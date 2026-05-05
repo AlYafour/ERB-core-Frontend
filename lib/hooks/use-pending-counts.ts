@@ -3,8 +3,13 @@ import apiClient from '@/lib/api/client';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 
 async function fetchCount(url: string, params: Record<string, unknown>): Promise<number> {
-  const res = await apiClient.get(url, { params: { ...params, page: 1, page_size: 1 } });
-  return res.data?.count ?? 0;
+  try {
+    const res = await apiClient.get(url, { params: { ...params, page: 1, page_size: 1 } });
+    return res.data?.count ?? 0;
+  } catch (err: any) {
+    if (err?.response?.status === 403 || err?.response?.status === 401) return 0;
+    throw err;
+  }
 }
 
 export interface PendingCounts {
