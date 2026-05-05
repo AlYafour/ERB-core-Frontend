@@ -332,6 +332,7 @@ export default function PurchaseQuotationDetailPage() {
               <thead>
                 <tr>
                   <th>{t('col', 'product')}</th>
+                  <th>{t('col', 'unit')}</th>
                   <th>{t('col', 'quantity')}</th>
                   <th>{t('col', 'unitPrice')}</th>
                   <th>Disc</th>
@@ -367,6 +368,11 @@ export default function PurchaseQuotationDetailPage() {
                           }}
                         >
                           {productCode}
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ color: 'var(--text-secondary)' }}>
+                          {(typeof item.product === 'object' && item.product ? item.product.unit : null)?.toUpperCase() || '—'}
                         </div>
                       </td>
                       <td>
