@@ -407,6 +407,7 @@ function NewPurchaseInvoicePageContent() {
                 <thead>
                   <tr>
                     <th>{t('col', 'product')}</th>
+                    <th>{t('col', 'unit')}</th>
                     <th>{t('col', 'quantity')}</th>
                     <th>{t('col', 'unitPrice')}</th>
                     <th>{t('col', 'discountPct')}</th>
@@ -433,6 +434,10 @@ function NewPurchaseInvoicePageContent() {
                             {purchaseOrder?.items?.find((poItem) => poItem.id === item.purchase_order_item_id)
                               ?.product?.code || ''}
                           </div>
+                        </td>
+                        <td className="text-muted-foreground">
+                          {purchaseOrder?.items?.find((poItem) => poItem.id === item.purchase_order_item_id)
+                            ?.product?.unit?.toUpperCase() || '—'}
                         </td>
                         <td>
                           <input

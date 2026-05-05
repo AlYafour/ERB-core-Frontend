@@ -701,6 +701,7 @@ Terms & Conditions:
                     <thead>
                       <tr>
                         <th>{t('col', 'product')}</th>
+                        <th>{t('col', 'unit')}</th>
                         <th>{t('col', 'quantity')}</th>
                         <th>{t('col', 'unitPrice')}</th>
                         <th>{t('col', 'discountPct')}</th>
@@ -754,6 +755,7 @@ Terms & Conditions:
                                 </div>
                               )}
                             </td>
+                            <td style={{ color: 'var(--text-secondary)' }}>{product?.unit?.toUpperCase() || '—'}</td>
                             <td>
                               <input
                                 type="number"

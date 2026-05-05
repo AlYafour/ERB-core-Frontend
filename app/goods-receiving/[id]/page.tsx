@@ -365,6 +365,7 @@ export default function GRNDetailPage() {
               <thead>
                 <tr>
                   <th>{t('col', 'product')}</th>
+                  <th>{t('col', 'unit')}</th>
                   <th>{t('col', 'orderedQty')}</th>
                   <th>{t('col', 'receivedQty')}</th>
                   <th>{t('col', 'rejectedQty')}</th>
@@ -390,6 +391,7 @@ export default function GRNDetailPage() {
                           {item.product?.code || ''}
                         </div>
                       </td>
+                      <td style={{ color: 'var(--text-secondary)' }}>{item.product?.unit?.toUpperCase() || '—'}</td>
                       <td>
                         <div style={{ color: 'var(--text-primary)' }}>{item.ordered_quantity}</div>
                       </td>

@@ -511,6 +511,7 @@ function NewGRNPageContent() {
                 <thead>
                   <tr>
                     <th>Product</th>
+                    <th>Unit</th>
                     <th>Ordered Qty</th>
                     <th>Received Qty</th>
                     <th>Rejected Qty</th>
@@ -530,6 +531,10 @@ function NewGRNPageContent() {
                           {purchaseOrder?.items?.find((poItem) => poItem.id === item.purchase_order_item_id)
                             ?.product?.code || ''}
                         </div>
+                      </td>
+                      <td className="text-muted-foreground">
+                        {purchaseOrder?.items?.find((poItem) => poItem.id === item.purchase_order_item_id)
+                          ?.product?.unit?.toUpperCase() || '—'}
                       </td>
                       <td>
                         <div className="text-foreground">{item.ordered_quantity}</div>

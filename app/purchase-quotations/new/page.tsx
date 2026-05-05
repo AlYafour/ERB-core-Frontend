@@ -614,6 +614,7 @@ function NewPurchaseQuotationPageContent() {
                     <thead>
                       <tr>
                         <th>{t('col', 'product')}</th>
+                        <th>{t('col', 'unit')}</th>
                         <th>{t('col', 'quantity')}</th>
                         <th>{t('col', 'unitPrice')}</th>
                         <th>Disc %</th>
@@ -665,7 +666,7 @@ function NewPurchaseQuotationPageContent() {
                                 {product?.name || `Product ID: ${item.product_id}`}
                               </div>
                               {product?.code && (
-                                <div style={{ 
+                                <div style={{
                                   fontSize: 'var(--font-xs)',
                                   color: 'var(--text-secondary)',
                                 }}>
@@ -673,6 +674,7 @@ function NewPurchaseQuotationPageContent() {
                                 </div>
                               )}
                             </td>
+                            <td style={{ color: 'var(--text-secondary)' }}>{product?.unit?.toUpperCase() || '—'}</td>
                             <td>
                               <input
                                 type="number"

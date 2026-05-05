@@ -187,6 +187,7 @@ export default function PurchaseInvoiceDetailPage() {
               <thead>
                 <tr>
                   <th>Product</th>
+                  <th>Unit</th>
                   <th>Qty</th>
                   <th>Unit Price</th>
                   <th>Disc %</th>
@@ -198,6 +199,7 @@ export default function PurchaseInvoiceDetailPage() {
                 {invoice.items.map((item, idx) => (
                   <tr key={item.id ?? idx}>
                     <td>{item.product?.name || `Product #${item.product_id}`}</td>
+                    <td className="text-muted-foreground">{item.product?.unit?.toUpperCase() || '—'}</td>
                     <td>{item.quantity}</td>
                     <td className="text-muted-foreground">{formatPrice(item.unit_price)}</td>
                     <td className="text-muted-foreground">{item.discount || 0}%</td>
