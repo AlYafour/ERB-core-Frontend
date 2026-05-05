@@ -217,8 +217,10 @@ function EditPurchaseOrderPageContent() {
     );
   }
 
-  // Prevent editing if order is approved or completed
-  if (order.status === 'approved' || order.status === 'completed') {
+  const isSuperAdmin = !!(user?.is_superuser || user?.is_staff);
+
+  // Prevent editing if order is approved or completed (super admins can still edit)
+  if ((order.status === 'approved' || order.status === 'completed') && !isSuperAdmin) {
     return (
       <MainLayout>
         <div className="space-y-6">
@@ -323,6 +325,8 @@ function EditPurchaseOrderPageContent() {
               >
                 <option value="draft">{t('status', 'draft')}</option>
                 <option value="pending">{t('status', 'pending')}</option>
+                {isSuperAdmin && <option value="approved">{t('status', 'approved')}</option>}
+                {isSuperAdmin && <option value="completed">{t('status', 'completed')}</option>}
                 <option value="rejected">{t('status', 'rejected')}</option>
                 <option value="cancelled">{t('status', 'cancelled')}</option>
               </select>
