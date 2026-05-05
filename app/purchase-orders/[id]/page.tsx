@@ -220,6 +220,7 @@ export default function PurchaseOrderDetailPage() {
                 <thead>
                   <tr>
                     <th>Product</th>
+                    <th>Unit</th>
                     <th>Qty</th>
                     <th>Unit Price</th>
                     <th>Disc %</th>
@@ -234,6 +235,7 @@ export default function PurchaseOrderDetailPage() {
                         <div className="font-medium">{item.product?.name || 'N/A'}</div>
                         <div className="text-xs text-muted-foreground">{item.product?.code || ''}</div>
                       </td>
+                      <td className="text-muted-foreground">{item.product?.unit?.toUpperCase() || '—'}</td>
                       <td>{item.quantity}</td>
                       <td className="text-muted-foreground">{formatPrice(item.unit_price)}</td>
                       <td className="text-muted-foreground">{item.discount || 0}%</td>
