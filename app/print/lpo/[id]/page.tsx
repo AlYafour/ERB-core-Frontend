@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
-import { PurchaseOrder, PurchaseOrderItem, Supplier } from '@/types';
+import { PurchaseOrder, PurchaseOrderItem, PurchaseRequest, Supplier } from '@/types';
 import { fmt, fmtDate, StatusBadge, COMPANY } from '@/components/print/PrintTemplate';
 import Image from 'next/image';
 
@@ -75,6 +75,7 @@ export default function PrintLPOPage() {
   );
 
   const supplier   = typeof po.supplier === 'object' && po.supplier ? po.supplier as Supplier : null;
+  const pr         = typeof po.purchase_request === 'object' && po.purchase_request ? po.purchase_request as PurchaseRequest : null;
   const subtotal   = Number(po.subtotal  ?? 0);
   const discount   = Number(po.discount  ?? 0);
   const taxRate    = Number(po.tax_rate  ?? 0);
@@ -287,6 +288,8 @@ export default function PrintLPOPage() {
                     ['Delivery Date', fmtDate(po.delivery_date)],
                     ['Payment Terms', po.payment_terms || '—'],
                     ['Delivery',      po.delivery_method === 'pickup' ? 'Ex-Works / Pickup' : 'Delivery to Site'],
+                    ...(pr ? [['PR Reference', pr.code]] : []),
+                    ...(pr?.required_by ? [['Required By', fmtDate(pr.required_by)]] : []),
                   ] as [string,string][]).map(([lbl, val], i, arr) => (
                     <tr key={i} style={{ background: i%2===0 ? '#fafafa' : '#fff',
                       borderBottom: i < arr.length-1 ? `1px solid #f1f5f9` : 'none' }}>
@@ -346,7 +349,7 @@ export default function PrintLPOPage() {
                       <div style={{ fontSize:'7.5pt', color:'#777', marginTop:1 }}>{item.notes}</div>
                     )}
                   </td>
-                  <td style={{ padding:'5px 8px', textAlign:'center' }}>{item.product?.unit || '—'}</td>
+                  <td style={{ padding:'5px 8px', textAlign:'center' }}>{item.product?.unit?.toUpperCase() || '—'}</td>
                   <td style={{ padding:'5px 8px', textAlign:'right' }}>{fmt(item.quantity, 2)}</td>
                   <td style={{ padding:'5px 8px', textAlign:'right' }}>AED {fmt(item.unit_price)}</td>
                   {hasDiscount && (

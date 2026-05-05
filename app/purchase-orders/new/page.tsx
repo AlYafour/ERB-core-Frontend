@@ -42,6 +42,12 @@ function NewPurchaseOrderPageContent() {
   const purchaseQuotationId = searchParams.get('purchase_quotation_id');
   const { user } = useAuth();
 
+  // PO must always originate from a PR or PQ — no standalone PO creation allowed
+  if (!purchaseRequestId && !purchaseQuotationId) {
+    router.push('/purchase-requests');
+    return null;
+  }
+
   // Only Procurement Officer and Super Admin can create Purchase Order
   // Procurement Manager should NOT be able to create Purchase Order
   if (user && user.role !== 'procurement_officer' && user.role !== 'super_admin' && !user.is_superuser) {
@@ -257,7 +263,14 @@ Terms & Conditions:
     
     // Frontend validation
     const validationErrors: Record<string, string> = {};
-    
+
+    // Enforce that PO must be linked to PR or PQ
+    if (!formData.purchase_request_id && !formData.purchase_quotation_id) {
+      toast('يجب إنشاء أمر الشراء من طلب شراء أو عرض سعر.', 'error');
+      router.push('/purchase-requests');
+      return;
+    }
+
     // Validate supplier
     if (!formData.supplier_id || formData.supplier_id === 0) {
       validationErrors.supplier_id = 'Supplier is required. Please select a supplier.';
@@ -407,9 +420,9 @@ Terms & Conditions:
             color: 'var(--text-secondary)',
             margin: 0,
           }}>
-            {purchaseRequestId
-              ? 'Create a purchase order directly from purchase request'
-              : 'Create a new purchase order'}
+            {purchaseQuotationId
+              ? 'Create a purchase order from awarded quotation'
+              : 'Create a purchase order from purchase request'}
           </p>
         </div>
 
