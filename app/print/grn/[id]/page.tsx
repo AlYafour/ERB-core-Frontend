@@ -5,13 +5,30 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { goodsReceivingApi, GoodsReceivedNote, GRNItem } from '@/lib/api/goods-receiving';
 import { PurchaseOrder, Supplier } from '@/types';
+import Image from 'next/image';
 import PrintTemplate, {
-  SectionTitle, InfoGrid, SignatureRow, NotesBox, StatusBadge,
+  SectionTitle, InfoGrid, NotesBox, StatusBadge,
   fmt, fmtDate,
 } from '@/components/print/PrintTemplate';
 
 const NAVY   = '#1a1a2e';
 const GREY   = '#64748b';
+const BORDER = '#cbd5e1';
+
+const USER_STAMPS: Record<string, string> = {
+  abdel: '/stamps/abdo-stamp.svg',
+  sayed: '/stamps/sayed-stamp.svg',
+  noura: '/stamps/noura-stamp.svg',
+  saif:  '/stamps/saif-stamp.svg',
+};
+function resolveStamp(u: string | null | undefined): string | null {
+  if (!u) return null;
+  const k = u.toLowerCase();
+  for (const name of Object.keys(USER_STAMPS)) {
+    if (k.includes(name)) return USER_STAMPS[name];
+  }
+  return null;
+}
 
 const QUALITY_LABEL: Record<string, string> = {
   good:      'Good',
@@ -214,13 +231,42 @@ export default function PrintGRNPage() {
             </>
           )}
 
-          <SectionTitle>Acknowledgement</SectionTitle>
-          <SignatureRow signatories={[
-            { label: 'Received By',   name: grn.received_by_name ?? '' },
-            { label: 'Inspected By',  name: '' },
-            { label: 'Store Keeper',  name: '' },
-            { label: 'Supplier Rep.', name: '' },
-          ]} />
+          <div style={{ breakInside:'avoid', pageBreakInside:'avoid', marginTop:10 }}>
+            <div style={{ fontSize:'8pt', fontWeight:700, letterSpacing:'.8px',
+              textTransform:'uppercase', color:GREY, borderBottom:`1.5px solid ${NAVY}`,
+              paddingBottom:3, marginBottom:8 }}>Acknowledgement</div>
+            <div style={{ display:'flex', border:`1px solid ${BORDER}`, borderRadius:8, overflow:'hidden' }}>
+              {[
+                { label: 'Received By',   name: grn.received_by_name ?? '', stamp: resolveStamp(grn.received_by_name) },
+                { label: 'Inspected By',  name: '',                          stamp: null },
+                { label: 'Store Keeper',  name: '',                          stamp: null },
+                { label: 'Supplier Rep.', name: '',                          stamp: null },
+              ].map((s, i, arr) => (
+                <div key={i} style={{
+                  flex:1, display:'flex', flexDirection:'column',
+                  height:115,
+                  borderRight: i < arr.length - 1 ? `1px solid ${BORDER}` : 'none',
+                  background: i%2===0 ? '#fafafa' : '#fff',
+                }}>
+                  <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+                    {s.stamp && (
+                      <Image src={s.stamp} alt="stamp" width={80} height={80}
+                        style={{ objectFit:'contain', opacity:0.78, transform:'rotate(-8deg)' }}
+                        unoptimized priority />
+                    )}
+                  </div>
+                  <div style={{ flexShrink:0, padding:'0 6px 7px', textAlign:'center' }}>
+                    <div style={{ height:1, background:BORDER, marginBottom:4 }} />
+                    <div style={{ fontSize:'5.5pt', fontWeight:700, textTransform:'uppercase',
+                      letterSpacing:'.6px', color:GREY }}>{s.label}</div>
+                    <div style={{ fontSize:'7pt', fontWeight:600, color:NAVY, marginTop:2, minHeight:12 }}>
+                      {s.name || ''}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </PrintTemplate>
       </div>
 

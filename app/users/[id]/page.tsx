@@ -59,6 +59,7 @@ export default function EditUserPage() {
     full_name_ar: '',
     phone: '',
     role: 'site_engineer',
+    is_active: true,
     password: '',
     password2: '',
   });
@@ -78,6 +79,7 @@ export default function EditUserPage() {
         full_name_ar: user.full_name_ar || '',
         phone: user.phone || '',
         role: user.role || 'site_engineer',
+        is_active: user.is_active ?? true,
         password: '',
         password2: '',
       });
@@ -427,6 +429,56 @@ export default function EditUserPage() {
               </p>
             </div>
           )}
+
+          {/* Account Active Toggle */}
+          <div className="mt-4 p-4 rounded-lg" style={{
+            backgroundColor: formData.is_active ? 'rgba(16,185,129,.06)' : 'rgba(239,68,68,.06)',
+            border: `1px solid ${formData.is_active ? 'rgba(16,185,129,.3)' : 'rgba(239,68,68,.3)'}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+          }}>
+            <div>
+              <p className="text-sm font-medium" style={{ color: formData.is_active ? '#065f46' : '#991b1b', marginBottom: 2 }}>
+                {formData.is_active ? '✅ Account Active' : '🚫 Account Deactivated'}
+              </p>
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                {formData.is_active
+                  ? 'User can sign in normally.'
+                  : 'User cannot sign in. Activate to restore access.'}
+              </p>
+            </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: currentUser?.id === id ? 'not-allowed' : 'pointer', flexShrink: 0 }}>
+              <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                {formData.is_active ? 'Active' : 'Inactive'}
+              </span>
+              <div
+                onClick={() => {
+                  if (currentUser?.id === id) return;
+                  setFormData({ ...formData, is_active: !formData.is_active });
+                }}
+                style={{
+                  width: 44, height: 24, borderRadius: 12,
+                  background: formData.is_active ? '#10b981' : '#d1d5db',
+                  position: 'relative', transition: 'background .2s',
+                  cursor: currentUser?.id === id ? 'not-allowed' : 'pointer',
+                  opacity: currentUser?.id === id ? 0.5 : 1,
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{
+                  width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                  position: 'absolute', top: 3,
+                  left: formData.is_active ? 23 : 3,
+                  transition: 'left .2s',
+                  boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+                }} />
+              </div>
+            </label>
+            {currentUser?.id === id && (
+              <p className="text-xs" style={{ color: '#9ca3af', marginTop: 4 }}>
+                You cannot deactivate your own account.
+              </p>
+            )}
+          </div>
 
           {/* Password Change Section */}
           <div className="mt-6 pt-6" style={{ borderTop: '1px solid var(--border-primary)' }}>
