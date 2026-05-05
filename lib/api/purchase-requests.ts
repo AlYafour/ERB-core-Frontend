@@ -67,6 +67,11 @@ export const purchaseRequestsApi = {
     return response.data;
   },
 
+  updateItem: async (itemId: number, data: { product_id?: number; quantity?: number; unit?: string; notes?: string }): Promise<PurchaseRequestItem> => {
+    const response = await apiClient.patch(`/purchase-requests/items/${itemId}/`, data);
+    return response.data;
+  },
+
   undoApproval: async (id: number): Promise<PurchaseRequest> => {
     const response = await apiClient.post(`/purchase-requests/${id}/undo_approval/`);
     return response.data;

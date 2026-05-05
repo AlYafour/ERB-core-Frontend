@@ -14,6 +14,8 @@ import { canCreateQuotationRequest, canCreatePurchaseOrder } from '@/lib/utils/w
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useT } from '@/lib/i18n/useT';
+import { productsApi } from '@/lib/api/products';
+import SearchableDropdown from '@/components/ui/SearchableDropdown';
 
 const statusColors: Record<string, string> = {
   pending: 'badge-warning',
@@ -39,7 +41,28 @@ export default function PurchaseRequestDetailPage() {
   // Only Procurement Manager, Super Admin, and Superuser can approve/reject
   // Procurement Officer and Site Engineer should NOT be able to approve/reject
   const { user } = useAuth();
+  const isSuperAdmin = !!(user?.is_superuser || user?.is_staff);
   const isSuperuser = user?.is_superuser ?? false;
+
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [editingProductId, setEditingProductId] = useState<number>(0);
+
+  const { data: products } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => productsApi.getAll({ page: 1 }),
+    enabled: isSuperAdmin,
+  });
+
+  const updateItemMutation = useMutation({
+    mutationFn: ({ itemId, productId }: { itemId: number; productId: number }) =>
+      purchaseRequestsApi.updateItem(itemId, { product_id: productId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-requests', id] });
+      setEditingItemId(null);
+      toast('Product updated successfully', 'success');
+    },
+    onError: () => toast('Failed to update product', 'error'),
+  });
   const canApprove = isSuperuser || ((hasPermission('purchase_request', 'approve') ?? false) && 
                      user?.role !== 'procurement_officer' && 
                      user?.role !== 'site_engineer');
@@ -324,24 +347,39 @@ export default function PurchaseRequestDetailPage() {
                   <th>{t('col', 'projectSite')}</th>
                   <th>{t('col', 'purpose')}</th>
                   <th>{t('col', 'notes')}</th>
+                  {isSuperAdmin && <th></th>}
                 </tr>
               </thead>
               <tbody>
                 {request.items.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      <div style={{ 
-                        fontWeight: 'var(--font-weight-medium)',
-                        color: 'var(--text-primary)',
-                      }}>
-                        {item.product?.name || 'N/A'}
-                      </div>
-                      <div style={{ 
-                        fontSize: 'var(--font-xs)',
-                        color: 'var(--text-secondary)',
-                      }}>
-                        {item.product?.code || ''}
-                      </div>
+                      {editingItemId === item.id ? (
+                        <div style={{ minWidth: '220px' }}>
+                          <SearchableDropdown
+                            options={
+                              products?.results.map((p) => ({
+                                value: p.id,
+                                label: `${p.name} (${p.code})`,
+                                searchText: `${p.name} ${p.code}`,
+                              })) || []
+                            }
+                            value={editingProductId}
+                            onChange={(val) => setEditingProductId(val ? Number(val) : 0)}
+                            placeholder="Select product..."
+                            searchPlaceholder="Search products..."
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <div style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--text-primary)' }}>
+                            {item.product?.name || 'N/A'}
+                          </div>
+                          <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>
+                            {item.product?.code || ''}
+                          </div>
+                        </>
+                      )}
                     </td>
                     <td>
                       <div style={{ color: 'var(--text-primary)' }}>{item.quantity}</div>
@@ -357,21 +395,49 @@ export default function PurchaseRequestDetailPage() {
                       </div>
                     </td>
                     <td>
-                      <div style={{ 
-                        color: 'var(--text-secondary)',
-                        maxWidth: '256px',
-                      }}>
+                      <div style={{ color: 'var(--text-secondary)', maxWidth: '256px' }}>
                         {item.reason || '-'}
                       </div>
                     </td>
                     <td>
-                      <div style={{ 
-                        color: 'var(--text-secondary)',
-                        maxWidth: '256px',
-                      }}>
+                      <div style={{ color: 'var(--text-secondary)', maxWidth: '256px' }}>
                         {item.notes || '-'}
                       </div>
                     </td>
+                    {isSuperAdmin && (
+                      <td>
+                        {editingItemId === item.id ? (
+                          <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
+                            <button
+                              className="btn btn-primary"
+                              style={{ fontSize: 'var(--font-xs)', padding: '4px 10px' }}
+                              disabled={!editingProductId || updateItemMutation.isPending}
+                              onClick={() => updateItemMutation.mutate({ itemId: item.id!, productId: editingProductId })}
+                            >
+                              {updateItemMutation.isPending ? '...' : 'Save'}
+                            </button>
+                            <button
+                              className="btn btn-secondary"
+                              style={{ fontSize: 'var(--font-xs)', padding: '4px 10px' }}
+                              onClick={() => setEditingItemId(null)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            className="btn btn-secondary"
+                            style={{ fontSize: 'var(--font-xs)', padding: '4px 10px' }}
+                            onClick={() => {
+                              setEditingItemId(item.id!);
+                              setEditingProductId(item.product?.id || 0);
+                            }}
+                          >
+                            Edit
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
