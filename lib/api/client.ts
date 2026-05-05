@@ -63,10 +63,11 @@ apiClient.interceptors.response.use(
           refresh: refreshToken,
         });
 
-        const { access } = response.data;
+        const { access, refresh: newRefresh } = response.data;
         localStorage.setItem('access_token', access);
-        // Keep cookie in sync so middleware can read it
-        const exp = new Date(Date.now() + 864e5).toUTCString();
+        if (newRefresh) localStorage.setItem('refresh_token', newRefresh);
+        // Keep cookie in sync — 30 min matches server ACCESS_TOKEN_LIFETIME
+        const exp = new Date(Date.now() + 30 * 60 * 1000).toUTCString();
         document.cookie = `access_token=${access};expires=${exp};path=/;SameSite=Strict`;
         processRefreshQueue(access);
 
