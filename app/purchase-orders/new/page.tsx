@@ -120,8 +120,8 @@ Terms & Conditions:
   });
 
   const { data: suppliers } = useQuery({
-    queryKey: ['suppliers'],
-    queryFn: () => suppliersApi.getAll({ page: 1 }),
+    queryKey: ['suppliers', 'all-active'],
+    queryFn: () => suppliersApi.getAllActive(),
   });
 
   const { data: products } = useQuery({
@@ -523,11 +523,11 @@ Terms & Conditions:
                 label={t('col', 'supplier')}
                 required
                 options={
-                  suppliers?.results.map((supplier) => ({
+                  (suppliers || []).map((supplier) => ({
                     value: supplier.id,
                     label: supplier.name,
                     searchText: `${supplier.name} ${supplier.business_name || ''} ${supplier.contact_person || ''}`,
-                  })) || []
+                  }))
                 }
                 value={formData.supplier_id}
                 onChange={(val) => {
