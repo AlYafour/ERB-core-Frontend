@@ -462,3 +462,188 @@ export interface PurchaseInvoice {
   created_at: string;
   updated_at: string;
 }
+
+// ── HR Module Types ────────────────────────────────────────────────────────────
+
+export interface HRDepartment {
+  id: number;
+  name: string;
+  name_ar: string;
+  description: string;
+  manager: number | null;
+  manager_name: string | null;
+  parent: number | null;
+  parent_name: string | null;
+  employee_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HRPosition {
+  id: number;
+  title: string;
+  title_ar: string;
+  level: number;
+  base_salary: string | null;
+  employee_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HREmployeeUser {
+  id: number;
+  username: string;
+  email: string;
+  full_name: string;
+  full_name_ar: string;
+  phone: string;
+  avatar: string | null;
+  role: string;
+}
+
+export interface HREmployee {
+  id: number;
+  employee_id: string;
+  user: HREmployeeUser;
+  user_id?: number;
+  full_name: string;
+  email: string;
+  avatar: string | null;
+  gender: string;
+  date_of_birth: string | null;
+  national_id: string;
+  nationality: string;
+  employment_type: 'full_time' | 'part_time' | 'contract' | 'intern';
+  join_date: string;
+  end_date: string | null;
+  is_active: boolean;
+  department: number | null;
+  department_name: string | null;
+  department_detail?: HRDepartment;
+  position: number | null;
+  position_title: string | null;
+  position_detail?: HRPosition;
+  manager: number | null;
+  manager_detail?: HREmployee;
+  basic_salary: string;
+  housing_allowance: string;
+  transport_allowance: string;
+  other_allowances: string;
+  total_salary: string;
+  emergency_contact?: HREmergencyContact;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HREmergencyContact {
+  id: number;
+  name: string;
+  relationship: string;
+  phone: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HRAttendance {
+  id: number;
+  employee: number;
+  employee_name: string;
+  employee_id_code: string;
+  date: string;
+  check_in: string | null;
+  check_out: string | null;
+  check_in_lat: number | null;
+  check_in_lng: number | null;
+  check_out_lat: number | null;
+  check_out_lng: number | null;
+  check_in_address: string;
+  break_start: string | null;
+  break_end: string | null;
+  status: 'present' | 'absent' | 'late' | 'half_day' | 'holiday' | 'on_leave';
+  work_hours: number | null;
+  overtime_hours: number | null;
+  duration_hours: number | null;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HRShift {
+  id: number;
+  name: string;
+  name_ar: string;
+  shift_type: 'morning' | 'evening' | 'night' | 'flexible';
+  start_time: string;
+  end_time: string;
+  break_mins: number;
+  work_days: number[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HRRequest {
+  id: number;
+  employee: number;
+  employee_name: string;
+  employee_id_code: string;
+  request_type: 'annual_leave' | 'sick_leave' | 'emergency_leave' | 'unpaid_leave' | 'work_from_home' | 'overtime' | 'advance_salary' | 'document_request' | 'other';
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  start_date: string | null;
+  end_date: string | null;
+  days: string | null;
+  reason: string;
+  attachments: string[];
+  approver: number | null;
+  approver_name: string | null;
+  approved_at: string | null;
+  rejected_at: string | null;
+  reject_reason: string;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HRLeaveBalance {
+  id: number;
+  employee: number;
+  employee_name: string;
+  year: number;
+  leave_type: 'annual_leave' | 'sick_leave' | 'emergency_leave' | 'unpaid_leave';
+  total_days: string;
+  used_days: string;
+  pending_days: string;
+  remaining_days: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HRPayroll {
+  id: number;
+  employee: number;
+  employee_name: string;
+  employee_id_code: string;
+  month: number;
+  year: number;
+  month_name: string;
+  basic_salary: string;
+  housing_allowance: string;
+  transport_allowance: string;
+  other_allowances: string;
+  overtime_amount: string;
+  deductions: string;
+  absence_deduction: string;
+  gross_salary: string;
+  net_salary: string;
+  working_days: number;
+  present_days: number;
+  absent_days: number;
+  leave_days: number;
+  status: 'draft' | 'processed' | 'paid';
+  paid_at: string | null;
+  notes: string;
+  created_by: number | null;
+  created_by_name: string | null;
+  created_at: string;
+  updated_at: string;
+}

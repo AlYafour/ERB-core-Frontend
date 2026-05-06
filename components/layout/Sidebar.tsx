@@ -10,6 +10,7 @@ import { usePendingCounts } from '@/lib/hooks/use-pending-counts';
 import {
   DashboardIcon, FileTextIcon, BuildingIcon, PackageIcon,
   BriefcaseIcon, DollarIcon, UsersIcon, XIcon, ShoppingCartIcon, AlertIcon,
+  UserIcon, ClockIcon, CalendarIcon, CurrencyIcon,
 } from '@/components/icons';
 
 export default function Sidebar() {
@@ -47,6 +48,9 @@ export default function Sidebar() {
     pathname.startsWith('/goods-receiving') ||
     pathname.startsWith('/purchase-invoices') ||
     pathname.startsWith('/payments');
+
+  const isHRActive =
+    pathname.startsWith('/hr/');
 
   function navLink(href: string, label: string, icon: React.ReactNode) {
     const active = isActive(href);
@@ -181,6 +185,25 @@ export default function Sidebar() {
               icon={<ShoppingCartIcon className="w-4 h-4" />}
               items={purchaseItems}
               defaultOpen={isPurchaseActive}
+              user={user}
+            />
+
+            <div className="my-2 mx-1 h-px" style={{ backgroundColor: 'var(--sidebar-border)' }} />
+
+            <div className="my-2 mx-1 h-px" style={{ backgroundColor: 'var(--sidebar-border)' }} />
+
+            {/* HR Management */}
+            <CollapsibleMenu
+              title={t('nav', 'hrModule')}
+              icon={<UsersIcon className="w-4 h-4" />}
+              items={[
+                { name: t('nav', 'hrEmployees'),   href: '/hr/employees'   },
+                { name: t('nav', 'hrDepartments'), href: '/hr/departments' },
+                { name: t('nav', 'hrAttendance'),  href: '/hr/attendance'  },
+                { name: t('nav', 'hrRequests'),    href: '/hr/requests'    },
+                { name: t('nav', 'hrPayroll'),     href: '/hr/payroll'     },
+              ]}
+              defaultOpen={isHRActive}
               user={user}
             />
 

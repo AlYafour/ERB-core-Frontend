@@ -22,6 +22,12 @@ export const translations = {
     permissions:        { en: 'Permissions',          ar: 'الصلاحيات' },
     logout:             { en: 'Logout',               ar: 'تسجيل الخروج' },
     operationsProcurement: { en: 'Operations & Procurement', ar: 'العمليات والمشتريات' },
+    hrModule:         { en: 'Human Resources',    ar: 'الموارد البشرية' },
+    hrEmployees:      { en: 'Employees',           ar: 'الموظفون' },
+    hrDepartments:    { en: 'Departments',         ar: 'الأقسام' },
+    hrAttendance:     { en: 'Attendance',          ar: 'الحضور والغياب' },
+    hrRequests:       { en: 'HR Requests',         ar: 'طلبات الموظفين' },
+    hrPayroll:        { en: 'Payroll',             ar: 'كشف الرواتب' },
   },
 
   // ── Common buttons ───────────────────────────────────────────────────
@@ -162,6 +168,11 @@ export const translations = {
     currentStage:         { en: 'Current Stage',                ar: 'المرحلة الحالية' },
     totalSteps:           { en: 'Total Steps',                  ar: 'إجمالي الخطوات' },
     completed:            { en: 'Completed',                    ar: 'مكتمل' },
+    hrEmployees:      { en: 'Employees',           ar: 'الموظفون' },
+    hrDepartments:    { en: 'Departments',         ar: 'الأقسام' },
+    hrAttendance:     { en: 'Attendance',          ar: 'الحضور والغياب' },
+    hrRequests:       { en: 'HR Requests',         ar: 'طلبات الموظفين' },
+    hrPayroll:        { en: 'Payroll',             ar: 'كشف الرواتب' },
   },
 
   // ── Section headings ─────────────────────────────────────────────────
@@ -397,6 +408,10 @@ export const translations = {
     searchPlaceholder:  { en: 'Search...',                      ar: 'بحث...' },
     selectOption:       { en: 'Select an option...',            ar: 'اختر خياراً...' },
     noOptions:          { en: 'No options found',               ar: 'لا توجد خيارات' },
+    noEmployees:      { en: 'No employees found',  ar: 'لا يوجد موظفون' },
+    noAttendance:     { en: 'No attendance records', ar: 'لا توجد سجلات حضور' },
+    noHRRequests:     { en: 'No requests found',   ar: 'لا توجد طلبات' },
+    noPayroll:        { en: 'No payroll records',  ar: 'لا توجد سجلات رواتب' },
   },
 
   // ── Toast / feedback messages ────────────────────────────────────────
