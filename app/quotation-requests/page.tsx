@@ -285,6 +285,7 @@ export default function QuotationRequestsPage() {
                         </th>
                       )}
                       <th>{t('col', 'code')}</th>
+                      <th>Project</th>
                       <th>{t('col', 'supplier')}</th>
                       <th>{t('col', 'requestDate')}</th>
                       <th>{t('col', 'actions')}</th>
@@ -307,6 +308,18 @@ export default function QuotationRequestsPage() {
                               ? request.purchase_request.code || 'N/A'
                               : 'N/A'}
                           </div>
+                        </td>
+                        <td>
+                          {request.project_name ? (
+                            <div>
+                              <div className="font-medium text-foreground">{request.project_name}</div>
+                              {request.project_code && (
+                                <div className="text-xs text-muted-foreground font-mono">{request.project_code}</div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
                         </td>
                         <td>
                           <div className="text-foreground">

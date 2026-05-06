@@ -184,6 +184,7 @@ export default function PurchaseOrdersPage() {
                     </th>
                   )}
                   <th>Order Number</th>
+                  <th>Project</th>
                   <th>Supplier</th>
                   <th>Order Date</th>
                   <th>Delivery Date</th>
@@ -207,6 +208,18 @@ export default function PurchaseOrdersPage() {
                       <Link href={`/purchase-orders/${order.id}`} className="text-primary hover:underline font-mono font-semibold">
                         {order.order_number}
                       </Link>
+                    </td>
+                    <td>
+                      {order.project_name ? (
+                        <div>
+                          <div className="font-medium text-foreground">{order.project_name}</div>
+                          {order.project_code && (
+                            <div className="text-xs text-muted-foreground font-mono">{order.project_code}</div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="text-muted-foreground">
                       {typeof order.supplier === 'object' ? order.supplier.name : '—'}

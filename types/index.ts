@@ -271,6 +271,8 @@ export interface QuotationRequest {
   created_by_name: string;
   created_at: string;
   items: QuotationRequestItem[];
+  project_name?: string | null;
+  project_code?: string | null;
 }
 
 // Purchase Quotation Types
@@ -318,6 +320,8 @@ export interface PurchaseQuotation {
   awarded_at?: string;
   created_at: string;
   items: PurchaseQuotationItem[];
+  project_name?: string | null;
+  project_code?: string | null;
 }
 
 // Purchase Order Types

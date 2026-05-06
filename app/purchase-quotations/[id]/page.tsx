@@ -156,8 +156,29 @@ export default function PurchaseQuotationDetailPage() {
             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
             gap: 'var(--spacing-4)',
           }}>
+            {(quotation.project_name || quotation.project_code) && (
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: 'var(--font-sm)',
+                  fontWeight: 'var(--font-weight-medium)',
+                  color: 'var(--text-secondary)',
+                  marginBottom: 'var(--spacing-2)',
+                }}>
+                  Project
+                </label>
+                <p style={{ fontSize: 'var(--font-base)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', margin: 0 }}>
+                  {quotation.project_name}
+                </p>
+                {quotation.project_code && (
+                  <p style={{ fontSize: 'var(--font-sm)', color: 'var(--text-secondary)', margin: 0, fontFamily: 'monospace' }}>
+                    {quotation.project_code}
+                  </p>
+                )}
+              </div>
+            )}
             <div>
-              <label style={{ 
+              <label style={{
                 display: 'block',
                 fontSize: 'var(--font-sm)',
                 fontWeight: 'var(--font-weight-medium)',

@@ -161,6 +161,17 @@ export default function PurchaseOrderDetailPage() {
 
           {/* Order Information */}
           <DetailCard title="Order Information">
+            {(order.project_name || order.project_code) && (
+              <DetailField
+                label="Project"
+                value={
+                  <div>
+                    <div className="font-semibold">{order.project_name}</div>
+                    {order.project_code && <div className="text-sm text-muted-foreground font-mono">{order.project_code}</div>}
+                  </div>
+                }
+              />
+            )}
             <DetailField label="Supplier" value={typeof order.supplier === 'object' ? order.supplier.name : 'N/A'} />
             <DetailField label="Order Date" value={new Date(order.order_date).toLocaleDateString('en-US')} />
             {order.delivery_date && (

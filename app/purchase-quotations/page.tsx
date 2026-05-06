@@ -312,6 +312,7 @@ export default function PurchaseQuotationsPage() {
                       <th>{t('col', 'status')}</th>
                       <th>PR</th>
                       <th>QR</th>
+                      <th>Project</th>
                       <th>{t('col', 'supplier')}</th>
                       <th>{t('col', 'requestDate')}</th>
                       <th>{t('col', 'deliveryMethod')}</th>
@@ -395,6 +396,18 @@ export default function PurchaseQuotationsPage() {
                               <span className="text-muted-foreground">-</span>
                             )}
                           </div>
+                        </td>
+                        <td>
+                          {quotation.project_name ? (
+                            <div>
+                              <div className="font-medium text-foreground">{quotation.project_name}</div>
+                              {quotation.project_code && (
+                                <div className="text-xs text-muted-foreground font-mono">{quotation.project_code}</div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
                         </td>
                         <td>
                           <div className="text-foreground">

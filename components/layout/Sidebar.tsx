@@ -24,11 +24,11 @@ export default function Sidebar() {
 
   const purchaseItems = [
     { name: t('nav', 'prList'),         href: '/purchase-requests',  icon: <FileTextIcon className="w-4 h-4" />,    badge: pending.pr        },
-    { name: t('nav', 'qrList'),         href: '/quotation-requests', icon: <BriefcaseIcon className="w-4 h-4" />                             },
+    { name: t('nav', 'qrList'),         href: '/quotation-requests', icon: <BriefcaseIcon className="w-4 h-4" />,  badge: pending.qr        },
     { name: t('nav', 'quotationsList'), href: '/purchase-quotations',icon: <DollarIcon className="w-4 h-4" />,     badge: pending.quotation  },
-    { name: t('nav', 'poList'),         href: '/purchase-orders',    icon: <ShoppingCartIcon className="w-4 h-4" />,badge: pending.po         },
-    { name: t('nav', 'grnList'),        href: '/goods-receiving',    icon: <PackageIcon className="w-4 h-4" />                               },
-    { name: t('nav', 'invoiceList'),    href: '/purchase-invoices',  icon: <DollarIcon className="w-4 h-4" />,     badge: pending.invoice    },
+    { name: t('nav', 'poList'),         href: '/purchase-orders',    icon: <ShoppingCartIcon className="w-4 h-4" />,badge: pending.po        },
+    { name: t('nav', 'grnList'),        href: '/goods-receiving',    icon: <PackageIcon className="w-4 h-4" />,    badge: pending.grn       },
+    { name: t('nav', 'invoiceList'),    href: '/purchase-invoices',  icon: <DollarIcon className="w-4 h-4" />,     badge: pending.invoice   },
   ];
 
   const otherItems = [
