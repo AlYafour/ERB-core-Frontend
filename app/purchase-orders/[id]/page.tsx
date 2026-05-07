@@ -260,28 +260,48 @@ export default function PurchaseOrderDetailPage() {
           </DetailCard>
 
           {/* Financial Summary */}
-          <DetailCard title="Financial Summary">
-            <div className="col-span-3 flex justify-end">
-              <div className="w-64 flex flex-col gap-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal:</span>
-                  <span className="font-semibold">{formatPrice(order.subtotal)}</span>
+          {(() => {
+            const itemsSubtotal = order.items.reduce((sum, item) => {
+              const s = Number(item.quantity) * Number(item.unit_price);
+              const d = s * ((Number(item.discount) || 0) / 100);
+              return sum + s - d;
+            }, 0);
+            const itemsVat = order.items.reduce((sum, item) => {
+              const s = Number(item.quantity) * Number(item.unit_price);
+              const d = s * ((Number(item.discount) || 0) / 100);
+              return sum + (s - d) * ((Number(item.tax_rate) || 0) / 100);
+            }, 0);
+            const globalDiscount = itemsSubtotal * ((Number(order.discount_rate) || 0) / 100);
+            const computedTotal = itemsSubtotal - globalDiscount + itemsVat;
+            return (
+              <DetailCard title="Financial Summary">
+                <div className="col-span-3 flex justify-end">
+                  <div className="w-64 flex flex-col gap-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Subtotal:</span>
+                      <span className="font-semibold">{formatPrice(itemsSubtotal)}</span>
+                    </div>
+                    {globalDiscount > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Discount:</span>
+                        <span className="font-semibold text-red-500">- {formatPrice(globalDiscount)}</span>
+                      </div>
+                    )}
+                    {itemsVat > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">VAT:</span>
+                        <span className="font-semibold">{formatPrice(itemsVat)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between border-t border-border pt-2 text-base">
+                      <span className="font-bold">Total:</span>
+                      <span className="font-bold">{formatPrice(computedTotal)}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Discount:</span>
-                  <span className="font-semibold">{formatPrice(order.discount)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tax:</span>
-                  <span className="font-semibold">{formatPrice(order.tax_amount)}</span>
-                </div>
-                <div className="flex justify-between border-t border-border pt-2 text-base">
-                  <span className="font-bold">Total:</span>
-                  <span className="font-bold">{formatPrice(order.total)}</span>
-                </div>
-              </div>
-            </div>
-          </DetailCard>
+              </DetailCard>
+            );
+          })()}
 
           {/* Terms & Conditions */}
           {order.terms_and_conditions && (
