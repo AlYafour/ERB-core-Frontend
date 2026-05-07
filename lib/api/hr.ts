@@ -27,6 +27,14 @@ export const hrEmployeesApi = {
     const response = await apiClient.get(`/hr/employees/${id}/attendance-summary/`);
     return response.data;
   },
+  activate: async (id: number) => {
+    const response = await apiClient.post(`/hr/employees/${id}/activate/`);
+    return response.data;
+  },
+  deactivate: async (id: number) => {
+    const response = await apiClient.post(`/hr/employees/${id}/deactivate/`);
+    return response.data;
+  },
 };
 
 // ── Departments ────────────────────────────────────────────────────────────────
