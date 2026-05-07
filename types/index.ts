@@ -509,14 +509,25 @@ export interface HREmployee {
   full_name: string;
   email: string;
   avatar: string | null;
+  // Personal Info
+  salary_display_name?: string;
   gender: string;
   date_of_birth: string | null;
-  national_id: string;
   nationality: string;
+  home_country?: string;
+  religion?: string;
+  national_id: string;
+  passport_number?: string;
+  passport_issue_date?: string | null;
+  passport_expiry_date?: string | null;
+  personal_email?: string;
+  // Employment
   employment_type: 'full_time' | 'part_time' | 'contract' | 'intern';
   join_date: string;
+  probation_end_date?: string | null;
   end_date: string | null;
   is_active: boolean;
+  work_location?: string;
   department: number | null;
   department_name: string | null;
   department_detail?: HRDepartment;
@@ -525,6 +536,20 @@ export interface HREmployee {
   position_detail?: HRPosition;
   manager: number | null;
   manager_detail?: HREmployee;
+  // Contact
+  mobile_number?: string;
+  extension_number?: string;
+  address?: string;
+  marital_status?: string;
+  // UAE Legal
+  sponsor_name?: string;
+  sponsor_id?: string;
+  labor_card?: string;
+  labor_card_expiry?: string | null;
+  mol_number?: string;
+  resident_id?: string;
+  is_citizen?: boolean;
+  // Salary
   basic_salary: string;
   housing_allowance: string;
   transport_allowance: string;
