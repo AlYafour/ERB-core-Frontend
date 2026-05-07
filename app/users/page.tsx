@@ -1,29 +1,21 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersApi } from '@/lib/api/users';
+import { hrEmployeesApi } from '@/lib/api/hr';
 import { permissionsApi, PermissionSet } from '@/lib/api/permissions';
-import { User } from '@/types';
+import { User, HREmployee, HREmployeeUser } from '@/types';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
-import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
-import FilterTags from '@/components/ui/FilterTags';
-import { Button, TextField, Checkbox, Loader, Badge } from '@/components/ui';
+import { Button, TextField, Badge, Loader } from '@/components/ui';
 import Avatar from '@/components/ui/Avatar';
 import { useT } from '@/lib/i18n/useT';
 
 /* ─── Constants ──────────────────────────────────────────────────── */
-const ROLE_LABELS: Record<string, string> = {
-  site_engineer:        'Site Engineer',
-  procurement_manager:  'Procurement Manager',
-  procurement_officer:  'Procurement Officer',
-  super_admin:          'Super Admin',
-};
-
 const ROLE_BADGE: Record<string, 'warning' | 'info' | 'success' | 'error'> = {
   super_admin:          'warning',
   procurement_manager:  'info',
@@ -31,15 +23,28 @@ const ROLE_BADGE: Record<string, 'warning' | 'info' | 'success' | 'error'> = {
   site_engineer:        'success',
 };
 
-/* Modules a role can access by default */
-const ROLE_MODULES: Record<string, { label: string; color: string }[]> = {
-  super_admin:         [{ label: 'Procurement', color: '#3b82f6' }, { label: 'HR', color: '#f97316' }],
-  procurement_manager: [{ label: 'Procurement', color: '#3b82f6' }, { label: 'HR', color: '#f97316' }],
-  procurement_officer: [{ label: 'Procurement', color: '#3b82f6' }, { label: 'HR', color: '#f97316' }],
-  site_engineer:       [{ label: 'Procurement', color: '#3b82f6' }, { label: 'HR', color: '#f97316' }],
+const ROLE_LABEL: Record<string, string> = {
+  super_admin:         'Super Admin',
+  procurement_manager: 'Proc. Manager',
+  procurement_officer: 'Proc. Officer',
+  site_engineer:       'Site Engineer',
 };
 
-/* ─── Inline Role Picker ─────────────────────────────────────────── */
+const EMP_TYPE_COLOR: Record<string, string> = {
+  full_time: '#10b981',
+  part_time: '#f59e0b',
+  contract:  '#3b82f6',
+  intern:    '#8b5cf6',
+};
+
+const EMP_TYPE_LABEL: Record<string, string> = {
+  full_time: 'Full Time',
+  part_time: 'Part Time',
+  contract:  'Contract',
+  intern:    'Intern',
+};
+
+/* ─── Inline Permission Set Picker ──────────────────────────────── */
 function RolePicker({
   userId,
   current,
@@ -57,11 +62,11 @@ function RolePicker({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const close = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
-    if (open) document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    if (open) document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
   }, [open]);
 
   return (
@@ -71,55 +76,38 @@ function RolePicker({
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 4,
           padding: '3px 10px', borderRadius: 6, cursor: 'pointer',
-          fontSize: 12, fontWeight: 600,
+          fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap',
           border: current ? '1px solid var(--brand-orange)' : '1px dashed var(--border-primary)',
           background: current ? 'var(--brand-orange-light)' : 'var(--bg-secondary)',
           color: current ? 'var(--brand-orange)' : 'var(--text-secondary)',
-          transition: 'all .15s',
         }}
       >
         {isPending ? '…' : (current?.name ?? 'No Role')}
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-          <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
       </button>
 
       {open && (
         <div style={{
-          position: 'absolute', top: '110%', left: 0, zIndex: 200,
-          minWidth: 200, background: 'var(--card-bg)',
+          position: 'absolute', top: '110%', left: 0, zIndex: 300,
+          minWidth: 210, background: 'var(--card-bg)',
           border: '1px solid var(--border-primary)',
-          borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.12)',
-          padding: 6, overflow: 'hidden',
+          borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,.13)',
+          padding: 6,
         }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '.8px', padding: '4px 8px 6px' }}>
             Assign Permission Set
           </div>
-          {/* Clear */}
           <button
             onClick={() => { onAssign(userId, null); setOpen(false); }}
-            style={{
-              width: '100%', textAlign: 'left', padding: '7px 10px',
-              borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12,
-              background: !current ? 'var(--brand-orange-light)' : 'transparent',
-              color: !current ? 'var(--brand-orange)' : 'var(--text-secondary)',
-              fontWeight: !current ? 700 : 400,
-            }}
+            style={pickerItemStyle(!current)}
           >
             — No Role
           </button>
           {sets.map(s => (
-            <button
-              key={s.id}
-              onClick={() => { onAssign(userId, s.id); setOpen(false); }}
-              style={{
-                width: '100%', textAlign: 'left', padding: '7px 10px',
-                borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12,
-                background: current?.id === s.id ? 'var(--brand-orange-light)' : 'transparent',
-                color: current?.id === s.id ? 'var(--brand-orange)' : 'var(--text-primary)',
-                fontWeight: current?.id === s.id ? 700 : 400,
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              }}
+            <button key={s.id} onClick={() => { onAssign(userId, s.id); setOpen(false); }}
+              style={pickerItemStyle(current?.id === s.id)}
             >
               <span>{s.name}</span>
               {current?.id === s.id && <span style={{ fontSize: 10 }}>✓</span>}
@@ -131,160 +119,156 @@ function RolePicker({
   );
 }
 
-/* ─── Module chips ───────────────────────────────────────────────── */
-function ModuleChips({ role }: { role: string }) {
-  const modules = ROLE_MODULES[role] ?? [{ label: 'HR', color: '#f97316' }];
+function pickerItemStyle(active: boolean): React.CSSProperties {
+  return {
+    width: '100%', textAlign: 'left', padding: '7px 10px',
+    borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12,
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    background: active ? 'var(--brand-orange-light)' : 'transparent',
+    color: active ? 'var(--brand-orange)' : 'var(--text-primary)',
+    fontWeight: active ? 700 : 400,
+  };
+}
+
+/* ─── Account Status Badge ───────────────────────────────────────── */
+function AccountBadge({ hasAccount }: { hasAccount: boolean }) {
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-      {modules.map(m => (
-        <span key={m.label} style={{
-          fontSize: 10, fontWeight: 700, padding: '2px 7px',
-          borderRadius: 4, letterSpacing: '.3px',
-          color: m.color, background: m.color + '18',
-          border: `1px solid ${m.color}44`,
-        }}>
-          {m.label}
-        </span>
-      ))}
-    </div>
+    <span style={{
+      fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
+      color:  hasAccount ? '#15803d' : '#92400e',
+      background: hasAccount ? '#f0fdf4' : '#fffbeb',
+      border: `1px solid ${hasAccount ? '#86efac' : '#fcd34d'}`,
+    }}>
+      {hasAccount ? '● System Account' : '○ No Account'}
+    </span>
   );
 }
 
 /* ─── Stat card ──────────────────────────────────────────────────── */
-function StatCard({ label, value, sub, color }: { label: string; value: number | string; sub?: string; color: string }) {
+function StatCard({ label, value, sub, color, onClick }: {
+  label: string; value: number | string; sub?: string; color: string; onClick?: () => void;
+}) {
   return (
-    <div style={{
-      flex: 1, minWidth: 140,
-      background: 'var(--card-bg)',
-      border: '1px solid var(--border-primary)',
-      borderRadius: 12, padding: '14px 18px',
-      borderTop: `3px solid ${color}`,
-    }}>
+    <div
+      onClick={onClick}
+      style={{
+        flex: 1, minWidth: 150,
+        background: 'var(--card-bg)', border: '1px solid var(--border-primary)',
+        borderRadius: 12, padding: '14px 18px',
+        borderTop: `3px solid ${color}`,
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'box-shadow .15s',
+      }}
+      onMouseEnter={e => onClick && ((e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px rgba(0,0,0,.08)')}
+      onMouseLeave={e => onClick && ((e.currentTarget as HTMLDivElement).style.boxShadow = 'none')}
+    >
       <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '.6px', marginBottom: 6 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>{sub}</div>}
     </div>
   );
 }
 
 /* ─── Page ───────────────────────────────────────────────────────── */
-export default function UsersPage() {
-  const [page, setPage] = useState(1);
+type Tab = 'staff' | 'unlinked';
+
+export default function PeoplePage() {
+  const [tab, setTab] = useState<Tab>('staff');
   const [search, setSearch] = useState('');
-  const [filters, setFilters] = useState<Record<string, any>>({});
-  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
+  const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
   const t = useT();
+  const isAdmin = currentUser?.role === 'super_admin' || currentUser?.is_superuser || currentUser?.is_staff;
 
   /* ─── Queries ── */
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['users', page, search, filters],
-    queryFn: () => usersApi.getAll({ page, search, ...filters }),
+  const { data: empData, isLoading: loadingEmps } = useQuery({
+    queryKey: ['hr-employees', page, search],
+    queryFn: () => hrEmployeesApi.getAll({ page, search, page_size: 50 } as any),
   });
 
-  const { data: permissionSetsData } = useQuery({
-    queryKey: ['permission-sets', ''],
-    queryFn: () => permissionsApi.getAllPermissionSets({ page_size: 100 }),
+  /* Fetch ALL users (unpaginated, for matching + permission_set) */
+  const { data: usersData } = useQuery({
+    queryKey: ['users-all-for-people'],
+    queryFn: () => usersApi.getAll({ page_size: 500 } as any),
+    staleTime: 60_000,
   });
-  const permissionSets = permissionSetsData?.results ?? [];
+
+  const { data: setsData } = useQuery({
+    queryKey: ['permission-sets-all'],
+    queryFn: () => permissionsApi.getAllPermissionSets({ page_size: 100 }),
+    staleTime: 120_000,
+  });
+  const permissionSets = setsData?.results ?? [];
+
+  /* Build lookup: userId → User (for permission_set) */
+  const userById = useMemo<Record<number, User>>(() => {
+    const map: Record<number, User> = {};
+    (usersData?.results ?? []).forEach((u: User) => { map[u.id] = u; });
+    return map;
+  }, [usersData]);
+
+  /* Employees linked to a user account */
+  const employees: HREmployee[] = empData?.results ?? [];
+
+  /* Users with NO employee record */
+  const linkedUserIds = useMemo(
+    () => new Set(employees.map(e => e.user?.id).filter(Boolean)),
+    [employees]
+  );
+  const unlinkedUsers = useMemo(
+    () => (usersData?.results ?? []).filter((u: User) => !linkedUserIds.has(u.id)),
+    [usersData, linkedUserIds]
+  );
+
+  /* Filtered unlinked users by search */
+  const filteredUnlinked = useMemo(() => {
+    if (!search) return unlinkedUsers;
+    const q = search.toLowerCase();
+    return unlinkedUsers.filter((u: User) =>
+      u.username.toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
+      [u.first_name, u.last_name].join(' ').toLowerCase().includes(q)
+    );
+  }, [unlinkedUsers, search]);
+
+  /* ─── Stats ── */
+  const totalEmployees  = empData?.count ?? 0;
+  const activeEmployees = employees.filter(e => e.is_active).length;
+  const withAccount     = employees.filter(e => !!e.user?.id).length;
+  const noRole          = employees.filter(e => e.user?.id && !userById[e.user.id]?.permission_set).length;
 
   /* ─── Mutations ── */
-  const toggleActiveMutation = useMutation({
-    mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
-      usersApi.setActive(id, isActive),
-    onSuccess: (_, { isActive }) => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast(isActive ? 'User activated' : 'User deactivated', 'success');
-    },
-    onError: () => toast('Failed to update user status', 'error'),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: usersApi.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast('User deleted', 'success');
-    },
-    onError: () => toast('Failed to delete user', 'error'),
-  });
-
-  const bulkDeleteMutation = useMutation({
-    mutationFn: async (ids: number[]) => {
-      await Promise.all(ids.filter(id => id !== currentUser?.id).map(id => usersApi.delete(id)));
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      setSelectedItems(new Set());
-      toast(`${selectedItems.size} user(s) deleted`, 'success');
-    },
-    onError: () => toast('Failed to delete users', 'error'),
-  });
-
   const assignRoleMutation = useMutation({
     mutationFn: ({ userId, permissionSetId }: { userId: number; permissionSetId: number | null }) =>
       permissionsApi.assignPermissionSetToUser(userId, permissionSetId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      queryClient.invalidateQueries({ queryKey: ['user-permission-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['users-all-for-people'] });
       toast('Permission set updated', 'success');
     },
     onError: () => toast('Failed to update permission set', 'error'),
   });
 
-  /* ─── Filter fields ── */
-  const filterFields: FilterField[] = [
-    { name: 'username',    label: 'Username',   type: 'text',    group: 'User Info' },
-    { name: 'email',       label: 'Email',      type: 'text',    group: 'User Info' },
-    { name: 'first_name',  label: 'First Name', type: 'text',    group: 'User Info' },
-    { name: 'last_name',   label: 'Last Name',  type: 'text',    group: 'User Info' },
-    {
-      name: 'role', label: 'Role', type: 'select', group: 'Role & Status',
-      options: [
-        { value: 'site_engineer',       label: 'Site Engineer' },
-        { value: 'procurement_manager', label: 'Procurement Manager' },
-        { value: 'procurement_officer', label: 'Procurement Officer' },
-        { value: 'super_admin',         label: 'Super Admin' },
-      ],
+  const toggleActiveMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
+      usersApi.setActive(id, isActive),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users-all-for-people'] });
+      queryClient.invalidateQueries({ queryKey: ['hr-employees'] });
+      toast('Status updated', 'success');
     },
-    { name: 'is_staff',  label: 'Is Staff',  type: 'boolean', group: 'Role & Status' },
-    { name: 'is_active', label: 'Is Active', type: 'boolean', group: 'Role & Status' },
-    { name: 'date_joined_after',  label: 'Joined From', type: 'date', group: 'Dates' },
-    { name: 'date_joined_before', label: 'Joined To',   type: 'date', group: 'Dates' },
-  ];
+  });
 
-  /* ─── Handlers ── */
-  const handleDelete = async (id: number) => {
-    if (id === currentUser?.id) { toast('Cannot delete your own account', 'warning'); return; }
-    if (await confirm('Delete this user?')) deleteMutation.mutate(id);
-  };
+  const deleteUserMutation = useMutation({
+    mutationFn: usersApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users-all-for-people'] });
+      toast('User deleted', 'success');
+    },
+  });
 
-  const handleBulkDelete = async () => {
-    if (!selectedItems.size) return;
-    if (await confirm(`Delete ${selectedItems.size} user(s)?`)) {
-      bulkDeleteMutation.mutate(Array.from(selectedItems));
-    }
-  };
-
-  const toggleSelect = (id: number, checked: boolean) => {
-    if (id === currentUser?.id) return;
-    const s = new Set(selectedItems);
-    checked ? s.add(id) : s.delete(id);
-    setSelectedItems(s);
-  };
-
-  const currentIds = data?.results?.filter((u: User) => u.id !== currentUser?.id).map((u: User) => u.id) ?? [];
-  const allSelected  = currentIds.length > 0 && currentIds.every(id => selectedItems.has(id));
-  const someSelected = currentIds.some(id => selectedItems.has(id)) && !allSelected;
-
-  /* ─── Stats ── */
-  const total   = data?.count ?? 0;
-  const active  = data?.results?.filter((u: User) => u.is_active).length ?? 0;
-  const admins  = data?.results?.filter((u: User) => u.role === 'super_admin').length ?? 0;
-  const noRole  = data?.results?.filter((u: User) => !u.permission_set).length ?? 0;
-
-  const isSuperuser = currentUser?.is_superuser ?? false;
-  if (!isSuperuser && currentUser?.role !== 'super_admin' && !currentUser?.is_staff) {
+  /* ─── Access guard ── */
+  if (!isAdmin) {
     return (
       <MainLayout>
         <div className="card border-destructive bg-destructive/10">
@@ -294,231 +278,379 @@ export default function UsersPage() {
     );
   }
 
+  /* ─── Tab style helper ── */
+  const tabStyle = (active: boolean): React.CSSProperties => ({
+    padding: '8px 20px', cursor: 'pointer', border: 'none',
+    borderBottom: active ? '2px solid var(--brand-orange)' : '2px solid transparent',
+    background: 'none', fontWeight: active ? 700 : 400,
+    color: active ? 'var(--brand-orange)' : 'var(--text-secondary)',
+    fontSize: 14, transition: 'all .15s',
+  });
+
   return (
     <MainLayout>
-      <div className="space-y-5">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-        {/* ── Page header ── */}
+        {/* ── Header ── */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
           <div>
-            <h1 style={{ fontSize: 'var(--font-2xl)', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-              Users & Access Control
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+              People &amp; Access
             </h1>
-            <p style={{ fontSize: 'var(--font-sm)', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
-              Manage user accounts, roles, and module access
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '4px 0 0' }}>
+              All employees and their system accounts in one place
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {selectedItems.size > 0 && (
-              <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
-                Delete {selectedItems.size} selected
-              </Button>
-            )}
-            <Link href="/users/pending">
-              <Button variant="secondary">Pending Approvals</Button>
-            </Link>
+          <div style={{ display: 'flex', gap: 8 }}>
             <Link href="/settings/permissions">
               <Button variant="secondary">Permission Sets</Button>
             </Link>
+            <Link href="/hr/employees/new">
+              <Button variant="secondary">+ Add Employee</Button>
+            </Link>
             <Link href="/users/new">
-              <Button variant="primary">+ Add User</Button>
+              <Button variant="primary">+ Add User Account</Button>
             </Link>
           </div>
         </div>
 
-        {/* ── Stats row ── */}
-        {data && (
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <StatCard label="Total Users"     value={total}  sub="registered accounts"    color="#3b82f6" />
-            <StatCard label="Active"          value={active} sub={`${total - active} inactive`} color="#10b981" />
-            <StatCard label="Super Admins"    value={admins} sub="full access"             color="#f97316" />
-            <StatCard label="No Role Assigned" value={noRole} sub="need permission set"   color="#ef4444" />
-          </div>
-        )}
-
-        {/* ── Search & Filters ── */}
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <TextField
-            type="text"
-            placeholder="Search by name, username, email…"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="flex-1 max-w-md"
-          />
-          <FilterPanel
-            fields={filterFields}
-            filters={filters}
-            onFilterChange={(f) => { setFilters(f); setPage(1); }}
-            onReset={() => { setFilters({}); setPage(1); }}
-            saveKey="users"
-          />
+        {/* ── Stats ── */}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <StatCard label="Total Staff"      value={totalEmployees}  sub="employee records"         color="#3b82f6" onClick={() => { setTab('staff'); setSearch(''); }} />
+          <StatCard label="Active"           value={activeEmployees} sub="currently employed"        color="#10b981" />
+          <StatCard label="With Accounts"    value={withAccount}     sub="can log into the system"   color="#f97316" />
+          <StatCard label="No Role Assigned" value={noRole}          sub="need a permission set"     color="#ef4444" onClick={() => setTab('staff')} />
+          <StatCard label="Unlinked Accounts" value={unlinkedUsers.length} sub="no HR record"        color="#8b5cf6" onClick={() => setTab('unlinked')} />
         </div>
 
-        {Object.keys(filters).length > 0 && (
-          <FilterTags
-            filters={filters}
-            fields={filterFields}
-            onRemoveFilter={(k) => { const f = { ...filters }; delete f[k]; setFilters(f); setPage(1); }}
-            onClearAll={() => { setFilters({}); setPage(1); }}
+        {/* ── Tabs ── */}
+        <div style={{ borderBottom: '1px solid var(--border-primary)', display: 'flex', gap: 4 }}>
+          <button style={tabStyle(tab === 'staff')}    onClick={() => { setTab('staff');    setSearch(''); setPage(1); }}>
+            All Staff
+            <span style={{ marginLeft: 6, fontSize: 11, background: 'var(--bg-secondary)', padding: '1px 7px', borderRadius: 10 }}>
+              {totalEmployees}
+            </span>
+          </button>
+          <button style={tabStyle(tab === 'unlinked')} onClick={() => { setTab('unlinked'); setSearch(''); }}>
+            Unlinked Accounts
+            {unlinkedUsers.length > 0 && (
+              <span style={{ marginLeft: 6, fontSize: 11, background: '#ef444420', color: '#ef4444', padding: '1px 7px', borderRadius: 10, fontWeight: 700 }}>
+                {unlinkedUsers.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* ── Search ── */}
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <TextField
+            type="text"
+            placeholder={tab === 'staff' ? 'Search by name, employee ID, position…' : 'Search by username or email…'}
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="flex-1 max-w-lg"
           />
-        )}
+          {tab === 'staff' && (
+            <Link href="/users/pending">
+              <Button variant="secondary" size="sm">Pending Approvals</Button>
+            </Link>
+          )}
+        </div>
 
-        {/* ── Table ── */}
-        {isLoading ? (
-          <div className="card text-center py-12"><Loader className="mx-auto mb-4" /><p className="text-muted-foreground">Loading…</p></div>
-        ) : error ? (
-          <div className="card border-destructive bg-destructive/10"><p className="text-destructive text-sm">Failed to load users</p></div>
-        ) : !data?.results?.length ? (
-          <div className="card text-center py-12"><p className="text-muted-foreground">No users found</p></div>
-        ) : (
+        {/* ═══════════════════════════════════════
+            Tab: All Staff
+        ═══════════════════════════════════════ */}
+        {tab === 'staff' && (
           <>
-            <div className="card p-0 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table>
-                  <thead>
-                    <tr>
-                      <th style={{ width: 44 }}>
-                        <Checkbox
-                          checked={allSelected}
-                          ref={(el) => { if (el) el.indeterminate = someSelected; }}
-                          onChange={(e) => {
-                            if (e.target.checked) setSelectedItems(new Set(currentIds));
-                            else setSelectedItems(new Set());
-                          }}
-                        />
-                      </th>
-                      <th>User</th>
-                      <th>Full Name</th>
-                      <th>Role</th>
-                      <th>Permission Set</th>
-                      <th>Module Access</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.results.map((user: User) => (
-                      <tr key={user.id} style={{ opacity: user.is_active ? 1 : 0.6 }}>
-                        {/* Checkbox */}
-                        <td>
-                          {user.id !== currentUser?.id && (
-                            <Checkbox
-                              checked={selectedItems.has(user.id)}
-                              onChange={(e) => toggleSelect(user.id, e.target.checked)}
-                            />
-                          )}
-                        </td>
+            {loadingEmps ? (
+              <div className="card text-center py-12"><Loader className="mx-auto mb-3" /><p className="text-muted-foreground">Loading…</p></div>
+            ) : !employees.length ? (
+              <div className="card text-center py-12"><p className="text-muted-foreground">No employees found</p></div>
+            ) : (
+              <div className="card p-0 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th style={{ width: 110 }}>Emp. ID</th>
+                        <th>Person</th>
+                        <th>Department / Position</th>
+                        <th>System Account</th>
+                        <th>Role</th>
+                        <th>Permission Set</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {employees.map((emp) => {
+                        const linkedUser = emp.user?.id ? userById[emp.user.id] : null;
+                        const hasAccount = !!emp.user?.id;
 
-                        {/* User */}
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <Avatar src={user.avatar_url} alt={user.username} size={34} username={user.username} />
-                            <div>
-                              <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
-                                {user.username}
-                                {user.id === currentUser?.id && (
-                                  <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: 'var(--brand-orange)', background: 'var(--brand-orange-light)', padding: '1px 5px', borderRadius: 4 }}>
-                                    You
-                                  </span>
+                        return (
+                          <tr key={emp.id} style={{ opacity: emp.is_active ? 1 : 0.55 }}>
+                            {/* Employee ID */}
+                            <td>
+                              <span style={{
+                                fontFamily: 'monospace', fontSize: 12, fontWeight: 700,
+                                color: 'var(--brand-orange)', background: 'var(--brand-orange-light)',
+                                padding: '3px 8px', borderRadius: 5,
+                              }}>
+                                {emp.employee_id}
+                              </span>
+                            </td>
+
+                            {/* Person */}
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <Avatar
+                                  src={emp.avatar || emp.user?.avatar || undefined}
+                                  alt={emp.full_name}
+                                  size={36}
+                                  username={emp.full_name || emp.user?.username}
+                                />
+                                <div>
+                                  <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+                                    {emp.full_name || [emp.user?.full_name].filter(Boolean).join(' ') || '—'}
+                                  </div>
+                                  <AccountBadge hasAccount={hasAccount} />
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Department / Position */}
+                            <td>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                                {emp.department_name || '—'}
+                              </div>
+                              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
+                                {emp.position_title || '—'}
+                              </div>
+                            </td>
+
+                            {/* System Account */}
+                            <td>
+                              {hasAccount ? (
+                                <div>
+                                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                                    {emp.user.username}
+                                  </div>
+                                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                                    {emp.user.email}
+                                  </div>
+                                </div>
+                              ) : (
+                                <Link href="/users/new">
+                                  <button style={{
+                                    fontSize: 11, fontWeight: 600, padding: '4px 10px',
+                                    borderRadius: 6, border: '1px dashed var(--border-primary)',
+                                    background: 'transparent', color: 'var(--text-secondary)',
+                                    cursor: 'pointer',
+                                  }}>
+                                    + Create Account
+                                  </button>
+                                </Link>
+                              )}
+                            </td>
+
+                            {/* Role */}
+                            <td>
+                              {hasAccount ? (
+                                <Badge variant={ROLE_BADGE[emp.user.role] ?? 'info'}>
+                                  {ROLE_LABEL[emp.user.role] ?? emp.user.role}
+                                </Badge>
+                              ) : (
+                                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>—</span>
+                              )}
+                            </td>
+
+                            {/* Permission Set */}
+                            <td>
+                              {hasAccount && linkedUser ? (
+                                <RolePicker
+                                  userId={emp.user.id}
+                                  current={linkedUser.permission_set}
+                                  sets={permissionSets}
+                                  onAssign={(uid, sid) => assignRoleMutation.mutate({ userId: uid, permissionSetId: sid })}
+                                  isPending={assignRoleMutation.isPending && assignRoleMutation.variables?.userId === emp.user.id}
+                                />
+                              ) : (
+                                <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>—</span>
+                              )}
+                            </td>
+
+                            {/* Employment Type */}
+                            <td>
+                              <span style={{
+                                fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 5,
+                                color: EMP_TYPE_COLOR[emp.employment_type] ?? '#64748b',
+                                background: (EMP_TYPE_COLOR[emp.employment_type] ?? '#64748b') + '18',
+                                border: `1px solid ${(EMP_TYPE_COLOR[emp.employment_type] ?? '#64748b')}44`,
+                              }}>
+                                {EMP_TYPE_LABEL[emp.employment_type] ?? emp.employment_type}
+                              </span>
+                            </td>
+
+                            {/* Status */}
+                            <td>
+                              <Badge variant={emp.is_active ? 'success' : 'error'}>
+                                {emp.is_active ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </td>
+
+                            {/* Actions */}
+                            <td>
+                              <div style={{ display: 'flex', gap: 5 }}>
+                                <Link href={`/hr/employees/${emp.id}`}>
+                                  <Button variant="view" size="sm">HR</Button>
+                                </Link>
+                                {hasAccount && (
+                                  <Link href={`/users/view/${emp.user.id}`}>
+                                    <Button variant="edit" size="sm">Account</Button>
+                                  </Link>
+                                )}
+                                {hasAccount && emp.user.id !== currentUser?.id && (
+                                  <Button
+                                    variant={linkedUser?.is_active ? 'secondary' : 'success'}
+                                    size="sm"
+                                    onClick={() => toggleActiveMutation.mutate({ id: emp.user.id, isActive: !linkedUser?.is_active })}
+                                    disabled={toggleActiveMutation.isPending}
+                                  >
+                                    {linkedUser?.is_active ? 'Disable' : 'Enable'}
+                                  </Button>
                                 )}
                               </div>
-                              <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{user.email}</div>
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Full Name */}
-                        <td>
-                          <div style={{ fontSize: 13, color: 'var(--text-primary)' }}>
-                            {[user.first_name, user.last_name].filter(Boolean).join(' ') || '—'}
-                          </div>
-                          {user.job_title && (
-                            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{user.job_title}</div>
-                          )}
-                        </td>
-
-                        {/* Role */}
-                        <td>
-                          <Badge variant={ROLE_BADGE[user.role] ?? 'info'}>
-                            {ROLE_LABELS[user.role] ?? user.role}
-                          </Badge>
-                        </td>
-
-                        {/* Permission Set — inline picker */}
-                        <td>
-                          {isSuperuser || currentUser?.is_staff ? (
-                            <RolePicker
-                              userId={user.id}
-                              current={user.permission_set}
-                              sets={permissionSets}
-                              onAssign={(uid, sid) => assignRoleMutation.mutate({ userId: uid, permissionSetId: sid })}
-                              isPending={assignRoleMutation.isPending && assignRoleMutation.variables?.userId === user.id}
-                            />
-                          ) : (
-                            <span style={{ fontSize: 12, color: user.permission_set ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                              {user.permission_set?.name ?? 'No Role'}
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Module Access */}
-                        <td><ModuleChips role={user.role} /></td>
-
-                        {/* Status */}
-                        <td>
-                          <Badge variant={user.is_active ? 'success' : 'error'}>
-                            {user.is_active ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </td>
-
-                        {/* Actions */}
-                        <td>
-                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                            <Link href={`/users/view/${user.id}`}>
-                              <Button variant="view" size="sm">View</Button>
-                            </Link>
-                            <Link href={`/users/${user.id}`}>
-                              <Button variant="edit" size="sm">Edit</Button>
-                            </Link>
-                            {user.id !== currentUser?.id && isSuperuser && (
-                              <Button
-                                variant={user.is_active ? 'secondary' : 'success'}
-                                size="sm"
-                                onClick={() => toggleActiveMutation.mutate({ id: user.id, isActive: !user.is_active })}
-                                disabled={toggleActiveMutation.isPending}
-                              >
-                                {user.is_active ? 'Deactivate' : 'Activate'}
-                              </Button>
-                            )}
-                            {user.id !== currentUser?.id && isSuperuser && (
-                              <Button
-                                variant="delete"
-                                size="sm"
-                                onClick={() => handleDelete(user.id)}
-                                disabled={deleteMutation.isPending}
-                              >
-                                Delete
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Pagination */}
-            {data.count > 50 && (
+            {empData && empData.count > 50 && (
               <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                  Showing {(page - 1) * 50 + 1}–{Math.min(page * 50, data.count)} of {data.count}
-                  {selectedItems.size > 0 && <strong style={{ marginLeft: 8 }}> · {selectedItems.size} selected</strong>}
+                  Showing {(page - 1) * 50 + 1}–{Math.min(page * 50, empData.count)} of {empData.count}
                 </span>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <Button variant="secondary" onClick={() => setPage(p => p - 1)} disabled={!data.previous}>Previous</Button>
-                  <Button variant="secondary" onClick={() => setPage(p => p + 1)} disabled={!data.next}>Next</Button>
+                  <Button variant="secondary" onClick={() => setPage(p => p - 1)} disabled={!empData.previous || page === 1}>Previous</Button>
+                  <Button variant="secondary" onClick={() => setPage(p => p + 1)} disabled={!empData.next}>Next</Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ═══════════════════════════════════════
+            Tab: Unlinked Accounts
+        ═══════════════════════════════════════ */}
+        {tab === 'unlinked' && (
+          <>
+            {/* Info banner */}
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px',
+              background: '#fffbeb', border: '1px solid #fcd34d', borderLeft: '3px solid #f59e0b',
+              borderRadius: '0 8px 8px 0', fontSize: 13,
+            }}>
+              <span style={{ color: '#92400e', fontWeight: 700, flexShrink: 0 }}>⚠ Note:</span>
+              <span style={{ color: '#78350f' }}>
+                These accounts can log in but have no HR employee record linked.
+                Create an employee profile for each person or delete the account if it's not needed.
+              </span>
+            </div>
+
+            {!filteredUnlinked.length ? (
+              <div className="card text-center py-12">
+                <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
+                  {search ? 'No matching accounts found' : '✓ All accounts are linked to employee records'}
+                </p>
+              </div>
+            ) : (
+              <div className="card p-0 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Account</th>
+                        <th>Full Name</th>
+                        <th>Role</th>
+                        <th>Permission Set</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredUnlinked.map((u: User) => (
+                        <tr key={u.id}>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <Avatar src={u.avatar_url} alt={u.username} size={34} username={u.username} />
+                              <div>
+                                <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+                                  {u.username}
+                                  {u.id === currentUser?.id && (
+                                    <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: 'var(--brand-orange)', background: 'var(--brand-orange-light)', padding: '1px 5px', borderRadius: 4 }}>You</span>
+                                  )}
+                                </div>
+                                <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{u.email}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <span style={{ fontSize: 13 }}>
+                              {[u.first_name, u.last_name].filter(Boolean).join(' ') || '—'}
+                            </span>
+                          </td>
+                          <td>
+                            <Badge variant={ROLE_BADGE[u.role] ?? 'info'}>
+                              {ROLE_LABEL[u.role] ?? u.role}
+                            </Badge>
+                          </td>
+                          <td>
+                            <RolePicker
+                              userId={u.id}
+                              current={u.permission_set}
+                              sets={permissionSets}
+                              onAssign={(uid, sid) => assignRoleMutation.mutate({ userId: uid, permissionSetId: sid })}
+                              isPending={assignRoleMutation.isPending && assignRoleMutation.variables?.userId === u.id}
+                            />
+                          </td>
+                          <td>
+                            <Badge variant={u.is_active ? 'success' : 'error'}>
+                              {u.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: 5 }}>
+                              <Link href={`/hr/employees/new`}>
+                                <Button variant="secondary" size="sm">+ HR Profile</Button>
+                              </Link>
+                              <Link href={`/users/view/${u.id}`}>
+                                <Button variant="view" size="sm">View</Button>
+                              </Link>
+                              {u.id !== currentUser?.id && currentUser?.is_superuser && (
+                                <Button
+                                  variant="delete"
+                                  size="sm"
+                                  onClick={async () => {
+                                    if (await confirm('Delete this user account?')) deleteUserMutation.mutate(u.id);
+                                  }}
+                                  disabled={deleteUserMutation.isPending}
+                                >
+                                  Delete
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}

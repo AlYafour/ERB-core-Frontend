@@ -90,13 +90,34 @@ export default function HREmployeesPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-foreground">{t('page', 'hrEmployees')}</h1>
-            <p className="text-sm text-muted-foreground mt-1">Manage company employees</p>
+            <p className="text-sm text-muted-foreground mt-1">HR records — salaries, attendance, contracts</p>
           </div>
-          {isAdmin && (
-            <Link href="/hr/employees/new">
-              <Button variant="primary">New Employee</Button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Link href="/users">
+              <Button variant="secondary">People &amp; Access →</Button>
             </Link>
-          )}
+            {isAdmin && (
+              <Link href="/hr/employees/new">
+                <Button variant="primary">New Employee</Button>
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* Banner */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px',
+          background: 'var(--brand-orange-light)', border: '1px solid var(--brand-orange)',
+          borderRadius: 8, fontSize: 13, color: 'var(--brand-orange)',
+        }}>
+          <span>💡</span>
+          <span>
+            To manage user accounts, roles, and module access for employees, use the{' '}
+            <Link href="/users" style={{ fontWeight: 700, textDecoration: 'underline' }}>
+              People &amp; Access
+            </Link>{' '}
+            page.
+          </span>
         </div>
 
         {/* Search + Filters */}
