@@ -22,39 +22,21 @@ export default function UserViewRedirectPage() {
     const employee = data.results?.[0];
     if (employee) {
       router.replace(`/hr/employees/${employee.id}`);
-    }
-  }, [data, router]);
-
-  if (isLoading) {
-    return (
-      <MainLayout>
-        <div className="flex items-center justify-center py-24">
-          <p className="text-muted-foreground text-sm">Loading employee profile...</p>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  useEffect(() => {
-    if (isError || (data && !data.results?.length)) {
+    } else {
       router.replace(`/hr/employees/new?user_id=${userId}`);
     }
-  }, [isError, data, router, userId]);
+  }, [data, router, userId]);
 
-  if (isError || (data && !data.results?.length)) {
-    return (
-      <MainLayout>
-        <div className="flex items-center justify-center py-24">
-          <p className="text-muted-foreground text-sm">Redirecting...</p>
-        </div>
-      </MainLayout>
-    );
-  }
+  useEffect(() => {
+    if (isError) router.replace(`/hr/employees/new?user_id=${userId}`);
+  }, [isError, router, userId]);
 
   return (
     <MainLayout>
       <div className="flex items-center justify-center py-24">
-        <p className="text-muted-foreground text-sm">Redirecting to employee profile...</p>
+        <p className="text-muted-foreground text-sm">
+          {isLoading ? 'Loading...' : 'Redirecting...'}
+        </p>
       </div>
     </MainLayout>
   );
