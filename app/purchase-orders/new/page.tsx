@@ -630,8 +630,8 @@ Terms & Conditions:
               )}
             </div>
 
-            {/* Add Item Form - Only show if NOT from quotation */}
-            {!purchaseQuotation && (
+            {/* Add Item Form - Only show if NOT from quotation and NOT from PR */}
+            {!purchaseQuotation && !purchaseRequest && (
               <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4 p-4 bg-[var(--muted)] rounded-md">
               <div className="md:col-span-2">
                 <SearchableDropdown
