@@ -307,10 +307,7 @@ export default function PeoplePage() {
               <Button variant="secondary">Permission Sets</Button>
             </Link>
             <Link href="/hr/employees/new">
-              <Button variant="secondary">+ Add Employee</Button>
-            </Link>
-            <Link href="/users/new">
-              <Button variant="primary">+ Add User Account</Button>
+              <Button variant="primary">+ Add Employee</Button>
             </Link>
           </div>
         </div>
@@ -442,14 +439,14 @@ export default function PeoplePage() {
                                   </div>
                                 </div>
                               ) : (
-                                <Link href="/users/new">
+                                <Link href="/hr/employees/new">
                                   <button style={{
                                     fontSize: 11, fontWeight: 600, padding: '4px 10px',
                                     borderRadius: 6, border: '1px dashed var(--border-primary)',
                                     background: 'transparent', color: 'var(--text-secondary)',
                                     cursor: 'pointer',
                                   }}>
-                                    + Create Account
+                                    + Add Employee
                                   </button>
                                 </Link>
                               )}
