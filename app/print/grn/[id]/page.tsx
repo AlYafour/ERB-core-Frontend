@@ -70,16 +70,18 @@ export default function PrintGRNPage() {
     <div className="print-page-bg" style={{ minHeight: '100vh', background: '#e8ecf0', fontFamily: "'Inter','Cairo','Segoe UI',sans-serif", fontSize: '12px' }}>
 
       <style>{`
+        @page { size: A4; margin: 0; }
         @media print {
-          .print-page-bg { background: white !important; }
+          html, body { width: 210mm; height: 297mm; }
+          .print-page-bg { background: white !important; padding: 0 !important; margin: 0 !important; }
           .print-controls-bar { display: none !important; }
           .print-doc {
             margin: 0 !important;
-            width: 100% !important;
+            width: 210mm !important;
             box-shadow: none !important;
             border-radius: 0 !important;
-            height: 100vh !important;
-            min-height: 100vh !important;
+            height: 297mm !important;
+            min-height: 297mm !important;
           }
         }
       `}</style>
