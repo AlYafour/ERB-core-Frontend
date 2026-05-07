@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersApi } from '@/lib/api/users';
+import { permissionsApi, PermissionSet } from '@/lib/api/permissions';
 import { User } from '@/types';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -12,100 +13,183 @@ import { confirm } from '@/lib/hooks/use-toast';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
 import { Button, TextField, Checkbox, Loader, Badge } from '@/components/ui';
-import BilingualName from '@/components/ui/BilingualName';
 import Avatar from '@/components/ui/Avatar';
 import { useT } from '@/lib/i18n/useT';
 
-const roleLabelsEn: Record<string, string> = {
-  site_engineer: 'Site Engineer',
-  procurement_manager: 'Procurement Manager',
-  procurement_officer: 'Procurement Officer',
-  super_admin: 'Super Admin',
+/* ─── Constants ──────────────────────────────────────────────────── */
+const ROLE_LABELS: Record<string, string> = {
+  site_engineer:        'Site Engineer',
+  procurement_manager:  'Procurement Manager',
+  procurement_officer:  'Procurement Officer',
+  super_admin:          'Super Admin',
 };
 
+const ROLE_BADGE: Record<string, 'warning' | 'info' | 'success' | 'error'> = {
+  super_admin:          'warning',
+  procurement_manager:  'info',
+  procurement_officer:  'info',
+  site_engineer:        'success',
+};
+
+/* Modules a role can access by default */
+const ROLE_MODULES: Record<string, { label: string; color: string }[]> = {
+  super_admin:         [{ label: 'Procurement', color: '#3b82f6' }, { label: 'HR', color: '#f97316' }],
+  procurement_manager: [{ label: 'Procurement', color: '#3b82f6' }, { label: 'HR', color: '#f97316' }],
+  procurement_officer: [{ label: 'Procurement', color: '#3b82f6' }, { label: 'HR', color: '#f97316' }],
+  site_engineer:       [{ label: 'Procurement', color: '#3b82f6' }, { label: 'HR', color: '#f97316' }],
+};
+
+/* ─── Inline Role Picker ─────────────────────────────────────────── */
+function RolePicker({
+  userId,
+  current,
+  sets,
+  onAssign,
+  isPending,
+}: {
+  userId: number;
+  current: PermissionSet | null | undefined;
+  sets: PermissionSet[];
+  onAssign: (userId: number, setId: number | null) => void;
+  isPending: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    if (open) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          padding: '3px 10px', borderRadius: 6, cursor: 'pointer',
+          fontSize: 12, fontWeight: 600,
+          border: current ? '1px solid var(--brand-orange)' : '1px dashed var(--border-primary)',
+          background: current ? 'var(--brand-orange-light)' : 'var(--bg-secondary)',
+          color: current ? 'var(--brand-orange)' : 'var(--text-secondary)',
+          transition: 'all .15s',
+        }}
+      >
+        {isPending ? '…' : (current?.name ?? 'No Role')}
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+          <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+        </svg>
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: '110%', left: 0, zIndex: 200,
+          minWidth: 200, background: 'var(--card-bg)',
+          border: '1px solid var(--border-primary)',
+          borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.12)',
+          padding: 6, overflow: 'hidden',
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '.8px', padding: '4px 8px 6px' }}>
+            Assign Permission Set
+          </div>
+          {/* Clear */}
+          <button
+            onClick={() => { onAssign(userId, null); setOpen(false); }}
+            style={{
+              width: '100%', textAlign: 'left', padding: '7px 10px',
+              borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12,
+              background: !current ? 'var(--brand-orange-light)' : 'transparent',
+              color: !current ? 'var(--brand-orange)' : 'var(--text-secondary)',
+              fontWeight: !current ? 700 : 400,
+            }}
+          >
+            — No Role
+          </button>
+          {sets.map(s => (
+            <button
+              key={s.id}
+              onClick={() => { onAssign(userId, s.id); setOpen(false); }}
+              style={{
+                width: '100%', textAlign: 'left', padding: '7px 10px',
+                borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12,
+                background: current?.id === s.id ? 'var(--brand-orange-light)' : 'transparent',
+                color: current?.id === s.id ? 'var(--brand-orange)' : 'var(--text-primary)',
+                fontWeight: current?.id === s.id ? 700 : 400,
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              }}
+            >
+              <span>{s.name}</span>
+              {current?.id === s.id && <span style={{ fontSize: 10 }}>✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Module chips ───────────────────────────────────────────────── */
+function ModuleChips({ role }: { role: string }) {
+  const modules = ROLE_MODULES[role] ?? [{ label: 'HR', color: '#f97316' }];
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+      {modules.map(m => (
+        <span key={m.label} style={{
+          fontSize: 10, fontWeight: 700, padding: '2px 7px',
+          borderRadius: 4, letterSpacing: '.3px',
+          color: m.color, background: m.color + '18',
+          border: `1px solid ${m.color}44`,
+        }}>
+          {m.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Stat card ──────────────────────────────────────────────────── */
+function StatCard({ label, value, sub, color }: { label: string; value: number | string; sub?: string; color: string }) {
+  return (
+    <div style={{
+      flex: 1, minWidth: 140,
+      background: 'var(--card-bg)',
+      border: '1px solid var(--border-primary)',
+      borderRadius: 12, padding: '14px 18px',
+      borderTop: `3px solid ${color}`,
+    }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '.6px', marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>{sub}</div>}
+    </div>
+  );
+}
+
+/* ─── Page ───────────────────────────────────────────────────────── */
 export default function UsersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
-  const [selectMode, setSelectMode] = useState<'page' | 'all'>('page');
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
   const t = useT();
 
+  /* ─── Queries ── */
   const { data, isLoading, error } = useQuery({
     queryKey: ['users', page, search, filters],
     queryFn: () => usersApi.getAll({ page, search, ...filters }),
   });
 
-  // Get all user IDs when selectMode is 'all'
-  const { data: allUsersData, isLoading: isLoadingAll } = useQuery({
-    queryKey: ['users', 'all-ids', search, filters],
-    queryFn: async () => {
-      const allIds: number[] = [];
-      let currentPage = 1;
-      let hasMore = true;
-      
-      while (hasMore) {
-        const response = await usersApi.getAll({ page: currentPage, search, ...filters });
-        allIds.push(...response.results.map((u: User) => u.id));
-        hasMore = !!response.next;
-        currentPage++;
-        if (currentPage > 100) break; // Safety limit
-      }
-      return allIds;
-    },
-    enabled: selectMode === 'all' && (currentUser?.role === 'super_admin' || currentUser?.is_staff),
+  const { data: permissionSetsData } = useQuery({
+    queryKey: ['permission-sets', ''],
+    queryFn: () => permissionsApi.getAllPermissionSets({ page_size: 100 }),
   });
+  const permissionSets = permissionSetsData?.results ?? [];
 
-  const filterFields: FilterField[] = [
-    // User Info
-    { name: 'username', label: 'Username', type: 'text', group: 'User Info' },
-    { name: 'email', label: 'Email', type: 'text', group: 'User Info' },
-    { name: 'first_name', label: 'First Name', type: 'text', group: 'User Info' },
-    { name: 'last_name', label: 'Last Name', type: 'text', group: 'User Info' },
-    // Role & Status
-    {
-      name: 'role',
-      label: 'Role',
-      type: 'select',
-      group: 'Role & Status',
-      options: [
-        { value: 'site_engineer', label: 'Site Engineer - مهندس الموقع' },
-        { value: 'procurement_manager', label: 'Procurement Manager - مدير المشتريات' },
-        { value: 'procurement_officer', label: 'Procurement Officer - موظف المشتريات' },
-        { value: 'super_admin', label: 'Super Admin - المدير الرئيسي' },
-      ],
-    },
-    { name: 'is_staff', label: 'Is Staff', type: 'boolean', group: 'Role & Status' },
-    { name: 'is_active', label: 'Is Active', type: 'boolean', group: 'Role & Status' },
-    // Dates
-    { name: 'date_joined_after', label: 'Joined From', type: 'date', group: 'Dates' },
-    { name: 'date_joined_before', label: 'Joined To', type: 'date', group: 'Dates' },
-  ];
-
-  const handleFilterChange = (newFilters: Record<string, any>) => {
-    setFilters(newFilters);
-    setPage(1);
-  };
-
-  const handleFilterReset = () => {
-    setFilters({});
-    setPage(1);
-  };
-
-  const handleRemoveFilter = (key: string) => {
-    const newFilters = { ...filters };
-    delete newFilters[key];
-    setFilters(newFilters);
-    setPage(1);
-  };
-
-  const handleClearAllFilters = () => {
-    setFilters({});
-    setPage(1);
-  };
-
+  /* ─── Mutations ── */
   const toggleActiveMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
       usersApi.setActive(id, isActive),
@@ -113,116 +197,98 @@ export default function UsersPage() {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast(isActive ? 'User activated' : 'User deactivated', 'success');
     },
-    onError: () => {
-      toast('Failed to update user status', 'error');
-    },
+    onError: () => toast('Failed to update user status', 'error'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: usersApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast('User deleted successfully', 'success');
+      toast('User deleted', 'success');
     },
-    onError: () => {
-      toast('Failed to delete user', 'error');
-    },
+    onError: () => toast('Failed to delete user', 'error'),
   });
 
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: number[]) => {
-      // Filter out current user's ID
-      const filteredIds = ids.filter(id => id !== currentUser?.id);
-      await Promise.all(filteredIds.map(id => usersApi.delete(id)));
+      await Promise.all(ids.filter(id => id !== currentUser?.id).map(id => usersApi.delete(id)));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      const count = selectedItems.size;
       setSelectedItems(new Set());
-      toast(`${count} user(s) deleted successfully`, 'success');
+      toast(`${selectedItems.size} user(s) deleted`, 'success');
     },
-    onError: () => {
-      toast('Failed to delete some users', 'error');
-    },
+    onError: () => toast('Failed to delete users', 'error'),
   });
 
+  const assignRoleMutation = useMutation({
+    mutationFn: ({ userId, permissionSetId }: { userId: number; permissionSetId: number | null }) =>
+      permissionsApi.assignPermissionSetToUser(userId, permissionSetId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['user-permission-summary'] });
+      toast('Permission set updated', 'success');
+    },
+    onError: () => toast('Failed to update permission set', 'error'),
+  });
+
+  /* ─── Filter fields ── */
+  const filterFields: FilterField[] = [
+    { name: 'username',    label: 'Username',   type: 'text',    group: 'User Info' },
+    { name: 'email',       label: 'Email',      type: 'text',    group: 'User Info' },
+    { name: 'first_name',  label: 'First Name', type: 'text',    group: 'User Info' },
+    { name: 'last_name',   label: 'Last Name',  type: 'text',    group: 'User Info' },
+    {
+      name: 'role', label: 'Role', type: 'select', group: 'Role & Status',
+      options: [
+        { value: 'site_engineer',       label: 'Site Engineer' },
+        { value: 'procurement_manager', label: 'Procurement Manager' },
+        { value: 'procurement_officer', label: 'Procurement Officer' },
+        { value: 'super_admin',         label: 'Super Admin' },
+      ],
+    },
+    { name: 'is_staff',  label: 'Is Staff',  type: 'boolean', group: 'Role & Status' },
+    { name: 'is_active', label: 'Is Active', type: 'boolean', group: 'Role & Status' },
+    { name: 'date_joined_after',  label: 'Joined From', type: 'date', group: 'Dates' },
+    { name: 'date_joined_before', label: 'Joined To',   type: 'date', group: 'Dates' },
+  ];
+
+  /* ─── Handlers ── */
   const handleDelete = async (id: number) => {
-    if (id === currentUser?.id) {
-      toast('You cannot delete your own account', 'warning');
-      return;
-    }
-    const confirmed = await confirm('Are you sure you want to delete this user?');
-    if (confirmed) {
-      deleteMutation.mutate(id);
-    }
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      if (selectMode === 'page' && data?.results) {
-        // Filter out current user's ID
-        setSelectedItems(new Set(data.results
-          .filter((u: User) => u.id !== currentUser?.id)
-          .map((u: User) => u.id)));
-      } else if (selectMode === 'all' && allUsersData) {
-        // Filter out current user's ID
-        setSelectedItems(new Set(allUsersData.filter(id => id !== currentUser?.id)));
-      }
-    } else {
-      setSelectedItems(new Set());
-    }
-  };
-
-  const handleSelectItem = (id: number, checked: boolean) => {
-    if (id === currentUser?.id) {
-      toast('You cannot select your own account', 'warning');
-      return;
-    }
-    const newSelected = new Set(selectedItems);
-    if (checked) {
-      newSelected.add(id);
-    } else {
-      newSelected.delete(id);
-    }
-    setSelectedItems(newSelected);
+    if (id === currentUser?.id) { toast('Cannot delete your own account', 'warning'); return; }
+    if (await confirm('Delete this user?')) deleteMutation.mutate(id);
   };
 
   const handleBulkDelete = async () => {
-    if (selectedItems.size === 0) return;
-    const confirmed = await confirm(`Are you sure you want to delete ${selectedItems.size} user(s)?`);
-    if (confirmed) {
+    if (!selectedItems.size) return;
+    if (await confirm(`Delete ${selectedItems.size} user(s)?`)) {
       bulkDeleteMutation.mutate(Array.from(selectedItems));
     }
   };
 
-  // Calculate checkbox state
-  const currentPageIds = data?.results?.filter((u: User) => u.id !== currentUser?.id).map((u: User) => u.id) || [];
-  const allPageSelected = currentPageIds.length > 0 && currentPageIds.every(id => selectedItems.has(id));
-  const somePageSelected = currentPageIds.some(id => selectedItems.has(id)) && !allPageSelected;
-  
-  const allSystemSelected = selectMode === 'all' && allUsersData && 
-    allUsersData.filter(id => id !== currentUser?.id).length > 0 && 
-    allUsersData.filter(id => id !== currentUser?.id).every(id => selectedItems.has(id));
-  const someSystemSelected = selectMode === 'all' && allUsersData && 
-    allUsersData.filter(id => id !== currentUser?.id).some(id => selectedItems.has(id)) && 
-    !allSystemSelected;
+  const toggleSelect = (id: number, checked: boolean) => {
+    if (id === currentUser?.id) return;
+    const s = new Set(selectedItems);
+    checked ? s.add(id) : s.delete(id);
+    setSelectedItems(s);
+  };
 
-  const checkboxChecked = selectMode === 'page' 
-    ? allPageSelected 
-    : (allSystemSelected ?? false);
-  const checkboxIndeterminate = selectMode === 'page'
-    ? somePageSelected
-    : (someSystemSelected ?? false);
+  const currentIds = data?.results?.filter((u: User) => u.id !== currentUser?.id).map((u: User) => u.id) ?? [];
+  const allSelected  = currentIds.length > 0 && currentIds.every(id => selectedItems.has(id));
+  const someSelected = currentIds.some(id => selectedItems.has(id)) && !allSelected;
 
-  // Only show this page to super admins
+  /* ─── Stats ── */
+  const total   = data?.count ?? 0;
+  const active  = data?.results?.filter((u: User) => u.is_active).length ?? 0;
+  const admins  = data?.results?.filter((u: User) => u.role === 'super_admin').length ?? 0;
+  const noRole  = data?.results?.filter((u: User) => !u.permission_set).length ?? 0;
+
   const isSuperuser = currentUser?.is_superuser ?? false;
   if (!isSuperuser && currentUser?.role !== 'super_admin' && !currentUser?.is_staff) {
     return (
       <MainLayout>
-        <div className="space-y-6">
-          <div className="card border-destructive bg-destructive/10">
-            <p className="text-destructive text-sm">{t('toast', 'accessDenied')}</p>
-          </div>
+        <div className="card border-destructive bg-destructive/10">
+          <p className="text-destructive text-sm">{t('toast', 'accessDenied')}</p>
         </div>
       </MainLayout>
     );
@@ -230,107 +296,80 @@ export default function UsersPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      <div className="space-y-5">
+
+        {/* ── Page header ── */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">{t('page', 'users')}</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t('page', 'usersSubtitle')}
+            <h1 style={{ fontSize: 'var(--font-2xl)', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+              Users & Access Control
+            </h1>
+            <p style={{ fontSize: 'var(--font-sm)', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
+              Manage user accounts, roles, and module access
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 border-r border-border pr-2 mr-2">
-              <span className="text-xs text-muted-foreground">{t('btn', 'selectAll')}:</span>
-              <Button
-                variant={selectMode === 'page' ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={() => {
-                  setSelectMode('page');
-                  setSelectedItems(new Set());
-                }}
-              >
-                {t('btn', 'selectPage')}
-              </Button>
-              <Button
-                variant={selectMode === 'all' ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={() => {
-                  setSelectMode('all');
-                  setSelectedItems(new Set());
-                }}
-              >
-                {t('btn', 'selectAllSys')}
-              </Button>
-            </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {selectedItems.size > 0 && (
-              <Button
-                variant="destructive"
-                onClick={handleBulkDelete}
-                disabled={bulkDeleteMutation.isPending}
-                isLoading={bulkDeleteMutation.isPending}
-              >
-                {bulkDeleteMutation.isPending ? t('btn', 'deleting') : `${t('btn', 'delete')} ${selectedItems.size}`}
+              <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
+                Delete {selectedItems.size} selected
               </Button>
             )}
             <Link href="/users/pending">
-              <Button variant="secondary" style={{ marginRight: 'var(--spacing-2)' }}>
-                Pending Approvals
-                {(() => {
-                  // Count pending users if available
-                  const pendingCount = data?.results?.filter((u: User) => !u.is_active).length || 0;
-                  return pendingCount > 0 ? ` (${pendingCount})` : '';
-                })()}
-              </Button>
+              <Button variant="secondary">Pending Approvals</Button>
+            </Link>
+            <Link href="/settings/permissions">
+              <Button variant="secondary">Permission Sets</Button>
             </Link>
             <Link href="/users/new">
-              <Button variant="primary">{t('btn', 'addUser')}</Button>
+              <Button variant="primary">+ Add User</Button>
             </Link>
           </div>
         </div>
 
-        {/* Search and Filters */}
-        <div className="card flex items-center gap-4">
+        {/* ── Stats row ── */}
+        {data && (
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <StatCard label="Total Users"     value={total}  sub="registered accounts"    color="#3b82f6" />
+            <StatCard label="Active"          value={active} sub={`${total - active} inactive`} color="#10b981" />
+            <StatCard label="Super Admins"    value={admins} sub="full access"             color="#f97316" />
+            <StatCard label="No Role Assigned" value={noRole} sub="need permission set"   color="#ef4444" />
+          </div>
+        )}
+
+        {/* ── Search & Filters ── */}
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <TextField
             type="text"
-            placeholder={t('misc', 'searchUsers')}
+            placeholder="Search by name, username, email…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className="flex-1 max-w-md"
           />
           <FilterPanel
             fields={filterFields}
             filters={filters}
-            onFilterChange={handleFilterChange}
-            onReset={handleFilterReset}
+            onFilterChange={(f) => { setFilters(f); setPage(1); }}
+            onReset={() => { setFilters({}); setPage(1); }}
             saveKey="users"
           />
         </div>
 
-        {/* Filter Tags */}
         {Object.keys(filters).length > 0 && (
           <FilterTags
             filters={filters}
             fields={filterFields}
-            onRemoveFilter={handleRemoveFilter}
-            onClearAll={handleClearAllFilters}
+            onRemoveFilter={(k) => { const f = { ...filters }; delete f[k]; setFilters(f); setPage(1); }}
+            onClearAll={() => { setFilters({}); setPage(1); }}
           />
         )}
 
-        {/* Content */}
+        {/* ── Table ── */}
         {isLoading ? (
-          <div className="card text-center py-12">
-            <Loader className="mx-auto mb-4" />
-            <p className="text-muted-foreground">{t('btn', 'loading')}</p>
-          </div>
+          <div className="card text-center py-12"><Loader className="mx-auto mb-4" /><p className="text-muted-foreground">Loading…</p></div>
         ) : error ? (
-          <div className="card border-destructive bg-destructive/10">
-            <p className="text-destructive text-sm">{t('toast', 'saveFailed')}</p>
-          </div>
-        ) : !data || !data.results || data.results.length === 0 ? (
-          <div className="card text-center py-12">
-            <p className="text-muted-foreground">{t('empty', 'noUsers')}</p>
-          </div>
+          <div className="card border-destructive bg-destructive/10"><p className="text-destructive text-sm">Failed to load users</p></div>
+        ) : !data?.results?.length ? (
+          <div className="card text-center py-12"><p className="text-muted-foreground">No users found</p></div>
         ) : (
           <>
             <div className="card p-0 overflow-hidden">
@@ -338,93 +377,127 @@ export default function UsersPage() {
                 <table>
                   <thead>
                     <tr>
-                      <th className="w-12">
+                      <th style={{ width: 44 }}>
                         <Checkbox
-                          checked={checkboxChecked}
-                          ref={(input) => {
-                            if (input) input.indeterminate = checkboxIndeterminate ?? false;
+                          checked={allSelected}
+                          ref={(el) => { if (el) el.indeterminate = someSelected; }}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedItems(new Set(currentIds));
+                            else setSelectedItems(new Set());
                           }}
-                          onChange={(e) => handleSelectAll(e.target.checked)}
-                          disabled={selectMode === 'all' && isLoadingAll}
-                          title={selectMode === 'page' ? 'Select all in page' : 'Select all in system'}
                         />
                       </th>
-                      <th>{t('col', 'user')}</th>
-                      <th>{t('col', 'email')}</th>
-                      <th>{t('col', 'name')}</th>
-                      <th>{t('col', 'role')}</th>
-                      <th>{t('col', 'active')}</th>
-                      <th>{t('col', 'actions')}</th>
+                      <th>User</th>
+                      <th>Full Name</th>
+                      <th>Role</th>
+                      <th>Permission Set</th>
+                      <th>Module Access</th>
+                      <th>Status</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.results.map((user: User) => (
-                      <tr key={user.id}>
+                      <tr key={user.id} style={{ opacity: user.is_active ? 1 : 0.6 }}>
+                        {/* Checkbox */}
                         <td>
                           {user.id !== currentUser?.id && (
                             <Checkbox
                               checked={selectedItems.has(user.id)}
-                              onChange={(e) => handleSelectItem(user.id, e.target.checked)}
+                              onChange={(e) => toggleSelect(user.id, e.target.checked)}
                             />
                           )}
                         </td>
+
+                        {/* User */}
                         <td>
-                          <div className="flex items-center gap-2.5">
-                            <Avatar
-                              src={user.avatar_url}
-                              alt={user.username}
-                              size={32}
-                              username={user.username}
-                            />
-                            <div className="font-medium text-foreground">{user.username}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <Avatar src={user.avatar_url} alt={user.username} size={34} username={user.username} />
+                            <div>
+                              <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
+                                {user.username}
+                                {user.id === currentUser?.id && (
+                                  <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: 'var(--brand-orange)', background: 'var(--brand-orange-light)', padding: '1px 5px', borderRadius: 4 }}>
+                                    You
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{user.email}</div>
+                            </div>
                           </div>
                         </td>
+
+                        {/* Full Name */}
                         <td>
-                          <div className="text-muted-foreground">{user.email}</div>
+                          <div style={{ fontSize: 13, color: 'var(--text-primary)' }}>
+                            {[user.first_name, user.last_name].filter(Boolean).join(' ') || '—'}
+                          </div>
+                          {user.job_title && (
+                            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{user.job_title}</div>
+                          )}
                         </td>
+
+                        {/* Role */}
                         <td>
-                          <BilingualName
-                            nameEn={[user.first_name, user.last_name].filter(Boolean).join(' ') || user.username}
-                            nameAr={user.full_name_ar}
-                          />
-                        </td>
-                        <td>
-                          <Badge variant={user.role === 'super_admin' ? 'warning' : 'info'}>
-                            {t('role', user.role as any) || roleLabelsEn[user.role] || user.role}
+                          <Badge variant={ROLE_BADGE[user.role] ?? 'info'}>
+                            {ROLE_LABELS[user.role] ?? user.role}
                           </Badge>
                         </td>
+
+                        {/* Permission Set — inline picker */}
+                        <td>
+                          {isSuperuser || currentUser?.is_staff ? (
+                            <RolePicker
+                              userId={user.id}
+                              current={user.permission_set}
+                              sets={permissionSets}
+                              onAssign={(uid, sid) => assignRoleMutation.mutate({ userId: uid, permissionSetId: sid })}
+                              isPending={assignRoleMutation.isPending && assignRoleMutation.variables?.userId === user.id}
+                            />
+                          ) : (
+                            <span style={{ fontSize: 12, color: user.permission_set ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                              {user.permission_set?.name ?? 'No Role'}
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Module Access */}
+                        <td><ModuleChips role={user.role} /></td>
+
+                        {/* Status */}
                         <td>
                           <Badge variant={user.is_active ? 'success' : 'error'}>
-                            {user.is_active ? t('status', 'active') : t('status', 'inactive')}
+                            {user.is_active ? 'Active' : 'Inactive'}
                           </Badge>
                         </td>
+
+                        {/* Actions */}
                         <td>
-                          <div className="flex items-center gap-2">
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                             <Link href={`/users/view/${user.id}`}>
-                              <Button variant="view" size="sm">{t('btn', 'view')}</Button>
+                              <Button variant="view" size="sm">View</Button>
                             </Link>
                             <Link href={`/users/${user.id}`}>
-                              <Button variant="edit" size="sm">{t('btn', 'edit')}</Button>
+                              <Button variant="edit" size="sm">Edit</Button>
                             </Link>
-                            {user.id !== currentUser?.id && currentUser?.is_superuser && (
+                            {user.id !== currentUser?.id && isSuperuser && (
                               <Button
                                 variant={user.is_active ? 'secondary' : 'success'}
                                 size="sm"
                                 onClick={() => toggleActiveMutation.mutate({ id: user.id, isActive: !user.is_active })}
                                 disabled={toggleActiveMutation.isPending}
                               >
-                                {user.is_active ? t('btn', 'deactivate') : t('btn', 'activate')}
+                                {user.is_active ? 'Deactivate' : 'Activate'}
                               </Button>
                             )}
-                            {user.id !== currentUser?.id && currentUser?.is_superuser && (
+                            {user.id !== currentUser?.id && isSuperuser && (
                               <Button
                                 variant="delete"
                                 size="sm"
                                 onClick={() => handleDelete(user.id)}
                                 disabled={deleteMutation.isPending}
-                                isLoading={deleteMutation.isPending}
                               >
-                                {t('btn', 'delete')}
+                                Delete
                               </Button>
                             )}
                           </div>
@@ -437,31 +510,15 @@ export default function UsersPage() {
             </div>
 
             {/* Pagination */}
-            {data && data.count > 50 && (
-              <div className="flex items-center justify-between card">
-                <div className="text-sm text-muted-foreground">
-                  {t('misc', 'showing')} {((page - 1) * 50) + 1} {t('misc', 'pageTo')} {Math.min(page * 50, data.count)} {t('misc', 'pageOf')} {data.count} {t('page', 'users').toLowerCase()}
-                  {selectMode === 'all' && selectedItems.size > 0 && (
-                    <span className="ml-2 text-foreground font-medium">
-                      ({selectedItems.size} selected)
-                    </span>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="secondary"
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={!data.previous || page === 1}
-                  >
-                    {t('btn', 'previous')}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setPage(p => p + 1)}
-                    disabled={!data.next}
-                  >
-                    {t('btn', 'next')}
-                  </Button>
+            {data.count > 50 && (
+              <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                  Showing {(page - 1) * 50 + 1}–{Math.min(page * 50, data.count)} of {data.count}
+                  {selectedItems.size > 0 && <strong style={{ marginLeft: 8 }}> · {selectedItems.size} selected</strong>}
+                </span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Button variant="secondary" onClick={() => setPage(p => p - 1)} disabled={!data.previous}>Previous</Button>
+                  <Button variant="secondary" onClick={() => setPage(p => p + 1)} disabled={!data.next}>Next</Button>
                 </div>
               </div>
             )}
