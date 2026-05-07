@@ -197,7 +197,6 @@ export default function Sidebar() {
               title={t('nav', 'hrModule')}
               icon={<UsersIcon className="w-4 h-4" />}
               items={[
-                { name: t('nav', 'hrEmployees'),   href: '/hr/employees'   },
                 { name: t('nav', 'hrDepartments'), href: '/hr/departments' },
                 { name: t('nav', 'hrAttendance'),  href: '/hr/attendance'  },
                 { name: t('nav', 'hrRequests'),    href: '/hr/requests'    },
