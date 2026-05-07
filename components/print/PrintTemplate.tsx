@@ -4,7 +4,7 @@ import Image from 'next/image';
 
 /* ─── Company constants ─────────────────────────────────────────── */
 export const COMPANY = {
-  name:    'AL YAFOUR CONSTRUCTION L.L.C',
+  name:    'AL YAFOUR GEN. CONT. & TRANSPORT LLC.',
   address: 'Abu Dhabi, United Arab Emirates',
   phone:   '+971 50 622 2469',
   email:   'info@alyafour.ae',
