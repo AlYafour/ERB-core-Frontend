@@ -267,10 +267,6 @@ function NewPurchaseQuotationPageContent() {
       });
     }
     
-    // Validate tax_rate and discount
-    if (formData.tax_rate < 0 || formData.tax_rate > 100) {
-      validationErrors.tax_rate = 'Tax rate must be between 0 and 100.';
-    }
     if (formData.discount < 0) {
       validationErrors.discount = 'Discount cannot be negative.';
     }
@@ -304,12 +300,24 @@ function NewPurchaseQuotationPageContent() {
     }, 0);
   };
 
+  const calculateTax = () => {
+    return items.reduce((sum, item) => {
+      const itemSubtotal = item.quantity * item.unit_price;
+      const discountAmount = itemSubtotal * ((item.discount ?? 0) / 100);
+      const afterDiscount = itemSubtotal - discountAmount;
+      return sum + afterDiscount * ((item.tax_rate ?? 0) / 100);
+    }, 0);
+  };
+
   const calculateTotal = () => {
     const subtotal = calculateSubtotal();
     const discountAmount = subtotal * (formData.discount / 100);
     const afterDiscount = subtotal - discountAmount;
-    const taxAmount = afterDiscount * (formData.tax_rate / 100);
-    return afterDiscount + taxAmount;
+    return afterDiscount + calculateTax();
+  };
+
+  const applyVatToAll = (rate: number) => {
+    setItems(items.map((item) => ({ ...item, tax_rate: rate })));
   };
 
   return (
@@ -493,28 +501,6 @@ function NewPurchaseQuotationPageContent() {
             </FormField>
 
             <FormField
-              label="Tax Rate (%)"
-              error={errors.tax_rate}
-              fieldName="tax_rate"
-            >
-              <input
-                type="number"
-                name="tax_rate"
-                step="0.01"
-                min="0"
-                max="100"
-                value={formData.tax_rate}
-                onChange={(e) => {
-                  setFormData({ ...formData, tax_rate: Number(e.target.value) });
-                  if (errors.tax_rate) {
-                    setErrors({ ...errors, tax_rate: '' });
-                  }
-                }}
-                className={`input w-full ${errors.tax_rate ? 'border-red-500' : ''}`}
-              />
-            </FormField>
-
-            <FormField
               label="Discount (%)"
               error={errors.discount}
               fieldName="discount"
@@ -589,7 +575,7 @@ function NewPurchaseQuotationPageContent() {
               justifyContent: 'space-between',
               marginBottom: 'var(--spacing-4)',
             }}>
-              <h3 style={{ 
+              <h3 style={{
                 fontSize: 'var(--font-lg)',
                 fontWeight: 'var(--font-weight-semibold)',
                 color: 'var(--text-primary)',
@@ -597,14 +583,33 @@ function NewPurchaseQuotationPageContent() {
               }}>
                 {t('col', 'product')}
               </h3>
-              {errors.items && (
-                <span style={{ 
-                  fontSize: 'var(--font-sm)',
-                  color: 'var(--color-error)',
-                }}>
-                  {errors.items}
-                </span>
-              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                {errors.items && (
+                  <span style={{ fontSize: 'var(--font-sm)', color: 'var(--color-error)' }}>
+                    {errors.items}
+                  </span>
+                )}
+                {items.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => applyVatToAll(5)}
+                    className="btn btn-secondary"
+                    style={{ fontSize: 'var(--font-xs)', padding: '4px 10px' }}
+                  >
+                    Apply 5% VAT to All
+                  </button>
+                )}
+                {items.length > 0 && items.some((i) => (i.tax_rate ?? 0) > 0) && (
+                  <button
+                    type="button"
+                    onClick={() => applyVatToAll(0)}
+                    className="btn btn-secondary"
+                    style={{ fontSize: 'var(--font-xs)', padding: '4px 10px' }}
+                  >
+                    Clear VAT
+                  </button>
+                )}
+              </div>
             </div>
 
             {items.length > 0 ? (
@@ -793,35 +798,30 @@ function NewPurchaseQuotationPageContent() {
                     {formatPrice(calculateSubtotal())}
                   </span>
                 </div>
-                <div style={{ 
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: 'var(--font-sm)',
-                }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Discount ({formData.discount}%):</span>
-                  <span style={{ 
-                    fontWeight: 'var(--font-weight-semibold)',
-                    color: 'var(--text-primary)',
+                {formData.discount > 0 && (
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: 'var(--font-sm)',
                   }}>
-                    {formatPrice(calculateSubtotal() * (formData.discount / 100))}
-                  </span>
-                </div>
-                <div style={{ 
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: 'var(--font-sm)',
-                }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Tax ({formData.tax_rate}%):</span>
-                  <span style={{ 
-                    fontWeight: 'var(--font-weight-semibold)',
-                    color: 'var(--text-primary)',
+                    <span style={{ color: 'var(--text-secondary)' }}>Discount ({formData.discount}%):</span>
+                    <span style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-error)' }}>
+                      - {formatPrice(calculateSubtotal() * (formData.discount / 100))}
+                    </span>
+                  </div>
+                )}
+                {calculateTax() > 0 && (
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: 'var(--font-sm)',
                   }}>
-                    {formatPrice(
-                      (calculateSubtotal() - calculateSubtotal() * (formData.discount / 100)) *
-                      (formData.tax_rate / 100)
-                    )}
-                  </span>
-                </div>
+                    <span style={{ color: 'var(--text-secondary)' }}>VAT:</span>
+                    <span style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)' }}>
+                      {formatPrice(calculateTax())}
+                    </span>
+                  </div>
+                )}
                 <div style={{ 
                   display: 'flex',
                   justifyContent: 'space-between',
