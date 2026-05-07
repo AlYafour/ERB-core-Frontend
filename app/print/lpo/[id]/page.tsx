@@ -76,12 +76,21 @@ export default function PrintLPOPage() {
 
   const supplier   = typeof po.supplier === 'object' && po.supplier ? po.supplier as Supplier : null;
   const pr         = typeof po.purchase_request === 'object' && po.purchase_request ? po.purchase_request as PurchaseRequest : null;
-  const subtotal   = Number(po.subtotal  ?? 0);
   const discount   = Number(po.discount  ?? 0);
-  const taxRate    = Number(po.tax_rate  ?? 0);
-  const taxAmount  = Number(po.tax_amount ?? 0);
-  const total      = Number(po.total     ?? 0);
   const hasDiscount = discount > 0;
+
+  // Compute from per-item data (backend tax_amount may be 0 if stored with old global tax_rate)
+  const subtotal = po.items.reduce((sum, item) => {
+    const s = Number(item.quantity) * Number(item.unit_price);
+    const d = s * ((Number(item.discount) || 0) / 100);
+    return sum + s - d;
+  }, 0);
+  const taxAmount = po.items.reduce((sum, item) => {
+    const s = Number(item.quantity) * Number(item.unit_price);
+    const d = s * ((Number(item.discount) || 0) / 100);
+    return sum + (s - d) * ((Number(item.tax_rate) || 0) / 100);
+  }, 0);
+  const total = subtotal - discount + taxAmount;
 
   const USER_STAMPS: Record<string, string> = {
     abdel: '/stamps/abdo-stamp.svg',
@@ -141,19 +150,20 @@ export default function PrintLPOPage() {
 
       {/* ── A4 sheet ── */}
       <div className="print-doc" style={{
-        width:'210mm', minHeight:'auto',
-        margin:'24px auto', background:'#fff',
+        width:'210mm', minHeight:'297mm',
+        margin:'12px auto', background:'#fff',
         borderRadius:4, boxShadow:'0 4px 32px rgba(0,0,0,.15)',
+        display:'flex', flexDirection:'column',
       }}>
-        <div style={{ padding:'9mm 13mm 7mm', color:NAVY, lineHeight:1.45 }}>
+        <div style={{ padding:'5mm 9mm 4mm', color:NAVY, lineHeight:1.45, flex:1, display:'flex', flexDirection:'column' }}>
 
           {/* ════════════════════════════════════════
               HEADER: Logo | Company + Info | LPO Box
               ════════════════════════════════════════ */}
-          <div style={{ display:'flex', alignItems:'flex-start', gap:14, marginBottom:8 }}>
+          <div style={{ display:'flex', alignItems:'stretch', gap:14, marginBottom:6 }}>
 
             {/* Logo */}
-            <div style={{ flexShrink:0, paddingTop:2 }}>
+            <div style={{ flexShrink:0, paddingTop:2, display:'flex', alignItems:'flex-start' }}>
               <Image src={COMPANY.logo} alt="Logo" width={64} height={64}
                 style={{ objectFit:'contain', display:'block' }} priority unoptimized />
             </div>
@@ -221,10 +231,11 @@ export default function PrintLPOPage() {
             </div>
 
             {/* LPO Number Box */}
-            <div style={{ flexShrink:0, textAlign:'right' }}>
+            <div style={{ flexShrink:0, display:'flex' }}>
               <div style={{
                 background:NAVY, borderRadius:8,
-                padding:'10px 16px', display:'inline-block', textAlign:'center', minWidth:150,
+                padding:'10px 16px', display:'flex', flexDirection:'column',
+                justifyContent:'space-between', textAlign:'center', minWidth:155,
               }}>
                 <div style={{ fontSize:'6pt', fontWeight:700, letterSpacing:'1.5px',
                   textTransform:'uppercase', color:'rgba(255,255,255,.6)', marginBottom:3 }}>
@@ -251,12 +262,12 @@ export default function PrintLPOPage() {
           </div>
 
           {/* ── Navy divider ── */}
-          <div style={{ height:2, background:NAVY, borderRadius:1, margin:'8px 0 10px' }} />
+          <div style={{ height:2, background:NAVY, borderRadius:1, margin:'5px 0 7px' }} />
 
           {/* ════════════════════════════════════════
               SUPPLIER + ORDER INFO — side by side
               ════════════════════════════════════════ */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:10 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:7 }}>
 
             {/* Supplier */}
             <div>
@@ -308,9 +319,9 @@ export default function PrintLPOPage() {
               ════════════════════════════════════════ */}
           <div style={{ fontSize:'8pt', fontWeight:700, letterSpacing:'.8px',
             textTransform:'uppercase', color:STEEL, borderBottom:`1.5px solid ${NAVY}`,
-            paddingBottom:3, marginBottom:6 }}>Order Items</div>
+            paddingBottom:2, marginBottom:4 }}>Order Items</div>
 
-          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'8.5pt', marginBottom:6 }}>
+          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'8.5pt', marginBottom:4 }}>
             <thead>
               <tr style={{ background:NAVY, color:'#fff' }}>
                 <th style={{ padding:'6px 8px', textAlign:'left', fontSize:'6.5pt', fontWeight:700,
@@ -365,7 +376,7 @@ export default function PrintLPOPage() {
               TOTALS + AMOUNT IN WORDS — side by side
               ════════════════════════════════════════ */}
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end',
-            gap:14, marginBottom:8 }}>
+            gap:14, marginBottom:5 }}>
 
             {/* Amount in words */}
             <div style={{
@@ -392,11 +403,11 @@ export default function PrintLPOPage() {
                   <span style={{ fontWeight:600, color:'#dc2626' }}>− AED {fmt(discount)}</span>
                 </div>
               )}
-              {taxAmount !== 0 && (
+              {taxAmount > 0 && (
                 <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 12px',
                   fontSize:'8pt', background: hasDiscount ? '#fafafa' : '#fff',
                   borderBottom:`1px solid #f1f5f9` }}>
-                  <span style={{ color:GREY }}>VAT ({taxRate}%)</span>
+                  <span style={{ color:GREY }}>VAT</span>
                   <span style={{ fontWeight:600 }}>AED {fmt(taxAmount)}</span>
                 </div>
               )}
@@ -407,6 +418,9 @@ export default function PrintLPOPage() {
               </div>
             </div>
           </div>
+
+          {/* Spacer — pushes terms/auth to page bottom */}
+          <div style={{ flex:1 }} />
 
           {/* Terms / Notes — compact */}
           {(po.payment_terms || po.delivery_terms) && (
@@ -447,7 +461,7 @@ export default function PrintLPOPage() {
           {/* ════════════════════════════════════════
               AUTHORIZATION + FOOTER — never split
               ════════════════════════════════════════ */}
-          <div style={{ breakInside:'avoid', pageBreakInside:'avoid', marginTop:10 }}>
+          <div style={{ breakInside:'avoid', pageBreakInside:'avoid', marginTop:6 }}>
 
             <div style={{ fontSize:'8pt', fontWeight:700, letterSpacing:'.8px',
               textTransform:'uppercase', color:STEEL, borderBottom:`1.5px solid ${NAVY}`,
