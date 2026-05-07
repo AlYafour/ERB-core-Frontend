@@ -474,6 +474,10 @@ export interface HRDepartment {
   manager_name: string | null;
   parent: number | null;
   parent_name: string | null;
+  permission_set: number | null;
+  permission_set_id: number | null;
+  permission_set_name: string | null;
+  permissions_count: number;
   employee_count: number;
   created_at: string;
   updated_at: string;

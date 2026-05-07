@@ -55,6 +55,10 @@ export const hrDepartmentsApi = {
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/hr/employees/departments/${id}/`);
   },
+  assignPermissions: async (id: number, permissionIds: number[]): Promise<HRDepartment> => {
+    const response = await apiClient.post(`/hr/employees/departments/${id}/assign_permissions/`, { permission_ids: permissionIds });
+    return response.data;
+  },
 };
 
 // ── Positions ──────────────────────────────────────────────────────────────────
