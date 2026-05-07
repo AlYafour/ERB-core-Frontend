@@ -271,7 +271,7 @@ export default function PurchaseOrderDetailPage() {
               const d = s * ((Number(item.discount) || 0) / 100);
               return sum + (s - d) * ((Number(item.tax_rate) || 0) / 100);
             }, 0);
-            const globalDiscount = itemsSubtotal * ((Number(order.discount_rate) || 0) / 100);
+            const globalDiscount = Number(order.discount) || 0;
             const computedTotal = itemsSubtotal - globalDiscount + itemsVat;
             return (
               <DetailCard title="Financial Summary">
