@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
@@ -17,6 +17,14 @@ const fld = 'flex flex-col gap-1';
 const lbl = 'text-xs font-medium text-muted-foreground uppercase tracking-wide';
 
 export default function NewEmployeePage() {
+  return (
+    <Suspense>
+      <NewEmployeeForm />
+    </Suspense>
+  );
+}
+
+function NewEmployeeForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const existingUserId = searchParams.get('user_id') ? Number(searchParams.get('user_id')) : null;
