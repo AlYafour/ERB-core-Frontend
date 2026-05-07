@@ -69,6 +69,21 @@ export default function PrintGRNPage() {
   return (
     <div className="print-page-bg" style={{ minHeight: '100vh', background: '#e8ecf0', fontFamily: "'Inter','Cairo','Segoe UI',sans-serif", fontSize: '12px' }}>
 
+      <style>{`
+        @media print {
+          .print-page-bg { background: white !important; }
+          .print-controls-bar { display: none !important; }
+          .print-doc {
+            margin: 0 !important;
+            width: 100% !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            height: 100vh !important;
+            min-height: 100vh !important;
+          }
+        }
+      `}</style>
+
       {/* ── Controls ── */}
       <div className="print-controls-bar" style={{
         position: 'sticky', top: 0, zIndex: 100,
@@ -98,9 +113,9 @@ export default function PrintGRNPage() {
       {/* ── A4 Sheet ── */}
       <div className="print-doc" style={{
         width: '210mm', minHeight: '297mm',
-        margin: '24px auto', background: '#fff',
-        borderRadius: 4, boxShadow: '0 4px 32px rgba(0,0,0,.18)',
-        overflow: 'hidden',
+        margin: '12px auto', background: '#fff',
+        borderRadius: 4, boxShadow: '0 4px 32px rgba(0,0,0,.15)',
+        display: 'flex', flexDirection: 'column',
       }}>
         <PrintTemplate
           docType="GOODS RECEIVED NOTE"
@@ -230,6 +245,8 @@ export default function PrintGRNPage() {
               </div>
             </>
           )}
+
+          <div style={{ flex: 1 }} />
 
           <div style={{ breakInside:'avoid', pageBreakInside:'avoid', marginTop:10 }}>
             <div style={{ fontSize:'8pt', fontWeight:700, letterSpacing:'.8px',

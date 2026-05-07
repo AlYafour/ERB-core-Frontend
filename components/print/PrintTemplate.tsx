@@ -72,7 +72,7 @@ interface PrintTemplateProps {
 
 export default function PrintTemplate({ docType, docNumber, date, status, children, footer }: PrintTemplateProps) {
   return (
-    <div style={{ padding: '14mm 16mm 12mm', fontFamily: "'Inter','Cairo','Segoe UI',sans-serif", fontSize: '10pt', color: NAVY, lineHeight: 1.5 }}>
+    <div style={{ padding: '6mm 10mm 5mm', fontFamily: "'Inter','Cairo','Segoe UI',sans-serif", fontSize: '10pt', color: NAVY, lineHeight: 1.45, flex: 1, display: 'flex', flexDirection: 'column' }}>
 
       {/* ── HEADER ── */}
       <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 0 }}>
@@ -121,10 +121,12 @@ export default function PrintTemplate({ docType, docNumber, date, status, childr
       </table>
 
       {/* ── Divider ── */}
-      <div style={{ height: 3, background: `linear-gradient(90deg,${ORANGE} 0%,#fb923c 60%,${BORDER} 100%)`, margin: '12px 0 16px', borderRadius: 2 }} />
+      <div style={{ height: 3, background: `linear-gradient(90deg,${ORANGE} 0%,#fb923c 60%,${BORDER} 100%)`, margin: '7px 0 10px', borderRadius: 2 }} />
 
       {/* ── BODY ── */}
-      {children}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {children}
+      </div>
 
       {/* ── FOOTER ── */}
       {footer ?? <DefaultFooter />}

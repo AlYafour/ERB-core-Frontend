@@ -66,6 +66,21 @@ export default function PrintInvoicePage() {
   return (
     <div className="print-page-bg" style={{ minHeight: '100vh', background: '#e8ecf0', fontFamily: "'Inter','Cairo','Segoe UI',sans-serif", fontSize: '12px' }}>
 
+      <style>{`
+        @media print {
+          .print-page-bg { background: white !important; }
+          .print-controls-bar { display: none !important; }
+          .print-doc {
+            margin: 0 !important;
+            width: 100% !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            height: 100vh !important;
+            min-height: 100vh !important;
+          }
+        }
+      `}</style>
+
       {/* ── Controls ── */}
       <div className="print-controls-bar" style={{
         position: 'sticky', top: 0, zIndex: 100,
@@ -95,9 +110,9 @@ export default function PrintInvoicePage() {
       {/* ── A4 Sheet ── */}
       <div className="print-doc" style={{
         width: '210mm', minHeight: '297mm',
-        margin: '24px auto', background: '#fff',
-        borderRadius: 4, boxShadow: '0 4px 32px rgba(0,0,0,.18)',
-        overflow: 'hidden',
+        margin: '12px auto', background: '#fff',
+        borderRadius: 4, boxShadow: '0 4px 32px rgba(0,0,0,.15)',
+        display: 'flex', flexDirection: 'column',
       }}>
         <PrintTemplate
           docType="PURCHASE INVOICE"
@@ -253,6 +268,8 @@ export default function PrintInvoicePage() {
 
           {invoice.rejection_reason && <NotesBox label="Rejection Reason" text={invoice.rejection_reason} />}
           <NotesBox text={invoice.notes} />
+
+          <div style={{ flex: 1 }} />
 
           {/* ── Signatures ── */}
           <SectionTitle>Authorization</SectionTitle>
