@@ -4,7 +4,7 @@ import { HREmployee, HRDepartment, HRPosition, HRAttendance, HRShift, HRRequest,
 // ── Employees ──────────────────────────────────────────────────────────────────
 
 export const hrEmployeesApi = {
-  getAll: async (params?: { page?: number; search?: string; department?: number; position?: number; is_active?: boolean; employment_type?: string }): Promise<PaginatedResponse<HREmployee>> => {
+  getAll: async (params?: { page?: number; search?: string; department?: number; position?: number; is_active?: boolean; employment_type?: string; user?: number }): Promise<PaginatedResponse<HREmployee>> => {
     const response = await apiClient.get('/hr/employees/', { params });
     return response.data;
   },
