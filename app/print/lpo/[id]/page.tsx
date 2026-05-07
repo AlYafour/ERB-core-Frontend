@@ -372,6 +372,9 @@ export default function PrintLPOPage() {
             </tbody>
           </table>
 
+          {/* Spacer — pushes totals/terms/auth to page bottom */}
+          <div style={{ flex:1 }} />
+
           {/* ════════════════════════════════════════
               TOTALS + AMOUNT IN WORDS — side by side
               ════════════════════════════════════════ */}
@@ -418,9 +421,6 @@ export default function PrintLPOPage() {
               </div>
             </div>
           </div>
-
-          {/* Spacer — pushes terms/auth to page bottom */}
-          <div style={{ flex:1 }} />
 
           {/* Terms / Notes — compact */}
           {(po.payment_terms || po.delivery_terms) && (
