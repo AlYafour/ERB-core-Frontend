@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi } from '@/lib/api/hr';
+import { usersApi } from '@/lib/api/users';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { toast } from '@/lib/hooks/use-toast';
 import { Button, Badge, Loader } from '@/components/ui';
@@ -44,14 +45,21 @@ const empTypeLabel: Record<string, string> = {
   full_time: 'Full Time', part_time: 'Part Time', contract: 'Contract', intern: 'Intern',
 };
 
+const ROLES = [
+  { value: 'site_engineer',       label: 'Site Engineer' },
+  { value: 'procurement_manager', label: 'Procurement Manager' },
+  { value: 'procurement_officer', label: 'Procurement Officer' },
+  { value: 'super_admin',         label: 'Super Admin' },
+];
+
 const TABS = ['Profile', 'Bank Accounts', 'Family Info', 'Documents', 'Competencies',
   'Insurance', 'Air Ticket', 'Timeoff Setup', 'Assets', 'Projects', 'Contracts'];
 
 // ── Input helpers ──────────────────────────────────────────────────────────────
-const inp  = 'w-full px-3 py-2 rounded-md border text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40';
-const sel  = inp;
-const fld  = 'flex flex-col gap-1';
-const lbl  = 'text-xs font-medium text-muted-foreground uppercase tracking-wide';
+const inp = 'w-full px-3 py-2 rounded-md border text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40';
+const sel = inp;
+const fld = 'flex flex-col gap-1';
+const lbl = 'text-xs font-medium text-muted-foreground uppercase tracking-wide';
 
 // ── Row component ──────────────────────────────────────────────────────────────
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
@@ -84,12 +92,16 @@ export default function EmployeeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'super_admin' || user?.is_staff || user?.is_superuser;
+  const { user: currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'super_admin' || currentUser?.is_staff || currentUser?.is_superuser;
 
-  const [activeTab, setActiveTab] = useState('Profile');
-  const [editSection, setEditSection] = useState<'personal' | 'professional' | 'contact' | 'legal' | 'salary' | null>(null);
-  const [form, setForm] = useState<Record<string, any>>({});
+  const [activeTab, setActiveTab]       = useState('Profile');
+  const [editSection, setEditSection]   = useState<'personal' | 'professional' | 'contact' | 'legal' | 'salary' | 'account' | null>(null);
+  const [form, setForm]                 = useState<Record<string, any>>({});
+  const [avatarFile, setAvatarFile]     = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [changePassword, setChangePassword] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: emp, isLoading, error } = useQuery<HREmployee>({
     queryKey: ['hr-employee', id],
@@ -100,8 +112,8 @@ export default function EmployeeDetailPage() {
   const { data: positions } = useQuery({ queryKey: ['hr-positions-all'],   queryFn: () => hrPositionsApi.getAll({ page: 1 }) });
   const { data: summary }   = useQuery({
     queryKey: ['hr-emp-summary', id],
-    queryFn: () => hrEmployeesApi.getAttendanceSummary(Number(id)),
-    enabled: !!id,
+    queryFn:  () => hrEmployeesApi.getAttendanceSummary(Number(id)),
+    enabled:  !!id,
   });
 
   const updateMutation = useMutation({
@@ -115,49 +127,74 @@ export default function EmployeeDetailPage() {
     onError: () => toast('Failed to save', 'error'),
   });
 
+  const userUpdateMutation = useMutation({
+    mutationFn: (data: any) => usersApi.update(emp!.user!.id, { ...data, ...(avatarFile ? { avatar: avatarFile } : {}) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hr-employee', id] });
+      toast('Account updated', 'success');
+      setEditSection(null);
+      setAvatarFile(null);
+      setAvatarPreview(null);
+      setChangePassword(false);
+    },
+    onError: () => toast('Failed to update account', 'error'),
+  });
+
   const openEdit = (section: typeof editSection) => {
     if (!emp) return;
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    setChangePassword(false);
     setForm({
       // Personal
-      salary_display_name: emp.salary_display_name || '',
-      gender:              emp.gender || '',
-      date_of_birth:       emp.date_of_birth || '',
-      nationality:         emp.nationality || '',
-      home_country:        emp.home_country || '',
-      religion:            emp.religion || '',
-      national_id:         emp.national_id || '',
-      passport_number:     emp.passport_number || '',
-      passport_issue_date: emp.passport_issue_date || '',
-      passport_expiry_date:emp.passport_expiry_date || '',
-      personal_email:      emp.personal_email || '',
-      marital_status:      emp.marital_status || '',
+      salary_display_name:  emp.salary_display_name || '',
+      gender:               emp.gender || '',
+      date_of_birth:        emp.date_of_birth || '',
+      nationality:          emp.nationality || '',
+      home_country:         emp.home_country || '',
+      religion:             emp.religion || '',
+      national_id:          emp.national_id || '',
+      passport_number:      emp.passport_number || '',
+      passport_issue_date:  emp.passport_issue_date || '',
+      passport_expiry_date: emp.passport_expiry_date || '',
+      personal_email:       emp.personal_email || '',
+      marital_status:       emp.marital_status || '',
       // Professional
-      employment_type:     emp.employment_type || 'full_time',
-      join_date:           emp.join_date || '',
-      probation_end_date:  emp.probation_end_date || '',
-      end_date:            emp.end_date || '',
-      department:          emp.department ?? '',
-      position:            emp.position ?? '',
-      manager:             emp.manager ?? '',
-      work_location:       emp.work_location || '',
-      is_active:           emp.is_active,
+      employment_type:      emp.employment_type || 'full_time',
+      join_date:            emp.join_date || '',
+      probation_end_date:   emp.probation_end_date || '',
+      end_date:             emp.end_date || '',
+      department:           emp.department ?? '',
+      position:             emp.position ?? '',
+      manager:              emp.manager ?? '',
+      work_location:        emp.work_location || '',
+      is_active:            emp.is_active,
       // Contact
-      mobile_number:       emp.mobile_number || '',
-      extension_number:    emp.extension_number || '',
-      address:             emp.address || '',
+      mobile_number:        emp.mobile_number || '',
+      extension_number:     emp.extension_number || '',
+      address:              emp.address || '',
       // Legal
-      sponsor_name:        emp.sponsor_name || '',
-      sponsor_id:          emp.sponsor_id || '',
-      labor_card:          emp.labor_card || '',
-      labor_card_expiry:   emp.labor_card_expiry || '',
-      mol_number:          emp.mol_number || '',
-      resident_id:         emp.resident_id || '',
-      is_citizen:          emp.is_citizen ?? false,
+      sponsor_name:         emp.sponsor_name || '',
+      sponsor_id:           emp.sponsor_id || '',
+      labor_card:           emp.labor_card || '',
+      labor_card_expiry:    emp.labor_card_expiry || '',
+      mol_number:           emp.mol_number || '',
+      resident_id:          emp.resident_id || '',
+      is_citizen:           emp.is_citizen ?? false,
       // Salary
-      basic_salary:        emp.basic_salary || '0',
-      housing_allowance:   emp.housing_allowance || '0',
-      transport_allowance: emp.transport_allowance || '0',
-      other_allowances:    emp.other_allowances || '0',
+      basic_salary:         emp.basic_salary || '0',
+      housing_allowance:    emp.housing_allowance || '0',
+      transport_allowance:  emp.transport_allowance || '0',
+      other_allowances:     emp.other_allowances || '0',
+      // Account
+      username:             emp.user?.username || '',
+      email:                emp.user?.email || '',
+      phone:                emp.user?.phone || '',
+      role:                 emp.user?.role || '',
+      first_name:           (emp.full_name || '').split(' ')[0] || '',
+      last_name:            (emp.full_name || '').split(' ').slice(-1)[0] || '',
+      password:             '',
+      password2:            '',
     });
     setEditSection(section);
   };
@@ -166,17 +203,43 @@ export default function EmployeeDetailPage() {
     setForm(p => ({ ...p, [key]: e.target.value }));
 
   const handleSave = () => {
-    updateMutation.mutate({
-      ...form,
-      department: form.department || null,
-      position:   form.position   || null,
-      manager:    form.manager    || null,
-    });
+    if (editSection === 'account') {
+      if (changePassword) {
+        if (!form.password || form.password.length < 8) {
+          toast('Password must be at least 8 characters', 'error');
+          return;
+        }
+        if (form.password !== form.password2) {
+          toast('Passwords do not match', 'error');
+          return;
+        }
+      }
+      const accountData: any = {
+        username:   form.username,
+        email:      form.email,
+        phone:      form.phone,
+        role:       form.role,
+        first_name: form.first_name,
+        last_name:  form.last_name,
+      };
+      if (changePassword && form.password) accountData.password = form.password;
+      userUpdateMutation.mutate(accountData);
+    } else {
+      updateMutation.mutate({
+        ...form,
+        department: form.department || null,
+        position:   form.position   || null,
+        manager:    form.manager    || null,
+      });
+    }
   };
+
+  const isSaving = updateMutation.isPending || userUpdateMutation.isPending;
 
   if (isLoading) return <MainLayout><div className="card text-center py-20"><Loader className="mx-auto mb-4" /><p className="text-muted-foreground text-sm">Loading employee...</p></div></MainLayout>;
   if (error || !emp) return <MainLayout><div className="card text-center py-20"><p className="text-destructive">Employee not found.</p></div></MainLayout>;
 
+  const avatarSrc = avatarPreview || emp.avatar || null;
   const avatarLetter = (emp.full_name || emp.user?.username || '?')[0].toUpperCase();
 
   return (
@@ -201,8 +264,8 @@ export default function EmployeeDetailPage() {
                 onClick={() => setActiveTab(tab)}
                 className="px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px"
                 style={{
-                  borderColor:  activeTab === tab ? 'var(--sidebar-active-text)' : 'transparent',
-                  color:        activeTab === tab ? 'var(--sidebar-active-text)' : 'var(--muted-foreground)',
+                  borderColor: activeTab === tab ? 'var(--sidebar-active-text)' : 'transparent',
+                  color:       activeTab === tab ? 'var(--sidebar-active-text)' : 'var(--muted-foreground)',
                 }}
               >
                 {tab}
@@ -224,8 +287,8 @@ export default function EmployeeDetailPage() {
               {/* User card */}
               <div className="card">
                 <div className="flex flex-col items-center text-center gap-3 mb-4">
-                  {emp.avatar ? (
-                    <img src={emp.avatar} alt="" className="w-24 h-24 rounded-full object-cover border-2" style={{ borderColor: 'var(--border)' }} />
+                  {avatarSrc ? (
+                    <img src={avatarSrc} alt="" className="w-24 h-24 rounded-full object-cover border-2" style={{ borderColor: 'var(--border)' }} />
                   ) : (
                     <div className="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold border-2"
                       style={{ backgroundColor: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)', borderColor: 'var(--border)' }}>
@@ -247,6 +310,14 @@ export default function EmployeeDetailPage() {
                     <span className="font-medium text-foreground">{emp.user?.username || '—'}</span>
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-muted-foreground">Email</span>
+                    <span className="font-medium text-foreground text-xs truncate max-w-[140px]">{emp.user?.email || '—'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Role</span>
+                    <span className="font-medium text-foreground text-xs">{emp.user?.role ? emp.user.role.replace(/_/g, ' ') : '—'}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Status</span>
                     <Badge className={emp.is_active ? 'badge-success' : 'badge-error'}>
                       {emp.is_active ? 'Active' : 'Inactive'}
@@ -255,11 +326,13 @@ export default function EmployeeDetailPage() {
                 </div>
 
                 {isAdmin && (
-                  <div className="flex gap-2">
-                    <Button variant="secondary" size="sm" className="flex-1">Reset Password</Button>
-                    <Button variant={emp.is_active ? 'delete' : 'primary'} size="sm" className="flex-1"
+                  <div className="flex flex-col gap-2">
+                    <Button variant="secondary" size="sm" className="w-full" onClick={() => openEdit('account')}>
+                      Edit Account & Access
+                    </Button>
+                    <Button variant={emp.is_active ? 'delete' : 'primary'} size="sm" className="w-full"
                       onClick={() => updateMutation.mutate({ is_active: !emp.is_active })}>
-                      {emp.is_active ? 'Deactivate' : 'Activate'}
+                      {emp.is_active ? 'Deactivate Account' : 'Activate Account'}
                     </Button>
                   </div>
                 )}
@@ -278,11 +351,11 @@ export default function EmployeeDetailPage() {
                     <InfoRow label="National ID"    value={emp.national_id} />
                   </div>
                   <div className="border-t pt-3 space-y-2" style={{ borderColor: 'var(--border)' }}>
-                    <InfoRow label="Home Country"     value={emp.home_country} />
-                    <InfoRow label="Religion"         value={emp.religion} />
-                    <InfoRow label="Passport No."     value={emp.passport_number} />
-                    <InfoRow label="Passport Issue"   value={fmtDate(emp.passport_issue_date)} />
-                    <InfoRow label="Passport Expiry"  value={fmtDate(emp.passport_expiry_date)} />
+                    <InfoRow label="Home Country"    value={emp.home_country} />
+                    <InfoRow label="Religion"        value={emp.religion} />
+                    <InfoRow label="Passport No."    value={emp.passport_number} />
+                    <InfoRow label="Passport Issue"  value={fmtDate(emp.passport_issue_date)} />
+                    <InfoRow label="Passport Expiry" value={fmtDate(emp.passport_expiry_date)} />
                   </div>
                 </div>
               </div>
@@ -343,16 +416,16 @@ export default function EmployeeDetailPage() {
               <div className="card">
                 <SectionHead title="Professional Info" onEdit={() => openEdit('professional')} isAdmin={isAdmin} />
                 <div className="grid grid-cols-3 gap-x-8 gap-y-5">
-                  <InfoRow label="Job Title"           value={emp.position_title} />
-                  <InfoRow label="Work Location"       value={emp.work_location} />
-                  <InfoRow label="Hiring Date"         value={fmtDate(emp.join_date)} />
-                  <InfoRow label="Work Type"           value={empTypeLabel[emp.employment_type] || emp.employment_type} />
-                  <InfoRow label="Department"          value={emp.department_name} />
-                  <InfoRow label="End of Probation"    value={fmtDate(emp.probation_end_date)} />
-                  <InfoRow label="Direct Manager"      value={emp.manager_detail?.full_name} />
+                  <InfoRow label="Job Title"            value={emp.position_title} />
+                  <InfoRow label="Work Location"        value={emp.work_location} />
+                  <InfoRow label="Hiring Date"          value={fmtDate(emp.join_date)} />
+                  <InfoRow label="Work Type"            value={empTypeLabel[emp.employment_type] || emp.employment_type} />
+                  <InfoRow label="Department"           value={emp.department_name} />
+                  <InfoRow label="End of Probation"     value={fmtDate(emp.probation_end_date)} />
+                  <InfoRow label="Direct Manager"       value={emp.manager_detail?.full_name} />
                   <InfoRow label="Period of Employment" value={calcPeriod(emp.join_date)} />
-                  <InfoRow label="End Date"            value={fmtDate(emp.end_date)} />
-                  <InfoRow label="Salary Display Name" value={emp.salary_display_name} />
+                  <InfoRow label="End Date"             value={fmtDate(emp.end_date)} />
+                  <InfoRow label="Salary Display Name"  value={emp.salary_display_name} />
                   {emp.user?.role && (
                     <InfoRow label="System Role" value={emp.user.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} />
                   )}
@@ -386,15 +459,15 @@ export default function EmployeeDetailPage() {
                 </div>
               </div>
 
-              {/* Timeoff / Attendance */}
+              {/* Attendance Summary */}
               {summary && (
                 <div className="card">
                   <SectionHead title="Attendance Summary" />
                   <div className="grid grid-cols-4 gap-4">
                     {(['present', 'absent', 'late', 'on_leave'] as const).map(s => {
                       const colors: Record<string, string> = {
-                        present:  '#10b981', absent: '#ef4444',
-                        late:     '#f59e0b', on_leave: '#3b82f6',
+                        present: '#10b981', absent: '#ef4444',
+                        late:    '#f59e0b', on_leave: '#3b82f6',
                       };
                       return (
                         <div key={s} className="rounded-xl p-4 text-center" style={{ background: 'var(--muted)' }}>
@@ -428,20 +501,115 @@ export default function EmployeeDetailPage() {
       {/* ══ EDIT DRAWER ════════════════════════════════════════════════════════ */}
       {editSection && (
         <div className="fixed inset-0 z-50 flex" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => setEditSection(null)}>
-          <div className="ml-auto w-full max-w-xl h-full flex flex-col shadow-2xl" style={{ background: 'var(--card)', color: 'var(--foreground)' }}
+          <div className="ml-auto w-full max-w-xl h-full flex flex-col shadow-2xl"
+            style={{ background: 'var(--card)', color: 'var(--foreground)' }}
             onClick={e => e.stopPropagation()}>
+
             <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
               <h2 className="font-semibold text-foreground">
-                {editSection === 'personal'      ? 'Edit Personal Info'
+                {editSection === 'account'      ? 'Edit Account & Access'
+                 : editSection === 'personal'   ? 'Edit Personal Info'
                  : editSection === 'professional' ? 'Edit Professional Info'
-                 : editSection === 'contact'      ? 'Edit Contact Info'
-                 : editSection === 'legal'        ? 'Edit UAE Legal Info'
+                 : editSection === 'contact'    ? 'Edit Contact Info'
+                 : editSection === 'legal'      ? 'Edit UAE Legal Info'
                  : 'Edit Salary'}
               </h2>
               <button onClick={() => setEditSection(null)} className="text-muted-foreground hover:text-foreground text-lg">✕</button>
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+
+              {/* ─ Account & Access ─ */}
+              {editSection === 'account' && (
+                <>
+                  {/* Avatar */}
+                  <div className={fld}>
+                    <label className={lbl}>Profile Picture</label>
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-full overflow-hidden border-2 flex items-center justify-center text-xl font-bold flex-shrink-0"
+                        style={{ backgroundColor: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)', borderColor: 'var(--border)' }}>
+                        {avatarPreview || emp.avatar
+                          ? <img src={avatarPreview || emp.avatar || ''} alt="" className="w-full h-full object-cover" />
+                          : avatarLetter}
+                      </div>
+                      <div>
+                        <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+                          onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            if (file.size > 5 * 1024 * 1024) { toast('Max 5MB', 'error'); return; }
+                            setAvatarFile(file);
+                            const reader = new FileReader();
+                            reader.onloadend = () => setAvatarPreview(reader.result as string);
+                            reader.readAsDataURL(file);
+                          }} />
+                        <button type="button" className="btn btn-secondary text-xs px-3 py-1.5"
+                          onClick={() => fileInputRef.current?.click()}>
+                          {avatarPreview || emp.avatar ? 'Change Photo' : 'Upload Photo'}
+                        </button>
+                        <p className="text-xs text-muted-foreground mt-1">JPG, PNG. Max 5MB</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className={fld}>
+                      <label className={lbl}>First Name</label>
+                      <input className={inp} value={form.first_name} onChange={f('first_name')} />
+                    </div>
+                    <div className={fld}>
+                      <label className={lbl}>Last Name</label>
+                      <input className={inp} value={form.last_name} onChange={f('last_name')} />
+                    </div>
+                    <div className={fld}>
+                      <label className={lbl}>Username</label>
+                      <input className={inp} value={form.username} onChange={f('username')} />
+                    </div>
+                    <div className={fld}>
+                      <label className={lbl}>Email</label>
+                      <input className={inp} type="email" value={form.email} onChange={f('email')} />
+                    </div>
+                    <div className={fld}>
+                      <label className={lbl}>Phone</label>
+                      <input className={inp} type="tel" value={form.phone} onChange={f('phone')} />
+                    </div>
+                    <div className={fld}>
+                      <label className={lbl}>System Role</label>
+                      <select className={sel} value={form.role} onChange={f('role')}>
+                        <option value="">— Select Role —</option>
+                        {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Password change */}
+                  <div className="border-t pt-4 mt-2" style={{ borderColor: 'var(--border)' }}>
+                    <label className="flex items-center gap-2 cursor-pointer mb-3">
+                      <input type="checkbox" className="w-4 h-4 rounded"
+                        checked={changePassword}
+                        onChange={e => {
+                          setChangePassword(e.target.checked);
+                          if (!e.target.checked) setForm(p => ({ ...p, password: '', password2: '' }));
+                        }} />
+                      <span className="text-sm font-medium text-foreground">Change Password</span>
+                    </label>
+                    {changePassword && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className={fld}>
+                          <label className={lbl}>New Password</label>
+                          <input className={inp} type="password" placeholder="Min 8 characters"
+                            value={form.password} onChange={f('password')} />
+                        </div>
+                        <div className={fld}>
+                          <label className={lbl}>Confirm Password</label>
+                          <input className={inp} type="password" placeholder="Repeat password"
+                            value={form.password2} onChange={f('password2')} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* ─ Personal ─ */}
               {editSection === 'personal' && (
@@ -521,7 +689,8 @@ export default function EmployeeDetailPage() {
                   </div>
                   <div className={fld}>
                     <label className={lbl}>Status</label>
-                    <select className={sel} value={form.is_active ? 'true' : 'false'} onChange={e => setForm(p => ({ ...p, is_active: e.target.value === 'true' }))}>
+                    <select className={sel} value={form.is_active ? 'true' : 'false'}
+                      onChange={e => setForm(p => ({ ...p, is_active: e.target.value === 'true' }))}>
                       <option value="true">Active</option>
                       <option value="false">Inactive</option>
                     </select>
@@ -614,7 +783,8 @@ export default function EmployeeDetailPage() {
                   </div>
                   <div className={`${fld} col-span-2`}>
                     <label className={lbl}>UAE Citizen?</label>
-                    <select className={sel} value={form.is_citizen ? 'true' : 'false'} onChange={e => setForm(p => ({ ...p, is_citizen: e.target.value === 'true' }))}>
+                    <select className={sel} value={form.is_citizen ? 'true' : 'false'}
+                      onChange={e => setForm(p => ({ ...p, is_citizen: e.target.value === 'true' }))}>
                       <option value="false">No</option>
                       <option value="true">Yes</option>
                     </select>
@@ -642,8 +812,8 @@ export default function EmployeeDetailPage() {
 
             <div className="px-6 py-4 border-t flex justify-end gap-3" style={{ borderColor: 'var(--border)' }}>
               <Button variant="secondary" onClick={() => setEditSection(null)}>Cancel</Button>
-              <Button variant="primary" onClick={handleSave} isLoading={updateMutation.isPending}>
-                {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+              <Button variant="primary" onClick={handleSave} isLoading={isSaving}>
+                {isSaving ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </div>
