@@ -119,6 +119,24 @@ export default function PrintLPOPage() {
       style={{ minHeight:'100vh', background:'#dde3ea',
         fontFamily:"'Inter','Cairo','Segoe UI',sans-serif", fontSize:'11px' }}>
 
+      <style>{`
+        @media print {
+          .print-page-bg { background: white !important; }
+          .print-controls-bar { display: none !important; }
+          .print-doc {
+            margin: 0 !important;
+            width: 100% !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            height: 100vh !important;
+            min-height: 100vh !important;
+          }
+          .print-content {
+            height: calc(100vh - 10mm) !important;
+          }
+        }
+      `}</style>
+
       {/* ── Control bar (hidden on print) ── */}
       <div className="print-controls-bar" style={{
         position:'sticky', top:0, zIndex:100,
@@ -155,7 +173,7 @@ export default function PrintLPOPage() {
         borderRadius:4, boxShadow:'0 4px 32px rgba(0,0,0,.15)',
         display:'flex', flexDirection:'column',
       }}>
-        <div style={{ padding:'5mm 9mm 4mm', color:NAVY, lineHeight:1.45, flex:1, display:'flex', flexDirection:'column' }}>
+        <div className="print-content" style={{ padding:'5mm 9mm 4mm', color:NAVY, lineHeight:1.45, flex:1, display:'flex', flexDirection:'column' }}>
 
           {/* ════════════════════════════════════════
               HEADER: Logo | Company + Info | LPO Box
