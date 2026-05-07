@@ -1,12 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi } from '@/lib/api/hr';
 import { usersApi } from '@/lib/api/users';
-import { permissionsApi } from '@/lib/api/permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import { Button } from '@/components/ui';
 import Link from 'next/link';
@@ -17,10 +16,16 @@ const sel = inp;
 const fld = 'flex flex-col gap-1';
 const lbl = 'text-xs font-medium text-muted-foreground uppercase tracking-wide';
 
-const STEPS = ['Personal Info', 'Employment', 'Account & Access'];
-
 export default function NewEmployeePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const existingUserId = searchParams.get('user_id') ? Number(searchParams.get('user_id')) : null;
+
+  // If linking to existing user, only 2 steps needed
+  const STEPS = existingUserId
+    ? ['Personal Info', 'Employment']
+    : ['Personal Info', 'Employment', 'Account & Access'];
+
   const [step, setStep] = useState(0);
 
   const [personal, setPersonal] = useState({
@@ -46,6 +51,24 @@ export default function NewEmployeePage() {
     role: 'site_engineer', is_active: false,
   });
 
+  // Fetch existing user data if user_id in params
+  const { data: existingUser } = useQuery({
+    queryKey: ['user-for-employee', existingUserId],
+    queryFn: () => usersApi.getById(existingUserId!),
+    enabled: !!existingUserId,
+  });
+
+  // Pre-fill name from existing user
+  useEffect(() => {
+    if (existingUser) {
+      setPersonal(prev => ({
+        ...prev,
+        first_name: existingUser.first_name || prev.first_name,
+        last_name:  existingUser.last_name  || prev.last_name,
+      }));
+    }
+  }, [existingUser]);
+
   const { data: depts }     = useQuery({ queryKey: ['hr-depts'],     queryFn: () => hrDepartmentsApi.getAll({ page: 1 }) });
   const { data: positions } = useQuery({ queryKey: ['hr-positions'], queryFn: () => hrPositionsApi.getAll({ page: 1 }) });
 
@@ -59,55 +82,60 @@ export default function NewEmployeePage() {
     parseFloat(employment.transport_allowance || '0') +
     parseFloat(employment.other_allowances || '0');
 
-  const createUserMutation  = useMutation({ mutationFn: usersApi.create });
-  const createEmpMutation   = useMutation({ mutationFn: (data: any) => hrEmployeesApi.create(data) });
+  const createUserMutation = useMutation({ mutationFn: usersApi.create });
+  const createEmpMutation  = useMutation({ mutationFn: (data: any) => hrEmployeesApi.create(data) });
   const isSubmitting = createUserMutation.isPending || createEmpMutation.isPending;
 
+  const buildEmpPayload = (userId: number) => ({
+    user_id: userId,
+    employment_type:      employment.employment_type,
+    join_date:            employment.join_date,
+    probation_end_date:   employment.probation_end_date   || null,
+    end_date:             employment.end_date             || null,
+    department:           employment.department           || null,
+    position:             employment.position             || null,
+    work_location:        employment.work_location,
+    salary_display_name:  employment.salary_display_name,
+    basic_salary:         employment.basic_salary,
+    housing_allowance:    employment.housing_allowance,
+    transport_allowance:  employment.transport_allowance,
+    other_allowances:     employment.other_allowances,
+    gender:               personal.gender,
+    date_of_birth:        personal.date_of_birth         || null,
+    nationality:          personal.nationality,
+    home_country:         personal.home_country,
+    religion:             personal.religion,
+    national_id:          personal.national_id,
+    passport_number:      personal.passport_number,
+    passport_issue_date:  personal.passport_issue_date   || null,
+    passport_expiry_date: personal.passport_expiry_date  || null,
+    personal_email:       personal.personal_email,
+    marital_status:       personal.marital_status,
+  });
+
   const handleFinalSubmit = async () => {
-    if (!account.username || !account.email || !account.password) {
-      toast('Username, email and password are required', 'error'); return;
-    }
     try {
-      const user = await createUserMutation.mutateAsync({
-        first_name:  personal.first_name,
-        last_name:   personal.last_name,
-        second_name: personal.second_name,
-        third_name:  personal.third_name,
-        username:    account.username,
-        email:       account.email,
-        phone:       account.phone,
-        password:    account.password,
-        role:        account.role,
-        is_active:   account.is_active,
-      } as any);
-
-      await createEmpMutation.mutateAsync({
-        user_id: user.id,
-        employment_type:      employment.employment_type,
-        join_date:            employment.join_date,
-        probation_end_date:   employment.probation_end_date   || null,
-        end_date:             employment.end_date             || null,
-        department:           employment.department           || null,
-        position:             employment.position             || null,
-        work_location:        employment.work_location,
-        salary_display_name:  employment.salary_display_name,
-        basic_salary:         employment.basic_salary,
-        housing_allowance:    employment.housing_allowance,
-        transport_allowance:  employment.transport_allowance,
-        other_allowances:     employment.other_allowances,
-        gender:               personal.gender,
-        date_of_birth:        personal.date_of_birth         || null,
-        nationality:          personal.nationality,
-        home_country:         personal.home_country,
-        religion:             personal.religion,
-        national_id:          personal.national_id,
-        passport_number:      personal.passport_number,
-        passport_issue_date:  personal.passport_issue_date   || null,
-        passport_expiry_date: personal.passport_expiry_date  || null,
-        personal_email:       personal.personal_email,
-        marital_status:       personal.marital_status,
-      });
-
+      if (existingUserId) {
+        // Link to existing user — no new user creation needed
+        await createEmpMutation.mutateAsync(buildEmpPayload(existingUserId));
+      } else {
+        if (!account.username || !account.email || !account.password) {
+          toast('Username, email and password are required', 'error'); return;
+        }
+        const user = await createUserMutation.mutateAsync({
+          first_name:  personal.first_name,
+          last_name:   personal.last_name,
+          second_name: personal.second_name,
+          third_name:  personal.third_name,
+          username:    account.username,
+          email:       account.email,
+          phone:       account.phone,
+          password:    account.password,
+          role:        account.role,
+          is_active:   account.is_active,
+        } as any);
+        await createEmpMutation.mutateAsync(buildEmpPayload(user.id));
+      }
       toast('Employee created successfully', 'success');
       router.push('/hr/employees');
     } catch (err: any) {
@@ -122,6 +150,8 @@ export default function NewEmployeePage() {
   const em = (k: string) => (e: React.ChangeEvent<any>) => setEmployment(prev => ({ ...prev, [k]: e.target.value }));
   const ac = (k: string) => (e: React.ChangeEvent<any>) => setAccount(prev => ({ ...prev, [k]: e.target.value }));
 
+  const isLastStep = step === STEPS.length - 1;
+
   return (
     <MainLayout>
       <div className="max-w-3xl mx-auto space-y-6">
@@ -134,6 +164,22 @@ export default function NewEmployeePage() {
           <span className="text-muted-foreground">/</span>
           <h1 className="text-xl font-bold text-foreground">New Employee</h1>
         </div>
+
+        {/* Existing user banner */}
+        {existingUserId && existingUser && (
+          <div className="rounded-lg px-4 py-3 flex items-center gap-3 border"
+            style={{ background: 'var(--sidebar-active-bg)', borderColor: 'var(--sidebar-active-text)' }}>
+            <span>🔗</span>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: 'var(--sidebar-active-text)' }}>
+                Linking to existing account
+              </p>
+              <p className="text-xs" style={{ color: 'var(--sidebar-active-text)', opacity: 0.8 }}>
+                @{existingUser.username} · {existingUser.email}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Steps */}
         <div className="flex items-center gap-2">
@@ -256,18 +302,25 @@ export default function NewEmployeePage() {
                 </span>
               </div>
             </div>
+
             <div className="flex justify-between pt-2">
               <Button variant="secondary" onClick={() => setStep(0)}>← Back</Button>
-              <Button variant="primary" onClick={() => {
-                if (!employment.join_date) { toast('Hiring date is required', 'error'); return; }
-                setStep(2);
-              }}>Next →</Button>
+              {isLastStep ? (
+                <Button variant="primary" onClick={handleFinalSubmit} isLoading={isSubmitting} disabled={!employment.join_date || isSubmitting}>
+                  {isSubmitting ? 'Creating...' : 'Create Employee'}
+                </Button>
+              ) : (
+                <Button variant="primary" onClick={() => {
+                  if (!employment.join_date) { toast('Hiring date is required', 'error'); return; }
+                  setStep(2);
+                }}>Next →</Button>
+              )}
             </div>
           </div>
         )}
 
-        {/* ── STEP 2: Account & Access ── */}
-        {step === 2 && (
+        {/* ── STEP 2: Account & Access (new user only) ── */}
+        {step === 2 && !existingUserId && (
           <div className="card space-y-5">
             <h2 className="font-semibold text-foreground border-b pb-3" style={{ borderColor: 'var(--border)' }}>System Account & Access</h2>
             <div className="grid grid-cols-2 gap-4">

@@ -35,16 +35,17 @@ export default function UserRedirectPage() {
     );
   }
 
+  useEffect(() => {
+    if (isError || (data && !data.results?.length)) {
+      router.replace(`/hr/employees/new?user_id=${userId}`);
+    }
+  }, [isError, data, router, userId]);
+
   if (isError || (data && !data.results?.length)) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center py-24">
-          <div className="text-center space-y-3">
-            <p className="text-muted-foreground text-sm">No employee record found for this account.</p>
-            <a href="/hr/employees/new" className="btn btn-primary text-sm">
-              Create Employee Profile
-            </a>
-          </div>
+          <p className="text-muted-foreground text-sm">Redirecting...</p>
         </div>
       </MainLayout>
     );
