@@ -465,11 +465,25 @@ export interface PurchaseInvoice {
 
 // ── HR Module Types ────────────────────────────────────────────────────────────
 
+export interface HRLocationType {
+  id: number;
+  name: string;
+  name_ar: string;
+  icon: string;
+  color: string;
+  locations_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface HRLocation {
   id: number;
   name: string;
   name_ar: string;
-  location_type: 'office' | 'site' | 'workshop' | 'other';
+  location_type: number | null;
+  location_type_name: string | null;
+  location_type_icon: string | null;
+  location_type_color: string | null;
   parent: number | null;
   parent_name: string | null;
   address: string;

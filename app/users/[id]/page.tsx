@@ -469,7 +469,9 @@ export default function UserProfilePage() {
                     <select className={sel} value={form.location ?? ''} onChange={f('location')}>
                       <option value="">— None —</option>
                       {locations?.results?.map((l: any) => (
-                        <option key={l.id} value={l.id}>{l.parent_name ? `${l.parent_name} › ` : ''}{l.name}</option>
+                        <option key={l.id} value={l.id}>
+                          {l.location_type_icon ? `${l.location_type_icon} ` : ''}{l.parent_name ? `${l.parent_name} › ` : ''}{l.name}
+                        </option>
                       ))}
                     </select>
                   </div>

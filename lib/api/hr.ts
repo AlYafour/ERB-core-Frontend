@@ -1,5 +1,25 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRLocation, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, PaginatedResponse } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, PaginatedResponse } from '@/types';
+
+// ── Location Types ─────────────────────────────────────────────────────────────
+
+export const hrLocationTypesApi = {
+  getAll: async (): Promise<PaginatedResponse<HRLocationType>> => {
+    const response = await apiClient.get('/hr/employees/location-types/', { params: { page_size: 100 } });
+    return response.data;
+  },
+  create: async (data: Partial<HRLocationType>): Promise<HRLocationType> => {
+    const response = await apiClient.post('/hr/employees/location-types/', data);
+    return response.data;
+  },
+  update: async (id: number, data: Partial<HRLocationType>): Promise<HRLocationType> => {
+    const response = await apiClient.patch(`/hr/employees/location-types/${id}/`, data);
+    return response.data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/employees/location-types/${id}/`);
+  },
+};
 
 // ── Locations ──────────────────────────────────────────────────────────────────
 
