@@ -170,6 +170,7 @@ export const translations = {
     completed:            { en: 'Completed',                    ar: 'مكتمل' },
     hrEmployees:      { en: 'Employees',           ar: 'الموظفون' },
     hrDepartments:    { en: 'Roles',               ar: 'الأدوار' },
+    hrLocations:      { en: 'Locations',           ar: 'المواقع' },
     hrAttendance:     { en: 'Attendance',          ar: 'الحضور والغياب' },
     hrRequests:       { en: 'HR Requests',         ar: 'طلبات الموظفين' },
     hrPayroll:        { en: 'Payroll',             ar: 'كشف الرواتب' },

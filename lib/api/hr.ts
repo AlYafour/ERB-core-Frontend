@@ -1,5 +1,29 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, PaginatedResponse } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRLocation, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, PaginatedResponse } from '@/types';
+
+// ── Locations ──────────────────────────────────────────────────────────────────
+
+export const hrLocationsApi = {
+  getAll: async (params?: { page?: number; search?: string; location_type?: string; parent?: number | null; is_active?: boolean }): Promise<PaginatedResponse<HRLocation>> => {
+    const response = await apiClient.get('/hr/employees/locations/', { params });
+    return response.data;
+  },
+  getById: async (id: number): Promise<HRLocation> => {
+    const response = await apiClient.get(`/hr/employees/locations/${id}/`);
+    return response.data;
+  },
+  create: async (data: Partial<HRLocation>): Promise<HRLocation> => {
+    const response = await apiClient.post('/hr/employees/locations/', data);
+    return response.data;
+  },
+  update: async (id: number, data: Partial<HRLocation>): Promise<HRLocation> => {
+    const response = await apiClient.patch(`/hr/employees/locations/${id}/`, data);
+    return response.data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/employees/locations/${id}/`);
+  },
+};
 
 // ── Employees ──────────────────────────────────────────────────────────────────
 

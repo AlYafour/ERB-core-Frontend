@@ -465,6 +465,22 @@ export interface PurchaseInvoice {
 
 // ── HR Module Types ────────────────────────────────────────────────────────────
 
+export interface HRLocation {
+  id: number;
+  name: string;
+  name_ar: string;
+  location_type: 'office' | 'site' | 'workshop' | 'other';
+  parent: number | null;
+  parent_name: string | null;
+  address: string;
+  description: string;
+  is_active: boolean;
+  employee_count: number;
+  children_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface HRDepartment {
   id: number;
   name: string;
@@ -535,6 +551,8 @@ export interface HREmployee {
   end_date: string | null;
   is_active: boolean;
   work_location?: string;
+  location: number | null;
+  location_name: string | null;
   department: number | null;
   department_name: string | null;
   department_detail?: HRDepartment;

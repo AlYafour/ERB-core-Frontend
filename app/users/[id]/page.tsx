@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersApi } from '@/lib/api/users';
-import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi } from '@/lib/api/hr';
+import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi, hrLocationsApi } from '@/lib/api/hr';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import { Button, Badge, Loader } from '@/components/ui';
@@ -85,6 +85,7 @@ export default function UserProfilePage() {
 
   const { data: depts }     = useQuery({ queryKey: ['hr-depts'],     queryFn: () => hrDepartmentsApi.getAll({ page: 1 }) });
   const { data: positions } = useQuery({ queryKey: ['hr-positions'], queryFn: () => hrPositionsApi.getAll({ page: 1 }) });
+  const { data: locations } = useQuery({ queryKey: ['hr-locations-all'], queryFn: () => hrLocationsApi.getAll({ page_size: 200 } as any) });
 
   const emp = empData?.results?.[0] ?? null;
 
@@ -107,6 +108,7 @@ export default function UserProfilePage() {
       department:          emp?.department          ?? '',
       position:            emp?.position            ?? '',
       work_location:       emp?.work_location       || '',
+      location:            emp?.location            ?? '',
       salary_display_name: emp?.salary_display_name || '',
       basic_salary:        emp?.basic_salary        || '0',
       housing_allowance:   emp?.housing_allowance   || '0',
@@ -163,6 +165,7 @@ export default function UserProfilePage() {
     department:           form.department           || null,
     position:             form.position             || null,
     work_location:        form.work_location,
+    location:             form.location             || null,
     salary_display_name:  form.salary_display_name,
     basic_salary:         form.basic_salary,
     housing_allowance:    form.housing_allowance,
@@ -325,7 +328,7 @@ export default function UserProfilePage() {
                 <InfoRow label="Department"  value={deptName || emp?.department_name} />
                 <InfoRow label="Work Type"   value={emp?.employment_type?.replace('_', ' ')} />
                 <InfoRow label="Hiring Date" value={fmtDate(emp?.join_date)} />
-                <InfoRow label="Location"    value={emp?.work_location} />
+                <InfoRow label="Location"    value={emp?.location_name || emp?.work_location} />
                 <InfoRow label="Email"       value={user.email} />
               </div>
               {!emp && (
@@ -462,7 +465,15 @@ export default function UserProfilePage() {
                       {positions?.results?.map((p: any) => <option key={p.id} value={p.id}>{p.title}</option>)}
                     </select>
                   </div>
-                  <div className={fld}><label className={lbl}>Work Location</label><input className={inp} value={form.work_location} onChange={f('work_location')} /></div>
+                  <div className={fld}><label className={lbl}>Location</label>
+                    <select className={sel} value={form.location ?? ''} onChange={f('location')}>
+                      <option value="">— None —</option>
+                      {locations?.results?.map((l: any) => (
+                        <option key={l.id} value={l.id}>{l.parent_name ? `${l.parent_name} › ` : ''}{l.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={fld}><label className={lbl}>Work Location (notes)</label><input className={inp} value={form.work_location} onChange={f('work_location')} /></div>
                   <div className={fld}><label className={lbl}>Salary Display Name</label><input className={inp} value={form.salary_display_name} onChange={f('salary_display_name')} /></div>
                   {[['basic_salary','Basic (AED)'],['housing_allowance','Housing (AED)'],['transport_allowance','Transport (AED)'],['other_allowances','Other (AED)']].map(([k,l]) => (
                     <div key={k} className={fld}><label className={lbl}>{l}</label><input className={inp} type="number" min="0" value={form[k]} onChange={f(k)} /></div>

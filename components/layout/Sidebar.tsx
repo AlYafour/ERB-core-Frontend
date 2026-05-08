@@ -198,6 +198,7 @@ export default function Sidebar() {
               icon={<UsersIcon className="w-4 h-4" />}
               items={[
                 { name: t('nav', 'hrDepartments'), href: '/hr/departments' },
+                { name: t('nav', 'hrLocations'),   href: '/hr/locations'   },
                 { name: t('nav', 'hrAttendance'),  href: '/hr/attendance'  },
                 { name: t('nav', 'hrRequests'),    href: '/hr/requests'    },
                 { name: t('nav', 'hrPayroll'),     href: '/hr/payroll'     },
