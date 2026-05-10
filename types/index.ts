@@ -711,3 +711,154 @@ export interface HRPayroll {
   created_at: string;
   updated_at: string;
 }
+
+// ── Tasks Module ──────────────────────────────────────────────────────────────
+
+export type TaskStatus =
+  | 'draft' | 'assigned' | 'accepted' | 'in_progress'
+  | 'submitted' | 'review' | 'approved' | 'rejected' | 'closed';
+
+export type TaskPriority = 'critical' | 'high' | 'medium' | 'low';
+export type TaskType = 'task' | 'request' | 'issue' | 'followup';
+export type TeamMemberRole = 'leader' | 'member' | 'observer';
+
+export interface MiniUser {
+  id: number;
+  username: string;
+  full_name: string;
+  avatar_url: string | null;
+  role: string;
+}
+
+export interface Team {
+  id: number;
+  name: string;
+  description: string;
+  created_by: number;
+  created_by_detail: MiniUser;
+  members: TeamMember[];
+  member_count: number;
+  tasks_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TeamMember {
+  id: number;
+  team: number;
+  user: number;
+  user_detail: MiniUser;
+  role: TeamMemberRole;
+  joined_at: string;
+}
+
+export interface TaskListItem {
+  id: number;
+  title: string;
+  task_type: TaskType;
+  priority: TaskPriority;
+  status: TaskStatus;
+  created_by: number;
+  created_by_detail: MiniUser;
+  assigned_to: number | null;
+  assigned_to_detail: MiniUser | null;
+  assigned_team: number | null;
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+  requires_approval: boolean;
+  subtasks_total: number;
+  subtasks_done: number;
+  comments_count: number;
+  attachments_count: number;
+}
+
+export interface SubTask {
+  id: number;
+  task: number;
+  title: string;
+  is_completed: boolean;
+  completed_by: number | null;
+  completed_by_detail: MiniUser | null;
+  completed_at: string | null;
+  order: number;
+  created_at: string;
+}
+
+export interface TaskComment {
+  id: number;
+  task: number;
+  author: number;
+  author_detail: MiniUser;
+  content: string;
+  is_system: boolean;
+  attachments: TaskAttachmentItem[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskAttachmentItem {
+  id: number;
+  task: number;
+  comment: number | null;
+  uploaded_by: number;
+  uploaded_by_detail: MiniUser;
+  file: string;
+  file_url: string | null;
+  file_name: string;
+  file_size: number;
+  created_at: string;
+}
+
+export interface TaskActivity {
+  id: number;
+  task: number;
+  actor: number;
+  actor_detail: MiniUser;
+  action: string;
+  details: Record<string, string>;
+  created_at: string;
+}
+
+export interface TaskDetail {
+  id: number;
+  title: string;
+  description: string;
+  task_type: TaskType;
+  priority: TaskPriority;
+  status: TaskStatus;
+  created_by: number;
+  created_by_detail: MiniUser;
+  assigned_to: number | null;
+  assigned_to_detail: MiniUser | null;
+  assigned_team: number | null;
+  watchers: number[];
+  watchers_detail: MiniUser[];
+  due_date: string | null;
+  started_at: string | null;
+  submitted_at: string | null;
+  closed_at: string | null;
+  requires_approval: boolean;
+  approved_by: number | null;
+  approved_by_detail: MiniUser | null;
+  rejection_reason: string;
+  project: number | null;
+  department: number | null;
+  location: number | null;
+  subtasks: SubTask[];
+  comments: TaskComment[];
+  attachments: TaskAttachmentItem[];
+  activities: TaskActivity[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskStats {
+  my_tasks: number;
+  created_by_me: number;
+  pending_review: number;
+  overdue: number;
+  completed_this_month: number;
+  by_status: Record<TaskStatus, number>;
+  by_priority: Record<TaskPriority, number>;
+}

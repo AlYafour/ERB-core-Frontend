@@ -10,7 +10,7 @@ import { usePendingCounts } from '@/lib/hooks/use-pending-counts';
 import {
   DashboardIcon, FileTextIcon, BuildingIcon, PackageIcon,
   BriefcaseIcon, DollarIcon, UsersIcon, XIcon, ShoppingCartIcon, AlertIcon,
-  UserIcon, ClockIcon, CalendarIcon, CurrencyIcon,
+  UserIcon, ClockIcon, CalendarIcon, CurrencyIcon, TasksIcon,
 } from '@/components/icons';
 
 export default function Sidebar() {
@@ -51,6 +51,9 @@ export default function Sidebar() {
 
   const isHRActive =
     pathname.startsWith('/hr/');
+
+  const isTasksActive =
+    pathname.startsWith('/tasks');
 
   function navLink(href: string, label: string, icon: React.ReactNode) {
     const active = isActive(href);
@@ -204,6 +207,20 @@ export default function Sidebar() {
                 { name: t('nav', 'hrPayroll'),     href: '/hr/payroll'     },
               ]}
               defaultOpen={isHRActive}
+              user={user}
+            />
+
+            <div className="my-2 mx-1 h-px" style={{ backgroundColor: 'var(--sidebar-border)' }} />
+
+            {/* Task Management */}
+            <CollapsibleMenu
+              title={t('nav', 'tasksModule')}
+              icon={<TasksIcon className="w-4 h-4" />}
+              items={[
+                { name: t('nav', 'tasksList'),  href: '/tasks'       },
+                { name: t('nav', 'tasksTeams'), href: '/tasks/teams' },
+              ]}
+              defaultOpen={isTasksActive}
               user={user}
             />
 

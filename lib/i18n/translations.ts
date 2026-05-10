@@ -29,6 +29,9 @@ export const translations = {
     hrAttendance:     { en: 'Attendance',          ar: 'الحضور والغياب' },
     hrRequests:       { en: 'HR Requests',         ar: 'طلبات الموظفين' },
     hrPayroll:        { en: 'Payroll',             ar: 'كشف الرواتب' },
+    tasksModule:      { en: 'Task Management',    ar: 'إدارة المهام' },
+    tasksList:        { en: 'All Tasks',          ar: 'جميع المهام' },
+    tasksTeams:       { en: 'Teams',              ar: 'الفرق' },
   },
 
   // ── Common buttons ───────────────────────────────────────────────────
@@ -175,6 +178,9 @@ export const translations = {
     hrAttendance:     { en: 'Attendance',          ar: 'الحضور والغياب' },
     hrRequests:       { en: 'HR Requests',         ar: 'طلبات الموظفين' },
     hrPayroll:        { en: 'Payroll',             ar: 'كشف الرواتب' },
+    tasksModule:      { en: 'Task Management',    ar: 'إدارة المهام' },
+    tasksList:        { en: 'All Tasks',          ar: 'جميع المهام' },
+    tasksTeams:       { en: 'Teams',              ar: 'الفرق' },
   },
 
   // ── Section headings ─────────────────────────────────────────────────
