@@ -853,6 +853,19 @@ export interface TaskDetail {
   updated_at: string;
 }
 
+export interface MyTask {
+  id: number;
+  owner: number;
+  title: string;
+  note: string;
+  is_done: boolean;
+  priority: 'high' | 'medium' | 'low';
+  due_date: string | null;
+  order: number;
+  created_at: string;
+  done_at: string | null;
+}
+
 export interface TaskStats {
   my_tasks: number;
   created_by_me: number;

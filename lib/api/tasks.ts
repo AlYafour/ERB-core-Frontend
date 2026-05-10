@@ -1,7 +1,7 @@
 import apiClient from './client';
 import type {
   Team, TeamMember, TaskListItem, TaskDetail, SubTask,
-  TaskComment, TaskAttachmentItem, TaskActivity, TaskStats,
+  TaskComment, TaskAttachmentItem, TaskActivity, TaskStats, MyTask,
 } from '@/types';
 
 // ── Teams ─────────────────────────────────────────────────────────────────────
@@ -120,4 +120,17 @@ export const taskAttachmentsApi = {
 export const taskActivitiesApi = {
   getByTask: (taskId: number) =>
     apiClient.get<TaskActivity[]>('/tasks/activities/', { params: { task: taskId } }).then(r => r.data),
+};
+
+// ── My Tasks (personal to-do) ─────────────────────────────────────────────────
+
+export const myTasksApi = {
+  getAll: () => apiClient.get<MyTask[]>('/tasks/my-tasks/').then(r => r.data),
+  create: (data: { title: string; note?: string; priority?: string; due_date?: string }) =>
+    apiClient.post<MyTask>('/tasks/my-tasks/', data).then(r => r.data),
+  update: (id: number, data: Partial<MyTask>) =>
+    apiClient.patch<MyTask>(`/tasks/my-tasks/${id}/`, data).then(r => r.data),
+  delete: (id: number) => apiClient.delete(`/tasks/my-tasks/${id}/`),
+  toggle: (id: number) =>
+    apiClient.post<MyTask>(`/tasks/my-tasks/${id}/toggle/`).then(r => r.data),
 };
