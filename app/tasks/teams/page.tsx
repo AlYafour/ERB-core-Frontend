@@ -43,7 +43,7 @@ function TeamCard({ team, selected, onClick }: { team: Team; selected: boolean; 
     <div onClick={onClick} style={{
       background: 'var(--card-bg)', border: `2px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
       borderRadius: 12, padding: '16px', cursor: 'pointer', transition: 'all 0.15s',
-      boxShadow: selected ? '0 0 0 3px rgba(var(--accent-rgb),0.15)' : 'none',
+      boxShadow: selected ? '0 0 0 3px rgba(249,115,22,0.15)' : 'none',
     }}
       onMouseEnter={e => { if (!selected) e.currentTarget.style.borderColor = 'var(--accent)'; }}
       onMouseLeave={e => { if (!selected) e.currentTarget.style.borderColor = 'var(--border)'; }}
@@ -61,7 +61,7 @@ function TeamCard({ team, selected, onClick }: { team: Team; selected: boolean; 
       </div>
       <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>{team.name}</h3>
       {team.description && (
-        <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 10, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+        <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 10, overflow: 'hidden', maxHeight: '2.8em', lineHeight: '1.4em' }}>
           {team.description}
         </p>
       )}
