@@ -5,7 +5,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tasksApi, subTasksApi, taskCommentsApi, taskAttachmentsApi } from '@/lib/api/tasks';
 import { usersApi } from '@/lib/api/users';
-import type { TaskListItem, TaskDetail, TaskStatus, TaskPriority, SubTask, TaskComment } from '@/types';
+import type { TaskListItem, TaskDetail, TaskStatus, TaskPriority, TaskType, SubTask, TaskComment } from '@/types';
 import { useT } from '@/lib/i18n/useT';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
