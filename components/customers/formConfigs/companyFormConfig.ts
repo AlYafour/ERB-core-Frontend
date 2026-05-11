@@ -11,6 +11,7 @@ const companyFormConfig: { steps: FormStep[] } = {
         { name: 'classification',                       label: 'Classification',               type: 'select',   optionsKey: 'classification' },
         { name: 'postal_code',                          label: 'Postal Code',                  type: 'text' },
         { name: 'landline_number',                      label: 'Landline Number',              type: 'text' },
+        { name: 'company_fax',                          label: 'Company Fax',                  type: 'text' },
         { name: 'company_office_address',               label: 'Company Address',              type: 'textarea' },
         { name: 'company_logo_attachment',              label: 'Company Logo',                 type: 'file' },
         { name: 'company_trade_license_number',         label: 'Trade License Number',         type: 'text' },

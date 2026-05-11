@@ -83,7 +83,7 @@ export default function CustomerFormWizard() {
     if (['commercial', 'consultant'].includes(customerType)) {
       // Company profile fields
       const companyProfileKeys = [
-        'classification', 'postal_code', 'landline_number', 'company_office_address',
+        'classification', 'postal_code', 'landline_number', 'company_fax', 'company_office_address',
         'company_logo_attachment', 'company_trade_license_number', 'company_trade_license_attachment',
         'company_trade_license_expiry_date', 'company_stamp_attachment', 'company_establishment_date',
         'area', 'map_location',
