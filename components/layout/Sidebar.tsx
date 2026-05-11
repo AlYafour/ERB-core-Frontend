@@ -55,6 +55,9 @@ export default function Sidebar() {
   const isTasksActive =
     pathname.startsWith('/tasks');
 
+  const isCustomersActive =
+    pathname.startsWith('/customers');
+
   function navLink(href: string, label: string, icon: React.ReactNode) {
     const active = isActive(href);
     return (
@@ -221,6 +224,20 @@ export default function Sidebar() {
                 { name: t('nav', 'tasksTeams'), href: '/tasks/teams' },
               ]}
               defaultOpen={isTasksActive}
+              user={user}
+            />
+
+            <div className="my-2 mx-1 h-px" style={{ backgroundColor: 'var(--sidebar-border)' }} />
+
+            {/* Customers */}
+            <CollapsibleMenu
+              title={t('nav', 'customers')}
+              icon={<UsersIcon className="w-4 h-4" />}
+              items={[
+                { name: t('nav', 'customersList'), href: '/customers'     },
+                { name: t('nav', 'addCustomer'),   href: '/customers/new' },
+              ]}
+              defaultOpen={isCustomersActive}
               user={user}
             />
 

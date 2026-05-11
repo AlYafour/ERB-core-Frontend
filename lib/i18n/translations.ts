@@ -32,6 +32,9 @@ export const translations = {
     tasksModule:      { en: 'Task Management',    ar: 'إدارة المهام' },
     tasksList:        { en: 'All Tasks',          ar: 'جميع المهام' },
     tasksTeams:       { en: 'Teams',              ar: 'الفرق' },
+    customers:        { en: 'Customers',          ar: 'العملاء' },
+    customersList:    { en: 'Customers List',     ar: 'قائمة العملاء' },
+    addCustomer:      { en: 'Add Customer',       ar: 'إضافة عميل' },
   },
 
   // ── Common buttons ───────────────────────────────────────────────────
@@ -73,6 +76,7 @@ export const translations = {
     changePhoto:    { en: 'Change Photo',     ar: 'تغيير الصورة' },
     addProduct:     { en: 'Add Product',      ar: 'إضافة منتج' },
     addSupplier:    { en: 'Add Supplier',     ar: 'إضافة مورد' },
+    addCustomer:    { en: 'Add Customer',    ar: 'إضافة عميل' },
     addProject:     { en: 'Add Project',      ar: 'إضافة مشروع' },
     addUser:        { en: 'Add User',         ar: 'إضافة مستخدم' },
     addItem:        { en: 'Add Item',         ar: 'إضافة بند' },
@@ -132,6 +136,12 @@ export const translations = {
     newSupplier:          { en: 'Add New Supplier',             ar: 'إضافة مورد جديد' },
     editSupplier:         { en: 'Edit Supplier',                ar: 'تعديل المورد' },
     suppliersSubtitle:    { en: 'Manage your supplier network', ar: 'إدارة شبكة الموردين' },
+    // Customers
+    customers:            { en: 'Customers',                    ar: 'العملاء' },
+    newCustomer:          { en: 'Add New Customer',             ar: 'إضافة عميل جديد' },
+    editCustomer:         { en: 'Edit Customer',                ar: 'تعديل العميل' },
+    customersSubtitle:    { en: 'Manage your customers',        ar: 'إدارة العملاء' },
+    newCustomerSubtitle:  { en: 'Add a new customer record',    ar: 'إضافة سجل عميل جديد' },
     newSupplierSubtitle:  { en: 'Add a new supplier to your network', ar: 'إضافة مورد جديد إلى شبكتك' },
     // Products
     products:             { en: 'Products',                     ar: 'المنتجات والمواد' },
