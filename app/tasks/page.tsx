@@ -10,7 +10,7 @@ import type {
   SubTask, TaskComment, MyTask,
 } from '@/types';
 
-const ORANGE = '#F97316';
+const ORANGE = 'var(--brand)';
 
 const STATUS: Record<TaskStatus, { label: string; color: string; bg: string }> = {
   draft:       { label: 'Draft',         color: '#64748B', bg: '#F1F5F9' },

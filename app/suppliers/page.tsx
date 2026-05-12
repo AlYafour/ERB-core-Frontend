@@ -11,7 +11,7 @@ import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
-import { Button, TextField, Badge } from '@/components/ui';
+import { Button, Badge, PageHeader, PageToolbar, SearchInput } from '@/components/ui';
 import { exportToExcel, fetchAllPages } from '@/lib/utils/export-excel';
 import BilingualName from '@/components/ui/BilingualName';
 import { useT } from '@/lib/i18n/useT';
@@ -149,41 +149,34 @@ export default function SuppliersPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">{t('page', 'suppliers')}</h1>
-            <p className="text-sm text-muted-foreground mt-1">{totalCount} {t('page', 'suppliers').toLowerCase()}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {isAdmin && selectedItems.size > 0 && (
-              <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
-                {t('btn', 'delete')} {selectedItems.size}
-              </Button>
-            )}
-            <Button variant="secondary" onClick={handleExport}>⬇ {t('btn', 'export')}</Button>
-            {isAdmin && (
-              <>
-                <input ref={importFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
-                <Button variant="secondary" onClick={() => importFileRef.current?.click()}>⬆ {t('btn', 'import')}</Button>
-              </>
-            )}
-            <Link href="/suppliers/new"><Button variant="primary">{t('btn', 'addSupplier')}</Button></Link>
-          </div>
-        </div>
+        <PageHeader
+          title={t('page', 'suppliers')}
+          count={totalCount}
+          breadcrumbs={[{ label: 'Suppliers' }]}
+          actions={
+            <div className="flex items-center gap-2">
+              {isAdmin && selectedItems.size > 0 && (
+                <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
+                  {t('btn', 'delete')} {selectedItems.size}
+                </Button>
+              )}
+              <Button variant="secondary" onClick={handleExport}>⬇ {t('btn', 'export')}</Button>
+              {isAdmin && (
+                <>
+                  <input ref={importFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
+                  <Button variant="secondary" onClick={() => importFileRef.current?.click()}>⬆ {t('btn', 'import')}</Button>
+                </>
+              )}
+              <Link href="/suppliers/new"><Button variant="primary">{t('btn', 'addSupplier')}</Button></Link>
+            </div>
+          }
+        />
 
-        {/* Search + Filter */}
-        <div className="card flex items-center gap-4">
-          <TextField
-            placeholder={t('misc', 'searchSuppliers')}
-            value={search}
-            onChange={e => handleSearch(e.target.value)}
-            className="flex-1 max-w-md"
-          />
-          <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="suppliers" />
-        </div>
-
-        <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
+        <PageToolbar
+          search={<SearchInput value={search} onChange={handleSearch} placeholder={t('misc', 'searchSuppliers')} />}
+          filters={<FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="suppliers" />}
+          filterTags={<FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />}
+        />
 
         <DataTable
           columns={columns}

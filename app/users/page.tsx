@@ -7,7 +7,7 @@ import { usersApi } from '@/lib/api/users';
 import { User } from '@/types';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { Button, TextField, Badge } from '@/components/ui';
+import { Button, Badge, PageHeader, PageToolbar, SearchInput } from '@/components/ui';
 import Avatar from '@/components/ui/Avatar';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
@@ -106,38 +106,36 @@ export default function UsersPage() {
   return (
     <MainLayout>
       <div className="space-y-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Users</h1>
-            <p className="text-sm text-muted-foreground mt-1">{total > 0 ? `${total} user${total !== 1 ? 's' : ''}` : 'No users'}</p>
-          </div>
-          <Link href="/hr/employees/new"><Button variant="primary">+ New User</Button></Link>
-        </div>
+        <PageHeader
+          title="Users"
+          count={total}
+          breadcrumbs={[{ label: 'Users' }]}
+          actions={<Link href="/hr/employees/new"><Button variant="primary">+ New User</Button></Link>}
+        />
 
-        <div className="card flex items-center gap-3 flex-wrap">
-          <TextField
-            placeholder="Search name, username, email..."
-            value={search}
-            onChange={e => handleSearch(e.target.value)}
-            className="flex-1 min-w-[220px] max-w-sm"
-          />
-          <select className={sel} value={role} onChange={e => handleRole(e.target.value)}>
-            {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-          </select>
-          <select className={sel} value={status} onChange={e => handleStatus(e.target.value)}>
-            <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-          {(search || role || status) && (
-            <button
-              onClick={() => { handleSearch(''); handleRole(''); handleStatus(''); }}
-              className="text-sm text-muted-foreground hover:text-foreground px-2"
-            >
-              Clear
-            </button>
-          )}
-        </div>
+        <PageToolbar
+          search={<SearchInput value={search} onChange={handleSearch} placeholder="Search name, username, email..." />}
+          actions={
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <select className={sel} value={role} onChange={e => handleRole(e.target.value)}>
+                {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+              <select className={sel} value={status} onChange={e => handleStatus(e.target.value)}>
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              {(search || role || status) && (
+                <button
+                  onClick={() => { handleSearch(''); handleRole(''); handleStatus(''); }}
+                  className="text-sm text-muted-foreground hover:text-foreground px-2"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          }
+        />
 
         <DataTable
           columns={columns}

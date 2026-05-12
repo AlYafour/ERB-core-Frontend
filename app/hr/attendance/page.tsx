@@ -6,7 +6,7 @@ import { hrAttendanceApi } from '@/lib/api/hr';
 import { HRAttendance } from '@/types';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
-import { Button, TextField, Badge } from '@/components/ui';
+import { Badge, PageHeader, PageToolbar, SearchInput } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
@@ -67,35 +67,31 @@ export default function HRAttendancePage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">{t('page', 'hrAttendance')}</h1>
-            <p className="text-sm text-muted-foreground mt-1">{totalCount} attendance records</p>
-          </div>
-        </div>
+      <PageHeader
+        title={t('page', 'hrAttendance')}
+        count={totalCount}
+        breadcrumbs={[{ label: 'HR' }, { label: 'Attendance' }]}
+      />
 
-        <div className="card flex items-center gap-4">
-          <TextField placeholder="Search by employee name or ID..." value={search} onChange={e => handleSearch(e.target.value)} className="flex-1 max-w-md" />
-          <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="hr-attendance" />
-        </div>
+      <PageToolbar
+        search={<SearchInput value={search} onChange={handleSearch} placeholder="Search by employee name or ID..." />}
+        filters={<FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="hr-attendance" />}
+        filterTags={<FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />}
+      />
 
-        <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
-
-        <DataTable
-          columns={columns}
-          data={records}
-          isLoading={isLoading}
-          error={error}
-          emptyMessage={t('empty', 'noAttendance')}
-          page={page}
-          totalCount={totalCount}
-          pageSize={50}
-          hasPrev={!!data?.previous}
-          hasNext={!!data?.next}
-          onPageChange={setPage}
-        />
-      </div>
+      <DataTable
+        columns={columns}
+        data={records}
+        isLoading={isLoading}
+        error={error}
+        emptyMessage={t('empty', 'noAttendance')}
+        page={page}
+        totalCount={totalCount}
+        pageSize={50}
+        hasPrev={!!data?.previous}
+        hasNext={!!data?.next}
+        onPageChange={setPage}
+      />
     </MainLayout>
   );
 }

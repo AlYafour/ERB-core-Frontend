@@ -8,6 +8,7 @@ import { projectsApi } from '@/lib/api/projects';
 import { MunicipalViolation } from '@/types';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useT } from '@/lib/i18n/useT';
+import { PageHeader } from '@/components/ui';
 
 const FRONTEND_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://purchase-self.vercel.app';
 
@@ -349,28 +350,24 @@ export default function ViolationsPage() {
     <MainLayout>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--text-primary)' }}>
-              Abu Dhabi Municipality Violations
-            </h1>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>
-              Incoming ADM SMS notifications · automated tracking &amp; assignment
-              {stats && <span style={{ fontWeight: 700, color: 'var(--color-primary)', marginLeft: 6 }}>{stats.total} total</span>}
-            </p>
-          </div>
-          <button
-            onClick={() => { setTestOpen(o => !o); setTestResult(null); }}
-            style={{
-              padding: '8px 16px', borderRadius: 9, border: '1.5px solid #E5E7EB',
-              background: testOpen ? '#F0FDF4' : '#fff', cursor: 'pointer',
-              fontSize: 13, fontWeight: 600, color: testOpen ? '#15803D' : 'var(--text-primary)',
-            }}
-          >
-            🧪 Test SMS
-          </button>
-        </div>
+        <PageHeader
+          title="Abu Dhabi Municipality Violations"
+          description="Incoming ADM SMS notifications · automated tracking & assignment"
+          count={stats?.total ?? null}
+          breadcrumbs={[{ label: 'Violations' }]}
+          actions={
+            <button
+              onClick={() => { setTestOpen(o => !o); setTestResult(null); }}
+              style={{
+                padding: '8px 16px', borderRadius: 9, border: '1.5px solid var(--border-default)',
+                background: testOpen ? 'var(--surface-subtle)' : 'var(--surface-base)', cursor: 'pointer',
+                fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)',
+              }}
+            >
+              🧪 Test SMS
+            </button>
+          }
+        />
 
         {/* Stats */}
         {stats && (

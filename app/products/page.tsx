@@ -13,7 +13,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
-import { Button, TextField, Badge } from '@/components/ui';
+import { Button, Badge, PageHeader, PageToolbar, SearchInput } from '@/components/ui';
 import { formatPrice } from '@/lib/utils/format';
 import BilingualName from '@/components/ui/BilingualName';
 import { useT } from '@/lib/i18n/useT';
@@ -153,50 +153,32 @@ export default function ProductsPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">Products</h1>
-            <p className="text-sm text-muted-foreground mt-1">{totalCount} total products</p>
-          </div>
-          <div className="flex gap-2">
-            {isAdmin && (
-              <>
-                <input ref={importFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
-                <Button variant="secondary" onClick={handleExport}>Export Excel</Button>
-                <Button variant="secondary" onClick={() => importFileRef.current?.click()}>Import Excel</Button>
-              </>
-            )}
-            {canCreate && (
-              <Link href="/products/new">
-                <Button variant="primary">+ {t('btn', 'addProduct') || 'New Product'}</Button>
-              </Link>
-            )}
-          </div>
-        </div>
+        <PageHeader
+          title="Products"
+          count={totalCount}
+          breadcrumbs={[{ label: 'Products' }]}
+          actions={
+            <div className="flex gap-2">
+              {isAdmin && (
+                <>
+                  <input ref={importFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
+                  <Button variant="secondary" onClick={handleExport}>Export Excel</Button>
+                  <Button variant="secondary" onClick={() => importFileRef.current?.click()}>Import Excel</Button>
+                </>
+              )}
+              {canCreate && (
+                <Link href="/products/new">
+                  <Button variant="primary">+ {t('btn', 'addProduct') || 'New Product'}</Button>
+                </Link>
+              )}
+            </div>
+          }
+        />
 
-        {/* Search + Filter */}
-        <div className="flex gap-4 items-start">
-          <div className="flex-1">
-            <TextField
-              placeholder="Search products..."
-              value={search}
-              onChange={e => handleSearch(e.target.value)}
-            />
-          </div>
-          <FilterPanel
-            fields={filterFields}
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            onReset={handleFilterReset}
-          />
-        </div>
-
-        <FilterTags
-          filters={filters}
-          fields={filterFields}
-          onRemoveFilter={handleRemoveFilter}
-          onClearAll={handleFilterReset}
+        <PageToolbar
+          search={<SearchInput value={search} onChange={handleSearch} placeholder="Search products..." />}
+          filters={<FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} />}
+          filterTags={<FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />}
         />
 
         {/* Bulk action bar */}

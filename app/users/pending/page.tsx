@@ -10,7 +10,7 @@ import { PERMISSIONS_QUERY_KEY } from '@/lib/hooks/use-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useState } from 'react';
-import { Button, Badge } from '@/components/ui';
+import { Button, Badge, PageHeader } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import DataTable, { Column } from '@/components/ui/DataTable';
 
@@ -121,10 +121,11 @@ export default function PendingUsersPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Pending Users</h1>
-          <p className="text-sm text-muted-foreground mt-1">Review and approve new user registrations</p>
-        </div>
+        <PageHeader
+          title="Pending Users"
+          description="Review and approve new user registrations"
+          breadcrumbs={[{ label: 'Users', href: '/users' }, { label: 'Pending' }]}
+        />
 
         <DataTable
           columns={columns}

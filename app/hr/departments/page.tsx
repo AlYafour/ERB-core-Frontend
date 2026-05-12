@@ -9,7 +9,7 @@ import { HRDepartment } from '@/types';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { Button, TextField, Loader, Badge, Checkbox } from '@/components/ui';
+import { Button, Loader, Badge, Checkbox, PageHeader, SearchInput, Drawer } from '@/components/ui';
 
 const CATEGORY_LABELS: Record<string, string> = {
   purchase_request:   'Purchase Request',
@@ -146,26 +146,22 @@ export default function RolesPage() {
     <MainLayout>
       <div className="space-y-5">
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">Roles</h1>
-            <p className="text-sm text-muted-foreground mt-1">Each role is a department — assign permissions to control what its members can do</p>
-          </div>
-          {isAdmin && (
-            <Button variant="primary" onClick={openCreate}>+ New Role</Button>
-          )}
-        </div>
+        <PageHeader
+          title="Roles"
+          description="Each role is a department — assign permissions to control what its members can do"
+          count={data?.results?.length ?? null}
+          breadcrumbs={[{ label: 'HR' }, { label: 'Roles' }]}
+          actions={isAdmin ? <Button variant="primary" onClick={openCreate}>+ New Role</Button> : undefined}
+        />
 
         <div className="flex gap-5 items-start">
 
           {/* ── LEFT: role list ── */}
           <div className="w-72 flex-shrink-0 space-y-3">
-            <TextField
+            <SearchInput
               placeholder="Search roles..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full"
+              onChange={setSearch}
             />
 
             {isLoading ? <Loader className="mx-auto" /> : (
@@ -276,45 +272,34 @@ export default function RolesPage() {
         </div>
       </div>
 
-      {/* ── Drawer: create / edit role ── */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-50 flex" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => setDrawerOpen(false)}>
-          <div className="ml-auto w-full max-w-md h-full flex flex-col shadow-2xl"
-            style={{ background: 'var(--card)' }} onClick={(e) => e.stopPropagation()}>
-
-            <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
-              <h2 className="font-semibold text-foreground">{editingDept ? 'Edit Role' : 'New Role'}</h2>
-              <button onClick={() => setDrawerOpen(false)} className="text-muted-foreground hover:text-foreground text-lg">✕</button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
-              <div className={fld}>
-                <label className={lbl}>Name (EN)</label>
-                <input className={inp} value={form.name} onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Procurement Team" />
-              </div>
-              <div className={fld}>
-                <label className={lbl}>Name (AR)</label>
-                <input className={inp} dir="rtl" value={form.name_ar} onChange={(e) => setForm(p => ({ ...p, name_ar: e.target.value }))} placeholder="مثال: فريق المشتريات" />
-              </div>
-              <div className={fld}>
-                <label className={lbl}>Description</label>
-                <textarea className={inp} rows={3} value={form.description} onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))} />
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t flex justify-end gap-3" style={{ borderColor: 'var(--border)' }}>
-              <Button variant="secondary" onClick={() => setDrawerOpen(false)}>Cancel</Button>
-              <Button
-                variant="primary"
-                onClick={handleSaveForm}
-                isLoading={createMutation.isPending || updateMutation.isPending}
-              >
-                {editingDept ? 'Save' : 'Create'}
-              </Button>
-            </div>
-          </div>
+      <Drawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title={editingDept ? 'Edit Role' : 'New Role'}
+        footer={<>
+          <Button variant="secondary" onClick={() => setDrawerOpen(false)}>Cancel</Button>
+          <Button
+            variant="primary"
+            onClick={handleSaveForm}
+            isLoading={createMutation.isPending || updateMutation.isPending}
+          >
+            {editingDept ? 'Save' : 'Create'}
+          </Button>
+        </>}
+      >
+        <div className={fld}>
+          <label className={lbl}>Name (EN)</label>
+          <input className={inp} value={form.name} onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Procurement Team" />
         </div>
-      )}
+        <div className={fld} style={{ marginTop: 16 }}>
+          <label className={lbl}>Name (AR)</label>
+          <input className={inp} dir="rtl" value={form.name_ar} onChange={(e) => setForm(p => ({ ...p, name_ar: e.target.value }))} placeholder="مثال: فريق المشتريات" />
+        </div>
+        <div className={fld} style={{ marginTop: 16 }}>
+          <label className={lbl}>Description</label>
+          <textarea className={inp} rows={3} value={form.description} onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))} />
+        </div>
+      </Drawer>
     </MainLayout>
   );
 }

@@ -8,7 +8,7 @@ import { HRLocationType, HRLocation } from '@/types';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { Button, TextField, Badge, Loader } from '@/components/ui';
+import { Button, Badge, Loader, PageHeader, SearchInput, Drawer } from '@/components/ui';
 
 const inp = 'w-full px-3 py-2 rounded-md border text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40';
 const sel = `${inp} h-[38px]`;
@@ -212,16 +212,12 @@ export default function LocationsPage() {
     <MainLayout>
       <div className="space-y-5">
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Locations</h1>
-            <p className="text-sm text-muted-foreground mt-1">Create location types then add your offices, sites, and sub-locations</p>
-          </div>
-          {isAdmin && (
-            <Button variant="primary" onClick={openTypeCreate}>+ New Type</Button>
-          )}
-        </div>
+        <PageHeader
+          title="Locations"
+          description="Create location types then add your offices, sites, and sub-locations"
+          breadcrumbs={[{ label: 'HR' }, { label: 'Locations' }]}
+          actions={isAdmin ? <Button variant="primary" onClick={openTypeCreate}>+ New Type</Button> : undefined}
+        />
 
         <div className="flex gap-5 items-start">
 
@@ -298,8 +294,7 @@ export default function LocationsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <TextField placeholder="Search..." value={searchLoc}
-                      onChange={e => setSearchLoc(e.target.value)} className="max-w-xs" />
+                    <SearchInput placeholder="Search..." value={searchLoc} onChange={setSearchLoc} width={220} />
                     {allLocs.length > 0 && (
                       <button onClick={() => setExpandedIds(new Set(allLocs.map(l => l.id)))}
                         className="text-xs text-muted-foreground hover:text-foreground px-2 whitespace-nowrap">
@@ -346,146 +341,133 @@ export default function LocationsPage() {
         </div>
       </div>
 
-      {/* ══ DRAWER ════════════════════════════════════════════════════════════════ */}
-      {drawerMode && (
-        <div className="fixed inset-0 z-50 flex" style={{ background: 'rgba(0,0,0,0.45)' }}
-          onClick={() => setDrawerMode(null)}>
-          <div className="ml-auto w-full max-w-md h-full flex flex-col shadow-2xl"
-            style={{ background: 'var(--card)' }} onClick={e => e.stopPropagation()}>
-
-            <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
-              <h2 className="font-semibold text-foreground">
-                {drawerMode === 'type-create' ? 'New Location Type'
-                  : drawerMode === 'type-edit' ? `Edit Type — ${(editTarget as HRLocationType)?.name}`
-                  : drawerMode === 'loc-create' ? `New Location (${selectedType?.name})`
-                  : `Edit — ${(editTarget as HRLocation)?.name}`}
-              </h2>
-              <button onClick={() => setDrawerMode(null)} className="text-muted-foreground hover:text-foreground text-lg">✕</button>
+      <Drawer
+        isOpen={drawerMode !== null}
+        onClose={() => setDrawerMode(null)}
+        title={
+          drawerMode === 'type-create' ? 'New Location Type'
+            : drawerMode === 'type-edit' ? `Edit Type — ${(editTarget as HRLocationType)?.name}`
+            : drawerMode === 'loc-create' ? `New Location (${selectedType?.name})`
+            : `Edit — ${(editTarget as HRLocation)?.name}`
+        }
+        footer={<>
+          <Button variant="secondary" onClick={() => setDrawerMode(null)}>Cancel</Button>
+          <Button variant="primary"
+            onClick={(drawerMode ?? '').startsWith('type') ? saveType : saveLoc}
+            isLoading={isSavingType || isSavingLoc}>
+            {(drawerMode ?? '').includes('edit') ? 'Save' : 'Create'}
+          </Button>
+        </>}
+      >
+        {/* ── Type form ── */}
+        {(drawerMode === 'type-create' || drawerMode === 'type-edit') && <>
+          <div className="grid grid-cols-2 gap-4">
+            <div className={fld}>
+              <label className={lbl}>Name (EN)</label>
+              <input className={inp} value={typeForm.name}
+                onChange={e => setTypeForm(p => ({ ...p, name: e.target.value }))}
+                placeholder="e.g. Office" />
             </div>
-
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
-
-              {/* ── Type form ── */}
-              {(drawerMode === 'type-create' || drawerMode === 'type-edit') && <>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className={fld}>
-                    <label className={lbl}>Name (EN)</label>
-                    <input className={inp} value={typeForm.name}
-                      onChange={e => setTypeForm(p => ({ ...p, name: e.target.value }))}
-                      placeholder="e.g. Office" />
-                  </div>
-                  <div className={fld}>
-                    <label className={lbl}>Name (AR)</label>
-                    <input className={inp} dir="rtl" value={typeForm.name_ar}
-                      onChange={e => setTypeForm(p => ({ ...p, name_ar: e.target.value }))}
-                      placeholder="مثال: مكتب" />
-                  </div>
-                </div>
-
-                <div className={fld}>
-                  <label className={lbl}>Icon</label>
-                  <div className="flex flex-wrap gap-2">
-                    {PRESET_ICONS.map(ic => (
-                      <button key={ic} onClick={() => setTypeForm(p => ({ ...p, icon: ic }))}
-                        className="text-xl p-2 rounded-lg border-2 transition-all"
-                        style={{ borderColor: typeForm.icon === ic ? 'var(--sidebar-active-text)' : 'var(--border)', background: typeForm.icon === ic ? 'var(--sidebar-active-bg)' : 'transparent' }}>
-                        {ic}
-                      </button>
-                    ))}
-                    <input className={`${inp} w-16 text-center text-xl`} value={typeForm.icon}
-                      onChange={e => setTypeForm(p => ({ ...p, icon: e.target.value }))} maxLength={2} />
-                  </div>
-                </div>
-
-                <div className={fld}>
-                  <label className={lbl}>Color</label>
-                  <div className="flex flex-wrap gap-2 items-center">
-                    {PRESET_COLORS.map(c => (
-                      <button key={c} onClick={() => setTypeForm(p => ({ ...p, color: c }))}
-                        className="w-8 h-8 rounded-full border-2 transition-all"
-                        style={{ background: c, borderColor: typeForm.color === c ? '#000' : 'transparent', transform: typeForm.color === c ? 'scale(1.2)' : 'scale(1)' }} />
-                    ))}
-                    <input type="color" value={typeForm.color}
-                      onChange={e => setTypeForm(p => ({ ...p, color: e.target.value }))}
-                      className="w-8 h-8 rounded-full cursor-pointer border-0" title="Custom color" />
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-2xl">{typeForm.icon}</span>
-                    <span className="text-sm font-semibold px-3 py-1 rounded-full"
-                      style={{ background: typeForm.color + '20', color: typeForm.color, border: `1px solid ${typeForm.color}44` }}>
-                      {typeForm.name || 'Preview'}
-                    </span>
-                  </div>
-                </div>
-              </>}
-
-              {/* ── Location form ── */}
-              {(drawerMode === 'loc-create' || drawerMode === 'loc-edit') && <>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className={fld}>
-                    <label className={lbl}>Name (EN)</label>
-                    <input className={inp} value={locForm.name}
-                      onChange={e => setLocForm(p => ({ ...p, name: e.target.value }))}
-                      placeholder="e.g. Abu Dhabi Office" />
-                  </div>
-                  <div className={fld}>
-                    <label className={lbl}>Name (AR)</label>
-                    <input className={inp} dir="rtl" value={locForm.name_ar}
-                      onChange={e => setLocForm(p => ({ ...p, name_ar: e.target.value }))}
-                      placeholder="مكتب أبوظبي" />
-                  </div>
-                </div>
-
-                <div className={fld}>
-                  <label className={lbl}>Parent Location (optional)</label>
-                  <select className={sel} value={locForm.parent ?? ''}
-                    onChange={e => setLocForm(p => ({ ...p, parent: e.target.value }))}>
-                    <option value="">— None (top level) —</option>
-                    {allLocs
-                      .filter(l => l.id !== (editTarget as HRLocation)?.id)
-                      .map(l => (
-                        <option key={l.id} value={l.id}>
-                          {l.parent_name ? `${l.parent_name} › ` : ''}{l.name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-
-                <div className={fld}>
-                  <label className={lbl}>Address</label>
-                  <textarea className={inp} rows={2} value={locForm.address}
-                    onChange={e => setLocForm(p => ({ ...p, address: e.target.value }))}
-                    placeholder="Street, area, city..." />
-                </div>
-
-                <div className={fld}>
-                  <label className={lbl}>Description</label>
-                  <textarea className={inp} rows={2} value={locForm.description}
-                    onChange={e => setLocForm(p => ({ ...p, description: e.target.value }))} />
-                </div>
-
-                <div className={fld}>
-                  <label className={lbl}>Status</label>
-                  <select className={sel} value={locForm.is_active ? 'true' : 'false'}
-                    onChange={e => setLocForm(p => ({ ...p, is_active: e.target.value === 'true' }))}>
-                    <option value="true">Active</option>
-                    <option value="false">Inactive</option>
-                  </select>
-                </div>
-              </>}
-            </div>
-
-            <div className="px-6 py-4 border-t flex justify-end gap-3" style={{ borderColor: 'var(--border)' }}>
-              <Button variant="secondary" onClick={() => setDrawerMode(null)}>Cancel</Button>
-              <Button variant="primary"
-                onClick={drawerMode.startsWith('type') ? saveType : saveLoc}
-                isLoading={isSavingType || isSavingLoc}>
-                {drawerMode.includes('edit') ? 'Save' : 'Create'}
-              </Button>
+            <div className={fld}>
+              <label className={lbl}>Name (AR)</label>
+              <input className={inp} dir="rtl" value={typeForm.name_ar}
+                onChange={e => setTypeForm(p => ({ ...p, name_ar: e.target.value }))}
+                placeholder="مثال: مكتب" />
             </div>
           </div>
-        </div>
-      )}
+
+          <div className={fld} style={{ marginTop: 16 }}>
+            <label className={lbl}>Icon</label>
+            <div className="flex flex-wrap gap-2">
+              {PRESET_ICONS.map(ic => (
+                <button key={ic} onClick={() => setTypeForm(p => ({ ...p, icon: ic }))}
+                  className="text-xl p-2 rounded-lg border-2 transition-all"
+                  style={{ borderColor: typeForm.icon === ic ? 'var(--brand)' : 'var(--border-default)', background: typeForm.icon === ic ? 'var(--brand-subtle)' : 'transparent' }}>
+                  {ic}
+                </button>
+              ))}
+              <input className={`${inp} w-16 text-center text-xl`} value={typeForm.icon}
+                onChange={e => setTypeForm(p => ({ ...p, icon: e.target.value }))} maxLength={2} />
+            </div>
+          </div>
+
+          <div className={fld} style={{ marginTop: 16 }}>
+            <label className={lbl}>Color</label>
+            <div className="flex flex-wrap gap-2 items-center">
+              {PRESET_COLORS.map(c => (
+                <button key={c} onClick={() => setTypeForm(p => ({ ...p, color: c }))}
+                  className="w-8 h-8 rounded-full border-2 transition-all"
+                  style={{ background: c, borderColor: typeForm.color === c ? '#000' : 'transparent', transform: typeForm.color === c ? 'scale(1.2)' : 'scale(1)' }} />
+              ))}
+              <input type="color" value={typeForm.color}
+                onChange={e => setTypeForm(p => ({ ...p, color: e.target.value }))}
+                className="w-8 h-8 rounded-full cursor-pointer border-0" title="Custom color" />
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-2xl">{typeForm.icon}</span>
+              <span className="text-sm font-semibold px-3 py-1 rounded-full"
+                style={{ background: typeForm.color + '20', color: typeForm.color, border: `1px solid ${typeForm.color}44` }}>
+                {typeForm.name || 'Preview'}
+              </span>
+            </div>
+          </div>
+        </>}
+
+        {/* ── Location form ── */}
+        {(drawerMode === 'loc-create' || drawerMode === 'loc-edit') && <>
+          <div className="grid grid-cols-2 gap-4">
+            <div className={fld}>
+              <label className={lbl}>Name (EN)</label>
+              <input className={inp} value={locForm.name}
+                onChange={e => setLocForm(p => ({ ...p, name: e.target.value }))}
+                placeholder="e.g. Abu Dhabi Office" />
+            </div>
+            <div className={fld}>
+              <label className={lbl}>Name (AR)</label>
+              <input className={inp} dir="rtl" value={locForm.name_ar}
+                onChange={e => setLocForm(p => ({ ...p, name_ar: e.target.value }))}
+                placeholder="مكتب أبوظبي" />
+            </div>
+          </div>
+
+          <div className={fld} style={{ marginTop: 16 }}>
+            <label className={lbl}>Parent Location (optional)</label>
+            <select className={sel} value={locForm.parent ?? ''}
+              onChange={e => setLocForm(p => ({ ...p, parent: e.target.value }))}>
+              <option value="">— None (top level) —</option>
+              {allLocs
+                .filter(l => l.id !== (editTarget as HRLocation)?.id)
+                .map(l => (
+                  <option key={l.id} value={l.id}>
+                    {l.parent_name ? `${l.parent_name} › ` : ''}{l.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <div className={fld} style={{ marginTop: 16 }}>
+            <label className={lbl}>Address</label>
+            <textarea className={inp} rows={2} value={locForm.address}
+              onChange={e => setLocForm(p => ({ ...p, address: e.target.value }))}
+              placeholder="Street, area, city..." />
+          </div>
+
+          <div className={fld} style={{ marginTop: 16 }}>
+            <label className={lbl}>Description</label>
+            <textarea className={inp} rows={2} value={locForm.description}
+              onChange={e => setLocForm(p => ({ ...p, description: e.target.value }))} />
+          </div>
+
+          <div className={fld} style={{ marginTop: 16 }}>
+            <label className={lbl}>Status</label>
+            <select className={sel} value={locForm.is_active ? 'true' : 'false'}
+              onChange={e => setLocForm(p => ({ ...p, is_active: e.target.value === 'true' }))}>
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
+        </>}
+      </Drawer>
     </MainLayout>
   );
 }

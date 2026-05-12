@@ -66,6 +66,22 @@ export {
   type BadgeProps,
 } from './Badge';
 
+// Layout & Page
+export { default as PageHeader }   from './PageHeader';
+export { default as PageToolbar }  from './PageToolbar';
+export { SearchInput }             from './SearchInput';
+export { default as Drawer }       from './Drawer';
+
+// Data display
+export { default as StatusBadge }  from './StatusBadge';
+export { default as TableActions } from './TableActions';
+
+// Forms
+export { default as FormSection }  from './FormSection';
+export { ColSpan }                 from './FormSection';
+export { default as Stepper }      from './Stepper';
+export type { Step as StepperStep } from './Stepper';
+
 // Existing Components
 export { default as ConfirmDialog } from './ConfirmDialog';
 export { default as RejectionReasonDialog } from './RejectionReasonDialog';

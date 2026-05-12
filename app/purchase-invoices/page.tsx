@@ -11,12 +11,15 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
-import { Button, TextField, Badge } from '@/components/ui';
+import { Button, Badge } from '@/components/ui';
 import { PurchaseInvoice } from '@/types';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { INVOICE_STATUS } from '@/lib/utils/status-colors';
+import PageHeader from '@/components/ui/PageHeader';
+import PageToolbar from '@/components/ui/PageToolbar';
+import { SearchInput } from '@/components/ui/SearchInput';
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Draft', pending: 'Pending Approval', approved: 'Approved',
@@ -111,49 +114,47 @@ export default function PurchaseInvoicesPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">{t('page', 'purchaseInvoices')}</h1>
-            <p className="text-sm text-muted-foreground mt-1">{totalCount} invoices</p>
-          </div>
-          <div className="flex items-center gap-2">
+      <PageHeader
+        breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Purchase Management', href: '#' }, { label: 'Purchase Invoices' }]}
+        title="Purchase Invoices"
+        description="Manage supplier invoices and payment tracking."
+        count={totalCount}
+        actions={
+          <>
             {isAdmin && selectedItems.size > 0 && (
               <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
                 Delete {selectedItems.size}
               </Button>
             )}
             {canCreate && <Link href="/purchase-invoices/new"><Button variant="primary">Create Invoice</Button></Link>}
-          </div>
-        </div>
+          </>
+        }
+      />
+      <PageToolbar
+        search={<SearchInput value={search} onChange={handleSearch} placeholder="Search invoices…" width={260} />}
+        filters={<FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="purchase-invoices" />}
+        filterTags={<FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />}
+      />
 
-        <div className="card flex items-center gap-4">
-          <TextField placeholder="Search invoices..." value={search} onChange={e => handleSearch(e.target.value)} className="flex-1 max-w-md" />
-          <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="purchase-invoices" />
-        </div>
-
-        <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
-
-        <DataTable
-          columns={columns}
-          data={invoices}
-          isLoading={isLoading}
-          error={error}
-          emptyMessage={t('empty', 'noInvoices')}
-          selectable={isAdmin}
-          selectedItems={selectedItems}
-          onToggleSelect={toggleSelect}
-          onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
-          isAllSelected={isAllPageSelected(currentIds)}
-          isSomeSelected={isSomePageSelected(currentIds)}
-          page={page}
-          totalCount={totalCount}
-          pageSize={50}
-          hasPrev={!!data?.previous}
-          hasNext={!!data?.next}
-          onPageChange={setPage}
-        />
-      </div>
+      <DataTable
+        columns={columns}
+        data={invoices}
+        isLoading={isLoading}
+        error={error}
+        emptyMessage={t('empty', 'noInvoices')}
+        selectable={isAdmin}
+        selectedItems={selectedItems}
+        onToggleSelect={toggleSelect}
+        onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
+        isAllSelected={isAllPageSelected(currentIds)}
+        isSomeSelected={isSomePageSelected(currentIds)}
+        page={page}
+        totalCount={totalCount}
+        pageSize={50}
+        hasPrev={!!data?.previous}
+        hasNext={!!data?.next}
+        onPageChange={setPage}
+      />
     </MainLayout>
   );
 }

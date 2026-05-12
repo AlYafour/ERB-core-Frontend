@@ -8,7 +8,7 @@ import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useT } from '@/lib/i18n/useT';
-import { Button, TextField, Badge } from '@/components/ui';
+import { Button, Badge, PageHeader, PageToolbar, SearchInput } from '@/components/ui';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
 import DataTable, { Column } from '@/components/ui/DataTable';
@@ -110,33 +110,18 @@ export default function CustomersPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-              {t('nav', 'customers')}
-            </h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-              {totalCount} {t('page', 'customersSubtitle') || 'customers'}
-            </p>
-          </div>
-          <Link href="/customers/new">
-            <Button variant="primary">{t('btn', 'addCustomer')}</Button>
-          </Link>
-        </div>
+        <PageHeader
+          title={t('nav', 'customers')}
+          count={totalCount}
+          breadcrumbs={[{ label: 'Customers' }]}
+          actions={<Link href="/customers/new"><Button variant="primary">{t('btn', 'addCustomer')}</Button></Link>}
+        />
 
-        {/* Search + Filter */}
-        <div className="card flex items-center gap-4">
-          <TextField
-            placeholder="Search by name, email, phone..."
-            value={search}
-            onChange={e => handleSearch(e.target.value)}
-            className="flex-1 max-w-md"
-          />
-          <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="customers" />
-        </div>
-
-        <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
+        <PageToolbar
+          search={<SearchInput value={search} onChange={handleSearch} placeholder="Search by name, email, phone..." />}
+          filters={<FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="customers" />}
+          filterTags={<FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />}
+        />
 
         <DataTable
           columns={columns}
