@@ -14,7 +14,7 @@ import {
   BriefcaseIcon,
 } from '@/components/icons';
 import Link from 'next/link';
-import { Badge } from '@/components/ui';
+import { Badge, PageShell, PageHeader } from '@/components/ui';
 import { formatPrice } from '@/lib/utils/format';
 import {
   LineChart,
@@ -78,45 +78,28 @@ function SectionHeader({ title, viewAllLabel, href, size = 'lg' }: { title: stri
   );
 }
 
-/* ─── Reusable: Stat card (number + label, clickable) ───────────── */
-interface StatCardProps {
-  label: string;
-  value: number | string;
-  color: string;
-  href: string;
-  icon?: React.ReactNode;
-}
-function StatCard({ label, value, color, href, icon }: StatCardProps) {
+/* ─── Reusable: MetricGroup card (grouped stat columns) ─────────── */
+interface MetricItem { label: string; value: number | string; color: string; href: string; }
+function MetricGroup({ title, href, metrics }: { title: string; href: string; metrics: MetricItem[] }) {
   return (
-    <Link href={href} style={{ textDecoration: 'none', display: 'block' }}>
-      <div
-        className="p-4 rounded-lg transition-all cursor-pointer"
-        style={{
-          backgroundColor: 'var(--bg-secondary)',
-          border: '1px solid var(--border-primary)',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateY(-2px)';
-          e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = 'none';
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-              {label}
-            </div>
-            <div className="text-2xl font-bold" style={{ color }}>
-              {value}
-            </div>
-          </div>
-          {icon && <div style={{ color, opacity: 0.25 }}>{icon}</div>}
-        </div>
+    <div className="card" style={{ padding: '18px 20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{title}</span>
+        <Link href={href} style={{ fontSize: 12, color: 'var(--text-tertiary)', textDecoration: 'none' }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-tertiary)'; }}>
+          View all →
+        </Link>
       </div>
-    </Link>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${metrics.length}, 1fr)`, gap: 0 }}>
+        {metrics.map((m, i) => (
+          <Link key={i} href={m.href} style={{ textDecoration: 'none', padding: '0 16px 0 0', borderRight: i < metrics.length - 1 ? '1px solid var(--border-primary)' : 'none', marginRight: i < metrics.length - 1 ? 16 : 0 }}>
+            <div style={{ fontSize: 28, fontWeight: 800, color: m.color, lineHeight: 1, letterSpacing: '-0.02em' }}>{m.value}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 5, lineHeight: 1.3 }}>{m.label}</div>
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -178,10 +161,7 @@ function StatusPieCard({ title, viewAllLabel, href, data }: {
 /* ─── Reusable: Skeleton loader ─────────────────────────────────── */
 function CardSkeleton({ height = 120 }: { height?: number }) {
   return (
-    <div
-      className="card animate-pulse"
-      style={{ height, backgroundColor: 'var(--bg-secondary)' }}
-    />
+    <div className="card animate-pulse" style={{ height, backgroundColor: 'var(--bg-secondary)' }} />
   );
 }
 
@@ -277,45 +257,42 @@ function DashboardContent() {
 
   return (
     <MainLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
+      <PageShell>
 
-        {/* ── Page title ─────────────────────────────────────────── */}
-        <div>
-          <h1 style={{ fontSize: 'var(--font-2xl)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', margin: 0 }}>
-            {t('dash', 'execDashboard')}
-          </h1>
-          <p style={{ fontSize: 'var(--font-sm)', color: 'var(--text-secondary)', margin: 0, marginTop: 2 }}>
-            {t('dash', 'overviewSubtitle')}
-          </p>
-        </div>
+        {/* ── Page header ─────────────────────────────────────────── */}
+        <PageHeader
+          title={t('dash', 'execDashboard')}
+          description={t('dash', 'overviewSubtitle')}
+          breadcrumbs={[{ label: 'Dashboard' }]}
+        />
 
-        {/* ── KPI top row ─────────────────────────────────────────── */}
-        {statsLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {Array(8).fill(0).map((_, i) => <CardSkeleton key={i} height={80} />)}
-          </div>
-        ) : stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-            <StatCard label={t('dash', 'prTotal')}    value={stats.purchaseRequests.total}   color={C.blue}  href="/purchase-requests"                icon={<FileTextIcon className="w-8 h-8" />} />
-            <StatCard label={t('dash', 'prPending')}  value={stats.purchaseRequests.pending}  color={C.amber} href="/purchase-requests?status=pending" />
-            <StatCard label={t('dash', 'prApproved')} value={stats.purchaseRequests.approved} color={C.green} href="/purchase-requests?status=approved" />
-            <StatCard label={t('dash', 'prRejected')} value={stats.purchaseRequests.rejected} color={C.red}   href="/purchase-requests?status=rejected" />
-            <StatCard label={t('dash', 'poTotal')}    value={stats.purchaseOrders.total}      color={C.blue}  href="/purchase-orders"                  icon={<ShoppingCartIcon className="w-8 h-8" />} />
-            <StatCard label={t('dash', 'poPending')}  value={stats.purchaseOrders.pending}    color={C.amber} href="/purchase-orders?status=pending" />
-            <StatCard label={t('dash', 'poApproved')} value={stats.purchaseOrders.approved}   color={C.green} href="/purchase-orders?status=approved" />
-            <StatCard label={t('dash', 'poCompleted')} value={stats.purchaseOrders.completed} color={C.teal}  href="/purchase-orders?status=completed" />
+        {/* ── MetricGroup KPI row ─────────────────────────────────── */}
+        {statsLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[130, 130, 130].map((h, i) => <CardSkeleton key={i} height={h} />)}
           </div>
         )}
 
-        {/* ── Secondary KPIs ──────────────────────────────────────── */}
         {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <StatCard label={t('dash', 'invoices')}     value={stats.invoices.total}          color={C.pink}   href="/purchase-invoices"                icon={<DollarIcon className="w-8 h-8" />} />
-            <StatCard label={t('dash', 'invPending')}   value={stats.invoices.pending}        color={C.amber}  href="/purchase-invoices?status=pending" />
-            <StatCard label={t('dash', 'invPaid')}      value={stats.invoices.paid}           color={C.green}  href="/purchase-invoices?status=paid" />
-            <StatCard label={t('dash', 'quotationReq')} value={stats.quotationRequests.total} color={C.purple} href="/quotation-requests"               icon={<BriefcaseIcon className="w-8 h-8" />} />
-            <StatCard label={t('dash', 'suppliers')}    value={stats.suppliers.total}         color={C.green}  href="/suppliers"                        icon={<BuildingIcon className="w-8 h-8" />} />
-            <StatCard label={t('dash', 'products')}     value={stats.products.total}          color={C.indigo} href="/products"                         icon={<PackageIcon className="w-8 h-8" />} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <MetricGroup title="Purchase Requests" href="/purchase-requests" metrics={[
+              { label: t('dash', 'prTotal'),    value: stats.purchaseRequests.total,   color: C.blue,  href: '/purchase-requests' },
+              { label: t('dash', 'prPending'),  value: stats.purchaseRequests.pending, color: C.amber, href: '/purchase-requests?status=pending' },
+              { label: t('dash', 'prApproved'), value: stats.purchaseRequests.approved, color: C.green, href: '/purchase-requests?status=approved' },
+              { label: t('dash', 'prRejected'), value: stats.purchaseRequests.rejected, color: C.red,   href: '/purchase-requests?status=rejected' },
+            ]} />
+            <MetricGroup title="Purchase Orders" href="/purchase-orders" metrics={[
+              { label: t('dash', 'poTotal'),     value: stats.purchaseOrders.total,     color: C.blue,  href: '/purchase-orders' },
+              { label: t('dash', 'poPending'),   value: stats.purchaseOrders.pending,   color: C.amber, href: '/purchase-orders?status=pending' },
+              { label: t('dash', 'poApproved'),  value: stats.purchaseOrders.approved,  color: C.green, href: '/purchase-orders?status=approved' },
+              { label: t('dash', 'poCompleted'), value: stats.purchaseOrders.completed, color: C.teal,  href: '/purchase-orders?status=completed' },
+            ]} />
+            <MetricGroup title="Invoices & Catalog" href="/purchase-invoices" metrics={[
+              { label: t('dash', 'invPaid'),    value: stats.invoices.paid,    color: C.green,  href: '/purchase-invoices?status=paid' },
+              { label: t('dash', 'invPending'), value: stats.invoices.pending, color: C.amber,  href: '/purchase-invoices?status=pending' },
+              { label: t('dash', 'suppliers'),  value: stats.suppliers.total,  color: C.indigo, href: '/suppliers' },
+              { label: t('dash', 'products'),   value: stats.products.total,   color: C.purple, href: '/products' },
+            ]} />
           </div>
         )}
 
@@ -490,9 +467,9 @@ function DashboardContent() {
               <div className="card">
                 <SectionHeader title={t('dash', 'procCycle')} />
                 <div className="space-y-3">
-                  <MetricBlock label={t('dash', 'prToPoAvg')}  value={`${cycleMetrics.avgPRToPO} ${t('dash', 'days')}`}      color={C.blue} />
-                  <MetricBlock label={t('dash', 'poToGrnAvg')} value={`${cycleMetrics.avgPOToGRN} ${t('dash', 'days')}`}     color={C.green} />
-                  <MetricBlock label={t('dash', 'grnToInvAvg')} value={`${cycleMetrics.avgGRNToInvoice} ${t('dash', 'days')}`} color={C.purple} />
+                  <MetricBlock label={t('dash', 'prToPoAvg')}   value={`${cycleMetrics.avgPRToPO} ${t('dash', 'days')}`}        color={C.blue} />
+                  <MetricBlock label={t('dash', 'poToGrnAvg')}  value={`${cycleMetrics.avgPOToGRN} ${t('dash', 'days')}`}       color={C.green} />
+                  <MetricBlock label={t('dash', 'grnToInvAvg')} value={`${cycleMetrics.avgGRNToInvoice} ${t('dash', 'days')}`}  color={C.purple} />
                 </div>
                 {cycleMetrics.bottlenecks?.length > 0 && (
                   <div style={{ marginTop: 'var(--spacing-4)', paddingTop: 'var(--spacing-4)', borderTop: '1px solid var(--border-primary)' }}>
@@ -551,27 +528,29 @@ function DashboardContent() {
             ) : recentActivity && recentActivity.length > 0 && (
               <div className="card">
                 <SectionHeader title={t('dash', 'recentActivity')} />
-                <div className="space-y-1">
-                  {recentActivity.slice(0, 8).map((a) => (
+                <div>
+                  {recentActivity.slice(0, 8).map((a, i) => (
                     <Link
                       key={`${a.type}-${a.id}`}
                       href={a.link}
-                      className="block p-2 rounded transition-colors"
-                      style={{ backgroundColor: 'var(--bg-secondary)', textDecoration: 'none' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'; }}
+                      style={{ display: 'block', textDecoration: 'none', padding: '9px 0', borderBottom: i < 7 ? '1px solid var(--border-primary)' : 'none' }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.paddingLeft = '8px';
+                        e.currentTarget.style.borderLeft = `2px solid ${actionBadge(a.action) === 'success' ? C.green : actionBadge(a.action) === 'error' ? C.red : C.blue}`;
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.paddingLeft = '0';
+                        e.currentTarget.style.borderLeft = 'none';
+                      }}
                     >
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <Badge variant={actionBadge(a.action)} className="text-[10px] px-[6px]">
-                          {a.action.charAt(0).toUpperCase() + a.action.slice(1)}
-                        </Badge>
-                        <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {typeLabel[a.type] ?? a.type}
-                        </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: actionBadge(a.action) === 'success' ? C.green : actionBadge(a.action) === 'error' ? C.red : C.blue, flexShrink: 0 }} />
+                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{typeLabel[a.type] ?? a.type}</span>
+                        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 'auto' }}>{new Date(a.timestamp).toLocaleDateString('en-GB')}</span>
                       </div>
-                      <div className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{a.title}</div>
-                      <div className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                        {a.user} · {new Date(a.timestamp).toLocaleDateString('en-GB')}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 12 }}>
+                        <span style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{a.title}</span>
+                        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0 }}>{a.user}</span>
                       </div>
                     </Link>
                   ))}
@@ -581,7 +560,7 @@ function DashboardContent() {
 
           </div>
         </div>
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }
