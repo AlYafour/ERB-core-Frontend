@@ -8,7 +8,7 @@ import type { Notification } from '@/types';
 import { useWebSocketNotifications } from '@/lib/hooks/use-websocket';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import Link from 'next/link';
-import { Button, Loader } from '@/components/ui';
+import { Button, Loader, PageHeader, PageShell, WorkspaceSurface } from '@/components/ui';
 
 const getNotificationIcon = (type: string) => {
   if (type.includes('approved')) {
@@ -128,158 +128,119 @@ export default function NotificationsPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">Notifications</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Stay updated with all system activities
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleMarkAllAsRead}
-              disabled={markAllAsReadMutation.isPending}
-              isLoading={markAllAsReadMutation.isPending}
-            >
-              Mark All Read
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleClearAll}
-              disabled={clearAllMutation.isPending}
-              isLoading={clearAllMutation.isPending}
-            >
-              Clear All
-            </Button>
-          </div>
-        </div>
+      <PageShell>
+        <PageHeader
+          title="Notifications"
+          description="Stay updated with all system activities."
+          count={data?.count ?? null}
+          breadcrumbs={[{ label: 'Notifications' }]}
+          actions={
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Button variant="secondary" size="sm" onClick={handleMarkAllAsRead} isLoading={markAllAsReadMutation.isPending}>
+                Mark All Read
+              </Button>
+              <Button variant="destructive" size="sm" onClick={handleClearAll} isLoading={clearAllMutation.isPending}>
+                Clear All
+              </Button>
+            </div>
+          }
+        />
 
-        {/* Filters */}
-        <div className="card">
-          <div className="flex gap-2">
-            <Button
-              variant={filter === 'all' ? 'primary' : 'secondary'}
-              size="sm"
-              onClick={() => setFilter('all')}
-            >
-              All
-            </Button>
-            <Button
-              variant={filter === 'unread' ? 'primary' : 'secondary'}
-              size="sm"
-              onClick={() => setFilter('unread')}
-            >
-              Unread
-            </Button>
-          </div>
-        </div>
-
-        {/* Content */}
-        {isLoading ? (
-          <div className="card text-center py-12">
-            <Loader className="mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading notifications...</p>
-          </div>
-        ) : error ? (
-          <div className="card border-destructive bg-destructive/10">
-            <p className="text-destructive text-sm">Error loading notifications. Please try again.</p>
-          </div>
-        ) : !data || !data.results || data.results.length === 0 ? (
-          <div className="card text-center py-12">
-            <p className="text-muted-foreground">No notifications found</p>
-          </div>
-        ) : (
-          <>
-            <div className="space-y-2">
-              {data.results.map((notification: Notification) => {
+        <WorkspaceSurface
+          toolbar={
+            <div style={{ display: 'flex', gap: 6 }}>
+              {(['all', 'unread'] as const).map(f => (
+                <button
+                  key={f}
+                  onClick={() => { setFilter(f); setPage(1); }}
+                  style={{
+                    padding: '4px 12px',
+                    borderRadius: 6,
+                    fontSize: 13,
+                    fontWeight: 500,
+                    border: filter === f ? '1px solid var(--primary)' : '1px solid var(--border)',
+                    background: filter === f ? 'var(--primary)' : 'transparent',
+                    color: filter === f ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {f === 'all' ? 'All' : 'Unread'}
+                </button>
+              ))}
+            </div>
+          }
+        >
+          {isLoading ? (
+            <div style={{ padding: '48px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+              <Loader />
+              <p style={{ color: 'var(--muted-foreground)', fontSize: 14 }}>Loading notifications...</p>
+            </div>
+          ) : error ? (
+            <div style={{ padding: '32px 16px' }}>
+              <p style={{ color: 'var(--destructive)', fontSize: 14 }}>Error loading notifications. Please try again.</p>
+            </div>
+          ) : !data?.results?.length ? (
+            <div style={{ padding: '64px 0', textAlign: 'center' }}>
+              <p style={{ color: 'var(--muted-foreground)', fontSize: 14 }}>No notifications found</p>
+            </div>
+          ) : (
+            <div>
+              {data.results.map((notification: Notification, idx: number) => {
                 const link = getNotificationLink(notification);
-                const NotificationContent = (
+                const isUnread = !notification.is_read;
+                const content = (
                   <div
-                    className={`card cursor-pointer ${
-                      !notification.is_read ? 'bg-blue-50 border-blue-200' : ''
-                    }`}
-                    onClick={() => {
-                      if (!notification.is_read) {
-                        handleMarkAsRead(notification.id);
-                      }
+                    onClick={() => { if (isUnread) handleMarkAsRead(notification.id); }}
+                    style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 14,
+                      padding: '14px 16px',
+                      borderBottom: idx < data.results.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+                      background: isUnread ? 'color-mix(in srgb, var(--primary) 4%, transparent)' : 'transparent',
+                      cursor: isUnread ? 'pointer' : 'default',
+                      transition: 'background 0.15s',
                     }}
                   >
-                    <div className="flex items-start gap-4">
-                      <div className="flex-shrink-0 mt-0.5">
-                        {getNotificationIcon(notification.notification_type)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1">
-                            <h3 className={`text-sm font-semibold ${!notification.is_read ? 'text-foreground' : 'text-muted-foreground'}`}>
-                              {notification.title}
-                            </h3>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {notification.message}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-2">
-                              {new Date(notification.created_at).toLocaleString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </p>
-                          </div>
-                          {!notification.is_read && (
-                            <span className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-600 mt-1.5" />
-                          )}
+                    <div style={{ flexShrink: 0, marginTop: 2 }}>
+                      {getNotificationIcon(notification.notification_type)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: 14, fontWeight: isUnread ? 600 : 500, color: isUnread ? 'var(--foreground)' : 'var(--muted-foreground)', margin: 0 }}>
+                            {notification.title}
+                          </p>
+                          <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginTop: 3 }}>
+                            {notification.message}
+                          </p>
+                          <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 6, opacity: 0.7 }}>
+                            {new Date(notification.created_at).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
                         </div>
+                        {isUnread && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)', flexShrink: 0, marginTop: 5 }} />}
                       </div>
                     </div>
                   </div>
                 );
-
-                if (link) {
-                  return (
-                    <Link key={notification.id} href={link}>
-                      {NotificationContent}
-                    </Link>
-                  );
-                }
-
-                return <div key={notification.id}>{NotificationContent}</div>;
+                return link
+                  ? <Link key={notification.id} href={link} style={{ display: 'block', textDecoration: 'none' }}>{content}</Link>
+                  : <div key={notification.id}>{content}</div>;
               })}
-            </div>
 
-            {/* Pagination */}
-            {data && data.count > 50 && (
-              <div className="flex items-center justify-between card">
-                <div className="text-sm text-muted-foreground">
-                  Showing {((page - 1) * 50) + 1} to {Math.min(page * 50, data.count)} of {data.count} notifications
+              {data.count > 50 && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderTop: '1px solid var(--border-subtle)' }}>
+                  <span style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>
+                    {((page - 1) * 50) + 1}–{Math.min(page * 50, data.count)} of {data.count}
+                  </span>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={!data.previous || page === 1}>Previous</Button>
+                    <Button variant="secondary" size="sm" onClick={() => setPage(p => p + 1)} disabled={!data.next}>Next</Button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="secondary"
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={!data.previous || page === 1}
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setPage(p => p + 1)}
-                    disabled={!data.next}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+              )}
+            </div>
+          )}
+        </WorkspaceSurface>
+      </PageShell>
     </MainLayout>
   );
 }

@@ -10,7 +10,7 @@ import { PERMISSIONS_QUERY_KEY } from '@/lib/hooks/use-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useState } from 'react';
-import { Button, Badge, PageHeader } from '@/components/ui';
+import { Button, Badge, PageHeader, PageShell, WorkspaceSurface } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import DataTable, { Column } from '@/components/ui/DataTable';
 
@@ -120,25 +120,28 @@ export default function PendingUsersPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <PageShell>
         <PageHeader
           title="Pending Users"
-          description="Review and approve new user registrations"
+          description="Review and approve new user registrations."
+          count={users.length || null}
           breadcrumbs={[{ label: 'Users', href: '/users' }, { label: 'Pending' }]}
         />
-
-        <DataTable
-          columns={columns}
-          data={users}
-          isLoading={isLoading}
-          error={error}
-          emptyMessage="No pending users at this time."
-          page={1}
-          totalCount={users.length}
-          pageSize={1000}
-          onPageChange={() => {}}
-        />
-      </div>
+        <WorkspaceSurface>
+          <DataTable
+            surface
+            columns={columns}
+            data={users}
+            isLoading={isLoading}
+            error={error}
+            emptyMessage="No pending users at this time."
+            page={1}
+            totalCount={users.length}
+            pageSize={1000}
+            onPageChange={() => {}}
+          />
+        </WorkspaceSurface>
+      </PageShell>
     </MainLayout>
   );
 }

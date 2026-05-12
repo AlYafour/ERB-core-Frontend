@@ -9,7 +9,7 @@ import { HRDepartment } from '@/types';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { Button, Loader, Badge, Checkbox, PageHeader, SearchInput, Drawer } from '@/components/ui';
+import { Button, Loader, Badge, Checkbox, PageHeader, SearchInput, Drawer, PageShell } from '@/components/ui';
 
 const CATEGORY_LABELS: Record<string, string> = {
   purchase_request:   'Purchase Request',
@@ -144,7 +144,7 @@ export default function RolesPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-5">
+      <PageShell>
 
         <PageHeader
           title="Roles"
@@ -270,7 +270,7 @@ export default function RolesPage() {
             )}
           </div>
         </div>
-      </div>
+      </PageShell>
 
       <Drawer
         isOpen={drawerOpen}
