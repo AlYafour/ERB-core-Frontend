@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useUIStore } from '@/lib/store/ui-store';
 import { MenuIcon } from '@/components/icons';
 import GlobalSearch from '@/components/ui/GlobalSearch';
-import NotificationsDropdown from '@/components/ui/NotificationsDropdown';
+import NotificationsDropdown from '@/components/layout/NotificationsDropdown';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import LocaleToggle from '@/components/ui/LocaleToggle';
 import Avatar from '@/components/ui/Avatar';
@@ -22,7 +22,7 @@ export default function Navbar() {
         className="flex h-full items-center justify-between"
         style={{ padding: '0 1rem' }}
       >
-        {/* ── Start: hamburger + search ── */}
+        {/* â”€â”€ Start: hamburger + search â”€â”€ */}
         <div className="flex items-center gap-3">
           <button
             onClick={toggleSidebar}
@@ -43,7 +43,7 @@ export default function Navbar() {
           <GlobalSearch />
         </div>
 
-        {/* ── End: tools + user ── */}
+        {/* â”€â”€ End: tools + user â”€â”€ */}
         <div className="flex items-center gap-2">
           <LocaleToggle />
           <div className="h-5 w-px" style={{ backgroundColor: 'var(--border-primary)' }} />

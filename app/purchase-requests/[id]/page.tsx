@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseRequestsApi } from '@/lib/api/purchase-requests';
 import MainLayout from '@/components/layout/MainLayout';
 import PageHeader from '@/components/ui/PageHeader';
-import RejectionReasonDialog from '@/components/ui/RejectionReasonDialog';
+import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
 import DropdownButton from '@/components/ui/DropdownButton';
 import { Button } from '@/components/ui';
 import { useState } from 'react';

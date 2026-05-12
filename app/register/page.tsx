@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
@@ -9,7 +9,7 @@ import Image from 'next/image';
 import { toast } from '@/lib/hooks/use-toast';
 import { TextField, PasswordField, Button } from '@/components/ui';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
-import AuthParticles from '@/components/ui/AuthParticles';
+import AuthParticles from '@/components/layout/AuthParticles';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -122,8 +122,8 @@ export default function RegisterPage() {
                   placeholder="Min 8 characters" value={formData.password}
                   onChange={(e) => { setFormData({ ...formData, password: e.target.value }); setPasswordErrors(e.target.value ? validatePassword(e.target.value) : []); }}
                   showPassword={showPassword} onTogglePassword={() => setShowPassword(!showPassword)} />
-                {passwordErrors.map((err, i) => <p key={i} className="text-xs text-red-500 mt-1">• {err}</p>)}
-                {formData.password && !passwordErrors.length && <p className="text-xs mt-1" style={{ color: 'var(--color-success)' }}>✓ Password is valid</p>}
+                {passwordErrors.map((err, i) => <p key={i} className="text-xs text-red-500 mt-1">â€¢ {err}</p>)}
+                {formData.password && !passwordErrors.length && <p className="text-xs mt-1" style={{ color: 'var(--color-success)' }}>âœ“ Password is valid</p>}
               </div>
 
               <PasswordField id="password2" name="password2" label="Confirm Password" required
@@ -133,7 +133,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-primary)' }}>
-              <p className="text-xs mb-1 font-medium" style={{ color: 'var(--text-primary)' }}>ⓘ Account Approval Required</p>
+              <p className="text-xs mb-1 font-medium" style={{ color: 'var(--text-primary)' }}>â“˜ Account Approval Required</p>
               <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Your account will be reviewed by an administrator.</p>
             </div>
 
@@ -154,7 +154,7 @@ export default function RegisterPage() {
         </div>
 
         <div className="text-center mt-8 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-          © 2025 Al Yafour — All Rights Reserved.
+          Â© 2025 Al Yafour â€” All Rights Reserved.
         </div>
       </div>
     </div>

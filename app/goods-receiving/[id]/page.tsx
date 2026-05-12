@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -7,7 +7,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import PageHeader from '@/components/ui/PageHeader';
 import Link from 'next/link';
 import { formatPrice } from '@/lib/utils/format';
-import LinkedDocumentsSection from '@/components/ui/LinkedDocumentsSection';
+import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection';
 import { canCreateInvoice } from '@/lib/utils/workflow-guards';
 import { toast } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';

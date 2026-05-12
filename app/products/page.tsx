@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import * as XLSX from 'xlsx';
 import { useRef } from 'react';
@@ -15,7 +15,7 @@ import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
 import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import { formatPrice } from '@/lib/utils/format';
-import BilingualName from '@/components/ui/BilingualName';
+import BilingualName from '@/components/domain/BilingualName';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
@@ -126,12 +126,12 @@ export default function ProductsPage() {
       ),
     },
     { key: 'code',     header: 'Code',       render: p => <span style={{ color: 'var(--text-secondary)' }}>{p.code}</span> },
-    { key: 'category', header: 'Category',   render: p => <span style={{ color: 'var(--text-secondary)' }}>{p.category || '—'}</span> },
+    { key: 'category', header: 'Category',   render: p => <span style={{ color: 'var(--text-secondary)' }}>{p.category || 'â€”'}</span> },
     { key: 'price',    header: 'Unit Price',  render: p => formatPrice(p.sell_price ?? p.unit_price) },
-    { key: 'stock',    header: 'Stock',       render: p => p.track_stock ? (p.stock_balance ?? 0) : '—' },
+    { key: 'stock',    header: 'Stock',       render: p => p.track_stock ? (p.stock_balance ?? 0) : 'â€”' },
     {
       key: 'status', header: 'Status',
-      render: p => <Badge variant={PRODUCT_STATUS[p.status ?? ''] ?? 'info'}>{p.status || '—'}</Badge>,
+      render: p => <Badge variant={PRODUCT_STATUS[p.status ?? ''] ?? 'info'}>{p.status || 'â€”'}</Badge>,
     },
     {
       key: 'actions', header: t('col', 'actions'),

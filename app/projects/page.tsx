@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
@@ -12,7 +12,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import { exportToExcel, fetchAllPages } from '@/lib/utils/export-excel';
-import BilingualName from '@/components/ui/BilingualName';
+import BilingualName from '@/components/domain/BilingualName';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
@@ -120,7 +120,7 @@ export default function ProjectsPage() {
         </Link>
       ),
     },
-    { key: 'location', header: 'Location', render: p => <span className="text-muted-foreground">{p.location || '—'}</span> },
+    { key: 'location', header: 'Location', render: p => <span className="text-muted-foreground">{p.location || 'â€”'}</span> },
     { key: 'status',   header: 'Status',   render: p => <Badge variant={PROJECT_STATUS[p.project_status] ?? 'info'}>{STATUS_LABEL[p.project_status] || p.project_status}</Badge> },
     { key: 'active',   header: 'Active',   render: p => <Badge variant={p.is_active ? 'success' : 'error'}>{p.is_active ? 'Yes' : 'No'}</Badge> },
     {
@@ -145,13 +145,13 @@ export default function ProjectsPage() {
           actions={
             <div className="flex items-center gap-2">
               <Button variant="secondary" onClick={handleExport} isLoading={isExporting}>
-                {isExporting ? t('btn', 'exporting') : `⬇ ${t('btn', 'export')}`}
+                {isExporting ? t('btn', 'exporting') : `â¬‡ ${t('btn', 'export')}`}
               </Button>
               {isAdmin && (
                 <>
                   <input ref={importFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
                   <Button variant="secondary" onClick={() => importFileRef.current?.click()} isLoading={isImporting}>
-                    {isImporting ? t('btn', 'importing') : `⬆ ${t('btn', 'import')}`}
+                    {isImporting ? t('btn', 'importing') : `â¬† ${t('btn', 'import')}`}
                   </Button>
                 </>
               )}

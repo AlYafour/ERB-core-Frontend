@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
@@ -13,7 +13,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
-import RejectionReasonDialog from '@/components/ui/RejectionReasonDialog';
+import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
 import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
@@ -106,10 +106,10 @@ export default function PurchaseRequestsPage() {
       key: 'project', header: t('col', 'project'),
       render: r => r.project && typeof r.project === 'object'
         ? <div><div className="font-medium">{r.project.name}</div><div className="text-xs text-muted-foreground">{r.project.code}</div></div>
-        : <span className="text-muted-foreground">—</span>,
+        : <span className="text-muted-foreground">â€”</span>,
     },
     { key: 'title',       header: t('col', 'title'),       render: r => <span className="max-w-xs truncate block" title={r.title}>{r.title}</span> },
-    { key: 'requester',   header: t('col', 'requester'),   render: r => <span className="text-foreground">{r.created_by_name || '—'}</span> },
+    { key: 'requester',   header: t('col', 'requester'),   render: r => <span className="text-foreground">{r.created_by_name || 'â€”'}</span> },
     { key: 'req_date',    header: t('col', 'requestDate'), render: r => <span className="text-muted-foreground">{fmtDate(r.request_date)}</span> },
     { key: 'req_by',      header: t('col', 'requiredBy'),  render: r => <span className="text-muted-foreground">{fmtDate(r.required_by)}</span> },
     {
@@ -151,7 +151,7 @@ export default function PurchaseRequestsPage() {
         <WorkspaceSurface
           toolbar={
             <>
-              <SearchInput value={search} onChange={handleSearch} placeholder="Search by code, title, requester…" width={260} />
+              <SearchInput value={search} onChange={handleSearch} placeholder="Search by code, title, requesterâ€¦" width={260} />
               <div style={{ flex: 1 }} />
               {isAdmin && selectedItems.size > 0 && (
                 <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>

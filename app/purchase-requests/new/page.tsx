@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -11,12 +11,12 @@ import Link from 'next/link';
 import { PurchaseRequestItem, Product, Project } from '@/types';
 import { PurchaseRequestFormData, toPurchaseRequestCreateData } from '@/lib/types/form-data';
 import { toast } from '@/lib/hooks/use-toast';
-import ProductSelector from '@/components/ui/ProductSelector';
+import ProductSelector from '@/components/features/ProductSelector';
 import QuantityInput from '@/components/ui/QuantityInput';
 import SearchableDropdown, { DropdownOption } from '@/components/ui/SearchableDropdown';
 import FormField from '@/components/ui/FormField';
-import AIProcurementChat, { AIFormUpdate } from '@/components/ui/AIProcurementChat';
-import VoiceRealtimeChat from '@/components/ui/VoiceRealtimeChat';
+import AIProcurementChat, { AIFormUpdate } from '@/components/features/AIProcurementChat';
+import VoiceRealtimeChat from '@/components/features/VoiceRealtimeChat';
 import { formatPrice } from '@/lib/utils/format';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { useT } from '@/lib/i18n/useT';
@@ -312,7 +312,7 @@ function NewPurchaseRequestPageContent() {
               e.currentTarget.style.color = 'var(--text-secondary)';
             }}
           >
-            ← {t('btn', 'back')} {t('page', 'purchaseRequests')}
+            â† {t('btn', 'back')} {t('page', 'purchaseRequests')}
           </Link>
           <h1 style={{ 
             fontSize: 'var(--font-2xl)',
@@ -493,7 +493,7 @@ function NewPurchaseRequestPageContent() {
                   borderTop: `1px solid var(--border-primary)`,
                 }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                    {/* Qty — compact fixed width */}
+                    {/* Qty â€” compact fixed width */}
                     <div style={{ flexShrink: 0 }}>
                       <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('col', 'quantity')} <span style={{ color: '#ef4444' }}>*</span></label>
                       <QuantityInput

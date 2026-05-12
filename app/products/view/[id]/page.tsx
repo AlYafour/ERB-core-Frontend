@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { formatPrice, formatPercentage, formatNumber } from '@/lib/utils/format';
 import EntityHeader from '@/components/ui/EntityHeader';
 import { useAuth } from '@/lib/hooks/use-auth';
-import BilingualName from '@/components/ui/BilingualName';
+import BilingualName from '@/components/domain/BilingualName';
 import { useT } from '@/lib/i18n/useT';
 
 function Field({ label, value, mono, full }: { label: string; value?: string | null; mono?: boolean; full?: boolean }) {

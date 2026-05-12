@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -10,7 +10,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import { PurchaseOrder, PurchaseOrderItem, CostCode } from '@/types';
 import { PurchaseOrderUpdateFormData, toPurchaseOrderUpdateData } from '@/lib/types/form-data';
-import CostCodePicker from '@/components/ui/CostCodePicker';
+import CostCodePicker from '@/components/domain/CostCodePicker';
 import { toast } from '@/lib/hooks/use-toast';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { formatPrice } from '@/lib/utils/format';

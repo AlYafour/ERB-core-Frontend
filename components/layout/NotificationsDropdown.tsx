@@ -41,6 +41,8 @@ const getNotificationLink = (notification: Notification): string | null => {
       return `/suppliers/view/${id}`;
     case 'user':
       return `/users/${id}`;
+    case 'municipal_violation':
+      return `/violations/resolve/${id}`;
     default:
       return null;
   }

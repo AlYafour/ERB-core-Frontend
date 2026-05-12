@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -14,7 +14,7 @@ import { PurchaseOrderItem } from '@/types';
 import { PurchaseOrderFormData, toPurchaseOrderCreateData } from '@/lib/types/form-data';
 import { toast } from '@/lib/hooks/use-toast';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
-import CostCodePicker from '@/components/ui/CostCodePicker';
+import CostCodePicker from '@/components/domain/CostCodePicker';
 import FormField from '@/components/ui/FormField';
 import { formatPrice } from '@/lib/utils/format';
 import { formatBackendError, validateRequired, validatePositiveNumber, validateDateAfter } from '@/lib/utils/validation';
@@ -42,7 +42,7 @@ function NewPurchaseOrderPageContent() {
   const purchaseQuotationId = searchParams.get('purchase_quotation_id');
   const { user } = useAuth();
 
-  // PO must always originate from a PR or PQ — no standalone PO creation allowed
+  // PO must always originate from a PR or PQ â€” no standalone PO creation allowed
   if (!purchaseRequestId && !purchaseQuotationId) {
     router.push('/purchase-requests');
     return null;
@@ -74,7 +74,7 @@ Terms & Conditions:
 
 3- Please acknowledge the receipt & confirm the delivery dates.
 
-4- طلب الشراء هذا يجب أن يكون موقع ومختوم من المفوض بالتوقيع`;
+4- Ø·Ù„Ø¨ Ø§Ù„Ø´Ø±Ø§Ø¡ Ù‡Ø°Ø§ ÙŠØ¬Ø¨ Ø£Ù† ÙŠÙƒÙˆÙ† Ù…ÙˆÙ‚Ø¹ ÙˆÙ…Ø®ØªÙˆÙ… Ù…Ù† Ø§Ù„Ù…ÙÙˆØ¶ Ø¨Ø§Ù„ØªÙˆÙ‚ÙŠØ¹`;
 
   const [formData, setFormData] = useState<PurchaseOrderFormData>({
     purchase_request_id: purchaseRequestId ? Number(purchaseRequestId) : undefined,
@@ -266,7 +266,7 @@ Terms & Conditions:
 
     // Enforce that PO must be linked to PR or PQ
     if (!formData.purchase_request_id && !formData.purchase_quotation_id) {
-      toast('يجب إنشاء أمر الشراء من طلب شراء أو عرض سعر.', 'error');
+      toast('ÙŠØ¬Ø¨ Ø¥Ù†Ø´Ø§Ø¡ Ø£Ù…Ø± Ø§Ù„Ø´Ø±Ø§Ø¡ Ù…Ù† Ø·Ù„Ø¨ Ø´Ø±Ø§Ø¡ Ø£Ùˆ Ø¹Ø±Ø¶ Ø³Ø¹Ø±.', 'error');
       router.push('/purchase-requests');
       return;
     }
@@ -405,7 +405,7 @@ Terms & Conditions:
               e.currentTarget.style.color = 'var(--text-secondary)';
             }}
           >
-            ← {t('btn', 'back')} {t('page', 'purchaseOrders')}
+            â† {t('btn', 'back')} {t('page', 'purchaseOrders')}
           </Link>
           <h1 style={{ 
             fontSize: 'var(--font-2xl)',
@@ -769,7 +769,7 @@ Terms & Conditions:
                                 </div>
                               )}
                             </td>
-                            <td style={{ color: 'var(--text-secondary)' }}>{product?.unit?.toUpperCase() || '—'}</td>
+                            <td style={{ color: 'var(--text-secondary)' }}>{product?.unit?.toUpperCase() || 'â€”'}</td>
                             <td>
                               <input
                                 type="number"

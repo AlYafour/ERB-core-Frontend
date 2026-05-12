@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -8,7 +8,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import PageHeader from '@/components/ui/PageHeader';
 import Link from 'next/link';
 import { formatPrice } from '@/lib/utils/format';
-import LinkedDocumentsSection from '@/components/ui/LinkedDocumentsSection';
+import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection';
 import { toast } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';

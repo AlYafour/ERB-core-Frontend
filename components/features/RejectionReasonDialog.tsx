@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BaseModal } from './base/BaseModal';
-import { TextArea } from './Input';
-import { Button } from './Button';
+import { BaseModal } from '@/components/ui/base/BaseModal';
+import { TextArea } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 
 interface RejectionReasonDialogProps {
   isOpen: boolean;

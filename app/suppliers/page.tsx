@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useRef } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
@@ -13,7 +13,7 @@ import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
 import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import { exportToExcel, fetchAllPages } from '@/lib/utils/export-excel';
-import BilingualName from '@/components/ui/BilingualName';
+import BilingualName from '@/components/domain/BilingualName';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
@@ -124,8 +124,8 @@ export default function SuppliersPage() {
       key: 'name', header: t('col', 'name'),
       render: s => <BilingualName nameEn={s.business_name || s.name} nameAr={s.business_name_ar} />,
     },
-    { key: 'email', header: t('col', 'email'), render: s => <span style={{ color: 'var(--text-secondary)' }}>{s.email || '—'}</span> },
-    { key: 'phone', header: t('col', 'phone'), render: s => <span style={{ color: 'var(--text-secondary)' }}>{s.phone || '—'}</span> },
+    { key: 'email', header: t('col', 'email'), render: s => <span style={{ color: 'var(--text-secondary)' }}>{s.email || 'â€”'}</span> },
+    { key: 'phone', header: t('col', 'phone'), render: s => <span style={{ color: 'var(--text-secondary)' }}>{s.phone || 'â€”'}</span> },
     {
       key: 'status', header: t('col', 'status'),
       render: s => <Badge variant={s.is_active ? 'success' : 'error'}>{s.is_active ? t('status', 'active') : t('status', 'inactive')}</Badge>,
@@ -155,11 +155,11 @@ export default function SuppliersPage() {
           breadcrumbs={[{ label: 'Suppliers' }]}
           actions={
             <div className="flex items-center gap-2">
-              <Button variant="secondary" onClick={handleExport}>⬇ {t('btn', 'export')}</Button>
+              <Button variant="secondary" onClick={handleExport}>â¬‡ {t('btn', 'export')}</Button>
               {isAdmin && (
                 <>
                   <input ref={importFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
-                  <Button variant="secondary" onClick={() => importFileRef.current?.click()}>⬆ {t('btn', 'import')}</Button>
+                  <Button variant="secondary" onClick={() => importFileRef.current?.click()}>â¬† {t('btn', 'import')}</Button>
                 </>
               )}
               <Link href="/suppliers/new"><Button variant="primary">{t('btn', 'addSupplier')}</Button></Link>

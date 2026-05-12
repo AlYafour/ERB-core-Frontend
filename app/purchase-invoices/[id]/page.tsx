@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -8,8 +8,8 @@ import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import { formatPrice } from '@/lib/utils/format';
 import DetailCard, { DetailField } from '@/components/ui/DetailCard';
-import RejectionReasonDialog from '@/components/ui/RejectionReasonDialog';
-import LinkedDocumentsSection from '@/components/ui/LinkedDocumentsSection';
+import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
+import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection';
 import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
 import { INVOICE_STATUS } from '@/lib/utils/status-colors';
 import { toast } from '@/lib/hooks/use-toast';

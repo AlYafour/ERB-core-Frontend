@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
@@ -10,7 +10,7 @@ import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
-import RejectionReasonDialog from '@/components/ui/RejectionReasonDialog';
+import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
 import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
@@ -36,7 +36,7 @@ const filterFields: FilterField[] = [
   { name: 'start_date_before', label: 'Start Date To',   type: 'date', group: 'Dates' },
 ];
 
-const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'â€”';
 
 export default function HRRequestsPage() {
   const { page, setPage, search, filters, handleSearch, handleFilterChange, handleFilterReset, handleRemoveFilter } = useTableState();
@@ -90,8 +90,8 @@ export default function HRRequestsPage() {
     { key: 'status', header: t('col', 'status'), render: r => <Badge variant={HR_REQUEST_STATUS[r.status] ?? 'default'}>{STATUS_LABEL[r.status] || r.status}</Badge> },
     { key: 'start',  header: 'Start Date', render: r => <span className="text-sm text-muted-foreground">{fmtDate(r.start_date)}</span> },
     { key: 'end',    header: 'End Date',   render: r => <span className="text-sm text-muted-foreground">{fmtDate(r.end_date)}</span> },
-    { key: 'days',   header: 'Days',       render: r => <span className="text-sm font-medium text-foreground">{r.days != null ? r.days : '—'}</span> },
-    { key: 'reason', header: 'Reason',     render: r => <span className="text-sm text-muted-foreground max-w-[200px] truncate block" title={r.reason}>{r.reason || '—'}</span> },
+    { key: 'days',   header: 'Days',       render: r => <span className="text-sm font-medium text-foreground">{r.days != null ? r.days : 'â€”'}</span> },
+    { key: 'reason', header: 'Reason',     render: r => <span className="text-sm text-muted-foreground max-w-[200px] truncate block" title={r.reason}>{r.reason || 'â€”'}</span> },
     { key: 'created', header: 'Created',   render: r => <span className="text-sm text-muted-foreground">{fmtDate(r.created_at)}</span> },
     {
       key: 'actions', header: t('col', 'actions'),
@@ -103,7 +103,7 @@ export default function HRRequestsPage() {
               <Button variant="delete"  size="sm" onClick={() => handleReject(r.id)}  isLoading={rejectMutation.isPending}>{t('btn', 'reject')}</Button>
             </>
           ) : (
-            <span className="text-xs text-muted-foreground">{r.approver_name ? `By: ${r.approver_name}` : '—'}</span>
+            <span className="text-xs text-muted-foreground">{r.approver_name ? `By: ${r.approver_name}` : 'â€”'}</span>
           )}
         </div>
       ) : null,

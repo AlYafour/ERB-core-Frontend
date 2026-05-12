@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
@@ -9,7 +9,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { TextField, PasswordField, Button } from '@/components/ui';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
-import AuthParticles from '@/components/ui/AuthParticles';
+import AuthParticles from '@/components/layout/AuthParticles';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -129,7 +129,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <div className="text-center mt-8 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-          © 2025 Al Yafour — All Rights Reserved.
+          Â© 2025 Al Yafour â€” All Rights Reserved.
         </div>
       </div>
     </div>
