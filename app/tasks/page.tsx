@@ -91,19 +91,19 @@ function PrioBar({ p }: { p: TaskPriority }) {
 
 function KCard({ t, onClick }: { t: TaskListItem; onClick: () => void }) {
   const od = isOverdue(t);
+  const accentShadow = `inset 3px 0 0 ${PRIORITY[t.priority].color}`;
   return (
     <div onClick={onClick} style={{
       background: 'var(--card-bg)',
       borderRadius: 8,
       padding: '12px 14px',
       marginBottom: 6,
-      border: '1px solid var(--border-primary)',
-      borderLeft: `3px solid ${PRIORITY[t.priority].color}`,
+      boxShadow: `${accentShadow}, 0 1px 2px rgba(0,0,0,0.04), 0 0 0 1px var(--border-primary)`,
       cursor: 'pointer',
-      transition: 'box-shadow 0.15s, transform 0.1s',
+      transition: 'box-shadow 0.15s',
     }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = `${accentShadow}, 0 4px 12px rgba(0,0,0,0.08), 0 0 0 1px var(--border-primary)`; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = `${accentShadow}, 0 1px 2px rgba(0,0,0,0.04), 0 0 0 1px var(--border-primary)`; }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
         <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', background: 'var(--bg-secondary)', padding: '2px 6px', borderRadius: 4 }}>{TYPE_LABEL[t.task_type]}</span>
@@ -144,7 +144,7 @@ function Kanban({ tasks, onOpen }: { tasks: TaskListItem[]; onOpen: (t: TaskList
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10, padding: '0 2px' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block', flexShrink: 0 }} />
               <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', flex: 1 }}>{label}</span>
-              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', borderRadius: 99, padding: '0 7px', lineHeight: '18px' }}>{colTasks.length}</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-tertiary)', background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', borderRadius: 99, padding: '0 6px', lineHeight: '17px' }}>{colTasks.length}</span>
             </div>
             {colTasks.map(t => <KCard key={t.id} t={t} onClick={() => onOpen(t)} />)}
             {colTasks.length === 0 && (
@@ -659,11 +659,12 @@ export default function TasksPage() {
   const overdueCount = stats?.overdue ?? 0;
 
   const selStyle = {
-    padding: '7px 10px', borderRadius: 7,
+    padding: '6px 10px', borderRadius: 7,
     border: '1px solid var(--border-primary)',
-    fontSize: 13, background: 'var(--card-bg)',
+    fontSize: 12, background: 'var(--bg-secondary)',
     color: 'var(--text-secondary)', cursor: 'pointer',
     outline: 'none', flexShrink: 0 as const,
+    fontFamily: 'inherit',
   };
 
   return (
@@ -717,8 +718,8 @@ export default function TasksPage() {
                 const active = scope === tab.v && statusF !== 'review';
                 return (
                   <button key={tab.v} onClick={() => { setScope(tab.v); setStatusF(''); }} style={{
-                    padding: '9px 14px', border: 'none', background: 'transparent', cursor: 'pointer',
-                    fontSize: 13, fontWeight: active ? 700 : 400,
+                    padding: '8px 12px', border: 'none', background: 'transparent', cursor: 'pointer',
+                    fontSize: 12, fontWeight: active ? 700 : 400,
                     color: active ? ORANGE : 'var(--text-secondary)',
                     borderBottom: active ? `2px solid ${ORANGE}` : '2px solid transparent',
                     marginBottom: -1, transition: 'color 0.12s',
@@ -730,8 +731,8 @@ export default function TasksPage() {
               })}
               {reviewCount > 0 && (
                 <button onClick={() => { setScope(''); setStatusF(statusF === 'review' ? '' : 'review'); }} style={{
-                  display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', border: 'none', cursor: 'pointer',
-                  fontSize: 13, fontWeight: statusF === 'review' ? 700 : 500,
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', border: 'none', cursor: 'pointer',
+                  fontSize: 12, fontWeight: statusF === 'review' ? 700 : 500,
                   color: statusF === 'review' ? ORANGE : '#C2410C',
                   background: 'transparent',
                   borderBottom: statusF === 'review' ? `2px solid ${ORANGE}` : '2px solid transparent',
@@ -767,7 +768,7 @@ export default function TasksPage() {
                 <div style={{ display: 'flex', border: '1px solid var(--border-primary)', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
                   {(['kanban', 'list'] as const).map(v => (
                     <button key={v} onClick={() => setView(v)} style={{
-                      padding: '7px 14px', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500,
+                      padding: '6px 14px', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500,
                       background: view === v ? ORANGE : 'transparent',
                       color: view === v ? '#fff' : 'var(--text-secondary)',
                       transition: 'all 0.15s',
