@@ -113,15 +113,13 @@ export default function GRNDetailPage() {
         {/* Header */}
         <PageHeader
           backHref="/goods-receiving"
-          backLabel={`${t('btn', 'back')} ${t('page', 'goodsReceiving')}`}
           title={`GRN: ${grn.grn_number}`}
-          subtitle={t('page', 'grnSubtitle')}
-          status={grn.status}
-          statusColors={statusColors}
-          statusLabels={statusLabels}
-          actions={[
-            { label: `🖨 ${t('btn', 'printGRN')}`, variant: 'print', onClick: () => window.open(`/print/grn/${id}`, '_blank') },
-          ]}
+          breadcrumbs={[{ label: t('page', 'goodsReceiving'), href: '/goods-receiving' }, { label: grn.grn_number }]}
+          actions={
+            <Button variant="secondary" onClick={() => window.open(`/print/grn/${id}`, '_blank')}>
+              🖨 {t('btn', 'printGRN')}
+            </Button>
+          }
         />
 
         {/* Linked Documents */}

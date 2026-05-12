@@ -8,6 +8,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import PageHeader from '@/components/ui/PageHeader';
 import RejectionReasonDialog from '@/components/ui/RejectionReasonDialog';
 import DropdownButton from '@/components/ui/DropdownButton';
+import { Button } from '@/components/ui';
 import { useState } from 'react';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { canCreateQuotationRequest, canCreatePurchaseOrder } from '@/lib/utils/workflow-guards';
@@ -134,15 +135,13 @@ export default function PurchaseRequestDetailPage() {
         {/* Header */}
         <PageHeader
           backHref="/purchase-requests"
-          backLabel={`${t('btn', 'back')} ${t('page', 'purchaseRequests')}`}
           title={`${t('page', 'purchaseRequests')}: ${request.code}`}
-          subtitle={t('page', 'prSubtitle')}
-          status={request.status}
-          statusColors={statusColors}
-          statusLabels={statusLabels}
-          actions={[
-            { label: `🖨 ${t('btn', 'printPR')}`, variant: 'print', onClick: () => window.open(`/print/pr/${id}`, '_blank') },
-          ]}
+          breadcrumbs={[{ label: t('page', 'purchaseRequests'), href: '/purchase-requests' }, { label: request.code }]}
+          actions={
+            <Button variant="secondary" onClick={() => window.open(`/print/pr/${id}`, '_blank')}>
+              🖨 {t('btn', 'printPR')}
+            </Button>
+          }
         />
 
         {/* Details Card - Unified */}

@@ -126,12 +126,9 @@ export default function PurchaseQuotationDetailPage() {
         {/* Header */}
         <PageHeader
           backHref="/purchase-quotations"
-          backLabel={`${t('btn', 'back')} ${t('page', 'purchaseQuotations')}`}
           title={`Quotation: ${quotation.quotation_number}`}
-          subtitle="View quotation details and pricing"
-          status={quotationStatus}
-          statusColors={statusColors}
-          statusLabels={statusLabels}
+          description="View quotation details and pricing"
+          breadcrumbs={[{ label: t('page', 'purchaseQuotations'), href: '/purchase-quotations' }, { label: quotation.quotation_number }]}
         />
 
         {/* Linked Documents */}
