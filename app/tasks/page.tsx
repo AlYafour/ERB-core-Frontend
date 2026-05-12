@@ -677,7 +677,7 @@ export default function TasksPage() {
           <div>
             <PageHeader
               title="Tasks"
-              count={stats?.total}
+              count={stats ? Object.values(stats.by_status).reduce((a, b) => a + b, 0) : undefined}
               breadcrumbs={[{ label: 'Tasks' }]}
               actions={
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
