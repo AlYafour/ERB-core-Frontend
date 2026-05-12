@@ -23,7 +23,7 @@ export default function LocaleToggle() {
         cursor: 'pointer',
         letterSpacing: '0.03em',
         transition: 'background 0.15s, border-color 0.15s',
-        fontFamily: 'var(--font-cairo), sans-serif',
+        fontFamily: "'Cairo', 'Segoe UI', system-ui, sans-serif",
         minWidth: 36,
         justifyContent: 'center',
       }}

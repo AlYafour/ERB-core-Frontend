@@ -225,7 +225,7 @@ export default function TeamsPage() {
 
   return (
     <MainLayout>
-      <div style={{ display: 'flex', height: 'calc(100vh - 56px)', background: 'var(--bg-secondary)', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', height: 'calc(100vh - var(--navbar-height))', background: 'var(--bg-secondary)', overflow: 'hidden' }}>
 
         {/* ── Left Panel: Team List ───────────────────────── */}
         <div style={{ width: 280, flexShrink: 0, borderRight: '1px solid var(--border-primary)', background: 'var(--card-bg)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
