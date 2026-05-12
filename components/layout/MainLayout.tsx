@@ -20,7 +20,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
             width: '100%',
             maxWidth: 'var(--content-max-width)',
             margin: '0 auto',
-            padding: '1.5rem',
+            padding: 'var(--content-padding)',
           }}>
             {children}
           </div>
