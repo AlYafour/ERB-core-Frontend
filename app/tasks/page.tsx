@@ -5,6 +5,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tasksApi, subTasksApi, taskCommentsApi, myTasksApi } from '@/lib/api/tasks';
 import { usersApi } from '@/lib/api/users';
+import { Button, PageHeader, PageShell, WorkspaceSurface, SearchInput } from '@/components/ui';
 import type {
   TaskListItem, TaskDetail, TaskStatus, TaskPriority, TaskType,
   SubTask, TaskComment, MyTask,
@@ -117,7 +118,7 @@ function KCard({ t, onClick }: { t: TaskListItem; onClick: () => void }) {
               <span style={{ fontSize: 13 }}>◫</span> {t.subtasks_done}/{t.subtasks_total}
             </span>
           )}
-          {t.comments_count > 0 && <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>· {t.comments_count} comments</span>}
+          {t.comments_count > 0 && <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>· {t.comments_count}</span>}
         </div>
         {t.due_date && (
           <span style={{ fontSize: 11, fontWeight: od ? 700 : 400, color: od ? '#EF4444' : 'var(--text-tertiary)', background: od ? '#FEF2F2' : 'transparent', padding: od ? '1px 5px' : '0', borderRadius: 4 }}>
@@ -133,15 +134,16 @@ function KCard({ t, onClick }: { t: TaskListItem; onClick: () => void }) {
 
 function Kanban({ tasks, onOpen }: { tasks: TaskListItem[]; onOpen: (t: TaskListItem) => void }) {
   return (
-    <div style={{ display: 'flex', gap: 14, overflowX: 'auto', alignItems: 'flex-start', paddingBottom: 16 }}>
+    <div style={{ display: 'flex', gap: 12, overflowX: 'auto', alignItems: 'flex-start', paddingBottom: 8 }}>
       {KANBAN_COLS.map(col => {
         const { label, color } = STATUS[col];
         const colTasks = tasks.filter(t => t.status === col);
         return (
-          <div key={col} style={{ width: 285, flexShrink: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, padding: '8px 12px', background: 'var(--card-bg)', borderRadius: 8, border: '1px solid var(--border-primary)' }}>
+          <div key={col} style={{ width: 280, flexShrink: 0 }}>
+            {/* Column header — lighter, no card */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10, padding: '0 2px' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block', flexShrink: 0 }} />
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', flex: 1 }}>{label}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', flex: 1 }}>{label}</span>
               <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', borderRadius: 99, padding: '0 7px', lineHeight: '18px' }}>{colTasks.length}</span>
             </div>
             {colTasks.map(t => <KCard key={t.id} t={t} onClick={() => onOpen(t)} />)}
@@ -159,7 +161,7 @@ function Kanban({ tasks, onOpen }: { tasks: TaskListItem[]; onOpen: (t: TaskList
 
 function ListV({ tasks, onOpen }: { tasks: TaskListItem[]; onOpen: (t: TaskListItem) => void }) {
   return (
-    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-primary)', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+    <div style={{ overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', background: 'transparent' }}>
         <thead>
           <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)' }}>
@@ -552,6 +554,15 @@ function CreateDrawer({ onClose, onCreated }: { onClose: () => void; onCreated: 
     onSuccess: () => { onCreated(); onClose(); },
   });
 
+  const field = (label: string, children: React.ReactNode) => (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{label}</label>
+      {children}
+    </div>
+  );
+
+  const inp = { width: '100%', padding: '8px 11px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 13, background: 'var(--bg-secondary)', color: 'var(--text-primary)', boxSizing: 'border-box' as const, outline: 'none', fontFamily: 'inherit' };
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.35)', display: 'flex', justifyContent: 'flex-end' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -562,42 +573,31 @@ function CreateDrawer({ onClose, onCreated }: { onClose: () => void; onCreated: 
         </div>
 
         <div style={{ flex: 1, padding: '20px 24px', overflowY: 'auto' }}>
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Title</label>
-            <input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="What needs to be done?" style={{ width: '100%', padding: '8px 11px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 13, background: 'var(--bg-secondary)', color: 'var(--text-primary)', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' }} />
-          </div>
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Description</label>
-            <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Optional details…" rows={3} style={{ width: '100%', padding: '8px 11px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 13, background: 'var(--bg-secondary)', color: 'var(--text-primary)', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit', resize: 'vertical' }} />
-          </div>
+          {field('Title', <input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="What needs to be done?" style={inp} />)}
+          {field('Description', <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Optional details…" rows={3} style={{ ...inp, resize: 'vertical' }} />)}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
             <div>
               <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Type</label>
-              <select value={form.task_type} onChange={e => setForm(p => ({ ...p, task_type: e.target.value }))} style={{ width: '100%', padding: '8px 11px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 13, background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none' }}>
+              <select value={form.task_type} onChange={e => setForm(p => ({ ...p, task_type: e.target.value }))} style={inp}>
                 <option value="task">Task</option><option value="request">Request</option><option value="issue">Issue</option><option value="followup">Follow-up</option>
               </select>
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Priority</label>
-              <select value={form.priority} onChange={e => setForm(p => ({ ...p, priority: e.target.value }))} style={{ width: '100%', padding: '8px 11px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 13, background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none' }}>
+              <select value={form.priority} onChange={e => setForm(p => ({ ...p, priority: e.target.value }))} style={inp}>
                 <option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>
               </select>
             </div>
           </div>
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Assign to</label>
-            <select value={assignTo} onChange={e => setAssignTo(e.target.value)} style={{ width: '100%', padding: '8px 11px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 13, background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none' }}>
+          {field('Assign to', (
+            <select value={assignTo} onChange={e => setAssignTo(e.target.value)} style={inp}>
               <option value="">— Unassigned —</option>
               {users.map(u => <option key={u.id} value={u.id}>{u.first_name && u.last_name ? `${u.first_name} ${u.last_name}` : u.username}</option>)}
             </select>
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Due date</label>
-            <input type="datetime-local" value={form.due_date} onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))} style={{ width: '100%', padding: '8px 11px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 13, background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit' }} />
-          </div>
+          ))}
+          {field('Due date', <input type="datetime-local" value={form.due_date} onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))} style={inp} />)}
 
           <label style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', padding: '10px 12px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border-primary)' }}>
             <input type="checkbox" checked={form.requires_approval} onChange={e => setForm(p => ({ ...p, requires_approval: e.target.checked }))} style={{ width: 16, height: 16, accentColor: ORANGE, flexShrink: 0 }} />
@@ -617,7 +617,7 @@ function CreateDrawer({ onClose, onCreated }: { onClose: () => void; onCreated: 
   );
 }
 
-// ─── page ─────────────────────────────────────────────────────────────────────
+// ─── scope tabs ───────────────────────────────────────────────────────────────
 
 const TABS = [
   { v: '',         label: 'All Tasks' },
@@ -626,6 +626,8 @@ const TABS = [
   { v: 'team',     label: 'My Team' },
   { v: 'watching', label: 'Watching' },
 ];
+
+// ─── page ─────────────────────────────────────────────────────────────────────
 
 export default function TasksPage() {
   const qc = useQueryClient();
@@ -656,128 +658,153 @@ export default function TasksPage() {
   const reviewCount  = stats?.pending_review ?? 0;
   const overdueCount = stats?.overdue ?? 0;
 
+  const selStyle = {
+    padding: '7px 10px', borderRadius: 7,
+    border: '1px solid var(--border-primary)',
+    fontSize: 13, background: 'var(--card-bg)',
+    color: 'var(--text-secondary)', cursor: 'pointer',
+    outline: 'none', flexShrink: 0 as const,
+  };
+
   return (
     <MainLayout>
-      <div style={{ padding: '28px 28px 40px', minHeight: '100vh', marginRight: showMyTasks ? 320 : 0, transition: 'margin-right 0.2s ease' }}>
+      {/* Shift content when MyPanel is open */}
+      <div style={{ marginRight: showMyTasks ? 320 : 0, transition: 'margin-right 0.2s ease' }}>
+        <PageShell>
 
-        {/* ── Header ─────────────────────────────────────────── */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+          {/* Context header */}
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', marginBottom: 8 }}>Tasks</h1>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              {overdueCount > 0 && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 99, background: '#FEF2F2', color: '#EF4444', fontSize: 12, fontWeight: 600, border: '1px solid #FECACA' }}>
-                  ⚠ {overdueCount} overdue
-                </span>
-              )}
+            <PageHeader
+              title="Tasks"
+              count={stats?.total}
+              breadcrumbs={[{ label: 'Tasks' }]}
+              actions={
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  {/* Alert badges */}
+                  {overdueCount > 0 && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: '#FEF2F2', color: '#EF4444', fontSize: 12, fontWeight: 600, border: '1px solid #FECACA', whiteSpace: 'nowrap' }}>
+                      ⚠ {overdueCount} overdue
+                    </span>
+                  )}
+                  {reviewCount > 0 && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: '#FFF7ED', color: '#C2410C', fontSize: 12, fontWeight: 600, border: '1px solid #FED7AA', whiteSpace: 'nowrap' }}>
+                      ◉ {reviewCount} review
+                    </span>
+                  )}
+                  {/* My To-Do toggle */}
+                  <button onClick={() => setShowMyTasks(p => !p)} style={{
+                    display: 'flex', alignItems: 'center', gap: 7, padding: '7px 14px', borderRadius: 8,
+                    border: showMyTasks ? `1.5px solid ${ORANGE}` : '1.5px solid var(--border-primary)',
+                    background: showMyTasks ? '#FFF7ED' : 'var(--card-bg)',
+                    color: showMyTasks ? ORANGE : 'var(--text-secondary)',
+                    fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
+                  }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                    My To-Do
+                    {(myCount as number) > 0 && (
+                      <span style={{ background: ORANGE, color: '#fff', borderRadius: 99, padding: '0 6px', fontSize: 11, fontWeight: 700, lineHeight: '18px', minWidth: 18, textAlign: 'center' }}>{myCount}</span>
+                    )}
+                  </button>
+                  {/* New Task */}
+                  <Button variant="primary" onClick={() => setShowNew(true)}>+ New Task</Button>
+                </div>
+              }
+            />
+
+            {/* Scope tabs — below header, no card */}
+            <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border-subtle, var(--border-primary))', marginTop: 4, flexWrap: 'wrap' }}>
+              {TABS.map(tab => {
+                const active = scope === tab.v && statusF !== 'review';
+                return (
+                  <button key={tab.v} onClick={() => { setScope(tab.v); setStatusF(''); }} style={{
+                    padding: '9px 14px', border: 'none', background: 'transparent', cursor: 'pointer',
+                    fontSize: 13, fontWeight: active ? 700 : 400,
+                    color: active ? ORANGE : 'var(--text-secondary)',
+                    borderBottom: active ? `2px solid ${ORANGE}` : '2px solid transparent',
+                    marginBottom: -1, transition: 'color 0.12s',
+                  }}
+                    onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'var(--text-primary)'; }}
+                    onMouseLeave={e => { if (!active) e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                  >{tab.label}</button>
+                );
+              })}
               {reviewCount > 0 && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 99, background: '#FFF7ED', color: ORANGE, fontSize: 12, fontWeight: 600, border: '1px solid #FED7AA' }}>
-                  ◉ {reviewCount} pending review
-                </span>
-              )}
-              {stats && (
-                <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{stats.my_tasks} assigned to me</span>
+                <button onClick={() => { setScope(''); setStatusF(statusF === 'review' ? '' : 'review'); }} style={{
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', border: 'none', cursor: 'pointer',
+                  fontSize: 13, fontWeight: statusF === 'review' ? 700 : 500,
+                  color: statusF === 'review' ? ORANGE : '#C2410C',
+                  background: 'transparent',
+                  borderBottom: statusF === 'review' ? `2px solid ${ORANGE}` : '2px solid transparent',
+                  marginBottom: -1,
+                }}>
+                  Pending Review
+                  <span style={{ background: statusF === 'review' ? ORANGE : '#FED7AA', color: statusF === 'review' ? '#fff' : '#C2410C', borderRadius: 99, padding: '0 6px', fontSize: 11, fontWeight: 700, lineHeight: '18px' }}>{reviewCount}</span>
+                </button>
               )}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <button onClick={() => setShowMyTasks(p => !p)} style={{
-              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 8,
-              border: showMyTasks ? `1.5px solid ${ORANGE}` : '1.5px solid var(--border-primary)',
-              background: showMyTasks ? '#FFF7ED' : 'var(--card-bg)',
-              color: showMyTasks ? ORANGE : 'var(--text-secondary)',
-              fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
-            }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-              My To-Do
-              {(myCount as number) > 0 && (
-                <span style={{ background: ORANGE, color: '#fff', borderRadius: 99, padding: '0 7px', fontSize: 11, fontWeight: 700, lineHeight: '18px', minWidth: 18, textAlign: 'center' }}>{myCount}</span>
-              )}
-            </button>
-            <button onClick={() => setShowNew(true)} style={{
-              display: 'flex', alignItems: 'center', gap: 7, padding: '8px 18px', borderRadius: 8,
-              border: 'none', background: ORANGE, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(249,115,22,0.3)', transition: 'all 0.15s',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#EA580C'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = ORANGE; }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              New Task
-            </button>
-          </div>
-        </div>
 
-        {/* ── Tabs ──────────────────────────────────────────── */}
-        <div style={{ display: 'flex', gap: 0, marginBottom: 18, borderBottom: '1px solid var(--border-primary)', flexWrap: 'wrap' }}>
-          {TABS.map(tab => {
-            const active = scope === tab.v && statusF !== 'review';
-            return (
-              <button key={tab.v} onClick={() => { setScope(tab.v); setStatusF(''); }} style={{
-                padding: '10px 16px', border: 'none', background: 'transparent', cursor: 'pointer',
-                fontSize: 13, fontWeight: active ? 700 : 400,
-                color: active ? ORANGE : 'var(--text-secondary)',
-                borderBottom: active ? `2px solid ${ORANGE}` : '2px solid transparent',
-                marginBottom: -1, transition: 'color 0.15s',
-              }}
-                onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'var(--text-primary)'; }}
-                onMouseLeave={e => { if (!active) e.currentTarget.style.color = 'var(--text-secondary)'; }}
-              >{tab.label}</button>
-            );
-          })}
-          {reviewCount > 0 && (
-            <button onClick={() => { setScope(''); setStatusF(statusF === 'review' ? '' : 'review'); }} style={{
-              display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', border: 'none', cursor: 'pointer',
-              fontSize: 13, fontWeight: statusF === 'review' ? 700 : 500,
-              color: statusF === 'review' ? ORANGE : '#C2410C',
-              background: 'transparent',
-              borderBottom: statusF === 'review' ? `2px solid ${ORANGE}` : '2px solid transparent',
-              marginBottom: -1,
-            }}>
-              Pending Review
-              <span style={{ background: statusF === 'review' ? ORANGE : '#FED7AA', color: statusF === 'review' ? '#fff' : '#C2410C', borderRadius: 99, padding: '0 6px', fontSize: 11, fontWeight: 700, lineHeight: '18px' }}>{reviewCount}</span>
-            </button>
-          )}
-        </div>
+          {/* Unified workspace surface */}
+          <WorkspaceSurface
+            toolbar={
+              <>
+                <SearchInput
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="Search tasks…"
+                  width={240}
+                />
+                <div style={{ flex: 1 }} />
+                <select value={statusF} onChange={e => { setStatusF(e.target.value); setScope(''); }} style={selStyle}>
+                  <option value="">All statuses</option>
+                  {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+                <select value={priorityF} onChange={e => setPriorityF(e.target.value)} style={selStyle}>
+                  <option value="">All priorities</option>
+                  {Object.entries(PRIORITY).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+                {/* View toggle */}
+                <div style={{ display: 'flex', border: '1px solid var(--border-primary)', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+                  {(['kanban', 'list'] as const).map(v => (
+                    <button key={v} onClick={() => setView(v)} style={{
+                      padding: '7px 14px', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500,
+                      background: view === v ? ORANGE : 'transparent',
+                      color: view === v ? '#fff' : 'var(--text-secondary)',
+                      transition: 'all 0.15s',
+                    }}>
+                      {v === 'kanban' ? 'Board' : 'List'}
+                    </button>
+                  ))}
+                </div>
+              </>
+            }
+          >
+            {/* Content area */}
+            {isLoading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 260 }}>
+                <div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid var(--border-primary)', borderTopColor: ORANGE, borderRadius: '50%' }} />
+              </div>
+            ) : tasks.length === 0 ? (
+              <div style={{ padding: '52px 24px', textAlign: 'center' }}>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ color: 'var(--text-tertiary)', margin: '0 auto 12px', display: 'block' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <p style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500, margin: '0 0 8px' }}>No tasks found</p>
+                <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: '0 0 20px' }}>Create a task to get started</p>
+                <button onClick={() => setShowNew(true)} style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: ORANGE, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  + New Task
+                </button>
+              </div>
+            ) : view === 'kanban' ? (
+              <div style={{ padding: '16px 16px 20px', overflowX: 'auto' }}>
+                <Kanban tasks={tasks} onOpen={t => setTaskId(t.id)} />
+              </div>
+            ) : (
+              <ListV tasks={tasks} onOpen={t => setTaskId(t.id)} />
+            )}
+          </WorkspaceSurface>
 
-        {/* ── Toolbar ───────────────────────────────────────── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, padding: '10px 14px', background: 'var(--card-bg)', border: '1px solid var(--border-primary)', borderRadius: 10, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-          <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search tasks…"
-              style={{ width: '100%', padding: '7px 10px 7px 32px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 13, background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
-          </div>
-          <select value={statusF} onChange={e => { setStatusF(e.target.value); setScope(''); }} style={{ padding: '7px 10px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 13, background: 'var(--card-bg)', color: 'var(--text-secondary)', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            <option value="">All statuses</option>
-            {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-          </select>
-          <select value={priorityF} onChange={e => setPriorityF(e.target.value)} style={{ padding: '7px 10px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 13, background: 'var(--card-bg)', color: 'var(--text-secondary)', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            <option value="">All priorities</option>
-            {Object.entries(PRIORITY).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-          </select>
-          <div style={{ display: 'flex', border: '1px solid var(--border-primary)', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
-            {(['kanban', 'list'] as const).map(v => (
-              <button key={v} onClick={() => setView(v)} style={{
-                padding: '7px 14px', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500,
-                background: view === v ? ORANGE : 'transparent',
-                color: view === v ? '#fff' : 'var(--text-secondary)',
-                transition: 'all 0.15s',
-              }}>
-                {v === 'kanban' ? 'Board' : 'List'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Content ───────────────────────────────────────── */}
-        {isLoading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 260 }}>
-            <div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid var(--border-primary)', borderTopColor: ORANGE, borderRadius: '50%' }} />
-          </div>
-        ) : view === 'kanban'
-          ? <Kanban tasks={tasks} onOpen={t => setTaskId(t.id)} />
-          : <ListV tasks={tasks} onOpen={t => setTaskId(t.id)} />
-        }
+        </PageShell>
       </div>
 
       {showMyTasks  && <MyPanel onClose={() => setShowMyTasks(false)} />}
