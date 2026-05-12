@@ -502,7 +502,7 @@ export default function ViolationsPage() {
                     onClick={() => { setStatusFilter(s.id); setPage(1); }}
                     style={{
                       padding: '4px 10px', borderRadius: 'var(--radius-full)', border: 'none', cursor: 'pointer',
-                      fontSize: 'var(--text-xs)', fontWeight: statusFilter === s.key ? 600 : 400,
+                      fontSize: 'var(--text-xs)', fontWeight: statusFilter === s.id ? 600 : 400,
                       background: statusFilter === s.id ? 'var(--surface-subtle)' : 'transparent',
                       color: statusFilter === s.id ? 'var(--text-primary)' : 'var(--text-tertiary)',
                       transition: 'all var(--transition-fast)',
