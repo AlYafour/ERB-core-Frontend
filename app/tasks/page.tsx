@@ -105,11 +105,11 @@ function KCard({ t, onClick }: { t: TaskListItem; onClick: () => void }) {
       onMouseEnter={e => { e.currentTarget.style.boxShadow = `${accentShadow}, 0 4px 12px rgba(0,0,0,0.08), 0 0 0 1px var(--border-primary)`; }}
       onMouseLeave={e => { e.currentTarget.style.boxShadow = `${accentShadow}, 0 1px 2px rgba(0,0,0,0.04), 0 0 0 1px var(--border-primary)`; }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
-        <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', background: 'var(--bg-secondary)', padding: '2px 6px', borderRadius: 4 }}>{TYPE_LABEL[t.task_type]}</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{TYPE_LABEL[t.task_type]}</span>
         <PrioBar p={t.priority} />
       </div>
-      <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.45, marginBottom: 10 }}>{t.title}</p>
+      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: 10 }}>{t.title}</p>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {t.assigned_to_detail && <Av name={t.assigned_to_detail.full_name} url={t.assigned_to_detail.avatar_url} size={20} />}
@@ -139,7 +139,7 @@ function Kanban({ tasks, onOpen }: { tasks: TaskListItem[]; onOpen: (t: TaskList
         const { label, color } = STATUS[col];
         const colTasks = tasks.filter(t => t.status === col);
         return (
-          <div key={col} style={{ width: 280, flexShrink: 0 }}>
+          <div key={col} style={{ width: 300, flexShrink: 0 }}>
             {/* Column header — lighter, no card */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10, padding: '0 2px' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block', flexShrink: 0 }} />
@@ -148,7 +148,7 @@ function Kanban({ tasks, onOpen }: { tasks: TaskListItem[]; onOpen: (t: TaskList
             </div>
             {colTasks.map(t => <KCard key={t.id} t={t} onClick={() => onOpen(t)} />)}
             {colTasks.length === 0 && (
-              <div style={{ border: '1.5px dashed var(--border-primary)', borderRadius: 8, padding: '28px 0', textAlign: 'center', fontSize: 12, color: 'var(--text-tertiary)' }}>No tasks</div>
+              <div style={{ borderRadius: 8, padding: '24px 0', textAlign: 'center', fontSize: 'var(--text-xs)', color: 'var(--text-disabled)' }}>Empty</div>
             )}
           </div>
         );
@@ -786,15 +786,17 @@ export default function TasksPage() {
                 <div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid var(--border-primary)', borderTopColor: ORANGE, borderRadius: '50%' }} />
               </div>
             ) : tasks.length === 0 ? (
-              <div style={{ padding: '52px 24px', textAlign: 'center' }}>
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ color: 'var(--text-tertiary)', margin: '0 auto 12px', display: 'block' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              <div className="empty-state">
+                <svg className="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                <p style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500, margin: '0 0 8px' }}>No tasks found</p>
-                <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: '0 0 20px' }}>Create a task to get started</p>
-                <button onClick={() => setShowNew(true)} style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: ORANGE, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                  + New Task
-                </button>
+                <p className="empty-state-title">No tasks found</p>
+                <p className="empty-state-desc">{search || statusF || priorityF ? 'Try adjusting your filters' : 'Create a task to get started'}</p>
+                {!search && !statusF && !priorityF && (
+                  <button onClick={() => setShowNew(true)} style={{ marginTop: 4, padding: '7px 18px', borderRadius: 'var(--radius-md)', border: 'none', background: ORANGE, color: '#fff', fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer' }}>
+                    New Task
+                  </button>
+                )}
               </div>
             ) : view === 'kanban' ? (
               <div style={{ padding: '16px 16px 20px', overflowX: 'auto' }}>

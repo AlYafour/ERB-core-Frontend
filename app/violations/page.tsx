@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { violationsApi } from '@/lib/api/violations';
@@ -31,27 +31,7 @@ function parseMessage(text: string) {
   return { body, urls };
 }
 
-/* ─── Stat card ──────────────────────────────────────────────────────────── */
-function StatCard({ label, value, sub, color, border, active, onClick }: {
-  label: string; value: number; sub?: string;
-  color: string; border: string; active?: boolean; onClick?: () => void;
-}) {
-  return (
-    <button onClick={onClick} style={{ textAlign: 'left', width: '100%', background: 'none', border: 'none', padding: 0, cursor: onClick ? 'pointer' : 'default' }}>
-      <div style={{
-        background: active ? `${color}10` : '#fff',
-        border: active ? `2px solid ${color}` : `1.5px solid ${border}`,
-        borderRadius: 12, padding: '14px 16px',
-        boxShadow: active ? `0 0 0 3px ${color}15` : '0 1px 3px rgba(0,0,0,0.04)',
-        transition: 'all 0.15s',
-      }}>
-        <div style={{ fontSize: 30, fontWeight: 800, color, lineHeight: 1, marginBottom: 4 }}>{value}</div>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>{label}</div>
-        {sub && <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 2 }}>{sub}</div>}
-      </div>
-    </button>
-  );
-}
+/* StatCard removed — replaced by inline stat strip */
 
 /* ─── Status badge ───────────────────────────────────────────────────────── */
 function StatusBadge({ status }: { status: string }) {
@@ -369,22 +349,31 @@ export default function ViolationsPage() {
           }
         />
 
-        {/* Stats */}
+        {/* Inline stat strip — no cards, just clickable numbers */}
         {stats && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10 }}>
-            <StatCard label="Total" value={stats.total} sub="All violations"
-              color="#2563EB" border="#C7D2FE" active={statusFilter === ''} onClick={() => { setStatusFilter(''); setPage(1); }} />
-            <StatCard label="New" value={stats.new} sub="Needs action"
-              color={STATUS_CFG.new.color} border={STATUS_CFG.new.border} active={statusFilter === 'new'} onClick={() => { setStatusFilter('new'); setPage(1); }} />
-            <StatCard label="Notified" value={stats.notified} sub="Engineer informed"
-              color={STATUS_CFG.notified.color} border={STATUS_CFG.notified.border} active={statusFilter === 'notified'} onClick={() => { setStatusFilter('notified'); setPage(1); }} />
-            <StatCard label="Resolved" value={stats.resolved} sub="Closed"
-              color={STATUS_CFG.resolved.color} border={STATUS_CFG.resolved.border} active={statusFilter === 'resolved'} onClick={() => { setStatusFilter('resolved'); setPage(1); }} />
-            <StatCard label="Fined" value={stats.fined} sub="Fine issued"
-              color={STATUS_CFG.fined.color} border={STATUS_CFG.fined.border} active={statusFilter === 'fined'} onClick={() => { setStatusFilter('fined'); setPage(1); }} />
+          <div className="stat-strip">
+            {([
+              { id: '',         label: 'Total',    value: stats.total,    color: 'var(--text-primary)' },
+              { id: 'new',      label: 'New',      value: stats.new,      color: STATUS_CFG.new.color },
+              { id: 'notified', label: 'Notified', value: stats.notified, color: STATUS_CFG.notified.color },
+              { id: 'resolved', label: 'Resolved', value: stats.resolved, color: STATUS_CFG.resolved.color },
+              { id: 'fined',    label: 'Fined',    value: stats.fined,    color: STATUS_CFG.fined.color },
+            ]).map((s, i) => (
+              <React.Fragment key={s.id}>
+                {i > 0 && <span className="stat-strip-divider" />}
+                <button
+                  onClick={() => { setStatusFilter(s.id); setPage(1); }}
+                  className={`stat-strip-item${statusFilter === s.id ? ' active' : ''}`}
+                >
+                  <span className="stat-strip-value" style={{ color: s.color }}>{s.value}</span>
+                  <span className="stat-strip-label">{s.label}</span>
+                </button>
+              </React.Fragment>
+            ))}
             {stats.no_project > 0 && (
-              <StatCard label="No Project" value={stats.no_project} sub="Needs linking"
-                color="#D97706" border="#FDE68A" />
+              <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 'var(--radius-md)', background: 'var(--status-warning-bg)', border: '1px solid var(--status-warning-border)', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--status-warning)', whiteSpace: 'nowrap' }}>
+                ⚠ {stats.no_project} unlinked
+              </span>
             )}
           </div>
         )}
@@ -418,41 +407,40 @@ export default function ViolationsPage() {
 
         {/* Bulk action bar */}
         {selectedIds.size > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderRadius: 10, background: '#EFF6FF', border: '1.5px solid #93C5FD' }}>
-              <span style={{ fontWeight: 700, fontSize: 13, color: '#1E40AF' }}>
-                {selectAllPages ? `All ${totalCount} violations selected` : `${selectedIds.size} selected`}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div className="bulk-bar">
+              <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {selectAllPages ? `All ${totalCount} selected` : `${selectedIds.size} selected`}
               </span>
+              <div style={{ width: 1, height: 16, background: 'var(--border-default)', flexShrink: 0 }} />
               <button onClick={() => bulkMutation.mutate(Array.from(selectedIds))} disabled={bulkMutation.isPending || selectAllPages}
-                style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: '#22C55E', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: selectAllPages ? 0.4 : 1 }}>
+                style={{ padding: '4px 12px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--status-success)', color: '#fff', fontWeight: 600, fontSize: 'var(--text-xs)', cursor: 'pointer', opacity: selectAllPages ? 0.4 : 1 }}>
                 Mark Resolved
               </button>
               <button onClick={() => setConfirmDelete(true)} disabled={bulkDeleteMutation.isPending}
-                style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: '#EF4444', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                style={{ padding: '4px 12px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--status-error)', color: '#fff', fontWeight: 600, fontSize: 'var(--text-xs)', cursor: 'pointer' }}>
                 Delete
               </button>
               <button onClick={() => { setSelectedIds(new Set()); setSelectAllPages(false); }}
-                style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: '#E5E7EB', cursor: 'pointer', fontSize: 12, color: '#6B7280' }}>
+                style={{ padding: '4px 10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-default)', background: 'transparent', cursor: 'pointer', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
                 Cancel
               </button>
             </div>
-
-            {/* Select-all-pages banner */}
             {allSelected && totalCount > violations.length && !selectAllPages && (
-              <div style={{ padding: '9px 16px', borderRadius: 9, background: '#FEF9C3', border: '1.5px solid #FDE68A', fontSize: 12, color: '#92400E', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span>All {violations.length} violations on this page are selected.</span>
+              <div style={{ padding: '6px 16px', background: 'var(--status-warning-bg)', borderBottom: '1px solid var(--status-warning-border)', fontSize: 'var(--text-xs)', color: 'var(--status-warning)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span>{violations.length} on this page selected.</span>
                 <button onClick={() => setSelectAllPages(true)}
-                  style={{ padding: '4px 12px', borderRadius: 7, border: 'none', background: '#D97706', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
-                  Select all {totalCount} violations
+                  style={{ padding: '2px 10px', borderRadius: 'var(--radius-sm)', border: 'none', background: 'var(--status-warning)', color: '#fff', fontWeight: 600, fontSize: 'var(--text-xs)', cursor: 'pointer' }}>
+                  Select all {totalCount}
                 </button>
               </div>
             )}
             {selectAllPages && (
-              <div style={{ padding: '9px 16px', borderRadius: 9, background: '#FEE2E2', border: '1.5px solid #FCA5A5', fontSize: 12, color: '#7F1D1D', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span>All {totalCount} violations across all pages are selected.</span>
+              <div style={{ padding: '6px 16px', background: 'var(--status-error-bg)', borderBottom: '1px solid var(--status-error-border)', fontSize: 'var(--text-xs)', color: 'var(--status-error)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span>All {totalCount} violations selected.</span>
                 <button onClick={() => setSelectAllPages(false)}
-                  style={{ padding: '4px 12px', borderRadius: 7, border: 'none', background: '#E5E7EB', color: '#374151', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>
-                  Clear selection
+                  style={{ padding: '2px 10px', borderRadius: 'var(--radius-sm)', border: 'none', background: 'var(--surface-subtle)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: 'var(--text-xs)', cursor: 'pointer' }}>
+                  Clear
                 </button>
               </div>
             )}
@@ -493,28 +481,48 @@ export default function ViolationsPage() {
           <WorkspaceSurface
             toolbar={
               <>
-                <input type="text" placeholder="Search by reference, area or plot..." value={search}
+                <input
+                  type="text"
+                  placeholder="Search reference, area, plot…"
+                  value={search}
                   onChange={e => { setSearch(e.target.value); setPage(1); }}
-                  style={{ flex: 1, minWidth: 200, padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 12, background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit' }} />
-                <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
-                  style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 12, background: 'var(--bg-secondary)', color: 'var(--text-secondary)', outline: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-                  <option value="">All Statuses</option>
-                  <option value="new">New</option>
-                  <option value="notified">Notified</option>
-                  <option value="resolved">Resolved</option>
-                  <option value="fined">Fined</option>
-                </select>
+                  style={{ width: 240, padding: '5px 10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontSize: 'var(--text-xs)', background: 'var(--surface-app)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit' }}
+                />
+                <div style={{ flex: 1 }} />
+                {/* Compact tab pills */}
+                {([
+                  { id: '',         label: 'All' },
+                  { id: 'new',      label: 'New' },
+                  { id: 'notified', label: 'Notified' },
+                  { id: 'resolved', label: 'Resolved' },
+                  { id: 'fined',    label: 'Fined' },
+                ]).map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => { setStatusFilter(s.id); setPage(1); }}
+                    style={{
+                      padding: '4px 10px', borderRadius: 'var(--radius-full)', border: 'none', cursor: 'pointer',
+                      fontSize: 'var(--text-xs)', fontWeight: statusFilter === s.key ? 600 : 400,
+                      background: statusFilter === s.id ? 'var(--surface-subtle)' : 'transparent',
+                      color: statusFilter === s.id ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                      transition: 'all var(--transition-fast)',
+                    }}
+                  >{s.label}</button>
+                ))}
               </>
             }
           >
             {isLoading ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
-                <div className="w-7 h-7 border-4 rounded-full animate-spin" style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 220 }}>
+                <div className="animate-spin" style={{ width: 24, height: 24, border: '2px solid var(--border-default)', borderTopColor: 'var(--brand)', borderRadius: '50%' }} />
               </div>
             ) : violations.length === 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, gap: 8 }}>
-                <div style={{ fontSize: 36 }}>✓</div>
-                <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: 0 }}>No violations found</p>
+              <div className="empty-state">
+                <svg className="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <p className="empty-state-title">{search || statusFilter ? 'No violations match this filter' : 'No violations'}</p>
+                <p className="empty-state-desc">{search || statusFilter ? 'Try adjusting your search or status filter' : 'All ADM violations will appear here automatically'}</p>
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
