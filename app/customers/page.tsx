@@ -13,12 +13,7 @@ import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
-
-const TYPE_BADGE: Record<string, 'info' | 'warning' | 'default'> = {
-  owner:      'info',
-  commercial: 'warning',
-  consultant: 'default',
-};
+import { CUSTOMER_TYPE } from '@/lib/utils/status-colors';
 
 const TYPE_LABEL: Record<string, string> = {
   owner:      'Owner / مالك',
@@ -87,7 +82,7 @@ export default function CustomersPage() {
     },
     {
       key: 'type', header: 'Type',
-      render: c => <Badge variant={TYPE_BADGE[c.customer_type] ?? 'default'}>{TYPE_LABEL[c.customer_type] || c.customer_type}</Badge>,
+      render: c => <Badge variant={CUSTOMER_TYPE[c.customer_type] ?? 'default'}>{TYPE_LABEL[c.customer_type] || c.customer_type}</Badge>,
     },
     { key: 'email', header: t('col', 'email'), render: c => <span style={{ color: 'var(--text-secondary)' }}>{c.email || '—'}</span> },
     { key: 'phone', header: t('col', 'phone'), render: c => <span style={{ color: 'var(--text-secondary)' }}>{c.telephone_number || c.whatsapp_number || '—'}</span> },

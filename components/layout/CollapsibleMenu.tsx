@@ -60,20 +60,20 @@ export default function CollapsibleMenu({
         className="w-full flex items-center justify-between gap-2.5 rounded-md px-2.5 py-2 text-sm transition-all duration-200"
         style={{
           backgroundColor: isActive ? 'var(--sidebar-active-bg)' : 'transparent',
-          color: isActive ? 'var(--sidebar-active-text)' : 'var(--text-secondary)',
+          color: isActive ? 'var(--sidebar-active-text)' : 'var(--sidebar-text)',
           fontWeight: isActive ? 'var(--font-weight-semibold)' : 'var(--font-weight-medium)',
         }}
         onMouseEnter={(e) => {
           if (!isActive) {
             e.currentTarget.style.backgroundColor = 'var(--sidebar-hover)';
-            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.color = 'var(--sidebar-text-hover)';
             e.currentTarget.style.fontWeight = 'var(--font-weight-semibold)';
           }
         }}
         onMouseLeave={(e) => {
           if (!isActive) {
             e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.color = 'var(--text-secondary)';
+            e.currentTarget.style.color = 'var(--sidebar-text)';
             e.currentTarget.style.fontWeight = 'var(--font-weight-medium)';
           }
         }}
@@ -109,20 +109,20 @@ export default function CollapsibleMenu({
                 className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-all duration-200"
                 style={{
                   backgroundColor: itemIsActive ? 'var(--sidebar-active-bg)' : 'transparent',
-                  color: itemIsActive ? 'var(--sidebar-active-text)' : 'var(--text-secondary)',
+                  color: itemIsActive ? 'var(--sidebar-active-text)' : 'var(--sidebar-text)',
                   fontWeight: itemIsActive ? 'var(--font-weight-semibold)' : 'var(--font-weight-medium)',
                 }}
                 onMouseEnter={(e) => {
                   if (!itemIsActive) {
                     e.currentTarget.style.backgroundColor = 'var(--sidebar-hover)';
-                    e.currentTarget.style.color = 'var(--text-primary)';
+                    e.currentTarget.style.color = 'var(--sidebar-text-hover)';
                     e.currentTarget.style.fontWeight = 'var(--font-weight-semibold)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!itemIsActive) {
                     e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = 'var(--text-secondary)';
+                    e.currentTarget.style.color = 'var(--sidebar-text)';
                     e.currentTarget.style.fontWeight = 'var(--font-weight-medium)';
                   }
                 }}
@@ -138,8 +138,8 @@ export default function CollapsibleMenu({
                     flexShrink: 0,
                     minWidth: 18, height: 18,
                     borderRadius: 9,
-                    background: '#ef4444',
-                    color: '#fff',
+                    background: 'rgba(247, 232, 234, 0.20)',
+                    color: 'var(--sidebar-active-text)',
                     fontSize: 10,
                     fontWeight: 700,
                     display: 'inline-flex',

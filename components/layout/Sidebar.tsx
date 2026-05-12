@@ -68,19 +68,19 @@ export default function Sidebar() {
         className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-all duration-150"
         style={{
           backgroundColor: active ? 'var(--sidebar-active-bg)' : 'transparent',
-          color:           active ? 'var(--sidebar-active-text)' : 'var(--text-secondary)',
+          color:           active ? 'var(--sidebar-active-text)' : 'var(--sidebar-text)',
           fontWeight:      active ? '600' : '500',
         }}
         onMouseEnter={(e) => {
           if (!active) {
             e.currentTarget.style.backgroundColor = 'var(--sidebar-hover)';
-            e.currentTarget.style.color           = 'var(--text-primary)';
+            e.currentTarget.style.color           = 'var(--sidebar-text-hover)';
           }
         }}
         onMouseLeave={(e) => {
           if (!active) {
             e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.color           = 'var(--text-secondary)';
+            e.currentTarget.style.color           = 'var(--sidebar-text)';
           }
         }}
       >
@@ -112,7 +112,7 @@ export default function Sidebar() {
             className="relative flex flex-col items-center px-4 pt-5 pb-4"
             style={{
               borderBottom: '1px solid var(--sidebar-border)',
-              background: 'linear-gradient(180deg, var(--sidebar-bg) 0%, rgba(249,115,22,0.03) 100%)',
+              background: 'linear-gradient(180deg, var(--sidebar-bg) 0%, rgba(124,45,58,0.08) 100%)',
               flexShrink: 0,
             }}
           >

@@ -18,12 +18,9 @@ import { Button, TextField, Badge } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
+import { PR_STATUS } from '@/lib/utils/status-colors';
 
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-
-const STATUS_VARIANT: Record<string, 'success' | 'error' | 'warning' | 'info'> = {
-  approved: 'success', rejected: 'error', pending: 'warning',
-};
 
 export default function PurchaseRequestsPage() {
   const {
@@ -117,7 +114,7 @@ export default function PurchaseRequestsPage() {
     { key: 'req_by',      header: t('col', 'requiredBy'),  render: r => <span className="text-muted-foreground">{fmtDate(r.required_by)}</span> },
     {
       key: 'status', header: t('col', 'status'),
-      render: r => <Badge variant={STATUS_VARIANT[r.status] ?? 'info'}>{t('status', r.status as any) || r.status}</Badge>,
+      render: r => <Badge variant={PR_STATUS[r.status] ?? 'info'}>{t('status', r.status as any) || r.status}</Badge>,
     },
     {
       key: 'actions', header: t('col', 'actions'),

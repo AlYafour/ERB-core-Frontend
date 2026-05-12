@@ -19,12 +19,7 @@ import BilingualName from '@/components/ui/BilingualName';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
-
-const STATUS_BADGE: Record<string, string> = {
-  active:   'badge-success',
-  inactive: 'badge-error',
-  archived: 'badge-info',
-};
+import { PRODUCT_STATUS } from '@/lib/utils/status-colors';
 
 const filterFields: FilterField[] = [
   { name: 'name',              label: 'Name',      type: 'text',    group: 'Product Info' },
@@ -136,11 +131,7 @@ export default function ProductsPage() {
     { key: 'stock',    header: 'Stock',       render: p => p.track_stock ? (p.stock_balance ?? 0) : '—' },
     {
       key: 'status', header: 'Status',
-      render: p => (
-        <span className={`badge ${STATUS_BADGE[p.status ?? ''] || 'badge-info'}`}>
-          {p.status || '—'}
-        </span>
-      ),
+      render: p => <Badge variant={PRODUCT_STATUS[p.status ?? ''] ?? 'info'}>{p.status || '—'}</Badge>,
     },
     {
       key: 'actions', header: t('col', 'actions'),

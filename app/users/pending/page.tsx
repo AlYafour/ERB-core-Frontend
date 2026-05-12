@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersApi } from '@/lib/api/users';
@@ -10,8 +9,10 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { PERMISSIONS_QUERY_KEY } from '@/lib/hooks/use-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
-import { Button, Loader, Badge } from '@/components/ui';
+import { useState } from 'react';
+import { Button, Badge } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
+import DataTable, { Column } from '@/components/ui/DataTable';
 
 export default function PendingUsersPage() {
   const { user: currentUser } = useAuth();
@@ -24,11 +25,8 @@ export default function PendingUsersPage() {
       try {
         return await usersApi.getPending();
       } catch (err: any) {
-        const errorMessage = err?.response?.data?.error ||
-                            err?.response?.data?.detail ||
-                            err?.message ||
-                            'Failed to fetch pending users';
-        toast(errorMessage, 'error');
+        const msg = err?.response?.data?.error || err?.response?.data?.detail || err?.message || 'Failed to fetch pending users';
+        toast(msg, 'error');
         throw err;
       }
     },
@@ -51,15 +49,9 @@ export default function PendingUsersPage() {
       queryClient.invalidateQueries({ queryKey: ['users', 'pending'] });
       queryClient.invalidateQueries({ queryKey: PERMISSIONS_QUERY_KEY });
       toast(`User ${data.username} has been approved`, 'success');
-      setSelectedPermissionSet(prev => {
-        const newState = { ...prev };
-        delete newState[variables.id];
-        return newState;
-      });
+      setSelectedPermissionSet(prev => { const next = { ...prev }; delete next[variables.id]; return next; });
     },
-    onError: () => {
-      toast('Failed to approve user', 'error');
-    },
+    onError: () => toast('Failed to approve user', 'error'),
   });
 
   const rejectMutation = useMutation({
@@ -69,143 +61,82 @@ export default function PendingUsersPage() {
       queryClient.invalidateQueries({ queryKey: ['users', 'pending'] });
       toast(`User ${data?.username ?? ''} has been rejected`, 'success');
     },
-    onError: () => {
-      toast('Failed to reject user', 'error');
-    },
+    onError: () => toast('Failed to reject user', 'error'),
   });
 
-  const handleApprove = (user: User) => {
-    const permissionSetId = selectedPermissionSet[user.id];
-    approveMutation.mutate({ id: user.id, permissionSetId });
-  };
-
+  const handleApprove = (user: User) => approveMutation.mutate({ id: user.id, permissionSetId: selectedPermissionSet[user.id] });
   const handleReject = async (user: User) => {
-    const confirmed = await confirm(`Reject user "${user.username}"? This will delete the account.`);
-    if (confirmed) {
-      rejectMutation.mutate(user.id);
-    }
+    if (await confirm(`Reject user "${user.username}"? This will delete the account.`)) rejectMutation.mutate(user.id);
   };
 
   if (currentUser?.role !== 'super_admin' && !currentUser?.is_superuser) {
     return (
       <MainLayout>
-        <div className="card" style={{ borderColor: 'var(--color-error)', backgroundColor: 'var(--color-error-light)' }}>
-          <p style={{ color: 'var(--color-error)', fontSize: 'var(--font-sm)', margin: 0 }}>
-            Access Denied. Admin access required.
-          </p>
+        <div className="card border-destructive bg-destructive/10">
+          <p className="text-destructive text-sm">Access Denied. Admin access required.</p>
         </div>
       </MainLayout>
     );
   }
 
+  const users = (pendingUsers as User[]) ?? [];
+
+  const columns: Column<User>[] = [
+    {
+      key: 'username', header: 'Username',
+      render: u => (
+        <div>
+          <div className="font-medium text-foreground">{u.username}</div>
+          {u.first_name && <div className="text-xs text-muted-foreground">{u.first_name} {u.last_name}</div>}
+        </div>
+      ),
+    },
+    { key: 'email',    header: 'Email',      render: u => <span className="text-sm text-muted-foreground">{u.email}</span> },
+    { key: 'role',     header: 'Role',       render: u => <Badge variant="info">{u.role}</Badge> },
+    { key: 'joined',   header: 'Registered', render: u => <span className="text-sm text-muted-foreground">{u.date_joined ? new Date(u.date_joined).toLocaleDateString() : '—'}</span> },
+    {
+      key: 'permset', header: 'Permission Set',
+      render: u => (
+        <div style={{ minWidth: 200 }}>
+          <SearchableDropdown
+            options={permissionSets.map((ps: any) => ({ value: String(ps.id), label: ps.name }))}
+            value={selectedPermissionSet[u.id] ? String(selectedPermissionSet[u.id]) : ''}
+            onChange={(val) => setSelectedPermissionSet(prev => ({ ...prev, [u.id]: Number(val) }))}
+            placeholder="Select permission set (optional)"
+          />
+        </div>
+      ),
+    },
+    {
+      key: 'actions', header: 'Actions',
+      render: u => (
+        <div className="flex gap-2">
+          <Button variant="primary" size="sm" onClick={() => handleApprove(u)} isLoading={approveMutation.isPending}>Approve</Button>
+          <Button variant="destructive" size="sm" onClick={() => handleReject(u)} isLoading={rejectMutation.isPending}>Reject</Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <MainLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-        {/* Header */}
+      <div className="space-y-6">
         <div>
-          <h1 style={{
-            fontSize: 'var(--font-2xl)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-1)',
-          }}>
-            Pending Users
-          </h1>
-          <p style={{ fontSize: 'var(--font-sm)', color: 'var(--text-secondary)', margin: 0 }}>
-            Review and approve new user registrations
-          </p>
+          <h1 className="text-2xl font-semibold text-foreground">Pending Users</h1>
+          <p className="text-sm text-muted-foreground mt-1">Review and approve new user registrations</p>
         </div>
 
-        {/* Content */}
-        <div className="card">
-          {isLoading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--spacing-8)' }}>
-              <Loader />
-            </div>
-          ) : error ? (
-            <div style={{ textAlign: 'center', padding: 'var(--spacing-8)', color: 'var(--color-error)' }}>
-              Failed to load pending users
-            </div>
-          ) : !pendingUsers || (pendingUsers as User[]).length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 'var(--spacing-8)', color: 'var(--text-secondary)' }}>
-              No pending users at this time
-            </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-primary)' }}>
-                    {['Username', 'Email', 'Role', 'Registered', 'Permission Set', 'Actions'].map((h) => (
-                      <th key={h} style={{
-                        padding: 'var(--spacing-3) var(--spacing-4)',
-                        textAlign: 'left',
-                        fontSize: 'var(--font-xs)',
-                        fontWeight: 'var(--font-weight-medium)',
-                        color: 'var(--text-secondary)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                      }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {(pendingUsers as User[]).map((user) => (
-                    <tr key={user.id} style={{ borderBottom: '1px solid var(--border-primary)' }}>
-                      <td style={{ padding: 'var(--spacing-3) var(--spacing-4)' }}>
-                        <div style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--text-primary)' }}>
-                          {user.username}
-                        </div>
-                        {user.first_name && (
-                          <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>
-                            {user.first_name} {user.last_name}
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ padding: 'var(--spacing-3) var(--spacing-4)', color: 'var(--text-secondary)', fontSize: 'var(--font-sm)' }}>
-                        {user.email}
-                      </td>
-                      <td style={{ padding: 'var(--spacing-3) var(--spacing-4)' }}>
-                        <Badge variant="info">{user.role}</Badge>
-                      </td>
-                      <td style={{ padding: 'var(--spacing-3) var(--spacing-4)', color: 'var(--text-secondary)', fontSize: 'var(--font-sm)' }}>
-                        {user.date_joined ? new Date(user.date_joined).toLocaleDateString() : '—'}
-                      </td>
-                      <td style={{ padding: 'var(--spacing-3) var(--spacing-4)', minWidth: '200px' }}>
-                        <SearchableDropdown
-                          options={permissionSets.map((ps: any) => ({ value: String(ps.id), label: ps.name }))}
-                          value={selectedPermissionSet[user.id] ? String(selectedPermissionSet[user.id]) : ''}
-                          onChange={(val) => setSelectedPermissionSet(prev => ({ ...prev, [user.id]: Number(val) }))}
-                          placeholder="Select permission set (optional)"
-                        />
-                      </td>
-                      <td style={{ padding: 'var(--spacing-3) var(--spacing-4)' }}>
-                        <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
-                          <Button
-                            size="sm"
-                            onClick={() => handleApprove(user)}
-                            disabled={approveMutation.isPending}
-                            className="btn btn-primary"
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handleReject(user)}
-                            disabled={rejectMutation.isPending}
-                            className="btn btn-danger"
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        <DataTable
+          columns={columns}
+          data={users}
+          isLoading={isLoading}
+          error={error}
+          emptyMessage="No pending users at this time."
+          page={1}
+          totalCount={users.length}
+          pageSize={1000}
+          onPageChange={() => {}}
+        />
       </div>
     </MainLayout>
   );

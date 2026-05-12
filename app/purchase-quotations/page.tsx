@@ -11,15 +11,13 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
-import { Button, TextField } from '@/components/ui';
+import { Button, TextField, Badge } from '@/components/ui';
 import { formatPrice } from '@/lib/utils/format';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
+import { PQ_STATUS } from '@/lib/utils/status-colors';
 
-const STATUS_CLASS: Record<string, string> = {
-  pending: 'badge-warning', awarded: 'badge-success', rejected: 'badge-error', expired: 'badge-info',
-};
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Pending', awarded: 'Awarded', rejected: 'Rejected', expired: 'Expired',
 };
@@ -83,7 +81,7 @@ export default function PurchaseQuotationsPage() {
     { key: 'number', header: t('col', 'quotationNumber'), render: q => <span className="font-medium text-foreground">{q.quotation_number}</span> },
     {
       key: 'status', header: t('col', 'status'),
-      render: q => <span className={`badge ${STATUS_CLASS[q.status || 'pending'] || 'badge-info'}`}>{STATUS_LABEL[q.status || 'pending'] || q.status}</span>,
+      render: q => <Badge variant={PQ_STATUS[q.status ?? 'pending'] ?? 'info'}>{STATUS_LABEL[q.status ?? 'pending'] || q.status}</Badge>,
     },
     {
       key: 'pr', header: 'PR',

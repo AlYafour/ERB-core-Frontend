@@ -11,16 +11,13 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
-import { Button, TextField } from '@/components/ui';
+import { Button, TextField, Badge } from '@/components/ui';
 import { formatPrice } from '@/lib/utils/format';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
+import { PO_STATUS } from '@/lib/utils/status-colors';
 
-const STATUS_CLASS: Record<string, string> = {
-  draft: 'badge-info', pending: 'badge-warning', approved: 'badge-success',
-  rejected: 'badge-error', completed: 'badge-success', cancelled: 'badge-error',
-};
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Draft', pending: 'Pending', approved: 'Approved',
   rejected: 'Rejected', completed: 'Completed', cancelled: 'Cancelled',
@@ -92,7 +89,7 @@ export default function PurchaseOrdersPage() {
     { key: 'date',      header: 'Order Date',              render: o => <span className="text-muted-foreground">{new Date(o.order_date).toLocaleDateString('en-US')}</span> },
     { key: 'delivery',  header: 'Delivery Date',           render: o => <span className="text-muted-foreground">{o.delivery_date ? new Date(o.delivery_date).toLocaleDateString('en-US') : '—'}</span> },
     { key: 'total',     header: t('col', 'totalAmount'),   render: o => <span className="font-semibold">{formatPrice(o.total)}</span> },
-    { key: 'status',    header: t('col', 'status'),        render: o => <span className={`badge ${STATUS_CLASS[o.status] || 'badge-info'}`}>{STATUS_LABEL[o.status] || o.status}</span> },
+    { key: 'status',    header: t('col', 'status'),        render: o => <Badge variant={PO_STATUS[o.status] ?? 'info'}>{STATUS_LABEL[o.status] || o.status}</Badge> },
     {
       key: 'actions', header: t('col', 'actions'),
       render: o => (

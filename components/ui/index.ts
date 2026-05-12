@@ -4,9 +4,6 @@ export * from './base';
 // Buttons
 export {
   Button,
-  PrimaryButton,
-  SecondaryButton,
-  GhostButton,
   IconButton,
   type ButtonProps,
   type IconButtonProps,

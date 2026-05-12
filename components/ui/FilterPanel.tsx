@@ -119,7 +119,7 @@ export default function FilterPanel({ fields, filters, onFilterChange, onReset, 
         </svg>
         Filters
         {activeFiltersCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-[#F97316] text-white text-xs font-medium rounded-full w-5 h-5 flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 text-white text-xs font-medium rounded-full w-5 h-5 flex items-center justify-center" style={{ backgroundColor: 'var(--color-wine-500)' }}>
             {activeFiltersCount}
           </span>
         )}
@@ -372,7 +372,7 @@ export default function FilterPanel({ fields, filters, onFilterChange, onReset, 
               </button>
               <button
                 onClick={handleApply}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-[#F97316] rounded-md hover:bg-[#EA6820] transition-colors shadow-sm"
+                className="flex-1 px-4 py-2 text-sm font-medium text-white rounded-md transition-colors shadow-sm" style={{ backgroundColor: 'var(--color-wine-500)' }}
               >
                 Apply Filters
               </button>
