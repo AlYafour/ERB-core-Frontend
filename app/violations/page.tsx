@@ -8,7 +8,7 @@ import { projectsApi } from '@/lib/api/projects';
 import { MunicipalViolation } from '@/types';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useT } from '@/lib/i18n/useT';
-import { PageHeader, PageShell } from '@/components/ui';
+import { PageHeader, PageShell, WorkspaceSurface } from '@/components/ui';
 
 const FRONTEND_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://purchase-self.vercel.app';
 
@@ -415,20 +415,6 @@ export default function ViolationsPage() {
           </div>
         )}
 
-        {/* Filters row */}
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <input type="text" placeholder="Search by reference, area or plot..." value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1); }}
-            style={{ flex: 1, minWidth: 220, padding: '9px 14px', borderRadius: 9, border: '1.5px solid #E2E8F0', fontSize: 13 }} />
-          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
-            style={{ minWidth: 150, padding: '9px 12px', borderRadius: 9, border: '1.5px solid #E2E8F0', fontSize: 13 }}>
-            <option value="">All Statuses</option>
-            <option value="new">New</option>
-            <option value="notified">Notified</option>
-            <option value="resolved">Resolved</option>
-            <option value="fined">Fined</option>
-          </select>
-        </div>
 
         {/* Bulk action bar */}
         {selectedIds.size > 0 && (
@@ -503,8 +489,24 @@ export default function ViolationsPage() {
         {/* Main content: table + detail panel */}
         <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
 
-          {/* Table */}
-          <div style={{ flex: 1, minWidth: 0, background: '#fff', borderRadius: 14, border: '1.5px solid #E5E7EB', overflow: 'hidden', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+          <WorkspaceSurface
+            toolbar={
+              <>
+                <input type="text" placeholder="Search by reference, area or plot..." value={search}
+                  onChange={e => { setSearch(e.target.value); setPage(1); }}
+                  style={{ flex: 1, minWidth: 200, padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 12, background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit' }} />
+                <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
+                  style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 12, background: 'var(--bg-secondary)', color: 'var(--text-secondary)', outline: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  <option value="">All Statuses</option>
+                  <option value="new">New</option>
+                  <option value="notified">Notified</option>
+                  <option value="resolved">Resolved</option>
+                  <option value="fined">Fined</option>
+                </select>
+              </>
+            }
+          >
             {isLoading ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
                 <div className="w-7 h-7 border-4 rounded-full animate-spin" style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
@@ -518,7 +520,7 @@ export default function ViolationsPage() {
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
-                    <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
+                    <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)' }}>
                       <th style={thS(36)}>
                         <input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ width: 15, height: 15, cursor: 'pointer' }} />
                       </th>
@@ -641,7 +643,7 @@ export default function ViolationsPage() {
 
             {/* Pagination inside card */}
             {totalPages > 1 && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderTop: '1px solid #F1F5F9', background: '#FAFAFA' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderTop: '1px solid var(--border-primary)', background: 'var(--bg-secondary)' }}>
                 <span style={{ fontSize: 12, color: '#94A3B8' }}>
                   Showing {(page - 1) * 25 + 1}–{Math.min(page * 25, totalCount)} of {totalCount}
                 </span>
@@ -658,6 +660,7 @@ export default function ViolationsPage() {
                 </div>
               </div>
             )}
+          </WorkspaceSurface>
           </div>
 
           {/* Detail panel */}
