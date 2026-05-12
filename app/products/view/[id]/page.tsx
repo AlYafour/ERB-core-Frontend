@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { productsApi } from '@/lib/api/products';
-import { Button, PageShell } from '@/components/ui';
+import { PageShell } from '@/components/ui';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import { formatPrice, formatPercentage, formatNumber } from '@/lib/utils/format';
@@ -11,6 +11,15 @@ import EntityHeader from '@/components/ui/EntityHeader';
 import { useAuth } from '@/lib/hooks/use-auth';
 import BilingualName from '@/components/ui/BilingualName';
 import { useT } from '@/lib/i18n/useT';
+
+function Field({ label, value, mono, full }: { label: string; value?: string | null; mono?: boolean; full?: boolean }) {
+  return (
+    <div className={full ? 'info-full' : undefined}>
+      <div className="info-label">{label}</div>
+      <div className={mono ? 'info-value-mono' : 'info-value'}>{value || '—'}</div>
+    </div>
+  );
+}
 
 export default function ProductDetailPage() {
   const t = useT();
@@ -23,14 +32,15 @@ export default function ProductDetailPage() {
     queryFn: () => productsApi.getById(id),
   });
 
+  const isAdmin = user?.role === 'super_admin' || user?.is_staff;
+
   if (isLoading) {
     return (
       <MainLayout>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('btn', 'loading')}</p>
-          </div>
-        </div>
+        <PageShell>
+          <div className="card animate-pulse" style={{ height: 120 }} />
+          <div className="card animate-pulse" style={{ height: 320 }} />
+        </PageShell>
       </MainLayout>
     );
   }
@@ -38,27 +48,35 @@ export default function ProductDetailPage() {
   if (!product) {
     return (
       <MainLayout>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('empty', 'notFound')}</p>
+        <PageShell>
+          <div className="card empty-state">
+            <p className="empty-state-title">{t('empty', 'notFound')}</p>
           </div>
-        </div>
+        </PageShell>
       </MainLayout>
     );
   }
-  const isAdmin = user?.role === 'super_admin' || user?.is_staff;
 
   const getStatusVariant = () => {
     if (!product.is_active) return 'error';
-    if (product.status === 'active') return 'success';
     if (product.status === 'inactive') return 'error';
-    return 'info';
+    return 'success';
   };
+
+  const isLowStock =
+    product.stock_balance !== undefined &&
+    product.low_stock_threshold !== undefined &&
+    product.stock_balance <= product.low_stock_threshold;
+
+  const supplierName = product.supplier
+    ? typeof product.supplier === 'object'
+      ? (product.supplier as any).business_name || (product.supplier as any).name
+      : `Supplier #${product.supplier}`
+    : null;
 
   return (
     <MainLayout>
       <PageShell>
-        {/* Entity Header - Unified */}
         <EntityHeader
           title={product.name}
           subtitle={product.code}
@@ -68,634 +86,113 @@ export default function ProductDetailPage() {
           statusBadge={product.is_active ? (product.status === 'inactive' ? t('status', 'inactive') : t('status', 'active')) : t('status', 'inactive')}
           statusVariant={getStatusVariant()}
           backHref="/products"
-          backLabel={`${t('btn','back')} ${t('page','products')}`}
+          backLabel={`${t('btn', 'back')} ${t('page', 'products')}`}
           actions={
-            <>
-              <Link href={`/products/${id}`}><Button variant="edit">{t('btn', 'edit')}</Button></Link>
-            </>
+            isAdmin ? (
+              <Link href={`/products/${id}`} className="btn btn-edit">
+                {t('btn', 'edit')}
+              </Link>
+            ) : undefined
           }
         />
 
-        {/* Basic Product Information - Unified */}
         <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-4)',
-          }}>
-            {t('section', 'basicInfo')}
-          </h3>
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-          }}>
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Product Name
-              </label>
+          {/* Product Identity */}
+          <div className="info-section-title">Product Identity</div>
+          <div className="info-grid">
+            <div className="info-full">
+              <div className="info-label">Product Name</div>
               <BilingualName nameEn={product.name} nameAr={product.name_ar} />
             </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Product Code
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {product.code}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                SKU
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {product.sku || '-'}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Barcode
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {product.barcode || '-'}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Brand
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {product.brand || '-'}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Unit
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {product.unit || '-'}
-              </p>
-            </div>
-            {product.description && (
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ 
-                  display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
-                  color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
-                }}>
-                  Description
-                </label>
-                <p style={{ 
-                  fontSize: 'var(--font-base)',
-                  color: 'var(--text-primary)',
-                  margin: 0,
-                  whiteSpace: 'pre-wrap',
-                }}>
-                  {product.description}
-                </p>
-              </div>
-            )}
-            {product.tags && (
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ 
-                  display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
-                  color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
-                }}>
-                  Tags
-                </label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-2)' }}>
-                  {product.tags.split(',').map((tag, index) => (
-                    <span
-                      key={index}
-                      style={{
-                        padding: '0.25rem 0.5rem',
-                        backgroundColor: 'var(--brand-orange-light)',
-                        color: 'var(--brand-orange)',
-                        borderRadius: 'var(--radius-md)',
-                        fontSize: 'var(--font-xs)',
-                        fontWeight: 'var(--font-weight-medium)',
-                      }}
-                    >
-                      {tag.trim()}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+            <Field label="Product Code" value={product.code} mono />
+            <Field label="SKU" value={product.sku} mono />
+            <Field label="Barcode" value={product.barcode} mono />
+            <Field label="Brand" value={product.brand} />
+            <Field label="Unit" value={product.unit} />
+            <Field label="Category" value={product.category} />
+            <Field label="Supplier" value={supplierName} />
           </div>
-        </div>
 
-        {/* Category & Supplier - Unified */}
-        <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-4)',
-          }}>
-            {t('section', 'categorySupplier')}
-          </h3>
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-          }}>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Category
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {product.category || '-'}
-              </p>
-            </div>
-            <div style={{ gridColumn: 'span 2' }}>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Supplier
-              </label>
-              {product.supplier ? (
-                typeof product.supplier === 'object' ? (
-                  <BilingualName
-                    nameEn={product.supplier.business_name || product.supplier.name}
-                    nameAr={(product.supplier as any).business_name_ar}
-                  />
-                ) : (
-                  <p style={{ fontSize: 'var(--font-base)', color: 'var(--text-primary)', margin: 0 }}>
-                    {`Supplier ID: ${product.supplier}`}
-                  </p>
-                )
-              ) : (
-                <p style={{ fontSize: 'var(--font-base)', color: 'var(--text-primary)', margin: 0 }}>-</p>
-              )}
+          {/* Pricing */}
+          <div className="info-section">
+            <div className="info-section-title">Pricing</div>
+            <div className="info-grid">
+              <Field label="Purchase Price" value={formatPrice(product.buy_price)} />
+              <Field label="Selling Price" value={formatPrice(product.sell_price ?? product.unit_price)} />
+              <Field label="Minimum Price" value={formatPrice(product.minimum_price)} />
+              <Field label="Average Cost" value={formatPrice(product.average_cost)} />
+              <Field
+                label="Discount"
+                value={product.discount_type === 'fixed' ? formatPrice(product.discount) : formatPercentage(product.discount)}
+              />
+              <Field label="Profit Margin" value={formatPercentage(product.profit_margin)} />
             </div>
           </div>
-        </div>
 
-        {/* Pricing - Unified */}
-        <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-4)',
-          }}>
-            {t('section', 'pricing')}
-          </h3>
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-          }}>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Purchase Price
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {formatPrice(product.buy_price)}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Selling Price
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {formatPrice(product.sell_price ?? product.unit_price)}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Minimum Price
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {formatPrice(product.minimum_price)}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Average Cost
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {formatPrice(product.average_cost)}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Discount
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {product.discount_type === 'fixed'
-                  ? formatPrice(product.discount)
-                  : formatPercentage(product.discount)}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Profit Margin
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {formatPercentage(product.profit_margin)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Inventory - Unified */}
-        {product.track_stock && (
-          <div className="card">
-            <h3 style={{ 
-              fontSize: 'var(--font-lg)',
-              fontWeight: 'var(--font-weight-semibold)',
-              color: 'var(--text-primary)',
-              margin: 0,
-              marginBottom: 'var(--spacing-4)',
-            }}>
-              {t('section', 'inventory')}
-            </h3>
-            <div style={{ 
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-              gap: 'var(--spacing-4)',
-            }}>
+          {/* Tax & Discount */}
+          <div className="info-section">
+            <div className="info-section-title">Tax & Discount</div>
+            <div className="info-grid">
+              <Field label="Tax 1" value={formatPercentage(product.tax1)} />
+              <Field label="Tax 2" value={formatPercentage(product.tax2)} />
+              <Field label="Discount Type" value={product.discount_type} />
               <div>
-                <label style={{ 
-                  display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
-                  color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
-                }}>
-                  Stock Balance
-                </label>
-                <p style={{ 
-                  fontSize: 'var(--font-base)',
-                  color: 'var(--text-primary)',
-                  margin: 0,
-                }}>
-                  {formatNumber(product.stock_balance, 2)}
-                </p>
-              </div>
-              <div>
-                <label style={{ 
-                  display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
-                  color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
-                }}>
-                  Low Stock Threshold
-                </label>
-                <p style={{ 
-                  fontSize: 'var(--font-base)',
-                  color: 'var(--text-primary)',
-                  margin: 0,
-                }}>
-                  {formatNumber(product.low_stock_threshold, 2)}
-                </p>
-              </div>
-              <div>
-                <label style={{ 
-                  display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
-                  color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
-                }}>
-                  Stock Status
-                </label>
-                <span className={`badge ${
-                  product.stock_balance !== undefined &&
-                  product.low_stock_threshold !== undefined &&
-                  product.stock_balance <= product.low_stock_threshold
-                    ? 'badge-error'
-                    : 'badge-success'
-                }`}>
-                  {product.stock_balance !== undefined &&
-                  product.low_stock_threshold !== undefined &&
-                  product.stock_balance <= product.low_stock_threshold
-                    ? 'Low Stock'
-                    : 'In Stock'}
+                <div className="info-label">Track Stock</div>
+                <span className={`badge ${product.track_stock ? 'badge-success' : 'badge-info'}`}>
+                  {product.track_stock ? 'Yes' : 'No'}
                 </span>
               </div>
             </div>
           </div>
-        )}
 
-        {/* Taxes & Discount - Unified */}
-        <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-4)',
-          }}>
-            {t('section', 'taxesDiscount')}
-          </h3>
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-          }}>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Tax 1
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {formatPercentage(product.tax1)}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Tax 2
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {formatPercentage(product.tax2)}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Discount Type
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {product.discount_type || '—'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Additional Information - Unified */}
-        {product.internal_notes && (
-          <div className="card">
-            <h3 style={{
-              fontSize: 'var(--font-lg)',
-              fontWeight: 'var(--font-weight-semibold)',
-              color: 'var(--text-primary)',
-              margin: 0,
-              marginBottom: 'var(--spacing-4)',
-            }}>
-              Additional Information
-            </h3>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-              gap: 'var(--spacing-4)',
-            }}>
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{
-                  display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
-                  color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
-                }}>
-                  Internal Notes
-                </label>
-                <p style={{
-                  fontSize: 'var(--font-base)',
-                  color: 'var(--text-primary)',
-                  margin: 0,
-                  whiteSpace: 'pre-wrap',
-                }}>
-                  {product.internal_notes}
-                </p>
+          {/* Inventory */}
+          {product.track_stock && (
+            <div className="info-section">
+              <div className="info-section-title">Inventory</div>
+              <div className="info-grid">
+                <Field label="Stock Balance" value={formatNumber(product.stock_balance, 2)} />
+                <Field label="Low Stock Threshold" value={formatNumber(product.low_stock_threshold, 2)} />
+                <div>
+                  <div className="info-label">Stock Status</div>
+                  <span className={`badge ${isLowStock ? 'badge-error' : 'badge-success'}`}>
+                    {isLowStock ? 'Low Stock' : 'In Stock'}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Status Information - Unified */}
-        <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-4)',
-          }}>
-            Status Information
-          </h3>
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-          }}>
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                {t('col', 'status')}
-              </label>
-              <span className={`badge ${
-                product.status === 'active' ? 'badge-success' :
-                product.status === 'inactive' ? 'badge-error' :
-                'badge-info'
-              }`}>
-                {product.status === 'active' ? t('status', 'active') : product.status === 'inactive' ? t('status', 'inactive') : t('status', 'active')}
-              </span>
+          {/* Tags */}
+          {product.tags && (
+            <div className="info-section">
+              <div className="info-section-title">Tags</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginTop: 'var(--space-1)' }}>
+                {product.tags.split(',').map((tag, i) => (
+                  <span key={i} className="badge badge-info">{tag.trim()}</span>
+                ))}
+              </div>
             </div>
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                {t('col', 'active')}
-              </label>
-              <span className={`badge ${product.is_active ? 'badge-success' : 'badge-error'}`}>
-                {product.is_active ? 'Yes' : 'No'}
-              </span>
+          )}
+
+          {/* Description */}
+          {product.description && (
+            <div className="info-section">
+              <div className="info-section-title">Description</div>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: 0 }}>
+                {product.description}
+              </p>
             </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Track Stock
-              </label>
-              <span className={`badge ${product.track_stock ? 'badge-success' : 'badge-info'}`}>
-                {product.track_stock ? 'Yes' : 'No'}
-              </span>
+          )}
+
+          {/* Internal Notes */}
+          {product.internal_notes && (
+            <div className="info-section">
+              <div className="info-section-title">Internal Notes</div>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: 0 }}>
+                {product.internal_notes}
+              </p>
             </div>
-          </div>
+          )}
         </div>
       </PageShell>
     </MainLayout>

@@ -48,9 +48,10 @@ export default function ProfilePage() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="card text-center py-12">
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
+        <PageShell>
+          <div className="card animate-pulse" style={{ height: 80 }} />
+          <div className="card animate-pulse" style={{ height: 200 }} />
+        </PageShell>
       </MainLayout>
     );
   }
@@ -108,46 +109,45 @@ export default function ProfilePage() {
           </div>
         ) : (
           <div className="card">
-            <h2 className="section-title">Profile Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="info-grid">
               <div>
-                <p className="text-sm text-muted-foreground">Full Name</p>
-                <p className="font-medium">{fullName}</p>
+                <div className="info-label">Full Name</div>
+                <div className="info-value">{fullName}</div>
               </div>
               {(user as any).full_name_ar && (
                 <div>
-                  <p className="text-sm text-muted-foreground">Arabic Name</p>
-                  <p className="font-medium" dir="rtl">{(user as any).full_name_ar}</p>
+                  <div className="info-label">Arabic Name</div>
+                  <div className="info-value" dir="rtl">{(user as any).full_name_ar}</div>
                 </div>
               )}
               <div>
-                <p className="text-sm text-muted-foreground">Username</p>
-                <p className="font-medium">{user.username}</p>
+                <div className="info-label">Username</div>
+                <div className="info-value info-value-mono">{user.username}</div>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Email</p>
-                <p className="font-medium">{user.email}</p>
+                <div className="info-label">Email</div>
+                <div className="info-value">{user.email}</div>
               </div>
               {user.phone && (
                 <div>
-                  <p className="text-sm text-muted-foreground">Phone</p>
-                  <p className="font-medium">{user.phone}</p>
+                  <div className="info-label">Phone</div>
+                  <div className="info-value">{user.phone}</div>
                 </div>
               )}
               <div>
-                <p className="text-sm text-muted-foreground">Role</p>
-                <p className="font-medium">{roleLabels[user.role] || user.role}</p>
+                <div className="info-label">Role</div>
+                <div className="info-value">{roleLabels[user.role] || user.role}</div>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Status</p>
+                <div className="info-label">Status</div>
                 <span className={`badge ${user.is_active ? 'badge-success' : 'badge-error'}`}>
                   {user.is_active ? 'Active' : 'Inactive'}
                 </span>
               </div>
               {(user as any).date_joined && (
                 <div>
-                  <p className="text-sm text-muted-foreground">Member Since</p>
-                  <p className="font-medium">{new Date((user as any).date_joined).toLocaleDateString('en-US')}</p>
+                  <div className="info-label">Member Since</div>
+                  <div className="info-value">{new Date((user as any).date_joined).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
                 </div>
               )}
             </div>

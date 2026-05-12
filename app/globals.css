@@ -1098,6 +1098,89 @@ table tbody tr:hover {
 .border-primary   { border-color: var(--border-subtle); }
 .border-secondary { border-color: var(--border-default); }
 
+/* ── LEGACY TOKEN ALIASES ─────────────────────────────────────── */
+/* Old pages used --font-* and --spacing-* naming — alias them */
+:root {
+  --font-xs:    var(--text-xs);
+  --font-sm:    var(--text-sm);
+  --font-base:  var(--text-base);
+  --font-md:    var(--text-md);
+  --font-lg:    var(--text-lg);
+  --font-xl:    var(--text-xl);
+  --font-2xl:   var(--text-2xl);
+  --font-3xl:   var(--text-3xl);
+  --font-4xl:   var(--text-4xl);
+
+  --font-weight-normal:   var(--weight-normal);
+  --font-weight-medium:   var(--weight-medium);
+  --font-weight-semibold: var(--weight-semibold);
+  --font-weight-bold:     var(--weight-bold);
+
+  --spacing-0:  var(--space-0);
+  --spacing-1:  var(--space-1);
+  --spacing-2:  var(--space-2);
+  --spacing-3:  var(--space-3);
+  --spacing-4:  var(--space-4);
+  --spacing-5:  var(--space-5);
+  --spacing-6:  var(--space-6);
+  --spacing-7:  var(--space-7);
+  --spacing-8:  var(--space-8);
+  --spacing-10: var(--space-10);
+  --spacing-12: var(--space-12);
+  --spacing-16: var(--space-16);
+}
+
+/* ── DETAIL VIEW — INFO FIELD PATTERN ────────────────────────── */
+/* Replaces verbose inline styles on label+value pairs */
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-5) var(--space-6);
+}
+
+.info-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-1);
+  line-height: 1;
+}
+
+.info-value {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: var(--weight-medium);
+  line-height: 1.4;
+}
+
+.info-value-mono {
+  font-family: ui-monospace, 'Cascadia Code', 'SF Mono', monospace;
+  font-size: var(--text-xs);
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+/* Section divider inside a card */
+.info-section {
+  padding-top: var(--space-5);
+  margin-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.info-section-title {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-4);
+}
+
+.info-full { grid-column: 1 / -1; }
+
 /* ── WORKSPACE PATTERNS ───────────────────────────────────────── */
 
 /* Stat strip — horizontal inline numbers, no cards */

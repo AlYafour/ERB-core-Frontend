@@ -10,6 +10,15 @@ import { PageShell } from '@/components/ui';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useT } from '@/lib/i18n/useT';
 
+function Field({ label, value, mono, full }: { label: string; value?: string | null; mono?: boolean; full?: boolean }) {
+  return (
+    <div className={full ? 'info-full' : undefined}>
+      <div className="info-label">{label}</div>
+      <div className={mono ? 'info-value-mono' : 'info-value'}>{value || '—'}</div>
+    </div>
+  );
+}
+
 export default function SupplierDetailPage() {
   const t = useT();
   const params = useParams();
@@ -26,11 +35,10 @@ export default function SupplierDetailPage() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('btn', 'loading')}</p>
-          </div>
-        </div>
+        <PageShell>
+          <div className="card animate-pulse" style={{ height: 120 }} />
+          <div className="card animate-pulse" style={{ height: 320 }} />
+        </PageShell>
       </MainLayout>
     );
   }
@@ -38,11 +46,11 @@ export default function SupplierDetailPage() {
   if (!supplier) {
     return (
       <MainLayout>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('empty', 'notFound')}</p>
+        <PageShell>
+          <div className="card empty-state">
+            <p className="empty-state-title">{t('empty', 'notFound')}</p>
           </div>
-        </div>
+        </PageShell>
       </MainLayout>
     );
   }
@@ -50,7 +58,6 @@ export default function SupplierDetailPage() {
   return (
     <MainLayout>
       <PageShell>
-        {/* Entity Header - Unified */}
         <EntityHeader
           title={supplier.business_name || supplier.name || 'Unnamed Supplier'}
           subtitle={supplier.supplier_number || undefined}
@@ -60,543 +67,76 @@ export default function SupplierDetailPage() {
           statusBadge={supplier.is_active ? t('status', 'active') : t('status', 'inactive')}
           statusVariant={supplier.is_active ? 'success' : 'error'}
           backHref="/suppliers"
-          backLabel={`${t('btn','back')} ${t('page','suppliers')}`}
+          backLabel={`${t('btn', 'back')} ${t('page', 'suppliers')}`}
           actions={
-            <>
+            isAdmin ? (
               <Link href={`/suppliers/${id}`} className="btn btn-edit">
                 {t('btn', 'edit')}
               </Link>
-            </>
+            ) : undefined
           }
         />
 
-        {/* Business Information - Unified */}
+        {/* Single consolidated detail card */}
         <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-4)',
-          }}>
-            Business Information
-          </h3>
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-          }}>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Business Name
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                fontWeight: 'var(--font-weight-semibold)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.business_name || supplier.name || '-'}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Supplier Number
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.supplier_number || '-'}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Currency
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.currency || '-'}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                First Name
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.first_name || '-'}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Last Name
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.last_name || '-'}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Contact Person
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.contact_person || '-'}
-              </p>
+
+          {/* Business & Contact */}
+          <div className="info-section-title">Business & Contact</div>
+          <div className="info-grid">
+            <Field label="Business Name" value={supplier.business_name || supplier.name} />
+            <Field label="Supplier Number" value={supplier.supplier_number} mono />
+            <Field label="Currency" value={supplier.currency} />
+            <Field label="Contact Person" value={supplier.contact_person} />
+            <Field label="First Name" value={supplier.first_name} />
+            <Field label="Last Name" value={supplier.last_name} />
+          </div>
+
+          {/* Contact Details */}
+          <div className="info-section">
+            <div className="info-section-title">Contact Details</div>
+            <div className="info-grid">
+              <Field label="Email" value={supplier.email} />
+              <Field label="Phone" value={supplier.phone} />
+              <Field label="Mobile" value={supplier.mobile} />
+              <Field label="Telephone" value={supplier.telephone} />
             </div>
           </div>
-        </div>
 
-        {/* Contact Information - Unified */}
-        <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-4)',
-          }}>
-            Contact Information
-          </h3>
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-          }}>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Email
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.email || '-'}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Phone
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.phone || '-'}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Mobile
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.mobile || '-'}
-              </p>
-            </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Telephone
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.telephone || '-'}
-              </p>
+          {/* Address */}
+          <div className="info-section">
+            <div className="info-section-title">Address</div>
+            <div className="info-grid">
+              {supplier.street_address_1 && <Field label="Street Address" value={supplier.street_address_1} full />}
+              {supplier.street_address_2 && <Field label="Street Address 2" value={supplier.street_address_2} full />}
+              <Field label="City" value={supplier.city} />
+              <Field label="State / Province" value={supplier.state} />
+              <Field label="Postal Code" value={supplier.postal_code} />
+              <Field label="Country" value={supplier.country} />
             </div>
           </div>
-        </div>
 
-        {/* Address Information - Unified */}
-        <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-4)',
-          }}>
-            Address Information
-          </h3>
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-          }}>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Street Address 1
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.street_address_1 || '-'}
-              </p>
-            </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Street Address 2
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.street_address_2 || '-'}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                City
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.city || '-'}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                State
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.state || '-'}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Postal Code
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.postal_code || '-'}
-              </p>
-            </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Country
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.country || '-'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* TRN / Tax Details - Unified */}
-        <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-4)',
-          }}>
-            TRN / Tax Details
-          </h3>
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-          }}>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                TRN
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.trn || '-'}
-              </p>
-            </div>
-            <div style={{ gridColumn: 'span 2' }}>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Tax ID
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.tax_id || '-'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Bank Information - Unified */}
-        <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-4)',
-          }}>
-            Bank Information
-          </h3>
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-          }}>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Bank Name
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.bank_name || '-'}
-              </p>
-            </div>
-            <div style={{ gridColumn: 'span 2' }}>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Bank Account
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {supplier.bank_account || '-'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Additional Information - Unified */}
-        {supplier.notes && (
-          <div className="card">
-            <h3 style={{ 
-              fontSize: 'var(--font-lg)',
-              fontWeight: 'var(--font-weight-semibold)',
-              color: 'var(--text-primary)',
-              margin: 0,
-              marginBottom: 'var(--spacing-4)',
-            }}>
-              Additional Information
-            </h3>
-            <div style={{ 
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-              gap: 'var(--spacing-4)',
-            }}>
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ 
-                  display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
-                  color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
-                }}>
-                  Notes
-                </label>
-                <p style={{ 
-                  fontSize: 'var(--font-base)',
-                  color: 'var(--text-primary)',
-                  margin: 0,
-                  whiteSpace: 'pre-wrap',
-                }}>
-                  {supplier.notes}
-                </p>
+          {/* Tax & Banking */}
+          {(supplier.trn || supplier.tax_id || supplier.bank_name || supplier.bank_account) && (
+            <div className="info-section">
+              <div className="info-section-title">Tax & Banking</div>
+              <div className="info-grid">
+                {supplier.trn        && <Field label="TRN" value={supplier.trn} mono />}
+                {supplier.tax_id     && <Field label="Tax ID" value={supplier.tax_id} mono />}
+                {supplier.bank_name  && <Field label="Bank Name" value={supplier.bank_name} />}
+                {supplier.bank_account && <Field label="Bank Account" value={supplier.bank_account} mono />}
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Status Information - Unified */}
-        <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-4)',
-          }}>
-            Status Information
-          </h3>
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-          }}>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Status
-              </label>
-              <span className={`badge ${supplier.is_active ? 'badge-success' : 'badge-error'}`}>
-                {supplier.is_active ? t('status', 'active') : t('status', 'inactive')}
-              </span>
+          {/* Notes */}
+          {supplier.notes && (
+            <div className="info-section">
+              <div className="info-section-title">Notes</div>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: 0 }}>
+                {supplier.notes}
+              </p>
             </div>
-          </div>
+          )}
         </div>
       </PageShell>
     </MainLayout>
