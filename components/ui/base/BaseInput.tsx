@@ -11,39 +11,34 @@ export interface BaseInputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const BaseInput = forwardRef<HTMLInputElement, BaseInputProps>(
-  ({ label, error, helperText, className, ...props }, ref) => {
+  ({ label, error, helperText, className, style, ...props }, ref) => {
     return (
       <div className="w-full">
         {label && (
-          <label 
-            className="form-label"
-          >
+          <label className="form-label">
             {label}
-            {props.required && <span style={{ color: 'var(--color-error)' }} className="ml-1">*</span>}
+            {props.required && (
+              <span style={{ color: 'var(--status-error)' }} className="ml-1">*</span>
+            )}
           </label>
         )}
         <input
           ref={ref}
-          className={cn(
-            'input',
-            error && 'border-red-500 focus:ring-red-500/20 focus:border-red-500',
-            className
-          )}
+          className={cn('input', className)}
+          style={error ? {
+            borderColor: 'var(--status-error)',
+            boxShadow: `0 0 0 3px var(--status-error-border)`,
+            ...style,
+          } : style}
           {...props}
         />
         {error && (
-          <p 
-            className="mt-1.5 text-xs"
-            style={{ color: 'var(--color-error)' }}
-          >
+          <p className="mt-1.5 text-[11px]" style={{ color: 'var(--status-error)' }}>
             {error}
           </p>
         )}
         {helperText && !error && (
-          <p 
-            className="mt-1.5 text-xs"
-            style={{ color: 'var(--text-secondary)' }}
-          >
+          <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
             {helperText}
           </p>
         )}
@@ -51,7 +46,6 @@ export const BaseInput = forwardRef<HTMLInputElement, BaseInputProps>(
     );
   }
 );
-
 BaseInput.displayName = 'BaseInput';
 
 export interface BaseTextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -62,39 +56,34 @@ export interface BaseTextareaProps extends TextareaHTMLAttributes<HTMLTextAreaEl
 }
 
 export const BaseTextarea = forwardRef<HTMLTextAreaElement, BaseTextareaProps>(
-  ({ label, error, helperText, className, ...props }, ref) => {
+  ({ label, error, helperText, className, style, ...props }, ref) => {
     return (
       <div className="w-full">
         {label && (
-          <label 
-            className="form-label"
-          >
+          <label className="form-label">
             {label}
-            {props.required && <span style={{ color: 'var(--color-error)' }} className="ml-1">*</span>}
+            {props.required && (
+              <span style={{ color: 'var(--status-error)' }} className="ml-1">*</span>
+            )}
           </label>
         )}
         <textarea
           ref={ref}
-          className={cn(
-            'input resize-none',
-            error && 'border-red-500 focus:ring-red-500/20 focus:border-red-500',
-            className
-          )}
+          className={cn('input resize-none', className)}
+          style={error ? {
+            borderColor: 'var(--status-error)',
+            boxShadow: `0 0 0 3px var(--status-error-border)`,
+            ...style,
+          } : style}
           {...props}
         />
         {error && (
-          <p 
-            className="mt-1.5 text-xs"
-            style={{ color: 'var(--color-error)' }}
-          >
+          <p className="mt-1.5 text-[11px]" style={{ color: 'var(--status-error)' }}>
             {error}
           </p>
         )}
         {helperText && !error && (
-          <p 
-            className="mt-1.5 text-xs"
-            style={{ color: 'var(--text-secondary)' }}
-          >
+          <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
             {helperText}
           </p>
         )}
@@ -102,5 +91,4 @@ export const BaseTextarea = forwardRef<HTMLTextAreaElement, BaseTextareaProps>(
     );
   }
 );
-
 BaseTextarea.displayName = 'BaseTextarea';

@@ -6,30 +6,28 @@ import { cn } from '@/lib/utils/cn';
 interface TabsContextValue {
   activeTab: string;
   setActiveTab: (value: string) => void;
+  variant: 'underline' | 'pills';
 }
 
 const TabsContext = createContext<TabsContextValue | undefined>(undefined);
 
 function useTabsContext() {
-  const context = useContext(TabsContext);
-  if (!context) {
-    throw new Error('Tabs components must be used within Tabs');
-  }
-  return context;
+  const ctx = useContext(TabsContext);
+  if (!ctx) throw new Error('Tabs components must be used within <Tabs>');
+  return ctx;
 }
 
 export interface TabsProps {
   defaultValue: string;
   children: ReactNode;
   className?: string;
-  variant?: 'default' | 'pills';
+  variant?: 'underline' | 'pills';
 }
 
-export function Tabs({ defaultValue, children, className, variant = 'default' }: TabsProps) {
+export function Tabs({ defaultValue, children, className, variant = 'underline' }: TabsProps) {
   const [activeTab, setActiveTab] = useState(defaultValue);
-
   return (
-    <TabsContext.Provider value={{ activeTab, setActiveTab }}>
+    <TabsContext.Provider value={{ activeTab, setActiveTab, variant }}>
       <div className={cn('w-full', className)}>
         {children}
       </div>
@@ -43,13 +41,28 @@ export interface TabsListProps {
 }
 
 export function TabsList({ children, className }: TabsListProps) {
+  const { variant } = useTabsContext();
+
+  if (variant === 'pills') {
+    return (
+      <div
+        role="tablist"
+        className={cn('inline-flex items-center gap-1 p-1 rounded-md', className)}
+        style={{
+          background: 'var(--surface-subtle)',
+          border: '1px solid var(--border-subtle)',
+        }}
+      >
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div
-      className={cn(
-        'inline-flex items-center gap-1 p-1 bg-muted rounded-md',
-        className
-      )}
       role="tablist"
+      className={cn('flex items-center gap-0', className)}
+      style={{ borderBottom: '1px solid var(--border-subtle)' }}
     >
       {children}
     </div>
@@ -63,23 +76,60 @@ export interface TabsTriggerProps {
 }
 
 export function TabsTrigger({ value, children, className }: TabsTriggerProps) {
-  const { activeTab, setActiveTab } = useTabsContext();
+  const { activeTab, setActiveTab, variant } = useTabsContext();
   const isActive = activeTab === value;
 
+  if (variant === 'pills') {
+    return (
+      <button
+        type="button"
+        role="tab"
+        aria-selected={isActive}
+        onClick={() => setActiveTab(value)}
+        className={cn('px-3 py-1.5 rounded-md text-[13px] transition-all', className)}
+        style={{
+          fontWeight: isActive ? 600 : 400,
+          color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+          background: isActive ? 'var(--surface-base)' : 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          boxShadow: isActive ? 'var(--shadow-xs)' : 'none',
+        }}
+      >
+        {children}
+      </button>
+    );
+  }
+
+  /* Underline variant (default) */
   return (
     <button
       type="button"
       role="tab"
       aria-selected={isActive}
       onClick={() => setActiveTab(value)}
-      className={cn(
-        'px-4 py-2 text-sm font-medium rounded-md transition-all duration-150',
-        'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
-        isActive
-          ? 'bg-background text-foreground shadow-sm'
-          : 'text-muted-foreground hover:text-foreground hover:bg-accent',
-        className
-      )}
+      className={cn(className)}
+      style={{
+        padding: '9px 16px',
+        fontSize: 'var(--text-sm)',
+        fontWeight: isActive ? 600 : 400,
+        color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+        background: 'transparent',
+        border: 'none',
+        borderBottom: isActive
+          ? '2px solid var(--brand)'
+          : '2px solid transparent',
+        marginBottom: '-1px',
+        cursor: 'pointer',
+        whiteSpace: 'nowrap',
+        transition: 'color 100ms cubic-bezier(0.16,1,0.3,1), border-color 100ms cubic-bezier(0.16,1,0.3,1)',
+      }}
+      onMouseEnter={(e) => {
+        if (!isActive) e.currentTarget.style.color = 'var(--text-primary)';
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive) e.currentTarget.style.color = 'var(--text-secondary)';
+      }}
     >
       {children}
     </button>
@@ -94,16 +144,10 @@ export interface TabsContentProps {
 
 export function TabsContent({ value, children, className }: TabsContentProps) {
   const { activeTab } = useTabsContext();
-  
   if (activeTab !== value) return null;
-
   return (
-    <div
-      className={cn('mt-4', className)}
-      role="tabpanel"
-    >
+    <div role="tabpanel" className={cn('mt-4', className)}>
       {children}
     </div>
   );
 }
-

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Checkbox, Button, Loader } from '@/components/ui';
+import { Checkbox, Button, Loader, Skeleton } from '@/components/ui';
 
 // ── Column definition ────────────────────────────────────────────────────────
 export interface Column<T> {
@@ -99,17 +99,23 @@ export default function DataTable<T>({
 
   if (isLoading) {
     return (
-      <div className="card text-center py-12">
-        <Loader className="mx-auto mb-4" />
-        <p style={{ color: 'var(--text-secondary)' }}>Loading...</p>
+      <div className="card p-5 space-y-2.5">
+        {[...Array(6)].map((_, i) => (
+          <Skeleton key={i} className="h-10 w-full" />
+        ))}
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="card text-center py-8">
-        <p className="text-sm font-medium" style={{ color: 'var(--color-error)' }}>
+      <div className="card" style={{ padding: '40px 24px', textAlign: 'center' }}>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          style={{ color: 'var(--status-error)', opacity: 0.7, margin: '0 auto 10px' }}>
+          <circle cx="12" cy="12" r="10" strokeWidth="1.5" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4m0 4h.01" />
+        </svg>
+        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--status-error)', margin: 0 }}>
           Failed to load data. Please try again.
         </p>
       </div>
@@ -118,8 +124,15 @@ export default function DataTable<T>({
 
   if (data.length === 0) {
     return (
-      <div className="card text-center py-12 space-y-3">
-        <p style={{ color: 'var(--text-secondary)' }}>{emptyMessage}</p>
+      <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          style={{ color: 'var(--text-tertiary)', margin: '0 auto 12px', display: 'block' }}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"
+            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0H4m4 0v-2a4 4 0 018 0v2" />
+        </svg>
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: '0 0 12px' }}>
+          {emptyMessage}
+        </p>
         {emptyAction}
       </div>
     );

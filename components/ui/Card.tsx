@@ -16,9 +16,9 @@ export function Card({ children, className, padding = 'md', hover = false }: Car
       className={cn(
         'card',
         padding === 'none' && 'p-0',
-        padding === 'sm' && 'p-4',
-        padding === 'md' && 'p-6',
-        padding === 'lg' && 'p-8',
+        padding === 'sm' && 'p-3',
+        padding === 'md' && 'p-5',
+        padding === 'lg' && 'p-7',
         hover && 'card-hover',
         className
       )}
@@ -37,7 +37,7 @@ export function CardHeader({ children, className }: CardHeaderProps) {
   return (
     <div
       className={cn(
-        'mb-6 pb-4 border-b',
+        'mb-5 pb-4 border-b',
         className
       )}
       style={{

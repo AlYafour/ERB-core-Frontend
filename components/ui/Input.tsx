@@ -67,8 +67,8 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
                 cursor: 'pointer',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--color-primary)';
-                e.currentTarget.style.backgroundColor = 'rgba(249, 115, 22, 0.1)';
+                e.currentTarget.style.color = 'var(--brand)';
+                e.currentTarget.style.backgroundColor = 'var(--brand-subtle)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.color = 'var(--text-tertiary)';

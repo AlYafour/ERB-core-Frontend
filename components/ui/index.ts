@@ -34,6 +34,8 @@ export {
 export {
   Loader,
   Spinner,
+  Skeleton,
+  PageLoader,
   type LoaderProps,
 } from './Loader';
 
