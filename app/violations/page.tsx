@@ -37,16 +37,24 @@ function parseMessage(text: string) {
 function StatusBadge({ status }: { status: string }) {
   const cfg = STATUS_CFG[status as keyof typeof STATUS_CFG] ?? STATUS_CFG.new;
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-      padding: '3px 10px', borderRadius: 20,
-      background: cfg.bg, color: cfg.color,
-      fontSize: 11, fontWeight: 700, border: `1px solid ${cfg.border}`,
-      whiteSpace: 'nowrap',
-    }}>
-      <span style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.dot, flexShrink: 0 }} />
+    <span className="status-pill" style={{
+      '--pill-color': cfg.color,
+      '--pill-bg': cfg.bg,
+      '--pill-border': cfg.border,
+    } as React.CSSProperties}>
+      <span className="status-pill-dot" style={{ background: cfg.dot }} />
       {cfg.label}
     </span>
+  );
+}
+
+/* ─── Info box ───────────────────────────────────────────────────────────── */
+function InfoBox({ label, value, valueColor, bold }: { label: string; value: string; valueColor?: string; bold?: boolean }) {
+  return (
+    <div className="info-box">
+      <div className="info-box-label">{label}</div>
+      <div className="info-box-value" style={{ fontWeight: bold ? 700 : undefined, color: valueColor ?? undefined }}>{value}</div>
+    </div>
   );
 }
 
@@ -76,45 +84,39 @@ function ViolationDetailPanel({
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  const deadlineColor = violation.deadline_days == null ? '#64748B'
-    : violation.deadline_days <= 1 ? '#DC2626'
-    : violation.deadline_days <= 3 ? '#D97706'
-    : '#16A34A';
+  const deadlineColor = violation.deadline_days == null ? 'var(--text-tertiary)'
+    : violation.deadline_days <= 1 ? 'var(--red-600, #DC2626)'
+    : violation.deadline_days <= 3 ? 'var(--orange-600, #D97706)'
+    : 'var(--green-700, #15803D)';
 
   return (
-    <div style={{
-      width: 440, flexShrink: 0,
-      background: '#fff', border: '1.5px solid #E2E8F0', borderRadius: 16,
-      overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
-      position: 'sticky', top: 0, maxHeight: 'calc(100vh - 130px)',
-      display: 'flex', flexDirection: 'column',
-    }}>
+    <div className="detail-panel">
       {/* Header */}
-      <div style={{ padding: '14px 18px', borderBottom: '1.5px solid #F1F5F9', background: '#FAFAFA', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+      <div className="detail-panel-header">
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 14, color: '#0F172A' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-1)' }}>
+            <span style={{ fontFamily: 'ui-monospace, monospace', fontWeight: 800, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
               Ref: {violation.reference_number || `#${violation.id}`}
             </span>
             <StatusBadge status={violation.status} />
           </div>
-          <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 3 }}>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
             {violation.sender} · {fmtDate(violation.received_at)}
           </div>
         </div>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: '#94A3B8', fontSize: 18, lineHeight: 1, borderRadius: 6 }}>✕</button>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: 'var(--text-tertiary)', fontSize: 18, lineHeight: 1, borderRadius: 'var(--radius-md)' }}>✕</button>
       </div>
 
       {/* Scrollable body */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="detail-panel-body">
 
-        {/* Key facts row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+        {/* Key facts grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-2)' }}>
           <InfoBox label="Area" value={violation.area || '—'} />
           <InfoBox label="Sector" value={violation.sector || '—'} />
           <InfoBox label="Plot No." value={violation.plot || '—'} />
           {violation.fine_amount && (
-            <InfoBox label="Fine" value={`${Number(violation.fine_amount).toLocaleString()} AED`} valueColor="#DC2626" bold />
+            <InfoBox label="Fine" value={`${Number(violation.fine_amount).toLocaleString()} AED`} valueColor="var(--red-600, #DC2626)" bold />
           )}
           {violation.deadline_days != null && (
             <InfoBox label="Deadline" value={`${violation.deadline_days} days`} valueColor={deadlineColor} bold />
@@ -124,31 +126,47 @@ function ViolationDetailPanel({
           )}
         </div>
 
-        {/* Violation description */}
+        {/* Violation description (Arabic) */}
         {violation.violation_description && (
-          <div style={{ padding: '10px 14px', background: '#FFFBEB', borderRadius: 10, border: '1px solid #FDE68A', fontSize: 12, color: '#92400E', direction: 'rtl', textAlign: 'right', lineHeight: 1.8, fontFamily: 'system-ui, Tahoma, Arial, sans-serif' }}>
+          <div style={{
+            padding: 'var(--space-3) var(--space-4)',
+            background: 'color-mix(in srgb, var(--yellow-400, #FACC15) 8%, var(--card-bg))',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid color-mix(in srgb, var(--yellow-400, #FACC15) 30%, transparent)',
+            fontSize: 'var(--text-xs)',
+            color: 'var(--text-secondary)',
+            direction: 'rtl', textAlign: 'right', lineHeight: 1.9,
+            fontFamily: 'system-ui, Tahoma, Arial, sans-serif',
+          }}>
             {violation.violation_description}
           </div>
         )}
 
         {/* Raw SMS */}
         <div>
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 }}>Original SMS</div>
+          <div className="info-box-label" style={{ marginBottom: 'var(--space-2)' }}>Original SMS</div>
           <div style={{
-            background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10,
-            padding: '12px 14px', direction: 'rtl', textAlign: 'right',
-            fontSize: 12, lineHeight: 2, color: '#334155',
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            padding: 'var(--space-3) var(--space-4)',
+            direction: 'rtl', textAlign: 'right',
+            fontSize: 'var(--text-xs)', lineHeight: 2,
+            color: 'var(--text-secondary)',
             fontFamily: 'system-ui, Tahoma, Arial, sans-serif',
             whiteSpace: 'pre-wrap', maxHeight: 180, overflowY: 'auto',
           }}>
             {body || violation.raw_message}
           </div>
           {urls.length > 0 && (
-            <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            <div style={{ marginTop: 'var(--space-2)', display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
               {urls.map((url, i) => (
                 <a key={i} href={url} target="_blank" rel="noreferrer" style={{
-                  padding: '3px 10px', borderRadius: 7, background: '#EFF6FF',
-                  color: '#1D4ED8', border: '1px solid #BFDBFE', fontSize: 11, fontWeight: 600, textDecoration: 'none',
+                  padding: '3px 10px', borderRadius: 'var(--radius-md)',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--brand)',
+                  border: '1px solid var(--border-default)',
+                  fontSize: 11, fontWeight: 600, textDecoration: 'none',
                 }}>
                   Open ADM Link ↗
                 </a>
@@ -159,12 +177,13 @@ function ViolationDetailPanel({
 
         {/* Project & Engineer */}
         <div>
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8 }}>Project & Engineer</div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+          <div className="info-box-label" style={{ marginBottom: 'var(--space-2)' }}>Project & Engineer</div>
+          <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
             <select
               value={selectedProject}
               onChange={e => setSelectedProject(e.target.value)}
-              style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1.5px solid #E2E8F0', fontSize: 12, background: '#fff', color: '#0F172A' }}
+              className="form-select"
+              style={{ flex: 1 }}
             >
               <option value="">— No Project —</option>
               {projects.map(p => (
@@ -174,28 +193,36 @@ function ViolationDetailPanel({
             <button
               onClick={() => onLinkProject(violation.id, selectedProject ? Number(selectedProject) : null)}
               disabled={linking || selectedProject === (violation.project?.toString() ?? '')}
-              style={{
-                padding: '8px 16px', borderRadius: 8, border: 'none',
-                background: '#2563EB', color: '#fff', fontSize: 12, fontWeight: 600,
-                cursor: linking ? 'wait' : 'pointer', opacity: (linking || selectedProject === (violation.project?.toString() ?? '')) ? 0.5 : 1,
-                whiteSpace: 'nowrap',
-              }}
+              className="btn btn-primary"
+              style={{ whiteSpace: 'nowrap', opacity: (linking || selectedProject === (violation.project?.toString() ?? '')) ? 0.5 : 1 }}
             >
               {linking ? '...' : 'Link'}
             </button>
           </div>
           {violation.engineer_name ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: '#F0FDF4', borderRadius: 8, border: '1px solid #BBF7D0' }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#16A34A', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+              padding: 'var(--space-2) var(--space-3)',
+              background: 'color-mix(in srgb, var(--green-600, #16A34A) 8%, var(--card-bg))',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid color-mix(in srgb, var(--green-600, #16A34A) 25%, transparent)',
+            }}>
+              <div className="av-initials" style={{ width: 28, height: 28, fontSize: 11, background: 'var(--green-600, #16A34A)' }}>
                 {violation.engineer_name[0].toUpperCase()}
               </div>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>{violation.engineer_name}</div>
-                <div style={{ fontSize: 10, color: '#16A34A' }}>Responsible Engineer</div>
+                <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-primary)' }}>{violation.engineer_name}</div>
+                <div style={{ fontSize: 10, color: 'var(--green-600, #16A34A)' }}>Responsible Engineer</div>
               </div>
             </div>
           ) : (
-            <div style={{ padding: '8px 12px', background: '#FEF9C3', borderRadius: 8, fontSize: 11, color: '#92400E', border: '1px solid #FDE68A' }}>
+            <div style={{
+              padding: 'var(--space-2) var(--space-3)',
+              background: 'color-mix(in srgb, var(--yellow-400, #FACC15) 8%, var(--card-bg))',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid color-mix(in srgb, var(--yellow-400, #FACC15) 30%, transparent)',
+              fontSize: 'var(--text-xs)', color: 'var(--text-secondary)',
+            }}>
               No engineer assigned — link a project to auto-assign
             </div>
           )}
@@ -203,41 +230,28 @@ function ViolationDetailPanel({
       </div>
 
       {/* Action footer */}
-      <div style={{ padding: '12px 18px', borderTop: '1.5px solid #F1F5F9', display: 'flex', gap: 8, flexShrink: 0, background: '#FAFAFA' }}>
+      <div className="detail-panel-footer">
         {violation.status !== 'resolved' && (
           <button
             onClick={() => onResolve(violation.id)} disabled={resolving}
-            style={{
-              flex: 1, padding: '10px', borderRadius: 9, border: 'none',
-              background: '#22C55E', color: '#fff', fontSize: 13, fontWeight: 700,
-              cursor: resolving ? 'wait' : 'pointer', opacity: resolving ? 0.7 : 1,
-            }}
+            className="btn btn-primary"
+            style={{ flex: 1, background: 'var(--green-600, #16A34A)', opacity: resolving ? 0.7 : 1, cursor: resolving ? 'wait' : 'pointer' }}
           >
             ✓ Mark Resolved
           </button>
         )}
         <button
           onClick={copyLink}
+          className="btn"
           style={{
-            padding: '10px 14px', borderRadius: 9,
-            border: `1.5px solid ${copiedLink ? '#86EFAC' : '#CBD5E1'}`,
-            background: copiedLink ? '#DCFCE7' : '#fff',
-            color: copiedLink ? '#15803D' : '#475569',
-            fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+            border: `1px solid ${copiedLink ? 'var(--green-400, #4ADE80)' : 'var(--border-default)'}`,
+            background: copiedLink ? 'color-mix(in srgb, var(--green-500, #22C55E) 10%, var(--card-bg))' : 'var(--card-bg)',
+            color: copiedLink ? 'var(--green-700, #15803D)' : 'var(--text-secondary)',
           }}
         >
-          {copiedLink ? '✓ Copied' : '🔗 Engineer Link'}
+          {copiedLink ? '✓ Copied' : 'Engineer Link'}
         </button>
       </div>
-    </div>
-  );
-}
-
-function InfoBox({ label, value, valueColor, bold }: { label: string; value: string; valueColor?: string; bold?: boolean }) {
-  return (
-    <div style={{ padding: '7px 10px', background: '#F8FAFC', borderRadius: 8, border: '1px solid #F1F5F9' }}>
-      <div style={{ fontSize: 9, color: '#94A3B8', marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.4 }}>{label}</div>
-      <div style={{ fontSize: 12, fontWeight: bold ? 700 : 600, color: valueColor ?? '#0F172A' }}>{value}</div>
     </div>
   );
 }

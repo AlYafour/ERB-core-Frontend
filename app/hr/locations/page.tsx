@@ -10,10 +10,10 @@ import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { Button, Badge, Loader, PageHeader, PageShell, SearchInput, Drawer } from '@/components/ui';
 
-const inp = 'w-full px-3 py-2 rounded-md border text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40';
-const sel = `${inp} h-[38px]`;
-const fld = 'flex flex-col gap-1';
-const lbl = 'text-xs font-medium text-muted-foreground uppercase tracking-wide';
+const inp = 'form-input';
+const sel = 'form-select';
+const fld = 'form-field';
+const lbl = 'form-label';
 
 const PRESET_ICONS  = ['🏢', '🏗️', '🔧', '🏭', '🏪', '🏠', '📍', '🗺️', '⚙️', '🏛️', '🚧', '🏕️'];
 const PRESET_COLORS = ['#3b82f6','#f97316','#8b5cf6','#10b981','#ef4444','#f59e0b','#06b6d4','#ec4899','#6b7280'];

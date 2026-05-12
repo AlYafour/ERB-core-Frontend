@@ -31,9 +31,9 @@ const ACTION_LABELS: Record<string, string> = {
   award: 'Award', convert: 'Convert to PO', mark_paid: 'Mark Paid',
 };
 
-const inp = 'w-full px-3 py-2 rounded-md border text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40';
-const fld = 'flex flex-col gap-1';
-const lbl = 'text-xs font-medium text-muted-foreground uppercase tracking-wide';
+const inp = 'form-input';
+const fld = 'form-field';
+const lbl = 'form-label';
 
 export default function RolesPage() {
   const queryClient = useQueryClient();

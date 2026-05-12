@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tasksApi, subTasksApi, taskCommentsApi, myTasksApi } from '@/lib/api/tasks';
@@ -59,17 +59,18 @@ function fmtSize(b: number) {
 // ─── micro ui ─────────────────────────────────────────────────────────────────
 
 function Av({ name, url, size = 28 }: { name: string; url?: string | null; size?: number }) {
-  const i = (name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const initials = (name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const sz = { width: size, height: size, fontSize: size * 0.38 };
   return url
-    ? <img src={url} alt={name} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-    : <div style={{ width: size, height: size, borderRadius: '50%', background: ORANGE, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.38, fontWeight: 700, flexShrink: 0 }}>{i}</div>;
+    ? <img src={url} alt={name} className="av" style={sz} />
+    : <div className="av-initials" style={sz}>{initials}</div>;
 }
 
 function StatusPill({ s }: { s: TaskStatus }) {
   const { label, color, bg } = STATUS[s];
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 99, background: bg, fontSize: 11, fontWeight: 600, color, whiteSpace: 'nowrap', border: `1px solid ${color}30` }}>
-      <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, display: 'inline-block', flexShrink: 0 }} />
+    <span className="status-pill" style={{ '--pill-color': color, '--pill-bg': bg, '--pill-border': color + '30' } as CSSProperties}>
+      <span className="status-pill-dot" />
       {label}
     </span>
   );
@@ -78,10 +79,14 @@ function StatusPill({ s }: { s: TaskStatus }) {
 function PrioBar({ p }: { p: TaskPriority }) {
   const { color, label } = PRIORITY[p];
   const levels = { critical: 4, high: 3, medium: 2, low: 1 };
+  const heights = [5, 7, 10, 13];
   return (
-    <span title={label} style={{ display: 'inline-flex', alignItems: 'flex-end', gap: 2, height: 14, flexShrink: 0 }}>
+    <span className="prio-bar" title={label}>
       {[1, 2, 3, 4].map(l => (
-        <span key={l} style={{ width: 3, borderRadius: 2, background: l <= levels[p] ? color : 'var(--border-primary)', height: l === 1 ? 5 : l === 2 ? 7 : l === 3 ? 10 : 13 }} />
+        <span key={l} className="prio-bar-seg" style={{
+          height: heights[l - 1],
+          background: l <= levels[p] ? color : 'var(--border-primary)',
+        }} />
       ))}
     </span>
   );
@@ -91,38 +96,35 @@ function PrioBar({ p }: { p: TaskPriority }) {
 
 function KCard({ t, onClick }: { t: TaskListItem; onClick: () => void }) {
   const od = isOverdue(t);
-  const accentShadow = `inset 3px 0 0 ${PRIORITY[t.priority].color}`;
   return (
-    <div onClick={onClick} style={{
-      background: 'var(--card-bg)',
-      borderRadius: 8,
-      padding: '12px 14px',
-      marginBottom: 6,
-      boxShadow: `${accentShadow}, 0 1px 2px rgba(0,0,0,0.04), 0 0 0 1px var(--border-primary)`,
-      cursor: 'pointer',
-      transition: 'box-shadow 0.15s',
-    }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = `${accentShadow}, 0 4px 12px rgba(0,0,0,0.08), 0 0 0 1px var(--border-primary)`; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = `${accentShadow}, 0 1px 2px rgba(0,0,0,0.04), 0 0 0 1px var(--border-primary)`; }}
+    <div
+      className="k-card"
+      style={{ '--k-accent': PRIORITY[t.priority].color } as CSSProperties}
+      onClick={onClick}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{TYPE_LABEL[t.task_type]}</span>
+      <div className="k-card-header">
+        <span className="k-card-type">{TYPE_LABEL[t.task_type]}</span>
         <PrioBar p={t.priority} />
       </div>
-      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: 10 }}>{t.title}</p>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {t.assigned_to_detail && <Av name={t.assigned_to_detail.full_name} url={t.assigned_to_detail.avatar_url} size={20} />}
+      <p className="k-card-title">{t.title}</p>
+      <div className="k-card-meta">
+        <div className="k-card-meta-left">
+          {t.assigned_to_detail && (
+            <Av name={t.assigned_to_detail.full_name} url={t.assigned_to_detail.avatar_url} size={20} />
+          )}
           {t.subtasks_total > 0 && (
-            <span style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 3 }}>
-              <span style={{ fontSize: 13 }}>◫</span> {t.subtasks_done}/{t.subtasks_total}
+            <span className="k-card-sub">
+              <span style={{ fontSize: 13 }}>◫</span>
+              {t.subtasks_done}/{t.subtasks_total}
             </span>
           )}
-          {t.comments_count > 0 && <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>· {t.comments_count}</span>}
+          {t.comments_count > 0 && (
+            <span className="k-card-sub">· {t.comments_count}</span>
+          )}
         </div>
         {t.due_date && (
-          <span style={{ fontSize: 11, fontWeight: od ? 700 : 400, color: od ? '#EF4444' : 'var(--text-tertiary)', background: od ? '#FEF2F2' : 'transparent', padding: od ? '1px 5px' : '0', borderRadius: 4 }}>
-            {od ? '⚠ ' : ''}{fmt(t.due_date)}
+          <span className={`k-card-due${od ? ' overdue' : ''}`}>
+            {fmt(t.due_date)}
           </span>
         )}
       </div>
@@ -134,22 +136,21 @@ function KCard({ t, onClick }: { t: TaskListItem; onClick: () => void }) {
 
 function Kanban({ tasks, onOpen }: { tasks: TaskListItem[]; onOpen: (t: TaskListItem) => void }) {
   return (
-    <div style={{ display: 'flex', gap: 12, overflowX: 'auto', alignItems: 'flex-start', paddingBottom: 8 }}>
+    <div className="k-board">
       {KANBAN_COLS.map(col => {
         const { label, color } = STATUS[col];
         const colTasks = tasks.filter(t => t.status === col);
         return (
-          <div key={col} style={{ width: 300, flexShrink: 0 }}>
-            {/* Column header — lighter, no card */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10, padding: '0 2px' }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block', flexShrink: 0 }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', flex: 1 }}>{label}</span>
-              <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-tertiary)', background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', borderRadius: 99, padding: '0 6px', lineHeight: '17px' }}>{colTasks.length}</span>
+          <div key={col} className="k-col">
+            <div className="k-col-header">
+              <span className="k-col-dot" style={{ background: color }} />
+              <span className="k-col-name">{label}</span>
+              <span className="k-col-count">{colTasks.length}</span>
             </div>
-            {colTasks.map(t => <KCard key={t.id} t={t} onClick={() => onOpen(t)} />)}
-            {colTasks.length === 0 && (
-              <div style={{ borderRadius: 8, padding: '24px 0', textAlign: 'center', fontSize: 'var(--text-xs)', color: 'var(--text-disabled)' }}>Empty</div>
-            )}
+            <div className="k-col-cards">
+              {colTasks.map(t => <KCard key={t.id} t={t} onClick={() => onOpen(t)} />)}
+              {colTasks.length === 0 && <div className="k-col-empty">No tasks</div>}
+            </div>
           </div>
         );
       })}
@@ -162,10 +163,10 @@ function Kanban({ tasks, onOpen }: { tasks: TaskListItem[]; onOpen: (t: TaskList
 function ListV({ tasks, onOpen }: { tasks: TaskListItem[]; onOpen: (t: TaskListItem) => void }) {
   return (
     <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', background: 'transparent' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
-          <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)' }}>
-            {['P', 'Task', 'Status', 'Assignee', 'Due', 'Progress'].map((h, i) => (
+          <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-subtle)' }}>
+            {['', 'Task', 'Status', 'Assignee', 'Due', 'Progress'].map((h, i) => (
               <th key={i} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none' }}>{h}</th>
             ))}
           </tr>
@@ -177,29 +178,32 @@ function ListV({ tasks, onOpen }: { tasks: TaskListItem[]; onOpen: (t: TaskListI
               const od = isOverdue(t);
               return (
                 <tr key={t.id} onClick={() => onOpen(t)}
-                  style={{ borderTop: i > 0 ? '1px solid var(--border-primary)' : 'none', cursor: 'pointer', transition: 'background 0.1s' }}
+                  style={{ borderTop: i > 0 ? '1px solid var(--border-subtle)' : 'none', cursor: 'pointer', transition: 'background 0.1s' }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-secondary)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <td style={{ padding: '11px 14px', width: 24, border: 'none' }}><PrioBar p={t.priority} /></td>
+                  <td style={{ padding: '11px 14px', width: 28, border: 'none' }}><PrioBar p={t.priority} /></td>
                   <td style={{ padding: '11px 14px', maxWidth: 340, border: 'none' }}>
-                    <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
-                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>{TYPE_LABEL[t.task_type]}</p>
+                    <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>{t.title}</p>
+                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2, marginBottom: 0 }}>{TYPE_LABEL[t.task_type]}</p>
                   </td>
                   <td style={{ padding: '11px 14px', border: 'none' }}><StatusPill s={t.status} /></td>
                   <td style={{ padding: '11px 14px', border: 'none' }}>
                     {t.assigned_to_detail
-                      ? <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}><Av name={t.assigned_to_detail.full_name} url={t.assigned_to_detail.avatar_url} size={24} /><span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{t.assigned_to_detail.full_name}</span></div>
-                      : <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Unassigned</span>}
+                      ? <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                          <Av name={t.assigned_to_detail.full_name} url={t.assigned_to_detail.avatar_url} size={24} />
+                          <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{t.assigned_to_detail.full_name}</span>
+                        </div>
+                      : <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>—</span>}
                   </td>
-                  <td style={{ padding: '11px 14px', fontSize: 12, color: od ? '#EF4444' : 'var(--text-secondary)', fontWeight: od ? 600 : 400, whiteSpace: 'nowrap', border: 'none' }}>
-                    {od ? '⚠ ' : ''}{fmt(t.due_date)}
+                  <td style={{ padding: '11px 14px', fontSize: 12, color: od ? 'var(--red-600, #EF4444)' : 'var(--text-secondary)', fontWeight: od ? 600 : 400, whiteSpace: 'nowrap', border: 'none' }}>
+                    {fmt(t.due_date)}
                   </td>
-                  <td style={{ padding: '11px 14px', minWidth: 100, border: 'none' }}>
+                  <td style={{ padding: '11px 14px', minWidth: 110, border: 'none' }}>
                     {t.subtasks_total > 0 && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <div style={{ flex: 1, height: 4, background: 'var(--bg-secondary)', borderRadius: 99, overflow: 'hidden' }}>
-                          <div style={{ height: 4, background: ORANGE, borderRadius: 99, width: `${(t.subtasks_done / t.subtasks_total) * 100}%` }} />
+                        <div style={{ flex: 1, height: 4, background: 'var(--border-subtle)', borderRadius: 99, overflow: 'hidden' }}>
+                          <div style={{ height: 4, background: 'var(--brand)', borderRadius: 99, width: `${(t.subtasks_done / t.subtasks_total) * 100}%` }} />
                         </div>
                         <span style={{ fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0 }}>{t.subtasks_done}/{t.subtasks_total}</span>
                       </div>
