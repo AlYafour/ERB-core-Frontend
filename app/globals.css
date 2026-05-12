@@ -1101,6 +1101,8 @@ table tbody tr:hover {
 /* ── LEGACY TOKEN ALIASES ─────────────────────────────────────── */
 /* Old pages used --font-* and --spacing-* naming — alias them */
 :root {
+  --card:       var(--card-bg);
+
   --font-xs:    var(--text-xs);
   --font-sm:    var(--text-sm);
   --font-base:  var(--text-base);

@@ -178,7 +178,7 @@ export default function RolesPage() {
                       className={isSelected ? cardSelected : cardBase}
                       style={{
                         borderColor: isSelected ? 'var(--sidebar-active-text)' : 'var(--border)',
-                        background: isSelected ? 'var(--sidebar-active-bg)' : 'var(--card)',
+                        background: isSelected ? 'var(--sidebar-active-bg)' : 'var(--card-bg)',
                       }}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -217,8 +217,9 @@ export default function RolesPage() {
           {/* ── RIGHT: permissions grid ── */}
           <div className="flex-1 min-w-0">
             {!selected ? (
-              <div className="card text-center py-20">
-                <p className="text-muted-foreground text-sm">Select a role to manage its permissions</p>
+              <div className="card empty-state">
+                <p className="empty-state-title">Select a role to manage its permissions</p>
+                <p className="empty-state-desc">Choose a role from the list on the left</p>
               </div>
             ) : (
               <div className="card space-y-5">

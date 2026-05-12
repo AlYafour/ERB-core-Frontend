@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { projectsApi } from '@/lib/api/projects';
-import { Button, PageShell } from '@/components/ui';
+import { PageShell } from '@/components/ui';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import EntityHeader from '@/components/ui/EntityHeader';
@@ -23,6 +23,15 @@ const statusLabels: Record<string, string> = {
   cancelled: 'Cancelled',
 };
 
+function Field({ label, value, mono, full }: { label: string; value?: string | null; mono?: boolean; full?: boolean }) {
+  return (
+    <div className={full ? 'info-full' : undefined}>
+      <div className="info-label">{label}</div>
+      <div className={mono ? 'info-value-mono' : 'info-value'}>{value || '—'}</div>
+    </div>
+  );
+}
+
 export default function ProjectDetailPage() {
   const params = useParams();
   const id = Number(params.id);
@@ -38,11 +47,10 @@ export default function ProjectDetailPage() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Loading...</p>
-          </div>
-        </div>
+        <PageShell>
+          <div className="card animate-pulse" style={{ height: 120 }} />
+          <div className="card animate-pulse" style={{ height: 280 }} />
+        </PageShell>
       </MainLayout>
     );
   }
@@ -50,34 +58,30 @@ export default function ProjectDetailPage() {
   if (!project) {
     return (
       <MainLayout>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Project not found</p>
+        <PageShell>
+          <div className="card empty-state">
+            <p className="empty-state-title">Project not found</p>
           </div>
-        </div>
+        </PageShell>
       </MainLayout>
     );
   }
 
   const getStatusVariant = (): 'success' | 'error' | 'warning' | 'info' => {
     switch (project.project_status) {
-      case 'completed':
-        return 'success';
-      case 'cancelled':
-        return 'error';
-      case 'on_going':
-        return 'warning';
-      case 'on_hold':
-        return 'info';
-      default:
-        return 'info';
+      case 'completed': return 'success';
+      case 'cancelled': return 'error';
+      case 'on_going':  return 'warning';
+      default:          return 'info';
     }
   };
+
+  const fmt = (dt: string) =>
+    new Date(dt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
     <MainLayout>
       <PageShell>
-        {/* Entity Header - Unified */}
         <EntityHeader
           title={project.name}
           subtitle={project.code}
@@ -89,328 +93,63 @@ export default function ProjectDetailPage() {
           backHref="/projects"
           backLabel="Back to Projects"
           actions={
-            <>
-              <Link href={`/projects/${id}`}><Button variant="edit">Edit</Button></Link>
-            </>
+            isAdmin ? (
+              <Link href={`/projects/${id}`} className="btn btn-edit">Edit</Link>
+            ) : undefined
           }
         />
 
-        {/* Basic Project Information - Unified */}
         <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-4)',
-          }}>
-            Basic Project Information
-          </h3>
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-          }}>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Project Name
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                fontWeight: 'var(--font-weight-semibold)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {project.name}
-              </p>
+          {/* Project Identity */}
+          <div className="info-section-title">Project Details</div>
+          <div className="info-grid">
+            <Field label="Project Name" value={project.name} />
+            <Field label="Project Code" value={project.code} mono />
+            <Field label="Location" value={project.location} />
+            <Field label="Sector" value={project.sector} />
+            <Field label="Plot" value={project.plot} />
+            <Field label="Consultant" value={project.consultant} />
+          </div>
+
+          {/* Contact */}
+          <div className="info-section">
+            <div className="info-section-title">Contact</div>
+            <div className="info-grid">
+              <Field label="Contact Person" value={project.contact_person} />
+              <Field label="Mobile" value={project.mobile_number} />
             </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Project Code
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {project.code}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Location
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {project.location || '-'}
-              </p>
-            </div>
-            {project.description && (
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ 
-                  display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
-                  color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
-                }}>
-                  Description
-                </label>
-                <p style={{ 
-                  fontSize: 'var(--font-base)',
-                  color: 'var(--text-primary)',
-                  margin: 0,
-                  whiteSpace: 'pre-wrap',
-                }}>
-                  {project.description}
-                </p>
+          </div>
+
+          {/* Status & Timeline */}
+          <div className="info-section">
+            <div className="info-section-title">Status & Timeline</div>
+            <div className="info-grid">
+              <div>
+                <div className="info-label">Project Status</div>
+                <span className={`badge ${statusColors[project.project_status] || 'badge-info'}`}>
+                  {statusLabels[project.project_status] || project.project_status}
+                </span>
               </div>
-            )}
+              <div>
+                <div className="info-label">Active</div>
+                <span className={`badge ${project.is_active ? 'badge-success' : 'badge-error'}`}>
+                  {project.is_active ? 'Yes' : 'No'}
+                </span>
+              </div>
+              {project.created_at && <Field label="Created" value={fmt(project.created_at)} />}
+              {project.updated_at && <Field label="Last Updated" value={fmt(project.updated_at)} />}
+            </div>
           </div>
-        </div>
 
-        {/* Contact Information - Unified */}
-        <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-4)',
-          }}>
-            Contact Information
-          </h3>
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-          }}>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Contact Person
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {project.contact_person || '-'}
+          {/* Description */}
+          {project.description && (
+            <div className="info-section">
+              <div className="info-section-title">Description</div>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: 0 }}>
+                {project.description}
               </p>
             </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Mobile Number
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {project.mobile_number || '-'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Project Details - Unified */}
-        <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-4)',
-          }}>
-            Project Details
-          </h3>
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-          }}>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Sector
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {project.sector || '-'}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Plot
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {project.plot || '-'}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Consultant
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {project.consultant || '-'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Status Information - Unified */}
-        <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-4)',
-          }}>
-            Status Information
-          </h3>
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-          }}>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Project Status
-              </label>
-              <span className={`badge ${statusColors[project.project_status] || 'badge-info'}`}>
-                {statusLabels[project.project_status] || project.project_status}
-              </span>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Is Active
-              </label>
-              <span className={`badge ${project.is_active ? 'badge-success' : 'badge-error'}`}>
-                {project.is_active ? 'Active' : 'Inactive'}
-              </span>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Created At
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {new Date(project.created_at).toLocaleString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Updated At
-              </label>
-              <p style={{ 
-                fontSize: 'var(--font-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {new Date(project.updated_at).toLocaleString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </p>
-            </div>
-          </div>
+          )}
         </div>
       </PageShell>
     </MainLayout>

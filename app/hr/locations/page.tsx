@@ -8,7 +8,7 @@ import { HRLocationType, HRLocation } from '@/types';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { Button, Badge, Loader, PageHeader, SearchInput, Drawer } from '@/components/ui';
+import { Button, Badge, Loader, PageHeader, PageShell, SearchInput, Drawer } from '@/components/ui';
 
 const inp = 'w-full px-3 py-2 rounded-md border text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40';
 const sel = `${inp} h-[38px]`;
@@ -210,7 +210,7 @@ export default function LocationsPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-5">
+      <PageShell>
 
         <PageHeader
           title="Locations"
@@ -226,11 +226,10 @@ export default function LocationsPage() {
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">Location Types</p>
 
             {loadingTypes ? <Loader className="mx-auto mt-4" /> : types.length === 0 ? (
-              <div className="card text-center py-8 space-y-2">
-                <p className="text-2xl">📍</p>
-                <p className="text-xs text-muted-foreground">No types yet</p>
+              <div className="card empty-state" style={{ padding: 'var(--space-6) var(--space-4)' }}>
+                <p className="empty-state-title" style={{ fontSize: 'var(--text-xs)' }}>No types yet</p>
                 {isAdmin && (
-                  <button onClick={openTypeCreate} className="text-xs font-medium" style={{ color: 'var(--sidebar-active-text)' }}>
+                  <button onClick={openTypeCreate} style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', fontWeight: 'var(--weight-medium)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 'var(--space-2)' }}>
                     + Create first type
                   </button>
                 )}
@@ -245,7 +244,7 @@ export default function LocationsPage() {
                     style={{
                       borderColor: isSelected ? t.color : 'var(--border)',
                       borderWidth: isSelected ? 2 : 1,
-                      background: isSelected ? t.color + '15' : 'var(--card)',
+                      background: isSelected ? t.color + '15' : 'var(--card-bg)',
                     }}>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
@@ -275,12 +274,13 @@ export default function LocationsPage() {
           {/* ── RIGHT: locations ── */}
           <div className="flex-1 min-w-0 space-y-4">
             {!selectedType ? (
-              <div className="card text-center py-20 space-y-2">
-                <p className="text-3xl">👈</p>
-                <p className="text-muted-foreground text-sm">Select a type to view its locations</p>
-                {types.length === 0 && isAdmin && (
-                  <p className="text-xs text-muted-foreground">Start by creating a location type (e.g. "Office", "Site")</p>
-                )}
+              <div className="card empty-state">
+                <p className="empty-state-title">Select a location type</p>
+                <p className="empty-state-desc">
+                  {types.length === 0 && isAdmin
+                    ? 'Start by creating a location type (e.g. "Office", "Site")'
+                    : 'Choose a type from the list on the left to view its locations'}
+                </p>
               </div>
             ) : (
               <>
@@ -312,9 +312,8 @@ export default function LocationsPage() {
                 {loadingLocs ? (
                   <div className="card text-center py-16"><Loader className="mx-auto" /></div>
                 ) : allLocs.length === 0 ? (
-                  <div className="card text-center py-16 space-y-3">
-                    <p className="text-3xl">{selectedType.icon}</p>
-                    <p className="text-foreground font-semibold">No locations yet for "{selectedType.name}"</p>
+                  <div className="card empty-state">
+                    <p className="empty-state-title">No locations yet for "{selectedType.name}"</p>
                     {isAdmin && (
                       <Button variant="primary" size="sm" onClick={() => openLocCreate()}>+ Add First Location</Button>
                     )}
@@ -339,7 +338,7 @@ export default function LocationsPage() {
             )}
           </div>
         </div>
-      </div>
+      </PageShell>
 
       <Drawer
         isOpen={drawerMode !== null}
