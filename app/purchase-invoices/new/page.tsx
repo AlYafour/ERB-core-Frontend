@@ -7,7 +7,7 @@ import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
 import { purchaseInvoicesApi } from '@/lib/api/purchase-invoices';
 import { PurchaseInvoiceItem } from '@/types';
 import { PurchaseInvoiceFormData, toPurchaseInvoiceCreateData } from '@/lib/types/form-data';
-import { Button } from '@/components/ui';
+import { Button, PageHeader, PageShell } from '@/components/ui';
 import MainLayout from '@/components/layout/MainLayout';
 import { formatPrice } from '@/lib/utils/format';
 import { toast } from '@/lib/hooks/use-toast';
@@ -255,26 +255,12 @@ function NewPurchaseInvoicePageContent() {
 
   return (
     <MainLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-        {/* Header Section - Unified */}
-        <div>
-          <h1 style={{ 
-            fontSize: 'var(--font-2xl)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-1)',
-          }}>
-            {t('page', 'newInvoice')}
-          </h1>
-          <p style={{ 
-            fontSize: 'var(--font-sm)',
-            color: 'var(--text-secondary)',
-            margin: 0,
-          }}>
-            Create invoice for Purchase Order
-          </p>
-        </div>
+      <PageShell>
+        <PageHeader
+          title={t('page', 'newInvoice')}
+          description="Create invoice for Purchase Order"
+          breadcrumbs={[{ label: 'Purchase Invoices', href: '/purchase-invoices' }, { label: t('page', 'newInvoice') }]}
+        />
 
         {/* Info Banner - Unified */}
         {purchaseOrder && (
@@ -500,7 +486,7 @@ function NewPurchaseInvoicePageContent() {
             <Button type="button" variant="secondary" onClick={() => router.back()}>{t('btn', 'cancel')}</Button>
           </div>
         </form>
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

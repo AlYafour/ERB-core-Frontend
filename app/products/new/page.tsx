@@ -9,7 +9,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import FormField from '@/components/ui/FormField';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
-import { Button } from '@/components/ui';
+import { Button, PageHeader, PageShell } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
 import { ProductFormData } from '@/lib/types/form-data';
 
@@ -81,13 +81,11 @@ export default function NewProductPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        <div>
-          <Link href="/products" className="text-sm text-muted-foreground hover:text-foreground mb-2 inline-block">
-            ← Back to Products
-          </Link>
-          <h1 className="text-2xl font-semibold text-foreground">New Product</h1>
-        </div>
+      <PageShell>
+        <PageHeader
+          title="New Product"
+          breadcrumbs={[{ label: 'Products', href: '/products' }, { label: 'New Product' }]}
+        />
 
         <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="space-y-6">
           {/* Basic Info */}
@@ -210,7 +208,7 @@ export default function NewProductPage() {
             </Link>
           </div>
         </form>
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

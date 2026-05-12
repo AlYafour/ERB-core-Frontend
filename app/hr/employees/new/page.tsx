@@ -7,7 +7,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi } from '@/lib/api/hr';
 import { usersApi } from '@/lib/api/users';
 import { toast } from '@/lib/hooks/use-toast';
-import { Button } from '@/components/ui';
+import { Button, PageHeader, PageShell } from '@/components/ui';
 import Link from 'next/link';
 import { HRPosition } from '@/types';
 
@@ -162,16 +162,11 @@ function NewEmployeeForm() {
 
   return (
     <MainLayout>
-      <div className="max-w-3xl mx-auto space-y-6">
-
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <Link href="/hr/employees">
-            <button className="text-sm text-muted-foreground hover:text-foreground transition-colors">← Employees</button>
-          </Link>
-          <span className="text-muted-foreground">/</span>
-          <h1 className="text-xl font-bold text-foreground">New Employee</h1>
-        </div>
+      <PageShell>
+        <PageHeader
+          title="New Employee"
+          breadcrumbs={[{ label: 'HR' }, { label: 'Employees', href: '/hr/employees' }, { label: 'New Employee' }]}
+        />
 
         {/* Existing user banner */}
         {existingUserId && existingUser && (
@@ -404,7 +399,7 @@ function NewEmployeeForm() {
             </div>
           </div>
         )}
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

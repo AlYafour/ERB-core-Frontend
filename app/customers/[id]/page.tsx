@@ -6,7 +6,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useQuery } from '@tanstack/react-query';
 import { customersApi } from '@/lib/api/customers';
 import { useT } from '@/lib/i18n/useT';
-import { Button, Badge, Loader } from '@/components/ui';
+import { Button, Badge, Loader, PageHeader, PageShell } from '@/components/ui';
 
 const TYPE_BADGE: Record<string, 'info' | 'warning' | 'default'> = {
   owner:      'info',
@@ -37,20 +37,11 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-              Customer Details
-            </h1>
-          </div>
-          <div className="flex gap-2">
-            <Link href="/customers">
-              <Button variant="secondary">{t('btn', 'back')}</Button>
-            </Link>
-          </div>
-        </div>
+      <PageShell>
+        <PageHeader
+          title="Customer Details"
+          breadcrumbs={[{ label: 'Customers', href: '/customers' }, { label: 'Details' }]}
+        />
 
         {isLoading ? (
           <div className="card text-center py-12">
@@ -122,7 +113,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
             </div>
           </div>
         )}
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { usersApi } from '@/lib/api/users';
 import MainLayout from '@/components/layout/MainLayout';
-import { Button } from '@/components/ui';
+import { Button, PageHeader, PageShell } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useT } from '@/lib/i18n/useT';
@@ -62,16 +62,17 @@ export default function ProfilePage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">My Profile</h1>
-            <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
-          </div>
-          <Button variant={editMode ? 'secondary' : 'edit'} onClick={() => setEditMode(e => !e)}>
-            {editMode ? 'Cancel' : 'Edit Profile'}
-          </Button>
-        </div>
+      <PageShell>
+        <PageHeader
+          title="My Profile"
+          description={user.email}
+          breadcrumbs={[{ label: 'My Profile' }]}
+          actions={
+            <Button variant={editMode ? 'secondary' : 'edit'} onClick={() => setEditMode(e => !e)}>
+              {editMode ? 'Cancel' : 'Edit Profile'}
+            </Button>
+          }
+        />
 
         {editMode ? (
           <div className="card">
@@ -152,7 +153,7 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }
