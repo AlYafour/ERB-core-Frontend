@@ -67,10 +67,12 @@ export {
 } from './Badge';
 
 // Layout & Page
-export { default as PageHeader }   from './PageHeader';
-export { default as PageToolbar }  from './PageToolbar';
-export { SearchInput }             from './SearchInput';
-export { default as Drawer }       from './Drawer';
+export { default as PageHeader }    from './PageHeader';
+export { default as PageToolbar }   from './PageToolbar';
+export { SearchInput }              from './SearchInput';
+export { default as Drawer }        from './Drawer';
+export { PageShell }                from './PageShell';
+export { WorkspaceSurface }         from './WorkspaceSurface';
 
 // Data display
 export { default as StatusBadge }  from './StatusBadge';

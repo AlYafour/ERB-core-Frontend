@@ -9,7 +9,7 @@ import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
-import { Button, Badge, PageHeader, PageToolbar, SearchInput } from '@/components/ui';
+import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
@@ -124,31 +124,42 @@ export default function HRPayrollPage() {
 
   return (
     <MainLayout>
-      <PageHeader
-        title={t('page', 'hrPayroll')}
-        count={totalCount}
-        breadcrumbs={[{ label: 'HR' }, { label: 'Payroll' }]}
-      />
-
-      <PageToolbar
-        search={<SearchInput value={search} onChange={handleSearch} placeholder="Search by employee name or ID..." />}
-        filters={<FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="hr-payroll" />}
-        filterTags={<FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />}
-      />
-
-      <DataTable
-        columns={columns}
-        data={records}
-        isLoading={isLoading}
-        error={error}
-        emptyMessage={t('empty', 'noPayroll')}
-        page={page}
-        totalCount={totalCount}
-        pageSize={50}
-        hasPrev={!!data?.previous}
-        hasNext={!!data?.next}
-        onPageChange={setPage}
-      />
+      <PageShell>
+        <PageHeader
+          title={t('page', 'hrPayroll')}
+          count={totalCount}
+          breadcrumbs={[{ label: 'HR' }, { label: 'Payroll' }]}
+        />
+        <WorkspaceSurface
+          toolbar={
+            <>
+              <SearchInput value={search} onChange={handleSearch} placeholder="Search by employee name or ID..." />
+              <div style={{ flex: 1 }} />
+              <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="hr-payroll" />
+            </>
+          }
+          filterTags={
+            Object.keys(filters).length > 0
+              ? <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
+              : undefined
+          }
+        >
+          <DataTable
+            surface
+            columns={columns}
+            data={records}
+            isLoading={isLoading}
+            error={error}
+            emptyMessage={t('empty', 'noPayroll')}
+            page={page}
+            totalCount={totalCount}
+            pageSize={50}
+            hasPrev={!!data?.previous}
+            hasNext={!!data?.next}
+            onPageChange={setPage}
+          />
+        </WorkspaceSurface>
+      </PageShell>
     </MainLayout>
   );
 }

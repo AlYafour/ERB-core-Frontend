@@ -11,15 +11,12 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
-import { Button, Badge } from '@/components/ui';
+import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import { PurchaseInvoice } from '@/types';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { INVOICE_STATUS } from '@/lib/utils/status-colors';
-import PageHeader from '@/components/ui/PageHeader';
-import PageToolbar from '@/components/ui/PageToolbar';
-import { SearchInput } from '@/components/ui/SearchInput';
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Draft', pending: 'Pending Approval', approved: 'Approved',
@@ -114,47 +111,60 @@ export default function PurchaseInvoicesPage() {
 
   return (
     <MainLayout>
-      <PageHeader
-        breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Purchase Management', href: '#' }, { label: 'Purchase Invoices' }]}
-        title="Purchase Invoices"
-        description="Manage supplier invoices and payment tracking."
-        count={totalCount}
-        actions={
-          <>
-            {isAdmin && selectedItems.size > 0 && (
-              <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
-                Delete {selectedItems.size}
-              </Button>
-            )}
-            {canCreate && <Link href="/purchase-invoices/new"><Button variant="primary">Create Invoice</Button></Link>}
-          </>
-        }
-      />
-      <PageToolbar
-        search={<SearchInput value={search} onChange={handleSearch} placeholder="Search invoices…" width={260} />}
-        filters={<FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="purchase-invoices" />}
-        filterTags={<FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />}
-      />
+      <PageShell>
+        <PageHeader
+          title="Purchase Invoices"
+          description="Manage supplier invoices and payment tracking."
+          count={totalCount}
+          breadcrumbs={[{ label: 'Purchase Invoices' }]}
+          actions={
+            canCreate
+              ? <Link href="/purchase-invoices/new"><Button variant="primary">Create Invoice</Button></Link>
+              : undefined
+          }
+        />
 
-      <DataTable
-        columns={columns}
-        data={invoices}
-        isLoading={isLoading}
-        error={error}
-        emptyMessage={t('empty', 'noInvoices')}
-        selectable={isAdmin}
-        selectedItems={selectedItems}
-        onToggleSelect={toggleSelect}
-        onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
-        isAllSelected={isAllPageSelected(currentIds)}
-        isSomeSelected={isSomePageSelected(currentIds)}
-        page={page}
-        totalCount={totalCount}
-        pageSize={50}
-        hasPrev={!!data?.previous}
-        hasNext={!!data?.next}
-        onPageChange={setPage}
-      />
+        <WorkspaceSurface
+          toolbar={
+            <>
+              <SearchInput value={search} onChange={handleSearch} placeholder="Search invoices…" width={260} />
+              <div style={{ flex: 1 }} />
+              {isAdmin && selectedItems.size > 0 && (
+                <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
+                  Delete {selectedItems.size}
+                </Button>
+              )}
+              <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="purchase-invoices" />
+            </>
+          }
+          filterTags={
+            Object.keys(filters).length > 0
+              ? <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
+              : undefined
+          }
+        >
+          <DataTable
+            surface
+            columns={columns}
+            data={invoices}
+            isLoading={isLoading}
+            error={error}
+            emptyMessage={t('empty', 'noInvoices')}
+            selectable={isAdmin}
+            selectedItems={selectedItems}
+            onToggleSelect={toggleSelect}
+            onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
+            isAllSelected={isAllPageSelected(currentIds)}
+            isSomeSelected={isSomePageSelected(currentIds)}
+            page={page}
+            totalCount={totalCount}
+            pageSize={50}
+            hasPrev={!!data?.previous}
+            hasNext={!!data?.next}
+            onPageChange={setPage}
+          />
+        </WorkspaceSurface>
+      </PageShell>
     </MainLayout>
   );
 }

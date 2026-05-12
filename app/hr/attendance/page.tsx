@@ -6,7 +6,7 @@ import { hrAttendanceApi } from '@/lib/api/hr';
 import { HRAttendance } from '@/types';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
-import { Badge, PageHeader, PageToolbar, SearchInput } from '@/components/ui';
+import { Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
@@ -67,31 +67,42 @@ export default function HRAttendancePage() {
 
   return (
     <MainLayout>
-      <PageHeader
-        title={t('page', 'hrAttendance')}
-        count={totalCount}
-        breadcrumbs={[{ label: 'HR' }, { label: 'Attendance' }]}
-      />
-
-      <PageToolbar
-        search={<SearchInput value={search} onChange={handleSearch} placeholder="Search by employee name or ID..." />}
-        filters={<FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="hr-attendance" />}
-        filterTags={<FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />}
-      />
-
-      <DataTable
-        columns={columns}
-        data={records}
-        isLoading={isLoading}
-        error={error}
-        emptyMessage={t('empty', 'noAttendance')}
-        page={page}
-        totalCount={totalCount}
-        pageSize={50}
-        hasPrev={!!data?.previous}
-        hasNext={!!data?.next}
-        onPageChange={setPage}
-      />
+      <PageShell>
+        <PageHeader
+          title={t('page', 'hrAttendance')}
+          count={totalCount}
+          breadcrumbs={[{ label: 'HR' }, { label: 'Attendance' }]}
+        />
+        <WorkspaceSurface
+          toolbar={
+            <>
+              <SearchInput value={search} onChange={handleSearch} placeholder="Search by employee name or ID..." />
+              <div style={{ flex: 1 }} />
+              <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="hr-attendance" />
+            </>
+          }
+          filterTags={
+            Object.keys(filters).length > 0
+              ? <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
+              : undefined
+          }
+        >
+          <DataTable
+            surface
+            columns={columns}
+            data={records}
+            isLoading={isLoading}
+            error={error}
+            emptyMessage={t('empty', 'noAttendance')}
+            page={page}
+            totalCount={totalCount}
+            pageSize={50}
+            hasPrev={!!data?.previous}
+            hasNext={!!data?.next}
+            onPageChange={setPage}
+          />
+        </WorkspaceSurface>
+      </PageShell>
     </MainLayout>
   );
 }

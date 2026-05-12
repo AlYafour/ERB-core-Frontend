@@ -8,14 +8,11 @@ import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
-import { Button, Badge } from '@/components/ui';
+import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { GRN_STATUS } from '@/lib/utils/status-colors';
-import PageHeader from '@/components/ui/PageHeader';
-import PageToolbar from '@/components/ui/PageToolbar';
-import { SearchInput } from '@/components/ui/SearchInput';
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Draft', partial: 'Partial', completed: 'Completed', cancelled: 'Cancelled',
@@ -72,33 +69,41 @@ export default function GoodsReceivingPage() {
 
   return (
     <MainLayout>
-      <PageHeader
-        breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Purchase Management', href: '#' }, { label: 'Goods Receiving' }]}
-        title="Goods Receiving"
-        description="Record and verify goods receipt against purchase orders."
-        count={totalCount}
-        actions={
-          canCreate ? <Link href="/goods-receiving/new"><Button variant="primary">+ New GRN</Button></Link> : undefined
-        }
-      />
-      <PageToolbar
-        search={<SearchInput value={search} onChange={handleSearch} placeholder="Search GRN records…" width={260} />}
-      />
-
-      <DataTable
-        columns={columns}
-        data={grns}
-        isLoading={isLoading}
-        error={error}
-        emptyMessage="No goods receiving notes found."
-        emptyAction={canCreate ? <Link href="/goods-receiving/new"><Button variant="primary">Create GRN</Button></Link> : undefined}
-        page={page}
-        totalCount={totalCount}
-        pageSize={20}
-        hasPrev={!!data?.previous}
-        hasNext={!!data?.next}
-        onPageChange={setPage}
-      />
+      <PageShell>
+        <PageHeader
+          breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Purchase Management', href: '#' }, { label: 'Goods Receiving' }]}
+          title="Goods Receiving"
+          description="Record and verify goods receipt against purchase orders."
+          count={totalCount}
+          actions={
+            canCreate ? <Link href="/goods-receiving/new"><Button variant="primary">+ New GRN</Button></Link> : undefined
+          }
+        />
+        <WorkspaceSurface
+          toolbar={
+            <>
+              <SearchInput value={search} onChange={handleSearch} placeholder="Search GRN records…" width={260} />
+              <div style={{ flex: 1 }} />
+            </>
+          }
+        >
+          <DataTable
+            surface
+            columns={columns}
+            data={grns}
+            isLoading={isLoading}
+            error={error}
+            emptyMessage="No goods receiving notes found."
+            emptyAction={canCreate ? <Link href="/goods-receiving/new"><Button variant="primary">Create GRN</Button></Link> : undefined}
+            page={page}
+            totalCount={totalCount}
+            pageSize={20}
+            hasPrev={!!data?.previous}
+            hasNext={!!data?.next}
+            onPageChange={setPage}
+          />
+        </WorkspaceSurface>
+      </PageShell>
     </MainLayout>
   );
 }

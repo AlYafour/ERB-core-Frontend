@@ -11,15 +11,12 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
-import { Button, Badge } from '@/components/ui';
+import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import { formatPrice } from '@/lib/utils/format';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { PO_STATUS } from '@/lib/utils/status-colors';
-import PageHeader from '@/components/ui/PageHeader';
-import PageToolbar from '@/components/ui/PageToolbar';
-import { SearchInput } from '@/components/ui/SearchInput';
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Draft', pending: 'Pending', approved: 'Approved',
@@ -107,46 +104,59 @@ export default function PurchaseOrdersPage() {
 
   return (
     <MainLayout>
-      <PageHeader
-        breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Purchase Management', href: '#' }, { label: 'Purchase Orders' }]}
-        title="Purchase Orders"
-        description="Issue and track purchase orders to suppliers."
-        count={totalCount}
-        actions={
-          <>
-            {canDelete && selectedItems.size > 0 && (
-              <Button variant="destructive" onClick={handleBulkDelete}>Delete {selectedItems.size}</Button>
-            )}
-            {canCreate && <Link href="/purchase-orders/new"><Button variant="primary">+ New Purchase Order</Button></Link>}
-          </>
-        }
-      />
-      <PageToolbar
-        search={<SearchInput value={search} onChange={handleSearch} placeholder="Search purchase orders…" width={260} />}
-        filters={<FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} />}
-        filterTags={<FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />}
-      />
+      <PageShell>
+        <PageHeader
+          title="Purchase Orders"
+          description="Issue and track purchase orders to suppliers."
+          count={totalCount}
+          breadcrumbs={[{ label: 'Purchase Orders' }]}
+          actions={
+            canCreate
+              ? <Link href="/purchase-orders/new"><Button variant="primary">+ New Purchase Order</Button></Link>
+              : undefined
+          }
+        />
 
-      <DataTable
-        columns={columns}
-        data={orders}
-        isLoading={isLoading}
-        error={error}
-        emptyMessage="No purchase orders found."
-        emptyAction={canCreate ? <Link href="/purchase-orders/new"><Button variant="primary">Create Purchase Order</Button></Link> : undefined}
-        selectable={canDelete}
-        selectedItems={selectedItems}
-        onToggleSelect={toggleSelect}
-        onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
-        isAllSelected={isAllPageSelected(currentIds)}
-        isSomeSelected={isSomePageSelected(currentIds)}
-        page={page}
-        totalCount={totalCount}
-        pageSize={20}
-        hasPrev={!!data?.previous}
-        hasNext={!!data?.next}
-        onPageChange={setPage}
-      />
+        <WorkspaceSurface
+          toolbar={
+            <>
+              <SearchInput value={search} onChange={handleSearch} placeholder="Search purchase orders…" width={260} />
+              <div style={{ flex: 1 }} />
+              {canDelete && selectedItems.size > 0 && (
+                <Button variant="destructive" onClick={handleBulkDelete}>Delete {selectedItems.size}</Button>
+              )}
+              <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} />
+            </>
+          }
+          filterTags={
+            Object.keys(filters).length > 0
+              ? <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
+              : undefined
+          }
+        >
+          <DataTable
+            surface
+            columns={columns}
+            data={orders}
+            isLoading={isLoading}
+            error={error}
+            emptyMessage="No purchase orders found."
+            emptyAction={canCreate ? <Link href="/purchase-orders/new"><Button variant="primary">Create Purchase Order</Button></Link> : undefined}
+            selectable={canDelete}
+            selectedItems={selectedItems}
+            onToggleSelect={toggleSelect}
+            onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
+            isAllSelected={isAllPageSelected(currentIds)}
+            isSomeSelected={isSomePageSelected(currentIds)}
+            page={page}
+            totalCount={totalCount}
+            pageSize={20}
+            hasPrev={!!data?.previous}
+            hasNext={!!data?.next}
+            onPageChange={setPage}
+          />
+        </WorkspaceSurface>
+      </PageShell>
     </MainLayout>
   );
 }

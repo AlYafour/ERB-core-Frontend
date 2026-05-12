@@ -13,7 +13,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
-import { Button, Badge, PageHeader, PageToolbar, SearchInput } from '@/components/ui';
+import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import { formatPrice } from '@/lib/utils/format';
 import BilingualName from '@/components/ui/BilingualName';
 import { useT } from '@/lib/i18n/useT';
@@ -152,7 +152,7 @@ export default function ProductsPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <PageShell>
         <PageHeader
           title="Products"
           count={totalCount}
@@ -175,43 +175,52 @@ export default function ProductsPage() {
           }
         />
 
-        <PageToolbar
-          search={<SearchInput value={search} onChange={handleSearch} placeholder="Search products..." />}
-          filters={<FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} />}
-          filterTags={<FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />}
-        />
-
-        {/* Bulk action bar */}
-        {selectedItems.size > 0 && canDelete && (
-          <div className="flex gap-2 items-center p-3 rounded-lg border"
-            style={{ background: 'var(--color-warning-soft, #fefce8)', borderColor: 'var(--color-warning)' }}>
-            <span className="text-sm">{selectedItems.size} selected</span>
-            <Button variant="destructive" onClick={handleBulkDelete}>Delete Selected</Button>
-            <Button variant="secondary" onClick={clearSelection}>Clear</Button>
-          </div>
-        )}
-
-        <DataTable
-          columns={columns}
-          data={products}
-          isLoading={isLoading}
-          error={error}
-          emptyMessage="No products found."
-          emptyAction={canCreate ? <Link href="/products/new"><Button variant="primary">Create Product</Button></Link> : undefined}
-          selectable={canDelete}
-          selectedItems={selectedItems}
-          onToggleSelect={toggleSelect}
-          onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
-          isAllSelected={isAllPageSelected(currentIds)}
-          isSomeSelected={isSomePageSelected(currentIds)}
-          page={page}
-          totalCount={totalCount}
-          pageSize={20}
-          hasPrev={!!data?.previous}
-          hasNext={!!data?.next}
-          onPageChange={setPage}
-        />
-      </div>
+        <WorkspaceSurface
+          toolbar={
+            <>
+              <SearchInput value={search} onChange={handleSearch} placeholder="Search products..." />
+              <div style={{ flex: 1 }} />
+              {canDelete && selectedItems.size > 0 && (
+                <>
+                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                    {selectedItems.size} selected
+                  </span>
+                  <Button variant="destructive" onClick={handleBulkDelete}>Delete Selected</Button>
+                  <Button variant="secondary" onClick={clearSelection}>Clear</Button>
+                </>
+              )}
+              <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} />
+            </>
+          }
+          filterTags={
+            Object.keys(filters).length > 0
+              ? <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
+              : undefined
+          }
+        >
+          <DataTable
+            surface
+            columns={columns}
+            data={products}
+            isLoading={isLoading}
+            error={error}
+            emptyMessage="No products found."
+            emptyAction={canCreate ? <Link href="/products/new"><Button variant="primary">Create Product</Button></Link> : undefined}
+            selectable={canDelete}
+            selectedItems={selectedItems}
+            onToggleSelect={toggleSelect}
+            onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
+            isAllSelected={isAllPageSelected(currentIds)}
+            isSomeSelected={isSomePageSelected(currentIds)}
+            page={page}
+            totalCount={totalCount}
+            pageSize={20}
+            hasPrev={!!data?.previous}
+            hasNext={!!data?.next}
+            onPageChange={setPage}
+          />
+        </WorkspaceSurface>
+      </PageShell>
     </MainLayout>
   );
 }

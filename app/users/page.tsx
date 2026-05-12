@@ -7,7 +7,7 @@ import { usersApi } from '@/lib/api/users';
 import { User } from '@/types';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { Button, Badge, PageHeader, PageToolbar, SearchInput } from '@/components/ui';
+import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import Avatar from '@/components/ui/Avatar';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
@@ -105,7 +105,7 @@ export default function UsersPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-5">
+      <PageShell>
         <PageHeader
           title="Users"
           count={total}
@@ -113,10 +113,11 @@ export default function UsersPage() {
           actions={<Link href="/hr/employees/new"><Button variant="primary">+ New User</Button></Link>}
         />
 
-        <PageToolbar
-          search={<SearchInput value={search} onChange={handleSearch} placeholder="Search name, username, email..." />}
-          actions={
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <WorkspaceSurface
+          toolbar={
+            <>
+              <SearchInput value={search} onChange={handleSearch} placeholder="Search name, username, email..." />
+              <div style={{ flex: 1 }} />
               <select className={sel} value={role} onChange={e => handleRole(e.target.value)}>
                 {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
               </select>
@@ -133,24 +134,25 @@ export default function UsersPage() {
                   Clear
                 </button>
               )}
-            </div>
+            </>
           }
-        />
-
-        <DataTable
-          columns={columns}
-          data={users}
-          isLoading={isLoading}
-          emptyMessage="No users found."
-          rowStyle={u => u.is_active ? undefined : { opacity: 0.6 }}
-          page={page}
-          totalCount={total}
-          pageSize={20}
-          hasPrev={!!data?.previous}
-          hasNext={!!data?.next}
-          onPageChange={setPage}
-        />
-      </div>
+        >
+          <DataTable
+            surface
+            columns={columns}
+            data={users}
+            isLoading={isLoading}
+            emptyMessage="No users found."
+            rowStyle={u => u.is_active ? undefined : { opacity: 0.6 }}
+            page={page}
+            totalCount={total}
+            pageSize={20}
+            hasPrev={!!data?.previous}
+            hasNext={!!data?.next}
+            onPageChange={setPage}
+          />
+        </WorkspaceSurface>
+      </PageShell>
     </MainLayout>
   );
 }

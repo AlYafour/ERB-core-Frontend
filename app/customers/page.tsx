@@ -8,7 +8,7 @@ import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useT } from '@/lib/i18n/useT';
-import { Button, Badge, PageHeader, PageToolbar, SearchInput } from '@/components/ui';
+import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
 import DataTable, { Column } from '@/components/ui/DataTable';
@@ -109,7 +109,7 @@ export default function CustomersPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <PageShell>
         <PageHeader
           title={t('nav', 'customers')}
           count={totalCount}
@@ -117,34 +117,44 @@ export default function CustomersPage() {
           actions={<Link href="/customers/new"><Button variant="primary">{t('btn', 'addCustomer')}</Button></Link>}
         />
 
-        <PageToolbar
-          search={<SearchInput value={search} onChange={handleSearch} placeholder="Search by name, email, phone..." />}
-          filters={<FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="customers" />}
-          filterTags={<FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />}
-        />
-
-        <DataTable
-          columns={columns}
-          data={customers}
-          isLoading={isLoading}
-          error={error}
-          emptyMessage="No customers found."
-          emptyAction={<Link href="/customers/new"><Button variant="primary">{t('btn', 'addCustomer')}</Button></Link>}
-          selectable={isSuperuser}
-          selectedItems={selectedItems}
-          onToggleSelect={toggleSelect}
-          onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
-          isAllSelected={isAllPageSelected(currentIds)}
-          isSomeSelected={isSomePageSelected(currentIds)}
-          rowStyle={c => c.delete_requested ? { opacity: 0.6 } : undefined}
-          page={page}
-          totalCount={totalCount}
-          pageSize={20}
-          hasPrev={!!data?.previous}
-          hasNext={!!data?.next}
-          onPageChange={setPage}
-        />
-      </div>
+        <WorkspaceSurface
+          toolbar={
+            <>
+              <SearchInput value={search} onChange={handleSearch} placeholder="Search by name, email, phone..." />
+              <div style={{ flex: 1 }} />
+              <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="customers" />
+            </>
+          }
+          filterTags={
+            Object.keys(filters).length > 0
+              ? <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
+              : undefined
+          }
+        >
+          <DataTable
+            surface
+            columns={columns}
+            data={customers}
+            isLoading={isLoading}
+            error={error}
+            emptyMessage="No customers found."
+            emptyAction={<Link href="/customers/new"><Button variant="primary">{t('btn', 'addCustomer')}</Button></Link>}
+            selectable={isSuperuser}
+            selectedItems={selectedItems}
+            onToggleSelect={toggleSelect}
+            onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
+            isAllSelected={isAllPageSelected(currentIds)}
+            isSomeSelected={isSomePageSelected(currentIds)}
+            rowStyle={c => c.delete_requested ? { opacity: 0.6 } : undefined}
+            page={page}
+            totalCount={totalCount}
+            pageSize={20}
+            hasPrev={!!data?.previous}
+            hasNext={!!data?.next}
+            onPageChange={setPage}
+          />
+        </WorkspaceSurface>
+      </PageShell>
     </MainLayout>
   );
 }

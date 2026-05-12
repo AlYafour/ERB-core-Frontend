@@ -8,7 +8,7 @@ import { projectsApi } from '@/lib/api/projects';
 import { MunicipalViolation } from '@/types';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useT } from '@/lib/i18n/useT';
-import { PageHeader } from '@/components/ui';
+import { PageHeader, PageShell } from '@/components/ui';
 
 const FRONTEND_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://purchase-self.vercel.app';
 
@@ -348,7 +348,7 @@ export default function ViolationsPage() {
 
   return (
     <MainLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <PageShell>
 
         <PageHeader
           title="Abu Dhabi Municipality Violations"
@@ -674,7 +674,7 @@ export default function ViolationsPage() {
           )}
         </div>
 
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

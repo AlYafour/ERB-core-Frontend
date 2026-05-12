@@ -14,14 +14,11 @@ import { usePermissions } from '@/lib/hooks/use-permissions';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
 import RejectionReasonDialog from '@/components/ui/RejectionReasonDialog';
-import { Button, Badge } from '@/components/ui';
+import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { PR_STATUS } from '@/lib/utils/status-colors';
-import PageHeader from '@/components/ui/PageHeader';
-import PageToolbar from '@/components/ui/PageToolbar';
-import { SearchInput } from '@/components/ui/SearchInput';
 
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
@@ -138,59 +135,68 @@ export default function PurchaseRequestsPage() {
 
   return (
     <MainLayout>
-      <PageHeader
-        breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Purchase Management', href: '#' }, { label: 'Purchase Requests' }]}
-        title="Purchase Requests"
-        description="Track and manage all internal procurement requests."
-        count={totalCount}
-        actions={
-          <>
-            {isAdmin && selectedItems.size > 0 && (
-              <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
-                {t('btn', 'delete')} {selectedItems.size}
-              </Button>
-            )}
-            {canCreate && (
-              <Link href="/purchase-requests/new">
-                <Button variant="primary">{t('btn', 'create')} {t('page', 'purchaseRequests')}</Button>
-              </Link>
-            )}
-          </>
-        }
-      />
-      <PageToolbar
-        search={<SearchInput value={search} onChange={handleSearch} placeholder="Search by code, title, requester…" width={260} />}
-        filters={<FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="purchase-requests" />}
-        filterTags={<FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />}
-      />
+      <PageShell>
+        <PageHeader
+          title="Purchase Requests"
+          description="Track and manage all internal procurement requests."
+          count={totalCount}
+          breadcrumbs={[{ label: 'Purchase Requests' }]}
+          actions={
+            canCreate
+              ? <Link href="/purchase-requests/new"><Button variant="primary">{t('btn', 'create')} {t('page', 'purchaseRequests')}</Button></Link>
+              : undefined
+          }
+        />
 
-      <DataTable
-        columns={columns}
-        data={requests}
-        isLoading={isLoading}
-        error={error}
-        emptyMessage={t('empty', 'noPR')}
-        selectable={isAdmin}
-        selectedItems={selectedItems}
-        onToggleSelect={toggleSelect}
-        onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
-        isAllSelected={isAllPageSelected(currentIds)}
-        isSomeSelected={isSomePageSelected(currentIds)}
-        page={page}
-        totalCount={totalCount}
-        pageSize={50}
-        hasPrev={!!data?.previous}
-        hasNext={!!data?.next}
-        onPageChange={setPage}
-      />
+        <WorkspaceSurface
+          toolbar={
+            <>
+              <SearchInput value={search} onChange={handleSearch} placeholder="Search by code, title, requester…" width={260} />
+              <div style={{ flex: 1 }} />
+              {isAdmin && selectedItems.size > 0 && (
+                <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
+                  {t('btn', 'delete')} {selectedItems.size}
+                </Button>
+              )}
+              <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="purchase-requests" />
+            </>
+          }
+          filterTags={
+            Object.keys(filters).length > 0
+              ? <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
+              : undefined
+          }
+        >
+          <DataTable
+            surface
+            columns={columns}
+            data={requests}
+            isLoading={isLoading}
+            error={error}
+            emptyMessage={t('empty', 'noPR')}
+            selectable={isAdmin}
+            selectedItems={selectedItems}
+            onToggleSelect={toggleSelect}
+            onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
+            isAllSelected={isAllPageSelected(currentIds)}
+            isSomeSelected={isSomePageSelected(currentIds)}
+            page={page}
+            totalCount={totalCount}
+            pageSize={50}
+            hasPrev={!!data?.previous}
+            hasNext={!!data?.next}
+            onPageChange={setPage}
+          />
+        </WorkspaceSurface>
 
-      <RejectionReasonDialog
-        isOpen={rejectDialogOpen}
-        onClose={() => { setRejectDialogOpen(false); setRejectingId(null); }}
-        onConfirm={(reason) => { if (rejectingId) { rejectMutation.mutate({ id: rejectingId, reason }); setRejectDialogOpen(false); setRejectingId(null); } }}
-        title="Reject Purchase Request"
-        message="Please provide a reason for rejecting this request."
-      />
+        <RejectionReasonDialog
+          isOpen={rejectDialogOpen}
+          onClose={() => { setRejectDialogOpen(false); setRejectingId(null); }}
+          onConfirm={(reason) => { if (rejectingId) { rejectMutation.mutate({ id: rejectingId, reason }); setRejectDialogOpen(false); setRejectingId(null); } }}
+          title="Reject Purchase Request"
+          message="Please provide a reason for rejecting this request."
+        />
+      </PageShell>
     </MainLayout>
   );
 }

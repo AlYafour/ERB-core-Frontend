@@ -10,7 +10,7 @@ import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
-import { Button, Badge, PageHeader, PageToolbar, SearchInput } from '@/components/ui';
+import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import { exportToExcel, fetchAllPages } from '@/lib/utils/export-excel';
 import BilingualName from '@/components/ui/BilingualName';
 import { useT } from '@/lib/i18n/useT';
@@ -137,18 +137,13 @@ export default function ProjectsPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <PageShell>
         <PageHeader
           title="Projects"
           count={totalCount}
           breadcrumbs={[{ label: 'Projects' }]}
           actions={
             <div className="flex items-center gap-2">
-              {canDelete && selectedItems.size > 0 && (
-                <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
-                  {t('btn', 'delete')} {selectedItems.size}
-                </Button>
-              )}
               <Button variant="secondary" onClick={handleExport} isLoading={isExporting}>
                 {isExporting ? t('btn', 'exporting') : `⬇ ${t('btn', 'export')}`}
               </Button>
@@ -165,31 +160,42 @@ export default function ProjectsPage() {
           }
         />
 
-        <PageToolbar
-          search={<SearchInput value={search} onChange={handleSearch} placeholder="Search projects..." />}
-        />
-
-        <DataTable
-          columns={columns}
-          data={projects}
-          isLoading={isLoading}
-          error={error}
-          emptyMessage="No projects found."
-          emptyAction={canCreate ? <Link href="/projects/new"><Button variant="primary">Create Project</Button></Link> : undefined}
-          selectable={isAdmin}
-          selectedItems={selectedItems}
-          onToggleSelect={toggleSelect}
-          onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
-          isAllSelected={isAllPageSelected(currentIds)}
-          isSomeSelected={isSomePageSelected(currentIds)}
-          page={page}
-          totalCount={totalCount}
-          pageSize={20}
-          hasPrev={!!data?.previous}
-          hasNext={!!data?.next}
-          onPageChange={setPage}
-        />
-      </div>
+        <WorkspaceSurface
+          toolbar={
+            <>
+              <SearchInput value={search} onChange={handleSearch} placeholder="Search projects..." />
+              <div style={{ flex: 1 }} />
+              {canDelete && selectedItems.size > 0 && (
+                <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
+                  {t('btn', 'delete')} {selectedItems.size}
+                </Button>
+              )}
+            </>
+          }
+        >
+          <DataTable
+            surface
+            columns={columns}
+            data={projects}
+            isLoading={isLoading}
+            error={error}
+            emptyMessage="No projects found."
+            emptyAction={canCreate ? <Link href="/projects/new"><Button variant="primary">Create Project</Button></Link> : undefined}
+            selectable={isAdmin}
+            selectedItems={selectedItems}
+            onToggleSelect={toggleSelect}
+            onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
+            isAllSelected={isAllPageSelected(currentIds)}
+            isSomeSelected={isSomePageSelected(currentIds)}
+            page={page}
+            totalCount={totalCount}
+            pageSize={20}
+            hasPrev={!!data?.previous}
+            hasNext={!!data?.next}
+            onPageChange={setPage}
+          />
+        </WorkspaceSurface>
+      </PageShell>
     </MainLayout>
   );
 }

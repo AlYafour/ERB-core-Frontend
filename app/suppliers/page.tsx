@@ -11,7 +11,7 @@ import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
-import { Button, Badge, PageHeader, PageToolbar, SearchInput } from '@/components/ui';
+import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import { exportToExcel, fetchAllPages } from '@/lib/utils/export-excel';
 import BilingualName from '@/components/ui/BilingualName';
 import { useT } from '@/lib/i18n/useT';
@@ -148,18 +148,13 @@ export default function SuppliersPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <PageShell>
         <PageHeader
           title={t('page', 'suppliers')}
           count={totalCount}
           breadcrumbs={[{ label: 'Suppliers' }]}
           actions={
             <div className="flex items-center gap-2">
-              {isAdmin && selectedItems.size > 0 && (
-                <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
-                  {t('btn', 'delete')} {selectedItems.size}
-                </Button>
-              )}
               <Button variant="secondary" onClick={handleExport}>⬇ {t('btn', 'export')}</Button>
               {isAdmin && (
                 <>
@@ -171,33 +166,47 @@ export default function SuppliersPage() {
             </div>
           }
         />
-
-        <PageToolbar
-          search={<SearchInput value={search} onChange={handleSearch} placeholder={t('misc', 'searchSuppliers')} />}
-          filters={<FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="suppliers" />}
-          filterTags={<FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />}
-        />
-
-        <DataTable
-          columns={columns}
-          data={suppliers}
-          isLoading={isLoading}
-          error={error}
-          emptyMessage={t('empty', 'noSuppliers')}
-          selectable={isAdmin}
-          selectedItems={selectedItems}
-          onToggleSelect={toggleSelect}
-          onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
-          isAllSelected={isAllPageSelected(currentIds)}
-          isSomeSelected={isSomePageSelected(currentIds)}
-          page={page}
-          totalCount={totalCount}
-          pageSize={50}
-          hasPrev={!!data?.previous}
-          hasNext={!!data?.next}
-          onPageChange={setPage}
-        />
-      </div>
+        <WorkspaceSurface
+          toolbar={
+            <>
+              <SearchInput value={search} onChange={handleSearch} placeholder={t('misc', 'searchSuppliers')} />
+              <div style={{ flex: 1 }} />
+              {isAdmin && selectedItems.size > 0 && (
+                <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
+                  {t('btn', 'delete')} {selectedItems.size}
+                </Button>
+              )}
+              <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="suppliers" />
+            </>
+          }
+          filterTags={
+            Object.keys(filters).length > 0
+              ? <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
+              : undefined
+          }
+        >
+          <DataTable
+            surface
+            columns={columns}
+            data={suppliers}
+            isLoading={isLoading}
+            error={error}
+            emptyMessage={t('empty', 'noSuppliers')}
+            selectable={isAdmin}
+            selectedItems={selectedItems}
+            onToggleSelect={toggleSelect}
+            onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
+            isAllSelected={isAllPageSelected(currentIds)}
+            isSomeSelected={isSomePageSelected(currentIds)}
+            page={page}
+            totalCount={totalCount}
+            pageSize={50}
+            hasPrev={!!data?.previous}
+            hasNext={!!data?.next}
+            onPageChange={setPage}
+          />
+        </WorkspaceSurface>
+      </PageShell>
     </MainLayout>
   );
 }

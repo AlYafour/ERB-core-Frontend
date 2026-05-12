@@ -11,7 +11,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
 import RejectionReasonDialog from '@/components/ui/RejectionReasonDialog';
-import { Button, Badge, PageHeader, PageToolbar, SearchInput } from '@/components/ui';
+import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
@@ -112,31 +112,42 @@ export default function HRRequestsPage() {
 
   return (
     <MainLayout>
-      <PageHeader
-        title={t('page', 'hrRequests')}
-        count={totalCount}
-        breadcrumbs={[{ label: 'HR' }, { label: 'Requests' }]}
-      />
-
-      <PageToolbar
-        search={<SearchInput value={search} onChange={handleSearch} placeholder="Search requests..." />}
-        filters={<FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="hr-requests" />}
-        filterTags={<FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />}
-      />
-
-      <DataTable
-        columns={columns}
-        data={requests}
-        isLoading={isLoading}
-        error={error}
-        emptyMessage={t('empty', 'noHRRequests')}
-        page={page}
-        totalCount={totalCount}
-        pageSize={50}
-        hasPrev={!!data?.previous}
-        hasNext={!!data?.next}
-        onPageChange={setPage}
-      />
+      <PageShell>
+        <PageHeader
+          title={t('page', 'hrRequests')}
+          count={totalCount}
+          breadcrumbs={[{ label: 'HR' }, { label: 'Requests' }]}
+        />
+        <WorkspaceSurface
+          toolbar={
+            <>
+              <SearchInput value={search} onChange={handleSearch} placeholder="Search requests..." />
+              <div style={{ flex: 1 }} />
+              <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="hr-requests" />
+            </>
+          }
+          filterTags={
+            Object.keys(filters).length > 0
+              ? <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
+              : undefined
+          }
+        >
+          <DataTable
+            surface
+            columns={columns}
+            data={requests}
+            isLoading={isLoading}
+            error={error}
+            emptyMessage={t('empty', 'noHRRequests')}
+            page={page}
+            totalCount={totalCount}
+            pageSize={50}
+            hasPrev={!!data?.previous}
+            hasNext={!!data?.next}
+            onPageChange={setPage}
+          />
+        </WorkspaceSurface>
+      </PageShell>
 
       <RejectionReasonDialog
         isOpen={rejectDialogOpen}
