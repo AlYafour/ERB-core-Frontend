@@ -6,6 +6,7 @@ import { suppliersApi } from '@/lib/api/suppliers';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import EntityHeader from '@/components/ui/EntityHeader';
+import { PageShell } from '@/components/ui';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useT } from '@/lib/i18n/useT';
 
@@ -48,7 +49,7 @@ export default function SupplierDetailPage() {
 
   return (
     <MainLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
+      <PageShell>
         {/* Entity Header - Unified */}
         <EntityHeader
           title={supplier.business_name || supplier.name || 'Unnamed Supplier'}
@@ -597,7 +598,7 @@ export default function SupplierDetailPage() {
             </div>
           </div>
         </div>
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

@@ -16,7 +16,7 @@ import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { formatPrice } from '@/lib/utils/format';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { Button } from '@/components/ui';
+import { Button, PageHeader, PageShell } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
 
 export default function EditPurchaseOrderPage() {
@@ -239,21 +239,12 @@ function EditPurchaseOrderPageContent() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        <div>
-          <Link
-            href={`/purchase-orders/${id}`}
-            className="text-sm text-muted-foreground hover:text-foreground mb-2 inline-block"
-          >
-            ← {t('btn', 'back')} {t('page', 'purchaseOrders')}
-          </Link>
-          <h1 className="text-2xl font-semibold text-foreground">
-            {t('page', 'editPO')}: {order.order_number}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Update purchase order details
-          </p>
-        </div>
+      <PageShell>
+        <PageHeader
+          title={`${t('page', 'editPO')}: ${order.order_number}`}
+          description="Update purchase order details"
+          breadcrumbs={[{ label: t('page', 'purchaseOrders'), href: '/purchase-orders' }, { label: order.order_number, href: `/purchase-orders/${id}` }, { label: 'Edit' }]}
+        />
 
         <form onSubmit={handleSubmit} className="card">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -646,7 +637,7 @@ function EditPurchaseOrderPageContent() {
             </Link>
           </div>
         </form>
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectsApi } from '@/lib/api/projects';
 import { usersApi } from '@/lib/api/users';
 import { User } from '@/types';
-import { Button } from '@/components/ui';
+import { Button, PageHeader, PageShell } from '@/components/ui';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import { toast } from '@/lib/hooks/use-toast';
@@ -125,23 +125,12 @@ export default function EditProjectPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <Link href="/projects" className="text-sm mb-2 inline-block"
-            style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
-          >
-            ← {t('btn', 'back')} {t('page', 'projects')}
-          </Link>
-          <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {t('page', 'editProject')}
-          </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-            {project.code} — {project.name}
-          </p>
-        </div>
+      <PageShell>
+        <PageHeader
+          title={t('page', 'editProject')}
+          description={`${project.code} — ${project.name}`}
+          breadcrumbs={[{ label: t('page', 'projects'), href: '/projects' }, { label: t('page', 'editProject') }]}
+        />
 
         <form onSubmit={handleSubmit} className="space-y-6">
 
@@ -335,7 +324,7 @@ export default function EditProjectPage() {
             </Button>
           </div>
         </form>
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

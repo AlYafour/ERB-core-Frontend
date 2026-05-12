@@ -8,6 +8,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { useT } from '@/lib/i18n/useT';
+import { PageHeader, PageShell } from '@/components/ui';
 
 const currencies = [
   { value: 'AED', label: 'AED - UAE Dirham' },
@@ -117,16 +118,12 @@ export default function EditSupplierPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        <div>
-          <Link href="/suppliers" className="text-sm text-muted-foreground hover:text-foreground mb-2 inline-block">
-            ← {t('btn', 'back')} {t('page', 'suppliers')}
-          </Link>
-          <h1 className="text-2xl font-semibold text-foreground">{t('page', 'editSupplier')}</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Update supplier information
-          </p>
-        </div>
+      <PageShell>
+        <PageHeader
+          title={t('page', 'editSupplier')}
+          description="Update supplier information"
+          breadcrumbs={[{ label: t('page', 'suppliers'), href: '/suppliers' }, { label: t('page', 'editSupplier') }]}
+        />
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Supplier Details Section */}
@@ -442,7 +439,7 @@ export default function EditSupplierPage() {
             </Link>
           </div>
         </form>
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

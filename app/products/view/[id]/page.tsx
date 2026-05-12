@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { productsApi } from '@/lib/api/products';
-import { Button } from '@/components/ui';
+import { Button, PageShell } from '@/components/ui';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import { formatPrice, formatPercentage, formatNumber } from '@/lib/utils/format';
@@ -57,7 +57,7 @@ export default function ProductDetailPage() {
 
   return (
     <MainLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
+      <PageShell>
         {/* Entity Header - Unified */}
         <EntityHeader
           title={product.name}
@@ -697,7 +697,7 @@ export default function ProductDetailPage() {
             </div>
           </div>
         </div>
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }
