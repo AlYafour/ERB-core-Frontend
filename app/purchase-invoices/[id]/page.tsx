@@ -10,7 +10,8 @@ import { formatPrice } from '@/lib/utils/format';
 import DetailCard, { DetailField } from '@/components/ui/DetailCard';
 import RejectionReasonDialog from '@/components/ui/RejectionReasonDialog';
 import LinkedDocumentsSection from '@/components/ui/LinkedDocumentsSection';
-import { Button } from '@/components/ui';
+import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
+import { INVOICE_STATUS } from '@/lib/utils/status-colors';
 import { toast } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -114,23 +115,28 @@ export default function PurchaseInvoiceDetailPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        <div>
-          <Link href="/purchase-invoices" className="text-sm text-muted-foreground hover:text-foreground mb-2 inline-block">
-            ← Back to Invoices
-          </Link>
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-semibold text-foreground">
-                Invoice: {invoice.invoice_number}
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">View invoice details</p>
+      <PageShell>
+        <PageHeader
+          title={`Invoice: ${invoice.invoice_number}`}
+          breadcrumbs={[{ label: 'Purchase Invoices', href: '/purchase-invoices' }, { label: invoice.invoice_number }]}
+          actions={
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Badge variant={INVOICE_STATUS[invoice.status] ?? 'info'}>{statusLabels[invoice.status] || invoice.status}</Badge>
+              <Link href={`/print/invoice/${invoice.id}`} target="_blank">
+                <Button variant="secondary" size="sm">Print</Button>
+              </Link>
+              {canApprove && (invoice.status === 'draft' || invoice.status === 'pending') && (
+                <Button variant="success" size="sm" onClick={() => approveMutation.mutate()} isLoading={approveMutation.isPending}>Approve</Button>
+              )}
+              {canReject && (invoice.status === 'draft' || invoice.status === 'pending') && (
+                <Button variant="destructive" size="sm" onClick={() => setRejectDialogOpen(true)} disabled={rejectMutation.isPending}>Reject</Button>
+              )}
+              {canMarkPaid && invoice.status === 'approved' && !invoice.is_fully_paid && (
+                <Button variant="success" size="sm" onClick={() => markPaidMutation.mutate()} isLoading={markPaidMutation.isPending}>Mark as Paid</Button>
+              )}
             </div>
-            <span className={`badge ${statusColors[invoice.status] || 'badge-info'}`}>
-              {statusLabels[invoice.status] || invoice.status}
-            </span>
-          </div>
-        </div>
+          }
+        />
 
         <LinkedDocumentsSection
           documents={{
@@ -253,44 +259,6 @@ export default function PurchaseInvoiceDetailPage() {
           </div>
         </DetailCard>
 
-        <div className="flex flex-wrap gap-3">
-          <Link href={`/print/invoice/${invoice.id}`} target="_blank">
-            <Button variant="secondary">Print</Button>
-          </Link>
-
-          {canApprove && (invoice.status === 'draft' || invoice.status === 'pending') && (
-            <Button
-              variant="success"
-              onClick={() => approveMutation.mutate()}
-              disabled={approveMutation.isPending}
-              isLoading={approveMutation.isPending}
-            >
-              Approve
-            </Button>
-          )}
-
-          {canReject && (invoice.status === 'draft' || invoice.status === 'pending') && (
-            <Button
-              variant="destructive"
-              onClick={() => setRejectDialogOpen(true)}
-              disabled={rejectMutation.isPending}
-            >
-              Reject
-            </Button>
-          )}
-
-          {canMarkPaid && invoice.status === 'approved' && !invoice.is_fully_paid && (
-            <Button
-              variant="success"
-              onClick={() => markPaidMutation.mutate()}
-              disabled={markPaidMutation.isPending}
-              isLoading={markPaidMutation.isPending}
-            >
-              Mark as Paid
-            </Button>
-          )}
-        </div>
-
         <RejectionReasonDialog
           isOpen={rejectDialogOpen}
           onClose={() => setRejectDialogOpen(false)}
@@ -298,7 +266,7 @@ export default function PurchaseInvoiceDetailPage() {
           title="Reject Invoice"
           message="Please provide a reason for rejecting this invoice."
         />
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

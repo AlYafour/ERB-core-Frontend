@@ -7,11 +7,10 @@ import { hrPayrollApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
-import { Button, Badge, Loader } from '@/components/ui';
-import Link from 'next/link';
+import { Button, Badge, Loader, PageHeader, PageShell } from '@/components/ui';
 
-const statusColors: Record<string, string> = {
-  draft: 'badge-default', processed: 'badge-info', paid: 'badge-success',
+const STATUS_VARIANT: Record<string, string> = {
+  draft: 'default', processed: 'info', paid: 'success',
 };
 
 const fmt = (v: string | number) =>
@@ -44,26 +43,28 @@ export default function PayrollDetailPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6 max-w-2xl mx-auto">
-        <div className="flex items-center gap-3">
-          <Link href="/hr/payroll"><Button variant="ghost" size="sm">← Back</Button></Link>
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">
-              {payroll.month_name} {payroll.year}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">{payroll.employee_name} — {payroll.employee_id_code}</p>
-          </div>
-        </div>
+      <PageShell>
+        <PageHeader
+          title={`${payroll.month_name} ${payroll.year}`}
+          description={`${payroll.employee_name} — ${payroll.employee_id_code}`}
+          breadcrumbs={[{ label: 'HR' }, { label: 'Payroll', href: '/hr/payroll' }, { label: `${payroll.month_name} ${payroll.year}` }]}
+          actions={
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Badge variant={(STATUS_VARIANT[payroll.status] as any) || 'default'}>{payroll.status.toUpperCase()}</Badge>
+              {isAdmin && payroll.status === 'processed' && (
+                <Button variant="primary" size="sm" onClick={handleMarkPaid} isLoading={markPaidMutation.isPending}>
+                  Mark as Paid
+                </Button>
+              )}
+            </div>
+          }
+        />
 
-        <div className="card space-y-5">
-          <div className="flex items-center justify-between">
-            <Badge className={statusColors[payroll.status] || 'badge-default'}>{payroll.status.toUpperCase()}</Badge>
-            {payroll.paid_at && (
-              <span className="text-sm text-muted-foreground">Paid {new Date(payroll.paid_at).toLocaleDateString()}</span>
-            )}
-          </div>
+        <div className="card space-y-5" style={{ maxWidth: '42rem' }}>
+          {payroll.paid_at && (
+            <p className="text-sm text-muted-foreground">Paid {new Date(payroll.paid_at).toLocaleDateString()}</p>
+          )}
 
-          {/* Earnings */}
           <div className="space-y-2">
             <p className="text-sm font-semibold text-foreground">Earnings</p>
             {[
@@ -84,7 +85,6 @@ export default function PayrollDetailPage() {
             </div>
           </div>
 
-          {/* Deductions */}
           <div className="space-y-2">
             <p className="text-sm font-semibold text-foreground">Deductions</p>
             {[
@@ -98,14 +98,12 @@ export default function PayrollDetailPage() {
             ))}
           </div>
 
-          {/* Net */}
           <div className="flex justify-between text-base font-bold p-3 rounded-lg"
             style={{ backgroundColor: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)' }}>
             <span>Net Salary</span>
             <span>{fmt(payroll.net_salary)}</span>
           </div>
 
-          {/* Attendance summary */}
           <div className="grid grid-cols-4 gap-3 border-t pt-4" style={{ borderColor: 'var(--border)' }}>
             {[
               ['Working Days', payroll.working_days],
@@ -127,13 +125,7 @@ export default function PayrollDetailPage() {
             </div>
           )}
         </div>
-
-        {isAdmin && payroll.status === 'processed' && (
-          <Button variant="primary" onClick={handleMarkPaid} isLoading={markPaidMutation.isPending}>
-            Mark as Paid
-          </Button>
-        )}
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

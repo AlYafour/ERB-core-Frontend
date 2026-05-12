@@ -10,7 +10,8 @@ import { formatPrice } from '@/lib/utils/format';
 import RejectionReasonDialog from '@/components/ui/RejectionReasonDialog';
 import LinkedDocumentsSection from '@/components/ui/LinkedDocumentsSection';
 import DetailCard, { DetailField } from '@/components/ui/DetailCard';
-import { Button } from '@/components/ui';
+import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
+import { PO_STATUS } from '@/lib/utils/status-colors';
 import { toast } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -126,25 +127,47 @@ export default function PurchaseOrderDetailPage() {
   return (
     <MainLayout>
       <div className="lpo-print">
-        <div className="space-y-6">
-
-          {/* Header */}
-          <div>
-            <Link href="/purchase-orders" className="text-sm text-muted-foreground hover:text-foreground mb-2 inline-block">
-              ← Back to Purchase Orders
-            </Link>
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-2xl font-semibold text-foreground">
-                  Purchase Order: {order.order_number}
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">View purchase order details</p>
+        <PageShell>
+          <PageHeader
+            title={`Purchase Order: ${order.order_number}`}
+            breadcrumbs={[{ label: 'Purchase Orders', href: '/purchase-orders' }, { label: order.order_number }]}
+            actions={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <Badge variant={PO_STATUS[order.status] ?? 'info'}>{statusLabels[order.status] || order.status}</Badge>
+                <Button variant="secondary" size="sm" onClick={() => window.open(`/print/lpo/${id}`, '_blank')}>Print LPO</Button>
+                {canEdit && (
+                  <Link href={`/purchase-orders/${id}/edit`}><Button variant="edit" size="sm">Edit</Button></Link>
+                )}
+                {canApprove && (order.status === 'draft' || order.status === 'pending') && (
+                  <Button variant="success" size="sm" onClick={() => approveMutation.mutate()} isLoading={approveMutation.isPending}>Approve</Button>
+                )}
+                {canReject && (order.status === 'draft' || order.status === 'pending') && (
+                  <Button variant="destructive" size="sm" onClick={() => setRejectDialogOpen(true)} disabled={rejectMutation.isPending}>Reject</Button>
+                )}
+                {canCancelOrder && (
+                  <Button variant="destructive" size="sm" onClick={() => setCancelDialogOpen(true)} disabled={cancelMutation.isPending}>Cancel</Button>
+                )}
+                {order.status === 'approved' && canCreateGRNPerm && (user?.role === 'site_engineer' || user?.role === 'procurement_officer' || user?.is_superuser) && (
+                  <Button variant="primary" size="sm" onClick={() => {
+                    const guard = canCreateGRN(order.status);
+                    if (!guard.canProceed) { toast(guard.reason || 'Cannot create GRN', 'error'); return; }
+                    router.push(`/goods-receiving/new?purchase_order_id=${id}`);
+                  }}>Create GRN</Button>
+                )}
+                {order.status === 'approved' && canCreateInvoicePerm && order.has_grn && (
+                  <Button variant="primary" size="sm" onClick={() => {
+                    const guard = canCreateInvoice(order.status);
+                    if (!guard.canProceed) { toast(guard.reason || 'Cannot create invoice', 'error'); return; }
+                    if (guard.warning && !confirm(guard.warning + '\n\nDo you want to continue?')) return;
+                    router.push(`/purchase-invoices/new?purchase_order_id=${id}`);
+                  }}>Create Invoice</Button>
+                )}
+                {order.status === 'approved' && canCreateInvoicePerm && !order.has_grn && (
+                  <Button variant="secondary" size="sm" disabled>Create Invoice (GRN Required)</Button>
+                )}
               </div>
-              <span className={`badge ${statusColors[order.status] || 'badge-info'}`}>
-                {statusLabels[order.status] || order.status}
-              </span>
-            </div>
-          </div>
+            }
+          />
 
           {/* Linked Documents */}
           <LinkedDocumentsSection
@@ -328,85 +351,6 @@ export default function PurchaseOrderDetailPage() {
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-3">
-            <Button variant="secondary" onClick={() => window.open(`/print/lpo/${id}`, '_blank')}>
-              🖨 Print LPO
-            </Button>
-
-            {canEdit && (
-              <Link href={`/purchase-orders/${id}/edit`}>
-                <Button variant="edit">Edit</Button>
-              </Link>
-            )}
-
-            {canApprove && (order.status === 'draft' || order.status === 'pending') && (
-              <Button
-                variant="success"
-                onClick={() => approveMutation.mutate()}
-                disabled={approveMutation.isPending}
-                isLoading={approveMutation.isPending}
-              >
-                Approve
-              </Button>
-            )}
-
-            {canReject && (order.status === 'draft' || order.status === 'pending') && (
-              <Button
-                variant="destructive"
-                onClick={() => setRejectDialogOpen(true)}
-                disabled={rejectMutation.isPending}
-              >
-                Reject
-              </Button>
-            )}
-
-            {canCancelOrder && (
-              <Button
-                variant="destructive"
-                onClick={() => setCancelDialogOpen(true)}
-                disabled={cancelMutation.isPending}
-              >
-                Cancel Order
-              </Button>
-            )}
-
-            {order.status === 'approved' && canCreateGRNPerm &&
-              (user?.role === 'site_engineer' || user?.role === 'procurement_officer' || user?.is_superuser) && (
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    const guard = canCreateGRN(order.status);
-                    if (!guard.canProceed) { toast(guard.reason || 'Cannot create GRN', 'error'); return; }
-                    router.push(`/goods-receiving/new?purchase_order_id=${id}`);
-                  }}
-                >
-                  Create GRN
-                </Button>
-              )}
-
-            {order.status === 'approved' && canCreateInvoicePerm && order.has_grn && (
-              <Button
-                variant="primary"
-                onClick={() => {
-                  const guard = canCreateInvoice(order.status);
-                  if (!guard.canProceed) { toast(guard.reason || 'Cannot create invoice', 'error'); return; }
-                  if (guard.warning && !confirm(guard.warning + '\n\nDo you want to continue?')) return;
-                  router.push(`/purchase-invoices/new?purchase_order_id=${id}`);
-                }}
-              >
-                Create Invoice
-              </Button>
-            )}
-
-            {order.status === 'approved' && canCreateInvoicePerm && !order.has_grn && (
-              <Button variant="secondary" disabled title="GRN must be created first">
-                Create Invoice (GRN Required)
-              </Button>
-            )}
-          </div>
-
-          {/* Dialogs */}
           <RejectionReasonDialog
             isOpen={rejectDialogOpen}
             onClose={() => setRejectDialogOpen(false)}
@@ -422,7 +366,7 @@ export default function PurchaseOrderDetailPage() {
             title="Cancel Purchase Order"
             message="Please provide a reason for cancelling this purchase order."
           />
-        </div>
+        </PageShell>
       </div>
     </MainLayout>
   );

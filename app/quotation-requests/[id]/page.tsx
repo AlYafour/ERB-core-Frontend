@@ -6,7 +6,7 @@ import { quotationRequestsApi } from '@/lib/api/quotation-requests';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import DetailCard, { DetailField } from '@/components/ui/DetailCard';
-import { Button } from '@/components/ui';
+import { Button, PageHeader, PageShell } from '@/components/ui';
 import { useAuth } from '@/lib/hooks/use-auth';
 
 export default function QuotationRequestDetailPage() {
@@ -45,16 +45,17 @@ export default function QuotationRequestDetailPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        <div>
-          <Link href="/quotation-requests" className="text-sm text-muted-foreground hover:text-foreground mb-2 inline-block">
-            ← Back to Quotation Requests
-          </Link>
-          <h1 className="text-2xl font-semibold text-foreground">
-            Quotation Request #{qr.id}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">{new Date(qr.created_at).toLocaleDateString('en-US')}</p>
-        </div>
+      <PageShell>
+        <PageHeader
+          title={`Quotation Request #${qr.id}`}
+          description={new Date(qr.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+          breadcrumbs={[{ label: 'Quotation Requests', href: '/quotation-requests' }, { label: `#${qr.id}` }]}
+          actions={
+            <Link href={`/purchase-quotations/new?quotation_request_id=${qr.id}`}>
+              <Button variant="primary">Create Quotation</Button>
+            </Link>
+          }
+        />
 
         <DetailCard title="Quotation Request Information">
           {supplier && (
@@ -101,13 +102,7 @@ export default function QuotationRequestDetailPage() {
             </table>
           </div>
         </DetailCard>
-
-        <div className="flex gap-3">
-          <Link href={`/purchase-quotations/new?quotation_request_id=${qr.id}`}>
-            <Button variant="primary">Create Quotation</Button>
-          </Link>
-        </div>
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

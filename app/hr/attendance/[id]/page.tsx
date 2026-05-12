@@ -4,13 +4,11 @@ import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { hrAttendanceApi } from '@/lib/api/hr';
-import { Badge, Loader } from '@/components/ui';
-import Link from 'next/link';
-import { Button } from '@/components/ui';
+import { Badge, Loader, PageHeader, PageShell } from '@/components/ui';
 
-const statusColors: Record<string, string> = {
-  present: 'badge-success', absent: 'badge-error', late: 'badge-warning',
-  half_day: 'badge-info', holiday: 'badge-default', on_leave: 'badge-default',
+const STATUS_VARIANT: Record<string, string> = {
+  present: 'success', absent: 'error', late: 'warning',
+  half_day: 'info', holiday: 'default', on_leave: 'default',
 };
 
 const fmtTime = (dt: string | null) =>
@@ -29,20 +27,16 @@ export default function AttendanceDetailPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6 max-w-2xl mx-auto">
-        <div className="flex items-center gap-3">
-          <Link href="/hr/attendance"><Button variant="ghost" size="sm">← Back</Button></Link>
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">Attendance Record</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {record.employee_name} — {new Date(record.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            </p>
-          </div>
-        </div>
+      <PageShell>
+        <PageHeader
+          title="Attendance Record"
+          description={`${record.employee_name} — ${new Date(record.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`}
+          breadcrumbs={[{ label: 'HR' }, { label: 'Attendance', href: '/hr/attendance' }, { label: record.employee_name }]}
+          actions={<Badge variant={(STATUS_VARIANT[record.status] as any) || 'default'}>{record.status.replace('_', ' ').toUpperCase()}</Badge>}
+        />
 
-        <div className="card space-y-5">
+        <div className="card space-y-5" style={{ maxWidth: '42rem' }}>
           <div className="flex items-center justify-between">
-            <Badge className={statusColors[record.status] || 'badge-default'}>{record.status.replace('_', ' ').toUpperCase()}</Badge>
             <span className="font-mono text-sm text-muted-foreground">{record.employee_id_code}</span>
           </div>
 
@@ -87,7 +81,7 @@ export default function AttendanceDetailPage() {
             </div>
           )}
         </div>
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

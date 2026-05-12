@@ -7,13 +7,11 @@ import { hrRequestsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
-import { Button, Badge, Loader } from '@/components/ui';
-import Link from 'next/link';
+import { Button, Badge, Loader, PageHeader, PageShell } from '@/components/ui';
 import { useState } from 'react';
 
-const statusColors: Record<string, string> = {
-  pending: 'badge-warning', approved: 'badge-success',
-  rejected: 'badge-error', cancelled: 'badge-default',
+const STATUS_VARIANT: Record<string, string> = {
+  pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'default',
 };
 
 const typeLabels: Record<string, string> = {
@@ -59,18 +57,26 @@ export default function HRRequestDetailPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6 max-w-2xl mx-auto">
-        <div className="flex items-center gap-3">
-          <Link href="/hr/requests"><Button variant="ghost" size="sm">← Back</Button></Link>
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">{typeLabels[req.request_type] || req.request_type}</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">#{req.id} — {req.employee_name} ({req.employee_id_code})</p>
-          </div>
-        </div>
+      <PageShell>
+        <PageHeader
+          title={typeLabels[req.request_type] || req.request_type}
+          description={`#${req.id} — ${req.employee_name} (${req.employee_id_code})`}
+          breadcrumbs={[{ label: 'HR' }, { label: 'Requests', href: '/hr/requests' }, { label: `#${req.id}` }]}
+          actions={
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Badge variant={(STATUS_VARIANT[req.status] as any) || 'default'}>{req.status.toUpperCase()}</Badge>
+              {isAdmin && req.status === 'pending' && (
+                <>
+                  <Button variant="success" size="sm" onClick={handleApprove} isLoading={approveMutation.isPending}>Approve</Button>
+                  <Button variant="destructive" size="sm" onClick={() => setShowRejectInput(!showRejectInput)}>Reject</Button>
+                </>
+              )}
+            </div>
+          }
+        />
 
-        <div className="card space-y-4">
+        <div className="card space-y-4" style={{ maxWidth: '42rem' }}>
           <div className="flex items-center justify-between">
-            <Badge className={statusColors[req.status] || 'badge-default'}>{req.status.toUpperCase()}</Badge>
             <span className="text-sm text-muted-foreground">{new Date(req.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
           </div>
 
@@ -107,31 +113,28 @@ export default function HRRequestDetailPage() {
           )}
         </div>
 
-        {isAdmin && req.status === 'pending' && (
-          <div className="card space-y-3">
-            <p className="text-sm font-semibold text-foreground">Actions</p>
-            <div className="flex gap-3">
-              <Button variant="primary" onClick={handleApprove} isLoading={approveMutation.isPending}>Approve</Button>
-              <Button variant="secondary" onClick={() => setShowRejectInput(!showRejectInput)}>Reject</Button>
+        {showRejectInput && (
+          <div className="card space-y-3" style={{ maxWidth: '42rem' }}>
+            <p className="text-sm font-semibold text-foreground">Rejection Reason</p>
+            <textarea
+              className="w-full px-3 py-2 rounded-md border text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+              rows={3} placeholder="Rejection reason (required)..."
+              value={rejectReason} onChange={e => setRejectReason(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <Button variant="destructive" size="sm"
+                disabled={!rejectReason.trim() || rejectMutation.isPending}
+                isLoading={rejectMutation.isPending}
+                onClick={() => rejectMutation.mutate(rejectReason)}>
+                Confirm Rejection
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => { setShowRejectInput(false); setRejectReason(''); }}>
+                Cancel
+              </Button>
             </div>
-            {showRejectInput && (
-              <div className="space-y-2">
-                <textarea
-                  className="w-full px-3 py-2 rounded-md border text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  rows={3} placeholder="Rejection reason (required)..."
-                  value={rejectReason} onChange={e => setRejectReason(e.target.value)}
-                />
-                <Button variant="destructive" size="sm"
-                  disabled={!rejectReason.trim() || rejectMutation.isPending}
-                  isLoading={rejectMutation.isPending}
-                  onClick={() => rejectMutation.mutate(rejectReason)}>
-                  Confirm Rejection
-                </Button>
-              </div>
-            )}
           </div>
         )}
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }
