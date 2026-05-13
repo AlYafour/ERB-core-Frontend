@@ -1,0 +1,118 @@
+/*
+  Print pages reset — overrides globals.css table/typography resets
+  Applied via className="print-doc" on the A4 container div
+*/
+
+body {
+  font-family: 'Inter', 'Cairo', 'Segoe UI', sans-serif !important;
+  background: #e8ecf0 !important;
+}
+
+/* ── Table reset ── */
+.print-doc table {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: inherit !important;
+  overflow: visible !important;
+  width: 100%;
+  border-collapse: collapse;
+}
+.print-doc table thead {
+  background: transparent !important;
+}
+.print-doc table th {
+  padding: 0 !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  color: inherit !important;
+  border-bottom: none !important;
+  white-space: nowrap;
+}
+.print-doc table td {
+  padding: 0 !important;
+  border-bottom: none !important;
+  color: inherit !important;
+}
+.print-doc table tbody tr {
+  background: transparent !important;
+}
+.print-doc table tbody tr:nth-child(even) {
+  background: transparent !important;
+}
+.print-doc table tbody tr:hover {
+  background: transparent !important;
+}
+.print-doc table tbody tr:last-child td {
+  border-bottom: none !important;
+}
+.print-doc table tfoot tr {
+  background: transparent !important;
+}
+.print-doc table tfoot td {
+  border-top: none !important;
+  padding: 0 !important;
+  color: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+}
+
+/* ── Typography reset ── */
+.print-doc p {
+  margin: 0;
+  line-height: inherit;
+  color: inherit;
+}
+.print-doc h1, .print-doc h2, .print-doc h3,
+.print-doc h4, .print-doc h5, .print-doc h6 {
+  font-weight: inherit !important;
+  letter-spacing: normal !important;
+  line-height: inherit !important;
+  color: inherit !important;
+  margin: 0 !important;
+  font-size: inherit !important;
+}
+
+/* ── Print media ── */
+@media print {
+  /* Natural page margins — no double-margin with inner padding */
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm;
+  }
+
+  html, body {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide the control bar completely */
+  .print-controls-bar {
+    display: none !important;
+  }
+
+  /* Page wrapper: no grey, no padding */
+  .print-page-bg {
+    background: #fff !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* A4 sheet: natural height, no forced page breaks */
+  .print-doc {
+    width: 100% !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 8mm !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    /* Removed: page-break-after: always — was creating blank trailing page */
+  }
+}

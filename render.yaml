@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: procurement-frontend
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.x
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
+      - key: PORT
+        value: "3000"
+
