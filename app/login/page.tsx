@@ -44,7 +44,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className=”auth-bg” style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+    <div className="auth-bg" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
 
       <AuthParticles />
 
@@ -54,21 +54,21 @@ export default function LoginPage() {
       </div>
 
       {/* Main Content */}
-      <div className=”auth-fade-in” style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: 448, padding: '0 var(--space-6)' }}>
+      <div className="auth-fade-in" style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: 448, padding: '0 var(--space-6)' }}>
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--space-4)' }}>
-            <div className=”auth-logo-box” style={{ width: 80, height: 80, borderRadius: 'var(--radius-2xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+            <div className="auth-logo-box" style={{ width: 80, height: 80, borderRadius: 'var(--radius-2xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
               <Image
-                src=”/logo.png”
-                alt=”AL YAFOUR Logo”
+                src="/logo.png"
+                alt="AL YAFOUR Logo"
                 width={64}
                 height={64}
                 style={{ objectFit: 'contain' }}
                 priority
               />
-              <div className=”auth-logo-glow” style={{ position: 'absolute', inset: 0, borderRadius: 'var(--radius-2xl)' }} />
+              <div className="auth-logo-glow" style={{ position: 'absolute', inset: 0, borderRadius: 'var(--radius-2xl)' }} />
             </div>
           </div>
           <h1 style={{ fontSize: '1.875rem', fontWeight: 700, margin: '0 0 var(--space-2) 0', color: 'var(--text-primary)' }}>
@@ -80,7 +80,7 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className=”auth-card” style={{ borderRadius: 'var(--radius-2xl)', padding: 'var(--space-8)' }}>
+        <div className="auth-card" style={{ borderRadius: 'var(--radius-2xl)', padding: 'var(--space-8)' }}>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 'var(--weight-semibold)', textAlign: 'center', marginBottom: 'var(--space-6)', marginTop: 0, color: 'var(--text-primary)' }}>
             Sign In
           </h2>
@@ -92,29 +92,29 @@ export default function LoginPage() {
               </div>
             )}
             <TextField
-              id=”username” name=”username” type=”text” label=”Username” required
-              placeholder=”Enter your username” value={username}
+              id="username" name="username" type="text" label="Username" required
+              placeholder="Enter your username" value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
             <PasswordField
-              id=”password” name=”password” label=”Password” required
-              placeholder=”Enter your password” value={password}
+              id="password" name="password" label="Password" required
+              placeholder="Enter your password" value={password}
               onChange={(e) => setPassword(e.target.value)}
               showPassword={showPassword}
               onTogglePassword={() => setShowPassword(!showPassword)}
             />
 
             <Button
-              type=”submit” disabled={isLoggingIn} isLoading={isLoggingIn}
-              className=”auth-btn” style={{ width: '100%', position: 'relative', overflow: 'hidden' }}
+              type="submit" disabled={isLoggingIn} isLoading={isLoggingIn}
+              className="auth-btn" style={{ width: '100%', position: 'relative', overflow: 'hidden' }}
             >
               <span style={{ position: 'relative', zIndex: 1 }}>{isLoggingIn ? 'Signing in...' : 'Sign In'}</span>
-              {isLoggingIn && <div className=”auth-shimmer” style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent)' }} />}
+              {isLoggingIn && <div className="auth-shimmer" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent)' }} />}
             </Button>
 
             <div style={{ textAlign: 'center', paddingTop: 'var(--space-4)' }}>
               <Link
-                href=”/register”
+                href="/register"
                 style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-secondary)', textDecoration: 'none' }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-primary)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}

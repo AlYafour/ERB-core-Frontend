@@ -66,7 +66,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className=”auth-bg” style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: 'var(--space-12) 0' }}>
+    <div className="auth-bg" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: 'var(--space-12) 0' }}>
 
       <AuthParticles />
 
@@ -76,14 +76,14 @@ export default function RegisterPage() {
       </div>
 
       {/* Main Content */}
-      <div className=”auth-fade-in” style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: 448, padding: '0 var(--space-6)' }}>
+      <div className="auth-fade-in" style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: 448, padding: '0 var(--space-6)' }}>
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--space-4)' }}>
-            <div className=”auth-logo-box” style={{ width: 80, height: 80, borderRadius: 'var(--radius-2xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-              <Image src=”/logo.png” alt=”AL YAFOUR Logo” width={64} height={64} style={{ objectFit: 'contain' }} priority />
-              <div className=”auth-logo-glow” style={{ position: 'absolute', inset: 0, borderRadius: 'var(--radius-2xl)' }} />
+            <div className="auth-logo-box" style={{ width: 80, height: 80, borderRadius: 'var(--radius-2xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+              <Image src="/logo.png" alt="AL YAFOUR Logo" width={64} height={64} style={{ objectFit: 'contain' }} priority />
+              <div className="auth-logo-glow" style={{ position: 'absolute', inset: 0, borderRadius: 'var(--radius-2xl)' }} />
             </div>
           </div>
           <h1 style={{ fontSize: '1.875rem', fontWeight: 700, marginBottom: 'var(--space-2)', color: 'var(--text-primary)', margin: '0 0 var(--space-2) 0' }}>AL YAFOUR</h1>
@@ -91,43 +91,43 @@ export default function RegisterPage() {
         </div>
 
         {/* Card */}
-        <div className=”auth-card” style={{ borderRadius: 'var(--radius-2xl)', padding: 'var(--space-8)' }}>
+        <div className="auth-card" style={{ borderRadius: 'var(--radius-2xl)', padding: 'var(--space-8)' }}>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 'var(--weight-semibold)', textAlign: 'center', marginBottom: 'var(--space-6)', color: 'var(--text-primary)', marginTop: 0 }}>Sign Up</h2>
 
           <form style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }} onSubmit={handleSubmit}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-              <TextField id=”username” name=”username” type=”text” label=”Username” required
-                placeholder=”Choose a username” value={formData.username}
+              <TextField id="username" name="username" type="text" label="Username" required
+                placeholder="Choose a username" value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })} />
 
-              <TextField id=”email” name=”email” type=”email” label=”Email” required
-                placeholder=”Enter your email” value={formData.email}
+              <TextField id="email" name="email" type="email" label="Email" required
+                placeholder="Enter your email" value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-4)' }}>
-                <TextField id=”first_name” name=”first_name” type=”text” label=”First Name”
-                  placeholder=”First name” value={formData.first_name}
+                <TextField id="first_name" name="first_name" type="text" label="First Name"
+                  placeholder="First name" value={formData.first_name}
                   onChange={(e) => setFormData({ ...formData, first_name: e.target.value })} />
-                <TextField id=”last_name” name=”last_name” type=”text” label=”Last Name”
-                  placeholder=”Last name” value={formData.last_name}
+                <TextField id="last_name" name="last_name" type="text" label="Last Name"
+                  placeholder="Last name" value={formData.last_name}
                   onChange={(e) => setFormData({ ...formData, last_name: e.target.value })} />
               </div>
 
-              <TextField id=”phone” name=”phone” type=”tel” label=”Phone”
-                placeholder=”Phone number” value={formData.phone}
+              <TextField id="phone" name="phone" type="tel" label="Phone"
+                placeholder="Phone number" value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
 
               <div>
-                <PasswordField id=”password” name=”password” label=”Password” required
-                  placeholder=”Min 8 characters” value={formData.password}
+                <PasswordField id="password" name="password" label="Password" required
+                  placeholder="Min 8 characters" value={formData.password}
                   onChange={(e) => { setFormData({ ...formData, password: e.target.value }); setPasswordErrors(e.target.value ? validatePassword(e.target.value) : []); }}
                   showPassword={showPassword} onTogglePassword={() => setShowPassword(!showPassword)} />
                 {passwordErrors.map((err, i) => <p key={i} style={{ fontSize: 'var(--text-xs)', color: 'var(--color-error)', marginTop: 'var(--space-1)' }}>• {err}</p>)}
                 {formData.password && !passwordErrors.length && <p style={{ fontSize: 'var(--text-xs)', marginTop: 'var(--space-1)', color: 'var(--color-success)' }}>✓ Password is valid</p>}
               </div>
 
-              <PasswordField id=”password2” name=”password2” label=”Confirm Password” required
-                placeholder=”Confirm your password” value={formData.password2}
+              <PasswordField id="password2" name="password2" label="Confirm Password" required
+                placeholder="Confirm your password" value={formData.password2}
                 onChange={(e) => setFormData({ ...formData, password2: e.target.value })}
                 showPassword={showPassword2} onTogglePassword={() => setShowPassword2(!showPassword2)} />
             </div>
@@ -137,12 +137,12 @@ export default function RegisterPage() {
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>Your account will be reviewed by an administrator.</p>
             </div>
 
-            <Button type=”submit” disabled={isRegistering} isLoading={isRegistering} className=”auth-btn” style={{ width: '100%' }}>
+            <Button type="submit" disabled={isRegistering} isLoading={isRegistering} className="auth-btn" style={{ width: '100%' }}>
               {isRegistering ? 'Creating Account...' : 'Create Account'}
             </Button>
 
             <div style={{ textAlign: 'center', paddingTop: 'var(--space-4)' }}>
-              <Link href=”/login”
+              <Link href="/login"
                 style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-secondary)', textDecoration: 'none' }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-primary)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}>

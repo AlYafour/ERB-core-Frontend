@@ -460,7 +460,7 @@ function NewPurchaseRequestPageContent() {
                   borderTop: `1px solid var(--border-subtle)`,
                 }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                    {/* Qty â€” compact fixed width */}
+                    {/* Qty â€" compact fixed width */}
                     <div style={{ flexShrink: 0 }}>
                       <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('col', 'quantity')} <span style={{ color: '#ef4444' }}>*</span></label>
                       <QuantityInput
