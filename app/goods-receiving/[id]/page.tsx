@@ -10,6 +10,7 @@ import { formatPrice } from '@/lib/utils/format';
 import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection';
 import { canCreateInvoice } from '@/lib/utils/workflow-guards';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { Button, PageShell } from '@/components/ui';
@@ -74,7 +75,7 @@ export default function GRNDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['goods-receiving', id] });
     },
     onError: (error: any) => {
-      toast(error?.response?.data?.error || 'Failed to mark invoice as delivered', 'error');
+      toast(getApiError(error, 'Failed to mark invoice as delivered'), 'error');
     },
   });
 

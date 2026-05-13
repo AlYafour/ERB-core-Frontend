@@ -12,6 +12,7 @@ import { PurchaseOrder, PurchaseOrderItem, CostCode } from '@/types';
 import { PurchaseOrderUpdateFormData, toPurchaseOrderUpdateData } from '@/lib/types/form-data';
 import CostCodePicker from '@/components/domain/CostCodePicker';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { formatPrice } from '@/lib/utils/format';
 import RouteGuard from '@/components/auth/RouteGuard';
@@ -128,7 +129,7 @@ function EditPurchaseOrderPageContent() {
       router.push(`/purchase-orders/${id}`);
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.error || 'Failed to update purchase order';
+      const message = getApiError(error, 'Failed to update purchase order');
       toast(message, 'error');
     },
   });

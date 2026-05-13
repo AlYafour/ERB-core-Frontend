@@ -12,6 +12,7 @@ import { Button, PageShell, PageHeader } from '@/components/ui';
 import { PurchaseRequestItem, Product, Project } from '@/types';
 import { PurchaseRequestFormData, toPurchaseRequestCreateData } from '@/lib/types/form-data';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import ProductSelector from '@/components/features/ProductSelector';
 import QuantityInput from '@/components/ui/QuantityInput';
 import SearchableDropdown, { DropdownOption } from '@/components/ui/SearchableDropdown';
@@ -131,7 +132,7 @@ function NewPurchaseRequestPageContent() {
       router.push('/purchase-requests');
     },
     onError: (error: any) => {
-      toast(error?.response?.data?.detail || 'Failed to create purchase request', 'error');
+      toast(getApiError(error, 'Failed to create purchase request'), 'error');
     },
   });
 

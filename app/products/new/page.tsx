@@ -11,6 +11,7 @@ import FormField from '@/components/ui/FormField';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { Button, PageHeader, PageShell } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { ProductFormData } from '@/lib/types/form-data';
 
 const UNITS = [
@@ -64,7 +65,7 @@ export default function NewProductPage() {
       router.push(`/products/view/${data.id}`);
     },
     onError: (error: any) => {
-      toast(error?.response?.data?.detail || 'Failed to create product', 'error');
+      toast(getApiError(error, 'Failed to create product'), 'error');
     },
   });
 

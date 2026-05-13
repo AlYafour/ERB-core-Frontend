@@ -196,7 +196,7 @@ export function TeamList({ teams, selectedId, isLoading, onSelect, onCreateClick
                 </div>
 
                 {/* Member avatars */}
-                {team.members.length > 0 && (
+                {(team.members?.length ?? 0) > 0 && (
                   <div
                     style={{
                       display: 'flex',
@@ -205,7 +205,7 @@ export function TeamList({ teams, selectedId, isLoading, onSelect, onCreateClick
                       paddingLeft: 46,
                     }}
                   >
-                    {team.members.slice(0, 5).map((m, i) => (
+                    {(team.members ?? []).slice(0, 5).map((m, i) => (
                       <div
                         key={m.id}
                         style={{

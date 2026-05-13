@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { customersApi, SharedOptions } from '@/lib/api/customers';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { Button } from '@/components/ui';
 
 import CustomerTypeSelector from './CustomerTypeSelector';
@@ -156,8 +157,7 @@ export default function CustomerFormWizard() {
       toast(`Customer created: ${result.full_name_english} (${result.code})`, 'success');
       router.push('/customers');
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { detail?: string } } })
-        ?.response?.data?.detail ?? 'Failed to create customer';
+      const msg = getApiError(err, 'Failed to create customer');
       toast(msg, 'error');
     } finally {
       setSubmitting(false);

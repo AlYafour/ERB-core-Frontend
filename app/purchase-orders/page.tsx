@@ -9,12 +9,10 @@ import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
-import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
-import FilterTags from '@/components/ui/FilterTags';
-import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
+import { type FilterField } from '@/components/ui/FilterPanel';
+import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
 import { formatPrice } from '@/lib/utils/format';
 import { useT } from '@/lib/i18n/useT';
-import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { PO_STATUS } from '@/lib/utils/status-colors';
 
@@ -34,11 +32,8 @@ const filterFields: FilterField[] = [
 ];
 
 export default function PurchaseOrdersPage() {
-  const {
-    page, setPage, search, filters, selectedItems,
-    handleSearch, handleFilterChange, handleFilterReset, handleRemoveFilter,
-    toggleSelect, selectPage, clearSelection, isAllPageSelected, isSomePageSelected,
-  } = useTableState();
+  const tableState = useTableState();
+  const { page, search, filters, selectedItems, clearSelection } = tableState;
 
   const queryClient    = useQueryClient();
   const { user }       = useAuth();
@@ -55,11 +50,17 @@ export default function PurchaseOrdersPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => purchaseOrdersApi.delete(id),
-    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['purchase-orders'] }); queryClient.invalidateQueries({ queryKey: ['pending-count'] }); toast('Purchase Order deleted', 'success'); },
-    onError:    () => toast('Failed to delete purchase order', 'error'),
+    onSuccess:  () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-count'] });
+      toast('Purchase Order deleted', 'success');
+    },
+    onError: () => toast('Failed to delete purchase order', 'error'),
   });
 
-  const handleDelete = async (id: number) => { if (await confirm('Delete this purchase order?')) deleteMutation.mutate(id); };
+  const handleDelete = async (id: number) => {
+    if (await confirm('Delete this purchase order?')) deleteMutation.mutate(id);
+  };
 
   const handleBulkDelete = async () => {
     if (!selectedItems.size || !await confirm(`Delete ${selectedItems.size} purchase orders?`)) return;
@@ -70,30 +71,38 @@ export default function PurchaseOrdersPage() {
     clearSelection();
   };
 
-  const orders     = data?.results ?? [];
+  const orders     = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
-  const currentIds = orders.map((o: PurchaseOrder) => o.id);
 
   const columns: Column<PurchaseOrder>[] = [
     {
       key: 'number', header: 'Order Number',
-      render: o => <Link href={`/purchase-orders/${o.id}`} style={{ fontFamily: 'monospace', fontWeight: 'var(--weight-semibold)', color: 'var(--text-brand)' }}>{o.order_number}</Link>,
+      render: o => (
+        <Link href={`/purchase-orders/${o.id}`} className="font-mono font-semibold" style={{ color: 'var(--text-brand)' }}>
+          {o.order_number}
+        </Link>
+      ),
     },
     {
       key: 'project', header: t('col', 'project'),
       render: o => o.project_name
-        ? <div><div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{o.project_name}</div>{o.project_code && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{o.project_code}</div>}</div>
+        ? (
+          <div>
+            <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{o.project_name}</div>
+            {o.project_code && <div className="font-mono" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{o.project_code}</div>}
+          </div>
+        )
         : <span style={{ color: 'var(--text-secondary)' }}>—</span>,
     },
     { key: 'supplier',  header: t('col', 'supplier'),      render: o => <span style={{ color: 'var(--text-secondary)' }}>{typeof o.supplier === 'object' ? o.supplier.name : '—'}</span> },
     { key: 'date',      header: 'Order Date',              render: o => <span style={{ color: 'var(--text-secondary)' }}>{new Date(o.order_date).toLocaleDateString('en-US')}</span> },
     { key: 'delivery',  header: 'Delivery Date',           render: o => <span style={{ color: 'var(--text-secondary)' }}>{o.delivery_date ? new Date(o.delivery_date).toLocaleDateString('en-US') : '—'}</span> },
-    { key: 'total',     header: t('col', 'totalAmount'),   render: o => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(o.total)}</span> },
+    { key: 'total',     header: t('col', 'totalAmount'),   render: o => <span className="font-semibold">{formatPrice(o.total)}</span> },
     { key: 'status',    header: t('col', 'status'),        render: o => <Badge variant={PO_STATUS[o.status] ?? 'info'}>{STATUS_LABEL[o.status] || o.status}</Badge> },
     {
       key: 'actions', header: t('col', 'actions'),
       render: o => (
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+        <div className="flex gap-2">
           <Link href={`/purchase-orders/${o.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>
           <Link href={`/print/lpo/${o.id}`} target="_blank"><Button variant="secondary" size="sm">Print</Button></Link>
           {canDelete && <Button variant="destructive" size="sm" onClick={() => handleDelete(o.id)}>{t('btn', 'delete')}</Button>}
@@ -116,46 +125,25 @@ export default function PurchaseOrdersPage() {
               : undefined
           }
         />
-
-        <WorkspaceSurface
-          toolbar={
-            <>
-              <SearchInput value={search} onChange={handleSearch} placeholder="Search purchase orders…" width={260} />
-              <div style={{ flex: 1 }} />
-              {canDelete && selectedItems.size > 0 && (
-                <Button variant="destructive" onClick={handleBulkDelete}>Delete {selectedItems.size}</Button>
-              )}
-              <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} />
-            </>
+        <TableShell
+          tableState={tableState}
+          filterFields={filterFields}
+          searchPlaceholder="Search purchase orders…"
+          toolbarActions={
+            canDelete && selectedItems.size > 0 ? (
+              <Button variant="destructive" onClick={handleBulkDelete}>Delete {selectedItems.size}</Button>
+            ) : undefined
           }
-          filterTags={
-            Object.keys(filters).length > 0
-              ? <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
-              : undefined
-          }
-        >
-          <DataTable
-            surface
-            columns={columns}
-            data={orders}
-            isLoading={isLoading}
-            error={error}
-            emptyMessage="No purchase orders found."
-            emptyAction={canCreate ? <Link href="/purchase-orders/new"><Button variant="primary">Create Purchase Order</Button></Link> : undefined}
-            selectable={canDelete}
-            selectedItems={selectedItems}
-            onToggleSelect={toggleSelect}
-            onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
-            isAllSelected={isAllPageSelected(currentIds)}
-            isSomeSelected={isSomePageSelected(currentIds)}
-            page={page}
-            totalCount={totalCount}
-            pageSize={20}
-            hasPrev={!!data?.previous}
-            hasNext={!!data?.next}
-            onPageChange={setPage}
-          />
-        </WorkspaceSurface>
+          columns={columns}
+          data={orders}
+          isLoading={isLoading}
+          error={error}
+          emptyMessage="No purchase orders found."
+          emptyAction={canCreate ? <Link href="/purchase-orders/new"><Button variant="primary">Create Purchase Order</Button></Link> : undefined}
+          selectable={canDelete}
+          totalCount={totalCount}
+          paginatedData={data}
+        />
       </PageShell>
     </MainLayout>
   );

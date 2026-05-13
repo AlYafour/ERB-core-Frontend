@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authApi } from '@/lib/api/auth';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useRouter } from 'next/navigation';
+import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 
 export function useAuth() {
   const { setAuth, logout: logoutStore, user, isAuthenticated } = useAuthStore();
@@ -40,37 +42,12 @@ export function useAuth() {
       role?: string;
       phone?: string;
     }) => authApi.register(data),
-    onSuccess: (data) => {
-      // Don't auto-login - user needs approval first
-      // Show success message and redirect to login
-      const { toast } = require('@/lib/hooks/use-toast');
+    onSuccess: () => {
       toast('Registration successful! Your account is pending approval. You will be notified once approved.', 'success');
       router.push('/login');
     },
-    onError: (error: any) => {
-      const { toast } = require('@/lib/hooks/use-toast');
-      // Handle password validation errors
-      if (error?.response?.data?.password) {
-        const passwordErrors = error.response.data.password;
-        if (Array.isArray(passwordErrors)) {
-          // Show first error
-          toast(passwordErrors[0], 'error');
-        } else {
-          toast(String(passwordErrors), 'error');
-        }
-      } else if (error?.response?.data?.error) {
-        toast(error.response.data.error, 'error');
-      } else if (error?.response?.data?.message) {
-        toast(error.response.data.message, 'error');
-      } else {
-        // Try to extract error from non-field errors
-        const nonFieldErrors = error?.response?.data?.non_field_errors;
-        if (nonFieldErrors && Array.isArray(nonFieldErrors)) {
-          toast(nonFieldErrors[0], 'error');
-        } else {
-          toast(error?.message || 'Registration failed. Please check your information and try again.', 'error');
-        }
-      }
+    onError: (error: unknown) => {
+      toast(getApiError(error, 'Registration failed. Please check your information and try again.'), 'error');
     },
   });
 

@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { TextField, PasswordField, Button } from '@/components/ui';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import AuthParticles from '@/components/layout/AuthParticles';
+import { getApiError } from '@/lib/utils/error';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -32,9 +33,8 @@ export default function LoginPage() {
       setAuth(data.user, data.tokens.access, data.tokens.refresh);
       router.replace('/dashboard');
     },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.error || err?.response?.data?.detail || 'Invalid username or password';
-      setError(msg);
+    onError: (err: unknown) => {
+      setError(getApiError(err, 'Invalid username or password'));
     },
   });
 

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useRef } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
@@ -9,13 +9,11 @@ import Link from 'next/link';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
-import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
-import FilterTags from '@/components/ui/FilterTags';
-import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
+import { type FilterField } from '@/components/ui/FilterPanel';
+import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
 import { exportToExcel, fetchAllPages } from '@/lib/utils/export-excel';
 import BilingualName from '@/components/domain/BilingualName';
 import { useT } from '@/lib/i18n/useT';
-import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
 
 const filterFields: FilterField[] = [
@@ -33,11 +31,8 @@ const filterFields: FilterField[] = [
 ];
 
 export default function SuppliersPage() {
-  const {
-    page, setPage, search, filters, selectedItems,
-    handleSearch, handleFilterChange, handleFilterReset, handleRemoveFilter,
-    toggleSelect, selectPage, clearSelection, isAllPageSelected, isSomePageSelected,
-  } = useTableState();
+  const tableState = useTableState();
+  const { page, search, filters, selectedItems, clearSelection } = tableState;
 
   const importFileRef = useRef<HTMLInputElement>(null);
   const queryClient   = useQueryClient();
@@ -115,9 +110,8 @@ export default function SuppliersPage() {
     }
   };
 
-  const suppliers   = data?.results ?? [];
-  const totalCount  = data?.count ?? 0;
-  const currentIds  = suppliers.map((s: Supplier) => s.id);
+  const suppliers  = Array.isArray(data?.results) ? data!.results : [];
+  const totalCount = data?.count ?? 0;
 
   const columns: Column<Supplier>[] = [
     {
@@ -133,7 +127,7 @@ export default function SuppliersPage() {
     {
       key: 'actions', header: t('col', 'actions'),
       render: s => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+        <div className="flex items-center gap-2">
           <Link href={`/suppliers/view/${s.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>
           <Link href={`/suppliers/${s.id}`}><Button variant="edit" size="sm">{t('btn', 'edit')}</Button></Link>
           {isSuperuser && (
@@ -154,58 +148,40 @@ export default function SuppliersPage() {
           count={totalCount}
           breadcrumbs={[{ label: 'Suppliers' }]}
           actions={
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-              <Button variant="secondary" onClick={handleExport}>â¬‡ {t('btn', 'export')}</Button>
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" onClick={handleExport}>⬇ {t('btn', 'export')}</Button>
               {isAdmin && (
                 <>
-                  <input ref={importFileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleImport} />
-                  <Button variant="secondary" onClick={() => importFileRef.current?.click()}>â¬† {t('btn', 'import')}</Button>
+                  <input ref={importFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
+                  <Button variant="secondary" onClick={() => importFileRef.current?.click()}>⬆ {t('btn', 'import')}</Button>
                 </>
               )}
               <Link href="/suppliers/new"><Button variant="primary">{t('btn', 'addSupplier')}</Button></Link>
             </div>
           }
         />
-        <WorkspaceSurface
-          toolbar={
-            <>
-              <SearchInput value={search} onChange={handleSearch} placeholder={t('misc', 'searchSuppliers')} />
-              <div style={{ flex: 1 }} />
-              {isAdmin && selectedItems.size > 0 && (
-                <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
-                  {t('btn', 'delete')} {selectedItems.size}
-                </Button>
-              )}
-              <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="suppliers" />
-            </>
+        <TableShell
+          tableState={tableState}
+          filterFields={filterFields}
+          filterSaveKey="suppliers"
+          searchPlaceholder={t('misc', 'searchSuppliers')}
+          toolbarActions={
+            isAdmin && selectedItems.size > 0 ? (
+              <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
+                {t('btn', 'delete')} {selectedItems.size}
+              </Button>
+            ) : undefined
           }
-          filterTags={
-            Object.keys(filters).length > 0
-              ? <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
-              : undefined
-          }
-        >
-          <DataTable
-            surface
-            columns={columns}
-            data={suppliers}
-            isLoading={isLoading}
-            error={error}
-            emptyMessage={t('empty', 'noSuppliers')}
-            selectable={isAdmin}
-            selectedItems={selectedItems}
-            onToggleSelect={toggleSelect}
-            onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
-            isAllSelected={isAllPageSelected(currentIds)}
-            isSomeSelected={isSomePageSelected(currentIds)}
-            page={page}
-            totalCount={totalCount}
-            pageSize={50}
-            hasPrev={!!data?.previous}
-            hasNext={!!data?.next}
-            onPageChange={setPage}
-          />
-        </WorkspaceSurface>
+          columns={columns}
+          data={suppliers}
+          isLoading={isLoading}
+          error={error}
+          emptyMessage={t('empty', 'noSuppliers')}
+          selectable={isAdmin}
+          totalCount={totalCount}
+          pageSize={50}
+          paginatedData={data}
+        />
       </PageShell>
     </MainLayout>
   );

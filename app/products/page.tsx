@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import * as XLSX from 'xlsx';
 import { useRef } from 'react';
@@ -11,13 +11,11 @@ import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
-import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
-import FilterTags from '@/components/ui/FilterTags';
-import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
+import { type FilterField } from '@/components/ui/FilterPanel';
+import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
 import { formatPrice } from '@/lib/utils/format';
 import BilingualName from '@/components/domain/BilingualName';
 import { useT } from '@/lib/i18n/useT';
-import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { PRODUCT_STATUS } from '@/lib/utils/status-colors';
 
@@ -42,11 +40,8 @@ const filterFields: FilterField[] = [
 ];
 
 export default function ProductsPage() {
-  const {
-    page, setPage, search, filters, selectedItems,
-    handleSearch, handleFilterChange, handleFilterReset, handleRemoveFilter,
-    toggleSelect, selectPage, clearSelection, isAllPageSelected, isSomePageSelected,
-  } = useTableState();
+  const tableState = useTableState();
+  const { page, search, filters, selectedItems, clearSelection } = tableState;
 
   const importFileRef = useRef<HTMLInputElement>(null);
   const queryClient   = useQueryClient();
@@ -85,7 +80,7 @@ export default function ProductsPage() {
   const handleExport = async () => {
     try {
       const all  = await productsApi.getAll({ page_size: 10000 });
-      const rows = all.results.map((p: Product) => ({
+      const rows = (Array.isArray(all?.results) ? all.results : []).map((p: Product) => ({
         Code: p.code, Name: p.name, Name_AR: p.name_ar ?? '',
         Category: p.category ?? '', Unit: p.unit ?? '', Brand: p.brand ?? '',
         Unit_Price: p.unit_price ?? '', Stock: p.stock_balance ?? '', Status: p.status ?? '',
@@ -112,15 +107,14 @@ export default function ProductsPage() {
     }
   };
 
-  const products    = data?.results ?? [];
-  const totalCount  = data?.count ?? 0;
-  const currentIds  = products.map((p: Product) => p.id);
+  const products   = Array.isArray(data?.results) ? data!.results : [];
+  const totalCount = data?.count ?? 0;
 
   const columns: Column<Product>[] = [
     {
       key: 'name', header: 'Product',
       render: p => (
-        <Link href={`/products/view/${p.id}`} style={{ color: 'var(--text-brand)', fontWeight: 'var(--weight-medium)' }}>
+        <Link href={`/products/view/${p.id}`} className="font-medium" style={{ color: 'var(--text-brand)' }}>
           <BilingualName nameEn={p.name} nameAr={p.name_ar} />
         </Link>
       ),
@@ -136,7 +130,7 @@ export default function ProductsPage() {
     {
       key: 'actions', header: t('col', 'actions'),
       render: p => (
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+        <div className="flex gap-2">
           <Link href={`/products/view/${p.id}`}>
             <Button variant="view" size="sm">{t('btn', 'view')}</Button>
           </Link>
@@ -158,10 +152,10 @@ export default function ProductsPage() {
           count={totalCount}
           breadcrumbs={[{ label: 'Products' }]}
           actions={
-            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+            <div className="flex gap-2">
               {isAdmin && (
                 <>
-                  <input ref={importFileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleImport} />
+                  <input ref={importFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
                   <Button variant="secondary" onClick={handleExport}>Export Excel</Button>
                   <Button variant="secondary" onClick={() => importFileRef.current?.click()}>Import Excel</Button>
                 </>
@@ -174,52 +168,31 @@ export default function ProductsPage() {
             </div>
           }
         />
-
-        <WorkspaceSurface
-          toolbar={
-            <>
-              <SearchInput value={search} onChange={handleSearch} placeholder="Search products..." />
-              <div style={{ flex: 1 }} />
-              {canDelete && selectedItems.size > 0 && (
-                <>
-                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-                    {selectedItems.size} selected
-                  </span>
-                  <Button variant="destructive" onClick={handleBulkDelete}>Delete Selected</Button>
-                  <Button variant="secondary" onClick={clearSelection}>Clear</Button>
-                </>
-              )}
-              <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} />
-            </>
+        <TableShell
+          tableState={tableState}
+          filterFields={filterFields}
+          searchPlaceholder="Search products..."
+          toolbarActions={
+            canDelete && selectedItems.size > 0 ? (
+              <>
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                  {selectedItems.size} selected
+                </span>
+                <Button variant="destructive" onClick={handleBulkDelete}>Delete Selected</Button>
+                <Button variant="secondary" onClick={clearSelection}>Clear</Button>
+              </>
+            ) : undefined
           }
-          filterTags={
-            Object.keys(filters).length > 0
-              ? <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
-              : undefined
-          }
-        >
-          <DataTable
-            surface
-            columns={columns}
-            data={products}
-            isLoading={isLoading}
-            error={error}
-            emptyMessage="No products found."
-            emptyAction={canCreate ? <Link href="/products/new"><Button variant="primary">Create Product</Button></Link> : undefined}
-            selectable={canDelete}
-            selectedItems={selectedItems}
-            onToggleSelect={toggleSelect}
-            onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
-            isAllSelected={isAllPageSelected(currentIds)}
-            isSomeSelected={isSomePageSelected(currentIds)}
-            page={page}
-            totalCount={totalCount}
-            pageSize={20}
-            hasPrev={!!data?.previous}
-            hasNext={!!data?.next}
-            onPageChange={setPage}
-          />
-        </WorkspaceSurface>
+          columns={columns}
+          data={products}
+          isLoading={isLoading}
+          error={error}
+          emptyMessage="No products found."
+          emptyAction={canCreate ? <Link href="/products/new"><Button variant="primary">Create Product</Button></Link> : undefined}
+          selectable={canDelete}
+          totalCount={totalCount}
+          paginatedData={data}
+        />
       </PageShell>
     </MainLayout>
   );

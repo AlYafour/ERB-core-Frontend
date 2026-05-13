@@ -6,6 +6,7 @@ import { usersApi } from '@/lib/api/users';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button, PageHeader, PageShell } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useT } from '@/lib/i18n/useT';
 
@@ -41,7 +42,7 @@ export default function ProfilePage() {
       refetch();
     },
     onError: (error: any) => {
-      toast(error?.response?.data?.detail || 'Failed to update profile', 'error');
+      toast(getApiError(error, 'Failed to update profile'), 'error');
     },
   });
 

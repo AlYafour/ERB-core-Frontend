@@ -5,6 +5,7 @@ import Image from 'next/image';
 import apiClient from '@/lib/api/client';
 import { Product } from '@/types';
 import { productsApi } from '@/lib/api/products';
+import { getApiError } from '@/lib/utils/error';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -183,7 +184,7 @@ export default function AIProcurementChat({ onAddItems, onFormUpdate }: Props) {
         });
       }
     } catch (err: any) {
-      const serverError = err?.response?.data?.error;
+      const serverError = getApiError(err, '');
       const errMsg = serverError ? `❌ ${serverError}` : '❌ حدث خطأ في الاتصال، حاول مرة أخرى.';
       setMessages((prev) => [...prev, { role: 'assistant', content: errMsg }]);
       if (isVoice) {

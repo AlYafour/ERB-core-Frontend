@@ -13,6 +13,7 @@ import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection
 import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
 import { INVOICE_STATUS } from '@/lib/utils/status-colors';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 
@@ -57,7 +58,7 @@ export default function PurchaseInvoiceDetailPage() {
       toast('Invoice approved successfully!', 'success');
     },
     onError: (error: any) => {
-      toast(error?.response?.data?.error || 'Failed to approve invoice', 'error');
+      toast(getApiError(error, 'Failed to approve invoice'), 'error');
     },
   });
 
@@ -70,7 +71,7 @@ export default function PurchaseInvoiceDetailPage() {
       toast('Invoice rejected', 'info');
     },
     onError: (error: any) => {
-      toast(error?.response?.data?.error || 'Failed to reject invoice', 'error');
+      toast(getApiError(error, 'Failed to reject invoice'), 'error');
     },
   });
 
@@ -82,7 +83,7 @@ export default function PurchaseInvoiceDetailPage() {
       toast('Invoice marked as paid!', 'success');
     },
     onError: (error: any) => {
-      toast(error?.response?.data?.error || 'Failed to mark invoice as paid', 'error');
+      toast(getApiError(error, 'Failed to mark invoice as paid'), 'error');
     },
   });
 

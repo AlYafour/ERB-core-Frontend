@@ -1,8 +1,13 @@
 'use client';
 
 import { QueryProvider } from '@/lib/providers/query-provider';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  return <QueryProvider>{children}</QueryProvider>;
+  return (
+    <ErrorBoundary>
+      <QueryProvider>{children}</QueryProvider>
+    </ErrorBoundary>
+  );
 }
 

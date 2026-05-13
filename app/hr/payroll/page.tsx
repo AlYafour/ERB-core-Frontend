@@ -7,11 +7,9 @@ import { HRPayroll } from '@/types';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
-import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
-import FilterTags from '@/components/ui/FilterTags';
-import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
+import { type FilterField } from '@/components/ui/FilterPanel';
+import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
-import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { PAYROLL_STATUS } from '@/lib/utils/status-colors';
 
@@ -40,28 +38,30 @@ const filterFields: FilterField[] = [
 ];
 
 export default function HRPayrollPage() {
-  const { page, setPage, search, filters, handleSearch, handleFilterChange, handleFilterReset, handleRemoveFilter } = useTableState();
+  const tableState = useTableState();
+  const { page, search, filters } = tableState;
+
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const t = useT();
-  const isAdmin = user?.role === 'super_admin' || user?.is_staff || user?.is_superuser;
+  const { user }    = useAuth();
+  const t           = useT();
+  const isAdmin     = user?.role === 'super_admin' || user?.is_staff || user?.is_superuser;
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['hr-payroll', page, search, filters],
-    queryFn: () => hrPayrollApi.getAll({ page, search, ...filters }),
+    queryFn:  () => hrPayrollApi.getAll({ page, search, ...filters }),
   });
 
   const markPaidMutation = useMutation({
     mutationFn: (id: number) => hrPayrollApi.markPaid(id),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['hr-payroll'] }); toast('Payroll marked as paid', 'success'); },
-    onError: () => toast('Failed to mark as paid', 'error'),
+    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['hr-payroll'] }); toast('Payroll marked as paid', 'success'); },
+    onError:    () => toast('Failed to mark as paid', 'error'),
   });
 
   const handleMarkPaid = async (id: number, employeeName: string, monthName: string) => {
     if (await confirm(`Mark payroll for ${employeeName} (${monthName}) as paid?`)) markPaidMutation.mutate(id);
   };
 
-  const records    = data?.results ?? [];
+  const records    = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
 
   const columns: Column<HRPayroll>[] = [
@@ -69,8 +69,8 @@ export default function HRPayrollPage() {
       key: 'employee', header: 'Employee',
       render: r => (
         <div>
-          <div style={{ fontWeight: 'var(--weight-medium)' }}>{r.employee_name}</div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{r.employee_id_code}</div>
+          <div className="font-medium">{r.employee_name}</div>
+          <div className="font-mono" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{r.employee_id_code}</div>
         </div>
       ),
     },
@@ -78,21 +78,21 @@ export default function HRPayrollPage() {
       key: 'period', header: 'Period',
       render: r => (
         <div>
-          <div style={{ fontWeight: 'var(--weight-medium)' }}>{r.month_name || MONTH_NAMES[r.month]}</div>
+          <div className="font-medium">{r.month_name || MONTH_NAMES[r.month]}</div>
           <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{r.year}</div>
         </div>
       ),
     },
-    { key: 'basic',   header: 'Basic Salary',  render: r => <span style={{ fontFamily: 'monospace' }}>AED {formatCurrency(r.basic_salary)}</span> },
-    { key: 'gross',   header: 'Gross Salary',  render: r => <span style={{ fontFamily: 'monospace', fontWeight: 'var(--weight-medium)' }}>AED {formatCurrency(r.gross_salary)}</span> },
+    { key: 'basic',  header: 'Basic Salary', render: r => <span className="font-mono">AED {formatCurrency(r.basic_salary)}</span> },
+    { key: 'gross',  header: 'Gross Salary', render: r => <span className="font-mono font-medium">AED {formatCurrency(r.gross_salary)}</span> },
     {
       key: 'deductions', header: 'Deductions',
       render: r => {
         const total = parseFloat(r.deductions) + parseFloat(r.absence_deduction);
-        return <span style={{ fontFamily: 'monospace', color: 'var(--color-error)' }}>{total > 0 ? `AED ${formatCurrency(total.toString())}` : '—'}</span>;
+        return <span className="font-mono" style={{ color: 'var(--color-error)' }}>{total > 0 ? `AED ${formatCurrency(total.toString())}` : '—'}</span>;
       },
     },
-    { key: 'net',     header: 'Net Salary',    render: r => <span style={{ fontFamily: 'monospace', fontWeight: 'var(--weight-semibold)' }}>AED {formatCurrency(r.net_salary)}</span> },
+    { key: 'net',    header: 'Net Salary',   render: r => <span className="font-mono font-semibold">AED {formatCurrency(r.net_salary)}</span> },
     {
       key: 'days', header: 'Days',
       render: r => (
@@ -107,7 +107,7 @@ export default function HRPayrollPage() {
     {
       key: 'actions', header: t('col', 'actions'),
       render: r => isAdmin ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+        <div className="flex items-center gap-2">
           {r.status === 'processed' && (
             <Button variant="success" size="sm" onClick={() => handleMarkPaid(r.id, r.employee_name, r.month_name || MONTH_NAMES[r.month])} isLoading={markPaidMutation.isPending}>
               Mark Paid
@@ -130,35 +130,20 @@ export default function HRPayrollPage() {
           count={totalCount}
           breadcrumbs={[{ label: 'HR' }, { label: 'Payroll' }]}
         />
-        <WorkspaceSurface
-          toolbar={
-            <>
-              <SearchInput value={search} onChange={handleSearch} placeholder="Search by employee name or ID..." />
-              <div style={{ flex: 1 }} />
-              <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="hr-payroll" />
-            </>
-          }
-          filterTags={
-            Object.keys(filters).length > 0
-              ? <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
-              : undefined
-          }
-        >
-          <DataTable
-            surface
-            columns={columns}
-            data={records}
-            isLoading={isLoading}
-            error={error}
-            emptyMessage={t('empty', 'noPayroll')}
-            page={page}
-            totalCount={totalCount}
-            pageSize={50}
-            hasPrev={!!data?.previous}
-            hasNext={!!data?.next}
-            onPageChange={setPage}
-          />
-        </WorkspaceSurface>
+        <TableShell
+          tableState={tableState}
+          filterFields={filterFields}
+          filterSaveKey="hr-payroll"
+          searchPlaceholder="Search by employee name or ID..."
+          columns={columns}
+          data={records}
+          isLoading={isLoading}
+          error={error}
+          emptyMessage={t('empty', 'noPayroll')}
+          totalCount={totalCount}
+          pageSize={50}
+          paginatedData={data}
+        />
       </PageShell>
     </MainLayout>
   );

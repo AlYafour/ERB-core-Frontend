@@ -8,6 +8,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from '@/lib/hooks/use-toast';
 import { TextField, PasswordField, Button } from '@/components/ui';
+import { getApiError } from '@/lib/utils/error';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import AuthParticles from '@/components/layout/AuthParticles';
 
@@ -38,21 +39,8 @@ export default function RegisterPage() {
       toast('Registration successful! Your account is pending approval. You will be notified once approved.', 'success');
       router.push('/login');
     },
-    onError: (error: any) => {
-      if (error?.response?.data?.password) {
-        const passwordErrors = error.response.data.password;
-        toast(Array.isArray(passwordErrors) ? passwordErrors[0] : String(passwordErrors), 'error');
-      } else if (error?.response?.data?.error) {
-        toast(error.response.data.error, 'error');
-      } else if (error?.response?.data?.message) {
-        toast(error.response.data.message, 'error');
-      } else {
-        const nonFieldErrors = error?.response?.data?.non_field_errors;
-        toast(
-          nonFieldErrors?.[0] ?? error?.message ?? 'Registration failed. Please check your information and try again.',
-          'error'
-        );
-      }
+    onError: (error: unknown) => {
+      toast(getApiError(error, 'Registration failed. Please check your information and try again.'), 'error');
     },
   });
 

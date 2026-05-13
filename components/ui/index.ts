@@ -84,6 +84,8 @@ export { default as StatusBadge }  from './StatusBadge';
 export { default as TableActions } from './TableActions';
 export { default as DetailCard, DetailField } from './DetailCard';
 export { default as DataTable }    from './DataTable';
+export type { Column }             from './DataTable';
+export { default as TableShell }   from './TableShell';
 export { default as DropdownButton } from './DropdownButton';
 
 // Forms
@@ -102,4 +104,5 @@ export { default as FilterTags }         from './FilterTags';
 // Dialogs & Overlays
 export { default as ConfirmDialog }  from './ConfirmDialog';
 export { default as ToastContainer } from './Toast';
+export { default as ErrorBoundary }  from './ErrorBoundary';
 

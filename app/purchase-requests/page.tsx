@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
@@ -9,25 +9,21 @@ import { PurchaseRequest, Project } from '@/types';
 import Link from 'next/link';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
-import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
-import FilterTags from '@/components/ui/FilterTags';
+import { type FilterField } from '@/components/ui/FilterPanel';
 import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
-import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
+import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
-import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { PR_STATUS } from '@/lib/utils/status-colors';
 
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
 export default function PurchaseRequestsPage() {
-  const {
-    page, setPage, search, filters, selectedItems,
-    handleSearch, handleFilterChange, handleFilterReset, handleRemoveFilter,
-    toggleSelect, selectPage, clearSelection, isAllPageSelected, isSomePageSelected,
-  } = useTableState();
+  const tableState = useTableState();
+  const { page, search, filters, selectedItems } = tableState;
 
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectingId, setRejectingId]           = useState<number | null>(null);
@@ -63,7 +59,7 @@ export default function PurchaseRequestsPage() {
   const rejectMutation = useMutation({
     mutationFn: ({ id, reason }: { id: number; reason: string }) => purchaseRequestsApi.reject(id, reason),
     onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['purchase-requests'] }); queryClient.invalidateQueries({ queryKey: ['pending-count'] }); toast('Request rejected', 'info'); },
-    onError:    (e: any) => toast(e?.response?.data?.error || 'Failed to reject request', 'error'),
+    onError:    (e: unknown) => toast(getApiError(e, 'Failed to reject request'), 'error'),
   });
 
   const deleteMutation = useMutation({
@@ -74,7 +70,7 @@ export default function PurchaseRequestsPage() {
 
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: number[]) => { await Promise.all(ids.map(id => purchaseRequestsApi.delete(id))); },
-    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['purchase-requests'] }); queryClient.invalidateQueries({ queryKey: ['pending-count'] }); toast(`${selectedItems.size} request(s) deleted`, 'success'); clearSelection(); },
+    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['purchase-requests'] }); queryClient.invalidateQueries({ queryKey: ['pending-count'] }); toast(`${selectedItems.size} request(s) deleted`, 'success'); tableState.clearSelection(); },
     onError:    () => toast('Failed to delete some requests', 'error'),
   });
 
@@ -96,22 +92,29 @@ export default function PurchaseRequestsPage() {
     { name: 'required_by_before',   label: 'Required By To',    type: 'date',   group: 'Dates' },
   ];
 
-  const requests   = data?.results ?? [];
+  const requests   = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
-  const currentIds = requests.map((r: PurchaseRequest) => r.id);
 
   const columns: Column<PurchaseRequest>[] = [
-    { key: 'code',    header: t('col', 'code'),        render: r => <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{r.code}</span> },
+    {
+      key: 'code', header: t('col', 'code'),
+      render: r => <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{r.code}</span>,
+    },
     {
       key: 'project', header: t('col', 'project'),
       render: r => r.project && typeof r.project === 'object'
-        ? <div><div style={{ fontWeight: 'var(--weight-medium)' }}>{r.project.name}</div><div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{r.project.code}</div></div>
+        ? (
+          <div>
+            <div className="font-medium">{r.project.name}</div>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{r.project.code}</div>
+          </div>
+        )
         : <span style={{ color: 'var(--text-secondary)' }}>—</span>,
     },
-    { key: 'title',       header: t('col', 'title'),       render: r => <span style={{ maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={r.title}>{r.title}</span> },
-    { key: 'requester',   header: t('col', 'requester'),   render: r => <span style={{ color: 'var(--text-primary)' }}>{r.created_by_name || '—'}</span> },
-    { key: 'req_date',    header: t('col', 'requestDate'), render: r => <span style={{ color: 'var(--text-secondary)' }}>{fmtDate(r.request_date)}</span> },
-    { key: 'req_by',      header: t('col', 'requiredBy'),  render: r => <span style={{ color: 'var(--text-secondary)' }}>{fmtDate(r.required_by)}</span> },
+    { key: 'title',     header: t('col', 'title'),       render: r => <span className="block max-w-[240px] truncate" title={r.title}>{r.title}</span> },
+    { key: 'requester', header: t('col', 'requester'),   render: r => <span style={{ color: 'var(--text-primary)' }}>{r.created_by_name || '—'}</span> },
+    { key: 'req_date',  header: t('col', 'requestDate'), render: r => <span style={{ color: 'var(--text-secondary)' }}>{fmtDate(r.request_date)}</span> },
+    { key: 'req_by',    header: t('col', 'requiredBy'),  render: r => <span style={{ color: 'var(--text-secondary)' }}>{fmtDate(r.required_by)}</span> },
     {
       key: 'status', header: t('col', 'status'),
       render: r => <Badge variant={PR_STATUS[r.status] ?? 'info'}>{t('status', r.status as any) || r.status}</Badge>,
@@ -119,7 +122,7 @@ export default function PurchaseRequestsPage() {
     {
       key: 'actions', header: t('col', 'actions'),
       render: r => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+        <div className="flex items-center gap-2">
           {canView && <Link href={`/purchase-requests/${r.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>}
           {r.status === 'pending' && canApprove && (
             <Button variant="success" size="sm" onClick={() => handleApprove(r.id)} isLoading={approveMutation.isPending}>{t('btn', 'approve')}</Button>
@@ -147,47 +150,28 @@ export default function PurchaseRequestsPage() {
               : undefined
           }
         />
-
-        <WorkspaceSurface
-          toolbar={
-            <>
-              <SearchInput value={search} onChange={handleSearch} placeholder="Search by code, title, requesterâ€¦" width={260} />
-              <div style={{ flex: 1 }} />
-              {isAdmin && selectedItems.size > 0 && (
-                <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
-                  {t('btn', 'delete')} {selectedItems.size}
-                </Button>
-              )}
-              <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="purchase-requests" />
-            </>
+        <TableShell
+          tableState={tableState}
+          filterFields={filterFields}
+          filterSaveKey="purchase-requests"
+          searchPlaceholder="Search by code, title, requester…"
+          toolbarActions={
+            isAdmin && selectedItems.size > 0 ? (
+              <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
+                {t('btn', 'delete')} {selectedItems.size}
+              </Button>
+            ) : undefined
           }
-          filterTags={
-            Object.keys(filters).length > 0
-              ? <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
-              : undefined
-          }
-        >
-          <DataTable
-            surface
-            columns={columns}
-            data={requests}
-            isLoading={isLoading}
-            error={error}
-            emptyMessage={t('empty', 'noPR')}
-            selectable={isAdmin}
-            selectedItems={selectedItems}
-            onToggleSelect={toggleSelect}
-            onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
-            isAllSelected={isAllPageSelected(currentIds)}
-            isSomeSelected={isSomePageSelected(currentIds)}
-            page={page}
-            totalCount={totalCount}
-            pageSize={50}
-            hasPrev={!!data?.previous}
-            hasNext={!!data?.next}
-            onPageChange={setPage}
-          />
-        </WorkspaceSurface>
+          columns={columns}
+          data={requests}
+          isLoading={isLoading}
+          error={error}
+          emptyMessage={t('empty', 'noPR')}
+          selectable={isAdmin}
+          totalCount={totalCount}
+          pageSize={50}
+          paginatedData={data}
+        />
 
         <RejectionReasonDialog
           isOpen={rejectDialogOpen}

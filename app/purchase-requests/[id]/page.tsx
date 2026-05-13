@@ -10,6 +10,7 @@ import DropdownButton from '@/components/ui/DropdownButton';
 import { Button, PageHeader, PageShell } from '@/components/ui';
 import { useState } from 'react';
 import { toast, confirm } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { canCreateQuotationRequest, canCreatePurchaseOrder } from '@/lib/utils/workflow-guards';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -91,7 +92,7 @@ export default function PurchaseRequestDetailPage() {
       setRejectDialogOpen(false);
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.error || 'Failed to reject request';
+      const message = getApiError(error, 'Failed to reject request');
       toast(message, 'error');
     },
   });

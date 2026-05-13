@@ -122,7 +122,8 @@ export default function DataTable<T>({
   surface = false,
 }: DataTableProps<T>) {
   const getId = getItemId ?? ((item: T) => (item as { id: number }).id);
-  const ids   = data.map(getId);
+  const safeData = Array.isArray(data) ? data : [];
+  const ids   = safeData.map(getId);
 
   if (isLoading) {
     const skeletons = (
@@ -172,7 +173,7 @@ export default function DataTable<T>({
     return surface ? content : <div className="card">{content}</div>;
   }
 
-  if (data.length === 0) {
+  if (safeData.length === 0) {
     const content = (
       <div style={{ padding: '48px 24px', textAlign: 'center' }}>
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -217,7 +218,7 @@ export default function DataTable<T>({
           </tr>
         </thead>
         <tbody>
-          {data.map((item, idx) => {
+          {safeData.map((item, idx) => {
             const id = getId(item);
             return (
               <tr key={id} style={rowStyle?.(item)}>
