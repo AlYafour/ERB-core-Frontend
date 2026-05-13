@@ -10,14 +10,7 @@ export default function CustomerFormStepper({ steps, currentStep }: CustomerForm
   if (steps.length <= 1) return null;
 
   return (
-    <div style={{
-      background: 'var(--card-bg)',
-      border: '1px solid var(--border-subtle)',
-      borderRadius: 'var(--radius-lg)',
-      padding: 'var(--space-4) var(--space-5)',
-      boxShadow: 'var(--card-shadow)',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
+    <div style={{ display: 'flex', alignItems: 'center', padding: 'var(--space-2) 0' }}>
         {steps.map((step, idx) => (
           <div
             key={step.id}
@@ -82,7 +75,6 @@ export default function CustomerFormStepper({ steps, currentStep }: CustomerForm
             )}
           </div>
         ))}
-      </div>
     </div>
   );
 }
