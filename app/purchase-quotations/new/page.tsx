@@ -15,6 +15,7 @@ import { PurchaseQuotationFormData, toPurchaseQuotationCreateData } from '@/lib/
 import { toast } from '@/lib/hooks/use-toast';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import FormField from '@/components/ui/FormField';
+import { Button, PageShell } from '@/components/ui';
 import { formatBackendError, validateRequired, validatePositiveNumber, validateDateAfter } from '@/lib/utils/validation';
 import { formatPrice } from '@/lib/utils/format';
 import RouteGuard from '@/components/auth/RouteGuard';
@@ -322,13 +323,15 @@ function NewPurchaseQuotationPageContent() {
 
   return (
     <MainLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-        {/* Header Section - Unified */}
+      <PageShell>
+        {/* Header Section */}
         <div>
-          <Link 
-            href="/purchase-quotations" 
-            className="text-sm mb-2 inline-block"
-            style={{ 
+          <Link
+            href="/purchase-quotations"
+            style={{
+              fontSize: 'var(--text-sm)',
+              marginBottom: 'var(--space-2)',
+              display: 'inline-block',
               color: 'var(--text-secondary)',
               textDecoration: 'none',
             }}
@@ -342,16 +345,16 @@ function NewPurchaseQuotationPageContent() {
             ← {t('btn', 'back')} {t('page', 'purchaseQuotations')}
           </Link>
           <h1 style={{ 
-            fontSize: 'var(--font-2xl)',
-            fontWeight: 'var(--font-weight-semibold)',
+            fontSize: 'var(--text-2xl)',
+            fontWeight: 'var(--weight-semibold)',
             color: 'var(--text-primary)',
             margin: 0,
-            marginBottom: 'var(--spacing-1)',
+            marginBottom: 'var(--space-1)',
           }}>
             {t('page', 'newQuotation')}
           </h1>
           <p style={{ 
-            fontSize: 'var(--font-sm)',
+            fontSize: 'var(--text-sm)',
             color: 'var(--text-secondary)',
             margin: 0,
           }}>
@@ -359,7 +362,7 @@ function NewPurchaseQuotationPageContent() {
           </p>
         </div>
 
-        {/* Info Banner - Unified */}
+        {/* Info Banner */}
         {quotationRequest && (
           <div className="card" style={{ 
             backgroundColor: 'var(--info-banner-bg)',
@@ -368,27 +371,27 @@ function NewPurchaseQuotationPageContent() {
             borderStyle: 'solid',
           }}>
             <h3 style={{ 
-              fontSize: 'var(--font-sm)',
-              fontWeight: 'var(--font-weight-semibold)',
+              fontSize: 'var(--text-sm)',
+              fontWeight: 'var(--weight-semibold)',
               color: 'var(--info-banner-text)',
               margin: 0,
-              marginBottom: 'var(--spacing-2)',
+              marginBottom: 'var(--space-2)',
             }}>
               Quotation Request Information
             </h3>
             <div style={{ 
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: 'var(--spacing-2)',
-              fontSize: 'var(--font-sm)',
+              gap: 'var(--space-2)',
+              fontSize: 'var(--text-sm)',
             }}>
               <div>
                 <span style={{ color: 'var(--info-banner-text)' }}>Request ID:</span>{' '}
-                <span style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--text-primary)' }}>#{quotationRequest.id}</span>
+                <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>#{quotationRequest.id}</span>
               </div>
               <div>
                 <span style={{ color: 'var(--info-banner-text)' }}>Supplier:</span>{' '}
-                <span style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--text-primary)' }}>
+                <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>
                   {typeof quotationRequest.supplier === 'object'
                     ? quotationRequest.supplier.name || quotationRequest.supplier.business_name
                     : 'N/A'}
@@ -397,7 +400,7 @@ function NewPurchaseQuotationPageContent() {
               {quotationRequest.items && (
                 <div>
                   <span style={{ color: 'var(--info-banner-text)' }}>Items:</span>{' '}
-                  <span style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--text-primary)' }}>{quotationRequest.items.length} items loaded automatically</span>
+                  <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{quotationRequest.items.length} items loaded automatically</span>
                 </div>
               )}
             </div>
@@ -410,27 +413,27 @@ function NewPurchaseQuotationPageContent() {
             backgroundColor: 'var(--color-error-light)',
             border: '1px solid var(--color-error)',
             borderRadius: 'var(--radius-md)',
-            padding: 'var(--spacing-4)',
+            padding: 'var(--space-4)',
           }}>
-            <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-error)', marginBottom: 'var(--spacing-2)' }}>
+            <p style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--color-error)', marginBottom: 'var(--space-2)' }}>
               Please fix the following errors:
             </p>
-            <ul style={{ margin: 0, paddingInlineStart: '1.25rem', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-1)' }}>
+            <ul style={{ margin: 0, paddingInlineStart: '1.25rem', display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
               {Object.entries(errors).map(([key, msg]) => msg ? (
-                <li key={key} style={{ fontSize: 'var(--font-sm)', color: 'var(--color-error)' }}>{msg}</li>
+                <li key={key} style={{ fontSize: 'var(--text-sm)', color: 'var(--color-error)' }}>{msg}</li>
               ) : null)}
             </ul>
           </div>
         )}
 
-        {/* Form Card - Unified */}
+        {/* Form Card */}
         <form onSubmit={handleSubmit} className="card">
-          {/* Form Fields Grid - Unified Spacing */}
+          {/* Form Fields Grid */}
           <div style={{ 
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-            marginBottom: 'var(--spacing-6)',
+            gap: 'var(--space-4)',
+            marginBottom: 'var(--space-6)',
           }}>
             <FormField
               label={t('col', 'supplier')}
@@ -477,7 +480,7 @@ function NewPurchaseQuotationPageContent() {
                     setErrors({ ...errors, quotation_date: '' });
                   }
                 }}
-                className={`input w-full ${errors.quotation_date ? 'border-red-500' : ''}`}
+                className="form-input"
               />
             </FormField>
 
@@ -496,7 +499,7 @@ function NewPurchaseQuotationPageContent() {
                     setErrors({ ...errors, valid_until: '' });
                   }
                 }}
-                className={`input w-full ${errors.valid_until ? 'border-red-500' : ''}`}
+                className="form-input"
               />
             </FormField>
 
@@ -517,7 +520,7 @@ function NewPurchaseQuotationPageContent() {
                     setErrors({ ...errors, discount: '' });
                   }
                 }}
-                className={`input w-full ${errors.discount ? 'border-red-500' : ''}`}
+                className="form-input"
               />
             </FormField>
 
@@ -527,7 +530,7 @@ function NewPurchaseQuotationPageContent() {
                   value={formData.payment_terms}
                   onChange={(e) => setFormData({ ...formData, payment_terms: e.target.value })}
                   rows={3}
-                  className="input"
+                  className="form-textarea"
                 />
               </FormField>
             </div>
@@ -537,7 +540,7 @@ function NewPurchaseQuotationPageContent() {
                 <select
                   value={formData.delivery_method}
                   onChange={(e) => setFormData({ ...formData, delivery_method: e.target.value as 'pickup' | 'delivery' | '' })}
-                  className="input w-full"
+                  className="form-select"
                 >
                   <option value="">-- Select Delivery Method --</option>
                   <option value="pickup">Pick Up</option>
@@ -550,7 +553,7 @@ function NewPurchaseQuotationPageContent() {
                   value={formData.delivery_terms}
                   onChange={(e) => setFormData({ ...formData, delivery_terms: e.target.value })}
                   rows={3}
-                  className="input"
+                  className="form-textarea"
                 />
               </FormField>
             </div>
@@ -561,53 +564,43 @@ function NewPurchaseQuotationPageContent() {
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={3}
-                  className="input"
+                  className="form-textarea"
                 />
               </FormField>
             </div>
           </div>
 
-          {/* Items Section - Unified */}
-          <div style={{ marginBottom: 'var(--spacing-6)' }}>
+          {/* Items Section */}
+          <div style={{ marginBottom: 'var(--space-6)' }}>
             <div style={{ 
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: 'var(--spacing-4)',
+              marginBottom: 'var(--space-4)',
             }}>
               <h3 style={{
-                fontSize: 'var(--font-lg)',
-                fontWeight: 'var(--font-weight-semibold)',
+                fontSize: 'var(--text-lg)',
+                fontWeight: 'var(--weight-semibold)',
                 color: 'var(--text-primary)',
                 margin: 0,
               }}>
                 {t('col', 'product')}
               </h3>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 {errors.items && (
-                  <span style={{ fontSize: 'var(--font-sm)', color: 'var(--color-error)' }}>
+                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-error)' }}>
                     {errors.items}
                   </span>
                 )}
                 {items.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => applyVatToAll(5)}
-                    className="btn btn-secondary"
-                    style={{ fontSize: 'var(--font-xs)', padding: '4px 10px' }}
-                  >
+                  <Button type="button" variant="secondary" size="sm" onClick={() => applyVatToAll(5)}>
                     Apply 5% VAT to All
-                  </button>
+                  </Button>
                 )}
                 {items.length > 0 && items.some((i) => (i.tax_rate ?? 0) > 0) && (
-                  <button
-                    type="button"
-                    onClick={() => applyVatToAll(0)}
-                    className="btn btn-secondary"
-                    style={{ fontSize: 'var(--font-xs)', padding: '4px 10px' }}
-                  >
+                  <Button type="button" variant="secondary" size="sm" onClick={() => applyVatToAll(0)}>
                     Clear VAT
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -665,14 +658,14 @@ function NewPurchaseQuotationPageContent() {
                           <tr key={index}>
                             <td>
                               <div style={{ 
-                                fontWeight: 'var(--font-weight-medium)',
+                                fontWeight: 'var(--weight-medium)',
                                 color: 'var(--text-primary)',
                               }}>
                                 {product?.name || `Product ID: ${item.product_id}`}
                               </div>
                               {product?.code && (
                                 <div style={{
-                                  fontSize: 'var(--font-xs)',
+                                  fontSize: 'var(--text-xs)',
                                   color: 'var(--text-secondary)',
                                 }}>
                                   {product.code}
@@ -687,7 +680,7 @@ function NewPurchaseQuotationPageContent() {
                                 step="0.01"
                                 value={item.quantity}
                                 onChange={(e) => handleUpdateItem(index, 'quantity', Number(e.target.value))}
-                                className="input"
+                                className="form-input"
                                 style={{ width: '80px' }}
                               />
                             </td>
@@ -698,7 +691,7 @@ function NewPurchaseQuotationPageContent() {
                                 step="0.01"
                                 value={item.unit_price}
                                 onChange={(e) => handleUpdateItem(index, 'unit_price', Number(e.target.value))}
-                                className="input"
+                                className="form-input"
                                 style={{ width: '96px' }}
                               />
                             </td>
@@ -710,7 +703,7 @@ function NewPurchaseQuotationPageContent() {
                                 step="0.01"
                                 value={item.discount ?? 0}
                                 onChange={(e) => handleUpdateItem(index, 'discount', Math.min(100, Number(e.target.value)))}
-                                className="input"
+                                className="form-input"
                                 style={{ width: '80px' }}
                               />
                             </td>
@@ -722,39 +715,22 @@ function NewPurchaseQuotationPageContent() {
                                 step="0.01"
                                 value={item.tax_rate ?? 0}
                                 onChange={(e) => handleUpdateItem(index, 'tax_rate', Math.min(100, Number(e.target.value)))}
-                                className="input"
+                                className="form-input"
                                 style={{ width: '80px' }}
                               />
                             </td>
                             <td>
                               <div style={{ 
-                                fontWeight: 'var(--font-weight-semibold)',
+                                fontWeight: 'var(--weight-semibold)',
                                 color: 'var(--text-primary)',
                               }}>
                                 {itemTotal.toFixed(2)}
                               </div>
                             </td>
                             <td>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveItem(index)}
-                                className="btn btn-primary"
-                                style={{
-                                  backgroundColor: 'var(--color-error)',
-                                  borderColor: 'var(--color-error)',
-                                  color: '#FFFFFF',
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = '#DC2626';
-                                  e.currentTarget.style.borderColor = '#DC2626';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'var(--color-error)';
-                                  e.currentTarget.style.borderColor = 'var(--color-error)';
-                                }}
-                              >
+                              <Button type="button" variant="delete" size="sm" onClick={() => handleRemoveItem(index)}>
                                 {t('btn', 'delete')}
-                              </button>
+                              </Button>
                             </td>
                           </tr>
                         );
@@ -764,13 +740,9 @@ function NewPurchaseQuotationPageContent() {
                 </div>
               </div>
             ) : (
-              <div className="card" style={{ 
-                textAlign: 'center', 
-                padding: 'var(--spacing-8)',
-                color: 'var(--text-secondary)',
-              }}>
-                <p style={{ margin: 0 }}>
-                  {quotationRequestId 
+              <div className="card empty-state">
+                <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
+                  {quotationRequestId
                     ? 'No products found in the Quotation Request. Please add products to the Quotation Request first.'
                     : 'No products loaded. Please create a Quotation Request first with products.'}
                 </p>
@@ -778,21 +750,21 @@ function NewPurchaseQuotationPageContent() {
             )}
           </div>
 
-          {/* Summary - Unified */}
+          {/* Summary */}
           <div className="card" style={{ 
-            backgroundColor: 'var(--bg-tertiary)',
-            marginBottom: 'var(--spacing-6)',
+            backgroundColor: 'var(--surface-inset)',
+            marginBottom: 'var(--space-6)',
           }}>
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <div style={{ width: '256px', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2)' }}>
+              <div style={{ width: '256px', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                 <div style={{ 
                   display: 'flex',
                   justifyContent: 'space-between',
-                  fontSize: 'var(--font-sm)',
+                  fontSize: 'var(--text-sm)',
                 }}>
                   <span style={{ color: 'var(--text-secondary)' }}>Subtotal:</span>
                   <span style={{ 
-                    fontWeight: 'var(--font-weight-semibold)',
+                    fontWeight: 'var(--weight-semibold)',
                     color: 'var(--text-primary)',
                   }}>
                     {formatPrice(calculateSubtotal())}
@@ -802,10 +774,10 @@ function NewPurchaseQuotationPageContent() {
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    fontSize: 'var(--font-sm)',
+                    fontSize: 'var(--text-sm)',
                   }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Discount ({formData.discount}%):</span>
-                    <span style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-error)' }}>
+                    <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--color-error)' }}>
                       - {formatPrice(calculateSubtotal() * (formData.discount / 100))}
                     </span>
                   </div>
@@ -814,10 +786,10 @@ function NewPurchaseQuotationPageContent() {
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    fontSize: 'var(--font-sm)',
+                    fontSize: 'var(--text-sm)',
                   }}>
                     <span style={{ color: 'var(--text-secondary)' }}>VAT:</span>
-                    <span style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)' }}>
+                    <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
                       {formatPrice(calculateTax())}
                     </span>
                   </div>
@@ -825,18 +797,18 @@ function NewPurchaseQuotationPageContent() {
                 <div style={{ 
                   display: 'flex',
                   justifyContent: 'space-between',
-                  borderTop: `1px solid var(--border-primary)`,
-                  paddingTop: 'var(--spacing-2)',
-                  fontSize: 'var(--font-base)',
+                  borderTop: `1px solid var(--border-subtle)`,
+                  paddingTop: 'var(--space-2)',
+                  fontSize: 'var(--text-base)',
                 }}>
                   <span style={{
-                    fontWeight: 'var(--font-weight-bold)',
+                    fontWeight: 'var(--weight-bold)',
                     color: 'var(--text-primary)',
                   }}>
                     {t('col', 'total')}:
                   </span>
                   <span style={{ 
-                    fontWeight: 'var(--font-weight-bold)',
+                    fontWeight: 'var(--weight-bold)',
                     color: 'var(--text-primary)',
                   }}>
                     {formatPrice(calculateTotal())}
@@ -846,21 +818,17 @@ function NewPurchaseQuotationPageContent() {
             </div>
           </div>
 
-          {/* Form Actions - Unified */}
-          <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
-            <button
-              type="submit"
-              disabled={mutation.isPending}
-              className="btn btn-primary"
-            >
-              {mutation.isPending ? t('btn', 'loading') : t('page', 'newQuotation')}
-            </button>
-            <Link href="/purchase-quotations" className="btn btn-secondary">
+          {/* Form Actions */}
+          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+            <Button type="submit" variant="primary" disabled={mutation.isPending} isLoading={mutation.isPending}>
+              {t('page', 'newQuotation')}
+            </Button>
+            <Button variant="secondary" onClick={() => router.push('/purchase-quotations')}>
               {t('btn', 'cancel')}
-            </Link>
+            </Button>
           </div>
         </form>
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

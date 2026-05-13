@@ -8,6 +8,7 @@ import { productsApi } from '@/lib/api/products';
 import { projectsApi } from '@/lib/api/projects';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
+import { Button, PageShell, PageHeader } from '@/components/ui';
 import { PurchaseRequestItem, Product, Project } from '@/types';
 import { PurchaseRequestFormData, toPurchaseRequestCreateData } from '@/lib/types/form-data';
 import { toast } from '@/lib/hooks/use-toast';
@@ -295,52 +296,18 @@ function NewPurchaseRequestPageContent() {
 
   return (
     <MainLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-        {/* Header Section - Unified */}
-        <div>
-          <Link 
-            href="/purchase-requests" 
-            className="text-sm mb-2 inline-block"
-            style={{ 
-              color: 'var(--text-secondary)',
-              textDecoration: 'none',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--text-primary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--text-secondary)';
-            }}
-          >
-            â† {t('btn', 'back')} {t('page', 'purchaseRequests')}
-          </Link>
-          <h1 style={{ 
-            fontSize: 'var(--font-2xl)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--spacing-1)',
-          }}>
-            {t('page', 'newPR')}
-          </h1>
-          <p style={{ 
-            fontSize: 'var(--font-sm)',
-            color: 'var(--text-secondary)',
-            margin: 0,
-          }}>
-            Create a new purchase request with required products
-          </p>
-        </div>
-
-        {/* Form Card - Unified */}
+      <PageShell>
+        <PageHeader
+          title={t('page', 'newPR')}
+          description="Create a new purchase request with required products"
+          backHref="/purchase-requests"
+          breadcrumbs={[
+            { label: t('page', 'purchaseRequests'), href: '/purchase-requests' },
+            { label: t('page', 'newPR') },
+          ]}
+        />
         <form onSubmit={handleSubmit} className="card">
-          {/* Form Fields Grid - Unified Spacing */}
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-            marginBottom: 'var(--spacing-6)',
-          }}>
+          <div className="form-grid" style={{ marginBottom: 'var(--space-6)' }}>
             {/* Project Selection */}
             <FormField
               label={t('field', 'project')}
@@ -371,7 +338,7 @@ function NewPurchaseRequestPageContent() {
                 placeholder="Enter project code"
                 value={formData.project_code}
                 onChange={(e) => handleProjectCodeChange(e.target.value)}
-                className="input"
+                className="form-input"
               />
             </FormField>
 
@@ -386,7 +353,7 @@ function NewPurchaseRequestPageContent() {
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Auto-filled from project name"
-                className="input"
+                className="form-input"
               />
             </FormField>
 
@@ -400,7 +367,7 @@ function NewPurchaseRequestPageContent() {
                 required
                 value={formData.request_date}
                 onChange={(e) => setFormData({ ...formData, request_date: e.target.value })}
-                className="input"
+                className="form-input"
               />
             </FormField>
 
@@ -414,7 +381,7 @@ function NewPurchaseRequestPageContent() {
                 required
                 value={formData.required_by}
                 onChange={(e) => setFormData({ ...formData, required_by: e.target.value })}
-                className="input"
+                className="form-input"
               />
             </FormField>
 
@@ -428,7 +395,7 @@ function NewPurchaseRequestPageContent() {
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={3}
                   placeholder="Additional notes..."
-                  className="input"
+                  className="form-textarea"
                 />
               </FormField>
             </div>
@@ -438,13 +405,13 @@ function NewPurchaseRequestPageContent() {
               <div 
                 className="card"
                 style={{ 
-                  padding: 'var(--spacing-3)',
-                  backgroundColor: 'var(--bg-tertiary)',
-                  borderColor: 'var(--border-primary)',
+                  padding: 'var(--space-3)',
+                  backgroundColor: 'var(--surface-inset)',
+                  borderColor: 'var(--border-subtle)',
                 }}
               >
                 <p style={{ 
-                  fontSize: 'var(--font-xs)',
+                  fontSize: 'var(--text-xs)',
                   color: 'var(--text-secondary)',
                   margin: 0,
                 }}>
@@ -455,11 +422,11 @@ function NewPurchaseRequestPageContent() {
           </div>
 
           {/* Items Section - Unified */}
-          <div style={{ marginBottom: 'var(--spacing-6)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)' }}>
+          <div style={{ marginBottom: 'var(--space-6)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
               <h3 style={{
-                fontSize: 'var(--font-lg)',
-                fontWeight: 'var(--font-weight-semibold)',
+                fontSize: 'var(--text-lg)',
+                fontWeight: 'var(--weight-semibold)',
                 color: 'var(--text-primary)',
                 margin: 0,
               }}>
@@ -472,9 +439,9 @@ function NewPurchaseRequestPageContent() {
             </div>
             
             {/* Add Item Form - Unified Card */}
-            <div className="card" style={{ marginBottom: 'var(--spacing-4)' }}>
+            <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
               {/* Product Selection */}
-              <div style={{ marginBottom: 'var(--spacing-4)' }}>
+              <div style={{ marginBottom: 'var(--space-4)' }}>
                 <ProductSelector
                   selectedProductId={selectedProduct?.id || null}
                   onProductSelect={handleProductSelect}
@@ -490,7 +457,7 @@ function NewPurchaseRequestPageContent() {
                   flexDirection: 'column',
                   gap: 8,
                   paddingTop: 10,
-                  borderTop: `1px solid var(--border-primary)`,
+                  borderTop: `1px solid var(--border-subtle)`,
                 }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
                     {/* Qty â€” compact fixed width */}
@@ -519,7 +486,7 @@ function NewPurchaseRequestPageContent() {
                     <div style={{ flex: 1 }}>
                       <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('field', 'reason')}</label>
                       <input
-                        className="input"
+                        className="form-input"
                         style={{ width: '100%' }}
                         placeholder="Why is this needed?"
                         value={currentItem.reason}
@@ -530,7 +497,7 @@ function NewPurchaseRequestPageContent() {
                     <div style={{ flex: 1 }}>
                       <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('col', 'notes')}</label>
                       <input
-                        className="input"
+                        className="form-input"
                         style={{ width: '100%' }}
                         placeholder="Additional notes"
                         value={currentItem.notes}
@@ -539,30 +506,20 @@ function NewPurchaseRequestPageContent() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: 'var(--spacing-3)', paddingTop: 'var(--spacing-2)' }}>
-                    <button
-                      type="button"
-                      onClick={handleAddItem}
-                      className="btn btn-primary"
-                    >
+                  <div style={{ display: 'flex', gap: 'var(--space-3)', paddingTop: 'var(--space-2)' }}>
+                    <Button type="button" variant="primary" onClick={handleAddItem}>
                       {t('btn', 'addProduct')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="secondary"
                       onClick={() => {
                         setSelectedProduct(null);
-                        setCurrentItem({
-                          quantity: 1,
-                          unit: '',
-                          project_site: '',
-                          reason: '',
-                          notes: '',
-                        });
+                        setCurrentItem({ quantity: 1, unit: '', project_site: '', reason: '', notes: '' });
                       }}
-                      className="btn btn-secondary"
                     >
                       {t('btn', 'cancel')}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -590,23 +547,23 @@ function NewPurchaseRequestPageContent() {
                           <tr key={index}>
                             <td>
                               <div style={{ 
-                                fontWeight: 'var(--font-weight-medium)',
+                                fontWeight: 'var(--weight-medium)',
                                 color: 'var(--text-primary)',
                               }}>
                                 {product?.name || 'Unknown Product'}
                               </div>
                               <div style={{ 
-                                fontSize: 'var(--font-xs)',
+                                fontSize: 'var(--text-xs)',
                                 color: 'var(--text-secondary)',
-                                marginTop: 'var(--spacing-1)',
+                                marginTop: 'var(--space-1)',
                               }}>
                                 {product?.code || 'N/A'}
                               </div>
                               {product?.category && (
                                 <div style={{ 
-                                  fontSize: 'var(--font-xs)',
+                                  fontSize: 'var(--text-xs)',
                                   color: 'var(--text-tertiary)',
-                                  marginTop: 'var(--spacing-1)',
+                                  marginTop: 'var(--space-1)',
                                 }}>
                                   {product.category}
                                 </div>
@@ -619,7 +576,7 @@ function NewPurchaseRequestPageContent() {
                                 step="1"
                                 value={item.quantity}
                                 onChange={(e) => handleUpdateItem(index, 'quantity', Math.floor(Number(e.target.value)) || 1)}
-                                className="input"
+                                className="form-input"
                                 style={{ width: '100px' }}
                               />
                             </td>
@@ -631,7 +588,6 @@ function NewPurchaseRequestPageContent() {
                                 placeholder="Select Unit"
                                 searchPlaceholder="Search unit..."
                                 allowClear
-                                className="w-32"
                               />
                             </td>
                             <td>
@@ -640,7 +596,7 @@ function NewPurchaseRequestPageContent() {
                                 onChange={(e) => handleUpdateItem(index, 'reason', e.target.value)}
                                 placeholder="Purpose"
                                 rows={2}
-                                className="input"
+                                className="form-textarea"
                                 style={{ width: '160px' }}
                               />
                             </td>
@@ -650,31 +606,14 @@ function NewPurchaseRequestPageContent() {
                                 onChange={(e) => handleUpdateItem(index, 'notes', e.target.value)}
                                 placeholder="Notes"
                                 rows={2}
-                                className="input"
+                                className="form-textarea"
                                 style={{ width: '160px' }}
                               />
                             </td>
                             <td>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveItem(index)}
-                                className="btn btn-primary"
-                                style={{
-                                  backgroundColor: 'var(--color-error)',
-                                  borderColor: 'var(--color-error)',
-                                  color: '#FFFFFF',
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = '#DC2626';
-                                  e.currentTarget.style.borderColor = '#DC2626';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'var(--color-error)';
-                                  e.currentTarget.style.borderColor = 'var(--color-error)';
-                                }}
-                              >
+                              <Button type="button" variant="delete" size="sm" onClick={() => handleRemoveItem(index)}>
                                 {t('btn', 'delete')}
-                              </button>
+                              </Button>
                             </td>
                           </tr>
                         );
@@ -686,21 +625,17 @@ function NewPurchaseRequestPageContent() {
             )}
           </div>
 
-          {/* Form Actions - Unified */}
-          <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
-            <button
-              type="submit"
-              disabled={mutation.isPending}
-              className="btn btn-primary"
-            >
-              {mutation.isPending ? t('btn', 'saving') : t('btn', 'save')}
-            </button>
-            <Link href="/purchase-requests" className="btn btn-secondary">
+          {/* Form Actions */}
+          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+            <Button type="submit" variant="primary" disabled={mutation.isPending} isLoading={mutation.isPending}>
+              {t('btn', 'save')}
+            </Button>
+            <Button variant="secondary" onClick={() => router.push('/purchase-requests')}>
               {t('btn', 'cancel')}
-            </Link>
+            </Button>
           </div>
         </form>
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

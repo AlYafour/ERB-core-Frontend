@@ -12,7 +12,7 @@ import { canCreateInvoice } from '@/lib/utils/workflow-guards';
 import { toast } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
-import { Button } from '@/components/ui';
+import { Button, PageShell } from '@/components/ui';
 import Image from 'next/image';
 import { useT } from '@/lib/i18n/useT';
 
@@ -81,10 +81,8 @@ export default function GRNDetailPage() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('btn', 'loading')}</p>
-          </div>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('btn', 'loading')}</p>
         </div>
       </MainLayout>
     );
@@ -93,13 +91,11 @@ export default function GRNDetailPage() {
   if (!grn) {
     return (
       <MainLayout>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('empty', 'notFound')}</p>
-            <Link href="/goods-receiving" style={{ marginTop: 'var(--spacing-4)', display: 'inline-block' }}>
-              <Button variant="primary">{t('btn', 'back')} {t('page', 'goodsReceiving')}</Button>
-            </Link>
-          </div>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', margin: '0 0 var(--space-4) 0' }}>{t('empty', 'notFound')}</p>
+          <Button variant="primary" onClick={() => router.push('/goods-receiving')}>
+            {t('btn', 'back')} {t('page', 'goodsReceiving')}
+          </Button>
         </div>
       </MainLayout>
     );
@@ -109,7 +105,7 @@ export default function GRNDetailPage() {
 
   return (
     <MainLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
+      <PageShell>
         {/* Header */}
         <PageHeader
           backHref="/goods-receiving"
@@ -135,24 +131,24 @@ export default function GRNDetailPage() {
           <div style={{ 
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
+            gap: 'var(--space-4)',
           }}>
             <div>
               <label style={{ 
                 display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'var(--weight-medium)',
                 color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
               }}>
                 {t('page', 'purchaseOrders')}
               </label>
               <p style={{ 
-                fontSize: 'var(--font-base)',
-                fontWeight: 'var(--font-weight-semibold)',
+                fontSize: 'var(--text-base)',
+                fontWeight: 'var(--weight-semibold)',
                 color: 'var(--text-primary)',
                 margin: 0,
-                marginBottom: 'var(--spacing-1)',
+                marginBottom: 'var(--space-1)',
               }}>
                 {purchaseOrder?.order_number || 'N/A'}
               </p>
@@ -160,12 +156,12 @@ export default function GRNDetailPage() {
                 <Link
                   href={`/purchase-orders/${purchaseOrder.id}`}
                   style={{ 
-                    fontSize: 'var(--font-sm)',
+                    fontSize: 'var(--text-sm)',
                     color: 'var(--text-primary)',
                     textDecoration: 'underline',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'var(--brand-orange)';
+                    e.currentTarget.style.color = 'var(--brand)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.color = 'var(--text-primary)';
@@ -178,15 +174,15 @@ export default function GRNDetailPage() {
             <div>
               <label style={{ 
                 display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'var(--weight-medium)',
                 color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
               }}>
                 {t('field', 'receiptDate')}
               </label>
               <p style={{ 
-                fontSize: 'var(--font-base)',
+                fontSize: 'var(--text-base)',
                 color: 'var(--text-primary)',
                 margin: 0,
               }}>
@@ -196,15 +192,15 @@ export default function GRNDetailPage() {
             <div>
               <label style={{ 
                 display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'var(--weight-medium)',
                 color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
               }}>
                 {t('col', 'createdBy')}
               </label>
               <p style={{ 
-                fontSize: 'var(--font-base)',
+                fontSize: 'var(--text-base)',
                 color: 'var(--text-primary)',
                 margin: 0,
               }}>
@@ -215,15 +211,15 @@ export default function GRNDetailPage() {
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ 
                   display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--weight-medium)',
                   color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
+                  marginBottom: 'var(--space-2)',
                 }}>
                   {t('col', 'notes')}
                 </label>
                 <p style={{ 
-                  fontSize: 'var(--font-base)',
+                  fontSize: 'var(--text-base)',
                   color: 'var(--text-primary)',
                   margin: 0,
                 }}>
@@ -238,28 +234,28 @@ export default function GRNDetailPage() {
         {((grn.material_images && grn.material_images.length > 0) || grn.supplier_invoice_file_url || grn.invoice_delivery_status) ? (
           <div className="card">
             <h3 style={{ 
-              fontSize: 'var(--font-lg)',
-              fontWeight: 'var(--font-weight-semibold)',
+              fontSize: 'var(--text-lg)',
+              fontWeight: 'var(--weight-semibold)',
               color: 'var(--text-primary)',
               margin: 0,
-              marginBottom: 'var(--spacing-4)',
+              marginBottom: 'var(--space-4)',
             }}>
               {t('section', 'receiptInfo')}
             </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
               {/* Material Images */}
               {grn.material_images && grn.material_images.length > 0 && (
                 <div>
                   <label style={{ 
                     display: 'block',
-                    fontSize: 'var(--font-sm)',
-                    fontWeight: 'var(--font-weight-medium)',
+                    fontSize: 'var(--text-sm)',
+                    fontWeight: 'var(--weight-medium)',
                     color: 'var(--text-secondary)',
-                    marginBottom: 'var(--spacing-2)',
+                    marginBottom: 'var(--space-2)',
                   }}>
                     {t('section', 'receiptInfo')}
                   </label>
-                  <div style={{ display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                     {grn.material_images.map((imageObj: any, index: number) => (
                       <div key={imageObj.id || index} style={{ position: 'relative', width: '150px', height: '150px' }}>
                         <img
@@ -285,14 +281,14 @@ export default function GRNDetailPage() {
                 <div>
                   <label style={{ 
                     display: 'block',
-                    fontSize: 'var(--font-sm)',
-                    fontWeight: 'var(--font-weight-medium)',
+                    fontSize: 'var(--text-sm)',
+                    fontWeight: 'var(--weight-medium)',
                     color: 'var(--text-secondary)',
-                    marginBottom: 'var(--spacing-2)',
+                    marginBottom: 'var(--space-2)',
                   }}>
                     {t('col', 'supplier')}
                   </label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                     {grn.supplier_invoice_file_url.endsWith('.pdf') ? (
                       <a href={grn.supplier_invoice_file_url} target="_blank" rel="noopener noreferrer">
                         <Button variant="primary">{t('btn', 'view')} PDF</Button>
@@ -319,14 +315,14 @@ export default function GRNDetailPage() {
               <div>
                 <label style={{ 
                   display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--weight-medium)',
                   color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
+                  marginBottom: 'var(--space-2)',
                 }}>
                   {t('col', 'invoiceDelivery')}
                 </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                   <span className={`badge ${grn.invoice_delivery_status === 'delivered' ? 'badge-success' : 'badge-warning'}`}>
                     {grn.invoice_delivery_status === 'delivered' 
                       ? t('status', 'delivered')
@@ -350,11 +346,11 @@ export default function GRNDetailPage() {
         {/* Items Section - Unified */}
         <div className="card">
           <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
+            fontSize: 'var(--text-lg)',
+            fontWeight: 'var(--weight-semibold)',
             color: 'var(--text-primary)',
             margin: 0,
-            marginBottom: 'var(--spacing-4)',
+            marginBottom: 'var(--space-4)',
           }}>
             {t('section', 'receivedItems')}
           </h3>
@@ -377,13 +373,13 @@ export default function GRNDetailPage() {
                     <tr key={item.id}>
                       <td>
                         <div style={{ 
-                          fontWeight: 'var(--font-weight-medium)',
+                          fontWeight: 'var(--weight-medium)',
                           color: 'var(--text-primary)',
                         }}>
                           {item.product?.name || 'N/A'}
                         </div>
                         <div style={{ 
-                          fontSize: 'var(--font-xs)',
+                          fontSize: 'var(--text-xs)',
                           color: 'var(--text-secondary)',
                         }}>
                           {item.product?.code || ''}
@@ -396,7 +392,7 @@ export default function GRNDetailPage() {
                       <td>
                         <div style={{ 
                           color: 'var(--color-success)',
-                          fontWeight: 'var(--font-weight-semibold)',
+                          fontWeight: 'var(--weight-semibold)',
                         }}>
                           {item.received_quantity}
                         </div>
@@ -411,7 +407,7 @@ export default function GRNDetailPage() {
                       </td>
                       <td>
                         <div style={{ 
-                          fontSize: 'var(--font-sm)',
+                          fontSize: 'var(--text-sm)',
                           color: 'var(--text-secondary)',
                         }}>
                           {item.notes || '-'}
@@ -424,7 +420,7 @@ export default function GRNDetailPage() {
                     <td colSpan={6} style={{ 
                       textAlign: 'center',
                       color: 'var(--text-secondary)',
-                      padding: 'var(--spacing-4)',
+                      padding: 'var(--space-4)',
                     }}>
                       {t('empty', 'noResults')}
                     </td>
@@ -440,21 +436,21 @@ export default function GRNDetailPage() {
           <div style={{ 
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
+            gap: 'var(--space-4)',
           }}>
             <div>
               <label style={{ 
                 display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'var(--weight-medium)',
                 color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
               }}>
                 {t('col', 'qty')}
               </label>
               <p style={{ 
-                fontSize: 'var(--font-2xl)',
-                fontWeight: 'var(--font-weight-bold)',
+                fontSize: 'var(--text-2xl)',
+                fontWeight: 'var(--weight-bold)',
                 color: 'var(--text-primary)',
                 margin: 0,
               }}>
@@ -464,16 +460,16 @@ export default function GRNDetailPage() {
             <div>
               <label style={{ 
                 display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'var(--weight-medium)',
                 color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
               }}>
                 {t('col', 'receivedQty')}
               </label>
               <p style={{ 
-                fontSize: 'var(--font-2xl)',
-                fontWeight: 'var(--font-weight-bold)',
+                fontSize: 'var(--text-2xl)',
+                fontWeight: 'var(--weight-bold)',
                 color: 'var(--color-success)',
                 margin: 0,
               }}>
@@ -483,15 +479,15 @@ export default function GRNDetailPage() {
             <div>
               <label style={{ 
                 display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'var(--weight-medium)',
                 color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
               }}>
                 Created At
               </label>
               <p style={{ 
-                fontSize: 'var(--font-base)',
+                fontSize: 'var(--text-base)',
                 color: 'var(--text-primary)',
                 margin: 0,
               }}>
@@ -502,7 +498,7 @@ export default function GRNDetailPage() {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 flex-wrap">
+        <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
           {grn.invoices && grn.invoices.length > 0 ? (
             <Link href={`/purchase-invoices/${grn.invoices[0].id}`}>
               <Button variant="primary">View Invoice</Button>
@@ -523,7 +519,7 @@ export default function GRNDetailPage() {
             )
           )}
         </div>
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

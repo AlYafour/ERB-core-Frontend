@@ -13,8 +13,8 @@ export default function NewUserPage() {
 
   return (
     <MainLayout>
-      <div className="flex items-center justify-center py-24">
-        <p className="text-muted-foreground text-sm">Redirecting...</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-24) 0' }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>Redirecting...</p>
       </div>
     </MainLayout>
   );

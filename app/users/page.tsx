@@ -27,7 +27,7 @@ const ROLE_BADGE: Record<string, 'warning' | 'info' | 'success'> = {
   site_engineer:        'success',
 };
 
-const sel = 'px-3 py-2 rounded-md border text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 h-[38px]';
+const sel = 'form-select';
 
 export default function UsersPage() {
   const { user: me } = useAuth();
@@ -56,8 +56,8 @@ export default function UsersPage() {
 
   if (!isAdmin) return (
     <MainLayout>
-      <div className="card text-center py-20">
-        <p className="text-destructive text-sm">Access denied.</p>
+      <div className="card" style={{ textAlign: 'center', padding: 'var(--space-20) 0' }}>
+        <p style={{ color: 'var(--color-error)', fontSize: 'var(--text-sm)' }}>Access denied.</p>
       </div>
     </MainLayout>
   );
@@ -68,30 +68,29 @@ export default function UsersPage() {
       render: u => {
         const name = [u.first_name, u.last_name].filter(Boolean).join(' ');
         return (
-          <div className="flex items-center gap-3">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
             <Avatar src={(u as any).avatar_url || (u as any).avatar} alt={u.username} size={36} username={u.username} />
             <div>
-              <p className="text-sm font-semibold text-foreground leading-tight">
+              <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', lineHeight: 'tight', margin: 0 }}>
                 {name || u.username}
                 {u.id === me?.id && (
-                  <span className="ml-2 text-xs font-bold px-1.5 py-0.5 rounded"
-                    style={{ background: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)' }}>
+                  <span style={{ marginLeft: 'var(--space-2)', fontSize: 'var(--text-xs)', fontWeight: 700, padding: '1px 6px', borderRadius: 'var(--radius-sm)', background: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)' }}>
                     You
                   </span>
                 )}
               </p>
-              <p className="text-xs text-muted-foreground">{u.email}</p>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>{u.email}</p>
             </div>
           </div>
         );
       },
     },
-    { key: 'username', header: 'Username', render: u => <span className="text-sm font-mono text-foreground">@{u.username}</span> },
+    { key: 'username', header: 'Username', render: u => <span style={{ fontSize: 'var(--text-sm)', fontFamily: 'monospace', color: 'var(--text-primary)' }}>@{u.username}</span> },
     {
       key: 'role', header: 'Role',
       render: u => u.role
         ? <Badge variant={ROLE_BADGE[u.role] ?? 'info'}>{ROLES.find(r => r.value === u.role)?.label ?? u.role}</Badge>
-        : <span className="text-xs text-muted-foreground">—</span>,
+        : <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>—</span>,
     },
     {
       key: 'status', header: 'Status',
@@ -129,7 +128,9 @@ export default function UsersPage() {
               {(search || role || status) && (
                 <button
                   onClick={() => { handleSearch(''); handleRole(''); handleStatus(''); }}
-                  className="text-sm text-muted-foreground hover:text-foreground px-2"
+                  style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', padding: '0 var(--space-2)', background: 'none', border: 'none', cursor: 'pointer' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
                 >
                   Clear
                 </button>

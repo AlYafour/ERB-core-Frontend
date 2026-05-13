@@ -12,6 +12,7 @@ import { QuotationRequestItem } from '@/types';
 import { toast } from '@/lib/hooks/use-toast';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import FormField from '@/components/ui/FormField';
+import { Button, PageShell } from '@/components/ui';
 import { formatBackendError } from '@/lib/utils/validation';
 import { canCreateQuotationRequest } from '@/lib/utils/workflow-guards';
 import RouteGuard from '@/components/auth/RouteGuard';
@@ -177,13 +178,11 @@ function NewQuotationRequestPageContent() {
   if (!purchaseRequestId) {
     return (
       <MainLayout>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-4)' }}>No purchase request selected</p>
-            <Link href="/purchase-requests" className="btn btn-primary">
-              {t('btn', 'back')} {t('page', 'purchaseRequests')}
-            </Link>
-          </div>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-4)', margin: '0 0 var(--space-4) 0' }}>No purchase request selected</p>
+          <Button variant="primary" onClick={() => router.push('/purchase-requests')}>
+            {t('btn', 'back')} {t('page', 'purchaseRequests')}
+          </Button>
         </div>
       </MainLayout>
     );
@@ -192,24 +191,16 @@ function NewQuotationRequestPageContent() {
   if (purchaseRequest && purchaseRequest.status === 'rejected') {
     return (
       <MainLayout>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-            <div style={{ color: 'var(--color-error)', marginBottom: 'var(--spacing-4)' }}>
-              <p style={{ 
-                fontSize: 'var(--font-lg)',
-                fontWeight: 'var(--font-weight-semibold)',
-                marginBottom: 'var(--spacing-2)',
-              }}>
-                Cannot Create Quotation Request
-              </p>
-              <p style={{ fontSize: 'var(--font-sm)' }}>
-                This purchase request is rejected and cannot be used to create a quotation request.
-              </p>
-            </div>
-            <Link href={`/purchase-requests/${purchaseRequest.id}`} className="btn btn-secondary">
-              {t('btn', 'back')} {t('page', 'purchaseRequests')}
-            </Link>
-          </div>
+        <div className="card empty-state">
+          <p style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', color: 'var(--color-error)', margin: '0 0 var(--space-2) 0' }}>
+            Cannot Create Quotation Request
+          </p>
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-error)', margin: '0 0 var(--space-4) 0' }}>
+            This purchase request is rejected and cannot be used to create a quotation request.
+          </p>
+          <Button variant="secondary" onClick={() => router.push(`/purchase-requests/${purchaseRequest.id}`)}>
+            {t('btn', 'back')} {t('page', 'purchaseRequests')}
+          </Button>
         </div>
       </MainLayout>
     );
@@ -217,13 +208,15 @@ function NewQuotationRequestPageContent() {
 
   return (
     <MainLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-        {/* Header Section - Unified */}
+      <PageShell>
+        {/* Header Section */}
         <div>
-          <Link 
-            href="/quotation-requests" 
-            className="text-sm mb-2 inline-block"
-            style={{ 
+          <Link
+            href="/quotation-requests"
+            style={{
+              fontSize: 'var(--text-sm)',
+              marginBottom: 'var(--space-2)',
+              display: 'inline-block',
               color: 'var(--text-secondary)',
               textDecoration: 'none',
             }}
@@ -237,35 +230,35 @@ function NewQuotationRequestPageContent() {
             ← {t('btn', 'back')} {t('page', 'quotationRequests')}
           </Link>
           <h1 style={{ 
-            fontSize: 'var(--font-2xl)',
-            fontWeight: 'var(--font-weight-semibold)',
+            fontSize: 'var(--text-2xl)',
+            fontWeight: 'var(--weight-semibold)',
             color: 'var(--text-primary)',
             margin: 0,
-            marginBottom: 'var(--spacing-1)',
+            marginBottom: 'var(--space-1)',
           }}>
             {t('page', 'newQR')}
           </h1>
           {purchaseRequest && (
             <p style={{ 
-              fontSize: 'var(--font-sm)',
+              fontSize: 'var(--text-sm)',
               color: 'var(--text-secondary)',
               margin: 0,
             }}>
-              For Purchase Request: <span style={{ fontWeight: 'var(--font-weight-semibold)' }}>{purchaseRequest.code}</span>
+              For Purchase Request: <span style={{ fontWeight: 'var(--weight-semibold)' }}>{purchaseRequest.code}</span>
             </p>
           )}
         </div>
 
-        {/* Warning Banner - Unified */}
+        {/* Warning Banner */}
         {purchaseRequest && purchaseRequest.status !== 'approved' && (
-          <div className="card" style={{ 
+          <div className="card" style={{
             backgroundColor: 'var(--color-warning-light)',
             borderColor: 'var(--color-warning)',
           }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--spacing-2)' }}>
-              <svg 
-                className="w-5 h-5 flex-shrink-0" 
-                style={{ 
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-2)' }}>
+              <svg
+                style={{
+                  width: 20, height: 20, flexShrink: 0,
                   color: 'var(--color-warning)',
                   marginTop: '2px',
                 }}
@@ -276,16 +269,16 @@ function NewQuotationRequestPageContent() {
               </svg>
               <div>
                 <p style={{ 
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-semibold)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--weight-semibold)',
                   color: '#854D0E',
                   margin: 0,
-                  marginBottom: 'var(--spacing-1)',
+                  marginBottom: 'var(--space-1)',
                 }}>
                   Warning
                 </p>
                 <p style={{ 
-                  fontSize: 'var(--font-sm)',
+                  fontSize: 'var(--text-sm)',
                   color: '#854D0E',
                   margin: 0,
                 }}>
@@ -297,14 +290,14 @@ function NewQuotationRequestPageContent() {
           </div>
         )}
 
-        {/* Form Card - Unified */}
+        {/* Form Card */}
         <form onSubmit={handleSubmit} className="card">
-          {/* Form Fields Grid - Unified Spacing */}
+          {/* Form Fields Grid */}
           <div style={{ 
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
-            marginBottom: 'var(--spacing-6)',
+            gap: 'var(--space-4)',
+            marginBottom: 'var(--space-6)',
           }}>
             <FormField
               label={t('col', 'supplier')}
@@ -349,24 +342,24 @@ function NewQuotationRequestPageContent() {
                     }
                   }}
                   rows={3}
-                  className="input"
+                  className="form-textarea"
                 />
               </FormField>
             </div>
           </div>
 
-          {/* Items Section - Unified */}
+          {/* Items Section */}
           {purchaseRequest && (
-            <div style={{ marginBottom: 'var(--spacing-6)' }}>
+            <div style={{ marginBottom: 'var(--space-6)' }}>
               <div style={{ 
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: 'var(--spacing-4)',
+                marginBottom: 'var(--space-4)',
               }}>
                 <h3 style={{ 
-                  fontSize: 'var(--font-lg)',
-                  fontWeight: 'var(--font-weight-semibold)',
+                  fontSize: 'var(--text-lg)',
+                  fontWeight: 'var(--weight-semibold)',
                   color: 'var(--text-primary)',
                   margin: 0,
                 }}>
@@ -374,7 +367,7 @@ function NewQuotationRequestPageContent() {
                 </h3>
                 {errors.items && (
                   <span style={{ 
-                    fontSize: 'var(--font-sm)',
+                    fontSize: 'var(--text-sm)',
                     color: 'var(--color-error)',
                   }}>
                     {errors.items}
@@ -400,7 +393,7 @@ function NewQuotationRequestPageContent() {
                           <tr key={index}>
                             <td>
                               <div style={{ 
-                                fontWeight: 'var(--font-weight-medium)',
+                                fontWeight: 'var(--weight-medium)',
                                 color: 'var(--text-primary)',
                               }}>
                                 {product?.name || 'N/A'}
@@ -426,21 +419,17 @@ function NewQuotationRequestPageContent() {
             </div>
           )}
 
-          {/* Form Actions - Unified */}
-          <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
-            <button
-              type="submit"
-              disabled={mutation.isPending}
-              className="btn btn-primary"
-            >
+          {/* Form Actions */}
+          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+            <Button type="submit" variant="primary" disabled={mutation.isPending}>
               {mutation.isPending ? t('btn', 'loading') : t('page', 'newQR')}
-            </button>
-            <Link href="/quotation-requests" className="btn btn-secondary">
+            </Button>
+            <Button variant="secondary" onClick={() => router.push('/quotation-requests')}>
               {t('btn', 'cancel')}
-            </Link>
+            </Button>
           </div>
         </form>
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

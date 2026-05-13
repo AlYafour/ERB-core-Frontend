@@ -146,7 +146,7 @@ function ViolationDetailPanel({
         <div>
           <div className="info-box-label" style={{ marginBottom: 'var(--space-2)' }}>Original SMS</div>
           <div style={{
-            background: 'var(--bg-secondary)',
+            background: 'var(--surface-subtle)',
             border: '1px solid var(--border-subtle)',
             borderRadius: 'var(--radius-lg)',
             padding: 'var(--space-3) var(--space-4)',
@@ -163,7 +163,7 @@ function ViolationDetailPanel({
               {urls.map((url, i) => (
                 <a key={i} href={url} target="_blank" rel="noreferrer" style={{
                   padding: '3px 10px', borderRadius: 'var(--radius-md)',
-                  background: 'var(--bg-secondary)',
+                  background: 'var(--surface-subtle)',
                   color: 'var(--brand)',
                   border: '1px solid var(--border-default)',
                   fontSize: 11, fontWeight: 600, textDecoration: 'none',
@@ -321,7 +321,7 @@ export default function ViolationsPage() {
 
   if (!isAdmin) return (
     <MainLayout>
-      <div className="flex items-center justify-center h-64">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 256 }}>
         <p style={{ color: 'var(--text-secondary)' }}>You do not have permission to view this page.</p>
       </div>
     </MainLayout>
@@ -542,7 +542,7 @@ export default function ViolationsPage() {
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
-                    <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)' }}>
+                    <tr style={{ background: 'var(--surface-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
                       <th style={thS(36)}>
                         <input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ width: 15, height: 15, cursor: 'pointer' }} />
                       </th>
@@ -665,7 +665,7 @@ export default function ViolationsPage() {
 
             {/* Pagination inside card */}
             {totalPages > 1 && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderTop: '1px solid var(--border-primary)', background: 'var(--bg-secondary)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderTop: '1px solid var(--border-subtle)', background: 'var(--surface-subtle)' }}>
                 <span style={{ fontSize: 12, color: '#94A3B8' }}>
                   Showing {(page - 1) * 25 + 1}–{Math.min(page * 25, totalCount)} of {totalCount}
                 </span>

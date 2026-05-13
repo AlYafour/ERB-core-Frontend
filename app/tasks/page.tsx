@@ -85,7 +85,7 @@ function PrioBar({ p }: { p: TaskPriority }) {
       {[1, 2, 3, 4].map(l => (
         <span key={l} className="prio-bar-seg" style={{
           height: heights[l - 1],
-          background: l <= levels[p] ? color : 'var(--border-primary)',
+          background: l <= levels[p] ? color : 'var(--border-subtle)',
         }} />
       ))}
     </span>
@@ -165,7 +165,7 @@ function ListV({ tasks, onOpen }: { tasks: TaskListItem[]; onOpen: (t: TaskListI
     <div style={{ overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
-          <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-subtle)' }}>
+          <tr style={{ background: 'var(--surface-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
             {['', 'Task', 'Status', 'Assignee', 'Due', 'Progress'].map((h, i) => (
               <th key={i} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', border: 'none' }}>{h}</th>
             ))}
@@ -179,7 +179,7 @@ function ListV({ tasks, onOpen }: { tasks: TaskListItem[]; onOpen: (t: TaskListI
               return (
                 <tr key={t.id} onClick={() => onOpen(t)}
                   style={{ borderTop: i > 0 ? '1px solid var(--border-subtle)' : 'none', cursor: 'pointer', transition: 'background 0.1s' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-secondary)')}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-subtle)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
                   <td style={{ padding: '11px 14px', width: 28, border: 'none' }}><PrioBar p={t.priority} /></td>
@@ -239,28 +239,28 @@ function MyPanel({ onClose }: { onClose: () => void }) {
   const done    = items.filter(t => t.is_done);
 
   return (
-    <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 90, width: 320, background: 'var(--card-bg)', borderLeft: '1px solid var(--border-primary)', display: 'flex', flexDirection: 'column', boxShadow: '-4px 0 24px rgba(0,0,0,0.08)' }}>
-      <div style={{ padding: '18px 20px 16px', borderBottom: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 90, width: 320, background: 'var(--card-bg)', borderLeft: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', boxShadow: '-4px 0 24px rgba(0,0,0,0.08)' }}>
+      <div style={{ padding: '18px 20px 16px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>My To-Do</p>
           <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>{pending.length} pending · {done.length} done</p>
         </div>
-        <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 7, border: '1px solid var(--border-primary)', background: 'transparent', cursor: 'pointer', fontSize: 18, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+        <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'transparent', cursor: 'pointer', fontSize: 18, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
       </div>
 
-      <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-primary)' }}>
+      <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
         <input
           value={text}
           onChange={e => setText(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && text.trim()) add.mutate(); }}
           placeholder="Add task, press Enter…"
-          style={{ width: '100%', padding: '8px 11px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 13, background: 'var(--bg-secondary)', color: 'var(--text-primary)', boxSizing: 'border-box', outline: 'none', marginBottom: 10, fontFamily: 'inherit' }}
+          style={{ width: '100%', padding: '8px 11px', borderRadius: 7, border: '1px solid var(--border-subtle)', fontSize: 13, background: 'var(--surface-subtle)', color: 'var(--text-primary)', boxSizing: 'border-box', outline: 'none', marginBottom: 10, fontFamily: 'inherit' }}
         />
         <div style={{ display: 'flex', gap: 6 }}>
           {(['high', 'medium', 'low'] as const).map(p => (
             <button key={p} onClick={() => setPrio(p)} style={{
               flex: 1, padding: '5px 0', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-              border: `1.5px solid ${prio === p ? PRIORITY[p].color : 'var(--border-primary)'}`,
+              border: `1.5px solid ${prio === p ? PRIORITY[p].color : 'var(--border-subtle)'}`,
               background: prio === p ? PRIORITY[p].color + '15' : 'transparent',
               color: prio === p ? PRIORITY[p].color : 'var(--text-tertiary)',
             }}>{PRIORITY[p].label}</button>
@@ -278,10 +278,10 @@ function MyPanel({ onClose }: { onClose: () => void }) {
         )}
 
         {pending.map(t => (
-          <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--border-primary)' }}>
+          <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--border-subtle)' }}>
             <button onClick={() => toggle.mutate(t.id)} style={{
               width: 18, height: 18, borderRadius: 4, flexShrink: 0, cursor: 'pointer',
-              border: `2px solid ${PRIORITY[t.priority as TaskPriority]?.color || 'var(--border-primary)'}`,
+              border: `2px solid ${PRIORITY[t.priority as TaskPriority]?.color || 'var(--border-subtle)'}`,
               background: 'transparent',
             }} />
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -296,7 +296,7 @@ function MyPanel({ onClose }: { onClose: () => void }) {
           <>
             <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '18px 0 8px' }}>Completed ({done.length})</p>
             {done.map(t => (
-              <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border-primary)', opacity: 0.5 }}>
+              <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border-subtle)', opacity: 0.5 }}>
                 <button onClick={() => toggle.mutate(t.id)} style={{ width: 18, height: 18, borderRadius: 4, flexShrink: 0, cursor: 'pointer', border: '2px solid #16A34A', background: '#16A34A', color: '#fff', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</button>
                 <p style={{ flex: 1, fontSize: 12, color: 'var(--text-tertiary)', textDecoration: 'line-through', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
                 <button onClick={() => del.mutate(t.id)} style={{ fontSize: 15, color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}>×</button>
@@ -339,7 +339,7 @@ function TaskDrawer({ taskId, onClose }: { taskId: number; onClose: () => void }
   if (isLoading || !task) return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.35)', display: 'flex', justifyContent: 'flex-end' }}>
       <div style={{ width: 640, background: 'var(--card-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="animate-spin" style={{ width: 28, height: 28, border: '3px solid var(--border-primary)', borderTopColor: ORANGE, borderRadius: '50%' }} />
+        <div className="animate-spin" style={{ width: 28, height: 28, border: '3px solid var(--border-subtle)', borderTopColor: ORANGE, borderRadius: '50%' }} />
       </div>
     </div>
   );
@@ -356,24 +356,24 @@ function TaskDrawer({ taskId, onClose }: { taskId: number; onClose: () => void }
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={{ width: '100%', maxWidth: 640, background: 'var(--card-bg)', display: 'flex', flexDirection: 'column', overflowY: 'auto', boxShadow: '-4px 0 40px rgba(0,0,0,0.15)' }}>
 
-        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--border-primary)' }}>
+        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
                 <StatusPill s={task.status} />
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 99, background: 'var(--bg-secondary)', fontSize: 11, color: PRIORITY[task.priority].color, fontWeight: 600, border: '1px solid var(--border-primary)' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 99, background: 'var(--surface-subtle)', fontSize: 11, color: PRIORITY[task.priority].color, fontWeight: 600, border: '1px solid var(--border-subtle)' }}>
                   <PrioBar p={task.priority} /> {PRIORITY[task.priority].label}
                 </span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 9px', borderRadius: 99, background: 'var(--bg-secondary)', fontSize: 11, color: 'var(--text-secondary)', border: '1px solid var(--border-primary)' }}>{TYPE_LABEL[task.task_type]}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 9px', borderRadius: 99, background: 'var(--surface-subtle)', fontSize: 11, color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }}>{TYPE_LABEL[task.task_type]}</span>
               </div>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3 }}>{task.title}</h2>
             </div>
-            <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-primary)', background: 'var(--bg-secondary)', cursor: 'pointer', fontSize: 18, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>×</button>
+            <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--surface-subtle)', cursor: 'pointer', fontSize: 18, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>×</button>
           </div>
         </div>
 
         {(['assigned','accepted','in_progress','review','submitted','rejected','closed','approved'].some(s => s === task.status)) && (
-          <div style={{ padding: '10px 24px', background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)', display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          <div style={{ padding: '10px 24px', background: 'var(--surface-subtle)', borderBottom: '1px solid var(--border-subtle)', display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
             {task.status === 'assigned'                              && <Btn label="Accept"  fn={() => tasksApi.accept(task.id)}  color="#8B5CF6" bg="#F5F3FF" />}
             {['assigned','accepted'].includes(task.status)          && <Btn label="Start"   fn={() => tasksApi.start(task.id)}   color="#F59E0B" bg="#FFFBEB" />}
             {['in_progress','accepted'].includes(task.status)       && <Btn label="Submit"  fn={() => tasksApi.submit(task.id)}  color="#3B82F6" bg="#EFF6FF" />}
@@ -386,17 +386,17 @@ function TaskDrawer({ taskId, onClose }: { taskId: number; onClose: () => void }
         )}
 
         {showRej && (
-          <div style={{ padding: '10px 24px', borderBottom: '1px solid var(--border-primary)', display: 'flex', gap: 8 }}>
+          <div style={{ padding: '10px 24px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', gap: 8 }}>
             <input value={reason} onChange={e => setReason(e.target.value)} placeholder="Rejection reason…"
-              style={{ flex: 1, padding: '7px 10px', borderRadius: 6, border: '1px solid #FCA5A5', fontSize: 13, background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit' }} />
+              style={{ flex: 1, padding: '7px 10px', borderRadius: 6, border: '1px solid #FCA5A5', fontSize: 13, background: 'var(--surface-subtle)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit' }} />
             <button onClick={() => { if (reason.trim()) { act.mutate(() => tasksApi.reject(task.id, reason)); setShowRej(false); setReason(''); } }}
               style={{ padding: '7px 14px', borderRadius: 6, border: 'none', background: '#EF4444', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Confirm</button>
-            <button onClick={() => setShowRej(false)} style={{ padding: '7px 12px', borderRadius: 6, border: '1px solid var(--border-primary)', background: 'transparent', color: 'var(--text-secondary)', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+            <button onClick={() => setShowRej(false)} style={{ padding: '7px 12px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--text-secondary)', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
           </div>
         )}
 
         <div style={{ flex: 1, padding: '20px 24px', overflowY: 'auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px 20px', paddingBottom: 20, borderBottom: '1px solid var(--border-primary)', marginBottom: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px 20px', paddingBottom: 20, borderBottom: '1px solid var(--border-subtle)', marginBottom: 20 }}>
             {[
               ['Created by', task.created_by_detail ? <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Av name={task.created_by_detail.full_name} url={task.created_by_detail.avatar_url} size={20} /><span style={{ fontSize: 12, color: 'var(--text-primary)' }}>{task.created_by_detail.full_name}</span></div> : '—'],
               ['Assigned to', task.assigned_to_detail ? <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Av name={task.assigned_to_detail.full_name} url={task.assigned_to_detail.avatar_url} size={20} /><span style={{ fontSize: 12, color: 'var(--text-primary)' }}>{task.assigned_to_detail.full_name}</span></div> : <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Unassigned</span>],
@@ -413,7 +413,7 @@ function TaskDrawer({ taskId, onClose }: { taskId: number; onClose: () => void }
           </div>
 
           {task.description && (
-            <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border-primary)' }}>
+            <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--surface-subtle)', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
               <p style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{task.description}</p>
             </div>
           )}
@@ -425,7 +425,7 @@ function TaskDrawer({ taskId, onClose }: { taskId: number; onClose: () => void }
             </div>
           )}
 
-          <div style={{ display: 'flex', borderBottom: '1px solid var(--border-primary)', marginBottom: 18 }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', marginBottom: 18 }}>
             {([['sub', `Sub-tasks (${task.subtasks.length})`], ['comments', `Comments (${task.comments.filter(c => !c.is_system).length})`], ['activity', `Activity (${task.activities.length})`]] as [typeof tab, string][]).map(([v, label]) => (
               <button key={v} onClick={() => setTab(v)} style={{
                 padding: '9px 16px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13,
@@ -444,16 +444,16 @@ function TaskDrawer({ taskId, onClose }: { taskId: number; onClose: () => void }
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 6 }}>
                     <span>{subDone}/{task.subtasks.length} done</span><span>{subPct}%</span>
                   </div>
-                  <div style={{ height: 4, background: 'var(--bg-secondary)', borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{ height: 4, background: 'var(--surface-subtle)', borderRadius: 99, overflow: 'hidden' }}>
                     <div style={{ height: 4, background: '#16A34A', borderRadius: 99, width: `${subPct}%`, transition: 'width 0.3s' }} />
                   </div>
                 </div>
               )}
               {task.subtasks.map((s: SubTask) => (
-                <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--border-primary)' }}>
+                <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--border-subtle)' }}>
                   <button onClick={() => toggleSub.mutate({ id: s.id, done: !s.is_completed })} style={{
                     width: 18, height: 18, borderRadius: 4, flexShrink: 0, cursor: 'pointer',
-                    border: `2px solid ${s.is_completed ? '#16A34A' : 'var(--border-primary)'}`,
+                    border: `2px solid ${s.is_completed ? '#16A34A' : 'var(--border-subtle)'}`,
                     background: s.is_completed ? '#16A34A' : 'transparent',
                     color: '#fff', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>{s.is_completed ? '✓' : ''}</button>
@@ -465,7 +465,7 @@ function TaskDrawer({ taskId, onClose }: { taskId: number; onClose: () => void }
                 <input value={newSub} onChange={e => setNewSub(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && newSub.trim()) addSub.mutate(newSub.trim()); }}
                   placeholder="Add sub-task…"
-                  style={{ flex: 1, padding: '8px 11px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 13, background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit' }} />
+                  style={{ flex: 1, padding: '8px 11px', borderRadius: 7, border: '1px solid var(--border-subtle)', fontSize: 13, background: 'var(--surface-subtle)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit' }} />
                 <button onClick={() => newSub.trim() && addSub.mutate(newSub.trim())} disabled={!newSub.trim()}
                   style={{ padding: '8px 16px', borderRadius: 7, border: 'none', background: ORANGE, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: !newSub.trim() ? 0.5 : 1 }}>Add</button>
               </div>
@@ -483,13 +483,13 @@ function TaskDrawer({ taskId, onClose }: { taskId: number; onClose: () => void }
                       <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{fmt(c.created_at, 'dt')}</span>
                       <button onClick={() => delComment.mutate(c.id)} style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>✕</button>
                     </div>
-                    <div style={{ padding: '10px 13px', background: 'var(--bg-secondary)', borderRadius: '0 8px 8px 8px', fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6, border: '1px solid var(--border-primary)' }}>{c.content}</div>
+                    <div style={{ padding: '10px 13px', background: 'var(--surface-subtle)', borderRadius: '0 8px 8px 8px', fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6, border: '1px solid var(--border-subtle)' }}>{c.content}</div>
                   </div>
                 </div>
               ))}
               <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                 <textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="Write a comment…" rows={2}
-                  style={{ flex: 1, padding: '9px 11px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 13, background: 'var(--bg-secondary)', color: 'var(--text-primary)', resize: 'vertical', fontFamily: 'inherit', outline: 'none' }} />
+                  style={{ flex: 1, padding: '9px 11px', borderRadius: 7, border: '1px solid var(--border-subtle)', fontSize: 13, background: 'var(--surface-subtle)', color: 'var(--text-primary)', resize: 'vertical', fontFamily: 'inherit', outline: 'none' }} />
                 <button onClick={() => comment.trim() && sendComment.mutate(comment.trim())} disabled={!comment.trim()}
                   style={{ padding: '9px 18px', alignSelf: 'flex-end', borderRadius: 7, border: 'none', background: ORANGE, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: !comment.trim() ? 0.5 : 1 }}>Send</button>
               </div>
@@ -516,10 +516,10 @@ function TaskDrawer({ taskId, onClose }: { taskId: number; onClose: () => void }
           )}
 
           {task.attachments.length > 0 && (
-            <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border-primary)' }}>
+            <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border-subtle)' }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Attachments ({task.attachments.length})</p>
               {task.attachments.map(a => (
-                <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border-primary)', marginBottom: 6 }}>
+                <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'var(--surface-subtle)', borderRadius: 8, border: '1px solid var(--border-subtle)', marginBottom: 6 }}>
                   <span style={{ fontSize: 18, flexShrink: 0 }}>📎</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.file_name}</p>
@@ -565,15 +565,15 @@ function CreateDrawer({ onClose, onCreated }: { onClose: () => void; onCreated: 
     </div>
   );
 
-  const inp = { width: '100%', padding: '8px 11px', borderRadius: 7, border: '1px solid var(--border-primary)', fontSize: 13, background: 'var(--bg-secondary)', color: 'var(--text-primary)', boxSizing: 'border-box' as const, outline: 'none', fontFamily: 'inherit' };
+  const inp = { width: '100%', padding: '8px 11px', borderRadius: 7, border: '1px solid var(--border-subtle)', fontSize: 13, background: 'var(--surface-subtle)', color: 'var(--text-primary)', boxSizing: 'border-box' as const, outline: 'none', fontFamily: 'inherit' };
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.35)', display: 'flex', justifyContent: 'flex-end' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={{ width: '100%', maxWidth: 460, background: 'var(--card-bg)', display: 'flex', flexDirection: 'column', boxShadow: '-4px 0 40px rgba(0,0,0,0.15)' }}>
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>New Task</h2>
-          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 7, border: '1px solid var(--border-primary)', background: 'transparent', cursor: 'pointer', fontSize: 18, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'transparent', cursor: 'pointer', fontSize: 18, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
         </div>
 
         <div style={{ flex: 1, padding: '20px 24px', overflowY: 'auto' }}>
@@ -603,18 +603,18 @@ function CreateDrawer({ onClose, onCreated }: { onClose: () => void; onCreated: 
           ))}
           {field('Due date', <input type="datetime-local" value={form.due_date} onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))} style={inp} />)}
 
-          <label style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', padding: '10px 12px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border-primary)' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', padding: '10px 12px', background: 'var(--surface-subtle)', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
             <input type="checkbox" checked={form.requires_approval} onChange={e => setForm(p => ({ ...p, requires_approval: e.target.checked }))} style={{ width: 16, height: 16, accentColor: ORANGE, flexShrink: 0 }} />
             <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Requires approval before closing</span>
           </label>
         </div>
 
-        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border-primary)', display: 'flex', gap: 10 }}>
+        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border-subtle)', display: 'flex', gap: 10 }}>
           <button onClick={() => mut.mutate()} disabled={!form.title.trim() || mut.isPending}
             style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none', background: ORANGE, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: !form.title.trim() || mut.isPending ? 0.6 : 1 }}>
             {mut.isPending ? 'Creating…' : 'Create Task'}
           </button>
-          <button onClick={onClose} style={{ padding: '10px 22px', borderRadius: 8, border: '1px solid var(--border-primary)', background: 'transparent', color: 'var(--text-secondary)', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
+          <button onClick={onClose} style={{ padding: '10px 22px', borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--text-secondary)', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
         </div>
       </div>
     </div>
@@ -664,8 +664,8 @@ export default function TasksPage() {
 
   const selStyle = {
     padding: '6px 10px', borderRadius: 7,
-    border: '1px solid var(--border-primary)',
-    fontSize: 12, background: 'var(--bg-secondary)',
+    border: '1px solid var(--border-subtle)',
+    fontSize: 12, background: 'var(--surface-subtle)',
     color: 'var(--text-secondary)', cursor: 'pointer',
     outline: 'none', flexShrink: 0 as const,
     fontFamily: 'inherit',
@@ -699,7 +699,7 @@ export default function TasksPage() {
                   {/* My To-Do toggle */}
                   <button onClick={() => setShowMyTasks(p => !p)} style={{
                     display: 'flex', alignItems: 'center', gap: 7, padding: '7px 14px', borderRadius: 8,
-                    border: showMyTasks ? `1.5px solid ${ORANGE}` : '1.5px solid var(--border-primary)',
+                    border: showMyTasks ? `1.5px solid ${ORANGE}` : '1.5px solid var(--border-subtle)',
                     background: showMyTasks ? '#FFF7ED' : 'var(--card-bg)',
                     color: showMyTasks ? ORANGE : 'var(--text-secondary)',
                     fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
@@ -717,7 +717,7 @@ export default function TasksPage() {
             />
 
             {/* Scope tabs — below header, no card */}
-            <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border-subtle, var(--border-primary))', marginTop: 4, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border-subtle, var(--border-subtle))', marginTop: 4, flexWrap: 'wrap' }}>
               {TABS.map(tab => {
                 const active = scope === tab.v && statusF !== 'review';
                 return (
@@ -769,7 +769,7 @@ export default function TasksPage() {
                   {Object.entries(PRIORITY).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                 </select>
                 {/* View toggle */}
-                <div style={{ display: 'flex', border: '1px solid var(--border-primary)', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+                <div style={{ display: 'flex', border: '1px solid var(--border-subtle)', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
                   {(['kanban', 'list'] as const).map(v => (
                     <button key={v} onClick={() => setView(v)} style={{
                       padding: '6px 14px', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500,
@@ -787,7 +787,7 @@ export default function TasksPage() {
             {/* Content area */}
             {isLoading ? (
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 260 }}>
-                <div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid var(--border-primary)', borderTopColor: ORANGE, borderRadius: '50%' }} />
+                <div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid var(--border-subtle)', borderTopColor: ORANGE, borderRadius: '50%' }} />
               </div>
             ) : tasks.length === 0 ? (
               <div className="empty-state">

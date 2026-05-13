@@ -57,7 +57,7 @@ export default function ViolationResolvePage() {
             onClick={() => router.back()}
             style={{
               marginTop: 16, padding: '8px 20px', borderRadius: 8,
-              background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)',
+              background: 'var(--surface-inset)', border: '1px solid var(--border-subtle)',
               cursor: 'pointer', color: 'var(--text-primary)', fontSize: 14,
             }}
           >
@@ -143,7 +143,7 @@ export default function ViolationResolvePage() {
               key={label}
               style={{
                 padding: '12px 4px',
-                borderBottom: '1px solid var(--border-primary)',
+                borderBottom: '1px solid var(--border-subtle)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 2,
@@ -161,7 +161,7 @@ export default function ViolationResolvePage() {
             style={{
               margin: '16px 0',
               padding: '12px 16px',
-              background: 'var(--bg-secondary)',
+              background: 'var(--surface-subtle)',
               borderRadius: 8,
               borderRight: '4px solid #EF4444',
             }}
@@ -270,9 +270,9 @@ export default function ViolationResolvePage() {
               rel="noopener noreferrer"
               style={{
                 padding: '12px 20px',
-                background: 'var(--bg-tertiary)',
+                background: 'var(--surface-inset)',
                 color: 'var(--text-primary)',
-                border: '1px solid var(--border-primary)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: 8,
                 fontSize: 14,
                 fontWeight: 600,

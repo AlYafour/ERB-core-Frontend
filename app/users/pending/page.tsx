@@ -72,8 +72,8 @@ export default function PendingUsersPage() {
   if (currentUser?.role !== 'super_admin' && !currentUser?.is_superuser) {
     return (
       <MainLayout>
-        <div className="card border-destructive bg-destructive/10">
-          <p className="text-destructive text-sm">Access Denied. Admin access required.</p>
+        <div className="card" style={{ borderColor: 'var(--color-error)', background: 'color-mix(in srgb, var(--color-error) 10%, transparent)' }}>
+          <p style={{ color: 'var(--color-error)', fontSize: 'var(--text-sm)' }}>Access Denied. Admin access required.</p>
         </div>
       </MainLayout>
     );
@@ -86,14 +86,14 @@ export default function PendingUsersPage() {
       key: 'username', header: 'Username',
       render: u => (
         <div>
-          <div className="font-medium text-foreground">{u.username}</div>
-          {u.first_name && <div className="text-xs text-muted-foreground">{u.first_name} {u.last_name}</div>}
+          <div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{u.username}</div>
+          {u.first_name && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{u.first_name} {u.last_name}</div>}
         </div>
       ),
     },
-    { key: 'email',    header: 'Email',      render: u => <span className="text-sm text-muted-foreground">{u.email}</span> },
+    { key: 'email',    header: 'Email',      render: u => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{u.email}</span> },
     { key: 'role',     header: 'Role',       render: u => <Badge variant="info">{u.role}</Badge> },
-    { key: 'joined',   header: 'Registered', render: u => <span className="text-sm text-muted-foreground">{u.date_joined ? new Date(u.date_joined).toLocaleDateString() : '—'}</span> },
+    { key: 'joined',   header: 'Registered', render: u => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{u.date_joined ? new Date(u.date_joined).toLocaleDateString() : '—'}</span> },
     {
       key: 'permset', header: 'Permission Set',
       render: u => (
@@ -110,7 +110,7 @@ export default function PendingUsersPage() {
     {
       key: 'actions', header: 'Actions',
       render: u => (
-        <div className="flex gap-2">
+        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
           <Button variant="primary" size="sm" onClick={() => handleApprove(u)} isLoading={approveMutation.isPending}>Approve</Button>
           <Button variant="destructive" size="sm" onClick={() => handleReject(u)} isLoading={rejectMutation.isPending}>Reject</Button>
         </div>

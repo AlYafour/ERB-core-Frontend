@@ -66,84 +66,84 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="auth-bg min-h-screen flex items-center justify-center relative overflow-hidden py-12">
+    <div className=”auth-bg” style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: 'var(--space-12) 0' }}>
 
       <AuthParticles />
 
       {/* Dark Mode Toggle */}
-      <div className="absolute top-6 right-6 z-10">
+      <div style={{ position: 'absolute', top: 'var(--space-6)', right: 'var(--space-6)', zIndex: 10 }}>
         <DarkModeToggle />
       </div>
 
       {/* Main Content */}
-      <div className="auth-fade-in relative z-10 w-full max-w-md px-6">
+      <div className=”auth-fade-in” style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: 448, padding: '0 var(--space-6)' }}>
 
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="auth-logo-box w-20 h-20 rounded-2xl flex items-center justify-center relative overflow-hidden">
-              <Image src="/logo.png" alt="AL YAFOUR Logo" width={64} height={64} className="object-contain" priority />
-              <div className="auth-logo-glow absolute inset-0 rounded-2xl" />
+        <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--space-4)' }}>
+            <div className=”auth-logo-box” style={{ width: 80, height: 80, borderRadius: 'var(--radius-2xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+              <Image src=”/logo.png” alt=”AL YAFOUR Logo” width={64} height={64} style={{ objectFit: 'contain' }} priority />
+              <div className=”auth-logo-glow” style={{ position: 'absolute', inset: 0, borderRadius: 'var(--radius-2xl)' }} />
             </div>
           </div>
-          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>AL YAFOUR</h1>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Create New Account</p>
+          <h1 style={{ fontSize: '1.875rem', fontWeight: 700, marginBottom: 'var(--space-2)', color: 'var(--text-primary)', margin: '0 0 var(--space-2) 0' }}>AL YAFOUR</h1>
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>Create New Account</p>
         </div>
 
         {/* Card */}
-        <div className="auth-card rounded-2xl p-8 backdrop-blur-xl border">
-          <h2 className="text-2xl font-semibold text-center mb-6" style={{ color: 'var(--text-primary)' }}>Sign Up</h2>
+        <div className=”auth-card” style={{ borderRadius: 'var(--radius-2xl)', padding: 'var(--space-8)' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 'var(--weight-semibold)', textAlign: 'center', marginBottom: 'var(--space-6)', color: 'var(--text-primary)', marginTop: 0 }}>Sign Up</h2>
 
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <TextField id="username" name="username" type="text" label="Username" required
-                placeholder="Choose a username" value={formData.username}
+          <form style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }} onSubmit={handleSubmit}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+              <TextField id=”username” name=”username” type=”text” label=”Username” required
+                placeholder=”Choose a username” value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })} />
 
-              <TextField id="email" name="email" type="email" label="Email" required
-                placeholder="Enter your email" value={formData.email}
+              <TextField id=”email” name=”email” type=”email” label=”Email” required
+                placeholder=”Enter your email” value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
 
-              <div className="grid grid-cols-2 gap-4">
-                <TextField id="first_name" name="first_name" type="text" label="First Name"
-                  placeholder="First name" value={formData.first_name}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-4)' }}>
+                <TextField id=”first_name” name=”first_name” type=”text” label=”First Name”
+                  placeholder=”First name” value={formData.first_name}
                   onChange={(e) => setFormData({ ...formData, first_name: e.target.value })} />
-                <TextField id="last_name" name="last_name" type="text" label="Last Name"
-                  placeholder="Last name" value={formData.last_name}
+                <TextField id=”last_name” name=”last_name” type=”text” label=”Last Name”
+                  placeholder=”Last name” value={formData.last_name}
                   onChange={(e) => setFormData({ ...formData, last_name: e.target.value })} />
               </div>
 
-              <TextField id="phone" name="phone" type="tel" label="Phone"
-                placeholder="Phone number" value={formData.phone}
+              <TextField id=”phone” name=”phone” type=”tel” label=”Phone”
+                placeholder=”Phone number” value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
 
               <div>
-                <PasswordField id="password" name="password" label="Password" required
-                  placeholder="Min 8 characters" value={formData.password}
+                <PasswordField id=”password” name=”password” label=”Password” required
+                  placeholder=”Min 8 characters” value={formData.password}
                   onChange={(e) => { setFormData({ ...formData, password: e.target.value }); setPasswordErrors(e.target.value ? validatePassword(e.target.value) : []); }}
                   showPassword={showPassword} onTogglePassword={() => setShowPassword(!showPassword)} />
-                {passwordErrors.map((err, i) => <p key={i} className="text-xs text-red-500 mt-1">â€¢ {err}</p>)}
-                {formData.password && !passwordErrors.length && <p className="text-xs mt-1" style={{ color: 'var(--color-success)' }}>âœ“ Password is valid</p>}
+                {passwordErrors.map((err, i) => <p key={i} style={{ fontSize: 'var(--text-xs)', color: 'var(--color-error)', marginTop: 'var(--space-1)' }}>• {err}</p>)}
+                {formData.password && !passwordErrors.length && <p style={{ fontSize: 'var(--text-xs)', marginTop: 'var(--space-1)', color: 'var(--color-success)' }}>✓ Password is valid</p>}
               </div>
 
-              <PasswordField id="password2" name="password2" label="Confirm Password" required
-                placeholder="Confirm your password" value={formData.password2}
+              <PasswordField id=”password2” name=”password2” label=”Confirm Password” required
+                placeholder=”Confirm your password” value={formData.password2}
                 onChange={(e) => setFormData({ ...formData, password2: e.target.value })}
                 showPassword={showPassword2} onTogglePassword={() => setShowPassword2(!showPassword2)} />
             </div>
 
-            <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-primary)' }}>
-              <p className="text-xs mb-1 font-medium" style={{ color: 'var(--text-primary)' }}>â“˜ Account Approval Required</p>
-              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Your account will be reviewed by an administrator.</p>
+            <div style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)' }}>
+              <p style={{ fontSize: 'var(--text-xs)', marginBottom: 'var(--space-1)', fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)', marginTop: 0 }}>ℹ Account Approval Required</p>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>Your account will be reviewed by an administrator.</p>
             </div>
 
-            <Button type="submit" disabled={isRegistering} isLoading={isRegistering} className="auth-btn w-full">
+            <Button type=”submit” disabled={isRegistering} isLoading={isRegistering} className=”auth-btn” style={{ width: '100%' }}>
               {isRegistering ? 'Creating Account...' : 'Create Account'}
             </Button>
 
-            <div className="text-center pt-4">
-              <Link href="/login" className="text-sm font-medium"
-                style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}
+            <div style={{ textAlign: 'center', paddingTop: 'var(--space-4)' }}>
+              <Link href=”/login”
+                style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-secondary)', textDecoration: 'none' }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-primary)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}>
                 Already have an account?{' '}
@@ -153,8 +153,8 @@ export default function RegisterPage() {
           </form>
         </div>
 
-        <div className="text-center mt-8 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-          Â© 2025 Al Yafour â€” All Rights Reserved.
+        <div style={{ textAlign: 'center', marginTop: 'var(--space-8)', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+          © 2025 Al Yafour – All Rights Reserved.
         </div>
       </div>
     </div>

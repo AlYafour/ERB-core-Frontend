@@ -20,6 +20,10 @@ const statusOptions = [
   { value: 'cancelled',  label: 'Cancelled'  },
 ];
 
+const lbl = 'form-label';
+const inp = 'form-input';
+const fld = 'form-field';
+
 export default function EditProjectPage() {
   const t = useT();
   const router = useRouter();
@@ -106,8 +110,8 @@ export default function EditProjectPage() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="card text-center py-12">
-          <p style={{ color: 'var(--text-secondary)' }}>{t('btn', 'loading')}</p>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('btn', 'loading')}</p>
         </div>
       </MainLayout>
     );
@@ -116,8 +120,8 @@ export default function EditProjectPage() {
   if (!project) {
     return (
       <MainLayout>
-        <div className="card text-center py-12">
-          <p style={{ color: 'var(--text-secondary)' }}>{t('page', 'projects')} {t('empty', 'notFound')}</p>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('page', 'projects')} {t('empty', 'notFound')}</p>
         </div>
       </MainLayout>
     );
@@ -132,48 +136,38 @@ export default function EditProjectPage() {
           breadcrumbs={[{ label: t('page', 'projects'), href: '/projects' }, { label: t('page', 'editProject') }]}
         />
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
 
           {/* Basic Information */}
           <div className="card">
-            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+            <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', marginBottom: 'var(--space-4)', marginTop: 0, color: 'var(--text-primary)' }}>
               {t('section', 'basicInfo')}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>
-                  {t('field', 'projectCode')} *
-                </label>
-                <input type="text" required value={formData.code} className="input w-full"
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
+              <div className={fld}>
+                <label className={lbl}>{t('field', 'projectCode')} *</label>
+                <input type="text" required value={formData.code} className={inp}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value })} />
               </div>
-              <div className="md:col-span-2">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>
-                  {t('field', 'projectName')} *
-                </label>
-                <input type="text" required value={formData.name} className="input w-full"
+              <div className={fld} style={{ gridColumn: 'span 2' }}>
+                <label className={lbl}>{t('field', 'projectName')} *</label>
+                <input type="text" required value={formData.name} className={inp}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
               </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>
-                  {t('field', 'projectNameAr')}
-                </label>
-                <input type="text" dir="rtl" value={formData.name_ar} className="input w-full"
+              <div className={fld}>
+                <label className={lbl}>{t('field', 'projectNameAr')}</label>
+                <input type="text" dir="rtl" value={formData.name_ar} className={inp}
                   placeholder="اسم المشروع بالعربي"
                   onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })} />
               </div>
-              <div className="md:col-span-3">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>
-                  {t('field', 'location')}
-                </label>
-                <input type="text" value={formData.location} className="input w-full"
+              <div className={fld} style={{ gridColumn: '1 / -1' }}>
+                <label className={lbl}>{t('field', 'location')}</label>
+                <input type="text" value={formData.location} className={inp}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })} />
               </div>
-              <div className="md:col-span-3">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>
-                  {t('field', 'description')}
-                </label>
-                <textarea value={formData.description} rows={3} className="input w-full"
+              <div className={fld} style={{ gridColumn: '1 / -1' }}>
+                <label className={lbl}>{t('field', 'description')}</label>
+                <textarea value={formData.description} rows={3} className="form-textarea"
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
               </div>
             </div>
@@ -181,19 +175,17 @@ export default function EditProjectPage() {
 
           {/* Responsible Engineer + Contact */}
           <div className="card">
-            <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+            <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', marginBottom: 'var(--space-1)', marginTop: 0, color: 'var(--text-primary)' }}>
               {t('section', 'contactInfo')}
             </h2>
-            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+            <p style={{ fontSize: 'var(--text-sm)', marginBottom: 'var(--space-4)', color: 'var(--text-secondary)', marginTop: 0 }}>
               {t('field', 'staffMember')} — {t('role', 'site_engineer')}
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-4)' }}>
 
               {/* Engineer selector */}
-              <div className="md:col-span-2">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>
-                  {t('role', 'site_engineer')} ({t('misc', 'optional')})
-                </label>
+              <div className={fld} style={{ gridColumn: '1 / -1' }}>
+                <label className={lbl}>{t('role', 'site_engineer')} ({t('misc', 'optional')})</label>
                 <SearchableDropdown
                   options={[
                     { value: '', label: `— ${t('misc', 'selectRole')} —` },
@@ -208,23 +200,34 @@ export default function EditProjectPage() {
                   placeholder={`${t('misc', 'selectRole')}...`}
                 />
 
-                {/* Selected engineer info card */}
                 {selectedEngineer && (
                   <div
-                    className="mt-2 flex items-center gap-3 px-3 py-2 rounded-lg"
-                    style={{ background: 'var(--sidebar-active-bg)', border: '1px solid var(--color-primary)' }}
+                    style={{
+                      marginTop: 'var(--space-2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--space-3)',
+                      padding: 'var(--space-2) var(--space-3)',
+                      borderRadius: 'var(--radius-lg)',
+                      background: 'var(--sidebar-active-bg)',
+                      border: '1px solid var(--color-primary)',
+                    }}
                   >
                     <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                      style={{ background: 'var(--color-primary)', color: '#fff' }}
+                      style={{
+                        width: 32, height: 32, borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-bold)', flexShrink: 0,
+                        background: 'var(--color-primary)', color: '#fff',
+                      }}
                     >
                       {(selectedEngineer.first_name?.[0] ?? selectedEngineer.username[0]).toUpperCase()}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
                         {`${selectedEngineer.first_name} ${selectedEngineer.last_name}`.trim() || selectedEngineer.username}
                       </div>
-                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
                         {selectedEngineer.job_title || t('role', 'site_engineer')}
                         {selectedEngineer.phone ? ` · ${selectedEngineer.phone}` : ''}
                         {selectedEngineer.email ? ` · ${selectedEngineer.email}` : ''}
@@ -233,8 +236,7 @@ export default function EditProjectPage() {
                     <button
                       type="button"
                       onClick={() => setFormData(f => ({ ...f, responsible_engineer: null }))}
-                      className="text-xs px-2 py-1 rounded"
-                      style={{ color: 'var(--text-secondary)' }}
+                      style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-2)', borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
                     >
                       ✕
                     </button>
@@ -242,19 +244,15 @@ export default function EditProjectPage() {
                 )}
               </div>
 
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>
-                  {t('field', 'contactPerson')}
-                </label>
-                <input type="text" value={formData.contact_person} className="input w-full"
+              <div className={fld}>
+                <label className={lbl}>{t('field', 'contactPerson')}</label>
+                <input type="text" value={formData.contact_person} className={inp}
                   onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })} />
               </div>
 
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>
-                  {t('field', 'mobileNumber')}
-                </label>
-                <input type="text" value={formData.mobile_number} className="input w-full"
+              <div className={fld}>
+                <label className={lbl}>{t('field', 'mobileNumber')}</label>
+                <input type="text" value={formData.mobile_number} className={inp}
                   onChange={(e) => setFormData({ ...formData, mobile_number: e.target.value })} />
               </div>
             </div>
@@ -262,29 +260,23 @@ export default function EditProjectPage() {
 
           {/* Project Details */}
           <div className="card">
-            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+            <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', marginBottom: 'var(--space-4)', marginTop: 0, color: 'var(--text-primary)' }}>
               {t('section', 'projectDetails')}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>
-                  {t('field', 'sector')}
-                </label>
-                <input type="text" value={formData.sector} className="input w-full"
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
+              <div className={fld}>
+                <label className={lbl}>{t('field', 'sector')}</label>
+                <input type="text" value={formData.sector} className={inp}
                   onChange={(e) => setFormData({ ...formData, sector: e.target.value })} />
               </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>
-                  {t('field', 'plot')}
-                </label>
-                <input type="text" value={formData.plot} className="input w-full"
+              <div className={fld}>
+                <label className={lbl}>{t('field', 'plot')}</label>
+                <input type="text" value={formData.plot} className={inp}
                   onChange={(e) => setFormData({ ...formData, plot: e.target.value })} />
               </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>
-                  {t('field', 'consultant')}
-                </label>
-                <input type="text" value={formData.consultant} className="input w-full"
+              <div className={fld}>
+                <label className={lbl}>{t('field', 'consultant')}</label>
+                <input type="text" value={formData.consultant} className={inp}
                   onChange={(e) => setFormData({ ...formData, consultant: e.target.value })} />
               </div>
             </div>
@@ -292,10 +284,10 @@ export default function EditProjectPage() {
 
           {/* Status */}
           <div className="card">
-            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+            <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', marginBottom: 'var(--space-4)', marginTop: 0, color: 'var(--text-primary)' }}>
               {t('section', 'status')}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
               <div>
                 <SearchableDropdown
                   label={t('field', 'projectStatus')}
@@ -305,11 +297,11 @@ export default function EditProjectPage() {
                   placeholder="Select Status"
                 />
               </div>
-              <div className="flex items-center gap-2">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 <input type="checkbox" id="is_active" checked={formData.is_active}
                   onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="w-4 h-4" />
-                <label htmlFor="is_active" className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                  style={{ width: 16, height: 16 }} />
+                <label htmlFor="is_active" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
                   {t('field', 'isActive')}
                 </label>
               </div>
@@ -317,7 +309,7 @@ export default function EditProjectPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
             <Link href="/projects"><Button variant="secondary">{t('btn', 'cancel')}</Button></Link>
             <Button type="submit" variant="primary" disabled={mutation.isPending} isLoading={mutation.isPending}>
               {t('btn', 'update')}

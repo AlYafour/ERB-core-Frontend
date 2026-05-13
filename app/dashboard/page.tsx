@@ -52,11 +52,11 @@ const PIE_STATUS_COLORS = [C.amber, C.green, C.red, C.teal];
 /* ─── Reusable: Section header with optional "View All" link ─────── */
 function SectionHeader({ title, viewAllLabel, href, size = 'lg' }: { title: string; viewAllLabel?: string; href?: string; size?: 'base' | 'lg' }) {
   return (
-    <div className="flex items-center justify-between mb-4">
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
       <h2
         style={{
-          fontSize: size === 'lg' ? 'var(--font-lg)' : 'var(--font-base)',
-          fontWeight: 'var(--font-weight-semibold)',
+          fontSize: size === 'lg' ? 'var(--text-lg)' : 'var(--text-base)',
+          fontWeight: 'var(--weight-semibold)',
           color: 'var(--text-primary)',
           margin: 0,
         }}
@@ -66,8 +66,7 @@ function SectionHeader({ title, viewAllLabel, href, size = 'lg' }: { title: stri
       {href && (
         <Link
           href={href}
-          className="text-xs transition-colors"
-          style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}
+          style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textDecoration: 'none' }}
           onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
         >
@@ -93,7 +92,7 @@ function MetricGroup({ title, href, metrics }: { title: string; href: string; me
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${metrics.length}, 1fr)`, gap: 0 }}>
         {metrics.map((m, i) => (
-          <Link key={i} href={m.href} style={{ textDecoration: 'none', padding: '0 16px 0 0', borderRight: i < metrics.length - 1 ? '1px solid var(--border-primary)' : 'none', marginRight: i < metrics.length - 1 ? 16 : 0 }}>
+          <Link key={i} href={m.href} style={{ textDecoration: 'none', padding: '0 16px 0 0', borderRight: i < metrics.length - 1 ? '1px solid var(--border-subtle)' : 'none', marginRight: i < metrics.length - 1 ? 16 : 0 }}>
             <div style={{ fontSize: 28, fontWeight: 800, color: m.color, lineHeight: 1, letterSpacing: '-0.02em' }}>{m.value}</div>
             <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 5, lineHeight: 1.3 }}>{m.label}</div>
           </Link>
@@ -106,9 +105,9 @@ function MetricGroup({ title, href, metrics }: { title: string; href: string; me
 /* ─── Reusable: Metric block (cycle time, etc.) ─────────────────── */
 function MetricBlock({ label, value, color }: { label: string; value: string | number; color: string }) {
   return (
-    <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-      <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</div>
-      <div className="text-xl font-bold" style={{ color }}>{value}</div>
+    <div style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--surface-subtle)' }}>
+      <div style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', marginBottom: 'var(--space-1)', color: 'var(--text-secondary)' }}>{label}</div>
+      <div style={{ fontSize: '1.25rem', fontWeight: 700, color }}>{value}</div>
     </div>
   );
 }
@@ -141,7 +140,7 @@ function StatusPieCard({ title, viewAllLabel, href, data }: {
           <Tooltip
             contentStyle={{
               backgroundColor: 'var(--card-bg)',
-              border: '1px solid var(--border-primary)',
+              border: '1px solid var(--border-subtle)',
               borderRadius: 8,
               color: 'var(--text-primary)',
               fontSize: 12,
@@ -161,7 +160,7 @@ function StatusPieCard({ title, viewAllLabel, href, data }: {
 /* ─── Reusable: Skeleton loader ─────────────────────────────────── */
 function CardSkeleton({ height = 120 }: { height?: number }) {
   return (
-    <div className="card animate-pulse" style={{ height, backgroundColor: 'var(--bg-secondary)' }} />
+    <div className="card animate-pulse" style={{ height, backgroundColor: 'var(--surface-subtle)' }} />
   );
 }
 
@@ -268,13 +267,13 @@ function DashboardContent() {
 
         {/* ── MetricGroup KPI row ─────────────────────────────────── */}
         {statsLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
             {[130, 130, 130].map((h, i) => <CardSkeleton key={i} height={h} />)}
           </div>
         )}
 
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
             <MetricGroup title="Purchase Requests" href="/purchase-requests" metrics={[
               { label: t('dash', 'prTotal'),    value: stats.purchaseRequests.total,   color: C.blue,  href: '/purchase-requests' },
               { label: t('dash', 'prPending'),  value: stats.purchaseRequests.pending, color: C.amber, href: '/purchase-requests?status=pending' },
@@ -298,13 +297,13 @@ function DashboardContent() {
 
         {/* ── Status pie charts ───────────────────────────────────── */}
         {chartsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-6)' }}>
             <CardSkeleton height={240} />
             <CardSkeleton height={240} />
             <CardSkeleton height={240} />
           </div>
         ) : chartData && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-6)' }}>
             <StatusPieCard
               title={t('dash', 'prByStatus')}
               viewAllLabel={t('dash', 'viewAll')}
@@ -340,10 +339,10 @@ function DashboardContent() {
         )}
 
         {/* ── Main content: 2/3 left + 1/3 right ─────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--space-6)' }}>
 
           {/* Left column */}
-          <div className="lg:col-span-2 space-y-6">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
 
             {/* Top spending projects */}
             {projectsLoading ? (
@@ -351,7 +350,7 @@ function DashboardContent() {
             ) : projectAnalytics && projectAnalytics.length > 0 && (
               <div className="card">
                 <SectionHeader title={t('dash', 'topProjects')} viewAllLabel={t('dash', 'viewAll')} href="/projects" />
-                <div className="overflow-x-auto">
+                <div style={{ overflowX: 'auto' }}>
                   <table>
                     <thead>
                       <tr>
@@ -368,8 +367,7 @@ function DashboardContent() {
                           <td>
                             <Link
                               href={`/projects/view/${project.id}`}
-                              className="font-medium"
-                              style={{ color: 'var(--text-primary)', textDecoration: 'none' }}
+                              style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 'var(--weight-medium)' }}
                               onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-primary)'; e.currentTarget.style.textDecoration = 'underline'; }}
                               onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.textDecoration = 'none'; }}
                             >
@@ -377,20 +375,21 @@ function DashboardContent() {
                             </Link>
                           </td>
                           <td><span style={{ color: 'var(--text-secondary)' }}>{project.code}</span></td>
-                          <td><span className="font-semibold">{formatPrice(project.totalSpending)}</span></td>
+                          <td><span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(project.totalSpending)}</span></td>
                           <td><Badge variant="info">{project.poCount}</Badge></td>
                           <td>
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-tertiary)', minWidth: 60 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                              <div style={{ flex: 1, height: 8, borderRadius: 9999, overflow: 'hidden', backgroundColor: 'var(--surface-inset)', minWidth: 60 }}>
                                 <div
-                                  className="h-full rounded-full"
                                   style={{
+                                    height: '100%',
+                                    borderRadius: 9999,
                                     width: `${project.progress}%`,
                                     backgroundColor: project.progress > 75 ? C.green : project.progress > 50 ? C.amber : C.blue,
                                   }}
                                 />
                               </div>
-                              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{project.progress}%</span>
+                              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{project.progress}%</span>
                             </div>
                           </td>
                         </tr>
@@ -407,13 +406,13 @@ function DashboardContent() {
                 <SectionHeader title={t('dash', 'monthlyVolume')} />
                 <ResponsiveContainer width="100%" height={280}>
                   <LineChart data={chartData.monthlyProcurement}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
                     <XAxis dataKey="month" stroke="var(--text-secondary)" style={{ fontSize: 11 }} />
                     <YAxis stroke="var(--text-secondary)" style={{ fontSize: 11 }} />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: 'var(--card-bg)',
-                        border: '1px solid var(--border-primary)',
+                        border: '1px solid var(--border-subtle)',
                         borderRadius: 8,
                         color: 'var(--text-primary)',
                         fontSize: 12,
@@ -432,7 +431,7 @@ function DashboardContent() {
                 <SectionHeader title={t('dash', 'projectSpending')} />
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={chartData.projectSpending} margin={{ bottom: 60 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
                     <XAxis
                       dataKey="project"
                       stroke="var(--text-secondary)"
@@ -445,7 +444,7 @@ function DashboardContent() {
                     <Tooltip
                       contentStyle={{
                         backgroundColor: 'var(--card-bg)',
-                        border: '1px solid var(--border-primary)',
+                        border: '1px solid var(--border-subtle)',
                         borderRadius: 8,
                         color: 'var(--text-primary)',
                         fontSize: 12,
@@ -460,25 +459,25 @@ function DashboardContent() {
           </div>
 
           {/* Right column */}
-          <div className="space-y-6">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
 
             {/* Procurement cycle metrics */}
             {cycleMetrics && (
               <div className="card">
                 <SectionHeader title={t('dash', 'procCycle')} />
-                <div className="space-y-3">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                   <MetricBlock label={t('dash', 'prToPoAvg')}   value={`${cycleMetrics.avgPRToPO} ${t('dash', 'days')}`}        color={C.blue} />
                   <MetricBlock label={t('dash', 'poToGrnAvg')}  value={`${cycleMetrics.avgPOToGRN} ${t('dash', 'days')}`}       color={C.green} />
                   <MetricBlock label={t('dash', 'grnToInvAvg')} value={`${cycleMetrics.avgGRNToInvoice} ${t('dash', 'days')}`}  color={C.purple} />
                 </div>
                 {cycleMetrics.bottlenecks?.length > 0 && (
-                  <div style={{ marginTop: 'var(--spacing-4)', paddingTop: 'var(--spacing-4)', borderTop: '1px solid var(--border-primary)' }}>
-                    <div className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>{t('dash', 'bottlenecks')}</div>
-                    <div className="space-y-2">
+                  <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
+                    <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', marginBottom: 'var(--space-3)', color: 'var(--text-primary)' }}>{t('dash', 'bottlenecks')}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                       {cycleMetrics.bottlenecks.map((b, i) => (
-                        <div key={i} className="flex items-center justify-between p-2 rounded" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
-                          <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{b.stage}</span>
-                          <span className="text-sm font-bold" style={{ color: b.avgDays > 7 ? C.red : b.avgDays > 3 ? C.amber : C.green }}>
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-2)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--surface-inset)' }}>
+                          <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{b.stage}</span>
+                          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: b.avgDays > 7 ? C.red : b.avgDays > 3 ? C.amber : C.green }}>
                             {b.avgDays}d
                           </span>
                         </div>
@@ -493,23 +492,22 @@ function DashboardContent() {
             {userActivity && userActivity.length > 0 && (
               <div className="card">
                 <SectionHeader title={t('dash', 'topUsers')} viewAllLabel={t('dash', 'viewAll')} href="/users" />
-                <div className="space-y-2">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                   {userActivity.slice(0, 5).map((u) => {
                     const total = u.createdPR + u.approvedRequests + u.createdPO + u.createdInvoices;
                     return (
                       <Link
                         key={u.id}
                         href={`/users/view/${u.id}`}
-                        className="block p-3 rounded-lg transition-colors"
-                        style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', textDecoration: 'none' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'; }}
+                        style={{ display: 'block', padding: 'var(--space-3)', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', textDecoration: 'none' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--surface-inset)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--surface-subtle)'; }}
                       >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{u.username}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-1)' }}>
+                          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{u.username}</span>
                           <Badge variant="info">{total}</Badge>
                         </div>
-                        <div className="grid grid-cols-2 gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-1)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
                           <span>PR: {u.createdPR}</span>
                           <span>Approved: {u.approvedRequests}</span>
                           <span>PO: {u.createdPO}</span>
@@ -533,7 +531,7 @@ function DashboardContent() {
                     <Link
                       key={`${a.type}-${a.id}`}
                       href={a.link}
-                      style={{ display: 'block', textDecoration: 'none', padding: '9px 0', borderBottom: i < 7 ? '1px solid var(--border-primary)' : 'none' }}
+                      style={{ display: 'block', textDecoration: 'none', padding: '9px 0', borderBottom: i < 7 ? '1px solid var(--border-subtle)' : 'none' }}
                       onMouseEnter={e => {
                         e.currentTarget.style.paddingLeft = '8px';
                         e.currentTarget.style.borderLeft = `2px solid ${actionBadge(a.action) === 'success' ? C.green : actionBadge(a.action) === 'error' ? C.red : C.blue}`;

@@ -13,27 +13,27 @@ import { Button, Loader, PageHeader, PageShell, WorkspaceSurface } from '@/compo
 const getNotificationIcon = (type: string) => {
   if (type.includes('approved')) {
     return (
-      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg style={{ width: 20, height: 20, color: '#16a34a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     );
   }
   if (type.includes('rejected') || type.includes('deleted')) {
     return (
-      <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg style={{ width: 20, height: 20, color: 'var(--color-error)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     );
   }
   if (type.includes('created')) {
     return (
-      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg style={{ width: 20, height: 20, color: 'var(--brand)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
       </svg>
     );
   }
   return (
-    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg style={{ width: 20, height: 20, color: 'var(--text-secondary)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
     </svg>
   );
@@ -160,7 +160,7 @@ export default function NotificationsPage() {
                     fontWeight: 500,
                     border: filter === f ? '1px solid var(--primary)' : '1px solid var(--border)',
                     background: filter === f ? 'var(--primary)' : 'transparent',
-                    color: filter === f ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
+                    color: filter === f ? 'var(--primary-foreground)' : 'var(--text-secondary)',
                     cursor: 'pointer',
                   }}
                 >
@@ -173,15 +173,15 @@ export default function NotificationsPage() {
           {isLoading ? (
             <div style={{ padding: '48px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
               <Loader />
-              <p style={{ color: 'var(--muted-foreground)', fontSize: 14 }}>Loading notifications...</p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Loading notifications...</p>
             </div>
           ) : error ? (
             <div style={{ padding: '32px 16px' }}>
-              <p style={{ color: 'var(--destructive)', fontSize: 14 }}>Error loading notifications. Please try again.</p>
+              <p style={{ color: 'var(--color-error)', fontSize: 14 }}>Error loading notifications. Please try again.</p>
             </div>
           ) : !data?.results?.length ? (
             <div style={{ padding: '64px 0', textAlign: 'center' }}>
-              <p style={{ color: 'var(--muted-foreground)', fontSize: 14 }}>No notifications found</p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>No notifications found</p>
             </div>
           ) : (
             <div>
@@ -206,13 +206,13 @@ export default function NotificationsPage() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                         <div style={{ flex: 1 }}>
-                          <p style={{ fontSize: 14, fontWeight: isUnread ? 600 : 500, color: isUnread ? 'var(--foreground)' : 'var(--muted-foreground)', margin: 0 }}>
+                          <p style={{ fontSize: 14, fontWeight: isUnread ? 600 : 500, color: isUnread ? 'var(--text-primary)' : 'var(--text-secondary)', margin: 0 }}>
                             {notification.title}
                           </p>
-                          <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginTop: 3 }}>
+                          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 3 }}>
                             {notification.message}
                           </p>
-                          <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 6, opacity: 0.7 }}>
+                          <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 6, opacity: 0.7 }}>
                             {new Date(notification.created_at).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
@@ -228,7 +228,7 @@ export default function NotificationsPage() {
 
               {data.count > 50 && (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderTop: '1px solid var(--border-subtle)' }}>
-                  <span style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>
+                  <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
                     {((page - 1) * 50) + 1}–{Math.min(page * 50, data.count)} of {data.count}
                   </span>
                   <div style={{ display: 'flex', gap: 6 }}>

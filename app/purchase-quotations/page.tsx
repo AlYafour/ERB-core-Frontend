@@ -78,7 +78,7 @@ export default function PurchaseQuotationsPage() {
   const currentIds = quotations.map((q: PurchaseQuotation) => q.id);
 
   const columns: Column<PurchaseQuotation>[] = [
-    { key: 'number', header: t('col', 'quotationNumber'), render: q => <span className="font-medium text-foreground">{q.quotation_number}</span> },
+    { key: 'number', header: t('col', 'quotationNumber'), render: q => <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{q.quotation_number}</span> },
     {
       key: 'status', header: t('col', 'status'),
       render: q => <Badge variant={PQ_STATUS[q.status ?? 'pending'] ?? 'info'}>{STATUS_LABEL[q.status ?? 'pending'] || q.status}</Badge>,
@@ -88,8 +88,8 @@ export default function PurchaseQuotationsPage() {
       render: q => {
         const prId = q.purchase_request_id ?? resolveId(q.purchase_request as any);
         return q.purchase_request_code && prId
-          ? <Link href={`/purchase-requests/${prId}`} className="text-primary hover:underline">{q.purchase_request_code}</Link>
-          : <span className="text-muted-foreground">—</span>;
+          ? <Link href={`/purchase-requests/${prId}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }} onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none'; }}>{q.purchase_request_code}</Link>
+          : <span style={{ color: 'var(--text-secondary)' }}>—</span>;
       },
     },
     {
@@ -97,27 +97,27 @@ export default function PurchaseQuotationsPage() {
       render: q => {
         const qrId = q.quotation_request_id ?? resolveId(q.quotation_request as any);
         return q.quotation_request_code && qrId
-          ? <Link href={`/quotation-requests/${qrId}`} className="text-primary hover:underline">{q.quotation_request_code}</Link>
-          : <span className="text-muted-foreground">—</span>;
+          ? <Link href={`/quotation-requests/${qrId}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }} onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none'; }}>{q.quotation_request_code}</Link>
+          : <span style={{ color: 'var(--text-secondary)' }}>—</span>;
       },
     },
     {
       key: 'project', header: 'Project',
       render: q => q.project_name
-        ? <div><div className="font-medium text-foreground">{q.project_name}</div>{q.project_code && <div className="text-xs text-muted-foreground font-mono">{q.project_code}</div>}</div>
-        : <span className="text-muted-foreground">—</span>,
+        ? <div><div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{q.project_name}</div>{q.project_code && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{q.project_code}</div>}</div>
+        : <span style={{ color: 'var(--text-secondary)' }}>—</span>,
     },
     {
       key: 'supplier', header: t('col', 'supplier'),
-      render: q => <span className="text-foreground">{typeof q.supplier === 'object' && q.supplier ? q.supplier.business_name || q.supplier.name || 'N/A' : 'N/A'}</span>,
+      render: q => <span style={{ color: 'var(--text-primary)' }}>{typeof q.supplier === 'object' && q.supplier ? q.supplier.business_name || q.supplier.name || 'N/A' : 'N/A'}</span>,
     },
-    { key: 'date',     header: t('col', 'requestDate'),  render: q => <span className="text-muted-foreground">{new Date(q.quotation_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span> },
-    { key: 'delivery', header: t('col', 'deliveryMethod'), render: q => <span className="text-foreground">{q.delivery_method ? (q.delivery_method === 'pickup' ? 'Pick Up' : 'Delivery') : '—'}</span> },
-    { key: 'total',    header: t('col', 'totalAmount'),  render: q => <span className="font-medium text-foreground">{formatPrice(q.total || 0)}</span> },
+    { key: 'date',     header: t('col', 'requestDate'),  render: q => <span style={{ color: 'var(--text-secondary)' }}>{new Date(q.quotation_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span> },
+    { key: 'delivery', header: t('col', 'deliveryMethod'), render: q => <span style={{ color: 'var(--text-primary)' }}>{q.delivery_method ? (q.delivery_method === 'pickup' ? 'Pick Up' : 'Delivery') : '—'}</span> },
+    { key: 'total',    header: t('col', 'totalAmount'),  render: q => <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{formatPrice(q.total || 0)}</span> },
     {
       key: 'actions', header: t('col', 'actions'),
       render: q => (
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           {canView && <Link href={`/purchase-quotations/${q.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>}
           {canDelete && <Button variant="delete" size="sm" onClick={() => handleDelete(q.id)} isLoading={deleteMutation.isPending}>{t('btn', 'delete')}</Button>}
         </div>

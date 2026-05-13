@@ -6,7 +6,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { projectsApi } from '@/lib/api/projects';
 import { usersApi } from '@/lib/api/users';
 import { User } from '@/types';
-import { Button } from '@/components/ui';
+import { Button, PageShell } from '@/components/ui';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import { toast } from '@/lib/hooks/use-toast';
@@ -77,49 +77,48 @@ export default function NewProjectPage() {
 
   return (
     <MainLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
+      <PageShell>
         {/* Header */}
         <div>
           <Link
             href="/projects"
-            className="text-sm mb-2 inline-block"
-            style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}
+            style={{ fontSize: 'var(--text-sm)', marginBottom: 'var(--space-2)', display: 'inline-block', color: 'var(--text-secondary)', textDecoration: 'none' }}
             onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
           >
             ← {t('btn', 'back')} {t('page', 'projects')}
           </Link>
-          <h1 style={{ fontSize: 'var(--font-2xl)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', margin: 0, marginBottom: 'var(--spacing-1)' }}>
+          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', margin: 0, marginBottom: 'var(--space-1)' }}>
             {t('page', 'newProject')}
           </h1>
-          <p style={{ fontSize: 'var(--font-sm)', color: 'var(--text-secondary)', margin: 0 }}>
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
             {t('page', 'newProjectSubtitle')}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
 
           {/* Basic Information */}
           <div className="card">
-            <h2 style={{ fontSize: 'var(--font-lg)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', margin: 0, marginBottom: 'var(--spacing-4)' }}>
+            <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', margin: 0, marginBottom: 'var(--space-4)' }}>
               {t('section', 'basicInfo')}
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--spacing-4)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--space-4)' }}>
               <FormField label={t('field', 'projectCode')} required>
                 <input type="text" required value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value })} className="input" />
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value })} className="form-input" />
               </FormField>
 
               <div style={{ gridColumn: 'span 2' }}>
                 <FormField label={t('field', 'projectName')} required>
                   <input type="text" required value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="input" />
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="form-input" />
                 </FormField>
               </div>
 
               <div style={{ gridColumn: 'span 2' }}>
                 <FormField label={t('field', 'projectNameAr')}>
-                  <input type="text" className="input" dir="rtl" placeholder="اسم المشروع بالعربي"
+                  <input type="text" className="form-input" dir="rtl" placeholder="اسم المشروع بالعربي"
                     value={formData.name_ar}
                     onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })} />
                 </FormField>
@@ -128,7 +127,7 @@ export default function NewProjectPage() {
               <div style={{ gridColumn: '1 / -1' }}>
                 <FormField label={t('field', 'location')}>
                   <input type="text" value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })} className="input" />
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })} className="form-input" />
                 </FormField>
               </div>
 
@@ -136,7 +135,7 @@ export default function NewProjectPage() {
                 <FormField label={t('field', 'description')}>
                   <textarea value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows={3} className="input" />
+                    rows={3} className="form-textarea" />
                 </FormField>
               </div>
             </div>
@@ -144,13 +143,13 @@ export default function NewProjectPage() {
 
           {/* Responsible Engineer */}
           <div className="card">
-            <h2 style={{ fontSize: 'var(--font-lg)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', margin: 0, marginBottom: 'var(--spacing-1)' }}>
+            <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', margin: 0, marginBottom: 'var(--space-1)' }}>
               {t('section', 'contactInfo')}
             </h2>
-            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+            <p style={{ fontSize: 'var(--text-sm)', marginBottom: 'var(--space-4)', marginTop: 0, color: 'var(--text-secondary)' }}>
               {t('field', 'staffMember')} — {t('role', 'site_engineer')}
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--spacing-4)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--space-4)' }}>
 
               {/* Engineer selector */}
               <div style={{ gridColumn: '1 / -1' }}>
@@ -173,20 +172,30 @@ export default function NewProjectPage() {
                 {/* Engineer info card — shown when selected */}
                 {selectedEngineer && (
                   <div
-                    className="mt-2 flex items-center gap-3 px-3 py-2 rounded-lg"
-                    style={{ background: 'var(--sidebar-active-bg)', border: '1px solid var(--color-primary)' }}
+                    style={{
+                      marginTop: 'var(--space-2)',
+                      display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                      padding: 'var(--space-2) var(--space-3)',
+                      borderRadius: 'var(--radius-lg)',
+                      background: 'var(--sidebar-active-bg)',
+                      border: '1px solid var(--color-primary)',
+                    }}
                   >
                     <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                      style={{ background: 'var(--color-primary)', color: '#fff' }}
+                      style={{
+                        width: 32, height: 32, borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-bold)', flexShrink: 0,
+                        background: 'var(--color-primary)', color: '#fff',
+                      }}
                     >
                       {(selectedEngineer.first_name?.[0] ?? selectedEngineer.username[0]).toUpperCase()}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
                         {`${selectedEngineer.first_name} ${selectedEngineer.last_name}`.trim() || selectedEngineer.username}
                       </div>
-                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
                         {selectedEngineer.job_title || t('role', 'site_engineer')}
                         {selectedEngineer.phone ? ` · ${selectedEngineer.phone}` : ''}
                       </div>
@@ -194,8 +203,7 @@ export default function NewProjectPage() {
                     <button
                       type="button"
                       onClick={() => setFormData(f => ({ ...f, responsible_engineer: null }))}
-                      className="text-xs px-2 py-1 rounded"
-                      style={{ color: 'var(--text-secondary)' }}
+                      style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-2)', borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
                     >
                       ✕
                     </button>
@@ -206,13 +214,13 @@ export default function NewProjectPage() {
               <FormField label={t('field', 'contactPerson')}>
                 <input type="text" value={formData.contact_person}
                   onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })}
-                  className="input" placeholder={t('misc', 'optional')} />
+                  className="form-input" placeholder={t('misc', 'optional')} />
               </FormField>
 
               <FormField label={t('field', 'mobileNumber')}>
                 <input type="text" value={formData.mobile_number}
                   onChange={(e) => setFormData({ ...formData, mobile_number: e.target.value })}
-                  className="input"
+                  className="form-input"
                   placeholder={selectedEngineer ? '' : t('misc', 'optional')}
                 />
               </FormField>
@@ -221,31 +229,31 @@ export default function NewProjectPage() {
 
           {/* Project Details */}
           <div className="card">
-            <h2 style={{ fontSize: 'var(--font-lg)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', margin: 0, marginBottom: 'var(--spacing-4)' }}>
+            <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', margin: 0, marginBottom: 'var(--space-4)' }}>
               {t('section', 'projectDetails')}
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--spacing-4)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--space-4)' }}>
               <FormField label={t('field', 'sector')}>
                 <input type="text" value={formData.sector}
-                  onChange={(e) => setFormData({ ...formData, sector: e.target.value })} className="input" />
+                  onChange={(e) => setFormData({ ...formData, sector: e.target.value })} className="form-input" />
               </FormField>
               <FormField label={t('field', 'plot')}>
                 <input type="text" value={formData.plot}
-                  onChange={(e) => setFormData({ ...formData, plot: e.target.value })} className="input" />
+                  onChange={(e) => setFormData({ ...formData, plot: e.target.value })} className="form-input" />
               </FormField>
               <FormField label={t('field', 'consultant')}>
                 <input type="text" value={formData.consultant}
-                  onChange={(e) => setFormData({ ...formData, consultant: e.target.value })} className="input" />
+                  onChange={(e) => setFormData({ ...formData, consultant: e.target.value })} className="form-input" />
               </FormField>
             </div>
           </div>
 
           {/* Status */}
           <div className="card">
-            <h2 style={{ fontSize: 'var(--font-lg)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', margin: 0, marginBottom: 'var(--spacing-4)' }}>
+            <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', margin: 0, marginBottom: 'var(--space-4)' }}>
               {t('section', 'status')}
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--spacing-4)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--space-4)' }}>
               <FormField label={t('field', 'projectStatus')}>
                 <SearchableDropdown
                   options={statusOptions}
@@ -254,11 +262,11 @@ export default function NewProjectPage() {
                   placeholder="Select Status"
                 />
               </FormField>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 <input type="checkbox" id="is_active" checked={formData.is_active}
                   onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                   style={{ width: '16px', height: '16px' }} />
-                <label htmlFor="is_active" style={{ fontSize: 'var(--font-sm)', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                <label htmlFor="is_active" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)', cursor: 'pointer' }}>
                   {t('field', 'isActive')}
                 </label>
               </div>
@@ -266,14 +274,14 @@ export default function NewProjectPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
             <Link href="/projects"><Button variant="secondary">{t('btn', 'cancel')}</Button></Link>
             <Button type="submit" variant="primary" disabled={mutation.isPending} isLoading={mutation.isPending}>
               {t('btn', 'create')}
             </Button>
           </div>
         </form>
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

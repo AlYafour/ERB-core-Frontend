@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseQuotationsApi } from '@/lib/api/purchase-quotations';
 import MainLayout from '@/components/layout/MainLayout';
+import { Button, PageShell } from '@/components/ui';
 import PageHeader from '@/components/ui/PageHeader';
 import Link from 'next/link';
 import { formatPrice } from '@/lib/utils/format';
@@ -88,10 +89,8 @@ export default function PurchaseQuotationDetailPage() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('btn', 'loading')}</p>
-          </div>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('btn', 'loading')}</p>
         </div>
       </MainLayout>
     );
@@ -100,10 +99,8 @@ export default function PurchaseQuotationDetailPage() {
   if (!quotation) {
     return (
       <MainLayout>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('empty', 'notFound')}</p>
-          </div>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('empty', 'notFound')}</p>
         </div>
       </MainLayout>
     );
@@ -122,7 +119,7 @@ export default function PurchaseQuotationDetailPage() {
 
   return (
     <MainLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
+      <PageShell>
         {/* Header */}
         <PageHeader
           backHref="/purchase-quotations"
@@ -151,24 +148,24 @@ export default function PurchaseQuotationDetailPage() {
           <div style={{ 
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
+            gap: 'var(--space-4)',
           }}>
             {(quotation.project_name || quotation.project_code) && (
               <div>
                 <label style={{
                   display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--weight-medium)',
                   color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
+                  marginBottom: 'var(--space-2)',
                 }}>
                   Project
                 </label>
-                <p style={{ fontSize: 'var(--font-base)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', margin: 0 }}>
+                <p style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', margin: 0 }}>
                   {quotation.project_name}
                 </p>
                 {quotation.project_code && (
-                  <p style={{ fontSize: 'var(--font-sm)', color: 'var(--text-secondary)', margin: 0, fontFamily: 'monospace' }}>
+                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0, fontFamily: 'monospace' }}>
                     {quotation.project_code}
                   </p>
                 )}
@@ -177,16 +174,16 @@ export default function PurchaseQuotationDetailPage() {
             <div>
               <label style={{
                 display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'var(--weight-medium)',
                 color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
               }}>
                 {t('col', 'supplier')}
               </label>
               <p style={{ 
-                fontSize: 'var(--font-base)',
-                fontWeight: 'var(--font-weight-semibold)',
+                fontSize: 'var(--text-base)',
+                fontWeight: 'var(--weight-semibold)',
                 color: 'var(--text-primary)',
                 margin: 0,
               }}>
@@ -196,15 +193,15 @@ export default function PurchaseQuotationDetailPage() {
             <div>
               <label style={{ 
                 display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'var(--weight-medium)',
                 color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
               }}>
                 Quotation Date
               </label>
               <p style={{ 
-                fontSize: 'var(--font-base)',
+                fontSize: 'var(--text-base)',
                 color: 'var(--text-primary)',
                 margin: 0,
               }}>
@@ -214,15 +211,15 @@ export default function PurchaseQuotationDetailPage() {
             <div>
               <label style={{ 
                 display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'var(--weight-medium)',
                 color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
               }}>
                 Valid Until
               </label>
               <p style={{ 
-                fontSize: 'var(--font-base)',
+                fontSize: 'var(--text-base)',
                 color: 'var(--text-primary)',
                 margin: 0,
               }}>
@@ -235,15 +232,15 @@ export default function PurchaseQuotationDetailPage() {
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ 
                   display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--weight-medium)',
                   color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
+                  marginBottom: 'var(--space-2)',
                 }}>
                   Payment Terms
                 </label>
                 <p style={{ 
-                  fontSize: 'var(--font-base)',
+                  fontSize: 'var(--text-base)',
                   color: 'var(--text-primary)',
                   margin: 0,
                 }}>
@@ -255,15 +252,15 @@ export default function PurchaseQuotationDetailPage() {
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ 
                   display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--weight-medium)',
                   color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
+                  marginBottom: 'var(--space-2)',
                 }}>
                   Delivery Terms
                 </label>
                 <p style={{ 
-                  fontSize: 'var(--font-base)',
+                  fontSize: 'var(--text-base)',
                   color: 'var(--text-primary)',
                   margin: 0,
                 }}>
@@ -275,15 +272,15 @@ export default function PurchaseQuotationDetailPage() {
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ 
                   display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--weight-medium)',
                   color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
+                  marginBottom: 'var(--space-2)',
                 }}>
                   {t('col', 'notes')}
                 </label>
                 <p style={{
-                  fontSize: 'var(--font-base)',
+                  fontSize: 'var(--text-base)',
                   color: 'var(--text-primary)',
                   margin: 0,
                 }}>
@@ -295,15 +292,15 @@ export default function PurchaseQuotationDetailPage() {
               <div>
                 <label style={{ 
                   display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--weight-medium)',
                   color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
+                  marginBottom: 'var(--space-2)',
                 }}>
                   Awarded By
                 </label>
                 <p style={{ 
-                  fontSize: 'var(--font-base)',
+                  fontSize: 'var(--text-base)',
                   color: 'var(--text-primary)',
                   margin: 0,
                 }}>
@@ -315,15 +312,15 @@ export default function PurchaseQuotationDetailPage() {
               <div>
                 <label style={{ 
                   display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--weight-medium)',
                   color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
+                  marginBottom: 'var(--space-2)',
                 }}>
                   Awarded At
                 </label>
                 <p style={{ 
-                  fontSize: 'var(--font-base)',
+                  fontSize: 'var(--text-base)',
                   color: 'var(--text-primary)',
                   margin: 0,
                 }}>
@@ -337,11 +334,11 @@ export default function PurchaseQuotationDetailPage() {
         {/* Items Section - Unified */}
         <div className="card">
           <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
+            fontSize: 'var(--text-lg)',
+            fontWeight: 'var(--weight-semibold)',
             color: 'var(--text-primary)',
             margin: 0,
-            marginBottom: 'var(--spacing-4)',
+            marginBottom: 'var(--space-4)',
           }}>
             {t('col', 'product')}
           </h3>
@@ -373,7 +370,7 @@ export default function PurchaseQuotationDetailPage() {
                       <td>
                         <div
                           style={{
-                            fontWeight: 'var(--font-weight-medium)',
+                            fontWeight: 'var(--weight-medium)',
                             color: 'var(--text-primary)',
                           }}
                         >
@@ -381,7 +378,7 @@ export default function PurchaseQuotationDetailPage() {
                         </div>
                         <div
                           style={{
-                            fontSize: 'var(--font-xs)',
+                            fontSize: 'var(--text-xs)',
                             color: 'var(--text-secondary)',
                           }}
                         >
@@ -408,7 +405,7 @@ export default function PurchaseQuotationDetailPage() {
                       <td>
                         <div
                           style={{
-                            fontWeight: 'var(--font-weight-semibold)',
+                            fontWeight: 'var(--weight-semibold)',
                             color: 'var(--text-primary)',
                           }}
                         >
@@ -426,15 +423,15 @@ export default function PurchaseQuotationDetailPage() {
         {/* Summary - Unified */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <div style={{ width: '256px', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2)' }}>
+            <div style={{ width: '256px', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               <div style={{ 
                 display: 'flex',
                 justifyContent: 'space-between',
-                fontSize: 'var(--font-sm)',
+                fontSize: 'var(--text-sm)',
               }}>
                 <span style={{ color: 'var(--text-secondary)' }}>Subtotal:</span>
                 <span style={{ 
-                  fontWeight: 'var(--font-weight-semibold)',
+                  fontWeight: 'var(--weight-semibold)',
                   color: 'var(--text-primary)',
                 }}>
                   {formatPrice(Number(quotation.subtotal || 0))}
@@ -443,11 +440,11 @@ export default function PurchaseQuotationDetailPage() {
               <div style={{ 
                 display: 'flex',
                 justifyContent: 'space-between',
-                fontSize: 'var(--font-sm)',
+                fontSize: 'var(--text-sm)',
               }}>
                 <span style={{ color: 'var(--text-secondary)' }}>Discount:</span>
                 <span style={{ 
-                  fontWeight: 'var(--font-weight-semibold)',
+                  fontWeight: 'var(--weight-semibold)',
                   color: 'var(--text-primary)',
                 }}>
                   {formatPrice(Number(quotation.discount || 0))}
@@ -456,11 +453,11 @@ export default function PurchaseQuotationDetailPage() {
               <div style={{ 
                 display: 'flex',
                 justifyContent: 'space-between',
-                fontSize: 'var(--font-sm)',
+                fontSize: 'var(--text-sm)',
               }}>
                 <span style={{ color: 'var(--text-secondary)' }}>Tax:</span>
                 <span style={{ 
-                  fontWeight: 'var(--font-weight-semibold)',
+                  fontWeight: 'var(--weight-semibold)',
                   color: 'var(--text-primary)',
                 }}>
                   {formatPrice(Number(quotation.tax_amount || 0))}
@@ -469,18 +466,18 @@ export default function PurchaseQuotationDetailPage() {
               <div style={{ 
                 display: 'flex',
                 justifyContent: 'space-between',
-                borderTop: `1px solid var(--border-primary)`,
-                paddingTop: 'var(--spacing-2)',
-                fontSize: 'var(--font-base)',
+                borderTop: `1px solid var(--border-subtle)`,
+                paddingTop: 'var(--space-2)',
+                fontSize: 'var(--text-base)',
               }}>
                 <span style={{
-                  fontWeight: 'var(--font-weight-bold)',
+                  fontWeight: 'var(--weight-bold)',
                   color: 'var(--text-primary)',
                 }}>
                   {t('col', 'total')}:
                 </span>
                 <span style={{ 
-                  fontWeight: 'var(--font-weight-bold)',
+                  fontWeight: 'var(--weight-bold)',
                   color: 'var(--text-primary)',
                 }}>
                   {formatPrice(Number(quotation.total || 0))}
@@ -491,81 +488,55 @@ export default function PurchaseQuotationDetailPage() {
         </div>
 
         {/* Actions - Unified */}
-        <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+        <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
           {quotationStatus === 'pending' && (canAward || canReject) && (
             <>
               {canAward && !quotation.has_awarded_quotation && (
-                <button
+                <Button
+                  variant="success"
+                  disabled={awardMutation.isPending || quotation.has_awarded_quotation}
+                  isLoading={awardMutation.isPending}
                   onClick={() => {
-                    const guard = canAwardQuotation(
-                      quotationStatus,
-                      quotation.valid_until ?? undefined,
-                      canAward
-                    );
-                    // canAward is already passed from hasPermission check
-                    if (!guard.canProceed) {
-                      toast(guard.reason || 'Cannot award quotation', 'error');
-                      return;
-                    }
-                    // Check if PR already has an awarded quotation
-                    if (quotation.has_awarded_quotation) {
-                      toast('This Purchase Request already has an awarded quotation. Cannot award another quotation for the same PR.', 'error');
-                      return;
-                    }
+                    const guard = canAwardQuotation(quotationStatus, quotation.valid_until ?? undefined, canAward);
+                    if (!guard.canProceed) { toast(guard.reason || 'Cannot award quotation', 'error'); return; }
+                    if (quotation.has_awarded_quotation) { toast('This Purchase Request already has an awarded quotation.', 'error'); return; }
                     awardMutation.mutate();
                   }}
-                  disabled={awardMutation.isPending || quotation.has_awarded_quotation}
-                  className="btn btn-success"
-                  title={
-                    quotation.has_awarded_quotation 
-                      ? 'This Purchase Request already has an awarded quotation' 
-                      : !canAward 
-                        ? 'You do not have permission to award' 
-                        : ''
-                  }
                 >
-                  {awardMutation.isPending ? t('btn', 'loading') : t('btn', 'approve')}
-                </button>
+                  {t('btn', 'approve')}
+                </Button>
               )}
               {quotation.has_awarded_quotation && (
-                <p style={{ 
-                  fontSize: 'var(--font-sm)', 
-                  color: 'var(--color-warning)', 
-                  margin: 0 
-                }}>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-warning)', margin: 0 }}>
                   This Purchase Request already has an awarded quotation. Cannot award another quotation.
                 </p>
               )}
               {canReject && (
-                <button
-                  onClick={() => rejectMutation.mutate()}
+                <Button
+                  variant="destructive"
                   disabled={rejectMutation.isPending}
-                  className="btn btn-destructive"
-                  title={!canReject ? 'You do not have permission to reject' : ''}
+                  isLoading={rejectMutation.isPending}
+                  onClick={() => rejectMutation.mutate()}
                 >
-                  {rejectMutation.isPending ? t('btn', 'loading') : t('btn', 'reject')}
-                </button>
+                  {t('btn', 'reject')}
+                </Button>
               )}
             </>
           )}
           {quotationStatus === 'awarded' && canConvert && (
-            <button
+            <Button
+              variant="primary"
               onClick={() => {
                 const guard = canCreatePurchaseOrder(quotationStatus);
-                if (!guard.canProceed) {
-                  toast(guard.reason || 'Cannot create purchase order', 'error');
-                  return;
-                }
+                if (!guard.canProceed) { toast(guard.reason || 'Cannot create purchase order', 'error'); return; }
                 router.push(`/purchase-orders/new?purchase_quotation_id=${id}`);
               }}
-              className="btn btn-primary"
-              title={!canConvert ? 'You do not have permission to convert to PO' : ''}
             >
               Convert to Purchase Order (LPO)
-            </button>
+            </Button>
           )}
         </div>
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

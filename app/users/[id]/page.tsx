@@ -19,8 +19,8 @@ function fmtDate(d?: string | null) {
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   return (
     <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-sm font-medium text-foreground mt-0.5">{value || '—'}</p>
+      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>{label}</p>
+      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', marginTop: 'var(--space-0-5)', marginBottom: 0 }}>{value || '—'}</p>
     </div>
   );
 }
@@ -28,11 +28,11 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
 function Section({ title, onEdit, children }: { title: string; onEdit?: () => void; children: React.ReactNode }) {
   return (
     <div className="card">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
+        <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', margin: 0 }}>{title}</h3>
         {onEdit && (
-          <button onClick={onEdit} className="text-xs font-medium px-3 py-1 rounded-md"
-            style={{ color: 'var(--sidebar-active-text)', background: 'var(--sidebar-active-bg)' }}>
+          <button onClick={onEdit}
+            style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', padding: 'var(--space-1) var(--space-3)', borderRadius: 'var(--radius-md)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--sidebar-active-text)', backgroundColor: 'var(--sidebar-active-bg)' }}>
             Edit
           </button>
         )}
@@ -43,10 +43,10 @@ function Section({ title, onEdit, children }: { title: string; onEdit?: () => vo
 }
 
 // ── Drawer input helpers ───────────────────────────────────────────────────────
-const inp = 'w-full px-3 py-2 rounded-md border text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40';
-const sel = inp;
-const fld = 'flex flex-col gap-1';
-const lbl = 'text-xs font-medium text-muted-foreground uppercase tracking-wide';
+const inp = 'form-input';
+const sel = 'form-select';
+const fld = 'form-field';
+const lbl = 'form-label';
 
 const ROLES = [
   { value: 'site_engineer',       label: 'Site Engineer' },
@@ -93,7 +93,6 @@ export default function UserProfilePage() {
   const openDrawer = (section: DrawerSection) => {
     setAvatarFile(null); setAvatarPreview(null); setChangePassword(false);
     setForm({
-      // account
       username:   user?.username   || '',
       email:      user?.email      || '',
       first_name: user?.first_name || '',
@@ -102,7 +101,6 @@ export default function UserProfilePage() {
       role:       user?.role       || 'site_engineer',
       is_active:  user?.is_active  ?? true,
       password: '', password2: '',
-      // employment
       employment_type:     emp?.employment_type     || 'full_time',
       join_date:           emp?.join_date           || '',
       department:          emp?.department          ?? '',
@@ -114,7 +112,6 @@ export default function UserProfilePage() {
       housing_allowance:   emp?.housing_allowance   || '0',
       transport_allowance: emp?.transport_allowance || '0',
       other_allowances:    emp?.other_allowances    || '0',
-      // personal
       gender:               emp?.gender               || '',
       date_of_birth:        emp?.date_of_birth        || '',
       nationality:          emp?.nationality          || '',
@@ -126,7 +123,6 @@ export default function UserProfilePage() {
       personal_email:       emp?.personal_email       || '',
       mobile_number:        emp?.mobile_number        || '',
       address:              emp?.address              || '',
-      // legal
       resident_id:       emp?.resident_id       || '',
       labor_card:        emp?.labor_card        || '',
       labor_card_expiry: emp?.labor_card_expiry || '',
@@ -212,15 +208,17 @@ export default function UserProfilePage() {
   // ── Loading / Error ────────────────────────────────────────────────────────
   if (uLoading || eLoading) return (
     <MainLayout>
-      <div className="flex items-center justify-center py-24">
-        <Loader className="mx-auto" />
+      <div className="card empty-state">
+        <Loader />
       </div>
     </MainLayout>
   );
 
   if (!user) return (
     <MainLayout>
-      <div className="card text-center py-20"><p className="text-destructive">User not found.</p></div>
+      <div className="card empty-state">
+        <p style={{ color: 'var(--color-error)', margin: 0 }}>User not found.</p>
+      </div>
     </MainLayout>
   );
 
@@ -235,62 +233,61 @@ export default function UserProfilePage() {
 
   return (
     <MainLayout>
-      <div className="space-y-0">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-3 mb-4">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
           <Link href="/users">
-            <button className="text-sm text-muted-foreground hover:text-foreground">← Users</button>
+            <button style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}>← Users</button>
           </Link>
-          <span className="text-muted-foreground">/</span>
-          <h1 className="text-xl font-bold text-foreground uppercase tracking-wide">{displayName}</h1>
+          <span style={{ color: 'var(--text-secondary)' }}>/</span>
+          <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{displayName}</h1>
         </div>
 
-        <div className="flex gap-6 items-start">
+        <div style={{ display: 'flex', gap: 'var(--space-6)', alignItems: 'flex-start' }}>
 
           {/* ── LEFT SIDEBAR ── */}
-          <div className="w-72 flex-shrink-0 space-y-4">
+          <div style={{ width: 288, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
             {/* Identity card */}
             <div className="card">
-              <div className="flex flex-col items-center text-center gap-3 mb-4">
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
                 {avatarSrc
-                  ? <img src={avatarSrc} alt="" className="w-24 h-24 rounded-full object-cover border-2" style={{ borderColor: 'var(--border)' }} />
-                  : <div className="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold border-2"
-                      style={{ backgroundColor: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)', borderColor: 'var(--border)' }}>
+                  ? <img src={avatarSrc} alt="" style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-subtle)' }} />
+                  : <div style={{ width: 96, height: 96, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-3xl)', fontWeight: 'var(--weight-bold)', border: '2px solid var(--border-subtle)', backgroundColor: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)' }}>
                       {avatarLetter}
                     </div>}
                 <div>
-                  <p className="font-semibold text-foreground text-sm">{displayName}</p>
-                  {emp && <p className="text-xs text-muted-foreground mt-0.5">#{emp.employee_id}</p>}
+                  <p style={{ fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)', margin: 0 }}>{displayName}</p>
+                  {emp && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 'var(--space-0-5)', marginBottom: 0 }}>#{emp.employee_id}</p>}
                 </div>
               </div>
 
-              <div className="space-y-2 text-sm mb-4">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Username</span>
-                  <span className="font-medium">@{user.username}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-4)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Username</span>
+                  <span style={{ fontWeight: 'var(--weight-medium)' }}>@{user.username}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Role</span>
-                  <span className="font-medium text-xs">{roleLabel}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Role</span>
+                  <span style={{ fontWeight: 'var(--weight-medium)', fontSize: 'var(--text-xs)' }}>{roleLabel}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Status</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Status</span>
                   <Badge className={user.is_active ? 'badge-success' : 'badge-error'}>
                     {user.is_active ? 'Active' : 'Inactive'}
                   </Badge>
                 </div>
               </div>
 
-              <Button variant="secondary" size="sm" className="w-full" onClick={() => openDrawer('account')}>
+              <Button variant="secondary" size="sm" style={{ width: '100%' }} onClick={() => openDrawer('account')}>
                 Edit Account
               </Button>
             </div>
 
             {/* Personal Info */}
             <Section title="Personal Info" onEdit={() => openDrawer('personal')}>
-              <div className="grid grid-cols-2 gap-3">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
                 <InfoRow label="Gender"      value={emp?.gender ? emp.gender.charAt(0).toUpperCase() + emp.gender.slice(1) : '—'} />
                 <InfoRow label="Nationality" value={emp?.nationality} />
                 <InfoRow label="Birth Date"  value={fmtDate(emp?.date_of_birth)} />
@@ -299,7 +296,7 @@ export default function UserProfilePage() {
                 <InfoRow label="Mobile"      value={emp?.mobile_number || user.phone} />
               </div>
               {emp?.passport_number && (
-                <div className="border-t mt-3 pt-3 space-y-1.5" style={{ borderColor: 'var(--border)' }}>
+                <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 'var(--space-3)', paddingTop: 'var(--space-3)', display: 'flex', flexDirection: 'column', gap: 'var(--space-1-5)' }}>
                   <InfoRow label="Passport No."    value={emp.passport_number} />
                   <InfoRow label="Passport Expiry" value={fmtDate(emp.passport_expiry_date)} />
                 </div>
@@ -308,7 +305,7 @@ export default function UserProfilePage() {
 
             {/* UAE Legal */}
             <Section title="UAE Legal" onEdit={() => openDrawer('legal')}>
-              <div className="space-y-2">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                 <InfoRow label="Resident ID"  value={emp?.resident_id} />
                 <InfoRow label="Labor Card"   value={emp?.labor_card} />
                 <InfoRow label="MOL Number"   value={emp?.mol_number} />
@@ -319,11 +316,11 @@ export default function UserProfilePage() {
           </div>
 
           {/* ── MAIN ── */}
-          <div className="flex-1 min-w-0 space-y-5">
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
 
             {/* Employment */}
             <Section title="Employment Details" onEdit={() => openDrawer('employment')}>
-              <div className="grid grid-cols-3 gap-x-8 gap-y-5">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', columnGap: 'var(--space-8)', rowGap: 'var(--space-5)' }}>
                 <InfoRow label="Position"    value={posName || emp?.position_title} />
                 <InfoRow label="Department"  value={deptName || emp?.department_name} />
                 <InfoRow label="Work Type"   value={emp?.employment_type?.replace('_', ' ')} />
@@ -332,10 +329,9 @@ export default function UserProfilePage() {
                 <InfoRow label="Email"       value={user.email} />
               </div>
               {!emp && (
-                <div className="mt-4 p-3 rounded-lg text-center" style={{ background: 'var(--muted)' }}>
-                  <p className="text-xs text-muted-foreground">No employee profile yet.</p>
-                  <button onClick={() => openDrawer('employment')} className="text-xs font-medium mt-1"
-                    style={{ color: 'var(--sidebar-active-text)' }}>
+                <div style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3)', borderRadius: 'var(--radius-lg)', textAlign: 'center', background: 'var(--surface-subtle)' }}>
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>No employee profile yet.</p>
+                  <button onClick={() => openDrawer('employment')} style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', marginTop: 'var(--space-1)', color: 'var(--sidebar-active-text)', background: 'none', border: 'none', cursor: 'pointer' }}>
                     + Set up employee profile
                   </button>
                 </div>
@@ -345,19 +341,19 @@ export default function UserProfilePage() {
             {/* Salary */}
             {emp && (
               <Section title="Salary Package" onEdit={() => openDrawer('employment')}>
-                <div className="grid grid-cols-4 gap-4">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-4)' }}>
                   {[['Basic Salary', emp.basic_salary], ['Housing', emp.housing_allowance],
                     ['Transport', emp.transport_allowance], ['Other', emp.other_allowances]].map(([l, v]) => (
-                    <div key={l as string} className="rounded-lg p-3 text-center" style={{ background: 'var(--muted)' }}>
-                      <p className="text-xs text-muted-foreground mb-1">{l}</p>
-                      <p className="text-base font-bold text-foreground">{Number(v).toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">AED</p>
+                    <div key={l as string} style={{ borderRadius: 'var(--radius-lg)', padding: 'var(--space-3)', textAlign: 'center', background: 'var(--surface-subtle)' }}>
+                      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 'var(--space-1)', marginTop: 0 }}>{l}</p>
+                      <p style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--weight-bold)', margin: 0 }}>{Number(v).toLocaleString()}</p>
+                      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 0, marginTop: 'var(--space-0-5)' }}>AED</p>
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 pt-4 border-t flex justify-between items-center" style={{ borderColor: 'var(--border)' }}>
-                  <span className="text-sm font-semibold">Total Package</span>
-                  <span className="text-xl font-bold" style={{ color: 'var(--sidebar-active-text)' }}>
+                <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)' }}>Total Package</span>
+                  <span style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', color: 'var(--sidebar-active-text)' }}>
                     {totalSalary.toLocaleString('en-US', { minimumFractionDigits: 2 })} AED
                   </span>
                 </div>
@@ -369,34 +365,33 @@ export default function UserProfilePage() {
 
       {/* ══ DRAWER ════════════════════════════════════════════════════════════════ */}
       {drawer && (
-        <div className="fixed inset-0 z-50 flex" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => setDrawer(null)}>
-          <div className="ml-auto w-full max-w-xl h-full flex flex-col shadow-2xl"
-            style={{ background: 'var(--card)' }} onClick={e => e.stopPropagation()}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', background: 'rgba(0,0,0,0.45)' }} onClick={() => setDrawer(null)}>
+          <div style={{ marginLeft: 'auto', width: '100%', maxWidth: 560, height: '100%', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', background: 'var(--card-bg)' }}
+            onClick={e => e.stopPropagation()}>
 
-            <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
-              <h2 className="font-semibold text-foreground">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-4) var(--space-6)', borderBottom: '1px solid var(--border-subtle)' }}>
+              <h2 style={{ fontWeight: 'var(--weight-semibold)', margin: 0 }}>
                 {drawer === 'account' ? 'Edit Account' : drawer === 'employment' ? 'Edit Employment' :
                  drawer === 'personal' ? 'Edit Personal Info' : 'Edit UAE Legal'}
               </h2>
-              <button onClick={() => setDrawer(null)} className="text-muted-foreground hover:text-foreground text-lg">✕</button>
+              <button onClick={() => setDrawer(null)} style={{ fontSize: 'var(--text-lg)', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1 }}>✕</button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+            <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--space-5) var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
               {/* Account */}
               {drawer === 'account' && <>
                 {/* Avatar */}
                 <div className={fld}>
                   <label className={lbl}>Profile Picture</label>
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-full overflow-hidden border-2 flex items-center justify-center text-xl font-bold flex-shrink-0"
-                      style={{ backgroundColor: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)', borderColor: 'var(--border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+                    <div style={{ width: 56, height: 56, borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', flexShrink: 0, backgroundColor: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)' }}>
                       {avatarPreview || avatarSrc
-                        ? <img src={avatarPreview || avatarSrc || ''} alt="" className="w-full h-full object-cover" />
+                        ? <img src={avatarPreview || avatarSrc || ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         : avatarLetter}
                     </div>
                     <div>
-                      <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+                      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
                         onChange={ev => {
                           const file = ev.target.files?.[0]; if (!file) return;
                           if (file.size > 5 * 1024 * 1024) { toast('Max 5MB', 'error'); return; }
@@ -405,12 +400,11 @@ export default function UserProfilePage() {
                           reader.onloadend = () => setAvatarPreview(reader.result as string);
                           reader.readAsDataURL(file);
                         }} />
-                      <button type="button" className="btn btn-secondary text-xs px-3 py-1.5"
-                        onClick={() => fileInputRef.current?.click()}>Change Photo</button>
+                      <Button type="button" variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>Change Photo</Button>
                     </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
                   <div className={fld}><label className={lbl}>First Name</label><input className={inp} value={form.first_name} onChange={f('first_name')} /></div>
                   <div className={fld}><label className={lbl}>Last Name</label><input className={inp} value={form.last_name} onChange={f('last_name')} /></div>
                   <div className={fld}><label className={lbl}>Username</label><input className={inp} value={form.username} onChange={f('username')} /></div>
@@ -421,21 +415,21 @@ export default function UserProfilePage() {
                       {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                     </select>
                   </div>
-                  <div className={`${fld} col-span-2`}><label className={lbl}>Status</label>
+                  <div className={fld} style={{ gridColumn: '1 / -1' }}><label className={lbl}>Status</label>
                     <select className={sel} value={form.is_active ? 'true' : 'false'}
                       onChange={ev => setForm(p => ({ ...p, is_active: ev.target.value === 'true' }))}>
                       <option value="true">Active</option><option value="false">Inactive</option>
                     </select>
                   </div>
                 </div>
-                <div className="border-t pt-4" style={{ borderColor: 'var(--border)' }}>
-                  <label className="flex items-center gap-2 cursor-pointer mb-3">
-                    <input type="checkbox" className="w-4 h-4" checked={changePassword}
+                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-4)' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer', marginBottom: 'var(--space-3)' }}>
+                    <input type="checkbox" style={{ width: 16, height: 16 }} checked={changePassword}
                       onChange={ev => { setChangePassword(ev.target.checked); if (!ev.target.checked) setForm(p => ({ ...p, password: '', password2: '' })); }} />
-                    <span className="text-sm font-medium">Change Password</span>
+                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)' }}>Change Password</span>
                   </label>
                   {changePassword && (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
                       <div className={fld}><label className={lbl}>New Password</label><input className={inp} type="password" value={form.password} onChange={f('password')} placeholder="Min 8 characters" /></div>
                       <div className={fld}><label className={lbl}>Confirm</label><input className={inp} type="password" value={form.password2} onChange={f('password2')} /></div>
                     </div>
@@ -445,7 +439,7 @@ export default function UserProfilePage() {
 
               {/* Employment */}
               {drawer === 'employment' && (
-                <div className="grid grid-cols-2 gap-4">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
                   <div className={fld}><label className={lbl}>Hiring Date</label><input className={inp} type="date" value={form.join_date} onChange={f('join_date')} /></div>
                   <div className={fld}><label className={lbl}>Employment Type</label>
                     <select className={sel} value={form.employment_type} onChange={f('employment_type')}>
@@ -476,7 +470,7 @@ export default function UserProfilePage() {
                     </select>
                   </div>
                   <div className={fld}><label className={lbl}>Work Location (notes)</label><input className={inp} value={form.work_location} onChange={f('work_location')} /></div>
-                  <div className={fld}><label className={lbl}>Salary Display Name</label><input className={inp} value={form.salary_display_name} onChange={f('salary_display_name')} /></div>
+                  <div className={fld} style={{ gridColumn: '1 / -1' }}><label className={lbl}>Salary Display Name</label><input className={inp} value={form.salary_display_name} onChange={f('salary_display_name')} /></div>
                   {[['basic_salary','Basic (AED)'],['housing_allowance','Housing (AED)'],['transport_allowance','Transport (AED)'],['other_allowances','Other (AED)']].map(([k,l]) => (
                     <div key={k} className={fld}><label className={lbl}>{l}</label><input className={inp} type="number" min="0" value={form[k]} onChange={f(k)} /></div>
                   ))}
@@ -485,7 +479,7 @@ export default function UserProfilePage() {
 
               {/* Personal */}
               {drawer === 'personal' && (
-                <div className="grid grid-cols-2 gap-4">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
                   <div className={fld}><label className={lbl}>Gender</label>
                     <select className={sel} value={form.gender} onChange={f('gender')}>
                       <option value="">—</option><option value="male">Male</option><option value="female">Female</option>
@@ -505,20 +499,20 @@ export default function UserProfilePage() {
                   <div className={fld}><label className={lbl}>Passport Number</label><input className={inp} value={form.passport_number} onChange={f('passport_number')} /></div>
                   <div className={fld}><label className={lbl}>Passport Issue</label><input className={inp} type="date" value={form.passport_issue_date} onChange={f('passport_issue_date')} /></div>
                   <div className={fld}><label className={lbl}>Passport Expiry</label><input className={inp} type="date" value={form.passport_expiry_date} onChange={f('passport_expiry_date')} /></div>
-                  <div className={`${fld} col-span-2`}><label className={lbl}>Address</label><textarea className={inp} rows={2} value={form.address} onChange={f('address')} /></div>
+                  <div className={fld} style={{ gridColumn: '1 / -1' }}><label className={lbl}>Address</label><textarea className="form-textarea" rows={2} value={form.address} onChange={f('address')} /></div>
                 </div>
               )}
 
               {/* Legal */}
               {drawer === 'legal' && (
-                <div className="grid grid-cols-2 gap-4">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
                   <div className={fld}><label className={lbl}>Resident ID</label><input className={inp} value={form.resident_id} onChange={f('resident_id')} /></div>
                   <div className={fld}><label className={lbl}>Labor Card</label><input className={inp} value={form.labor_card} onChange={f('labor_card')} /></div>
                   <div className={fld}><label className={lbl}>Labor Card Expiry</label><input className={inp} type="date" value={form.labor_card_expiry} onChange={f('labor_card_expiry')} /></div>
                   <div className={fld}><label className={lbl}>MOL Number</label><input className={inp} value={form.mol_number} onChange={f('mol_number')} /></div>
                   <div className={fld}><label className={lbl}>Sponsor Name</label><input className={inp} value={form.sponsor_name} onChange={f('sponsor_name')} /></div>
                   <div className={fld}><label className={lbl}>Sponsor ID</label><input className={inp} value={form.sponsor_id} onChange={f('sponsor_id')} /></div>
-                  <div className={`${fld} col-span-2`}><label className={lbl}>UAE Citizen?</label>
+                  <div className={fld} style={{ gridColumn: '1 / -1' }}><label className={lbl}>UAE Citizen?</label>
                     <select className={sel} value={form.is_citizen ? 'true' : 'false'}
                       onChange={ev => setForm(p => ({ ...p, is_citizen: ev.target.value === 'true' }))}>
                       <option value="false">No</option><option value="true">Yes</option>
@@ -528,7 +522,7 @@ export default function UserProfilePage() {
               )}
             </div>
 
-            <div className="px-6 py-4 border-t flex justify-end gap-3" style={{ borderColor: 'var(--border)' }}>
+            <div style={{ padding: 'var(--space-4) var(--space-6)', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
               <Button variant="secondary" onClick={() => setDrawer(null)}>Cancel</Button>
               <Button variant="primary" onClick={handleSave} isLoading={isSaving}>
                 {isSaving ? 'Saving...' : 'Save'}
