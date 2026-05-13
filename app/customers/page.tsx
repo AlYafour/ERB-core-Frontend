@@ -16,17 +16,17 @@ import { useTableState } from '@/lib/hooks/use-table-state';
 import { CUSTOMER_TYPE } from '@/lib/utils/status-colors';
 
 const TYPE_LABEL: Record<string, string> = {
-  owner:      'Owner / مالك',
-  commercial: 'Commercial / تجاري',
-  consultant: 'Consultant / استشاري',
+  owner:      'Owner',
+  commercial: 'Commercial',
+  consultant: 'Consultant',
 };
 
 const filterFields: FilterField[] = [
   { name: 'customer_type', label: 'Type', type: 'select', group: 'Customer',
     options: [
-      { value: 'owner',      label: 'Owner / مالك' },
-      { value: 'commercial', label: 'Commercial / تجاري' },
-      { value: 'consultant', label: 'Consultant / استشاري' },
+      { value: 'owner',      label: 'Owner' },
+      { value: 'commercial', label: 'Commercial' },
+      { value: 'consultant', label: 'Consultant' },
     ],
   },
   { name: 'status',           label: 'Status',          type: 'select', group: 'Customer',
@@ -69,14 +69,14 @@ export default function CustomersPage() {
   const columns: Column<Customer>[] = [
     {
       key: 'code', header: t('col', 'code'), width: 110,
-      render: c => <span className="text-xs font-mono" style={{ color: 'var(--text-tertiary)' }}>{c.code || '—'}</span>,
+      render: c => <span style={{ fontSize: 'var(--text-xs)', fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>{c.code || '—'}</span>,
     },
     {
       key: 'name', header: t('col', 'name'),
       render: c => (
         <div>
-          <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{c.full_name_english}</div>
-          {c.full_name_arabic && <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{c.full_name_arabic}</div>}
+          <div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{c.full_name_english}</div>
+          {c.full_name_arabic && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{c.full_name_arabic}</div>}
         </div>
       ),
     },
@@ -95,7 +95,7 @@ export default function CustomersPage() {
     {
       key: 'actions', header: t('col', 'actions'),
       render: c => (
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           <Link href={`/customers/${c.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>
           {isSuperuser && (
             <Button variant="delete" size="sm" onClick={() => handleDelete(c.id)} disabled={deleteMutation.isPending}>

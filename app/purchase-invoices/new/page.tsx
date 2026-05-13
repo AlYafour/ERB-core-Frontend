@@ -243,12 +243,12 @@ function NewPurchaseInvoicePageContent() {
   if (!purchaseOrderId) {
     return (
       <MainLayout>
-        <div className="space-y-6">
-          <div className="card text-center py-12">
-            <p className="text-muted-foreground">Purchase Order ID is required</p>
-            <Button variant="primary" className="mt-4" onClick={() => router.back()}>Go Back</Button>
+        <PageShell>
+          <div className="card empty-state">
+            <p style={{ color: 'var(--text-secondary)', margin: '0 0 var(--space-4)' }}>Purchase Order ID is required</p>
+            <Button variant="primary" onClick={() => router.back()}>Go Back</Button>
           </div>
-        </div>
+        </PageShell>
       </MainLayout>
     );
   }
@@ -271,27 +271,27 @@ function NewPurchaseInvoicePageContent() {
             borderStyle: 'solid',
           }}>
             <h3 style={{ 
-              fontSize: 'var(--font-sm)',
-              fontWeight: 'var(--font-weight-semibold)',
+              fontSize: 'var(--text-sm)',
+              fontWeight: 'var(--weight-semibold)',
               color: 'var(--info-banner-text)',
               margin: 0,
-              marginBottom: 'var(--spacing-2)',
+              marginBottom: 'var(--space-2)',
             }}>
               Purchase Order Information
             </h3>
             <div style={{ 
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: 'var(--spacing-2)',
-              fontSize: 'var(--font-sm)',
+              gap: 'var(--space-2)',
+              fontSize: 'var(--text-sm)',
             }}>
               <div>
                 <span style={{ color: 'var(--info-banner-text)' }}>Order Number:</span>{' '}
-                <span style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--text-primary)' }}>{purchaseOrder.order_number}</span>
+                <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{purchaseOrder.order_number}</span>
               </div>
               <div>
                 <span style={{ color: 'var(--info-banner-text)' }}>Supplier:</span>{' '}
-                <span style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--text-primary)' }}>
+                <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>
                   {typeof purchaseOrder.supplier === 'object'
                     ? purchaseOrder.supplier.name
                     : 'N/A'}
@@ -299,52 +299,52 @@ function NewPurchaseInvoicePageContent() {
               </div>
               <div>
                 <span style={{ color: 'var(--info-banner-text)' }}>Total:</span>{' '}
-                <span style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--text-primary)' }}>{formatPrice(Number(purchaseOrder.total || 0))}</span>
+                <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{formatPrice(Number(purchaseOrder.total || 0))}</span>
               </div>
             </div>
           </div>
         )}
 
         {/* Form Card - Unified */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
           <div className="card">
             <h3 style={{ 
-              fontSize: 'var(--font-lg)',
-              fontWeight: 'var(--font-weight-semibold)',
+              fontSize: 'var(--text-lg)',
+              fontWeight: 'var(--weight-semibold)',
               color: 'var(--text-primary)',
               margin: 0,
-              marginBottom: 'var(--spacing-4)',
+              marginBottom: 'var(--space-4)',
             }}>
               {t('section', 'invoiceInfo')}
             </h3>
             <div style={{ 
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-              gap: 'var(--spacing-4)',
+              gap: 'var(--space-4)',
             }}>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  {t('field', 'invoiceDate')} <span className="text-red-500">*</span>
+                <label className="form-label">
+                  {t('field', 'invoiceDate')} <span style={{ color: 'var(--color-error)' }}>*</span>
                 </label>
                 <input
                   type="date"
                   value={formData.invoice_date}
                   onChange={(e) => setFormData({ ...formData, invoice_date: e.target.value })}
-                  className="input"
+                  className="form-input"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">{t('field', 'dueDate')}</label>
+                <label className="form-label">{t('field', 'dueDate')}</label>
                 <input
                   type="date"
                   value={formData.due_date}
                   onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                  className="input"
+                  className="form-input"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">{t('col', 'taxPct')}</label>
+                <label className="form-label">{t('col', 'taxPct')}</label>
                 <input
                   type="number"
                   step="0.01"
@@ -352,26 +352,26 @@ function NewPurchaseInvoicePageContent() {
                   max="100"
                   value={formData.tax_rate}
                   onChange={(e) => setFormData({ ...formData, tax_rate: parseFloat(e.target.value) || 0 })}
-                  className="input"
+                  className="form-input"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">{t('col', 'discountPct')}</label>
+                <label className="form-label">{t('col', 'discountPct')}</label>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
                   value={formData.discount}
                   onChange={(e) => setFormData({ ...formData, discount: parseFloat(e.target.value) || 0 })}
-                  className="input"
+                  className="form-input"
                 />
               </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-foreground mb-2">{t('field', 'notes')}</label>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label className="form-label">{t('field', 'notes')}</label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="input"
+                  className="form-textarea"
                   rows={3}
                 />
               </div>
@@ -380,11 +380,11 @@ function NewPurchaseInvoicePageContent() {
 
           <div className="card">
             <h3 style={{ 
-              fontSize: 'var(--font-lg)',
-              fontWeight: 'var(--font-weight-semibold)',
+              fontSize: 'var(--text-lg)',
+              fontWeight: 'var(--weight-semibold)',
               color: 'var(--text-primary)',
               margin: 0,
-              marginBottom: 'var(--spacing-4)',
+              marginBottom: 'var(--space-4)',
             }}>
               {t('section', 'invoiceItems')}
             </h3>
@@ -412,16 +412,16 @@ function NewPurchaseInvoicePageContent() {
                     return (
                       <tr key={index}>
                         <td>
-                          <div className="font-medium text-foreground">
+                          <div style={{ fontWeight: 'var(--weight-medium)' }}>
                             {purchaseOrder?.items?.find((poItem) => poItem.id === item.purchase_order_item_id)
                               ?.product?.name || 'N/A'}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
                             {purchaseOrder?.items?.find((poItem) => poItem.id === item.purchase_order_item_id)
                               ?.product?.code || ''}
                           </div>
                         </td>
-                        <td className="text-muted-foreground">
+                        <td style={{ color: 'var(--text-secondary)' }}>
                           {purchaseOrder?.items?.find((poItem) => poItem.id === item.purchase_order_item_id)
                             ?.product?.unit?.toUpperCase() || '—'}
                         </td>
@@ -432,7 +432,7 @@ function NewPurchaseInvoicePageContent() {
                             step="0.01"
                             value={item.quantity}
                             onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
-                            className="input w-24"
+                            className="form-input" style={{ width: 96 }}
                           />
                         </td>
                         <td>
@@ -442,7 +442,7 @@ function NewPurchaseInvoicePageContent() {
                             step="0.01"
                             value={item.unit_price}
                             onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                            className="input w-32"
+                            className="form-input" style={{ width: 128 }}
                           />
                         </td>
                         <td>
@@ -452,7 +452,7 @@ function NewPurchaseInvoicePageContent() {
                             step="0.01"
                             value={item.discount || 0}
                             onChange={(e) => updateItem(index, 'discount', parseFloat(e.target.value) || 0)}
-                            className="input w-24"
+                            className="form-input" style={{ width: 96 }}
                           />
                         </td>
                         <td>
@@ -462,11 +462,11 @@ function NewPurchaseInvoicePageContent() {
                             step="0.01"
                             value={item.tax_rate || 0}
                             onChange={(e) => updateItem(index, 'tax_rate', parseFloat(e.target.value) || 0)}
-                            className="input w-24"
+                            className="form-input" style={{ width: 96 }}
                           />
                         </td>
                         <td>
-                          <div className="font-semibold text-foreground">
+                          <div style={{ fontWeight: 'var(--weight-semibold)' }}>
                             {formatPrice(total)}
                           </div>
                         </td>
@@ -479,7 +479,7 @@ function NewPurchaseInvoicePageContent() {
           </div>
 
           {/* Form Actions - Unified */}
-          <div className="flex gap-3">
+          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
             <Button type="submit" variant="primary" disabled={mutation.isPending} isLoading={mutation.isPending}>
               {t('btn', 'create')}
             </Button>

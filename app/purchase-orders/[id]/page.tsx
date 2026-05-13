@@ -107,8 +107,8 @@ export default function PurchaseOrderDetailPage() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="card text-center py-12">
-          <p className="text-muted-foreground">Loading...</p>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Loading...</p>
         </div>
       </MainLayout>
     );
@@ -117,8 +117,8 @@ export default function PurchaseOrderDetailPage() {
   if (!order) {
     return (
       <MainLayout>
-        <div className="card text-center py-12">
-          <p className="text-muted-foreground">Purchase Order not found</p>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Purchase Order not found</p>
         </div>
       </MainLayout>
     );
@@ -189,8 +189,8 @@ export default function PurchaseOrderDetailPage() {
                 label="Project"
                 value={
                   <div>
-                    <div className="font-semibold">{order.project_name}</div>
-                    {order.project_code && <div className="text-sm text-muted-foreground font-mono">{order.project_code}</div>}
+                    <div style={{ fontWeight: 'var(--weight-semibold)' }}>{order.project_name}</div>
+                    {order.project_code && <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{order.project_code}</div>}
                   </div>
                 }
               />
@@ -209,7 +209,7 @@ export default function PurchaseOrderDetailPage() {
                 value={
                   <Link
                     href={`/purchase-requests/${typeof order.purchase_request === 'object' ? order.purchase_request.id : order.purchase_request}`}
-                    className="text-primary hover:text-orange-500 underline"
+                    style={{ color: 'var(--text-brand)', textDecoration: 'underline' }}
                   >
                     {typeof order.purchase_request === 'object' ? order.purchase_request.code : 'View'}
                   </Link>
@@ -235,11 +235,13 @@ export default function PurchaseOrderDetailPage() {
               <DetailField
                 label={order.status === 'cancelled' ? 'Cancel Reason' : 'Rejection Reason'}
                 value={
-                  <div className="p-3 rounded-md" style={{
+                  <div style={{
+                    padding: 'var(--space-3)',
+                    borderRadius: 'var(--radius-md)',
                     backgroundColor: 'var(--color-error-light)',
                     border: '1px solid var(--color-error)',
                   }}>
-                    <p className="text-sm" style={{ color: '#991B1B', margin: 0 }}>{order.rejection_reason}</p>
+                    <p style={{ fontSize: 'var(--text-sm)', color: '#991B1B', margin: 0 }}>{order.rejection_reason}</p>
                   </div>
                 }
                 span={3}
@@ -249,7 +251,7 @@ export default function PurchaseOrderDetailPage() {
 
           {/* Products */}
           <DetailCard title="Products">
-            <div className="col-span-3 overflow-x-auto">
+            <div style={{ gridColumn: '1 / -1', overflowX: 'auto' }}>
               <table>
                 <thead>
                   <tr>
@@ -266,15 +268,15 @@ export default function PurchaseOrderDetailPage() {
                   {order.items.map((item) => (
                     <tr key={item.id}>
                       <td>
-                        <div className="font-medium">{item.product?.name || 'N/A'}</div>
-                        <div className="text-xs text-muted-foreground">{item.product?.code || ''}</div>
+                        <div style={{ fontWeight: 'var(--weight-medium)' }}>{item.product?.name || 'N/A'}</div>
+                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item.product?.code || ''}</div>
                       </td>
-                      <td className="text-muted-foreground">{item.product?.unit?.toUpperCase() || '—'}</td>
+                      <td style={{ color: 'var(--text-secondary)' }}>{item.product?.unit?.toUpperCase() || '—'}</td>
                       <td>{item.quantity}</td>
-                      <td className="text-muted-foreground">{formatPrice(item.unit_price)}</td>
-                      <td className="text-muted-foreground">{item.discount || 0}%</td>
-                      <td className="text-muted-foreground">{item.tax_rate || 0}%</td>
-                      <td className="font-semibold">{formatPrice(item.total)}</td>
+                      <td style={{ color: 'var(--text-secondary)' }}>{formatPrice(item.unit_price)}</td>
+                      <td style={{ color: 'var(--text-secondary)' }}>{item.discount || 0}%</td>
+                      <td style={{ color: 'var(--text-secondary)' }}>{item.tax_rate || 0}%</td>
+                      <td style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(item.total)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -298,27 +300,27 @@ export default function PurchaseOrderDetailPage() {
             const computedTotal = itemsSubtotal - globalDiscount + itemsVat;
             return (
               <DetailCard title="Financial Summary">
-                <div className="col-span-3 flex justify-end">
-                  <div className="w-64 flex flex-col gap-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Subtotal:</span>
-                      <span className="font-semibold">{formatPrice(itemsSubtotal)}</span>
+                <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end' }}>
+                  <div style={{ width: 256, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Subtotal:</span>
+                      <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(itemsSubtotal)}</span>
                     </div>
                     {globalDiscount > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Discount:</span>
-                        <span className="font-semibold text-red-500">- {formatPrice(globalDiscount)}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Discount:</span>
+                        <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--color-error)' }}>- {formatPrice(globalDiscount)}</span>
                       </div>
                     )}
                     {itemsVat > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">VAT:</span>
-                        <span className="font-semibold">{formatPrice(itemsVat)}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>VAT:</span>
+                        <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(itemsVat)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between border-t border-border pt-2 text-base">
-                      <span className="font-bold">Total:</span>
-                      <span className="font-bold">{formatPrice(computedTotal)}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-2)', fontSize: 'var(--text-base)' }}>
+                      <span style={{ fontWeight: 'var(--weight-bold)' }}>Total:</span>
+                      <span style={{ fontWeight: 'var(--weight-bold)' }}>{formatPrice(computedTotal)}</span>
                     </div>
                   </div>
                 </div>
@@ -328,11 +330,11 @@ export default function PurchaseOrderDetailPage() {
 
           {/* Terms & Conditions */}
           {order.terms_and_conditions && (
-            <div className="card" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
-              <h2 className="text-base font-semibold mb-5 pb-3 border-b text-foreground" style={{ borderColor: 'var(--border-primary)' }}>
+            <div className="card" style={{ backgroundColor: 'var(--surface-inset)' }}>
+              <h2 className="section-title" style={{ paddingBottom: 'var(--space-3)', borderBottom: '1px solid var(--border-subtle)', marginBottom: 'var(--space-4)' }}>
                 Terms & Conditions
               </h2>
-              <div className="text-sm leading-relaxed font-mono">
+              <div style={{ fontSize: 'var(--text-sm)', lineHeight: 1.6, fontFamily: 'monospace' }}>
                 {order.terms_and_conditions.split('\n').map((line, i) => {
                   if (!line.trim()) return <div key={i} style={{ marginBottom: '0.5rem' }} />;
                   const hasArabic = /[؀-ۿ]/.test(line);

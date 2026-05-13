@@ -10,15 +10,12 @@ import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { Button, Badge, Loader, PageHeader, PageShell, SearchInput, Drawer } from '@/components/ui';
 
-const inp = 'form-input';
-const sel = 'form-select';
-const fld = 'form-field';
-const lbl = 'form-label';
-
 const PRESET_ICONS  = ['🏢', '🏗️', '🔧', '🏭', '🏪', '🏠', '📍', '🗺️', '⚙️', '🏛️', '🚧', '🏕️'];
 const PRESET_COLORS = ['#3b82f6','#f97316','#8b5cf6','#10b981','#ef4444','#f59e0b','#06b6d4','#ec4899','#6b7280'];
 
 type DrawerMode = 'type-create' | 'type-edit' | 'loc-create' | 'loc-edit' | null;
+
+const tdStyle: React.CSSProperties = { padding: 'var(--space-3) var(--space-4)' };
 
 export default function LocationsPage() {
   const queryClient = useQueryClient();
@@ -31,12 +28,9 @@ export default function LocationsPage() {
   const [drawerMode,    setDrawerMode]    = useState<DrawerMode>(null);
   const [editTarget,    setEditTarget]    = useState<HRLocationType | HRLocation | null>(null);
 
-  // Form state for type
   const [typeForm, setTypeForm] = useState({ name: '', name_ar: '', icon: '📍', color: '#6b7280' });
-  // Form state for location
   const [locForm,  setLocForm]  = useState({ name: '', name_ar: '', parent: '' as any, address: '', description: '', is_active: true });
 
-  // ── Queries ────────────────────────────────────────────────────────────────
   const { data: typesData, isLoading: loadingTypes } = useQuery({
     queryKey: ['hr-location-types'],
     queryFn: () => hrLocationTypesApi.getAll(),
@@ -56,7 +50,6 @@ export default function LocationsPage() {
   const topLocs = allLocs.filter(l => !l.parent);
   const childrenOf = (id: number) => allLocs.filter(l => l.parent === id);
 
-  // ── Type mutations ─────────────────────────────────────────────────────────
   const createTypeMut = useMutation({
     mutationFn: hrLocationTypesApi.create,
     onSuccess: (t) => {
@@ -87,7 +80,6 @@ export default function LocationsPage() {
     onError: () => toast('Cannot delete — has locations', 'error'),
   });
 
-  // ── Location mutations ─────────────────────────────────────────────────────
   const createLocMut = useMutation({
     mutationFn: hrLocationsApi.create,
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['hr-locations'] }); setDrawerMode(null); toast('Location created', 'success'); },
@@ -104,7 +96,6 @@ export default function LocationsPage() {
     onError: () => toast('Cannot delete — has employees or sub-locations', 'error'),
   });
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
   const openTypeCreate = () => {
     setTypeForm({ name: '', name_ar: '', icon: '📍', color: '#6b7280' });
     setEditTarget(null);
@@ -155,48 +146,47 @@ export default function LocationsPage() {
   const isSavingType = createTypeMut.isPending || updateTypeMut.isPending;
   const isSavingLoc  = createLocMut.isPending  || updateLocMut.isPending;
 
-  // ── Location row (recursive) ───────────────────────────────────────────────
   const LocRow = ({ loc, depth = 0 }: { loc: HRLocation; depth?: number }) => {
     const kids = childrenOf(loc.id);
     const expanded = expandedIds.has(loc.id);
     return (
       <>
-        <tr className="border-b hover:bg-muted/20 transition-colors" style={{ borderColor: 'var(--border)' }}>
-          <td className="px-4 py-3">
-            <div className="flex items-center gap-2" style={{ paddingLeft: depth * 22 }}>
+        <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+          <td style={tdStyle}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', paddingLeft: depth * 22 }}>
               {kids.length > 0 ? (
                 <button onClick={() => toggleExpand(loc.id)}
-                  className="w-5 h-5 flex items-center justify-center text-xs text-muted-foreground hover:text-foreground flex-shrink-0">
+                  style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer' }}>
                   {expanded ? '▼' : '▶'}
                 </button>
-              ) : <span className="w-5 flex-shrink-0" />}
+              ) : <span style={{ width: 20, flexShrink: 0 }} />}
               <div>
-                <p className="text-sm font-semibold text-foreground">{loc.name}</p>
-                {loc.name_ar && <p className="text-xs text-muted-foreground" dir="rtl">{loc.name_ar}</p>}
+                <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', margin: 0 }}>{loc.name}</p>
+                {loc.name_ar && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }} dir="rtl">{loc.name_ar}</p>}
               </div>
             </div>
           </td>
-          <td className="px-4 py-3 text-sm text-muted-foreground">{loc.parent_name || <span className="text-xs italic">Top level</span>}</td>
-          <td className="px-4 py-3 text-sm text-muted-foreground truncate max-w-[200px]">{loc.address || '—'}</td>
-          <td className="px-4 py-3 text-center">
-            <span className="text-sm font-bold text-foreground">{loc.employee_count}</span>
+          <td style={{ ...tdStyle, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{loc.parent_name || <span style={{ fontSize: 'var(--text-xs)', fontStyle: 'italic' }}>Top level</span>}</td>
+          <td style={{ ...tdStyle, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200 }}>{loc.address || '—'}</td>
+          <td style={{ ...tdStyle, textAlign: 'center' }}>
+            <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-bold)' }}>{loc.employee_count}</span>
           </td>
-          <td className="px-4 py-3">
+          <td style={tdStyle}>
             <Badge variant={loc.is_active ? 'success' : 'error'}>{loc.is_active ? 'Active' : 'Inactive'}</Badge>
           </td>
           {isAdmin && (
-            <td className="px-4 py-3 text-right">
-              <div className="flex items-center justify-end gap-1">
+            <td style={{ ...tdStyle, textAlign: 'right' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 'var(--space-1)' }}>
                 <button onClick={() => openLocCreate(loc.id)} title="Add sub-location"
-                  className="text-xs px-2 py-1 rounded text-muted-foreground hover:text-foreground" style={{ background: 'var(--muted)' }}>
+                  style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-2)', borderRadius: 'var(--radius-sm)', color: 'var(--text-secondary)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer' }}>
                   + Sub
                 </button>
                 <button onClick={() => openLocEdit(loc)}
-                  className="text-xs px-2 py-1 rounded text-muted-foreground hover:text-foreground" style={{ background: 'var(--muted)' }}>
+                  style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-2)', borderRadius: 'var(--radius-sm)', color: 'var(--text-secondary)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer' }}>
                   Edit
                 </button>
                 <button onClick={async () => { if (await confirm(`Delete "${loc.name}"?`)) deleteLocMut.mutate(loc.id); }}
-                  className="text-xs px-2 py-1 rounded text-destructive" style={{ background: 'var(--muted)' }}>
+                  style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-2)', borderRadius: 'var(--radius-sm)', color: 'var(--color-error)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer' }}>
                   Del
                 </button>
               </div>
@@ -211,7 +201,6 @@ export default function LocationsPage() {
   return (
     <MainLayout>
       <PageShell>
-
         <PageHeader
           title="Locations"
           description="Create location types then add your offices, sites, and sub-locations"
@@ -219,13 +208,13 @@ export default function LocationsPage() {
           actions={isAdmin ? <Button variant="primary" onClick={openTypeCreate}>+ New Type</Button> : undefined}
         />
 
-        <div className="flex gap-5 items-start">
+        <div style={{ display: 'flex', gap: 'var(--space-5)', alignItems: 'flex-start' }}>
 
-          {/* ── LEFT: types list ── */}
-          <div className="w-64 flex-shrink-0 space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">Location Types</p>
+          {/* Left: types list */}
+          <div style={{ width: 256, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            <p style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 var(--space-1)', margin: 0 }}>Location Types</p>
 
-            {loadingTypes ? <Loader className="mx-auto mt-4" /> : types.length === 0 ? (
+            {loadingTypes ? <Loader /> : types.length === 0 ? (
               <div className="card empty-state" style={{ padding: 'var(--space-6) var(--space-4)' }}>
                 <p className="empty-state-title" style={{ fontSize: 'var(--text-xs)' }}>No types yet</p>
                 {isAdmin && (
@@ -240,28 +229,27 @@ export default function LocationsPage() {
                 return (
                   <div key={t.id}
                     onClick={() => { setSelectedType(t); setSearchLoc(''); setExpandedIds(new Set()); }}
-                    className="rounded-lg border cursor-pointer transition-all p-3"
                     style={{
-                      borderColor: isSelected ? t.color : 'var(--border)',
-                      borderWidth: isSelected ? 2 : 1,
+                      borderRadius: 'var(--radius-md)',
+                      border: isSelected ? `2px solid ${t.color}` : '1px solid var(--border-subtle)',
                       background: isSelected ? t.color + '15' : 'var(--card-bg)',
+                      cursor: 'pointer',
+                      padding: 'var(--space-3)',
                     }}>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-lg flex-shrink-0">{t.icon}</span>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-foreground truncate">{t.name}</p>
-                          <p className="text-xs text-muted-foreground">{t.locations_count} locations</p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-2)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
+                        <span style={{ fontSize: 'var(--text-lg)', flexShrink: 0 }}>{t.icon}</span>
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>{t.name}</p>
+                          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>{t.locations_count} locations</p>
                         </div>
                       </div>
                       {isAdmin && (
-                        <div className="flex gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', gap: 'var(--space-1)', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                           <button onClick={() => openTypeEdit(t)}
-                            className="text-xs px-1.5 py-0.5 rounded text-muted-foreground hover:text-foreground"
-                            style={{ background: 'var(--muted)' }}>✎</button>
+                            style={{ fontSize: 'var(--text-xs)', padding: '2px var(--space-1-5)', borderRadius: 'var(--radius-sm)', color: 'var(--text-secondary)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer' }}>✎</button>
                           <button onClick={async () => { if (await confirm(`Delete type "${t.name}"?`)) deleteTypeMut.mutate(t.id); }}
-                            className="text-xs px-1.5 py-0.5 rounded text-destructive"
-                            style={{ background: 'var(--muted)' }}>✕</button>
+                            style={{ fontSize: 'var(--text-xs)', padding: '2px var(--space-1-5)', borderRadius: 'var(--radius-sm)', color: 'var(--color-error)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer' }}>✕</button>
                         </div>
                       )}
                     </div>
@@ -271,8 +259,8 @@ export default function LocationsPage() {
             )}
           </div>
 
-          {/* ── RIGHT: locations ── */}
-          <div className="flex-1 min-w-0 space-y-4">
+          {/* Right: locations */}
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
             {!selectedType ? (
               <div className="card empty-state">
                 <p className="empty-state-title">Select a location type</p>
@@ -285,19 +273,19 @@ export default function LocationsPage() {
             ) : (
               <>
                 {/* Sub-header */}
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{selectedType.icon}</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                    <span style={{ fontSize: 'var(--text-2xl)' }}>{selectedType.icon}</span>
                     <div>
-                      <h2 className="text-lg font-bold text-foreground">{selectedType.name}</h2>
-                      <p className="text-xs text-muted-foreground">{allLocs.length} locations total</p>
+                      <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', margin: 0 }}>{selectedType.name}</h2>
+                      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>{allLocs.length} locations total</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                     <SearchInput placeholder="Search..." value={searchLoc} onChange={setSearchLoc} width={220} />
                     {allLocs.length > 0 && (
                       <button onClick={() => setExpandedIds(new Set(allLocs.map(l => l.id)))}
-                        className="text-xs text-muted-foreground hover:text-foreground px-2 whitespace-nowrap">
+                        style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', padding: '0 var(--space-2)', whiteSpace: 'nowrap', background: 'none', border: 'none', cursor: 'pointer' }}>
                         Expand all
                       </button>
                     )}
@@ -310,7 +298,7 @@ export default function LocationsPage() {
                 </div>
 
                 {loadingLocs ? (
-                  <div className="card text-center py-16"><Loader className="mx-auto" /></div>
+                  <div className="card empty-state"><Loader /></div>
                 ) : allLocs.length === 0 ? (
                   <div className="card empty-state">
                     <p className="empty-state-title">No locations yet for "{selectedType.name}"</p>
@@ -319,12 +307,12 @@ export default function LocationsPage() {
                     )}
                   </div>
                 ) : (
-                  <div className="card p-0 overflow-hidden">
-                    <table className="w-full">
+                  <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <table style={{ width: '100%' }}>
                       <thead>
-                        <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                        <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                           {['Name', 'Parent', 'Address', 'Staff', 'Status', ...(isAdmin ? [''] : [])].map(h => (
-                            <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
+                            <th key={h} style={{ padding: 'var(--space-3) var(--space-4)', textAlign: 'left', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -358,80 +346,77 @@ export default function LocationsPage() {
           </Button>
         </>}
       >
-        {/* ── Type form ── */}
+        {/* Type form */}
         {(drawerMode === 'type-create' || drawerMode === 'type-edit') && <>
-          <div className="grid grid-cols-2 gap-4">
-            <div className={fld}>
-              <label className={lbl}>Name (EN)</label>
-              <input className={inp} value={typeForm.name}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+            <div className="form-field">
+              <label className="form-label">Name (EN)</label>
+              <input className="form-input" value={typeForm.name}
                 onChange={e => setTypeForm(p => ({ ...p, name: e.target.value }))}
                 placeholder="e.g. Office" />
             </div>
-            <div className={fld}>
-              <label className={lbl}>Name (AR)</label>
-              <input className={inp} dir="rtl" value={typeForm.name_ar}
+            <div className="form-field">
+              <label className="form-label">Name (AR)</label>
+              <input className="form-input" dir="rtl" value={typeForm.name_ar}
                 onChange={e => setTypeForm(p => ({ ...p, name_ar: e.target.value }))}
                 placeholder="مثال: مكتب" />
             </div>
           </div>
 
-          <div className={fld} style={{ marginTop: 16 }}>
-            <label className={lbl}>Icon</label>
-            <div className="flex flex-wrap gap-2">
+          <div className="form-field" style={{ marginTop: 'var(--space-4)' }}>
+            <label className="form-label">Icon</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
               {PRESET_ICONS.map(ic => (
                 <button key={ic} onClick={() => setTypeForm(p => ({ ...p, icon: ic }))}
-                  className="text-xl p-2 rounded-lg border-2 transition-all"
-                  style={{ borderColor: typeForm.icon === ic ? 'var(--brand)' : 'var(--border-default)', background: typeForm.icon === ic ? 'var(--brand-subtle)' : 'transparent' }}>
+                  style={{ fontSize: 'var(--text-xl)', padding: 'var(--space-2)', borderRadius: 'var(--radius-md)', border: `2px solid ${typeForm.icon === ic ? 'var(--brand)' : 'var(--border-subtle)'}`, background: typeForm.icon === ic ? 'var(--surface-subtle)' : 'transparent', cursor: 'pointer' }}>
                   {ic}
                 </button>
               ))}
-              <input className={`${inp} w-16 text-center text-xl`} value={typeForm.icon}
+              <input className="form-input" style={{ width: 64, textAlign: 'center', fontSize: 'var(--text-xl)' }} value={typeForm.icon}
                 onChange={e => setTypeForm(p => ({ ...p, icon: e.target.value }))} maxLength={2} />
             </div>
           </div>
 
-          <div className={fld} style={{ marginTop: 16 }}>
-            <label className={lbl}>Color</label>
-            <div className="flex flex-wrap gap-2 items-center">
+          <div className="form-field" style={{ marginTop: 'var(--space-4)' }}>
+            <label className="form-label">Color</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', alignItems: 'center' }}>
               {PRESET_COLORS.map(c => (
                 <button key={c} onClick={() => setTypeForm(p => ({ ...p, color: c }))}
-                  className="w-8 h-8 rounded-full border-2 transition-all"
-                  style={{ background: c, borderColor: typeForm.color === c ? '#000' : 'transparent', transform: typeForm.color === c ? 'scale(1.2)' : 'scale(1)' }} />
+                  style={{ width: 32, height: 32, borderRadius: '50%', border: `2px solid ${typeForm.color === c ? '#000' : 'transparent'}`, background: c, transform: typeForm.color === c ? 'scale(1.2)' : 'scale(1)', cursor: 'pointer' }} />
               ))}
               <input type="color" value={typeForm.color}
                 onChange={e => setTypeForm(p => ({ ...p, color: e.target.value }))}
-                className="w-8 h-8 rounded-full cursor-pointer border-0" title="Custom color" />
+                style={{ width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', border: 0 }} title="Custom color" />
             </div>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-2xl">{typeForm.icon}</span>
-              <span className="text-sm font-semibold px-3 py-1 rounded-full"
-                style={{ background: typeForm.color + '20', color: typeForm.color, border: `1px solid ${typeForm.color}44` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-1)' }}>
+              <span style={{ fontSize: 'var(--text-2xl)' }}>{typeForm.icon}</span>
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', padding: 'var(--space-1) var(--space-3)', borderRadius: 9999, background: typeForm.color + '20', color: typeForm.color, border: `1px solid ${typeForm.color}44` }}>
                 {typeForm.name || 'Preview'}
               </span>
             </div>
           </div>
         </>}
 
-        {/* ── Location form ── */}
+        {/* Location form */}
         {(drawerMode === 'loc-create' || drawerMode === 'loc-edit') && <>
-          <div className="grid grid-cols-2 gap-4">
-            <div className={fld}>
-              <label className={lbl}>Name (EN)</label>
-              <input className={inp} value={locForm.name}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+            <div className="form-field">
+              <label className="form-label">Name (EN)</label>
+              <input className="form-input" value={locForm.name}
                 onChange={e => setLocForm(p => ({ ...p, name: e.target.value }))}
                 placeholder="e.g. Abu Dhabi Office" />
             </div>
-            <div className={fld}>
-              <label className={lbl}>Name (AR)</label>
-              <input className={inp} dir="rtl" value={locForm.name_ar}
+            <div className="form-field">
+              <label className="form-label">Name (AR)</label>
+              <input className="form-input" dir="rtl" value={locForm.name_ar}
                 onChange={e => setLocForm(p => ({ ...p, name_ar: e.target.value }))}
                 placeholder="مكتب أبوظبي" />
             </div>
           </div>
 
-          <div className={fld} style={{ marginTop: 16 }}>
-            <label className={lbl}>Parent Location (optional)</label>
-            <select className={sel} value={locForm.parent ?? ''}
+          <div className="form-field" style={{ marginTop: 'var(--space-4)' }}>
+            <label className="form-label">Parent Location (optional)</label>
+            <select className="form-select" value={locForm.parent ?? ''}
               onChange={e => setLocForm(p => ({ ...p, parent: e.target.value }))}>
               <option value="">— None (top level) —</option>
               {allLocs
@@ -444,22 +429,22 @@ export default function LocationsPage() {
             </select>
           </div>
 
-          <div className={fld} style={{ marginTop: 16 }}>
-            <label className={lbl}>Address</label>
-            <textarea className={inp} rows={2} value={locForm.address}
+          <div className="form-field" style={{ marginTop: 'var(--space-4)' }}>
+            <label className="form-label">Address</label>
+            <textarea className="form-textarea" rows={2} value={locForm.address}
               onChange={e => setLocForm(p => ({ ...p, address: e.target.value }))}
               placeholder="Street, area, city..." />
           </div>
 
-          <div className={fld} style={{ marginTop: 16 }}>
-            <label className={lbl}>Description</label>
-            <textarea className={inp} rows={2} value={locForm.description}
+          <div className="form-field" style={{ marginTop: 'var(--space-4)' }}>
+            <label className="form-label">Description</label>
+            <textarea className="form-textarea" rows={2} value={locForm.description}
               onChange={e => setLocForm(p => ({ ...p, description: e.target.value }))} />
           </div>
 
-          <div className={fld} style={{ marginTop: 16 }}>
-            <label className={lbl}>Status</label>
-            <select className={sel} value={locForm.is_active ? 'true' : 'false'}
+          <div className="form-field" style={{ marginTop: 'var(--space-4)' }}>
+            <label className="form-label">Status</label>
+            <select className="form-select" value={locForm.is_active ? 'true' : 'false'}
               onChange={e => setLocForm(p => ({ ...p, is_active: e.target.value === 'true' }))}>
               <option value="true">Active</option>
               <option value="false">Inactive</option>

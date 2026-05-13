@@ -11,9 +11,9 @@ import companyFormConfig from './formConfigs/companyFormConfig';
 import { FormStep } from './formConfigs/basicFormConfig';
 
 const CUSTOMER_TYPES = [
-  { value: 'owner',      label: 'Owner (مالك)' },
-  { value: 'commercial', label: 'Commercial (تجاري)' },
-  { value: 'consultant', label: 'Consultant (استشاري)' },
+  { value: 'owner',      label: 'Owner' },
+  { value: 'commercial', label: 'Commercial' },
+  { value: 'consultant', label: 'Consultant' },
 ];
 
 const SKIP_PREFIXES = [
@@ -149,32 +149,33 @@ export default function CustomerFormWizard() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div style={{ maxWidth: 768, margin: '0 auto' }}>
       {/* Step indicator */}
       {customerType && steps.length > 0 && (
-        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-6)', overflowX: 'auto', paddingBottom: 'var(--space-1)' }}>
           {steps.map((step, idx) => (
-            <div key={step.id} className="flex items-center gap-2 flex-shrink-0">
+            <div key={step.id} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexShrink: 0 }}>
               <div
-                className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-colors ${
-                  idx < currentStep
-                    ? 'bg-green-500 text-white'
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 28, height: 28, borderRadius: '50%',
+                  fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)',
+                  background: idx < currentStep
+                    ? 'var(--color-success)'
                     : idx === currentStep
-                    ? 'bg-orange-500 text-white'
-                    : 'text-gray-400'
-                }`}
-                style={idx > currentStep ? { background: 'var(--surface-elevated)', border: '2px solid var(--border)' } : {}}
+                    ? 'var(--brand)'
+                    : 'var(--surface-elevated)',
+                  color: idx >= currentStep && idx > currentStep ? 'var(--text-tertiary)' : 'white',
+                  border: idx > currentStep ? '2px solid var(--border-subtle)' : 'none',
+                }}
               >
                 {idx < currentStep ? '✓' : idx + 1}
               </div>
-              <span
-                className="text-xs font-medium hidden sm:block"
-                style={{ color: idx === currentStep ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
-              >
+              <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', color: idx === currentStep ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
                 {step.label}
               </span>
               {idx < steps.length - 1 && (
-                <div className="w-6 h-px" style={{ background: 'var(--border)' }} />
+                <div style={{ width: 24, height: 1, background: 'var(--border-subtle)' }} />
               )}
             </div>
           ))}
@@ -185,16 +186,25 @@ export default function CustomerFormWizard() {
         {/* Type selector */}
         {!customerType && (
           <div>
-            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+            <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', marginBottom: 'var(--space-4)', color: 'var(--text-primary)', marginTop: 0 }}>
               Select Customer Type
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-3)' }}>
               {CUSTOMER_TYPES.map((type) => (
                 <button
                   key={type.value}
                   onClick={() => handleTypeChange(type.value)}
-                  className="rounded-lg border-2 p-4 text-center font-medium transition-all hover:border-orange-400 hover:bg-orange-50"
-                  style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                  style={{
+                    borderRadius: 'var(--radius-lg)',
+                    border: '2px solid var(--border-subtle)',
+                    padding: 'var(--space-4)',
+                    textAlign: 'center',
+                    fontWeight: 'var(--weight-medium)',
+                    fontSize: 'var(--text-sm)',
+                    color: 'var(--text-primary)',
+                    background: 'var(--surface-subtle)',
+                    cursor: 'pointer',
+                  }}
                 >
                   {type.label}
                 </button>
@@ -207,7 +217,7 @@ export default function CustomerFormWizard() {
         {customerType && currentStepConfig && (
           <>
             {loadingOptions && (
-              <p className="text-xs mb-3" style={{ color: 'var(--text-tertiary)' }}>Loading options...</p>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 'var(--space-3)', marginTop: 0 }}>Loading options...</p>
             )}
 
             <DynamicFormStep
@@ -218,11 +228,11 @@ export default function CustomerFormWizard() {
               loadingOptions={loadingOptions}
             />
 
-            <div className="flex items-center justify-between mt-6 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-              <div className="flex gap-2">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'var(--space-6)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
+              <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                 {currentStep > 0 && (
                   <Button variant="secondary" onClick={() => setCurrentStep((p) => p - 1)}>
-                    ← Back
+                    Back
                   </Button>
                 )}
                 <Button
@@ -239,7 +249,7 @@ export default function CustomerFormWizard() {
 
               {!isLastStep ? (
                 <Button variant="primary" onClick={() => setCurrentStep((p) => p + 1)}>
-                  Next →
+                  Next
                 </Button>
               ) : (
                 <Button

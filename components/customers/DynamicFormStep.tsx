@@ -53,22 +53,17 @@ export default function DynamicFormStep({
       ? ((formData[prefix] as Record<string, unknown>[])?.[repeatableIdx ?? 0]?.[field.name] ?? '')
       : (formData[fullName] ?? (field.type === 'checkbox' ? false : ''));
 
-    const inputClass =
-      'w-full rounded-md border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-orange-400';
-    const labelClass = 'block text-sm font-medium mb-1';
-
     switch (field.type) {
       case 'text':
       case 'email':
         return (
-          <div key={fullName} className="mb-4">
-            <label className={labelClass} style={{ color: 'var(--text-primary)' }}>
-              {field.label}{field.required && <span className="text-red-500 ml-1">*</span>}
+          <div key={fullName} className="form-field">
+            <label className="form-label">
+              {field.label}{field.required && <span style={{ color: 'var(--color-error)', marginLeft: 2 }}>*</span>}
             </label>
             <input
               type={field.type}
-              className={inputClass}
-              style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--text-primary)' }}
+              className="form-input"
               value={String(value ?? '')}
               onChange={(e) =>
                 prefix !== '' && repeatableIdx !== undefined
@@ -81,12 +76,11 @@ export default function DynamicFormStep({
 
       case 'date':
         return (
-          <div key={fullName} className="mb-4">
-            <label className={labelClass} style={{ color: 'var(--text-primary)' }}>{field.label}</label>
+          <div key={fullName} className="form-field">
+            <label className="form-label">{field.label}</label>
             <input
               type="date"
-              className={inputClass}
-              style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--text-primary)' }}
+              className="form-input"
               value={String(value ?? '')}
               onChange={(e) =>
                 prefix !== '' && repeatableIdx !== undefined
@@ -99,12 +93,11 @@ export default function DynamicFormStep({
 
       case 'textarea':
         return (
-          <div key={fullName} className="mb-4 col-span-2">
-            <label className={labelClass} style={{ color: 'var(--text-primary)' }}>{field.label}</label>
+          <div key={fullName} className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label className="form-label">{field.label}</label>
             <textarea
               rows={3}
-              className={inputClass}
-              style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--text-primary)' }}
+              className="form-textarea"
               value={String(value ?? '')}
               onChange={(e) =>
                 prefix !== '' && repeatableIdx !== undefined
@@ -118,11 +111,10 @@ export default function DynamicFormStep({
       case 'select': {
         const opts = (field.optionsKey ? (options as Record<string, { value: string | number; label: string }[]>)[field.optionsKey] : field.options) || [];
         return (
-          <div key={fullName} className="mb-4">
-            <label className={labelClass} style={{ color: 'var(--text-primary)' }}>{field.label}</label>
+          <div key={fullName} className="form-field">
+            <label className="form-label">{field.label}</label>
             <select
-              className={inputClass}
-              style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--text-primary)' }}
+              className="form-select"
               value={String(value ?? '')}
               disabled={loadingOptions && !!field.optionsKey}
               onChange={(e) =>
@@ -142,22 +134,21 @@ export default function DynamicFormStep({
 
       case 'file':
         return (
-          <div key={fullName} className="mb-4">
-            <label className={labelClass} style={{ color: 'var(--text-primary)' }}>{field.label}</label>
+          <div key={fullName} className="form-field">
+            <label className="form-label">{field.label}</label>
             {typeof value === 'string' && value && (
               <a
                 href={value}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block text-xs text-orange-500 underline mb-1"
+                style={{ display: 'block', fontSize: 'var(--text-xs)', color: 'var(--brand)', textDecoration: 'underline', marginBottom: 'var(--space-1)' }}
               >
                 View uploaded file
               </a>
             )}
             <input
               type="file"
-              className="block w-full text-sm"
-              style={{ color: 'var(--text-secondary)' }}
+              className="form-input"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {
@@ -172,11 +163,11 @@ export default function DynamicFormStep({
 
       case 'checkbox':
         return (
-          <div key={fullName} className="mb-4 flex items-center gap-2">
+          <div key={fullName} className="form-field" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
             <input
               type="checkbox"
               id={fullName}
-              className="w-4 h-4 accent-orange-500"
+              style={{ width: 16, height: 16, accentColor: 'var(--brand)', flexShrink: 0, cursor: 'pointer' }}
               checked={!!value}
               onChange={(e) =>
                 prefix !== '' && repeatableIdx !== undefined
@@ -184,7 +175,7 @@ export default function DynamicFormStep({
                   : handleChange(fullName, e.target.checked)
               }
             />
-            <label htmlFor={fullName} className="text-sm" style={{ color: 'var(--text-primary)' }}>
+            <label htmlFor={fullName} style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)', cursor: 'pointer' }}>
               {field.label}
             </label>
           </div>
@@ -199,29 +190,34 @@ export default function DynamicFormStep({
     const list = (formData[step.id] as Record<string, unknown>[]) || [];
     return (
       <div>
-        <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+        <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--weight-semibold)', marginBottom: 'var(--space-4)', color: 'var(--text-primary)', marginTop: 0 }}>
           {step.label}
         </h3>
 
         {list.map((_, idx) => (
           <div
             key={idx}
-            className="rounded-lg border p-4 mb-4"
-            style={{ borderColor: 'var(--border)', background: 'var(--surface-elevated)' }}
+            style={{
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--border-subtle)',
+              padding: 'var(--space-4)',
+              marginBottom: 'var(--space-4)',
+              background: 'var(--surface-subtle)',
+            }}
           >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-secondary)' }}>
                 {step.label} #{idx + 1}
               </span>
               <button
                 type="button"
                 onClick={() => removeRepeatableItem(idx)}
-                className="text-xs text-red-500 hover:text-red-700"
+                style={{ fontSize: 'var(--text-xs)', color: 'var(--color-error)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}
               >
                 Remove
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-4)' }}>
               {step.fields.map((field) => renderField(field, step.id, idx))}
             </div>
           </div>
@@ -230,8 +226,17 @@ export default function DynamicFormStep({
         <button
           type="button"
           onClick={addRepeatableItem}
-          className="w-full rounded-md border-2 border-dashed py-2 text-sm font-medium transition-colors hover:border-orange-400 hover:text-orange-500"
-          style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+          style={{
+            width: '100%',
+            borderRadius: 'var(--radius-lg)',
+            border: '1.5px dashed var(--border-subtle)',
+            padding: 'var(--space-2) 0',
+            fontSize: 'var(--text-sm)',
+            fontWeight: 'var(--weight-medium)',
+            color: 'var(--text-secondary)',
+            background: 'transparent',
+            cursor: 'pointer',
+          }}
         >
           + Add {step.label}
         </button>
@@ -241,10 +246,10 @@ export default function DynamicFormStep({
 
   return (
     <div>
-      <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+      <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--weight-semibold)', marginBottom: 'var(--space-4)', color: 'var(--text-primary)', marginTop: 0 }}>
         {step.label}
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-4)' }}>
         {step.fields.map((field) => renderField(field))}
       </div>
     </div>

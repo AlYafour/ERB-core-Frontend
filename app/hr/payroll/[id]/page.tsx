@@ -38,8 +38,8 @@ export default function PayrollDetailPage() {
     if (ok) markPaidMutation.mutate();
   };
 
-  if (isLoading) return <MainLayout><div className="card text-center py-16"><Loader className="mx-auto mb-4" /></div></MainLayout>;
-  if (error || !payroll) return <MainLayout><div className="card text-center py-16"><p className="text-destructive">Payroll record not found.</p></div></MainLayout>;
+  if (isLoading) return <MainLayout><div className="card empty-state"><Loader /></div></MainLayout>;
+  if (error || !payroll) return <MainLayout><div className="card empty-state"><p style={{ color: 'var(--color-error)', margin: 0 }}>Payroll record not found.</p></div></MainLayout>;
 
   return (
     <MainLayout>
@@ -49,7 +49,7 @@ export default function PayrollDetailPage() {
           description={`${payroll.employee_name} — ${payroll.employee_id_code}`}
           breadcrumbs={[{ label: 'HR' }, { label: 'Payroll', href: '/hr/payroll' }, { label: `${payroll.month_name} ${payroll.year}` }]}
           actions={
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
               <Badge variant={(STATUS_VARIANT[payroll.status] as any) || 'default'}>{payroll.status.toUpperCase()}</Badge>
               {isAdmin && payroll.status === 'processed' && (
                 <Button variant="primary" size="sm" onClick={handleMarkPaid} isLoading={markPaidMutation.isPending}>
@@ -60,13 +60,13 @@ export default function PayrollDetailPage() {
           }
         />
 
-        <div className="card space-y-5" style={{ maxWidth: '42rem' }}>
+        <div className="card" style={{ maxWidth: '42rem', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
           {payroll.paid_at && (
-            <p className="text-sm text-muted-foreground">Paid {new Date(payroll.paid_at).toLocaleDateString()}</p>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>Paid {new Date(payroll.paid_at).toLocaleDateString()}</p>
           )}
 
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-foreground">Earnings</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', margin: 0 }}>Earnings</p>
             {[
               ['Basic Salary', payroll.basic_salary],
               ['Housing Allowance', payroll.housing_allowance],
@@ -74,54 +74,53 @@ export default function PayrollDetailPage() {
               ['Other Allowances', payroll.other_allowances],
               ['Overtime', payroll.overtime_amount],
             ].map(([label, value]) => (
-              <div key={label} className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{label}</span>
-                <span className="text-foreground">{fmt(value)}</span>
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
+                <span>{fmt(value)}</span>
               </div>
             ))}
-            <div className="flex justify-between text-sm font-semibold border-t pt-2" style={{ borderColor: 'var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-2)' }}>
               <span>Gross Salary</span>
               <span>{fmt(payroll.gross_salary)}</span>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-foreground">Deductions</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', margin: 0 }}>Deductions</p>
             {[
               ['General Deductions', payroll.deductions],
               ['Absence Deduction', payroll.absence_deduction],
             ].map(([label, value]) => (
-              <div key={label} className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{label}</span>
-                <span className="text-destructive">-{fmt(value)}</span>
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
+                <span style={{ color: 'var(--color-error)' }}>-{fmt(value)}</span>
               </div>
             ))}
           </div>
 
-          <div className="flex justify-between text-base font-bold p-3 rounded-lg"
-            style={{ backgroundColor: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-base)', fontWeight: 'var(--weight-bold)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)' }}>
             <span>Net Salary</span>
             <span>{fmt(payroll.net_salary)}</span>
           </div>
 
-          <div className="grid grid-cols-4 gap-3 border-t pt-4" style={{ borderColor: 'var(--border)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-3)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-4)' }}>
             {[
               ['Working Days', payroll.working_days],
               ['Present', payroll.present_days],
               ['Absent', payroll.absent_days],
               ['Leave', payroll.leave_days],
             ].map(([label, value]) => (
-              <div key={label} className="text-center">
-                <p className="text-xl font-bold text-foreground">{value}</p>
-                <p className="text-xs text-muted-foreground mt-1">{label}</p>
+              <div key={label} style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', margin: 0 }}>{value}</p>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)', marginBottom: 0 }}>{label}</p>
               </div>
             ))}
           </div>
 
           {payroll.notes && (
-            <div className="border-t pt-3" style={{ borderColor: 'var(--border)' }}>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Notes</p>
-              <p className="text-sm text-foreground">{payroll.notes}</p>
+            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-3)' }}>
+              <p style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', margin: '0 0 var(--space-1) 0' }}>Notes</p>
+              <p style={{ fontSize: 'var(--text-sm)', margin: 0 }}>{payroll.notes}</p>
             </div>
           )}
         </div>

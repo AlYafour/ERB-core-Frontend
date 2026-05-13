@@ -120,23 +120,23 @@ export default function ProductsPage() {
     {
       key: 'name', header: 'Product',
       render: p => (
-        <Link href={`/products/view/${p.id}`} className="text-primary hover:underline font-medium">
+        <Link href={`/products/view/${p.id}`} style={{ color: 'var(--text-brand)', fontWeight: 'var(--weight-medium)' }}>
           <BilingualName nameEn={p.name} nameAr={p.name_ar} />
         </Link>
       ),
     },
     { key: 'code',     header: 'Code',       render: p => <span style={{ color: 'var(--text-secondary)' }}>{p.code}</span> },
-    { key: 'category', header: 'Category',   render: p => <span style={{ color: 'var(--text-secondary)' }}>{p.category || 'â€”'}</span> },
+    { key: 'category', header: 'Category',   render: p => <span style={{ color: 'var(--text-secondary)' }}>{p.category || '—'}</span> },
     { key: 'price',    header: 'Unit Price',  render: p => formatPrice(p.sell_price ?? p.unit_price) },
-    { key: 'stock',    header: 'Stock',       render: p => p.track_stock ? (p.stock_balance ?? 0) : 'â€”' },
+    { key: 'stock',    header: 'Stock',       render: p => p.track_stock ? (p.stock_balance ?? 0) : '—' },
     {
       key: 'status', header: 'Status',
-      render: p => <Badge variant={PRODUCT_STATUS[p.status ?? ''] ?? 'info'}>{p.status || 'â€”'}</Badge>,
+      render: p => <Badge variant={PRODUCT_STATUS[p.status ?? ''] ?? 'info'}>{p.status || '—'}</Badge>,
     },
     {
       key: 'actions', header: t('col', 'actions'),
       render: p => (
-        <div className="flex gap-2">
+        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
           <Link href={`/products/view/${p.id}`}>
             <Button variant="view" size="sm">{t('btn', 'view')}</Button>
           </Link>
@@ -158,10 +158,10 @@ export default function ProductsPage() {
           count={totalCount}
           breadcrumbs={[{ label: 'Products' }]}
           actions={
-            <div className="flex gap-2">
+            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
               {isAdmin && (
                 <>
-                  <input ref={importFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
+                  <input ref={importFileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleImport} />
                   <Button variant="secondary" onClick={handleExport}>Export Excel</Button>
                   <Button variant="secondary" onClick={() => importFileRef.current?.click()}>Import Excel</Button>
                 </>

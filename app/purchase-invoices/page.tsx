@@ -88,20 +88,20 @@ export default function PurchaseInvoicesPage() {
   const currentIds = invoices.map((i: PurchaseInvoice) => i.id);
 
   const columns: Column<PurchaseInvoice>[] = [
-    { key: 'number',   header: t('col', 'invoiceNumber'), render: i => <span className="font-medium text-foreground">{i.invoice_number}</span> },
+    { key: 'number',   header: t('col', 'invoiceNumber'), render: i => <span style={{ fontWeight: 'var(--weight-medium)' }}>{i.invoice_number}</span> },
     {
       key: 'po', header: t('col', 'relatedPO'),
-      render: i => <span className="text-foreground">{typeof i.purchase_order === 'object' ? (i.purchase_order as any)?.order_number : 'N/A'}</span>,
+      render: i => <span>{typeof i.purchase_order === 'object' ? (i.purchase_order as any)?.order_number : 'N/A'}</span>,
     },
-    { key: 'date',    header: t('col', 'invoiceDate'),  render: i => <span className="text-muted-foreground">{fmtDate(i.invoice_date)}</span> },
-    { key: 'due',     header: t('col', 'deliveryDate'), render: i => <span className="text-muted-foreground">{i.due_date ? fmtDate(i.due_date) : '—'}</span> },
+    { key: 'date',    header: t('col', 'invoiceDate'),  render: i => <span style={{ color: 'var(--text-secondary)' }}>{fmtDate(i.invoice_date)}</span> },
+    { key: 'due',     header: t('col', 'deliveryDate'), render: i => <span style={{ color: 'var(--text-secondary)' }}>{i.due_date ? fmtDate(i.due_date) : '—'}</span> },
     { key: 'status',  header: t('col', 'status'),       render: i => <Badge variant={INVOICE_STATUS[i.status] ?? 'info'}>{STATUS_LABEL[i.status] || i.status}</Badge> },
-    { key: 'total',   header: t('col', 'total'),        render: i => <span className="font-semibold text-foreground">{formatPrice(Number(i.total || 0))}</span> },
-    { key: 'paid',    header: t('misc', 'paidAmount'),  render: i => <span className="text-foreground">{formatPrice(Number(i.paid_amount || 0))}</span> },
+    { key: 'total',   header: t('col', 'total'),        render: i => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(Number(i.total || 0))}</span> },
+    { key: 'paid',    header: t('misc', 'paidAmount'),  render: i => <span>{formatPrice(Number(i.paid_amount || 0))}</span> },
     {
       key: 'actions', header: t('col', 'actions'),
       render: i => (
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           {canView   && <Link href={`/purchase-invoices/${i.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>}
           {canDelete && <Button variant="destructive" size="sm" onClick={() => handleDelete(i.id)} isLoading={deleteMutation.isPending}>{t('btn', 'delete')}</Button>}
         </div>

@@ -196,10 +196,8 @@ function EditPurchaseOrderPageContent() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="space-y-6">
-          <div className="card text-center py-12">
-            <p className="text-muted-foreground">{t('btn', 'loading')}</p>
-          </div>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('btn', 'loading')}</p>
         </div>
       </MainLayout>
     );
@@ -208,10 +206,8 @@ function EditPurchaseOrderPageContent() {
   if (!order) {
     return (
       <MainLayout>
-        <div className="space-y-6">
-          <div className="card text-center py-12">
-            <p className="text-muted-foreground">{t('empty', 'notFound')}</p>
-          </div>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('empty', 'notFound')}</p>
         </div>
       </MainLayout>
     );
@@ -219,19 +215,16 @@ function EditPurchaseOrderPageContent() {
 
   const isSuperAdmin = !!(user?.is_superuser || user?.is_staff);
 
-  // Prevent editing if order is approved or completed (super admins can still edit)
   if ((order.status === 'approved' || order.status === 'completed') && !isSuperAdmin) {
     return (
       <MainLayout>
-        <div className="space-y-6">
-          <div className="card text-center py-12">
-            <p className="text-muted-foreground mb-4">
-              This purchase order cannot be edited because it is {order.status}.
-            </p>
-            <Link href={`/purchase-orders/${id}`}>
-              <Button variant="primary">{t('btn', 'back')} {t('page', 'purchaseOrders')}</Button>
-            </Link>
-          </div>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-4)', margin: '0 0 var(--space-4) 0' }}>
+            This purchase order cannot be edited because it is {order.status}.
+          </p>
+          <Link href={`/purchase-orders/${id}`}>
+            <Button variant="primary">{t('btn', 'back')} {t('page', 'purchaseOrders')}</Button>
+          </Link>
         </div>
       </MainLayout>
     );
@@ -247,7 +240,7 @@ function EditPurchaseOrderPageContent() {
         />
 
         <form onSubmit={handleSubmit} className="card">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
             <div>
               <SearchableDropdown
                 label={t('col', 'supplier')}
@@ -268,7 +261,7 @@ function EditPurchaseOrderPageContent() {
 
             <div>
               <label className="form-label">
-                {t('col', 'orderDate')} <span className="text-red-500">*</span>
+                {t('col', 'orderDate')} <span style={{ color: 'var(--color-error)' }}>*</span>
               </label>
               <input
                 type="date"
@@ -294,7 +287,7 @@ function EditPurchaseOrderPageContent() {
               <select
                 value={formData.delivery_method}
                 onChange={(e) => setFormData({ ...formData, delivery_method: e.target.value as 'pickup' | 'delivery' | '' })}
-                className="form-input"
+                className="form-select"
               >
                 <option value="">-- Select Delivery Method --</option>
                 <option value="pickup">Pick Up</option>
@@ -312,7 +305,7 @@ function EditPurchaseOrderPageContent() {
                     status: e.target.value as typeof formData.status,
                   })
                 }
-                className="form-input"
+                className="form-select"
               >
                 <option value="draft">{t('status', 'draft')}</option>
                 <option value="pending">{t('status', 'pending')}</option>
@@ -323,7 +316,7 @@ function EditPurchaseOrderPageContent() {
               </select>
             </div>
 
-            <div className="md:col-span-3">
+            <div style={{ gridColumn: '1 / -1' }}>
               <label className="form-label">Cost Code</label>
               <CostCodePicker
                 value={selectedCostCode}
@@ -336,12 +329,12 @@ function EditPurchaseOrderPageContent() {
           </div>
 
           {/* Items Section */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4 text-foreground">{t('section', 'orderItems')}</h3>
+          <div style={{ marginBottom: 'var(--space-6)' }}>
+            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', marginBottom: 'var(--space-4)', marginTop: 0 }}>{t('section', 'orderItems')}</h3>
 
             {/* Add Item Form */}
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4 p-4 bg-[var(--muted)] rounded-md">
-              <div className="md:col-span-2">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-4)', padding: 'var(--space-4)', backgroundColor: 'var(--surface-subtle)', borderRadius: 'var(--radius-md)' }}>
+              <div style={{ gridColumn: 'span 2' }}>
                 <SearchableDropdown
                   options={
                     products?.results.map((product) => ({
@@ -402,11 +395,11 @@ function EditPurchaseOrderPageContent() {
                 />
               </div>
 
-              <div className="flex items-end">
+              <div style={{ display: 'flex', alignItems: 'flex-end' }}>
                 <Button
                   type="button"
                   variant="primary"
-                  className="w-full"
+                  style={{ width: '100%' }}
                   onClick={handleAddItem}
                   disabled={!currentItem.product_id || currentItem.quantity <= 0 || currentItem.unit_price <= 0}
                 >
@@ -417,7 +410,7 @@ function EditPurchaseOrderPageContent() {
 
             {/* Items Table */}
             {items.length > 0 && (
-              <div className="overflow-x-auto">
+              <div style={{ overflowX: 'auto' }}>
                 <table>
                   <thead>
                     <tr>
@@ -442,8 +435,8 @@ function EditPurchaseOrderPageContent() {
                       return (
                         <tr key={index}>
                           <td>
-                            <div className="font-medium text-foreground">{product?.name || 'N/A'}</div>
-                            <div className="text-xs text-muted-foreground">{product?.code || ''}</div>
+                            <div style={{ fontWeight: 'var(--weight-medium)' }}>{product?.name || 'N/A'}</div>
+                            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{product?.code || ''}</div>
                           </td>
                           <td>
                             <input
@@ -454,7 +447,7 @@ function EditPurchaseOrderPageContent() {
                               onChange={(e) =>
                                 handleUpdateItem(index, 'quantity', parseFloat(e.target.value) || 0)
                               }
-                              className="form-input w-20"
+                              className="form-input" style={{ width: 80 }}
                             />
                           </td>
                           <td>
@@ -466,7 +459,7 @@ function EditPurchaseOrderPageContent() {
                               onChange={(e) =>
                                 handleUpdateItem(index, 'unit_price', parseFloat(e.target.value) || 0)
                               }
-                              className="form-input w-24"
+                              className="form-input" style={{ width: 96 }}
                             />
                           </td>
                           <td>
@@ -479,7 +472,7 @@ function EditPurchaseOrderPageContent() {
                               onChange={(e) =>
                                 handleUpdateItem(index, 'discount', parseFloat(e.target.value) || 0)
                               }
-                              className="form-input w-20"
+                              className="form-input" style={{ width: 80 }}
                             />
                           </td>
                           <td>
@@ -492,11 +485,11 @@ function EditPurchaseOrderPageContent() {
                               onChange={(e) =>
                                 handleUpdateItem(index, 'tax_rate', parseFloat(e.target.value) || 0)
                               }
-                              className="form-input w-20"
+                              className="form-input" style={{ width: 80 }}
                             />
                           </td>
                           <td>
-                            <div className="font-semibold text-foreground">
+                            <div style={{ fontWeight: 'var(--weight-semibold)' }}>
                               {formatPrice(itemTotal)}
                             </div>
                           </td>
@@ -520,14 +513,14 @@ function EditPurchaseOrderPageContent() {
           </div>
 
           {/* Summary Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div className="space-y-4">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-6)', marginBottom: 'var(--space-6)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
               <div>
                 <label className="form-label">{t('field', 'paymentTerms')}</label>
                 <textarea
                   value={formData.payment_terms}
                   onChange={(e) => setFormData({ ...formData, payment_terms: e.target.value })}
-                  className="form-input"
+                  className="form-textarea"
                   rows={3}
                   placeholder="Enter payment terms..."
                 />
@@ -538,7 +531,7 @@ function EditPurchaseOrderPageContent() {
                 <textarea
                   value={formData.delivery_terms}
                   onChange={(e) => setFormData({ ...formData, delivery_terms: e.target.value })}
-                  className="form-input"
+                  className="form-textarea"
                   rows={3}
                   placeholder="Enter delivery terms..."
                 />
@@ -549,7 +542,7 @@ function EditPurchaseOrderPageContent() {
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="form-input"
+                  className="form-textarea"
                   rows={3}
                   placeholder="Enter any additional notes..."
                 />
@@ -560,14 +553,14 @@ function EditPurchaseOrderPageContent() {
                 <textarea
                   value={formData.terms_and_conditions}
                   onChange={(e) => setFormData({ ...formData, terms_and_conditions: e.target.value })}
-                  className="form-input"
+                  className="form-textarea"
                   rows={4}
                   placeholder="Enter terms and conditions..."
                 />
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
               <div>
                 <label className="form-label">{t('col', 'discountPct')}</label>
                 <input
@@ -594,36 +587,28 @@ function EditPurchaseOrderPageContent() {
                 />
               </div>
 
-              <div className="card bg-[var(--muted)] p-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Subtotal:</span>
-                    <span className="font-semibold text-foreground">
-                      {formatPrice(calculateSubtotal())}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Discount:</span>
-                    <span className="font-semibold text-foreground">
-                      {formatPrice(calculateSubtotal() * ((formData.discount ?? 0) / 100) || 0)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Tax:</span>
-                    <span className="font-semibold text-foreground">
-                      {formatPrice(calculateTaxAmount())}
-                    </span>
-                  </div>
-                  <div className="flex justify-between border-t border-border pt-2 text-base">
-                    <span className="font-bold text-foreground">Total:</span>
-                    <span className="font-bold text-foreground">{formatPrice(calculateTotal())}</span>
-                  </div>
+              <div className="card" style={{ backgroundColor: 'var(--surface-subtle)', padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Subtotal:</span>
+                  <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateSubtotal())}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Discount:</span>
+                  <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateSubtotal() * ((formData.discount ?? 0) / 100) || 0)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Tax:</span>
+                  <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateTaxAmount())}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-2)', fontSize: 'var(--text-base)' }}>
+                  <span style={{ fontWeight: 'var(--weight-bold)' }}>Total:</span>
+                  <span style={{ fontWeight: 'var(--weight-bold)' }}>{formatPrice(calculateTotal())}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
             <Button
               type="submit"
               variant="primary"

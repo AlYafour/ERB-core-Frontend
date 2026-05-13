@@ -101,7 +101,7 @@ export default function ProfilePage() {
                   <input className="input" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
                 </div>
               </div>
-              <div className="flex gap-3 mt-4">
+              <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
                 <Button type="submit" variant="primary" isLoading={updateMutation.isPending}>Save Changes</Button>
                 <Button type="button" variant="secondary" onClick={() => setEditMode(false)}>Cancel</Button>
               </div>

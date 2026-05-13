@@ -69,27 +69,27 @@ export default function QuotationRequestsPage() {
   const columns: Column<QuotationRequest>[] = [
     {
       key: 'code', header: t('col', 'code'),
-      render: r => <span className="font-medium text-foreground">
+      render: r => <span style={{ fontWeight: 'var(--weight-medium)' }}>
         {typeof r.purchase_request === 'object' && r.purchase_request ? (r.purchase_request as any).code || 'N/A' : 'N/A'}
       </span>,
     },
     {
       key: 'project', header: 'Project',
       render: r => r.project_name
-        ? <div><div className="font-medium text-foreground">{r.project_name}</div>{r.project_code && <div className="text-xs text-muted-foreground font-mono">{r.project_code}</div>}</div>
-        : <span className="text-muted-foreground">—</span>,
+        ? <div><div style={{ fontWeight: 'var(--weight-medium)' }}>{r.project_name}</div>{r.project_code && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{r.project_code}</div>}</div>
+        : <span style={{ color: 'var(--text-secondary)' }}>—</span>,
     },
     {
       key: 'supplier', header: t('col', 'supplier'),
-      render: r => <span className="text-foreground">
+      render: r => <span>
         {typeof r.supplier === 'object' && r.supplier ? (r.supplier as any).business_name || (r.supplier as any).name || 'N/A' : 'N/A'}
       </span>,
     },
-    { key: 'date',    header: t('col', 'requestDate'), render: r => <span className="text-muted-foreground">{fmtDate(r.created_at)}</span> },
+    { key: 'date',    header: t('col', 'requestDate'), render: r => <span style={{ color: 'var(--text-secondary)' }}>{fmtDate(r.created_at)}</span> },
     {
       key: 'actions', header: t('col', 'actions'),
       render: r => (
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           {canView   && <Link href={`/quotation-requests/${r.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>}
           {canDelete && <Button variant="delete" size="sm" onClick={() => handleDelete(r.id)} isLoading={deleteMutation.isPending}>{t('btn', 'delete')}</Button>}
         </div>

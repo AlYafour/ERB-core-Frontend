@@ -52,8 +52,8 @@ export default function HRRequestDetailPage() {
     if (ok) approveMutation.mutate();
   };
 
-  if (isLoading) return <MainLayout><div className="card text-center py-16"><Loader className="mx-auto mb-4" /></div></MainLayout>;
-  if (error || !req) return <MainLayout><div className="card text-center py-16"><p className="text-destructive">Request not found.</p></div></MainLayout>;
+  if (isLoading) return <MainLayout><div className="card empty-state"><Loader /></div></MainLayout>;
+  if (error || !req) return <MainLayout><div className="card empty-state"><p style={{ color: 'var(--color-error)', margin: 0 }}>Request not found.</p></div></MainLayout>;
 
   return (
     <MainLayout>
@@ -63,7 +63,7 @@ export default function HRRequestDetailPage() {
           description={`#${req.id} — ${req.employee_name} (${req.employee_id_code})`}
           breadcrumbs={[{ label: 'HR' }, { label: 'Requests', href: '/hr/requests' }, { label: `#${req.id}` }]}
           actions={
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
               <Badge variant={(STATUS_VARIANT[req.status] as any) || 'default'}>{req.status.toUpperCase()}</Badge>
               {isAdmin && req.status === 'pending' && (
                 <>
@@ -75,12 +75,12 @@ export default function HRRequestDetailPage() {
           }
         />
 
-        <div className="card space-y-4" style={{ maxWidth: '42rem' }}>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">{new Date(req.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+        <div className="card" style={{ maxWidth: '42rem', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{new Date(req.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', fontSize: 'var(--text-sm)' }}>
             {[
               ['Employee', `${req.employee_name} (${req.employee_id_code})`],
               ['Type', typeLabels[req.request_type] || req.request_type],
@@ -92,36 +92,36 @@ export default function HRRequestDetailPage() {
               ['Rejected At', req.rejected_at ? new Date(req.rejected_at).toLocaleString() : '—'],
             ].map(([label, value]) => (
               <div key={label}>
-                <p className="text-muted-foreground text-xs uppercase tracking-wide">{label}</p>
-                <p className="font-medium text-foreground mt-0.5">{value}</p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{label}</p>
+                <p style={{ fontWeight: 'var(--weight-medium)', marginTop: 'var(--space-1)', marginBottom: 0 }}>{value}</p>
               </div>
             ))}
           </div>
 
           {req.reason && (
-            <div className="border-t pt-3" style={{ borderColor: 'var(--border)' }}>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Reason</p>
-              <p className="text-sm text-foreground">{req.reason}</p>
+            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-3)' }}>
+              <p style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', margin: '0 0 var(--space-1) 0' }}>Reason</p>
+              <p style={{ fontSize: 'var(--text-sm)', margin: 0 }}>{req.reason}</p>
             </div>
           )}
 
           {req.reject_reason && (
-            <div className="border-t pt-3" style={{ borderColor: 'var(--border)' }}>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Rejection Reason</p>
-              <p className="text-sm text-destructive">{req.reject_reason}</p>
+            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-3)' }}>
+              <p style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', margin: '0 0 var(--space-1) 0' }}>Rejection Reason</p>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-error)', margin: 0 }}>{req.reject_reason}</p>
             </div>
           )}
         </div>
 
         {showRejectInput && (
-          <div className="card space-y-3" style={{ maxWidth: '42rem' }}>
-            <p className="text-sm font-semibold text-foreground">Rejection Reason</p>
+          <div className="card" style={{ maxWidth: '42rem', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', margin: 0 }}>Rejection Reason</p>
             <textarea
-              className="w-full px-3 py-2 rounded-md border text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className="form-textarea"
               rows={3} placeholder="Rejection reason (required)..."
               value={rejectReason} onChange={e => setRejectReason(e.target.value)}
             />
-            <div className="flex gap-2">
+            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
               <Button variant="destructive" size="sm"
                 disabled={!rejectReason.trim() || rejectMutation.isPending}
                 isLoading={rejectMutation.isPending}

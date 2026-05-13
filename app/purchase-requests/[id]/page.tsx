@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseRequestsApi } from '@/lib/api/purchase-requests';
 import MainLayout from '@/components/layout/MainLayout';
 import PageHeader from '@/components/ui/PageHeader';
+import PageShell from '@/components/ui/PageShell';
 import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
 import DropdownButton from '@/components/ui/DropdownButton';
 import { Button } from '@/components/ui';
@@ -108,10 +109,8 @@ export default function PurchaseRequestDetailPage() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('btn', 'loading')}</p>
-          </div>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('btn', 'loading')}</p>
         </div>
       </MainLayout>
     );
@@ -120,10 +119,8 @@ export default function PurchaseRequestDetailPage() {
   if (!request) {
     return (
       <MainLayout>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('empty', 'notFound')}</p>
-          </div>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('empty', 'notFound')}</p>
         </div>
       </MainLayout>
     );
@@ -131,7 +128,7 @@ export default function PurchaseRequestDetailPage() {
 
   return (
     <MainLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
+      <PageShell>
         {/* Header */}
         <PageHeader
           backHref="/purchase-requests"
@@ -149,21 +146,21 @@ export default function PurchaseRequestDetailPage() {
           <div style={{ 
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-4)',
+            gap: 'var(--space-4)',
           }}>
             <div>
               <label style={{ 
                 display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'var(--weight-medium)',
                 color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
               }}>
                 {t('col', 'title')}
               </label>
               <p style={{ 
-                fontSize: 'var(--font-base)',
-                fontWeight: 'var(--font-weight-semibold)',
+                fontSize: 'var(--text-base)',
+                fontWeight: 'var(--weight-semibold)',
                 color: 'var(--text-primary)',
                 margin: 0,
               }}>
@@ -173,15 +170,15 @@ export default function PurchaseRequestDetailPage() {
             <div>
               <label style={{ 
                 display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'var(--weight-medium)',
                 color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
               }}>
                 {t('col', 'requestDate')}
               </label>
               <p style={{ 
-                fontSize: 'var(--font-base)',
+                fontSize: 'var(--text-base)',
                 color: 'var(--text-primary)',
                 margin: 0,
               }}>
@@ -191,15 +188,15 @@ export default function PurchaseRequestDetailPage() {
             <div>
               <label style={{ 
                 display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'var(--weight-medium)',
                 color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
               }}>
                 {t('col', 'requiredBy')}
               </label>
               <p style={{ 
-                fontSize: 'var(--font-base)',
+                fontSize: 'var(--text-base)',
                 color: 'var(--text-primary)',
                 margin: 0,
               }}>
@@ -209,15 +206,15 @@ export default function PurchaseRequestDetailPage() {
             <div>
               <label style={{ 
                 display: 'block',
-                fontSize: 'var(--font-sm)',
-                fontWeight: 'var(--font-weight-medium)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'var(--weight-medium)',
                 color: 'var(--text-secondary)',
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
               }}>
                 {t('col', 'createdBy')}
               </label>
               <p style={{ 
-                fontSize: 'var(--font-base)',
+                fontSize: 'var(--text-base)',
                 color: 'var(--text-primary)',
                 margin: 0,
               }}>
@@ -228,15 +225,15 @@ export default function PurchaseRequestDetailPage() {
               <div>
                 <label style={{ 
                   display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--weight-medium)',
                   color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
+                  marginBottom: 'var(--space-2)',
                 }}>
                   {t('section', 'authorization')}
                 </label>
                 <p style={{ 
-                  fontSize: 'var(--font-base)',
+                  fontSize: 'var(--text-base)',
                   color: 'var(--text-primary)',
                   margin: 0,
                 }}>
@@ -248,15 +245,15 @@ export default function PurchaseRequestDetailPage() {
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ 
                   display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--weight-medium)',
                   color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
+                  marginBottom: 'var(--space-2)',
                 }}>
                   {t('col', 'notes')}
                 </label>
                 <p style={{ 
-                  fontSize: 'var(--font-base)',
+                  fontSize: 'var(--text-base)',
                   color: 'var(--text-primary)',
                   margin: 0,
                 }}>
@@ -268,21 +265,21 @@ export default function PurchaseRequestDetailPage() {
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ 
                   display: 'block',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--weight-medium)',
                   color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-2)',
+                  marginBottom: 'var(--space-2)',
                 }}>
                   {t('confirm', 'rejectReason')}
                 </label>
                 <div style={{ 
-                  padding: 'var(--spacing-3)',
+                  padding: 'var(--space-3)',
                   backgroundColor: 'var(--color-error-light)',
                   border: `1px solid var(--color-error)`,
                   borderRadius: 'var(--radius-md)',
                 }}>
                   <p style={{ 
-                    fontSize: 'var(--font-base)',
+                    fontSize: 'var(--text-base)',
                     color: '#991B1B',
                     margin: 0,
                   }}>
@@ -295,20 +292,20 @@ export default function PurchaseRequestDetailPage() {
         </div>
 
         {/* Tracking Timeline Link */}
-        <div className="card" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+        <div className="card" style={{ backgroundColor: 'var(--surface-inset)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h3 style={{
-                fontSize: 'var(--font-lg)',
-                fontWeight: 'var(--font-weight-semibold)',
+                fontSize: 'var(--text-lg)',
+                fontWeight: 'var(--weight-semibold)',
                 color: 'var(--text-primary)',
                 margin: 0,
-                marginBottom: 'var(--spacing-1)',
+                marginBottom: 'var(--space-1)',
               }}>
                 {t('page', 'purchaseRequests')} - {t('section', 'statusInfo')}
               </h3>
               <p style={{
-                fontSize: 'var(--font-sm)',
+                fontSize: 'var(--text-sm)',
                 color: 'var(--text-secondary)',
                 margin: 0,
               }}>
@@ -328,11 +325,11 @@ export default function PurchaseRequestDetailPage() {
         {/* Items Section - Unified */}
         <div className="card">
           <h3 style={{ 
-            fontSize: 'var(--font-lg)',
-            fontWeight: 'var(--font-weight-semibold)',
+            fontSize: 'var(--text-lg)',
+            fontWeight: 'var(--weight-semibold)',
             color: 'var(--text-primary)',
             margin: 0,
-            marginBottom: 'var(--spacing-4)',
+            marginBottom: 'var(--space-4)',
           }}>
             {t('section', 'requestedItems')}
           </h3>
@@ -371,10 +368,10 @@ export default function PurchaseRequestDetailPage() {
                         </div>
                       ) : (
                         <>
-                          <div style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--text-primary)' }}>
+                          <div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>
                             {item.product?.name || 'N/A'}
                           </div>
-                          <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>
+                          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
                             {item.product?.code || ''}
                           </div>
                         </>
@@ -406,10 +403,10 @@ export default function PurchaseRequestDetailPage() {
                     {isSuperAdmin && (
                       <td>
                         {editingItemId === item.id ? (
-                          <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
+                          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                             <button
                               className="btn btn-primary"
-                              style={{ fontSize: 'var(--font-xs)', padding: '4px 10px' }}
+                              style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
                               disabled={!editingProductId || updateItemMutation.isPending}
                               onClick={() => updateItemMutation.mutate({ itemId: item.id!, productId: editingProductId })}
                             >
@@ -417,7 +414,7 @@ export default function PurchaseRequestDetailPage() {
                             </button>
                             <button
                               className="btn btn-secondary"
-                              style={{ fontSize: 'var(--font-xs)', padding: '4px 10px' }}
+                              style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
                               onClick={() => setEditingItemId(null)}
                             >
                               Cancel
@@ -426,7 +423,7 @@ export default function PurchaseRequestDetailPage() {
                         ) : (
                           <button
                             className="btn btn-secondary"
-                            style={{ fontSize: 'var(--font-xs)', padding: '4px 10px' }}
+                            style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
                             onClick={() => {
                               setEditingItemId(item.id!);
                               setEditingProductId(item.product?.id || 0);
@@ -446,7 +443,7 @@ export default function PurchaseRequestDetailPage() {
 
         {/* Actions - Unified */}
         {request.status === 'pending' && (canApprove || canReject) && (
-          <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
             {canApprove && (
               <button
                 onClick={() => approveMutation.mutate(id)}
@@ -497,7 +494,7 @@ export default function PurchaseRequestDetailPage() {
         )}
 
         {request.status === 'approved' && (
-          <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
             {/* Undo Approval - Only for Procurement Manager and Super Admin, and only if no quotation requests or purchase orders exist */}
             {(canApprove || user?.role === 'super_admin' || user?.is_superuser) && 
              !request.has_quotation_requests && 
@@ -574,15 +571,15 @@ export default function PurchaseRequestDetailPage() {
             {/* Show info banner if PR has awarded quotation or purchase orders */}
             {(request.has_awarded_quotation || request.has_purchase_orders) && (
               <div className="card" style={{
-                backgroundColor: 'var(--bg-tertiary)',
-                border: '1px solid var(--border-color)',
+                backgroundColor: 'var(--surface-inset)',
+                border: '1px solid var(--border-subtle)',
                 display: 'flex',
                 alignItems: 'flex-start',
-                gap: 'var(--spacing-3)',
+                gap: 'var(--space-3)',
               }}>
-                <svg 
-                  className="w-5 h-5 flex-shrink-0" 
-                  style={{ 
+                <svg
+                  style={{
+                    width: 20, height: 20, flexShrink: 0,
                     color: 'var(--text-secondary)',
                     marginTop: '2px',
                   }}
@@ -595,10 +592,10 @@ export default function PurchaseRequestDetailPage() {
                 <div style={{ flex: 1 }}>
                   <p style={{ 
                     margin: 0, 
-                    fontSize: 'var(--font-sm)',
-                    fontWeight: 'var(--font-weight-medium)',
+                    fontSize: 'var(--text-sm)',
+                    fontWeight: 'var(--weight-medium)',
                     color: 'var(--text-primary)',
-                    marginBottom: 'var(--spacing-1)',
+                    marginBottom: 'var(--space-1)',
                   }}>
                     {request.has_purchase_orders
                       ? 'Purchase Order Created'
@@ -606,7 +603,7 @@ export default function PurchaseRequestDetailPage() {
                   </p>
                   <p style={{ 
                     margin: 0, 
-                    fontSize: 'var(--font-sm)',
+                    fontSize: 'var(--text-sm)',
                     color: 'var(--text-secondary)',
                     lineHeight: '1.5',
                   }}>
@@ -627,7 +624,7 @@ export default function PurchaseRequestDetailPage() {
           title={`${t('btn', 'reject')} ${t('page', 'purchaseRequests')}`}
           message={t('confirm', 'rejectReason')}
         />
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

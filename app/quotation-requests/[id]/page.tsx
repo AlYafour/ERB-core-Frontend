@@ -22,8 +22,8 @@ export default function QuotationRequestDetailPage() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="card text-center py-12">
-          <p className="text-muted-foreground">Loading...</p>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Loading...</p>
         </div>
       </MainLayout>
     );
@@ -32,8 +32,8 @@ export default function QuotationRequestDetailPage() {
   if (!qr) {
     return (
       <MainLayout>
-        <div className="card text-center py-12">
-          <p className="text-muted-foreground">Quotation Request not found</p>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Quotation Request not found</p>
         </div>
       </MainLayout>
     );
@@ -65,7 +65,7 @@ export default function QuotationRequestDetailPage() {
             <DetailField
               label="Purchase Request"
               value={
-                <Link href={`/purchase-requests/${prId}`} className="text-primary hover:underline">
+                <Link href={`/purchase-requests/${prId}`} style={{ color: 'var(--text-brand)', textDecoration: 'underline' }}>
                   {pr?.code || `PR #${prId}`}
                 </Link>
               }
@@ -79,7 +79,7 @@ export default function QuotationRequestDetailPage() {
         </DetailCard>
 
         <DetailCard title="Items">
-          <div className="col-span-3 overflow-x-auto">
+          <div style={{ gridColumn: '1 / -1', overflowX: 'auto' }}>
             <table>
               <thead>
                 <tr>
@@ -95,7 +95,7 @@ export default function QuotationRequestDetailPage() {
                     <td>{(item as any).product?.name || `Product #${(item as any).product_id}`}</td>
                     <td>{(item as any).quantity}</td>
                     <td>{(item as any).unit || '—'}</td>
-                    <td className="text-muted-foreground">{(item as any).notes || '—'}</td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{(item as any).notes || '—'}</td>
                   </tr>
                 ))}
               </tbody>

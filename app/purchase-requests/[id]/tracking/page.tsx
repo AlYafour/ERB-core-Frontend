@@ -6,7 +6,7 @@ import { purchaseRequestsApi } from '@/lib/api/purchase-requests';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import RouteGuard from '@/components/auth/RouteGuard';
-import { Loader } from '@/components/ui';
+import { Loader, PageShell } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
 
 const statusColors: Record<string, string> = {
@@ -93,11 +93,9 @@ function PurchaseRequestTrackingPageContent() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-            <Loader className="mx-auto mb-4" />
-            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('page', 'loadingTimeline')}</p>
-          </div>
+        <div className="card empty-state">
+          <Loader />
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('page', 'loadingTimeline')}</p>
         </div>
       </MainLayout>
     );
@@ -106,18 +104,13 @@ function PurchaseRequestTrackingPageContent() {
   if (error || !data) {
     return (
       <MainLayout>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
-            <p style={{ color: 'var(--color-error)', margin: 0, marginBottom: 'var(--spacing-4)' }}>
-              {t('page', 'errorLoadingTimeline')}
-            </p>
-            <Link 
-              href={`/purchase-requests/${id}`} 
-              className="btn btn-primary"
-            >
-              {t('page', 'backToPurchaseRequest')}
-            </Link>
-          </div>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--color-error)', margin: 0, marginBottom: 'var(--space-4)' }}>
+            {t('page', 'errorLoadingTimeline')}
+          </p>
+          <Link href={`/purchase-requests/${id}`} className="btn btn-primary">
+            {t('page', 'backToPurchaseRequest')}
+          </Link>
         </div>
       </MainLayout>
     );
@@ -157,23 +150,24 @@ function PurchaseRequestTrackingPageContent() {
 
   return (
     <MainLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
+      <PageShell>
         {/* Header Section - Enhanced */}
         <div className="card" style={{ 
-          background: 'linear-gradient(135deg, var(--card-bg) 0%, var(--bg-tertiary) 100%)',
-          border: '1px solid var(--border-primary)',
+          background: 'linear-gradient(135deg, var(--card-bg) 0%, var(--surface-inset) 100%)',
+          border: '1px solid var(--border-subtle)',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--spacing-4)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--space-4)' }}>
             <div style={{ flex: 1, minWidth: '300px' }}>
               <Link
                 href={`/purchase-requests/${id}`}
-                className="text-sm mb-3 inline-block"
                 style={{
+                  fontSize: 'var(--text-sm)',
+                  marginBottom: 'var(--space-3)',
                   color: 'var(--text-secondary)',
                   textDecoration: 'none',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 'var(--spacing-1)',
+                  gap: 'var(--space-1)',
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.color = 'var(--color-primary)';
@@ -185,28 +179,28 @@ function PurchaseRequestTrackingPageContent() {
                 {t('btn', 'back')} {t('page', 'backToPurchaseRequest')}
               </Link>
               <h1 style={{
-                fontSize: 'var(--font-3xl)',
-                fontWeight: 'var(--font-weight-bold)',
+                fontSize: 'var(--text-3xl)',
+                fontWeight: 'var(--weight-bold)',
                 color: 'var(--text-primary)',
                 margin: 0,
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
                 lineHeight: 1.2,
               }}>
                 {t('page', 'purchaseRequestTracking')}
               </h1>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
                 <div style={{
-                  padding: 'var(--spacing-1) var(--spacing-3)',
-                  backgroundColor: 'var(--bg-tertiary)',
+                  padding: 'var(--space-1) var(--space-3)',
+                  backgroundColor: 'var(--surface-inset)',
                   borderRadius: 'var(--radius-full)',
-                  fontSize: 'var(--font-sm)',
-                  fontWeight: 'var(--font-weight-semibold)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--weight-semibold)',
                   color: 'var(--text-primary)',
-                  border: '1px solid var(--border-primary)',
+                  border: '1px solid var(--border-subtle)',
                 }}>
                   {purchase_request.code}
                 </div>
-                <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-sm)' }}>
+                <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
                   {purchase_request.title}
                 </span>
               </div>
@@ -215,22 +209,22 @@ function PurchaseRequestTrackingPageContent() {
               display: 'flex', 
               flexDirection: 'column', 
               alignItems: 'flex-end', 
-              gap: 'var(--spacing-2)',
+              gap: 'var(--space-2)',
               minWidth: '200px',
             }}>
               <div style={{ textAlign: 'right' }}>
                 <div style={{
-                  fontSize: 'var(--font-xs)',
+                  fontSize: 'var(--text-xs)',
                   color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-1)',
+                  marginBottom: 'var(--space-1)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
                 }}>
                   {t('page', 'totalDuration')}
                 </div>
                 <div style={{
-                  fontSize: 'var(--font-xl)',
-                  fontWeight: 'var(--font-weight-bold)',
+                  fontSize: 'var(--text-xl)',
+                  fontWeight: 'var(--weight-bold)',
                   color: 'var(--color-primary)',
                 }}>
                   {total_duration || 'N/A'}
@@ -238,17 +232,17 @@ function PurchaseRequestTrackingPageContent() {
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{
-                  fontSize: 'var(--font-xs)',
+                  fontSize: 'var(--text-xs)',
                   color: 'var(--text-secondary)',
-                  marginBottom: 'var(--spacing-1)',
+                  marginBottom: 'var(--space-1)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
                 }}>
                   {t('page', 'progress')}
                 </div>
                 <div style={{
-                  fontSize: 'var(--font-lg)',
-                  fontWeight: 'var(--font-weight-bold)',
+                  fontSize: 'var(--text-lg)',
+                  fontWeight: 'var(--weight-bold)',
                   color: 'var(--text-primary)',
                 }}>
                   {completedCount} / {timeline.length}
@@ -256,9 +250,9 @@ function PurchaseRequestTrackingPageContent() {
                 <div style={{
                   width: '120px',
                   height: '6px',
-                  backgroundColor: 'var(--bg-tertiary)',
+                  backgroundColor: 'var(--surface-inset)',
                   borderRadius: 'var(--radius-full)',
-                  marginTop: 'var(--spacing-1)',
+                  marginTop: 'var(--space-1)',
                   overflow: 'hidden',
                 }}>
                   <div style={{
@@ -276,16 +270,16 @@ function PurchaseRequestTrackingPageContent() {
 
         {/* Timeline Section - Professional Design */}
         <div className="card" style={{ 
-          padding: 'var(--spacing-8)',
+          padding: 'var(--space-8)',
           background: 'var(--card-bg)',
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 'var(--spacing-3)',
-            marginBottom: 'var(--spacing-8)',
-            paddingBottom: 'var(--spacing-4)',
-            borderBottom: '2px solid var(--border-primary)',
+            gap: 'var(--space-3)',
+            marginBottom: 'var(--space-8)',
+            paddingBottom: 'var(--space-4)',
+            borderBottom: '2px solid var(--border-subtle)',
           }}>
             <div style={{
               width: '48px',
@@ -295,22 +289,22 @@ function PurchaseRequestTrackingPageContent() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 'var(--font-xl)',
+              fontSize: 'var(--text-xl)',
             }}>
               📊
             </div>
             <div>
               <h2 style={{
-                fontSize: 'var(--font-2xl)',
-                fontWeight: 'var(--font-weight-bold)',
+                fontSize: 'var(--text-2xl)',
+                fontWeight: 'var(--weight-bold)',
                 color: 'var(--text-primary)',
                 margin: 0,
-                marginBottom: 'var(--spacing-1)',
+                marginBottom: 'var(--space-1)',
               }}>
                 {t('page', 'procurementWorkflow')}
               </h2>
               <p style={{
-                fontSize: 'var(--font-sm)',
+                fontSize: 'var(--text-sm)',
                 color: 'var(--text-secondary)',
                 margin: 0,
               }}>
@@ -320,7 +314,7 @@ function PurchaseRequestTrackingPageContent() {
           </div>
 
           {/* Vertical Timeline */}
-          <div style={{ position: 'relative', paddingLeft: 'var(--spacing-10)' }}>
+          <div style={{ position: 'relative', paddingLeft: 'var(--space-10)' }}>
             {/* Timeline Line - Enhanced */}
             <div style={{
               position: 'absolute',
@@ -331,14 +325,14 @@ function PurchaseRequestTrackingPageContent() {
               background: `linear-gradient(to bottom, 
                 ${statusColors.completed} 0%, 
                 ${statusColors.completed} ${progressPercentage}%, 
-                var(--border-primary) ${progressPercentage}%, 
-                var(--border-primary) 100%)`,
+                var(--border-subtle) ${progressPercentage}%, 
+                var(--border-subtle) 100%)`,
               borderRadius: 'var(--radius-full)',
               zIndex: 0,
             }} />
 
             {/* Timeline Items */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-8)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
               {timeline.map((item, index) => {
                 const isLast = index === timeline.length - 1;
                 const statusColor = statusColors[item.status] || statusColors.pending;
@@ -355,7 +349,7 @@ function PurchaseRequestTrackingPageContent() {
                       height: '24px',
                       borderRadius: '50%',
                       backgroundColor: statusColor,
-                      border: '4px solid var(--bg-primary)',
+                      border: '4px solid var(--surface-default)',
                       boxShadow: `0 0 0 2px ${statusColor}20, 0 2px 8px ${statusColor}40`,
                       display: 'flex',
                       alignItems: 'center',
@@ -370,7 +364,7 @@ function PurchaseRequestTrackingPageContent() {
 
                     {/* Timeline Card - Professional */}
                     <div className="card" style={{
-                      marginLeft: 'var(--spacing-6)',
+                      marginLeft: 'var(--space-6)',
                       borderLeft: `4px solid ${statusColor}`,
                       backgroundColor: statusBg,
                       boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
@@ -391,26 +385,26 @@ function PurchaseRequestTrackingPageContent() {
                         display: 'flex', 
                         justifyContent: 'space-between', 
                         alignItems: 'flex-start', 
-                        marginBottom: 'var(--spacing-4)',
+                        marginBottom: 'var(--space-4)',
                         flexWrap: 'wrap',
-                        gap: 'var(--spacing-3)',
+                        gap: 'var(--space-3)',
                       }}>
                         <div style={{ flex: 1, minWidth: '300px' }}>
                           <div style={{ 
                             display: 'flex', 
                             alignItems: 'center', 
-                            gap: 'var(--spacing-3)', 
-                            marginBottom: 'var(--spacing-2)',
+                            gap: 'var(--space-3)', 
+                            marginBottom: 'var(--space-2)',
                           }}>
                             <span style={{ 
-                              fontSize: 'var(--font-2xl)',
+                              fontSize: 'var(--text-2xl)',
                               lineHeight: 1,
                             }}>
                               {stageIcons[item.stage] || '📌'}
                             </span>
                             <h3 style={{
-                              fontSize: 'var(--font-lg)',
-                              fontWeight: 'var(--font-weight-bold)',
+                              fontSize: 'var(--text-lg)',
+                              fontWeight: 'var(--weight-bold)',
                               color: 'var(--text-primary)',
                               margin: 0,
                             }}>
@@ -422,25 +416,25 @@ function PurchaseRequestTrackingPageContent() {
                           <div style={{ 
                             display: 'grid', 
                             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-                            gap: 'var(--spacing-3)',
-                            marginTop: 'var(--spacing-3)',
+                            gap: 'var(--space-3)',
+                            marginTop: 'var(--space-3)',
                           }}>
                             {item.user && (
                               <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 'var(--spacing-2)',
+                                gap: 'var(--space-2)',
                               }}>
                                 <span style={{ 
-                                  fontSize: 'var(--font-xs)', 
+                                  fontSize: 'var(--text-xs)', 
                                   color: 'var(--text-secondary)',
-                                  fontWeight: 'var(--font-weight-medium)',
+                                  fontWeight: 'var(--weight-medium)',
                                 }}>
                                   👤
                                 </span>
                                 <div>
                                   <div style={{ 
-                                    fontSize: 'var(--font-xs)', 
+                                    fontSize: 'var(--text-xs)', 
                                     color: 'var(--text-secondary)',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.05em',
@@ -448,16 +442,16 @@ function PurchaseRequestTrackingPageContent() {
                                     {t('page', 'performedBy')}
                                   </div>
                                   <div style={{ 
-                                    fontSize: 'var(--font-sm)', 
+                                    fontSize: 'var(--text-sm)', 
                                     color: 'var(--text-primary)', 
-                                    fontWeight: 'var(--font-weight-semibold)',
+                                    fontWeight: 'var(--weight-semibold)',
                                   }}>
                                     {item.user}
                                     {item.user_role && (
                                       <span style={{ 
                                         color: 'var(--text-secondary)',
-                                        fontWeight: 'var(--font-weight-normal)',
-                                        marginLeft: 'var(--spacing-1)',
+                                        fontWeight: 'var(--weight-normal)',
+                                        marginLeft: 'var(--space-1)',
                                       }}>
                                         • {formatRole(item.user_role)}
                                       </span>
@@ -471,17 +465,17 @@ function PurchaseRequestTrackingPageContent() {
                               <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 'var(--spacing-2)',
+                                gap: 'var(--space-2)',
                               }}>
                                 <span style={{ 
-                                  fontSize: 'var(--font-xs)', 
+                                  fontSize: 'var(--text-xs)', 
                                   color: 'var(--text-secondary)',
                                 }}>
                                   🕐
                                 </span>
                                 <div>
                                   <div style={{ 
-                                    fontSize: 'var(--font-xs)', 
+                                    fontSize: 'var(--text-xs)', 
                                     color: 'var(--text-secondary)',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.05em',
@@ -489,9 +483,9 @@ function PurchaseRequestTrackingPageContent() {
                                     {t('page', 'dateTime')}
                                   </div>
                                   <div style={{ 
-                                    fontSize: 'var(--font-sm)', 
+                                    fontSize: 'var(--text-sm)', 
                                     color: 'var(--text-primary)',
-                                    fontWeight: 'var(--font-weight-semibold)',
+                                    fontWeight: 'var(--weight-semibold)',
                                   }}>
                                     {new Date(item.timestamp).toLocaleString('en-US', {
                                       year: 'numeric',
@@ -509,17 +503,17 @@ function PurchaseRequestTrackingPageContent() {
                               <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 'var(--spacing-2)',
+                                gap: 'var(--space-2)',
                               }}>
                                 <span style={{ 
-                                  fontSize: 'var(--font-xs)', 
+                                  fontSize: 'var(--text-xs)', 
                                   color: 'var(--text-secondary)',
                                 }}>
                                   ⏱️
                                 </span>
                                 <div>
                                   <div style={{ 
-                                    fontSize: 'var(--font-xs)', 
+                                    fontSize: 'var(--text-xs)', 
                                     color: 'var(--text-secondary)',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.05em',
@@ -527,9 +521,9 @@ function PurchaseRequestTrackingPageContent() {
                                     {t('page', 'duration')}
                                   </div>
                                   <div style={{ 
-                                    fontSize: 'var(--font-sm)', 
+                                    fontSize: 'var(--text-sm)', 
                                     color: statusColor,
-                                    fontWeight: 'var(--font-weight-bold)',
+                                    fontWeight: 'var(--weight-bold)',
                                   }}>
                                     {item.duration}
                                   </div>
@@ -542,12 +536,12 @@ function PurchaseRequestTrackingPageContent() {
                         {/* Status Badge */}
                         <div>
                           <div style={{
-                            padding: 'var(--spacing-2) var(--spacing-4)',
+                            padding: 'var(--space-2) var(--space-4)',
                             backgroundColor: statusColor,
                             color: '#FFFFFF',
                             borderRadius: 'var(--radius-full)',
-                            fontSize: 'var(--font-xs)',
-                            fontWeight: 'var(--font-weight-bold)',
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 'var(--weight-bold)',
                             textTransform: 'uppercase',
                             letterSpacing: '0.05em',
                             boxShadow: `0 2px 4px ${statusColor}40`,
@@ -560,24 +554,24 @@ function PurchaseRequestTrackingPageContent() {
                       {/* Notes */}
                       {item.notes && (
                         <div style={{
-                          marginTop: 'var(--spacing-4)',
-                          padding: 'var(--spacing-4)',
-                          backgroundColor: 'var(--bg-primary)',
+                          marginTop: 'var(--space-4)',
+                          padding: 'var(--space-4)',
+                          backgroundColor: 'var(--surface-default)',
                           borderRadius: 'var(--radius-md)',
-                          border: '1px solid var(--border-primary)',
+                          border: '1px solid var(--border-subtle)',
                         }}>
                           <div style={{
-                            fontSize: 'var(--font-xs)',
-                            fontWeight: 'var(--font-weight-bold)',
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 'var(--weight-bold)',
                             color: 'var(--text-secondary)',
-                            marginBottom: 'var(--spacing-2)',
+                            marginBottom: 'var(--space-2)',
                             textTransform: 'uppercase',
                             letterSpacing: '0.05em',
                           }}>
                             📝 {t('field', 'notes')}
                           </div>
                           <p style={{
-                            fontSize: 'var(--font-sm)',
+                            fontSize: 'var(--text-sm)',
                             color: 'var(--text-primary)',
                             margin: 0,
                             lineHeight: 1.6,
@@ -589,12 +583,12 @@ function PurchaseRequestTrackingPageContent() {
 
                       {/* Documents */}
                       {item.documents && item.documents.length > 0 && (
-                        <div style={{ marginTop: 'var(--spacing-4)' }}>
+                        <div style={{ marginTop: 'var(--space-4)' }}>
                           <div style={{ 
-                            fontSize: 'var(--font-xs)',
-                            fontWeight: 'var(--font-weight-bold)',
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 'var(--weight-bold)',
                             color: 'var(--text-secondary)',
-                            marginBottom: 'var(--spacing-3)',
+                            marginBottom: 'var(--space-3)',
                             textTransform: 'uppercase',
                             letterSpacing: '0.05em',
                           }}>
@@ -603,7 +597,7 @@ function PurchaseRequestTrackingPageContent() {
                           <div style={{ 
                             display: 'flex', 
                             flexWrap: 'wrap', 
-                            gap: 'var(--spacing-2)',
+                            gap: 'var(--space-2)',
                           }}>
                             {item.documents.map((doc, docIndex) => (
                               <a
@@ -614,15 +608,15 @@ function PurchaseRequestTrackingPageContent() {
                                 style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: 'var(--spacing-2)',
-                                  padding: 'var(--spacing-2) var(--spacing-3)',
-                                  backgroundColor: 'var(--bg-primary)',
-                                  border: '1px solid var(--border-primary)',
+                                  gap: 'var(--space-2)',
+                                  padding: 'var(--space-2) var(--space-3)',
+                                  backgroundColor: 'var(--surface-default)',
+                                  border: '1px solid var(--border-subtle)',
                                   borderRadius: 'var(--radius-md)',
-                                  fontSize: 'var(--font-xs)',
+                                  fontSize: 'var(--text-xs)',
                                   color: 'var(--color-primary)',
                                   textDecoration: 'none',
-                                  fontWeight: 'var(--font-weight-medium)',
+                                  fontWeight: 'var(--weight-medium)',
                                   transition: 'all 0.2s ease',
                                 }}
                                 onMouseEnter={(e) => {
@@ -631,8 +625,8 @@ function PurchaseRequestTrackingPageContent() {
                                   e.currentTarget.style.transform = 'translateY(-2px)';
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'var(--bg-primary)';
-                                  e.currentTarget.style.borderColor = 'var(--border-primary)';
+                                  e.currentTarget.style.backgroundColor = 'var(--surface-default)';
+                                  e.currentTarget.style.borderColor = 'var(--border-subtle)';
                                   e.currentTarget.style.transform = 'translateY(0)';
                                 }}
                               >
@@ -647,33 +641,33 @@ function PurchaseRequestTrackingPageContent() {
 
                       {/* View Details Link */}
                       <div style={{ 
-                        marginTop: 'var(--spacing-4)',
-                        paddingTop: 'var(--spacing-4)',
-                        borderTop: '1px solid var(--border-primary)',
+                        marginTop: 'var(--space-4)',
+                        paddingTop: 'var(--space-4)',
+                        borderTop: '1px solid var(--border-subtle)',
                       }}>
                         <Link
                           href={getRelatedUrl(item.related_type, item.related_id)}
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: 'var(--spacing-2)',
-                            fontSize: 'var(--font-sm)',
-                            fontWeight: 'var(--font-weight-semibold)',
+                            gap: 'var(--space-2)',
+                            fontSize: 'var(--text-sm)',
+                            fontWeight: 'var(--weight-semibold)',
                             color: 'var(--color-primary)',
                             textDecoration: 'none',
                             transition: 'all 0.2s ease',
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = 'var(--color-primary-dark)';
-                            e.currentTarget.style.gap = 'var(--spacing-3)';
+                            e.currentTarget.style.gap = 'var(--space-3)';
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.color = 'var(--color-primary)';
-                            e.currentTarget.style.gap = 'var(--spacing-2)';
+                            e.currentTarget.style.gap = 'var(--space-2)';
                           }}
                         >
                           {t('page', 'viewDetails')}
-                          <span style={{ fontSize: 'var(--font-base)' }}>→</span>
+                          <span style={{ fontSize: 'var(--text-base)' }}>→</span>
                         </Link>
                       </div>
                     </div>
@@ -686,18 +680,18 @@ function PurchaseRequestTrackingPageContent() {
 
         {/* Summary Card - Enhanced */}
         <div className="card" style={{ 
-          background: 'linear-gradient(135deg, var(--bg-tertiary) 0%, var(--card-bg) 100%)',
-          border: '1px solid var(--border-primary)',
+          background: 'linear-gradient(135deg, var(--surface-inset) 0%, var(--card-bg) 100%)',
+          border: '1px solid var(--border-subtle)',
         }}>
           <h3 style={{
-            fontSize: 'var(--font-xl)',
-            fontWeight: 'var(--font-weight-bold)',
+            fontSize: 'var(--text-xl)',
+            fontWeight: 'var(--weight-bold)',
             color: 'var(--text-primary)',
             margin: 0,
-            marginBottom: 'var(--spacing-6)',
+            marginBottom: 'var(--space-6)',
             display: 'flex',
             alignItems: 'center',
-            gap: 'var(--spacing-2)',
+            gap: 'var(--space-2)',
           }}>
             <span>📊</span>
             <span>{t('page', 'summary')}</span>
@@ -705,27 +699,27 @@ function PurchaseRequestTrackingPageContent() {
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-            gap: 'var(--spacing-6)',
+            gap: 'var(--space-6)',
           }}>
             <div style={{
-              padding: 'var(--spacing-4)',
-              backgroundColor: 'var(--bg-primary)',
+              padding: 'var(--space-4)',
+              backgroundColor: 'var(--surface-default)',
               borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--border-primary)',
+              border: '1px solid var(--border-subtle)',
             }}>
               <div style={{ 
-                fontSize: 'var(--font-xs)', 
+                fontSize: 'var(--text-xs)', 
                 color: 'var(--text-secondary)', 
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
-                fontWeight: 'var(--font-weight-semibold)',
+                fontWeight: 'var(--weight-semibold)',
               }}>
                 {t('page', 'currentStage')}
               </div>
               <div style={{ 
-                fontSize: 'var(--font-lg)', 
-                fontWeight: 'var(--font-weight-bold)', 
+                fontSize: 'var(--text-lg)', 
+                fontWeight: 'var(--weight-bold)', 
                 color: 'var(--text-primary)',
                 lineHeight: 1.3,
               }}>
@@ -733,72 +727,72 @@ function PurchaseRequestTrackingPageContent() {
               </div>
             </div>
             <div style={{
-              padding: 'var(--spacing-4)',
-              backgroundColor: 'var(--bg-primary)',
+              padding: 'var(--space-4)',
+              backgroundColor: 'var(--surface-default)',
               borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--border-primary)',
+              border: '1px solid var(--border-subtle)',
             }}>
               <div style={{ 
-                fontSize: 'var(--font-xs)', 
+                fontSize: 'var(--text-xs)', 
                 color: 'var(--text-secondary)', 
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
-                fontWeight: 'var(--font-weight-semibold)',
+                fontWeight: 'var(--weight-semibold)',
               }}>
                 {t('page', 'totalSteps')}
               </div>
               <div style={{ 
-                fontSize: 'var(--font-2xl)', 
-                fontWeight: 'var(--font-weight-bold)', 
+                fontSize: 'var(--text-2xl)', 
+                fontWeight: 'var(--weight-bold)', 
                 color: 'var(--text-primary)',
               }}>
                 {timeline.length}
               </div>
             </div>
             <div style={{
-              padding: 'var(--spacing-4)',
-              backgroundColor: 'var(--bg-primary)',
+              padding: 'var(--space-4)',
+              backgroundColor: 'var(--surface-default)',
               borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--border-primary)',
+              border: '1px solid var(--border-subtle)',
             }}>
               <div style={{ 
-                fontSize: 'var(--font-xs)', 
+                fontSize: 'var(--text-xs)', 
                 color: 'var(--text-secondary)', 
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
-                fontWeight: 'var(--font-weight-semibold)',
+                fontWeight: 'var(--weight-semibold)',
               }}>
                 {t('page', 'completed')}
               </div>
               <div style={{ 
-                fontSize: 'var(--font-2xl)', 
-                fontWeight: 'var(--font-weight-bold)', 
+                fontSize: 'var(--text-2xl)', 
+                fontWeight: 'var(--weight-bold)', 
                 color: 'var(--color-success)',
               }}>
                 {completedCount}
               </div>
             </div>
             <div style={{
-              padding: 'var(--spacing-4)',
-              backgroundColor: 'var(--bg-primary)',
+              padding: 'var(--space-4)',
+              backgroundColor: 'var(--surface-default)',
               borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--border-primary)',
+              border: '1px solid var(--border-subtle)',
             }}>
               <div style={{ 
-                fontSize: 'var(--font-xs)', 
+                fontSize: 'var(--text-xs)', 
                 color: 'var(--text-secondary)', 
-                marginBottom: 'var(--spacing-2)',
+                marginBottom: 'var(--space-2)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
-                fontWeight: 'var(--font-weight-semibold)',
+                fontWeight: 'var(--weight-semibold)',
               }}>
                 {t('page', 'totalDuration')}
               </div>
               <div style={{ 
-                fontSize: 'var(--font-lg)', 
-                fontWeight: 'var(--font-weight-bold)', 
+                fontSize: 'var(--text-lg)', 
+                fontWeight: 'var(--weight-bold)', 
                 color: 'var(--text-primary)',
               }}>
                 {total_duration || 'N/A'}
@@ -806,7 +800,7 @@ function PurchaseRequestTrackingPageContent() {
             </div>
           </div>
         </div>
-      </div>
+      </PageShell>
     </MainLayout>
   );
 }

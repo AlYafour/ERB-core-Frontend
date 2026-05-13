@@ -1391,6 +1391,21 @@ table tbody tr:hover {
   color: var(--text-disabled);
 }
 
+/* ── FORM LAYOUT ──────────────────────────────────────────────── */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4);
+}
+
+.section-title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-4);
+}
+
 /* ── STATUS PILL — dot + label ────────────────────────────────── */
 
 .status-pill {
@@ -1674,6 +1689,65 @@ table tbody tr:hover {
   gap: var(--space-2);
   flex-shrink: 0;
   background: var(--bg-secondary);
+}
+
+/* ── SECTION HEAD — label + inline edit trigger ───────────────── */
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.section-head-title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: 0;
+}
+
+.section-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.section-edit-btn:hover {
+  background: var(--surface-inset);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+/* ── SKELETON ─────────────────────────────────────────────────── */
+
+@keyframes skeleton-sweep {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-subtle) 25%,
+    var(--surface-inset) 50%,
+    var(--surface-subtle) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-sweep 1.6s ease-in-out infinite;
+  border-radius: var(--radius-md);
 }
 
 /* ── SCROLLBAR ────────────────────────────────────────────────── */

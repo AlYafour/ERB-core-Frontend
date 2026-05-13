@@ -36,7 +36,7 @@ const filterFields: FilterField[] = [
   { name: 'start_date_before', label: 'Start Date To',   type: 'date', group: 'Dates' },
 ];
 
-const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'â€”';
+const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
 
 export default function HRRequestsPage() {
   const { page, setPage, search, filters, handleSearch, handleFilterChange, handleFilterReset, handleRemoveFilter } = useTableState();
@@ -81,29 +81,29 @@ export default function HRRequestsPage() {
       key: 'employee', header: 'Employee',
       render: r => (
         <div>
-          <div className="font-medium text-foreground">{r.employee_name}</div>
-          <div className="text-xs text-muted-foreground font-mono">{r.employee_id_code}</div>
+          <div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{r.employee_name}</div>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{r.employee_id_code}</div>
         </div>
       ),
     },
-    { key: 'type',   header: 'Type',       render: r => <span className="text-sm text-foreground">{REQUEST_TYPE_LABEL[r.request_type] || r.request_type}</span> },
+    { key: 'type',   header: 'Type',       render: r => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{REQUEST_TYPE_LABEL[r.request_type] || r.request_type}</span> },
     { key: 'status', header: t('col', 'status'), render: r => <Badge variant={HR_REQUEST_STATUS[r.status] ?? 'default'}>{STATUS_LABEL[r.status] || r.status}</Badge> },
-    { key: 'start',  header: 'Start Date', render: r => <span className="text-sm text-muted-foreground">{fmtDate(r.start_date)}</span> },
-    { key: 'end',    header: 'End Date',   render: r => <span className="text-sm text-muted-foreground">{fmtDate(r.end_date)}</span> },
-    { key: 'days',   header: 'Days',       render: r => <span className="text-sm font-medium text-foreground">{r.days != null ? r.days : 'â€”'}</span> },
-    { key: 'reason', header: 'Reason',     render: r => <span className="text-sm text-muted-foreground max-w-[200px] truncate block" title={r.reason}>{r.reason || 'â€”'}</span> },
-    { key: 'created', header: 'Created',   render: r => <span className="text-sm text-muted-foreground">{fmtDate(r.created_at)}</span> },
+    { key: 'start',  header: 'Start Date', render: r => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{fmtDate(r.start_date)}</span> },
+    { key: 'end',    header: 'End Date',   render: r => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{fmtDate(r.end_date)}</span> },
+    { key: 'days',   header: 'Days',       render: r => <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{r.days != null ? r.days : '—'}</span> },
+    { key: 'reason', header: 'Reason',     render: r => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={r.reason}>{r.reason || '—'}</span> },
+    { key: 'created', header: 'Created',   render: r => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{fmtDate(r.created_at)}</span> },
     {
       key: 'actions', header: t('col', 'actions'),
       render: r => isAdmin ? (
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           {r.status === 'pending' ? (
             <>
               <Button variant="success" size="sm" onClick={() => handleApprove(r.id)} isLoading={approveMutation.isPending}>{t('btn', 'approve')}</Button>
               <Button variant="delete"  size="sm" onClick={() => handleReject(r.id)}  isLoading={rejectMutation.isPending}>{t('btn', 'reject')}</Button>
             </>
           ) : (
-            <span className="text-xs text-muted-foreground">{r.approver_name ? `By: ${r.approver_name}` : 'â€”'}</span>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{r.approver_name ? `By: ${r.approver_name}` : '—'}</span>
           )}
         </div>
       ) : null,

@@ -124,8 +124,8 @@ export default function SuppliersPage() {
       key: 'name', header: t('col', 'name'),
       render: s => <BilingualName nameEn={s.business_name || s.name} nameAr={s.business_name_ar} />,
     },
-    { key: 'email', header: t('col', 'email'), render: s => <span style={{ color: 'var(--text-secondary)' }}>{s.email || 'â€”'}</span> },
-    { key: 'phone', header: t('col', 'phone'), render: s => <span style={{ color: 'var(--text-secondary)' }}>{s.phone || 'â€”'}</span> },
+    { key: 'email', header: t('col', 'email'), render: s => <span style={{ color: 'var(--text-secondary)' }}>{s.email || '—'}</span> },
+    { key: 'phone', header: t('col', 'phone'), render: s => <span style={{ color: 'var(--text-secondary)' }}>{s.phone || '—'}</span> },
     {
       key: 'status', header: t('col', 'status'),
       render: s => <Badge variant={s.is_active ? 'success' : 'error'}>{s.is_active ? t('status', 'active') : t('status', 'inactive')}</Badge>,
@@ -133,7 +133,7 @@ export default function SuppliersPage() {
     {
       key: 'actions', header: t('col', 'actions'),
       render: s => (
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           <Link href={`/suppliers/view/${s.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>
           <Link href={`/suppliers/${s.id}`}><Button variant="edit" size="sm">{t('btn', 'edit')}</Button></Link>
           {isSuperuser && (
@@ -154,11 +154,11 @@ export default function SuppliersPage() {
           count={totalCount}
           breadcrumbs={[{ label: 'Suppliers' }]}
           actions={
-            <div className="flex items-center gap-2">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
               <Button variant="secondary" onClick={handleExport}>â¬‡ {t('btn', 'export')}</Button>
               {isAdmin && (
                 <>
-                  <input ref={importFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
+                  <input ref={importFileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleImport} />
                   <Button variant="secondary" onClick={() => importFileRef.current?.click()}>â¬† {t('btn', 'import')}</Button>
                 </>
               )}

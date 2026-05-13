@@ -111,22 +111,22 @@ export default function ProjectsPage() {
   const currentIds  = projects.map((p: Project) => p.id);
 
   const columns: Column<Project>[] = [
-    { key: 'code',     header: 'Code',     render: p => <span className="font-mono text-sm text-muted-foreground">{p.code}</span> },
+    { key: 'code',     header: 'Code',     render: p => <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{p.code}</span> },
     {
       key: 'name', header: 'Name',
       render: p => (
-        <Link href={`/projects/view/${p.id}`} className="text-primary hover:underline font-medium">
+        <Link href={`/projects/view/${p.id}`} style={{ color: 'var(--text-brand)', fontWeight: 'var(--weight-medium)' }}>
           <BilingualName nameEn={p.name} nameAr={p.name_ar} />
         </Link>
       ),
     },
-    { key: 'location', header: 'Location', render: p => <span className="text-muted-foreground">{p.location || 'â€”'}</span> },
+    { key: 'location', header: 'Location', render: p => <span style={{ color: 'var(--text-secondary)' }}>{p.location || '—'}</span> },
     { key: 'status',   header: 'Status',   render: p => <Badge variant={PROJECT_STATUS[p.project_status] ?? 'info'}>{STATUS_LABEL[p.project_status] || p.project_status}</Badge> },
     { key: 'active',   header: 'Active',   render: p => <Badge variant={p.is_active ? 'success' : 'error'}>{p.is_active ? 'Yes' : 'No'}</Badge> },
     {
       key: 'actions', header: t('col', 'actions'),
       render: p => (
-        <div className="flex gap-2">
+        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
           <Link href={`/projects/view/${p.id}`}><Button variant="view" size="sm">View</Button></Link>
           <Link href={`/projects/${p.id}`}><Button variant="edit" size="sm">Edit</Button></Link>
           {canDelete && <Button variant="delete" size="sm" onClick={() => handleDelete(p.id)} isLoading={deleteMutation.isPending}>{t('btn', 'delete')}</Button>}
@@ -143,13 +143,13 @@ export default function ProjectsPage() {
           count={totalCount}
           breadcrumbs={[{ label: 'Projects' }]}
           actions={
-            <div className="flex items-center gap-2">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
               <Button variant="secondary" onClick={handleExport} isLoading={isExporting}>
                 {isExporting ? t('btn', 'exporting') : `â¬‡ ${t('btn', 'export')}`}
               </Button>
               {isAdmin && (
                 <>
-                  <input ref={importFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
+                  <input ref={importFileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleImport} />
                   <Button variant="secondary" onClick={() => importFileRef.current?.click()} isLoading={isImporting}>
                     {isImporting ? t('btn', 'importing') : `â¬† ${t('btn', 'import')}`}
                   </Button>

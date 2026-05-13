@@ -31,10 +31,6 @@ const ACTION_LABELS: Record<string, string> = {
   award: 'Award', convert: 'Convert to PO', mark_paid: 'Mark Paid',
 };
 
-const inp = 'form-input';
-const fld = 'form-field';
-const lbl = 'form-label';
-
 export default function RolesPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -46,7 +42,6 @@ export default function RolesPage() {
   const [editingDept, setEditingDept] = useState<HRDepartment | null>(null);
   const [form, setForm]             = useState({ name: '', name_ar: '', description: '' });
 
-  // ── Queries ────────────────────────────────────────────────────────────────
   const { data, isLoading } = useQuery({
     queryKey: ['hr-departments', search],
     queryFn: () => hrDepartmentsApi.getAll({ search }),
@@ -63,7 +58,6 @@ export default function RolesPage() {
     enabled:  !!selected?.permission_set_id,
   });
 
-  // ── Mutations ──────────────────────────────────────────────────────────────
   const assignMutation = useMutation({
     mutationFn: ({ id, ids }: { id: number; ids: number[] }) =>
       hrDepartmentsApi.assignPermissions(id, ids),
@@ -108,7 +102,6 @@ export default function RolesPage() {
     onError: () => toast('Failed to delete role', 'error'),
   });
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
   const openCreate = () => {
     setEditingDept(null);
     setForm({ name: '', name_ar: '', description: '' });
@@ -139,13 +132,9 @@ export default function RolesPage() {
     assignMutation.mutate({ id: selected.id, ids: next });
   };
 
-  const cardBase = 'p-3 rounded-lg border cursor-pointer transition-all';
-  const cardSelected = `${cardBase} border-2` ;
-
   return (
     <MainLayout>
       <PageShell>
-
         <PageHeader
           title="Roles"
           description="Each role is a department — assign permissions to control what its members can do"
@@ -154,20 +143,20 @@ export default function RolesPage() {
           actions={isAdmin ? <Button variant="primary" onClick={openCreate}>+ New Role</Button> : undefined}
         />
 
-        <div className="flex gap-5 items-start">
+        <div style={{ display: 'flex', gap: 'var(--space-5)', alignItems: 'flex-start' }}>
 
-          {/* ── LEFT: role list ── */}
-          <div className="w-72 flex-shrink-0 space-y-3">
+          {/* Left: role list */}
+          <div style={{ width: 288, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             <SearchInput
               placeholder="Search roles..."
               value={search}
               onChange={setSearch}
             />
 
-            {isLoading ? <Loader className="mx-auto" /> : (
-              <div className="space-y-2">
+            {isLoading ? <Loader /> : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                 {data?.results?.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-6">No roles found.</p>
+                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', textAlign: 'center', padding: 'var(--space-6) 0' }}>No roles found.</p>
                 )}
                 {data?.results?.map((dept: HRDepartment) => {
                   const isSelected = selected?.id === dept.id;
@@ -175,32 +164,32 @@ export default function RolesPage() {
                     <div
                       key={dept.id}
                       onClick={() => setSelected(dept)}
-                      className={isSelected ? cardSelected : cardBase}
                       style={{
-                        borderColor: isSelected ? 'var(--sidebar-active-text)' : 'var(--border)',
+                        padding: 'var(--space-3)',
+                        borderRadius: 'var(--radius-md)',
+                        border: isSelected ? '2px solid var(--sidebar-active-text)' : '1px solid var(--border-subtle)',
                         background: isSelected ? 'var(--sidebar-active-bg)' : 'var(--card-bg)',
+                        cursor: 'pointer',
                       }}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-foreground truncate">{dept.name}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-2)' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>{dept.name}</p>
+                          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)', marginBottom: 0 }}>
                             {dept.permissions_count} permissions · {dept.employee_count} members
                           </p>
                         </div>
                         {isAdmin && (
-                          <div className="flex gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <div style={{ display: 'flex', gap: 'var(--space-1)', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => openEdit(dept)}
-                              className="text-xs px-2 py-0.5 rounded text-muted-foreground hover:text-foreground"
-                              style={{ background: 'var(--muted)' }}
+                              style={{ fontSize: 'var(--text-xs)', padding: '2px var(--space-2)', borderRadius: 'var(--radius-sm)', color: 'var(--text-secondary)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer' }}
                             >
                               Edit
                             </button>
                             <button
                               onClick={() => handleDelete(dept)}
-                              className="text-xs px-2 py-0.5 rounded text-destructive hover:opacity-80"
-                              style={{ background: 'var(--muted)' }}
+                              style={{ fontSize: 'var(--text-xs)', padding: '2px var(--space-2)', borderRadius: 'var(--radius-sm)', color: 'var(--color-error)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer' }}
                             >
                               Del
                             </button>
@@ -214,43 +203,47 @@ export default function RolesPage() {
             )}
           </div>
 
-          {/* ── RIGHT: permissions grid ── */}
-          <div className="flex-1 min-w-0">
+          {/* Right: permissions grid */}
+          <div style={{ flex: 1, minWidth: 0 }}>
             {!selected ? (
               <div className="card empty-state">
                 <p className="empty-state-title">Select a role to manage its permissions</p>
                 <p className="empty-state-desc">Choose a role from the list on the left</p>
               </div>
             ) : (
-              <div className="card space-y-5">
-                <div className="flex items-center justify-between">
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
-                    <h2 className="text-lg font-semibold text-foreground">{selected.name}</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', margin: 0 }}>{selected.name}</h2>
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)', marginBottom: 0 }}>
                       {selectedSetDetail?.permissions_count ?? 0} / {Object.values(permsByCategory || {}).flat().length} permissions active
                     </p>
                   </div>
                   {assignMutation.isPending && <Loader />}
                 </div>
 
-                {loadingPerms ? <Loader className="mx-auto" /> : (
-                  <div className="space-y-6">
+                {loadingPerms ? <Loader /> : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
                     {Object.entries(permsByCategory || {}).map(([category, perms]: [string, Permission[]]) => (
                       <div key={category}>
-                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                        <h4 style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-2)', marginTop: 0 }}>
                           {CATEGORY_LABELS[category] || category}
                         </h4>
-                        <div className="flex flex-wrap gap-2">
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
                           {perms.map((perm) => {
                             const isChecked = selectedSetDetail?.permissions.some((p) => p.id === perm.id) ?? false;
                             return (
                               <label
                                 key={perm.id}
-                                className="flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer text-sm border transition-colors"
                                 style={{
-                                  background: isChecked ? 'var(--sidebar-active-bg)' : 'var(--muted)',
-                                  borderColor: isChecked ? 'var(--sidebar-active-text)' : 'transparent',
-                                  color: isChecked ? 'var(--sidebar-active-text)' : 'var(--foreground)',
+                                  display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+                                  padding: 'var(--space-1-5) var(--space-3)',
+                                  borderRadius: 'var(--radius-md)',
+                                  cursor: 'pointer',
+                                  fontSize: 'var(--text-sm)',
+                                  border: isChecked ? '1px solid var(--sidebar-active-text)' : '1px solid transparent',
+                                  background: isChecked ? 'var(--sidebar-active-bg)' : 'var(--surface-subtle)',
+                                  color: isChecked ? 'var(--sidebar-active-text)' : 'inherit',
                                 }}
                               >
                                 <Checkbox
@@ -288,17 +281,17 @@ export default function RolesPage() {
           </Button>
         </>}
       >
-        <div className={fld}>
-          <label className={lbl}>Name (EN)</label>
-          <input className={inp} value={form.name} onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Procurement Team" />
+        <div className="form-field">
+          <label className="form-label">Name (EN)</label>
+          <input className="form-input" value={form.name} onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Procurement Team" />
         </div>
-        <div className={fld} style={{ marginTop: 16 }}>
-          <label className={lbl}>Name (AR)</label>
-          <input className={inp} dir="rtl" value={form.name_ar} onChange={(e) => setForm(p => ({ ...p, name_ar: e.target.value }))} placeholder="مثال: فريق المشتريات" />
+        <div className="form-field" style={{ marginTop: 'var(--space-4)' }}>
+          <label className="form-label">Name (AR)</label>
+          <input className="form-input" dir="rtl" value={form.name_ar} onChange={(e) => setForm(p => ({ ...p, name_ar: e.target.value }))} placeholder="مثال: فريق المشتريات" />
         </div>
-        <div className={fld} style={{ marginTop: 16 }}>
-          <label className={lbl}>Description</label>
-          <textarea className={inp} rows={3} value={form.description} onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))} />
+        <div className="form-field" style={{ marginTop: 'var(--space-4)' }}>
+          <label className="form-label">Description</label>
+          <textarea className="form-textarea" rows={3} value={form.description} onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))} />
         </div>
       </Drawer>
     </MainLayout>

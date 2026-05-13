@@ -96,8 +96,8 @@ export default function PurchaseInvoiceDetailPage() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="card text-center py-12">
-          <p className="text-muted-foreground">Loading...</p>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Loading...</p>
         </div>
       </MainLayout>
     );
@@ -106,8 +106,8 @@ export default function PurchaseInvoiceDetailPage() {
   if (!invoice) {
     return (
       <MainLayout>
-        <div className="card text-center py-12">
-          <p className="text-muted-foreground">Invoice not found</p>
+        <div className="card empty-state">
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Invoice not found</p>
         </div>
       </MainLayout>
     );
@@ -175,11 +175,13 @@ export default function PurchaseInvoiceDetailPage() {
             <DetailField
               label="Rejection Reason"
               value={
-                <div className="p-3 rounded-md" style={{
+                <div style={{
+                  padding: 'var(--space-3)',
+                  borderRadius: 'var(--radius-md)',
                   backgroundColor: 'var(--color-error-light)',
                   border: '1px solid var(--color-error)',
                 }}>
-                  <p className="text-sm" style={{ color: '#991B1B', margin: 0 }}>{invoice.rejection_reason}</p>
+                  <p style={{ fontSize: 'var(--text-sm)', color: '#991B1B', margin: 0 }}>{invoice.rejection_reason}</p>
                 </div>
               }
               span={3}
@@ -188,7 +190,7 @@ export default function PurchaseInvoiceDetailPage() {
         </DetailCard>
 
         <DetailCard title="Items">
-          <div className="col-span-3 overflow-x-auto">
+          <div style={{ gridColumn: '1 / -1', overflowX: 'auto' }}>
             <table>
               <thead>
                 <tr>
@@ -205,12 +207,12 @@ export default function PurchaseInvoiceDetailPage() {
                 {invoice.items.map((item, idx) => (
                   <tr key={item.id ?? idx}>
                     <td>{item.product?.name || `Product #${item.product_id}`}</td>
-                    <td className="text-muted-foreground">{item.product?.unit?.toUpperCase() || '—'}</td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{item.product?.unit?.toUpperCase() || '—'}</td>
                     <td>{item.quantity}</td>
-                    <td className="text-muted-foreground">{formatPrice(item.unit_price)}</td>
-                    <td className="text-muted-foreground">{item.discount || 0}%</td>
-                    <td className="text-muted-foreground">{item.tax_rate || 0}%</td>
-                    <td className="font-semibold">{formatPrice(item.total ?? 0)}</td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{formatPrice(item.unit_price)}</td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{item.discount || 0}%</td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{item.tax_rate || 0}%</td>
+                    <td style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(item.total ?? 0)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -219,40 +221,40 @@ export default function PurchaseInvoiceDetailPage() {
         </DetailCard>
 
         <DetailCard title="Financial Summary">
-          <div className="col-span-3 flex justify-end">
-            <div className="w-64 flex flex-col gap-2">
+          <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ width: 256, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               {invoice.subtotal !== undefined && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal:</span>
-                  <span className="font-semibold">{formatPrice(invoice.subtotal)}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Subtotal:</span>
+                  <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(invoice.subtotal)}</span>
                 </div>
               )}
               {invoice.discount !== undefined && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Discount:</span>
-                  <span className="font-semibold">{formatPrice(invoice.discount)}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Discount:</span>
+                  <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(invoice.discount)}</span>
                 </div>
               )}
               {invoice.tax_amount !== undefined && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tax:</span>
-                  <span className="font-semibold">{formatPrice(invoice.tax_amount)}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Tax:</span>
+                  <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(invoice.tax_amount)}</span>
                 </div>
               )}
-              <div className="flex justify-between border-t border-border pt-2 text-base">
-                <span className="font-bold">Total:</span>
-                <span className="font-bold">{formatPrice(invoice.total)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-2)', fontSize: 'var(--text-base)' }}>
+                <span style={{ fontWeight: 'var(--weight-bold)' }}>Total:</span>
+                <span style={{ fontWeight: 'var(--weight-bold)' }}>{formatPrice(invoice.total)}</span>
               </div>
               {invoice.paid_amount !== undefined && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Paid:</span>
-                  <span className="font-semibold text-green-600">{formatPrice(invoice.paid_amount)}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Paid:</span>
+                  <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--color-success)' }}>{formatPrice(invoice.paid_amount)}</span>
                 </div>
               )}
               {invoice.remaining_amount !== undefined && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Remaining:</span>
-                  <span className="font-semibold text-orange-600">{formatPrice(invoice.remaining_amount)}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Remaining:</span>
+                  <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--brand)' }}>{formatPrice(invoice.remaining_amount)}</span>
                 </div>
               )}
             </div>

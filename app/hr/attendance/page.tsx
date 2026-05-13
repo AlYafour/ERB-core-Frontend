@@ -51,18 +51,18 @@ export default function HRAttendancePage() {
       key: 'employee', header: 'Employee',
       render: r => (
         <div>
-          <div className="font-medium text-foreground">{r.employee_name}</div>
-          <div className="text-xs text-muted-foreground font-mono">{r.employee_id_code}</div>
+          <div style={{ fontWeight: 'var(--weight-medium)' }}>{r.employee_name}</div>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{r.employee_id_code}</div>
         </div>
       ),
     },
-    { key: 'date',     header: 'Date',       render: r => <span className="text-sm text-foreground">{new Date(r.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span> },
-    { key: 'checkin',  header: 'Check In',   render: r => <span className="text-sm text-foreground">{formatTime(r.check_in)}</span> },
-    { key: 'checkout', header: 'Check Out',  render: r => <span className="text-sm text-foreground">{formatTime(r.check_out)}</span> },
-    { key: 'work',     header: 'Work Hours', render: r => <span className="text-sm text-foreground">{r.work_hours != null ? `${r.work_hours}h` : '—'}</span> },
-    { key: 'ot',       header: 'Overtime',   render: r => <span className="text-sm text-foreground">{r.overtime_hours != null && r.overtime_hours > 0 ? `${r.overtime_hours}h` : '—'}</span> },
+    { key: 'date',     header: 'Date',       render: r => <span>{new Date(r.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span> },
+    { key: 'checkin',  header: 'Check In',   render: r => <span>{formatTime(r.check_in)}</span> },
+    { key: 'checkout', header: 'Check Out',  render: r => <span>{formatTime(r.check_out)}</span> },
+    { key: 'work',     header: 'Work Hours', render: r => <span>{r.work_hours != null ? `${r.work_hours}h` : '—'}</span> },
+    { key: 'ot',       header: 'Overtime',   render: r => <span>{r.overtime_hours != null && r.overtime_hours > 0 ? `${r.overtime_hours}h` : '—'}</span> },
     { key: 'status',   header: t('col', 'status'), render: r => <Badge variant={ATTENDANCE_STATUS[r.status] ?? 'default'}>{STATUS_LABEL[r.status] || r.status}</Badge> },
-    { key: 'notes',    header: 'Notes',      render: r => <span className="text-sm text-muted-foreground max-w-xs truncate block" title={r.notes}>{r.notes || '—'}</span> },
+    { key: 'notes',    header: 'Notes',      render: r => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={r.notes}>{r.notes || '—'}</span> },
   ];
 
   return (

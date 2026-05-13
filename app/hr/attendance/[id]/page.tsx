@@ -22,8 +22,8 @@ export default function AttendanceDetailPage() {
     queryFn: () => hrAttendanceApi.getById(Number(id)),
   });
 
-  if (isLoading) return <MainLayout><div className="card text-center py-16"><Loader className="mx-auto mb-4" /></div></MainLayout>;
-  if (error || !record) return <MainLayout><div className="card text-center py-16"><p className="text-destructive">Record not found.</p></div></MainLayout>;
+  if (isLoading) return <MainLayout><div className="card empty-state"><Loader /></div></MainLayout>;
+  if (error || !record) return <MainLayout><div className="card empty-state"><p style={{ color: 'var(--color-error)', margin: 0 }}>Record not found.</p></div></MainLayout>;
 
   return (
     <MainLayout>
@@ -35,49 +35,49 @@ export default function AttendanceDetailPage() {
           actions={<Badge variant={(STATUS_VARIANT[record.status] as any) || 'default'}>{record.status.replace('_', ' ').toUpperCase()}</Badge>}
         />
 
-        <div className="card space-y-5" style={{ maxWidth: '42rem' }}>
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-sm text-muted-foreground">{record.employee_id_code}</span>
+        <div className="card" style={{ maxWidth: '42rem', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{record.employee_id_code}</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div className="text-center p-4 rounded-lg" style={{ backgroundColor: 'var(--muted)' }}>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Check In</p>
-              <p className="text-2xl font-bold text-foreground">{fmtTime(record.check_in)}</p>
-              {record.check_in_address && <p className="text-xs text-muted-foreground mt-1">{record.check_in_address}</p>}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-6)' }}>
+            <div style={{ textAlign: 'center', padding: 'var(--space-4)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--surface-subtle)' }}>
+              <p style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: 'var(--space-2)', margin: '0 0 var(--space-2) 0' }}>Check In</p>
+              <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-bold)', margin: 0 }}>{fmtTime(record.check_in)}</p>
+              {record.check_in_address && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)', marginBottom: 0 }}>{record.check_in_address}</p>}
             </div>
-            <div className="text-center p-4 rounded-lg" style={{ backgroundColor: 'var(--muted)' }}>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Check Out</p>
-              <p className="text-2xl font-bold text-foreground">{fmtTime(record.check_out)}</p>
+            <div style={{ textAlign: 'center', padding: 'var(--space-4)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--surface-subtle)' }}>
+              <p style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', margin: '0 0 var(--space-2) 0' }}>Check Out</p>
+              <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-bold)', margin: 0 }}>{fmtTime(record.check_out)}</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 text-center">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-4)', textAlign: 'center' }}>
             <div>
-              <p className="text-xl font-bold text-foreground">{record.work_hours?.toFixed(1) ?? '—'}</p>
-              <p className="text-xs text-muted-foreground mt-1">Work Hours</p>
+              <p style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', margin: 0 }}>{record.work_hours?.toFixed(1) ?? '—'}</p>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)', marginBottom: 0 }}>Work Hours</p>
             </div>
             <div>
-              <p className="text-xl font-bold text-foreground">{record.overtime_hours?.toFixed(1) ?? '—'}</p>
-              <p className="text-xs text-muted-foreground mt-1">Overtime Hours</p>
+              <p style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', margin: 0 }}>{record.overtime_hours?.toFixed(1) ?? '—'}</p>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)', marginBottom: 0 }}>Overtime Hours</p>
             </div>
             <div>
-              <p className="text-xl font-bold text-foreground">{record.duration_hours?.toFixed(1) ?? '—'}</p>
-              <p className="text-xs text-muted-foreground mt-1">Duration</p>
+              <p style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', margin: 0 }}>{record.duration_hours?.toFixed(1) ?? '—'}</p>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)', marginBottom: 0 }}>Duration</p>
             </div>
           </div>
 
           {(record.break_start || record.break_end) && (
-            <div className="text-sm border-t pt-3 flex gap-6" style={{ borderColor: 'var(--border)' }}>
-              <div><p className="text-muted-foreground">Break Start</p><p className="font-medium">{fmtTime(record.break_start)}</p></div>
-              <div><p className="text-muted-foreground">Break End</p><p className="font-medium">{fmtTime(record.break_end)}</p></div>
+            <div style={{ fontSize: 'var(--text-sm)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-3)', display: 'flex', gap: 'var(--space-6)' }}>
+              <div><p style={{ color: 'var(--text-secondary)', margin: '0 0 var(--space-1) 0' }}>Break Start</p><p style={{ fontWeight: 'var(--weight-medium)', margin: 0 }}>{fmtTime(record.break_start)}</p></div>
+              <div><p style={{ color: 'var(--text-secondary)', margin: '0 0 var(--space-1) 0' }}>Break End</p><p style={{ fontWeight: 'var(--weight-medium)', margin: 0 }}>{fmtTime(record.break_end)}</p></div>
             </div>
           )}
 
           {record.notes && (
-            <div className="border-t pt-3" style={{ borderColor: 'var(--border)' }}>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Notes</p>
-              <p className="text-sm text-foreground">{record.notes}</p>
+            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-3)' }}>
+              <p style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', margin: '0 0 var(--space-1) 0' }}>Notes</p>
+              <p style={{ fontSize: 'var(--text-sm)', margin: 0 }}>{record.notes}</p>
             </div>
           )}
         </div>

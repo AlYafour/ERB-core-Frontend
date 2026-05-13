@@ -101,17 +101,17 @@ export default function PurchaseRequestsPage() {
   const currentIds = requests.map((r: PurchaseRequest) => r.id);
 
   const columns: Column<PurchaseRequest>[] = [
-    { key: 'code',    header: t('col', 'code'),        render: r => <span className="font-medium text-foreground">{r.code}</span> },
+    { key: 'code',    header: t('col', 'code'),        render: r => <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{r.code}</span> },
     {
       key: 'project', header: t('col', 'project'),
       render: r => r.project && typeof r.project === 'object'
-        ? <div><div className="font-medium">{r.project.name}</div><div className="text-xs text-muted-foreground">{r.project.code}</div></div>
-        : <span className="text-muted-foreground">â€”</span>,
+        ? <div><div style={{ fontWeight: 'var(--weight-medium)' }}>{r.project.name}</div><div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{r.project.code}</div></div>
+        : <span style={{ color: 'var(--text-secondary)' }}>—</span>,
     },
-    { key: 'title',       header: t('col', 'title'),       render: r => <span className="max-w-xs truncate block" title={r.title}>{r.title}</span> },
-    { key: 'requester',   header: t('col', 'requester'),   render: r => <span className="text-foreground">{r.created_by_name || 'â€”'}</span> },
-    { key: 'req_date',    header: t('col', 'requestDate'), render: r => <span className="text-muted-foreground">{fmtDate(r.request_date)}</span> },
-    { key: 'req_by',      header: t('col', 'requiredBy'),  render: r => <span className="text-muted-foreground">{fmtDate(r.required_by)}</span> },
+    { key: 'title',       header: t('col', 'title'),       render: r => <span style={{ maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={r.title}>{r.title}</span> },
+    { key: 'requester',   header: t('col', 'requester'),   render: r => <span style={{ color: 'var(--text-primary)' }}>{r.created_by_name || '—'}</span> },
+    { key: 'req_date',    header: t('col', 'requestDate'), render: r => <span style={{ color: 'var(--text-secondary)' }}>{fmtDate(r.request_date)}</span> },
+    { key: 'req_by',      header: t('col', 'requiredBy'),  render: r => <span style={{ color: 'var(--text-secondary)' }}>{fmtDate(r.required_by)}</span> },
     {
       key: 'status', header: t('col', 'status'),
       render: r => <Badge variant={PR_STATUS[r.status] ?? 'info'}>{t('status', r.status as any) || r.status}</Badge>,
@@ -119,7 +119,7 @@ export default function PurchaseRequestsPage() {
     {
       key: 'actions', header: t('col', 'actions'),
       render: r => (
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           {canView && <Link href={`/purchase-requests/${r.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>}
           {r.status === 'pending' && canApprove && (
             <Button variant="success" size="sm" onClick={() => handleApprove(r.id)} isLoading={approveMutation.isPending}>{t('btn', 'approve')}</Button>

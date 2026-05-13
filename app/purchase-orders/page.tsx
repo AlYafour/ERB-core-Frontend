@@ -77,23 +77,23 @@ export default function PurchaseOrdersPage() {
   const columns: Column<PurchaseOrder>[] = [
     {
       key: 'number', header: 'Order Number',
-      render: o => <Link href={`/purchase-orders/${o.id}`} className="text-primary hover:underline font-mono font-semibold">{o.order_number}</Link>,
+      render: o => <Link href={`/purchase-orders/${o.id}`} style={{ fontFamily: 'monospace', fontWeight: 'var(--weight-semibold)', color: 'var(--text-brand)' }}>{o.order_number}</Link>,
     },
     {
       key: 'project', header: t('col', 'project'),
       render: o => o.project_name
-        ? <div><div className="font-medium text-foreground">{o.project_name}</div>{o.project_code && <div className="text-xs text-muted-foreground font-mono">{o.project_code}</div>}</div>
-        : <span className="text-muted-foreground">—</span>,
+        ? <div><div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{o.project_name}</div>{o.project_code && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{o.project_code}</div>}</div>
+        : <span style={{ color: 'var(--text-secondary)' }}>—</span>,
     },
-    { key: 'supplier',  header: t('col', 'supplier'),      render: o => <span className="text-muted-foreground">{typeof o.supplier === 'object' ? o.supplier.name : '—'}</span> },
-    { key: 'date',      header: 'Order Date',              render: o => <span className="text-muted-foreground">{new Date(o.order_date).toLocaleDateString('en-US')}</span> },
-    { key: 'delivery',  header: 'Delivery Date',           render: o => <span className="text-muted-foreground">{o.delivery_date ? new Date(o.delivery_date).toLocaleDateString('en-US') : '—'}</span> },
-    { key: 'total',     header: t('col', 'totalAmount'),   render: o => <span className="font-semibold">{formatPrice(o.total)}</span> },
+    { key: 'supplier',  header: t('col', 'supplier'),      render: o => <span style={{ color: 'var(--text-secondary)' }}>{typeof o.supplier === 'object' ? o.supplier.name : '—'}</span> },
+    { key: 'date',      header: 'Order Date',              render: o => <span style={{ color: 'var(--text-secondary)' }}>{new Date(o.order_date).toLocaleDateString('en-US')}</span> },
+    { key: 'delivery',  header: 'Delivery Date',           render: o => <span style={{ color: 'var(--text-secondary)' }}>{o.delivery_date ? new Date(o.delivery_date).toLocaleDateString('en-US') : '—'}</span> },
+    { key: 'total',     header: t('col', 'totalAmount'),   render: o => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(o.total)}</span> },
     { key: 'status',    header: t('col', 'status'),        render: o => <Badge variant={PO_STATUS[o.status] ?? 'info'}>{STATUS_LABEL[o.status] || o.status}</Badge> },
     {
       key: 'actions', header: t('col', 'actions'),
       render: o => (
-        <div className="flex gap-2">
+        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
           <Link href={`/purchase-orders/${o.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>
           <Link href={`/print/lpo/${o.id}`} target="_blank"><Button variant="secondary" size="sm">Print</Button></Link>
           {canDelete && <Button variant="destructive" size="sm" onClick={() => handleDelete(o.id)}>{t('btn', 'delete')}</Button>}

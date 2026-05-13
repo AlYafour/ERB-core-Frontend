@@ -87,7 +87,7 @@ export default function NewProductPage() {
           breadcrumbs={[{ label: 'Products', href: '/products' }, { label: 'New Product' }]}
         />
 
-        <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="space-y-6">
+        <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
           {/* Basic Info */}
           <div className="card">
             <h2 className="section-title">Basic Information</h2>
@@ -181,9 +181,9 @@ export default function NewProductPage() {
             <h2 className="section-title">Stock</h2>
             <div className="form-grid">
               <FormField label="Track Stock">
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
                   <input type="checkbox" checked={form.track_stock} onChange={e => set('track_stock', e.target.checked)} />
-                  <span className="text-sm">Track inventory</span>
+                  <span style={{ fontSize: 'var(--text-sm)' }}>Track inventory</span>
                 </label>
               </FormField>
               {form.track_stock && (
@@ -199,7 +199,7 @@ export default function NewProductPage() {
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
             <Button type="submit" variant="primary" isLoading={mutation.isPending}>
               Create Product
             </Button>

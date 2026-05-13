@@ -69,8 +69,8 @@ export default function HRPayrollPage() {
       key: 'employee', header: 'Employee',
       render: r => (
         <div>
-          <div className="font-medium text-foreground">{r.employee_name}</div>
-          <div className="text-xs text-muted-foreground font-mono">{r.employee_id_code}</div>
+          <div style={{ fontWeight: 'var(--weight-medium)' }}>{r.employee_name}</div>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{r.employee_id_code}</div>
         </div>
       ),
     },
@@ -78,28 +78,28 @@ export default function HRPayrollPage() {
       key: 'period', header: 'Period',
       render: r => (
         <div>
-          <div className="font-medium text-foreground">{r.month_name || MONTH_NAMES[r.month]}</div>
-          <div className="text-xs text-muted-foreground">{r.year}</div>
+          <div style={{ fontWeight: 'var(--weight-medium)' }}>{r.month_name || MONTH_NAMES[r.month]}</div>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{r.year}</div>
         </div>
       ),
     },
-    { key: 'basic',   header: 'Basic Salary',  render: r => <span className="text-sm font-mono text-foreground">AED {formatCurrency(r.basic_salary)}</span> },
-    { key: 'gross',   header: 'Gross Salary',  render: r => <span className="text-sm font-mono font-medium text-foreground">AED {formatCurrency(r.gross_salary)}</span> },
+    { key: 'basic',   header: 'Basic Salary',  render: r => <span style={{ fontFamily: 'monospace' }}>AED {formatCurrency(r.basic_salary)}</span> },
+    { key: 'gross',   header: 'Gross Salary',  render: r => <span style={{ fontFamily: 'monospace', fontWeight: 'var(--weight-medium)' }}>AED {formatCurrency(r.gross_salary)}</span> },
     {
       key: 'deductions', header: 'Deductions',
       render: r => {
         const total = parseFloat(r.deductions) + parseFloat(r.absence_deduction);
-        return <span className="text-sm font-mono text-destructive">{total > 0 ? `AED ${formatCurrency(total.toString())}` : '—'}</span>;
+        return <span style={{ fontFamily: 'monospace', color: 'var(--color-error)' }}>{total > 0 ? `AED ${formatCurrency(total.toString())}` : '—'}</span>;
       },
     },
-    { key: 'net',     header: 'Net Salary',    render: r => <span className="text-sm font-semibold font-mono text-foreground">AED {formatCurrency(r.net_salary)}</span> },
+    { key: 'net',     header: 'Net Salary',    render: r => <span style={{ fontFamily: 'monospace', fontWeight: 'var(--weight-semibold)' }}>AED {formatCurrency(r.net_salary)}</span> },
     {
       key: 'days', header: 'Days',
       render: r => (
-        <span className="text-sm">
-          <span className="text-green-600">{r.present_days}P</span>{' / '}
-          <span className="text-red-500">{r.absent_days}A</span>{' / '}
-          <span className="text-muted-foreground">{r.working_days}W</span>
+        <span>
+          <span style={{ color: 'var(--color-success)' }}>{r.present_days}P</span>{' / '}
+          <span style={{ color: 'var(--color-error)' }}>{r.absent_days}A</span>{' / '}
+          <span style={{ color: 'var(--text-secondary)' }}>{r.working_days}W</span>
         </span>
       ),
     },
@@ -107,16 +107,16 @@ export default function HRPayrollPage() {
     {
       key: 'actions', header: t('col', 'actions'),
       render: r => isAdmin ? (
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           {r.status === 'processed' && (
             <Button variant="success" size="sm" onClick={() => handleMarkPaid(r.id, r.employee_name, r.month_name || MONTH_NAMES[r.month])} isLoading={markPaidMutation.isPending}>
               Mark Paid
             </Button>
           )}
           {r.status === 'paid' && r.paid_at && (
-            <span className="text-xs text-muted-foreground">{new Date(r.paid_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{new Date(r.paid_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
           )}
-          {r.status === 'draft' && <span className="text-xs text-muted-foreground">Not processed</span>}
+          {r.status === 'draft' && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Not processed</span>}
         </div>
       ) : null,
     },

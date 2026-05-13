@@ -46,9 +46,9 @@ export default function GoodsReceivingPage() {
   const totalCount = data?.count ?? 0;
 
   const columns: Column<GoodsReceivedNote>[] = [
-    { key: 'number', header: 'GRN Number',     render: g => <span className="font-mono text-sm font-semibold">{g.grn_number}</span> },
-    { key: 'po',     header: 'Purchase Order',  render: g => <span className="text-muted-foreground">{typeof g.purchase_order === 'object' && g.purchase_order ? (g.purchase_order as any).order_number : g.purchase_order_id}</span> },
-    { key: 'date',   header: 'Receipt Date',    render: g => <span className="text-muted-foreground">{new Date(g.receipt_date).toLocaleDateString('en-US')}</span> },
+    { key: 'number', header: 'GRN Number',     render: g => <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)' }}>{g.grn_number}</span> },
+    { key: 'po',     header: 'Purchase Order',  render: g => <span style={{ color: 'var(--text-secondary)' }}>{typeof g.purchase_order === 'object' && g.purchase_order ? (g.purchase_order as any).order_number : g.purchase_order_id}</span> },
+    { key: 'date',   header: 'Receipt Date',    render: g => <span style={{ color: 'var(--text-secondary)' }}>{new Date(g.receipt_date).toLocaleDateString('en-US')}</span> },
     { key: 'items',  header: 'Total Items',     render: g => g.total_items ?? g.items?.length ?? 0 },
     { key: 'status', header: t('col', 'status'), render: g => <Badge variant={GRN_STATUS[g.status] ?? 'info'}>{STATUS_LABEL[g.status] || g.status}</Badge> },
     {
@@ -58,7 +58,7 @@ export default function GoodsReceivingPage() {
     {
       key: 'actions', header: t('col', 'actions'),
       render: g => (
-        <div className="flex gap-2">
+        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
           <Link href={`/goods-receiving/${g.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>
           <Link href={`/print/grn/${g.id}`} target="_blank"><Button variant="secondary" size="sm">Print</Button></Link>
           {canDelete && <Button variant="destructive" size="sm" onClick={() => handleDelete(g.id)}>{t('btn', 'delete')}</Button>}
