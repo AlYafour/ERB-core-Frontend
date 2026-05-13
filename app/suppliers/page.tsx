@@ -115,7 +115,7 @@ export default function SuppliersPage() {
     }
   };
 
-  const suppliers   = data?.results ?? [];
+  const suppliers   = Array.isArray(data?.results) ? data!.results : [];
   const totalCount  = data?.count ?? 0;
   const currentIds  = suppliers.map((s: Supplier) => s.id);
 

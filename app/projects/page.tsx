@@ -106,7 +106,7 @@ export default function ProjectsPage() {
     if (selectedItems.size && await confirm(`Delete ${selectedItems.size} project(s)?`)) bulkDeleteMutation.mutate(Array.from(selectedItems));
   };
 
-  const projects    = data?.results ?? [];
+  const projects    = Array.isArray(data?.results) ? data!.results : [];
   const totalCount  = data?.count ?? 0;
   const currentIds  = projects.map((p: Project) => p.id);
 

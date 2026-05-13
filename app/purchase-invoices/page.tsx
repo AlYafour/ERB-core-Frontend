@@ -83,7 +83,7 @@ export default function PurchaseInvoicesPage() {
     if (selectedItems.size && await confirm(`Delete ${selectedItems.size} invoice(s)?`)) bulkDeleteMutation.mutate(Array.from(selectedItems));
   };
 
-  const invoices   = data?.results ?? [];
+  const invoices   = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
   const currentIds = invoices.map((i: PurchaseInvoice) => i.id);
 

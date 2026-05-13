@@ -96,7 +96,7 @@ export default function PurchaseRequestsPage() {
     { name: 'required_by_before',   label: 'Required By To',    type: 'date',   group: 'Dates' },
   ];
 
-  const requests   = data?.results ?? [];
+  const requests   = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
   const currentIds = requests.map((r: PurchaseRequest) => r.id);
 

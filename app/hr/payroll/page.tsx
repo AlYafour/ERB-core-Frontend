@@ -61,7 +61,7 @@ export default function HRPayrollPage() {
     if (await confirm(`Mark payroll for ${employeeName} (${monthName}) as paid?`)) markPaidMutation.mutate(id);
   };
 
-  const records    = data?.results ?? [];
+  const records    = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
 
   const columns: Column<HRPayroll>[] = [

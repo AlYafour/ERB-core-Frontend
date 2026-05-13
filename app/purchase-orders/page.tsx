@@ -70,7 +70,7 @@ export default function PurchaseOrdersPage() {
     clearSelection();
   };
 
-  const orders     = data?.results ?? [];
+  const orders     = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
   const currentIds = orders.map((o: PurchaseOrder) => o.id);
 

@@ -62,7 +62,7 @@ export default function CustomersPage() {
     if (await confirm('Delete this customer?')) deleteMutation.mutate(id);
   };
 
-  const customers  = data?.results ?? [];
+  const customers  = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
   const currentIds = customers.map((c: Customer) => c.id);
 

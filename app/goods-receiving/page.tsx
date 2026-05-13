@@ -42,7 +42,7 @@ export default function GoodsReceivingPage() {
 
   const handleDelete = async (id: number) => { if (await confirm('Delete this GRN?')) deleteMutation.mutate(id); };
 
-  const grns       = data?.results ?? [];
+  const grns       = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
 
   const columns: Column<GoodsReceivedNote>[] = [

@@ -73,7 +73,7 @@ export default function HRRequestsPage() {
   const handleApprove = async (id: number) => { if (await confirm('Approve this request?')) approveMutation.mutate(id); };
   const handleReject  = (id: number) => { setRejectingId(id); setRejectDialogOpen(true); };
 
-  const requests   = data?.results ?? [];
+  const requests   = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
 
   const columns: Column<HRRequest>[] = [

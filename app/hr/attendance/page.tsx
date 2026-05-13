@@ -43,7 +43,7 @@ export default function HRAttendancePage() {
     queryFn: () => hrAttendanceApi.getAll({ page, search, ...filters }),
   });
 
-  const records    = data?.results ?? [];
+  const records    = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
 
   const columns: Column<HRAttendance>[] = [

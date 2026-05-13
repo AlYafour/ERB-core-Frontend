@@ -85,7 +85,7 @@ export default function ProductsPage() {
   const handleExport = async () => {
     try {
       const all  = await productsApi.getAll({ page_size: 10000 });
-      const rows = all.results.map((p: Product) => ({
+      const rows = (Array.isArray(all?.results) ? all.results : []).map((p: Product) => ({
         Code: p.code, Name: p.name, Name_AR: p.name_ar ?? '',
         Category: p.category ?? '', Unit: p.unit ?? '', Brand: p.brand ?? '',
         Unit_Price: p.unit_price ?? '', Stock: p.stock_balance ?? '', Status: p.status ?? '',
@@ -112,7 +112,7 @@ export default function ProductsPage() {
     }
   };
 
-  const products    = data?.results ?? [];
+  const products    = Array.isArray(data?.results) ? data!.results : [];
   const totalCount  = data?.count ?? 0;
   const currentIds  = products.map((p: Product) => p.id);
 

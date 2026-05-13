@@ -39,7 +39,7 @@ export default function PendingUsersPage() {
     queryFn: () => permissionsApi.getAllPermissionSets({ page: 1, page_size: 1000 }),
   });
 
-  const permissionSets = permissionSetsData?.results || [];
+  const permissionSets = Array.isArray(permissionSetsData?.results) ? permissionSetsData!.results : [];
 
   const approveMutation = useMutation({
     mutationFn: ({ id, permissionSetId }: { id: number; permissionSetId?: number }) =>
