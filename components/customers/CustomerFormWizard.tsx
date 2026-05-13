@@ -187,9 +187,7 @@ export default function CustomerFormWizard() {
   // ── Type not yet selected ─────────────────────────────────────────────────
   if (!customerType) {
     return (
-      <div style={{ maxWidth: 960, margin: '0 auto' }}>
-        <CustomerTypeSelector onConfirm={handleConfirmType} />
-      </div>
+      <CustomerTypeSelector onConfirm={handleConfirmType} />
     );
   }
 
@@ -197,7 +195,7 @@ export default function CustomerFormWizard() {
 
   // ── Form with stepper ─────────────────────────────────────────────────────
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
       {/* Stepper */}
       <CustomerFormStepper steps={steps} currentStep={currentStep} />
