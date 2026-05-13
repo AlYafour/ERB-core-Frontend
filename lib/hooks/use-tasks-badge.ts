@@ -28,7 +28,7 @@ export function useTasksBadge(): TasksBadge {
 
   const { data: myTodo = 0 } = useQuery<number>({
     queryKey: ['my-tasks-count'],
-    queryFn: () => myTasksApi.getAll().then((r) => r.filter((t) => !t.is_done).length),
+    queryFn: () => myTasksApi.getAll().then((r) => (Array.isArray(r) ? r : []).filter((t) => !t.is_done).length),
     staleTime: 30_000,
     refetchInterval: 60_000,
   });
