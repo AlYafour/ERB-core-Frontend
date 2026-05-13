@@ -148,7 +148,7 @@ export function TeamDetail({ teamId, onEdit, onDelete }: Props) {
     );
   }
 
-  const existingIds = new Set(team.members.map((m) => m.user));
+  const existingIds = new Set((team.members ?? []).map((m) => m.user));
   const availableUsers = allUsers.filter((u) => !existingIds.has(u.id));
 
   return (
@@ -408,7 +408,7 @@ export function TeamDetail({ teamId, onEdit, onDelete }: Props) {
         )}
 
         {/* Members list */}
-        {team.members.length === 0 ? (
+        {(team.members?.length ?? 0) === 0 ? (
           <div style={{ textAlign: 'center', padding: '52px 24px' }}>
             <div
               style={{
@@ -437,7 +437,7 @@ export function TeamDetail({ teamId, onEdit, onDelete }: Props) {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {team.members.map((m: TeamMember) => (
+            {(team.members ?? []).map((m: TeamMember) => (
               <div
                 key={m.id}
                 style={{
