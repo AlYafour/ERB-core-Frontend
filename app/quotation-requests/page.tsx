@@ -29,6 +29,7 @@ export default function QuotationRequestsPage() {
     handleSearch, handleFilterChange, handleFilterReset, handleRemoveFilter,
     toggleSelect, selectPage, clearSelection, isAllPageSelected, isSomePageSelected,
   } = useTableState();
+  
 
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -62,7 +63,7 @@ export default function QuotationRequestsPage() {
     if (selectedItems.size && await confirm(`Delete ${selectedItems.size} request(s)?`)) bulkDeleteMutation.mutate(Array.from(selectedItems));
   };
 
-  const requests   = data?.results ?? [];
+  const requests   = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
   const currentIds = requests.map((r: QuotationRequest) => r.id);
 
