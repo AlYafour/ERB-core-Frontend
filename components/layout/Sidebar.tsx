@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useT } from '@/lib/i18n/useT';
 import CollapsibleMenu from './CollapsibleMenu';
 import { usePendingCounts } from '@/lib/hooks/use-pending-counts';
+import { useTasksBadge } from '@/lib/hooks/use-tasks-badge';
 import {
   DashboardIcon, FileTextIcon, BuildingIcon, PackageIcon,
   BriefcaseIcon, DollarIcon, UsersIcon, XIcon, ShoppingCartIcon, AlertIcon,
@@ -38,6 +39,7 @@ export default function Sidebar() {
   const { user } = useAuth();
   const t = useT();
   const pending = usePendingCounts();
+  const tasksBadge = useTasksBadge();
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + '/');
@@ -276,7 +278,11 @@ export default function Sidebar() {
                 title={t('nav', 'tasksModule')}
                 icon={<TasksIcon className="w-4 h-4" />}
                 items={[
-                  { name: t('nav', 'tasksList'),  href: '/tasks'       },
+                  {
+                    name: t('nav', 'tasksList'),
+                    href: '/tasks',
+                    badge: tasksBadge.total || undefined,
+                  },
                   { name: t('nav', 'tasksTeams'), href: '/tasks/teams' },
                 ]}
                 defaultOpen={isTasksActive}

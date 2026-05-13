@@ -1731,6 +1731,23 @@ table tbody tr:hover {
   border-color: var(--border-default);
 }
 
+/* ── TASK MODULE ANIMATIONS ───────────────────────────────────── */
+
+@keyframes slideInRight {
+  from { transform: translateX(40px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes fadeScaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
 /* ── SKELETON ─────────────────────────────────────────────────── */
 
 @keyframes skeleton-sweep {
