@@ -47,7 +47,7 @@ export default function CustomersPage() {
   const t           = useT();
   const isSuperuser = user?.is_superuser ?? false;
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['customers', page, search, filters],
     queryFn:  () => customersApi.getAll({ page, search: search || undefined, ...filters }),
   });
@@ -137,6 +137,7 @@ export default function CustomersPage() {
             data={customers}
             isLoading={isLoading}
             error={error}
+            onRetry={refetch}
             emptyMessage="No customers found."
             emptyAction={<Link href="/customers/new"><Button variant="primary">{t('btn', 'addCustomer')}</Button></Link>}
             selectable={isSuperuser}

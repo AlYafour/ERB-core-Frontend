@@ -20,6 +20,7 @@ interface DataTableProps<T> {
 
   isLoading?: boolean;
   error?: unknown;
+  onRetry?: () => void;
   emptyMessage?: string;
   emptyAction?: React.ReactNode;
 
@@ -113,7 +114,7 @@ function PaginationBar({
 // ── DataTable ────────────────────────────────────────────────────────────────
 export default function DataTable<T>({
   columns, data, getItemId,
-  isLoading, error, emptyMessage = 'No records found.', emptyAction,
+  isLoading, error, onRetry, emptyMessage = 'No records found.', emptyAction,
   selectable, selectedItems, onToggleSelect, onToggleSelectAll,
   isAllSelected, isSomeSelected,
   page, totalCount, pageSize = 20, hasPrev, hasNext, onPageChange,
@@ -136,15 +137,36 @@ export default function DataTable<T>({
 
   if (error) {
     const content = (
-      <div style={{ padding: '40px 24px', textAlign: 'center' }}>
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          style={{ color: 'var(--status-error)', opacity: 0.7, margin: '0 auto 10px' }}>
-          <circle cx="12" cy="12" r="10" strokeWidth="1.5" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4m0 4h.01" />
-        </svg>
-        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--status-error)', margin: 0 }}>
-          Failed to load data. Please try again.
+      <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+        <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--status-error-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ color: 'var(--status-error)' }}>
+            <circle cx="12" cy="12" r="10" strokeWidth="1.5" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4m0 4h.01" />
+          </svg>
+        </div>
+        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', margin: '0 0 4px' }}>
+          Failed to load data
         </p>
+        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '0 0 16px' }}>
+          Something went wrong. Check your connection and try again.
+        </p>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              padding: '0 16px', height: 32, borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-default)', background: 'var(--surface-subtle)',
+              fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)',
+              cursor: 'pointer',
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 .49-3.51" />
+            </svg>
+            Try Again
+          </button>
+        )}
       </div>
     );
     return surface ? content : <div className="card">{content}</div>;
