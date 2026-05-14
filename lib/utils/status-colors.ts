@@ -81,3 +81,37 @@ export const PAYROLL_STATUS: Record<string, Variant> = {
   processed: 'info',
   paid:      'success',
 };
+
+export const SUBCON_STATUS: Record<string, Variant> = {
+  active:   'success',
+  inactive: 'error',
+};
+
+export const CONTRACT_STATUS: Record<string, Variant> = {
+  draft:        'default',
+  under_review: 'warning',
+  approved:     'info',
+  active:       'success',
+  on_hold:      'warning',
+  completed:    'info',
+  closed:       'default',
+  terminated:   'error',
+};
+
+export const CERTIFICATE_STATUS: Record<string, Variant> = {
+  draft:        'default',
+  submitted:    'info',
+  under_review: 'warning',
+  reviewed:     'warning',
+  approved:     'success',
+  rejected:     'error',
+  paid:         'success',
+  cancelled:    'error',
+};
+
+export const PAYMENT_STATUS: Record<string, Variant> = {
+  pending:   'warning',
+  approved:  'info',
+  paid:      'success',
+  cancelled: 'error',
+};

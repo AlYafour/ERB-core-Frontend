@@ -32,9 +32,14 @@ export const translations = {
     tasksModule:      { en: 'Task Management',    ar: 'إدارة المهام' },
     tasksList:        { en: 'All Tasks',          ar: 'جميع المهام' },
     tasksTeams:       { en: 'Teams',              ar: 'الفرق' },
-    customers:        { en: 'Customers',          ar: 'العملاء' },
-    customersList:    { en: 'Customers List',     ar: 'قائمة العملاء' },
-    addCustomer:      { en: 'Add Customer',       ar: 'إضافة عميل' },
+    customers:           { en: 'Customers',             ar: 'العملاء' },
+    customersList:       { en: 'Customers List',         ar: 'قائمة العملاء' },
+    addCustomer:         { en: 'Add Customer',           ar: 'إضافة عميل' },
+    subcontractors:      { en: 'Subcontractors',         ar: 'المقاولون الباطن' },
+    subcontractorsList:  { en: 'Subcontractors List',    ar: 'قائمة المقاولين' },
+    subconContracts:     { en: 'Contracts',              ar: 'العقود' },
+    subconCertificates:  { en: 'Progress Certificates',  ar: 'شهادات الإنجاز' },
+    subconPayments:      { en: 'Payments',               ar: 'المدفوعات' },
   },
 
   // ── Common buttons ───────────────────────────────────────────────────
