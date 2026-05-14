@@ -4,6 +4,8 @@ import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { TaskDetail, SubTask, TaskComment, TaskStatus } from '@/types';
 import { tasksApi, subTasksApi, taskCommentsApi, taskAttachmentsApi } from '@/lib/api/tasks';
+import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { TaskAvatar } from '../shared/TaskAvatar';
 import { StatusBadge } from '../shared/StatusBadge';
 import { PriorityBar } from '../shared/PriorityBar';
@@ -117,6 +119,8 @@ export function TaskDetailDrawer({ taskId, onClose }: Props) {
   const [newSub, setNewSub] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectBox, setShowRejectBox] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editCommentText, setEditCommentText] = useState('');
 
   const { data: task, isLoading } = useQuery<TaskDetail>({
     queryKey: ['task', taskId],
@@ -132,37 +136,51 @@ export function TaskDetailDrawer({ taskId, onClose }: Props) {
   const transition = useMutation({
     mutationFn: (fn: () => Promise<TaskDetail>) => fn(),
     onSuccess: invalidate,
+    onError: (err: unknown) => toast(getApiError(err, 'Action failed'), 'error'),
   });
 
   const addComment = useMutation({
     mutationFn: (content: string) => taskCommentsApi.create({ task: taskId, content }),
     onSuccess: () => { setComment(''); invalidate(); },
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to add comment'), 'error'),
+  });
+
+  const updateComment = useMutation({
+    mutationFn: ({ id, content }: { id: number; content: string }) =>
+      taskCommentsApi.update(id, content),
+    onSuccess: () => { setEditingCommentId(null); setEditCommentText(''); invalidate(); },
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to update comment'), 'error'),
   });
 
   const deleteComment = useMutation({
     mutationFn: (id: number) => taskCommentsApi.delete(id),
     onSuccess: invalidate,
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to delete comment'), 'error'),
   });
 
   const addSubtask = useMutation({
     mutationFn: (title: string) => subTasksApi.create({ task: taskId, title }),
     onSuccess: () => { setNewSub(''); invalidate(); },
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to add checklist item'), 'error'),
   });
 
   const toggleSubtask = useMutation({
     mutationFn: ({ id, done }: { id: number; done: boolean }) =>
       done ? subTasksApi.complete(id) : subTasksApi.reopen(id),
     onSuccess: invalidate,
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to update checklist item'), 'error'),
   });
 
   const uploadFile = useMutation({
     mutationFn: (file: File) => taskAttachmentsApi.upload(taskId, file),
     onSuccess: invalidate,
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to upload file'), 'error'),
   });
 
   const deleteAttachment = useMutation({
     mutationFn: (id: number) => taskAttachmentsApi.delete(id),
     onSuccess: invalidate,
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to delete attachment'), 'error'),
   });
 
   const busy = transition.isPending;
@@ -473,6 +491,16 @@ export function TaskDetailDrawer({ taskId, onClose }: Props) {
                   onSend={() => comment.trim() && addComment.mutate(comment.trim())}
                   onDelete={(id) => deleteComment.mutate(id)}
                   sending={addComment.isPending}
+                  editingCommentId={editingCommentId}
+                  editCommentText={editCommentText}
+                  onEditStart={(id, content) => { setEditingCommentId(id); setEditCommentText(content); }}
+                  onEditChange={setEditCommentText}
+                  onEditSave={() => {
+                    if (editingCommentId && editCommentText.trim())
+                      updateComment.mutate({ id: editingCommentId, content: editCommentText.trim() });
+                  }}
+                  onEditCancel={() => { setEditingCommentId(null); setEditCommentText(''); }}
+                  savingEdit={updateComment.isPending}
                 />
               )}
 
@@ -846,6 +874,13 @@ function CommentsTab({
   onSend,
   onDelete,
   sending,
+  editingCommentId,
+  editCommentText,
+  onEditStart,
+  onEditChange,
+  onEditSave,
+  onEditCancel,
+  savingEdit,
 }: {
   comments: TaskComment[];
   comment: string;
@@ -853,6 +888,13 @@ function CommentsTab({
   onSend: () => void;
   onDelete: (id: number) => void;
   sending: boolean;
+  editingCommentId: number | null;
+  editCommentText: string;
+  onEditStart: (id: number, content: string) => void;
+  onEditChange: (v: string) => void;
+  onEditSave: () => void;
+  onEditCancel: () => void;
+  savingEdit: boolean;
 }) {
   return (
     <div>
@@ -886,39 +928,122 @@ function CommentsTab({
               </span>
               <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
                 {fmtDate(c.created_at, 'dt')}
+                {c.updated_at && c.updated_at !== c.created_at && (
+                  <span style={{ marginLeft: 4, fontStyle: 'italic' }}>(edited)</span>
+                )}
               </span>
-              <button
-                onClick={() => onDelete(c.id)}
-                title="Delete comment"
+              {editingCommentId !== c.id && (
+                <>
+                  <button
+                    onClick={() => onEditStart(c.id, c.content)}
+                    title="Edit comment"
+                    style={{
+                      marginLeft: 'auto',
+                      fontSize: 11,
+                      color: 'var(--text-tertiary)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '0 4px',
+                      transition: 'color 0.1s',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = BRAND)}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => onDelete(c.id)}
+                    title="Delete comment"
+                    style={{
+                      fontSize: 13,
+                      color: 'var(--text-tertiary)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '0 2px',
+                      transition: 'color 0.1s',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = '#EF4444')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+                  >
+                    ✕
+                  </button>
+                </>
+              )}
+            </div>
+
+            {editingCommentId === c.id ? (
+              <div>
+                <textarea
+                  value={editCommentText}
+                  onChange={(e) => onEditChange(e.target.value)}
+                  rows={3}
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: 8,
+                    border: `1px solid ${BRAND}`,
+                    fontSize: 13,
+                    background: 'var(--surface-subtle)',
+                    color: 'var(--text-primary)',
+                    resize: 'none',
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                    lineHeight: 1.5,
+                    boxSizing: 'border-box',
+                  }}
+                />
+                <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                  <button
+                    onClick={onEditSave}
+                    disabled={!editCommentText.trim() || savingEdit}
+                    style={{
+                      padding: '5px 14px',
+                      borderRadius: 6,
+                      border: 'none',
+                      background: BRAND,
+                      color: '#fff',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: editCommentText.trim() && !savingEdit ? 'pointer' : 'not-allowed',
+                      opacity: editCommentText.trim() && !savingEdit ? 1 : 0.5,
+                    }}
+                  >
+                    {savingEdit ? 'Saving…' : 'Save'}
+                  </button>
+                  <button
+                    onClick={onEditCancel}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: 6,
+                      border: '1px solid var(--border-subtle)',
+                      background: 'transparent',
+                      color: 'var(--text-secondary)',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
                 style={{
-                  marginLeft: 'auto',
+                  padding: '11px 14px',
+                  background: 'var(--surface-subtle)',
+                  borderRadius: '0 8px 8px 8px',
                   fontSize: 13,
-                  color: 'var(--text-tertiary)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '0 2px',
-                  transition: 'color 0.1s',
+                  color: 'var(--text-primary)',
+                  lineHeight: 1.6,
+                  border: '1px solid var(--border-subtle)',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#EF4444')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-tertiary)')}
               >
-                ✕
-              </button>
-            </div>
-            <div
-              style={{
-                padding: '11px 14px',
-                background: 'var(--surface-subtle)',
-                borderRadius: '0 8px 8px 8px',
-                fontSize: 13,
-                color: 'var(--text-primary)',
-                lineHeight: 1.6,
-                border: '1px solid var(--border-subtle)',
-              }}
-            >
-              {c.content}
-            </div>
+                {c.content}
+              </div>
+            )}
           </div>
         </div>
       ))}

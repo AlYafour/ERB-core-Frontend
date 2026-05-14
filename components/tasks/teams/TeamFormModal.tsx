@@ -5,6 +5,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Team } from '@/types';
 import { teamsApi } from '@/lib/api/tasks';
 import { BRAND } from '../shared/constants';
+import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 
 interface Props {
   team?: Team;
@@ -24,6 +26,9 @@ export function TeamFormModal({ team, onClose }: Props) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['teams'] });
       onClose();
+    },
+    onError: (err: unknown) => {
+      toast(getApiError(err, team ? 'Failed to update team' : 'Failed to create team'), 'error');
     },
   });
 

@@ -6,14 +6,49 @@ import { StatusBadge } from '../shared/StatusBadge';
 import { PriorityBar } from '../shared/PriorityBar';
 import { TYPE_LABEL, fmtDate, isOverdue } from '../shared/constants';
 
+export type SortField = 'title' | 'status' | 'due_date' | 'priority';
+export type SortDir = 'asc' | 'desc';
+
 interface Props {
   tasks: TaskListItem[];
   onRowClick: (id: number) => void;
+  sortBy?: SortField;
+  sortDir?: SortDir;
+  onSort?: (field: SortField) => void;
 }
 
-const TH = ['', 'Task', 'Status', 'Assignee', 'Due Date', 'Progress'];
+const COLUMNS: { label: string; field?: SortField }[] = [
+  { label: '' },
+  { label: 'Task',     field: 'title' },
+  { label: 'Status',   field: 'status' },
+  { label: 'Assignee' },
+  { label: 'Due Date', field: 'due_date' },
+  { label: 'Progress' },
+];
 
-export function TaskListView({ tasks, onRowClick }: Props) {
+function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
+  const color = active ? 'var(--brand)' : 'var(--border-subtle)';
+  return (
+    <svg
+      width="10"
+      height="10"
+      viewBox="0 0 10 10"
+      fill="none"
+      style={{ flexShrink: 0, marginLeft: 4 }}
+    >
+      <path
+        d="M5 2L8 6H2L5 2Z"
+        fill={active && dir === 'asc' ? color : 'var(--border-subtle)'}
+      />
+      <path
+        d="M5 8L2 4H8L5 8Z"
+        fill={active && dir === 'desc' ? color : 'var(--border-subtle)'}
+      />
+    </svg>
+  );
+}
+
+export function TaskListView({ tasks, onRowClick, sortBy, sortDir = 'asc', onSort }: Props) {
   return (
     <div style={{ overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -24,22 +59,30 @@ export function TaskListView({ tasks, onRowClick }: Props) {
               borderBottom: '1px solid var(--border-subtle)',
             }}
           >
-            {TH.map((h) => (
+            {COLUMNS.map((col) => (
               <th
-                key={h}
+                key={col.label}
+                onClick={col.field && onSort ? () => onSort(col.field!) : undefined}
                 style={{
                   padding: '10px 14px',
                   textAlign: 'left',
                   fontSize: 11,
                   fontWeight: 700,
-                  color: 'var(--text-tertiary)',
+                  color: col.field && sortBy === col.field ? 'var(--brand)' : 'var(--text-tertiary)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.06em',
                   border: 'none',
                   whiteSpace: 'nowrap',
+                  cursor: col.field && onSort ? 'pointer' : 'default',
+                  userSelect: 'none',
                 }}
               >
-                {h}
+                <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  {col.label}
+                  {col.field && onSort && (
+                    <SortIcon active={sortBy === col.field} dir={sortDir} />
+                  )}
+                </span>
               </th>
             ))}
           </tr>

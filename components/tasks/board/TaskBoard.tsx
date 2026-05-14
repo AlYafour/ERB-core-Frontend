@@ -5,36 +5,78 @@ import type { TaskListItem, TaskStatus } from '@/types';
 import { tasksApi } from '@/lib/api/tasks';
 import { KANBAN_COLS } from '../shared/constants';
 import { BoardColumn } from './BoardColumn';
+import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 
 interface Props {
   tasks: TaskListItem[];
   onCardClick: (id: number) => void;
 }
 
-const TRANSITION_MAP: Partial<Record<TaskStatus, (id: number) => Promise<unknown>>> = {
-  in_progress: (id) => tasksApi.start(id),
-  review:      (id) => tasksApi.submit(id),
-  approved:    (id) => tasksApi.approve(id),
-  assigned:    (id) => tasksApi.reopen(id),
+// Map every status to the column it appears in
+const STATUS_TO_COL: Record<TaskStatus, TaskStatus> = {
+  draft:       'assigned',
+  assigned:    'assigned',
+  rejected:    'assigned',
+  accepted:    'in_progress',
+  in_progress: 'in_progress',
+  submitted:   'review',
+  review:      'review',
+  approved:    'approved',
+  closed:      'approved',
 };
+
+// Return the API call to make when dragging FROM fromStatus TO targetCol
+function getTransition(fromStatus: TaskStatus, targetCol: TaskStatus): ((id: number) => Promise<unknown>) | null {
+  switch (targetCol) {
+    case 'in_progress':
+      if (['assigned', 'accepted', 'rejected', 'draft'].includes(fromStatus))
+        return (id) => tasksApi.start(id);
+      break;
+    case 'review':
+      if (['in_progress', 'accepted'].includes(fromStatus))
+        return (id) => tasksApi.submit(id);
+      break;
+    case 'approved':
+      if (['review', 'submitted'].includes(fromStatus))
+        return (id) => tasksApi.approve(id);
+      break;
+    case 'assigned':
+      if (['approved', 'rejected', 'closed', 'in_progress', 'review', 'submitted'].includes(fromStatus))
+        return (id) => tasksApi.reopen(id);
+      break;
+  }
+  return null;
+}
 
 export function TaskBoard({ tasks, onCardClick }: Props) {
   const qc = useQueryClient();
 
   const move = useMutation({
-    mutationFn: async ({ taskId, targetStatus }: { taskId: number; targetStatus: TaskStatus }) => {
-      const fn = TRANSITION_MAP[targetStatus];
-      if (!fn) throw new Error(`No transition to ${targetStatus}`);
+    mutationFn: async ({
+      taskId,
+      targetCol,
+      fromStatus,
+    }: {
+      taskId: number;
+      targetCol: TaskStatus;
+      fromStatus: TaskStatus;
+    }) => {
+      const fn = getTransition(fromStatus, targetCol);
+      if (!fn) throw new Error(`Cannot move from "${fromStatus}" to "${targetCol}"`);
       return fn(taskId);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['tasks'] });
       qc.invalidateQueries({ queryKey: ['task-stats'] });
     },
+    onError: (err: unknown) => {
+      toast(getApiError(err, 'Could not move task — this transition is not allowed'), 'error');
+    },
   });
 
-  function handleDrop(taskId: number, targetStatus: TaskStatus) {
-    move.mutate({ taskId, targetStatus });
+  function handleDrop(taskId: number, targetCol: TaskStatus, fromStatus: TaskStatus) {
+    move.mutate({ taskId, targetCol, fromStatus });
   }
 
   return (
@@ -52,7 +94,7 @@ export function TaskBoard({ tasks, onCardClick }: Props) {
         <BoardColumn
           key={col}
           status={col}
-          tasks={tasks.filter((t) => t.status === col)}
+          tasks={tasks.filter((t) => STATUS_TO_COL[t.status] === col)}
           onCardClick={onCardClick}
           onDrop={handleDrop}
         />

@@ -9,7 +9,7 @@ interface Props {
   status: TaskStatus;
   tasks: TaskListItem[];
   onCardClick: (id: number) => void;
-  onDrop: (taskId: number, targetStatus: TaskStatus) => void;
+  onDrop: (taskId: number, targetStatus: TaskStatus, fromStatus: TaskStatus) => void;
 }
 
 export function BoardColumn({ status, tasks, onCardClick, onDrop }: Props) {
@@ -32,7 +32,7 @@ export function BoardColumn({ status, tasks, onCardClick, onDrop }: Props) {
     const taskId = Number(e.dataTransfer.getData('taskId'));
     const fromStatus = e.dataTransfer.getData('fromStatus') as TaskStatus;
     if (taskId && fromStatus !== status) {
-      onDrop(taskId, status);
+      onDrop(taskId, status, fromStatus);
     }
   }
 

@@ -15,7 +15,7 @@ import {
 // ── New modular components ──────────────────────────────────────────────────
 import { useTasksUIStore } from '@/stores/tasks-ui.store';
 import { TaskBoard } from '@/components/tasks/board/TaskBoard';
-import { TaskListView } from '@/components/tasks/list/TaskListView';
+import { TaskListView, type SortField } from '@/components/tasks/list/TaskListView';
 import { TaskDetailDrawer } from '@/components/tasks/detail/TaskDetailDrawer';
 import { CreateTaskDrawer } from '@/components/tasks/create/CreateTaskDrawer';
 import { TodoPanel } from '@/components/tasks/todo/TodoPanel';
@@ -42,22 +42,33 @@ export default function TasksPage() {
     scope, setScope,
     statusFilter, setStatusFilter,
     priorityFilter, setPriorityFilter,
+    taskTypeFilter, setTaskTypeFilter,
     search, setSearch,
+    sortBy, sortDir, setSort,
+    page, setPage,
     selectedTaskId, openTask, closeTask,
     isCreateOpen, openCreate, closeCreate,
     isTodoOpen, toggleTodo, closeTodo,
   } = useTasksUIStore();
 
+  const PAGE_SIZE = 50;
+
+  // Build ordering string for API
+  const ordering = sortBy ? (sortDir === 'desc' ? `-${sortBy}` : sortBy) : undefined;
+
   // ── Server state ───────────────────────────────────────────────────────
   const { data: raw, isLoading } = useQuery({
-    queryKey: ['tasks', scope, statusFilter, priorityFilter, search],
+    queryKey: ['tasks', scope, statusFilter, priorityFilter, taskTypeFilter, search, ordering, page],
     queryFn: () =>
       tasksApi.getAll({
         scope: (scope as 'mine' | 'created' | 'team' | 'watching') || undefined,
         status: statusFilter || undefined,
         priority: priorityFilter || undefined,
+        task_type: taskTypeFilter || undefined,
         search: search || undefined,
-        page_size: 300,
+        ordering,
+        page,
+        page_size: PAGE_SIZE,
       }),
   });
 
@@ -75,11 +86,15 @@ export default function TasksPage() {
     ? raw
     : (raw as { results?: TaskListItem[] })?.results ?? [];
 
+  const totalPages = !Array.isArray(raw) && (raw as { count?: number })?.count
+    ? Math.ceil(((raw as { count: number }).count) / PAGE_SIZE)
+    : 1;
+
   const reviewCount  = stats?.pending_review ?? 0;
   const overdueCount = stats?.overdue ?? 0;
   const totalCount   = stats ? Object.values(stats.by_status).reduce((a, b) => a + b, 0) : undefined;
 
-  const hasFilters = Boolean(search || statusFilter || priorityFilter);
+  const hasFilters = Boolean(search || statusFilter || priorityFilter || taskTypeFilter);
 
   return (
     <MainLayout>
@@ -313,6 +328,19 @@ export default function TasksPage() {
                   <option value="low">Low</option>
                 </select>
 
+                {/* Task type filter */}
+                <select
+                  value={taskTypeFilter}
+                  onChange={(e) => setTaskTypeFilter(e.target.value)}
+                  style={SEL_STYLE}
+                >
+                  <option value="">All types</option>
+                  <option value="task">Task</option>
+                  <option value="request">Request</option>
+                  <option value="issue">Issue</option>
+                  <option value="followup">Follow-up</option>
+                </select>
+
                 {/* View toggle */}
                 <div
                   style={{
@@ -391,7 +419,53 @@ export default function TasksPage() {
                 <TaskBoard tasks={tasks} onCardClick={openTask} />
               </div>
             ) : (
-              <TaskListView tasks={tasks} onRowClick={openTask} />
+              <>
+                <TaskListView
+                  tasks={tasks}
+                  onRowClick={openTask}
+                  sortBy={sortBy as SortField | undefined}
+                  sortDir={sortDir}
+                  onSort={(field) => setSort(field)}
+                />
+                {totalPages > 1 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      padding: '16px 20px',
+                      borderTop: '1px solid var(--border-subtle)',
+                    }}
+                  >
+                    <button
+                      onClick={() => setPage(page - 1)}
+                      disabled={page <= 1}
+                      style={{
+                        ...SEL_STYLE,
+                        opacity: page <= 1 ? 0.4 : 1,
+                        cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      ← Prev
+                    </button>
+                    <span style={{ fontSize: 13, color: 'var(--text-secondary)', userSelect: 'none' }}>
+                      Page {page} of {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setPage(page + 1)}
+                      disabled={page >= totalPages}
+                      style={{
+                        ...SEL_STYLE,
+                        opacity: page >= totalPages ? 0.4 : 1,
+                        cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      Next →
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </WorkspaceSurface>
         </PageShell>

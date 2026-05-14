@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TaskType, TaskPriority, TaskDetail } from '@/types';
-import { tasksApi } from '@/lib/api/tasks';
+import { tasksApi, teamsApi } from '@/lib/api/tasks';
 import { usersApi } from '@/lib/api/users';
 import { BRAND, BRAND_HEX, PRIORITY_CONFIG } from '../shared/constants';
+import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 
 interface Props {
   onClose: () => void;
@@ -55,12 +57,18 @@ export function CreateTaskDrawer({ onClose }: Props) {
   const [taskType, setTaskType] = useState<TaskType>('task');
   const [priority, setPriority] = useState<TaskPriority>('medium');
   const [assignTo, setAssignTo] = useState('');
+  const [assignTeam, setAssignTeam] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [requiresApproval, setRequiresApproval] = useState(true);
 
   const { data: users = [] } = useQuery({
     queryKey: ['users-mini'],
     queryFn: () => usersApi.getAll({ page_size: 200 }).then((r) => r.results || []),
+  });
+
+  const { data: teams = [] } = useQuery({
+    queryKey: ['teams'],
+    queryFn: () => teamsApi.getAll(),
   });
 
   const create = useMutation({
@@ -73,11 +81,15 @@ export function CreateTaskDrawer({ onClose }: Props) {
         requires_approval: requiresApproval,
         due_date: dueDate || undefined,
         assigned_to: assignTo ? Number(assignTo) : undefined,
+        assigned_team: assignTeam ? Number(assignTeam) : undefined,
       } as unknown as Partial<TaskDetail>),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['tasks'] });
       qc.invalidateQueries({ queryKey: ['task-stats'] });
       onClose();
+    },
+    onError: (err: unknown) => {
+      toast(getApiError(err, 'Failed to create task'), 'error');
     },
   });
 
@@ -246,6 +258,21 @@ export function CreateTaskDrawer({ onClose }: Props) {
               {users.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.first_name && u.last_name ? `${u.first_name} ${u.last_name}` : u.username}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Assign to team">
+            <select
+              value={assignTeam}
+              onChange={(e) => setAssignTeam(e.target.value)}
+              style={INPUT_STYLE}
+            >
+              <option value="">— No team —</option>
+              {teams.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
                 </option>
               ))}
             </select>

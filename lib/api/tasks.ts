@@ -18,6 +18,8 @@ export const teamsApi = {
     apiClient.post<TeamMember>(`/tasks/teams/${id}/add_member/`, { user_id, role }).then(r => r.data),
   removeMember: (id: number, user_id: number) =>
     apiClient.post(`/tasks/teams/${id}/remove_member/`, { user_id }).then(r => r.data),
+  updateMemberRole: (id: number, user_id: number, role: string) =>
+    apiClient.post(`/tasks/teams/${id}/add_member/`, { user_id, role }).then(r => r.data),
 };
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
