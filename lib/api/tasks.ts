@@ -7,7 +7,11 @@ import type {
 // ── Teams ─────────────────────────────────────────────────────────────────────
 
 export const teamsApi = {
-  getAll: () => apiClient.get<Team[]>('/tasks/teams/').then(r => r.data),
+  getAll: () =>
+    apiClient.get<{ results?: Team[] } | Team[]>('/tasks/teams/').then(r => {
+      const d = r.data as any;
+      return (Array.isArray(d) ? d : (d?.results ?? [])) as Team[];
+    }),
   getById: (id: number) => apiClient.get<Team>(`/tasks/teams/${id}/`).then(r => r.data),
   create: (data: { name: string; description?: string }) =>
     apiClient.post<Team>('/tasks/teams/', data).then(r => r.data),
@@ -127,7 +131,11 @@ export const taskActivitiesApi = {
 // ── My Tasks (personal to-do) ─────────────────────────────────────────────────
 
 export const myTasksApi = {
-  getAll: () => apiClient.get<MyTask[]>('/tasks/my-tasks/').then(r => r.data),
+  getAll: () =>
+    apiClient.get<{ results?: MyTask[] } | MyTask[]>('/tasks/my-tasks/').then(r => {
+      const d = r.data as any;
+      return (Array.isArray(d) ? d : (d?.results ?? [])) as MyTask[];
+    }),
   create: (data: { title: string; note?: string; priority?: string; due_date?: string }) =>
     apiClient.post<MyTask>('/tasks/my-tasks/', data).then(r => r.data),
   update: (id: number, data: Partial<MyTask>) =>
