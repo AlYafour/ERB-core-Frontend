@@ -94,6 +94,49 @@
   --status-info-bg:         var(--wine-50);
   --status-info-border:     rgba(124, 45, 58, 0.18);
 
+  /* Priority */
+  --priority-critical:        #DC2626;
+  --priority-critical-bg:     #FEF2F2;
+  --priority-critical-border: rgba(220, 38, 38, 0.22);
+  --priority-high:            #EA580C;
+  --priority-high-bg:         #FFF7ED;
+  --priority-high-border:     rgba(234, 88, 12, 0.22);
+  --priority-medium:          #CA8A04;
+  --priority-medium-bg:       #FEFCE8;
+  --priority-medium-border:   rgba(202, 138, 4, 0.22);
+  --priority-low:             #64748B;
+  --priority-low-bg:          #F8FAFC;
+  --priority-low-border:      rgba(100, 116, 139, 0.22);
+
+  /* Task status */
+  --task-draft:               #64748B;
+  --task-draft-bg:            #F1F5F9;
+  --task-draft-border:        #CBD5E1;
+  --task-assigned:            #2563EB;
+  --task-assigned-bg:         #EFF6FF;
+  --task-assigned-border:     #BFDBFE;
+  --task-accepted:            #7C3AED;
+  --task-accepted-bg:         #F5F3FF;
+  --task-accepted-border:     #DDD6FE;
+  --task-in_progress:         #D97706;
+  --task-in_progress-bg:      #FFFBEB;
+  --task-in_progress-border:  #FDE68A;
+  --task-submitted:           #059669;
+  --task-submitted-bg:        #ECFDF5;
+  --task-submitted-border:    #A7F3D0;
+  --task-review:              #EA580C;
+  --task-review-bg:           #FFF7ED;
+  --task-review-border:       #FED7AA;
+  --task-approved:            #16A34A;
+  --task-approved-bg:         #DCFCE7;
+  --task-approved-border:     #86EFAC;
+  --task-rejected:            #DC2626;
+  --task-rejected-bg:         #FEF2F2;
+  --task-rejected-border:     #FECACA;
+  --task-closed:              #94A3B8;
+  --task-closed-bg:           #F8FAFC;
+  --task-closed-border:       #E2E8F0;
+
   /* Sidebar — always dark regardless of theme */
   --sidebar-bg:             #2D1A1E;
   --sidebar-border:         rgba(255, 255, 255, 0.07);
@@ -340,6 +383,49 @@
   --status-info:            var(--wine-400);
   --status-info-bg:         rgba(184, 85, 112, 0.10);
   --status-info-border:     rgba(184, 85, 112, 0.22);
+
+  /* Priority */
+  --priority-critical:        #FCA5A5;
+  --priority-critical-bg:     rgba(220, 38, 38, 0.12);
+  --priority-critical-border: rgba(220, 38, 38, 0.28);
+  --priority-high:            #FDBA74;
+  --priority-high-bg:         rgba(234, 88, 12, 0.12);
+  --priority-high-border:     rgba(234, 88, 12, 0.28);
+  --priority-medium:          #FDE047;
+  --priority-medium-bg:       rgba(202, 138, 4, 0.12);
+  --priority-medium-border:   rgba(202, 138, 4, 0.28);
+  --priority-low:             #94A3B8;
+  --priority-low-bg:          rgba(100, 116, 139, 0.12);
+  --priority-low-border:      rgba(100, 116, 139, 0.28);
+
+  /* Task status */
+  --task-draft:               #94A3B8;
+  --task-draft-bg:            rgba(100, 116, 139, 0.12);
+  --task-draft-border:        rgba(100, 116, 139, 0.28);
+  --task-assigned:            #93C5FD;
+  --task-assigned-bg:         rgba(37, 99, 235, 0.12);
+  --task-assigned-border:     rgba(37, 99, 235, 0.28);
+  --task-accepted:            #C4B5FD;
+  --task-accepted-bg:         rgba(124, 58, 237, 0.12);
+  --task-accepted-border:     rgba(124, 58, 237, 0.28);
+  --task-in_progress:         #FCD34D;
+  --task-in_progress-bg:      rgba(217, 119, 6, 0.12);
+  --task-in_progress-border:  rgba(217, 119, 6, 0.28);
+  --task-submitted:           #6EE7B7;
+  --task-submitted-bg:        rgba(5, 150, 105, 0.12);
+  --task-submitted-border:    rgba(5, 150, 105, 0.28);
+  --task-review:              #FDBA74;
+  --task-review-bg:           rgba(234, 88, 12, 0.12);
+  --task-review-border:       rgba(234, 88, 12, 0.28);
+  --task-approved:            #86EFAC;
+  --task-approved-bg:         rgba(22, 163, 74, 0.12);
+  --task-approved-border:     rgba(22, 163, 74, 0.28);
+  --task-rejected:            #FCA5A5;
+  --task-rejected-bg:         rgba(220, 38, 38, 0.12);
+  --task-rejected-border:     rgba(220, 38, 38, 0.28);
+  --task-closed:              #64748B;
+  --task-closed-bg:           rgba(100, 116, 139, 0.12);
+  --task-closed-border:       rgba(100, 116, 139, 0.28);
 
   /* Sidebar */
   --sidebar-bg:             #160D10;

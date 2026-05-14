@@ -1,25 +1,26 @@
 import type { TaskStatus, TaskPriority } from '@/types';
+import { taskStatus, priority as priorityTokens } from '@/lib/design-system/tokens';
 
 export const BRAND = 'var(--brand)';
-export const BRAND_HEX = '#F97316'; // for alpha compositing (var() can't be suffixed)
+export const BRAND_HEX = '#7C2D3A'; // for rgba() compositing only — do NOT use for solid fills
 
 export const STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; bg: string; border: string }> = {
-  draft:       { label: 'Draft',        color: '#64748B', bg: '#F1F5F9', border: '#CBD5E1' },
-  assigned:    { label: 'Assigned',     color: '#3B82F6', bg: '#EFF6FF', border: '#BFDBFE' },
-  accepted:    { label: 'Accepted',     color: '#8B5CF6', bg: '#F5F3FF', border: '#DDD6FE' },
-  in_progress: { label: 'In Progress',  color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A' },
-  submitted:   { label: 'Submitted',    color: '#10B981', bg: '#ECFDF5', border: '#A7F3D0' },
-  review:      { label: 'Under Review', color: '#F97316', bg: '#FFF7ED', border: '#FED7AA' },
-  approved:    { label: 'Approved',     color: '#16A34A', bg: '#DCFCE7', border: '#86EFAC' },
-  rejected:    { label: 'Rejected',     color: '#EF4444', bg: '#FEF2F2', border: '#FECACA' },
-  closed:      { label: 'Closed',       color: '#94A3B8', bg: '#F8FAFC', border: '#E2E8F0' },
+  draft:       { label: 'Draft',        ...taskStatus.draft },
+  assigned:    { label: 'Assigned',     ...taskStatus.assigned },
+  accepted:    { label: 'Accepted',     ...taskStatus.accepted },
+  in_progress: { label: 'In Progress',  ...taskStatus.in_progress },
+  submitted:   { label: 'Submitted',    ...taskStatus.submitted },
+  review:      { label: 'Under Review', ...taskStatus.review },
+  approved:    { label: 'Approved',     ...taskStatus.approved },
+  rejected:    { label: 'Rejected',     ...taskStatus.rejected },
+  closed:      { label: 'Closed',       ...taskStatus.closed },
 };
 
-export const PRIORITY_CONFIG: Record<TaskPriority, { label: string; color: string; bg: string; levels: number }> = {
-  critical: { label: 'Critical', color: '#EF4444', bg: '#FEF2F2', levels: 4 },
-  high:     { label: 'High',     color: '#F97316', bg: '#FFF7ED', levels: 3 },
-  medium:   { label: 'Medium',   color: '#EAB308', bg: '#FEFCE8', levels: 2 },
-  low:      { label: 'Low',      color: '#94A3B8', bg: '#F8FAFC', levels: 1 },
+export const PRIORITY_CONFIG: Record<TaskPriority, { label: string; color: string; bg: string; border: string; levels: number }> = {
+  critical: { label: 'Critical', ...priorityTokens.critical, levels: 4 },
+  high:     { label: 'High',     ...priorityTokens.high,     levels: 3 },
+  medium:   { label: 'Medium',   ...priorityTokens.medium,   levels: 2 },
+  low:      { label: 'Low',      ...priorityTokens.low,      levels: 1 },
 };
 
 export const TYPE_LABEL: Record<string, string> = {
