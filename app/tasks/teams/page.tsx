@@ -25,7 +25,7 @@ export default function TeamsPage() {
     queryKey: ['teams'],
     queryFn: () => teamsApi.getAll(),
   });
-  const teams: Team[] = Array.isArray(teamsRaw) ? teamsRaw : (teamsRaw as { results?: Team[] })?.results ?? [];
+  const teams: Team[] = teamsRaw ?? [];
 
   // Derive the active team ID — never hold a stale object reference in state
   // Falls back to first team if nothing selected or selected team was deleted

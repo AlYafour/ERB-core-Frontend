@@ -79,11 +79,7 @@ export default function TasksPage() {
 
   const { data: myCount = 0 } = useQuery<number>({
     queryKey: ['my-tasks-count'],
-    queryFn: () =>
-      myTasksApi.getAll().then((r) => {
-        const arr = Array.isArray(r) ? r : (r as { results?: typeof r })?.results ?? [];
-        return (arr as { is_done?: boolean }[]).filter((t) => !t.is_done).length;
-      }),
+    queryFn: () => myTasksApi.getAll().then((r) => r.filter((t) => !t.is_done).length),
   });
 
   const tasks: TaskListItem[] = Array.isArray(raw)
