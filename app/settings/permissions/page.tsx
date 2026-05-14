@@ -210,7 +210,7 @@ export default function PermissionsPage() {
               </div>
               {isLoadingSets ? <Loader className="mx-auto" /> : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                  {permissionSetsData?.results.map((set: PermissionSet) => (
+                  {permissionSetsData?.results?.map((set: PermissionSet) => (
                     <div key={set.id} onClick={() => setSelectedPermissionSet(set.id)} style={selectedPermissionSet === set.id ? selectedCardStyle : cardStyle}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
@@ -281,7 +281,7 @@ export default function PermissionsPage() {
               </div>
               {isLoadingUsers ? <Loader className="mx-auto" /> : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                  {usersData?.results.map((user: User) => (
+                  {usersData?.results?.map((user: User) => (
                     <div key={user.id} onClick={() => { setSelectedUser(user.id); setShowOverridePanel(false); }} style={selectedUser === user.id ? selectedCardStyle : cardStyle}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
@@ -314,7 +314,7 @@ export default function PermissionsPage() {
                     <Button variant="secondary" size="sm" onClick={() => handleAssignPermissionSet(selectedUser, null)} isLoading={assignPermissionSetMutation.isPending}>
                       {t('perm', 'clearRole')}
                     </Button>
-                    {permissionSetsData?.results.map((set: PermissionSet) => (
+                    {permissionSetsData?.results?.map((set: PermissionSet) => (
                       <Button
                         key={set.id}
                         variant={selectedUserPermissions.permission_set?.id === set.id ? 'primary' : 'secondary'}
@@ -390,7 +390,7 @@ export default function PermissionsPage() {
                             </div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
                               {perms.map((perm) => {
-                                const existing = userCustomOverrides?.results.find((o) => o.permission.id === perm.id);
+                                const existing = userCustomOverrides?.results?.find((o) => o.permission.id === perm.id);
                                 return (
                                   <div key={perm.id} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', padding: 'var(--space-1) var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', fontSize: 'var(--text-xs)' }}>
                                     <span>{ACTION_LABELS[perm.action] || perm.action}</span>

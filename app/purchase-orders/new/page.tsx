@@ -385,7 +385,7 @@ Terms & Conditions:
     setItems(items.map((item) => ({ ...item, tax_rate: rate })));
   };
 
-  const selectedProduct = products?.results.find((p) => p.id === currentItem.product_id);
+  const selectedProduct = products?.results?.find((p) => p.id === currentItem.product_id);
 
   return (
     <MainLayout>
@@ -611,7 +611,7 @@ Terms & Conditions:
               <div style={{ gridColumn: 'span 2' }}>
                 <SearchableDropdown
                   options={
-                    products?.results.map((product) => ({
+                    products?.results?.map((product) => ({
                       value: product.id,
                       label: `${product.name} (${product.code})`,
                       searchText: `${product.name} ${product.code} ${product.category || ''}`,

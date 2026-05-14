@@ -247,7 +247,7 @@ function EditPurchaseOrderPageContent() {
                 label={t('col', 'supplier')}
                 required
                 options={
-                  suppliers?.results.map((supplier) => ({
+                  suppliers?.results?.map((supplier) => ({
                     value: supplier.id,
                     label: supplier.name,
                     searchText: `${supplier.name} ${supplier.business_name || ''} ${supplier.contact_person || ''}`,
@@ -338,7 +338,7 @@ function EditPurchaseOrderPageContent() {
               <div style={{ gridColumn: 'span 2' }}>
                 <SearchableDropdown
                   options={
-                    products?.results.map((product) => ({
+                    products?.results?.map((product) => ({
                       value: product.id,
                       label: `${product.name} (${product.code})`,
                       searchText: `${product.name} ${product.code} ${product.category || ''}`,
@@ -426,7 +426,7 @@ function EditPurchaseOrderPageContent() {
                   </thead>
                   <tbody>
                     {items.map((item, index) => {
-                      const product = products?.results.find((p) => p.id === item.product_id);
+                      const product = products?.results?.find((p) => p.id === item.product_id);
                       const itemSubtotal = item.quantity * item.unit_price;
                       const discountAmount = itemSubtotal * ((item.discount ?? 0) / 100) || 0;
                       const afterDiscount = itemSubtotal - discountAmount;

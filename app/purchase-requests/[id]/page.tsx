@@ -353,7 +353,7 @@ export default function PurchaseRequestDetailPage() {
                         <div style={{ minWidth: '220px' }}>
                           <SearchableDropdown
                             options={
-                              products?.results.map((p) => ({
+                              products?.results?.map((p) => ({
                                 value: p.id,
                                 label: `${p.name} (${p.code})`,
                                 searchText: `${p.name} ${p.code}`,
