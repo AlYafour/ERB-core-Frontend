@@ -4,15 +4,8 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useQuery } from '@tanstack/react-query';
 import type { TaskListItem } from '@/types';
 import { tasksApi, myTasksApi } from '@/lib/api/tasks';
-import {
-  Button,
-  PageHeader,
-  PageShell,
-  WorkspaceSurface,
-  SearchInput,
-} from '@/components/ui';
+import { SearchInput } from '@/components/ui';
 
-// ── New modular components ──────────────────────────────────────────────────
 import { useTasksUIStore } from '@/stores/tasks-ui.store';
 import { TaskBoard } from '@/components/tasks/board/TaskBoard';
 import { TaskListView, type SortField } from '@/components/tasks/list/TaskListView';
@@ -20,23 +13,146 @@ import { TaskDetailDrawer } from '@/components/tasks/detail/TaskDetailDrawer';
 import { CreateTaskDrawer } from '@/components/tasks/create/CreateTaskDrawer';
 import { TodoPanel } from '@/components/tasks/todo/TodoPanel';
 import { KanbanSkeleton, ListSkeleton } from '@/components/tasks/shared/Skeletons';
-import { BRAND, SCOPE_TABS, STATUS_CONFIG } from '@/components/tasks/shared/constants';
+import { BRAND, BRAND_HEX, SCOPE_TABS, STATUS_CONFIG } from '@/components/tasks/shared/constants';
 
-const SEL_STYLE = {
+// ─── Stat card ─────────────────────────────────────────────────────────────────
+
+function StatCard({
+  label, value, icon, color, bg, border,
+  onClick, active,
+}: {
+  label: string;
+  value: number | undefined;
+  icon: React.ReactNode;
+  color: string;
+  bg: string;
+  border: string;
+  onClick?: () => void;
+  active?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flex: '1 1 130px',
+        minWidth: 0,
+        padding: '13px 16px',
+        borderRadius: 12,
+        border: `1.5px solid ${active ? color : border}`,
+        background: active ? bg : 'var(--card-bg)',
+        cursor: onClick ? 'pointer' : 'default',
+        textAlign: 'left',
+        transition: 'all 0.15s',
+        boxShadow: active ? `0 0 0 3px ${color}18` : 'var(--shadow-xs)',
+      }}
+      onMouseEnter={(e) => {
+        if (onClick) {
+          e.currentTarget.style.borderColor = color;
+          e.currentTarget.style.boxShadow = `0 2px 12px ${color}20`;
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (onClick) {
+          e.currentTarget.style.borderColor = active ? color : border;
+          e.currentTarget.style.boxShadow = active ? `0 0 0 3px ${color}18` : 'var(--shadow-xs)';
+        }
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <span style={{
+          width: 32,
+          height: 32,
+          borderRadius: 8,
+          background: bg,
+          border: `1px solid ${border}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          {icon}
+        </span>
+        <div>
+          <p style={{ fontSize: 20, fontWeight: 700, color: active ? color : 'var(--text-primary)', lineHeight: 1.2 }}>
+            {value ?? '—'}
+          </p>
+          <p style={{ fontSize: 11, color: active ? color : 'var(--text-tertiary)', fontWeight: 500, marginTop: 2 }}>
+            {label}
+          </p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// ─── Filter pill ───────────────────────────────────────────────────────────────
+
+const SEL: React.CSSProperties = {
   padding: '6px 10px',
-  borderRadius: 7,
+  borderRadius: 8,
   border: '1px solid var(--border-subtle)',
   fontSize: 12,
-  background: 'var(--surface-subtle)',
+  background: 'var(--card-bg)',
   color: 'var(--text-secondary)',
   cursor: 'pointer',
   outline: 'none',
-  flexShrink: 0 as const,
   fontFamily: 'inherit',
+  flexShrink: 0,
+  transition: 'border-color 0.15s',
 };
 
+// ─── View toggle ───────────────────────────────────────────────────────────────
+
+function ViewToggle({ view, setView }: { view: 'kanban' | 'list'; setView: (v: 'kanban' | 'list') => void }) {
+  return (
+    <div style={{ display: 'flex', background: 'var(--surface-subtle)', borderRadius: 9, padding: 2, flexShrink: 0 }}>
+      {(['kanban', 'list'] as const).map((v) => (
+        <button
+          key={v}
+          onClick={() => setView(v)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+            padding: '5px 12px',
+            borderRadius: 7,
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 12,
+            fontWeight: 600,
+            background: view === v ? 'var(--card-bg)' : 'transparent',
+            color: view === v ? 'var(--text-primary)' : 'var(--text-tertiary)',
+            boxShadow: view === v ? 'var(--shadow-sm)' : 'none',
+            transition: 'all 0.15s',
+          }}
+        >
+          {v === 'kanban' ? (
+            <>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="15" rx="1"/>
+              </svg>
+              Board
+            </>
+          ) : (
+            <>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+              List
+            </>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+const PAGE_SIZE = 50;
+
 export default function TasksPage() {
-  // ── UI state from Zustand ──────────────────────────────────────────────
   const {
     view, setView,
     scope, setScope,
@@ -49,14 +165,13 @@ export default function TasksPage() {
     selectedTaskId, openTask, closeTask,
     isCreateOpen, openCreate, closeCreate,
     isTodoOpen, toggleTodo, closeTodo,
+    clearFilters,
   } = useTasksUIStore();
 
-  const PAGE_SIZE = 50;
-
-  // Build ordering string for API
   const ordering = sortBy ? (sortDir === 'desc' ? `-${sortBy}` : sortBy) : undefined;
+  const hasFilters = Boolean(search || statusFilter || priorityFilter || taskTypeFilter);
 
-  // ── Server state ───────────────────────────────────────────────────────
+  // ── Queries ───────────────────────────────────────────────────────────────
   const { data: raw, isLoading } = useQuery({
     queryKey: ['tasks', scope, statusFilter, priorityFilter, taskTypeFilter, search, ordering, page],
     queryFn: () =>
@@ -86,398 +201,340 @@ export default function TasksPage() {
     ? raw
     : (raw as { results?: TaskListItem[] })?.results ?? [];
 
-  const totalPages = !Array.isArray(raw) && (raw as { count?: number })?.count
-    ? Math.ceil(((raw as { count: number }).count) / PAGE_SIZE)
-    : 1;
+  const totalCount = !Array.isArray(raw) && (raw as { count?: number })?.count;
+  const totalPages = totalCount ? Math.ceil(totalCount / PAGE_SIZE) : 1;
 
-  const reviewCount  = stats?.pending_review ?? 0;
   const overdueCount = stats?.overdue ?? 0;
-  const totalCount   = stats?.by_status ? Object.values(stats.by_status).reduce((a, b) => a + b, 0) : undefined;
-
-  const hasFilters = Boolean(search || statusFilter || priorityFilter || taskTypeFilter);
+  const reviewCount = stats?.pending_review ?? 0;
+  const completedCount = stats?.completed_this_month ?? 0;
+  const totalStat = stats?.by_status
+    ? Object.values(stats.by_status).reduce((a, b) => a + b, 0)
+    : undefined;
 
   return (
     <MainLayout>
-      {/* Shift content when Todo panel is open */}
-      <div
-        style={{
-          marginRight: isTodoOpen ? 340 : 0,
-          transition: 'margin-right 0.22s ease',
-        }}
-      >
-        <PageShell>
-          {/* ── Page header ─────────────────────────────────────────── */}
-          <div>
-            <PageHeader
-              title="Tasks"
-              count={totalCount}
-              breadcrumbs={[{ label: 'Tasks' }]}
-              actions={
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                  {/* Alert pills */}
-                  {overdueCount > 0 && (
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 5,
-                        padding: '4px 10px',
-                        borderRadius: 99,
-                        background: '#FEF2F2',
-                        color: '#EF4444',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        border: '1px solid #FECACA',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="8" x2="12" y2="12" />
-                        <line x1="12" y1="16" x2="12.01" y2="16" />
-                      </svg>
-                      {overdueCount} overdue
-                    </span>
-                  )}
-                  {reviewCount > 0 && (
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 5,
-                        padding: '4px 10px',
-                        borderRadius: 99,
-                        background: '#FFF7ED',
-                        color: '#C2410C',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        border: '1px solid #FED7AA',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="8" x2="12" y2="12" />
-                        <line x1="12" y1="16" x2="12.01" y2="16" />
-                      </svg>
-                      {reviewCount} in review
-                    </span>
-                  )}
+      <div style={{ marginRight: isTodoOpen ? 340 : 0, transition: 'margin-right 0.22s ease', display: 'flex', flexDirection: 'column', height: '100%' }}>
 
-                  {/* My To-Do toggle */}
-                  <button
-                    onClick={toggleTodo}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 7,
-                      padding: '7px 14px',
-                      borderRadius: 8,
-                      border: isTodoOpen ? `1.5px solid ${BRAND}` : '1.5px solid var(--border-subtle)',
-                      background: isTodoOpen ? '#FFF7ED' : 'var(--card-bg)',
-                      color: isTodoOpen ? BRAND : 'var(--text-secondary)',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 11l3 3L22 4" />
-                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                    </svg>
-                    My To-Do
-                    {(myCount as number) > 0 && (
-                      <span
-                        style={{
-                          background: BRAND,
-                          color: '#fff',
-                          borderRadius: 99,
-                          padding: '0 6px',
-                          fontSize: 11,
-                          fontWeight: 700,
-                          lineHeight: '18px',
-                          minWidth: 18,
-                          textAlign: 'center',
-                        }}
-                      >
-                        {myCount}
-                      </span>
-                    )}
-                  </button>
+        {/* ── Page header ──────────────────────────────────────── */}
+        <div style={{
+          padding: '20px 28px 0',
+          background: 'var(--card-bg)',
+          borderBottom: '1px solid var(--border-subtle)',
+          flexShrink: 0,
+        }}>
+          {/* Title row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <div>
+              <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
+                Tasks
+              </h1>
+              {totalStat !== undefined && (
+                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                  {totalStat} total tasks
+                </p>
+              )}
+            </div>
 
-                  <Button variant="primary" onClick={openCreate}>+ New Task</Button>
-                </div>
-              }
-            />
+            <div style={{ flex: 1 }} />
 
-            {/* Scope tabs */}
-            <div
+            {/* My To-Do button */}
+            <button
+              onClick={toggleTodo}
               style={{
                 display: 'flex',
-                gap: 0,
-                borderBottom: '1px solid var(--border-subtle)',
-                marginTop: 4,
-                flexWrap: 'wrap',
+                alignItems: 'center',
+                gap: 7,
+                padding: '8px 14px',
+                borderRadius: 9,
+                border: `1.5px solid ${isTodoOpen ? BRAND : 'var(--border-subtle)'}`,
+                background: isTodoOpen ? `${BRAND_HEX}10` : 'var(--card-bg)',
+                color: isTodoOpen ? BRAND : 'var(--text-secondary)',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s',
               }}
             >
-              {SCOPE_TABS.map((tab) => {
-                const active = scope === tab.value && statusFilter !== 'review';
-                return (
-                  <button
-                    key={tab.value}
-                    onClick={() => { setScope(tab.value); }}
-                    style={{
-                      padding: '8px 14px',
-                      border: 'none',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      fontSize: 13,
-                      fontWeight: active ? 700 : 400,
-                      color: active ? BRAND : 'var(--text-secondary)',
-                      borderBottom: active ? `2px solid ${BRAND}` : '2px solid transparent',
-                      marginBottom: -1,
-                      transition: 'color 0.12s',
-                      whiteSpace: 'nowrap',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!active) e.currentTarget.style.color = 'var(--text-primary)';
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!active) e.currentTarget.style.color = 'var(--text-secondary)';
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+              My To-Do
+              {(myCount as number) > 0 && (
+                <span style={{
+                  background: BRAND, color: '#fff', borderRadius: 99,
+                  padding: '0 6px', fontSize: 11, fontWeight: 700, lineHeight: '18px',
+                  minWidth: 18, textAlign: 'center',
+                }}>
+                  {myCount}
+                </span>
+              )}
+            </button>
 
-              {/* Pending Review quick tab */}
-              {reviewCount > 0 && (
+            {/* New Task button */}
+            <button
+              onClick={openCreate}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7,
+                padding: '9px 18px',
+                borderRadius: 9,
+                border: 'none',
+                background: BRAND,
+                color: '#fff',
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: `0 4px 14px ${BRAND_HEX}35`,
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none'; }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              New Task
+            </button>
+          </div>
+
+          {/* Stats bar */}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+            <StatCard
+              label="All Tasks" value={totalStat}
+              color="var(--brand)" bg={`${BRAND_HEX}10`} border={`${BRAND_HEX}25`}
+              icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={BRAND} strokeWidth="2" strokeLinecap="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>}
+              onClick={() => { setScope(''); setStatusFilter(''); clearFilters(); }}
+              active={!scope && !statusFilter && !hasFilters}
+            />
+            <StatCard
+              label="My Tasks" value={stats?.my_tasks}
+              color="#3B82F6" bg="#EFF6FF" border="#BFDBFE"
+              icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
+              onClick={() => setScope('mine')}
+              active={scope === 'mine'}
+            />
+            <StatCard
+              label="In Review" value={reviewCount}
+              color="#F97316" bg="#FFF7ED" border="#FED7AA"
+              icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
+              onClick={() => setStatusFilter(statusFilter === 'review' ? '' : 'review')}
+              active={statusFilter === 'review'}
+            />
+            <StatCard
+              label="Overdue" value={overdueCount}
+              color="#EF4444" bg="#FEF2F2" border="#FECACA"
+              icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
+            />
+            <StatCard
+              label="Done This Month" value={completedCount}
+              color="#16A34A" bg="#DCFCE7" border="#86EFAC"
+              icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
+            />
+          </div>
+
+          {/* Scope tabs */}
+          <div style={{ display: 'flex', gap: 0, flexWrap: 'wrap' }}>
+            {SCOPE_TABS.map((tab) => {
+              const active = scope === tab.value && !statusFilter;
+              return (
                 <button
-                  onClick={() => setStatusFilter(statusFilter === 'review' ? '' : 'review')}
+                  key={tab.value}
+                  onClick={() => { setScope(tab.value); setStatusFilter(''); }}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '8px 14px',
+                    padding: '9px 16px',
                     border: 'none',
+                    background: 'transparent',
                     cursor: 'pointer',
                     fontSize: 13,
-                    fontWeight: statusFilter === 'review' ? 700 : 500,
-                    color: statusFilter === 'review' ? BRAND : '#C2410C',
-                    background: 'transparent',
-                    borderBottom:
-                      statusFilter === 'review' ? `2px solid ${BRAND}` : '2px solid transparent',
+                    fontWeight: active ? 700 : 500,
+                    color: active ? BRAND : 'var(--text-secondary)',
+                    borderBottom: active ? `2px solid ${BRAND}` : '2px solid transparent',
                     marginBottom: -1,
+                    transition: 'color 0.12s',
+                    whiteSpace: 'nowrap',
+                  }}
+                  onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = 'var(--text-primary)'; }}
+                  onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Toolbar ───────────────────────────────────────────── */}
+        <div style={{
+          padding: '10px 28px',
+          display: 'flex',
+          gap: 8,
+          alignItems: 'center',
+          flexShrink: 0,
+          background: 'var(--card-bg)',
+          borderBottom: '1px solid var(--border-subtle)',
+          flexWrap: 'wrap',
+        }}>
+          <SearchInput value={search} onChange={setSearch} placeholder="Search tasks…" width={220} />
+
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flex: 1 }}>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={SEL}>
+              <option value="">All statuses</option>
+              {Object.entries(STATUS_CONFIG).map(([k, v]) => (
+                <option key={k} value={k}>{v.label}</option>
+              ))}
+            </select>
+
+            <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} style={SEL}>
+              <option value="">All priorities</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+
+            <select value={taskTypeFilter} onChange={(e) => setTaskTypeFilter(e.target.value)} style={SEL}>
+              <option value="">All types</option>
+              <option value="task">Task</option>
+              <option value="request">Request</option>
+              <option value="issue">Issue</option>
+              <option value="followup">Follow-up</option>
+            </select>
+
+            {hasFilters && (
+              <button
+                onClick={clearFilters}
+                style={{
+                  ...SEL,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  color: '#EF4444',
+                  border: '1px solid #FECACA',
+                  background: '#FEF2F2',
+                  fontWeight: 600,
+                }}
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+                Clear
+              </button>
+            )}
+          </div>
+
+          <ViewToggle view={view} setView={setView} />
+        </div>
+
+        {/* ── Main content ──────────────────────────────────────── */}
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          {isLoading ? (
+            <div style={{ padding: '20px 28px' }}>
+              {view === 'kanban' ? <KanbanSkeleton /> : <ListSkeleton />}
+            </div>
+          ) : tasks.length === 0 ? (
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 40,
+              textAlign: 'center',
+            }}>
+              <div style={{
+                width: 72,
+                height: 72,
+                borderRadius: '50%',
+                background: 'var(--surface-subtle)',
+                border: '1px solid var(--border-subtle)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 18,
+              }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--border-default)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                  <rect x="9" y="3" width="6" height="4" rx="1"/>
+                </svg>
+              </div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
+                {hasFilters ? 'No matching tasks' : 'No tasks yet'}
+              </h3>
+              <p style={{ fontSize: 13, color: 'var(--text-tertiary)', maxWidth: 340, lineHeight: 1.6, marginBottom: 20 }}>
+                {hasFilters
+                  ? 'Try adjusting your filters or clearing the search query.'
+                  : 'Create your first task to start managing your team\'s work.'}
+              </p>
+              {hasFilters ? (
+                <button
+                  onClick={clearFilters}
+                  style={{
+                    padding: '9px 22px', borderRadius: 9,
+                    border: '1.5px solid var(--border-default)',
+                    background: 'transparent', color: 'var(--text-secondary)',
+                    fontSize: 13, fontWeight: 600, cursor: 'pointer',
                   }}
                 >
-                  Pending Review
-                  <span
-                    style={{
-                      background: statusFilter === 'review' ? BRAND : '#FED7AA',
-                      color: statusFilter === 'review' ? '#fff' : '#C2410C',
-                      borderRadius: 99,
-                      padding: '0 6px',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      lineHeight: '18px',
-                    }}
-                  >
-                    {reviewCount}
-                  </span>
+                  Clear Filters
+                </button>
+              ) : (
+                <button
+                  onClick={openCreate}
+                  style={{
+                    padding: '10px 24px', borderRadius: 9, border: 'none',
+                    background: BRAND, color: '#fff',
+                    fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                    boxShadow: `0 4px 14px ${BRAND_HEX}35`,
+                  }}
+                >
+                  + Create First Task
                 </button>
               )}
             </div>
-          </div>
-
-          {/* ── Main workspace ─────────────────────────────────────── */}
-          <WorkspaceSurface
-            toolbar={
-              <>
-                <SearchInput
-                  value={search}
-                  onChange={setSearch}
-                  placeholder="Search tasks…"
-                  width={240}
-                />
-                <div style={{ flex: 1 }} />
-
-                {/* Status filter */}
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  style={SEL_STYLE}
-                >
-                  <option value="">All statuses</option>
-                  {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-                    <option key={k} value={k}>{v.label}</option>
-                  ))}
-                </select>
-
-                {/* Priority filter */}
-                <select
-                  value={priorityFilter}
-                  onChange={(e) => setPriorityFilter(e.target.value)}
-                  style={SEL_STYLE}
-                >
-                  <option value="">All priorities</option>
-                  <option value="critical">Critical</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
-
-                {/* Task type filter */}
-                <select
-                  value={taskTypeFilter}
-                  onChange={(e) => setTaskTypeFilter(e.target.value)}
-                  style={SEL_STYLE}
-                >
-                  <option value="">All types</option>
-                  <option value="task">Task</option>
-                  <option value="request">Request</option>
-                  <option value="issue">Issue</option>
-                  <option value="followup">Follow-up</option>
-                </select>
-
-                {/* View toggle */}
-                <div
-                  style={{
-                    display: 'flex',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: 8,
-                    overflow: 'hidden',
-                    flexShrink: 0,
-                  }}
-                >
-                  {(['kanban', 'list'] as const).map((v) => (
-                    <button
-                      key={v}
-                      onClick={() => setView(v)}
-                      style={{
-                        padding: '6px 14px',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: 12,
-                        fontWeight: 500,
-                        background: view === v ? BRAND : 'transparent',
-                        color: view === v ? '#fff' : 'var(--text-secondary)',
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      {v === 'kanban' ? 'Board' : 'List'}
-                    </button>
-                  ))}
-                </div>
-              </>
-            }
-          >
-            {/* ── Content ─────────────────────────────────────────── */}
-            {isLoading ? (
-              view === 'kanban' ? <KanbanSkeleton /> : <ListSkeleton />
-            ) : tasks.length === 0 ? (
-              <div className="empty-state">
-                <svg
-                  className="empty-state-icon"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                <p className="empty-state-title">No tasks found</p>
-                <p className="empty-state-desc">
-                  {hasFilters
-                    ? 'Try adjusting your filters or search query'
-                    : 'Create your first task to get started'}
-                </p>
-                {!hasFilters && (
+          ) : view === 'kanban' ? (
+            <div style={{ flex: 1, overflowX: 'auto', overflowY: 'auto', padding: '20px 20px 28px' }}>
+              <TaskBoard tasks={tasks} onCardClick={openTask} />
+            </div>
+          ) : (
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <TaskListView
+                tasks={tasks}
+                onRowClick={openTask}
+                sortBy={sortBy as SortField | undefined}
+                sortDir={sortDir}
+                onSort={(field) => setSort(field)}
+              />
+              {totalPages > 1 && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  gap: 8, padding: '16px 20px', borderTop: '1px solid var(--border-subtle)',
+                }}>
                   <button
-                    onClick={openCreate}
-                    style={{
-                      marginTop: 4,
-                      padding: '8px 20px',
-                      borderRadius: 8,
-                      border: 'none',
-                      background: BRAND,
-                      color: '#fff',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
+                    onClick={() => setPage(page - 1)} disabled={page <= 1}
+                    style={{ ...SEL, opacity: page <= 1 ? 0.4 : 1, cursor: page <= 1 ? 'not-allowed' : 'pointer' }}
                   >
-                    + New Task
+                    ← Prev
                   </button>
-                )}
-              </div>
-            ) : view === 'kanban' ? (
-              <div style={{ padding: '16px 0 20px' }}>
-                <TaskBoard tasks={tasks} onCardClick={openTask} />
-              </div>
-            ) : (
-              <>
-                <TaskListView
-                  tasks={tasks}
-                  onRowClick={openTask}
-                  sortBy={sortBy as SortField | undefined}
-                  sortDir={sortDir}
-                  onSort={(field) => setSort(field)}
-                />
-                {totalPages > 1 && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      padding: '16px 20px',
-                      borderTop: '1px solid var(--border-subtle)',
-                    }}
+                  <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage(page + 1)} disabled={page >= totalPages}
+                    style={{ ...SEL, opacity: page >= totalPages ? 0.4 : 1, cursor: page >= totalPages ? 'not-allowed' : 'pointer' }}
                   >
-                    <button
-                      onClick={() => setPage(page - 1)}
-                      disabled={page <= 1}
-                      style={{
-                        ...SEL_STYLE,
-                        opacity: page <= 1 ? 0.4 : 1,
-                        cursor: page <= 1 ? 'not-allowed' : 'pointer',
-                      }}
-                    >
-                      ← Prev
-                    </button>
-                    <span style={{ fontSize: 13, color: 'var(--text-secondary)', userSelect: 'none' }}>
-                      Page {page} of {totalPages}
-                    </span>
-                    <button
-                      onClick={() => setPage(page + 1)}
-                      disabled={page >= totalPages}
-                      style={{
-                        ...SEL_STYLE,
-                        opacity: page >= totalPages ? 0.4 : 1,
-                        cursor: page >= totalPages ? 'not-allowed' : 'pointer',
-                      }}
-                    >
-                      Next →
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </WorkspaceSurface>
-        </PageShell>
+                    Next →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* ── Panels / Drawers ─────────────────────────────────────── */}
+      {/* ── Side panels ──────────────────────────────────────────── */}
       {isTodoOpen && <TodoPanel onClose={closeTodo} onOpenTask={openTask} />}
-
-      {selectedTaskId !== null && (
-        <TaskDetailDrawer taskId={selectedTaskId} onClose={closeTask} />
-      )}
-
+      {selectedTaskId !== null && <TaskDetailDrawer taskId={selectedTaskId} onClose={closeTask} />}
       {isCreateOpen && <CreateTaskDrawer onClose={closeCreate} />}
     </MainLayout>
   );

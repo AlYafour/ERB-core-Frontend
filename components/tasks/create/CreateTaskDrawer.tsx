@@ -13,7 +13,9 @@ interface Props {
   onClose: () => void;
 }
 
-const INPUT_STYLE = {
+// ─── Small shared input style ──────────────────────────────────────────────────
+
+const INPUT: React.CSSProperties = {
   width: '100%',
   padding: '9px 12px',
   borderRadius: 8,
@@ -21,33 +23,56 @@ const INPUT_STYLE = {
   fontSize: 13,
   background: 'var(--surface-subtle)',
   color: 'var(--text-primary)',
-  boxSizing: 'border-box' as const,
+  boxSizing: 'border-box',
   outline: 'none',
   fontFamily: 'inherit',
   transition: 'border-color 0.15s',
 };
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+function onFocusBrand(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+  e.currentTarget.style.borderColor = BRAND;
+}
+function onBlurSubtle(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+  e.currentTarget.style.borderColor = 'var(--border-subtle)';
+}
+
+// ─── Section header ────────────────────────────────────────────────────────────
+
+function SectionHead({ label, icon }: { label: string; icon: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 16 }}>
-      <label
-        style={{
-          display: 'block',
-          fontSize: 11,
-          fontWeight: 700,
-          color: 'var(--text-tertiary)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.06em',
-          marginBottom: 6,
-        }}
-      >
+    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 14 }}>
+      <span style={{
+        width: 24, height: 24, borderRadius: 6,
+        background: `${BRAND_HEX}15`, border: `1px solid ${BRAND_HEX}25`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+      }}>
+        {icon}
+      </span>
+      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {label}
-        {required && <span style={{ color: '#EF4444', marginLeft: 2 }}>*</span>}
-      </label>
-      {children}
+      </span>
+      <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
     </div>
   );
 }
+
+// ─── Field label ───────────────────────────────────────────────────────────────
+
+function FieldLabel({ label, required }: { label: string; required?: boolean }) {
+  return (
+    <label style={{
+      display: 'block', fontSize: 11, fontWeight: 700,
+      color: 'var(--text-tertiary)', textTransform: 'uppercase',
+      letterSpacing: '0.06em', marginBottom: 6,
+    }}>
+      {label}
+      {required && <span style={{ color: '#EF4444', marginLeft: 2 }}>*</span>}
+    </label>
+  );
+}
+
+// ─── Main component ────────────────────────────────────────────────────────────
 
 export function CreateTaskDrawer({ onClose }: Props) {
   const qc = useQueryClient();
@@ -89,171 +114,179 @@ export function CreateTaskDrawer({ onClose }: Props) {
       qc.invalidateQueries({ queryKey: ['task-stats'] });
       onClose();
     },
-    onError: (err: unknown) => {
-      toast(getApiError(err, 'Failed to create task'), 'error');
-    },
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to create task'), 'error'),
   });
 
   const canSubmit = title.trim().length > 0 && !create.isPending;
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 100,
-        background: 'rgba(0,0,0,0.4)',
-        display: 'flex',
-        justifyContent: 'flex-end',
-      }}
+      style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.45)', display: 'flex', justifyContent: 'flex-end' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: 480,
-          background: 'var(--card-bg)',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '-4px 0 40px rgba(0,0,0,0.15)',
-          animation: 'slideInRight 0.2s ease',
-        }}
-      >
+      <div style={{
+        width: '100%',
+        maxWidth: 500,
+        background: 'var(--card-bg)',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '-6px 0 48px rgba(0,0,0,0.18)',
+        animation: 'slideInRight 0.2s var(--ease-spring)',
+      }}>
         {/* Header */}
-        <div
-          style={{
-            padding: '20px 24px',
-            borderBottom: '1px solid var(--border-subtle)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexShrink: 0,
-          }}
-        >
+        <div style={{
+          padding: '18px 22px 16px',
+          borderBottom: '1px solid var(--border-subtle)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexShrink: 0,
+        }}>
           <div>
-            <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>New Task</h2>
-            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
-              Fill in the details below to create a new task
+            <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Create Task</h2>
+            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 3 }}>
+              Fill in the details below
             </p>
           </div>
           <button
             onClick={onClose}
             style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              border: '1px solid var(--border-subtle)',
-              background: 'var(--surface-subtle)',
-              cursor: 'pointer',
-              fontSize: 18,
-              color: 'var(--text-secondary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-subtle)',
+              background: 'var(--surface-subtle)', cursor: 'pointer', fontSize: 18,
+              color: 'var(--text-secondary)', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', transition: 'all 0.15s',
             }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#FEF2F2'; e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.borderColor = '#FECACA'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--surface-subtle)'; e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
           >
             ×
           </button>
         </div>
 
-        {/* Form body */}
-        <div style={{ flex: 1, padding: '22px 24px', overflowY: 'auto' }}>
-          <Field label="Title" required>
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px' }}>
+
+          {/* ── Basic info ──────────────────────────────────────── */}
+          <SectionHead label="Task Details" icon={
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={BRAND} strokeWidth="2.5" strokeLinecap="round">
+              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+              <rect x="9" y="3" width="6" height="4" rx="1"/>
+            </svg>
+          } />
+
+          <div style={{ marginBottom: 14 }}>
+            <FieldLabel label="Title" required />
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="What needs to be done?"
               autoFocus
-              style={INPUT_STYLE}
-              onFocus={(e) => (e.currentTarget.style.borderColor = BRAND)}
-              onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border-subtle)')}
+              style={INPUT}
+              onFocus={onFocusBrand}
+              onBlur={onBlurSubtle}
             />
-          </Field>
+          </div>
 
-          <Field label="Description">
+          <div style={{ marginBottom: 20 }}>
+            <FieldLabel label="Description" />
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional details, context, or instructions…"
+              placeholder="Add context, instructions, or notes…"
               rows={3}
-              style={{ ...INPUT_STYLE, resize: 'vertical', lineHeight: 1.5 }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = BRAND)}
-              onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border-subtle)')}
+              style={{ ...INPUT, resize: 'vertical', lineHeight: 1.55 }}
+              onFocus={onFocusBrand as unknown as React.FocusEventHandler<HTMLTextAreaElement>}
+              onBlur={onBlurSubtle as unknown as React.FocusEventHandler<HTMLTextAreaElement>}
             />
-          </Field>
+          </div>
 
-          {/* Type + Priority */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
-            <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--text-tertiary)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  marginBottom: 6,
-                }}
-              >
-                Type
-              </label>
-              <select
-                value={taskType}
-                onChange={(e) => setTaskType(e.target.value as TaskType)}
-                style={INPUT_STYLE}
-              >
-                <option value="task">Task</option>
-                <option value="request">Request</option>
-                <option value="issue">Issue</option>
-                <option value="followup">Follow-up</option>
-              </select>
+          {/* ── Classification ───────────────────────────────────── */}
+          <SectionHead label="Classification" icon={
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={BRAND} strokeWidth="2.5" strokeLinecap="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          } />
+
+          {/* Type */}
+          <div style={{ marginBottom: 14 }}>
+            <FieldLabel label="Task Type" />
+            <div style={{ display: 'flex', gap: 6 }}>
+              {([
+                ['task', 'Task'],
+                ['request', 'Request'],
+                ['issue', 'Issue'],
+                ['followup', 'Follow-up'],
+              ] as [TaskType, string][]).map(([val, lbl]) => (
+                <button
+                  key={val}
+                  onClick={() => setTaskType(val)}
+                  style={{
+                    flex: 1,
+                    padding: '7px 4px',
+                    borderRadius: 8,
+                    border: `1.5px solid ${taskType === val ? BRAND : 'var(--border-subtle)'}`,
+                    background: taskType === val ? `${BRAND_HEX}12` : 'transparent',
+                    color: taskType === val ? BRAND : 'var(--text-tertiary)',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.12s',
+                  }}
+                >
+                  {lbl}
+                </button>
+              ))}
             </div>
-            <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--text-tertiary)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  marginBottom: 6,
-                }}
-              >
-                Priority
-              </label>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {(['critical', 'high', 'medium', 'low'] as TaskPriority[]).map((p) => (
+          </div>
+
+          {/* Priority */}
+          <div style={{ marginBottom: 20 }}>
+            <FieldLabel label="Priority" />
+            <div style={{ display: 'flex', gap: 6 }}>
+              {(['critical', 'high', 'medium', 'low'] as TaskPriority[]).map((p) => {
+                const pc = PRIORITY_CONFIG[p];
+                const active = priority === p;
+                return (
                   <button
                     key={p}
                     onClick={() => setPriority(p)}
                     style={{
                       flex: 1,
-                      padding: '7px 0',
-                      borderRadius: 7,
-                      fontSize: 10,
+                      padding: '8px 4px',
+                      borderRadius: 8,
+                      fontSize: 11,
                       fontWeight: 700,
                       cursor: 'pointer',
                       textTransform: 'capitalize',
-                      border: `1.5px solid ${priority === p ? PRIORITY_CONFIG[p].color : 'var(--border-subtle)'}`,
-                      background: priority === p ? PRIORITY_CONFIG[p].bg : 'transparent',
-                      color: priority === p ? PRIORITY_CONFIG[p].color : 'var(--text-tertiary)',
-                      transition: 'all 0.15s',
+                      border: `1.5px solid ${active ? pc.color : 'var(--border-subtle)'}`,
+                      background: active ? pc.bg : 'transparent',
+                      color: active ? pc.color : 'var(--text-tertiary)',
+                      transition: 'all 0.12s',
                     }}
                   >
                     {p === 'critical' ? 'Crit.' : p.charAt(0).toUpperCase() + p.slice(1)}
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
           </div>
 
-          <Field label="Assign to">
+          {/* ── Assignment ───────────────────────────────────────── */}
+          <SectionHead label="Assignment" icon={
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={BRAND} strokeWidth="2.5" strokeLinecap="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          } />
+
+          <div style={{ marginBottom: 14 }}>
+            <FieldLabel label="Assign to person" />
             <select
               value={assignTo}
               onChange={(e) => setAssignTo(e.target.value)}
-              style={INPUT_STYLE}
+              style={INPUT}
+              onFocus={onFocusBrand as unknown as React.FocusEventHandler<HTMLSelectElement>}
+              onBlur={onBlurSubtle as unknown as React.FocusEventHandler<HTMLSelectElement>}
             >
               <option value="">— Unassigned —</option>
               {users.map((u) => (
@@ -262,59 +295,78 @@ export function CreateTaskDrawer({ onClose }: Props) {
                 </option>
               ))}
             </select>
-          </Field>
+          </div>
 
-          <Field label="Assign to team">
+          <div style={{ marginBottom: 20 }}>
+            <FieldLabel label="Assign to team" />
             <select
               value={assignTeam}
               onChange={(e) => setAssignTeam(e.target.value)}
-              style={INPUT_STYLE}
+              style={INPUT}
+              onFocus={onFocusBrand as unknown as React.FocusEventHandler<HTMLSelectElement>}
+              onBlur={onBlurSubtle as unknown as React.FocusEventHandler<HTMLSelectElement>}
             >
               <option value="">— No team —</option>
               {teams.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
+                <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>
-          </Field>
+          </div>
 
-          <Field label="Due date & time">
+          {/* ── Scheduling ───────────────────────────────────────── */}
+          <SectionHead label="Scheduling" icon={
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={BRAND} strokeWidth="2.5" strokeLinecap="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          } />
+
+          <div style={{ marginBottom: 20 }}>
+            <FieldLabel label="Due date & time" />
             <input
               type="datetime-local"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              style={INPUT_STYLE}
-              onFocus={(e) => (e.currentTarget.style.borderColor = BRAND)}
-              onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border-subtle)')}
+              style={INPUT}
+              onFocus={onFocusBrand}
+              onBlur={onBlurSubtle}
             />
-          </Field>
+          </div>
 
-          {/* Requires approval toggle */}
+          {/* ── Settings ─────────────────────────────────────────── */}
+          <SectionHead label="Settings" icon={
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={BRAND} strokeWidth="2.5" strokeLinecap="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+            </svg>
+          } />
+
           <label
             style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: 10,
+              alignItems: 'flex-start',
+              gap: 11,
               cursor: 'pointer',
-              padding: '12px 14px',
-              background: 'var(--surface-subtle)',
-              borderRadius: 9,
-              border: `1.5px solid ${requiresApproval ? BRAND_HEX + '40' : 'var(--border-subtle)'}`,
-              transition: 'border-color 0.15s',
+              padding: '13px 15px',
+              background: requiresApproval ? `${BRAND_HEX}08` : 'var(--surface-subtle)',
+              borderRadius: 10,
+              border: `1.5px solid ${requiresApproval ? BRAND_HEX + '35' : 'var(--border-subtle)'}`,
+              transition: 'all 0.15s',
             }}
           >
             <input
               type="checkbox"
               checked={requiresApproval}
               onChange={(e) => setRequiresApproval(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: BRAND, flexShrink: 0, cursor: 'pointer' }}
+              style={{ width: 16, height: 16, accentColor: BRAND, flexShrink: 0, cursor: 'pointer', marginTop: 1 }}
             />
             <div>
-              <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3 }}>
                 Requires approval
               </p>
-              <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 1 }}>
+              <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 3, lineHeight: 1.5 }}>
                 Task must be reviewed and approved before closing
               </p>
             </div>
@@ -322,15 +374,14 @@ export function CreateTaskDrawer({ onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div
-          style={{
-            padding: '16px 24px',
-            borderTop: '1px solid var(--border-subtle)',
-            display: 'flex',
-            gap: 10,
-            flexShrink: 0,
-          }}
-        >
+        <div style={{
+          padding: '14px 22px',
+          borderTop: '1px solid var(--border-subtle)',
+          display: 'flex',
+          gap: 9,
+          flexShrink: 0,
+          background: 'var(--surface-subtle)',
+        }}>
           <button
             onClick={() => create.mutate()}
             disabled={!canSubmit}
@@ -342,11 +393,14 @@ export function CreateTaskDrawer({ onClose }: Props) {
               background: BRAND,
               color: '#fff',
               fontSize: 14,
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: canSubmit ? 'pointer' : 'not-allowed',
               opacity: canSubmit ? 1 : 0.5,
-              transition: 'opacity 0.15s',
+              transition: 'opacity 0.15s, transform 0.1s',
+              boxShadow: canSubmit ? `0 4px 14px ${BRAND_HEX}35` : 'none',
             }}
+            onMouseEnter={(e) => { if (canSubmit) e.currentTarget.style.transform = 'translateY(-1px)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; }}
           >
             {create.isPending ? 'Creating…' : 'Create Task'}
           </button>
@@ -356,11 +410,15 @@ export function CreateTaskDrawer({ onClose }: Props) {
               padding: '11px 22px',
               borderRadius: 9,
               border: '1px solid var(--border-subtle)',
-              background: 'transparent',
+              background: 'var(--card-bg)',
               color: 'var(--text-secondary)',
               fontSize: 14,
+              fontWeight: 500,
               cursor: 'pointer',
+              transition: 'background 0.15s',
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-subtle)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--card-bg)')}
           >
             Cancel
           </button>

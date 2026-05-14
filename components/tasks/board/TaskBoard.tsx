@@ -11,6 +11,7 @@ import { getApiError } from '@/lib/utils/error';
 interface Props {
   tasks: TaskListItem[];
   onCardClick: (id: number) => void;
+  onAddClick?: () => void;
 }
 
 // Map every status to the column it appears in
@@ -49,7 +50,7 @@ function getTransition(fromStatus: TaskStatus, targetCol: TaskStatus): ((id: num
   return null;
 }
 
-export function TaskBoard({ tasks, onCardClick }: Props) {
+export function TaskBoard({ tasks, onCardClick, onAddClick }: Props) {
   const qc = useQueryClient();
 
   const move = useMutation({
@@ -83,9 +84,7 @@ export function TaskBoard({ tasks, onCardClick }: Props) {
     <div
       style={{
         display: 'flex',
-        gap: 16,
-        padding: '0 16px 20px',
-        overflowX: 'auto',
+        gap: 14,
         alignItems: 'flex-start',
         minHeight: 200,
       }}
@@ -97,6 +96,7 @@ export function TaskBoard({ tasks, onCardClick }: Props) {
           tasks={tasks.filter((t) => STATUS_TO_COL[t.status] === col)}
           onCardClick={onCardClick}
           onDrop={handleDrop}
+          onAddClick={onAddClick}
         />
       ))}
     </div>
