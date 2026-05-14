@@ -79,7 +79,11 @@ export default function TasksPage() {
 
   const { data: myCount = 0 } = useQuery<number>({
     queryKey: ['my-tasks-count'],
-    queryFn: () => myTasksApi.getAll().then((r) => r.filter((t) => !t.is_done).length),
+    queryFn: () =>
+      myTasksApi.getAll().then((r) => {
+        const arr = Array.isArray(r) ? r : (r as { results?: typeof r })?.results ?? [];
+        return (arr as { is_done?: boolean }[]).filter((t) => !t.is_done).length;
+      }),
   });
 
   const tasks: TaskListItem[] = Array.isArray(raw)
@@ -92,7 +96,7 @@ export default function TasksPage() {
 
   const reviewCount  = stats?.pending_review ?? 0;
   const overdueCount = stats?.overdue ?? 0;
-  const totalCount   = stats ? Object.values(stats.by_status).reduce((a, b) => a + b, 0) : undefined;
+  const totalCount   = stats?.by_status ? Object.values(stats.by_status).reduce((a, b) => a + b, 0) : undefined;
 
   const hasFilters = Boolean(search || statusFilter || priorityFilter || taskTypeFilter);
 

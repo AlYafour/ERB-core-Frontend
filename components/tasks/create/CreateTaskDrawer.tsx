@@ -66,10 +66,11 @@ export function CreateTaskDrawer({ onClose }: Props) {
     queryFn: () => usersApi.getAll({ page_size: 200 }).then((r) => r.results || []),
   });
 
-  const { data: teams = [] } = useQuery({
+  const { data: teamsRaw } = useQuery({
     queryKey: ['teams'],
     queryFn: () => teamsApi.getAll(),
   });
+  const teams = Array.isArray(teamsRaw) ? teamsRaw : (teamsRaw as { results?: typeof teamsRaw })?.results ?? [];
 
   const create = useMutation({
     mutationFn: () =>
