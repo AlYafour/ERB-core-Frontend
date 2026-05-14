@@ -1,0 +1,15 @@
+/* ================================================================
+   SKELETON LOADER
+   ================================================================ */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-subtle) 25%,
+    var(--surface-inset) 50%,
+    var(--surface-subtle) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-sweep 1.6s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}

@@ -1,0 +1,19 @@
+/* ================================================================
+   CARD
+   ================================================================ */
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: var(--card-padding);
+  box-shadow: var(--card-shadow);
+  transition:
+    box-shadow var(--transition-base),
+    border-color var(--transition-base);
+}
+
+.card-hover:hover {
+  box-shadow: var(--shadow-sm);
+  border-color: var(--border-default);
+}
