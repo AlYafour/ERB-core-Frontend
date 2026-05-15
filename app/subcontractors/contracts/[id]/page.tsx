@@ -1,10 +1,10 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useState, useMemo } from 'react';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { subcontractorsApi } from '@/lib/api/subcontractors';
+import { subcontractorsApi, BOQTemplateItem } from '@/lib/api/subcontractors';
 import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
 import { CONTRACT_STATUS, CERTIFICATE_STATUS, PAYMENT_STATUS } from '@/lib/utils/status-colors';
@@ -61,9 +61,200 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
   );
 }
 
+// ── Import from Template Modal ────────────────────────────────────────────────
+
+function ImportModal({
+  onClose,
+  onImport,
+  isPending,
+}: {
+  onClose: () => void;
+  onImport: (items: Pick<BOQTemplateItem, 'item_code' | 'item_name' | 'default_unit'>[]) => void;
+  isPending: boolean;
+}) {
+  const { data: templates = [], isLoading } = useQuery({
+    queryKey: ['boq-templates-all'],
+    queryFn: () => subcontractorsApi.boqTemplates.listAll(),
+  });
+
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, { name: string; items: BOQTemplateItem[] }>();
+    for (const t of templates) {
+      if (!map.has(t.section_code)) {
+        map.set(t.section_code, { name: t.section_name, items: [] });
+      }
+      map.get(t.section_code)!.items.push(t);
+    }
+    return Array.from(map.entries()).map(([code, v]) => ({ code, ...v }));
+  }, [templates]);
+
+  const toggleSection = (code: string) => {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      next.has(code) ? next.delete(code) : next.add(code);
+      return next;
+    });
+  };
+
+  const toggleItem = (id: number) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSection_all = (items: BOQTemplateItem[]) => {
+    const ids = items.map(i => i.id);
+    const allSelected = ids.every(id => selected.has(id));
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (allSelected) ids.forEach(id => next.delete(id));
+      else ids.forEach(id => next.add(id));
+      return next;
+    });
+  };
+
+  const handleImport = () => {
+    const items = templates.filter(t => selected.has(t.id)).map(t => ({
+      item_code: t.item_code,
+      item_name: t.item_name,
+      default_unit: t.default_unit,
+    }));
+    if (items.length === 0) { toast('Select at least one item', 'error'); return; }
+    onImport(items);
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      background: 'rgba(0,0,0,0.5)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 'var(--space-4)',
+    }}>
+      <div style={{
+        background: 'var(--surface-primary)',
+        borderRadius: 12,
+        width: '100%', maxWidth: 720,
+        maxHeight: '85vh',
+        display: 'flex', flexDirection: 'column',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+      }}>
+        {/* Header */}
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 'var(--text-lg)', color: 'var(--text-primary)' }}>Import from BOQ Template</div>
+            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 2 }}>
+              {selected.size > 0 ? `${selected.size} item${selected.size > 1 ? 's' : ''} selected` : 'Select items to add to this contract\'s BOQ'}
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text-tertiary)', lineHeight: 1 }}>×</button>
+        </div>
+
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
+          {isLoading ? (
+            <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: 40 }}>Loading template…</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {grouped.map(({ code, name, items }) => {
+                const lineItems = items.filter(i => i.item_code !== code);
+                const allSel = lineItems.every(i => selected.has(i.id));
+                const someSel = lineItems.some(i => selected.has(i.id));
+                const isOpen = expanded.has(code);
+                return (
+                  <div key={code} style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, overflow: 'hidden' }}>
+                    {/* Section header */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '10px 14px',
+                      background: 'var(--surface-secondary)',
+                      cursor: 'pointer',
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={allSel}
+                        ref={el => { if (el) el.indeterminate = someSel && !allSel; }}
+                        onChange={() => toggleSection_all(lineItems)}
+                        onClick={e => e.stopPropagation()}
+                        style={{ width: 15, height: 15, flexShrink: 0 }}
+                      />
+                      <div
+                        style={{ flex: 1, fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}
+                        onClick={() => toggleSection(code)}
+                      >
+                        {code}. {name}
+                      </div>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                        {lineItems.filter(i => selected.has(i.id)).length}/{lineItems.length}
+                      </div>
+                      <span
+                        style={{ fontSize: 12, color: 'var(--text-tertiary)', userSelect: 'none' }}
+                        onClick={() => toggleSection(code)}
+                      >
+                        {isOpen ? '▲' : '▼'}
+                      </span>
+                    </div>
+
+                    {/* Items */}
+                    {isOpen && (
+                      <div>
+                        {lineItems.map(item => (
+                          <label key={item.id} style={{
+                            display: 'flex', alignItems: 'center', gap: 12,
+                            padding: '8px 14px 8px 28px',
+                            borderTop: '1px solid var(--border-subtle)',
+                            cursor: 'pointer',
+                            background: selected.has(item.id) ? 'var(--brand-subtle)' : 'transparent',
+                            transition: 'background 80ms',
+                          }}>
+                            <input
+                              type="checkbox"
+                              checked={selected.has(item.id)}
+                              onChange={() => toggleItem(item.id)}
+                              style={{ width: 14, height: 14, flexShrink: 0 }}
+                            />
+                            <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', width: 60, flexShrink: 0 }}>
+                              {item.item_code}
+                            </span>
+                            <span style={{ flex: 1, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
+                              {item.item_name}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border-default)', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" onClick={handleImport} disabled={isPending || selected.size === 0}>
+            {isPending ? 'Importing…' : `Import ${selected.size > 0 ? selected.size + ' Items' : ''}`}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
 export default function ContractDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [tab, setTab] = useState<Tab>('info');
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [editingBoqId, setEditingBoqId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({ item_name: '', unit: '', contract_quantity: '0', unit_rate: '0' });
   const queryClient = useQueryClient();
 
   const { data: contract, isLoading, error } = useQuery({
@@ -101,6 +292,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
     enabled: tab === 'log',
   });
 
+  // ── Contract workflow mutations ──
   const submitMutation = useMutation({
     mutationFn: () => subcontractorsApi.contracts.submit(Number(id)),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['subcon-contract', id] }); toast('Contract submitted for review', 'success'); },
@@ -119,10 +311,56 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
     onError: () => toast('Failed to close contract', 'error'),
   });
 
+  // ── BOQ mutations ──
+  const importMutation = useMutation({
+    mutationFn: (items: Pick<BOQTemplateItem, 'item_code' | 'item_name' | 'default_unit'>[]) =>
+      subcontractorsApi.boqItems.bulkCreate(Number(id), items.map(t => ({
+        item_code: t.item_code,
+        item_name: t.item_name,
+        unit: t.default_unit || '',
+        contract_quantity: '0',
+        unit_rate: '0',
+        order: 0,
+      }))),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['boq-items', id] });
+      toast(`${data.length} item${data.length !== 1 ? 's' : ''} imported`, 'success');
+      setShowImportModal(false);
+    },
+    onError: () => toast('Import failed', 'error'),
+  });
+
+  const updateBoqMutation = useMutation({
+    mutationFn: ({ itemId, data }: { itemId: number; data: Record<string, unknown> }) =>
+      subcontractorsApi.boqItems.update(itemId, data as never),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['boq-items', id] });
+      setEditingBoqId(null);
+      toast('Saved', 'success');
+    },
+    onError: () => toast('Save failed', 'error'),
+  });
+
+  const deleteBoqMutation = useMutation({
+    mutationFn: (itemId: number) => subcontractorsApi.boqItems.delete(itemId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['boq-items', id] }); toast('Item removed', 'info'); },
+    onError: () => toast('Delete failed', 'error'),
+  });
+
   if (isLoading) return <MainLayout><PageShell><div className="card empty-state"><p>Loading...</p></div></PageShell></MainLayout>;
   if (error || !contract) return <MainLayout><PageShell><div className="card empty-state"><p style={{ color: 'var(--status-error)' }}>Contract not found.</p></div></PageShell></MainLayout>;
 
   const fmt = (v: string | number) => `AED ${Number(v).toLocaleString()}`;
+
+  const startEdit = (item: typeof boqItems extends (infer T)[] | undefined ? T : never) => {
+    setEditingBoqId((item as { id: number }).id);
+    setEditForm({
+      item_name: (item as { item_name: string }).item_name,
+      unit: (item as { unit: string }).unit,
+      contract_quantity: String((item as { contract_quantity: string }).contract_quantity),
+      unit_rate: String((item as { unit_rate: string }).unit_rate),
+    });
+  };
 
   return (
     <MainLayout>
@@ -244,52 +482,151 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
               <div className="info-section-title" style={{ margin: 0 }}>Bill of Quantities</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Button variant="secondary" size="sm" onClick={() => setShowImportModal(true)}>
+                  + Import from Template
+                </Button>
+              </div>
             </div>
+
             {!boqItems?.length ? (
-              <div className="empty-state"><p>No BOQ items yet.</p></div>
+              <div className="empty-state">
+                <p style={{ marginBottom: 12 }}>No BOQ items yet.</p>
+                <Button variant="primary" size="sm" onClick={() => setShowImportModal(true)}>
+                  Import from Template
+                </Button>
+              </div>
             ) : (
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Code</th>
-                    <th>Item Name</th>
-                    <th>Unit</th>
-                    <th style={{ textAlign: 'right' }}>Qty</th>
-                    <th style={{ textAlign: 'right' }}>Rate (AED)</th>
-                    <th style={{ textAlign: 'right' }}>Total (AED)</th>
-                    <th style={{ textAlign: 'right' }}>Approved</th>
-                    <th style={{ textAlign: 'right' }}>Remaining</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {boqItems.map((item, i) => (
-                    <tr key={item.id}>
-                      <td style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>{i + 1}</td>
-                      <td style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{item.item_code || '—'}</td>
-                      <td>
-                        <div style={{ fontWeight: 500 }}>{item.item_name}</div>
-                        {item.description && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item.description}</div>}
-                      </td>
-                      <td style={{ color: 'var(--text-secondary)' }}>{item.unit}</td>
-                      <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{Number(item.contract_quantity).toLocaleString()}</td>
-                      <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{Number(item.unit_rate).toLocaleString()}</td>
-                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 500 }}>{Number(item.total_amount).toLocaleString()}</td>
-                      <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--status-success)' }}>{Number(item.approved_quantity_to_date).toLocaleString()}</td>
-                      <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{Number(item.remaining_quantity).toLocaleString()}</td>
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 32 }}>#</th>
+                      <th style={{ width: 80 }}>Code</th>
+                      <th>Item Name</th>
+                      <th style={{ width: 70 }}>Unit</th>
+                      <th style={{ textAlign: 'right', width: 100 }}>Qty</th>
+                      <th style={{ textAlign: 'right', width: 110 }}>Rate (AED)</th>
+                      <th style={{ textAlign: 'right', width: 120 }}>Total (AED)</th>
+                      <th style={{ textAlign: 'right', width: 90 }}>Approved</th>
+                      <th style={{ textAlign: 'right', width: 90 }}>Remaining</th>
+                      <th style={{ width: 90 }}></th>
                     </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 'var(--text-sm)' }}>Total</td>
-                    <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>
-                      {boqItems.reduce((sum, i) => sum + Number(i.total_amount), 0).toLocaleString()}
-                    </td>
-                    <td colSpan={2}></td>
-                  </tr>
-                </tfoot>
-              </table>
+                  </thead>
+                  <tbody>
+                    {boqItems.map((item, i) => {
+                      const isEditing = editingBoqId === item.id;
+                      return (
+                        <tr key={item.id}>
+                          <td style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>{i + 1}</td>
+                          <td style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                            {item.item_code || '—'}
+                          </td>
+
+                          {isEditing ? (
+                            <>
+                              <td>
+                                <input
+                                  className="form-input"
+                                  style={{ padding: '2px 6px', fontSize: 'var(--text-sm)' }}
+                                  value={editForm.item_name}
+                                  onChange={e => setEditForm(f => ({ ...f, item_name: e.target.value }))}
+                                />
+                              </td>
+                              <td>
+                                <input
+                                  className="form-input"
+                                  style={{ padding: '2px 6px', fontSize: 'var(--text-sm)', width: 60 }}
+                                  value={editForm.unit}
+                                  onChange={e => setEditForm(f => ({ ...f, unit: e.target.value }))}
+                                  placeholder="m2"
+                                />
+                              </td>
+                              <td>
+                                <input
+                                  type="number" min="0" step="0.001" className="form-input"
+                                  style={{ padding: '2px 6px', fontSize: 'var(--text-sm)', textAlign: 'right' }}
+                                  value={editForm.contract_quantity}
+                                  onChange={e => setEditForm(f => ({ ...f, contract_quantity: e.target.value }))}
+                                />
+                              </td>
+                              <td>
+                                <input
+                                  type="number" min="0" step="0.01" className="form-input"
+                                  style={{ padding: '2px 6px', fontSize: 'var(--text-sm)', textAlign: 'right' }}
+                                  value={editForm.unit_rate}
+                                  onChange={e => setEditForm(f => ({ ...f, unit_rate: e.target.value }))}
+                                />
+                              </td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>
+                                {(Number(editForm.contract_quantity) * Number(editForm.unit_rate)).toLocaleString()}
+                              </td>
+                              <td colSpan={2}></td>
+                            </>
+                          ) : (
+                            <>
+                              <td>
+                                <div style={{ fontWeight: 500 }}>{item.item_name}</div>
+                                {item.description && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item.description}</div>}
+                              </td>
+                              <td style={{ color: 'var(--text-secondary)' }}>{item.unit || '—'}</td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{Number(item.contract_quantity).toLocaleString()}</td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{Number(item.unit_rate).toLocaleString()}</td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 500 }}>{Number(item.total_amount).toLocaleString()}</td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--status-success)' }}>{Number(item.approved_quantity_to_date).toLocaleString()}</td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{Number(item.remaining_quantity).toLocaleString()}</td>
+                            </>
+                          )}
+
+                          <td>
+                            <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                              {isEditing ? (
+                                <>
+                                  <Button
+                                    variant="primary" size="sm"
+                                    disabled={updateBoqMutation.isPending}
+                                    onClick={() => updateBoqMutation.mutate({
+                                      itemId: item.id,
+                                      data: {
+                                        item_name: editForm.item_name,
+                                        unit: editForm.unit,
+                                        contract_quantity: editForm.contract_quantity,
+                                        unit_rate: editForm.unit_rate,
+                                      },
+                                    })}
+                                  >
+                                    Save
+                                  </Button>
+                                  <Button variant="secondary" size="sm" onClick={() => setEditingBoqId(null)}>✕</Button>
+                                </>
+                              ) : (
+                                <>
+                                  <Button variant="view" size="sm" onClick={() => startEdit(item)}>Edit</Button>
+                                  <Button
+                                    variant="secondary" size="sm"
+                                    onClick={() => { if (confirm('Remove this item?')) deleteBoqMutation.mutate(item.id); }}
+                                  >
+                                    ✕
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 'var(--text-sm)' }}>Total</td>
+                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>
+                        {boqItems.reduce((sum, i) => sum + Number(i.total_amount), 0).toLocaleString()}
+                      </td>
+                      <td colSpan={3}></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
             )}
           </div>
         )}
@@ -349,7 +686,9 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
         {/* Tab: Payments */}
         {tab === 'payments' && (
           <div className="card">
-            <div className="info-section-title">Payments</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
+              <div className="info-section-title" style={{ margin: 0 }}>Payments</div>
+            </div>
             {!paymentsData?.results?.length ? (
               <div className="empty-state"><p>No payments recorded yet.</p></div>
             ) : (
@@ -371,10 +710,10 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                     <tr key={p.id}>
                       <td style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)' }}>{p.payment_no}</td>
                       <td style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{p.payment_date}</td>
-                      <td style={{ fontSize: 'var(--text-xs)', fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>{p.certificate_no || '—'}</td>
+                      <td style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{p.certificate_no || '—'}</td>
                       <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>AED {Number(p.gross_amount).toLocaleString()}</td>
                       <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 600 }}>AED {Number(p.net_paid_amount).toLocaleString()}</td>
-                      <td style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{p.payment_method?.replace('_', ' ') || '—'}</td>
+                      <td style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{p.payment_method.replace('_', ' ')}</td>
                       <td><Badge variant={PAYMENT_STATUS[p.status] ?? 'default'}>{p.status}</Badge></td>
                       <td>
                         <Link href={`/subcontractors/payments/${p.id}`}>
@@ -439,6 +778,16 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
             )}
           </div>
         )}
+
+        {/* Import from Template Modal */}
+        {showImportModal && (
+          <ImportModal
+            onClose={() => setShowImportModal(false)}
+            onImport={items => importMutation.mutate(items)}
+            isPending={importMutation.isPending}
+          />
+        )}
+
       </PageShell>
     </MainLayout>
   );
