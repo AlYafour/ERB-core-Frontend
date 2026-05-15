@@ -75,6 +75,7 @@ function ImportModal({
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['boq-templates-all'],
     queryFn: () => subcontractorsApi.boqTemplates.listAll(),
+    retry: false,
   });
 
   const [selected, setSelected] = useState<Set<number>>(new Set());
