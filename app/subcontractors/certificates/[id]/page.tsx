@@ -55,52 +55,55 @@ function AmountRow({ label, value, highlight }: { label: string; value: string |
 
 export default function CertificateDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const numericId = Number(id);
   const [tab, setTab] = useState<Tab>('info');
   const queryClient = useQueryClient();
 
   const { data: cert, isLoading, error } = useQuery({
     queryKey: ['subcon-cert', id],
-    queryFn: () => subcontractorsApi.certificates.getOne(Number(id)),
+    queryFn: () => subcontractorsApi.certificates.getOne(numericId),
+    enabled: !isNaN(numericId) && numericId > 0,
   });
 
   const { data: items } = useQuery({
     queryKey: ['cert-items', id],
-    queryFn: () => subcontractorsApi.certificates.getItems(Number(id)),
-    enabled: tab === 'items',
+    queryFn: () => subcontractorsApi.certificates.getItems(numericId),
+    enabled: tab === 'items' && !isNaN(numericId) && numericId > 0,
   });
 
   const { data: attachments } = useQuery({
     queryKey: ['cert-attachments', id],
-    queryFn: () => subcontractorsApi.attachments.listForCertificate(Number(id)),
-    enabled: tab === 'attachments',
+    queryFn: () => subcontractorsApi.attachments.listForCertificate(numericId),
+    enabled: tab === 'attachments' && !isNaN(numericId) && numericId > 0,
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['subcon-cert', id] });
 
   const submitMutation = useMutation({
-    mutationFn: () => subcontractorsApi.certificates.submit(Number(id)),
+    mutationFn: () => subcontractorsApi.certificates.submit(numericId),
     onSuccess: () => { invalidate(); toast('Certificate submitted', 'success'); },
     onError: () => toast('Failed to submit', 'error'),
   });
 
   const reviewMutation = useMutation({
-    mutationFn: () => subcontractorsApi.certificates.review(Number(id), {}),
+    mutationFn: () => subcontractorsApi.certificates.review(numericId, {}),
     onSuccess: () => { invalidate(); toast('Certificate reviewed', 'success'); },
     onError: () => toast('Failed to review', 'error'),
   });
 
   const approveMutation = useMutation({
-    mutationFn: () => subcontractorsApi.certificates.approve(Number(id), {}),
+    mutationFn: () => subcontractorsApi.certificates.approve(numericId, {}),
     onSuccess: () => { invalidate(); toast('Certificate approved', 'success'); },
     onError: () => toast('Failed to approve', 'error'),
   });
 
   const rejectMutation = useMutation({
-    mutationFn: (reason: string) => subcontractorsApi.certificates.reject(Number(id), { reason }),
+    mutationFn: (reason: string) => subcontractorsApi.certificates.reject(numericId, { reason }),
     onSuccess: () => { invalidate(); toast('Certificate rejected', 'info'); },
     onError: () => toast('Failed to reject', 'error'),
   });
 
+  if (isNaN(numericId) || numericId <= 0) return <MainLayout><PageShell><div className="card empty-state"><p style={{ color: 'var(--status-error)' }}>Invalid certificate ID.</p></div></PageShell></MainLayout>;
   if (isLoading) return <MainLayout><PageShell><div className="card empty-state"><p>Loading...</p></div></PageShell></MainLayout>;
   if (error || !cert) return <MainLayout><PageShell><div className="card empty-state"><p style={{ color: 'var(--status-error)' }}>Certificate not found.</p></div></PageShell></MainLayout>;
 
