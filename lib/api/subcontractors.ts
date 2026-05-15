@@ -498,6 +498,20 @@ export const subcontractorsApi = {
       return items.filter(i => { if (seen.has(i.section_code)) return false; seen.add(i.section_code); return true; })
                   .map(i => i.section_code);
     },
+
+    create: async (data: Omit<BOQTemplateItem, 'id' | 'created_at'>): Promise<BOQTemplateItem> => {
+      const res = await apiClient.post(`${BASE}/boq-templates/`, data);
+      return res.data;
+    },
+
+    update: async (id: number, data: Partial<Omit<BOQTemplateItem, 'id' | 'created_at'>>): Promise<BOQTemplateItem> => {
+      const res = await apiClient.patch(`${BASE}/boq-templates/${id}/`, data);
+      return res.data;
+    },
+
+    delete: async (id: number): Promise<void> => {
+      await apiClient.delete(`${BASE}/boq-templates/${id}/`);
+    },
   },
 
   // Dashboard

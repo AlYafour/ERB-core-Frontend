@@ -303,10 +303,11 @@ export default function Sidebar() {
                 title={t('nav', 'subcontractors')}
                 icon={<BuildingIcon className="w-4 h-4" />}
                 items={[
-                  { name: t('nav', 'subcontractorsList'),  href: '/subcontractors'              },
-                  { name: t('nav', 'subconContracts'),     href: '/subcontractors/contracts'    },
-                  { name: t('nav', 'subconCertificates'),  href: '/subcontractors/certificates' },
-                  { name: t('nav', 'subconPayments'),      href: '/subcontractors/payments'     },
+                  { name: t('nav', 'subcontractorsList'),  href: '/subcontractors'                    },
+                  { name: t('nav', 'subconContracts'),     href: '/subcontractors/contracts'          },
+                  { name: t('nav', 'subconCertificates'),  href: '/subcontractors/certificates'       },
+                  { name: t('nav', 'subconPayments'),      href: '/subcontractors/payments'           },
+                  { name: 'BOQ Library',                   href: '/subcontractors/boq-library'        },
                 ]}
                 defaultOpen={isSubcontractorActive}
                 user={user}
