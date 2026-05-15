@@ -80,6 +80,7 @@ function ImportModal({
 
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState('');
 
   const grouped = useMemo(() => {
     const map = new Map<string, { name: string; items: BOQTemplateItem[] }>();
@@ -91,6 +92,29 @@ function ImportModal({
     }
     return Array.from(map.entries()).map(([code, v]) => ({ code, ...v }));
   }, [templates]);
+
+  const filteredGrouped = useMemo(() => {
+    if (!search.trim()) return grouped;
+    const q = search.trim().toLowerCase();
+    return grouped
+      .map(section => ({
+        ...section,
+        items: section.items.filter(
+          i => i.item_name.toLowerCase().includes(q) ||
+               i.item_code.toLowerCase().includes(q) ||
+               section.name.toLowerCase().includes(q)
+        ),
+      }))
+      .filter(section => section.items.length > 0 || section.name.toLowerCase().includes(q));
+  }, [grouped, search]);
+
+  // auto-expand sections that match the search
+  const searchExpanded = useMemo(() => {
+    if (!search.trim()) return expanded;
+    const auto = new Set(expanded);
+    filteredGrouped.forEach(s => auto.add(s.code));
+    return auto;
+  }, [filteredGrouped, search, expanded]);
 
   const toggleSection = (code: string) => {
     setExpanded(prev => {
@@ -145,14 +169,33 @@ function ImportModal({
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
       }}>
         {/* Header */}
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 'var(--text-lg)', color: 'var(--text-primary)' }}>Import from BOQ Template</div>
-            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 2 }}>
-              {selected.size > 0 ? `${selected.size} item${selected.size > 1 ? 's' : ''} selected` : 'Select items to add to this contract\'s BOQ'}
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-default)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 'var(--text-lg)', color: 'var(--text-primary)' }}>Import from BOQ Library</div>
+              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 2 }}>
+                {selected.size > 0 ? `${selected.size} item${selected.size > 1 ? 's' : ''} selected` : 'Select items to add to this contract\'s BOQ'}
+              </div>
             </div>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text-tertiary)', lineHeight: 1 }}>×</button>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text-tertiary)', lineHeight: 1 }}>×</button>
+          <input
+            type="text"
+            placeholder="Search by section or item… (e.g. نجارة، حدادة)"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            autoFocus
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              padding: '8px 12px',
+              border: '1px solid var(--border-default)',
+              borderRadius: 6,
+              fontSize: 'var(--text-sm)',
+              background: 'var(--surface-primary)',
+              color: 'var(--text-primary)',
+              outline: 'none',
+            }}
+          />
         </div>
 
         {/* Body */}
@@ -161,11 +204,14 @@ function ImportModal({
             <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: 40 }}>Loading template…</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {grouped.map(({ code, name, items }) => {
+              {filteredGrouped.length === 0 && (
+                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: 32 }}>No items match "{search}"</p>
+              )}
+              {filteredGrouped.map(({ code, name, items }) => {
                 const lineItems = items.filter(i => i.item_code !== code);
-                const allSel = lineItems.every(i => selected.has(i.id));
+                const allSel = lineItems.length > 0 && lineItems.every(i => selected.has(i.id));
                 const someSel = lineItems.some(i => selected.has(i.id));
-                const isOpen = expanded.has(code);
+                const isOpen = searchExpanded.has(code);
                 return (
                   <div key={code} style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, overflow: 'hidden' }}>
                     {/* Section header */}
