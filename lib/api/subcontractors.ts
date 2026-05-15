@@ -181,6 +181,19 @@ export interface ContractAttachment {
   created_at: string;
 }
 
+export interface BOQTemplateItem {
+  id: number;
+  section_code: string;
+  section_name: string;
+  item_code: string;
+  item_name: string;
+  description: string;
+  default_unit: string;
+  order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
 export interface ActivityLog {
   id: number;
   entity_type: string;
@@ -463,6 +476,27 @@ export const subcontractorsApi = {
     list: async (params: { entity_type?: string; entity_id?: number; page?: number }): Promise<PaginatedResponse<ActivityLog>> => {
       const res = await apiClient.get(`${BASE}/activity-logs/`, { params });
       return res.data;
+    },
+  },
+
+  // BOQ Template Library
+  boqTemplates: {
+    list: async (params?: Record<string, unknown>): Promise<PaginatedResponse<BOQTemplateItem>> => {
+      const res = await apiClient.get(`${BASE}/boq-templates/`, { params });
+      return res.data;
+    },
+
+    listAll: async (): Promise<BOQTemplateItem[]> => {
+      const res = await apiClient.get(`${BASE}/boq-templates/`, { params: { page_size: 500, active: 'true' } });
+      return res.data.results ?? res.data;
+    },
+
+    sections: async (): Promise<string[]> => {
+      const res = await apiClient.get(`${BASE}/boq-templates/`, { params: { page_size: 500, active: 'true' } });
+      const items: BOQTemplateItem[] = res.data.results ?? res.data;
+      const seen = new Set<string>();
+      return items.filter(i => { if (seen.has(i.section_code)) return false; seen.add(i.section_code); return true; })
+                  .map(i => i.section_code);
     },
   },
 
