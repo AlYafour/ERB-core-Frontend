@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subcontractorsApi, BOQTemplateItem } from '@/lib/api/subcontractors';
-import { toast } from '@/lib/utils/toast';
+import { toast } from '@/lib/hooks/use-toast';
 
 const EMPTY_FORM = {
   section_code: '',
