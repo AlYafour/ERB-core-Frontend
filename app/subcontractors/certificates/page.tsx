@@ -36,7 +36,7 @@ export default function CertificatesPage() {
   const rows       = data?.results ?? [];
   const totalCount = data?.count ?? 0;
 
-  const DELETABLE_STATUSES = new Set(['draft', 'rejected', 'cancelled']);
+  const DELETABLE_STATUSES = new Set(['draft', 'submitted', 'under_review', 'reviewed', 'rejected', 'cancelled']);
 
   const deletableIds = rows
     .filter(r => selectedItems.has(r.id) && DELETABLE_STATUSES.has(r.status))
@@ -52,7 +52,7 @@ export default function CertificatesPage() {
     onSuccess: (_, ids) => {
       queryClient.invalidateQueries({ queryKey: ['subcon-certificates'] });
       let msg = `Deleted ${ids.length} certificate(s)`;
-      if (nonDeletableCount > 0) msg += `. ${nonDeletableCount} skipped (not Draft/Rejected/Cancelled).`;
+      if (nonDeletableCount > 0) msg += `. ${nonDeletableCount} skipped (Approved/GM Approved/Paid cannot be deleted).`;
       toast(msg, 'success');
       clearSelection();
     },
@@ -62,11 +62,11 @@ export default function CertificatesPage() {
   const handleBulkDelete = () => {
     if (!selectedItems.size) return;
     if (deletableIds.length === 0) {
-      toast(`None of the selected certificates can be deleted. Only Draft, Rejected, or Cancelled certificates can be deleted.`, 'error');
+      toast(`Cannot delete. Approved, GM Approved, and Paid certificates cannot be deleted.`, 'error');
       return;
     }
     const msg = nonDeletableCount > 0
-      ? `Delete ${deletableIds.length} certificate(s)? ${nonDeletableCount} selected item(s) will be skipped (not in a deletable status).`
+      ? `Delete ${deletableIds.length} certificate(s)? ${nonDeletableCount} selected item(s) will be skipped (Approved/GM Approved/Paid are protected).`
       : `Delete ${deletableIds.length} selected certificate(s)?`;
     if (!confirm(msg)) return;
     deleteMutation.mutate(deletableIds);
