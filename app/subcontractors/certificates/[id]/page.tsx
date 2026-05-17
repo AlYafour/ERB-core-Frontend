@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subcontractorsApi } from '@/lib/api/subcontractors';
 import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { CERTIFICATE_STATUS } from '@/lib/utils/status-colors';
 
 type Tab = 'info' | 'items' | 'attachments';
@@ -160,7 +161,7 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
   const saveItemsMutation = useMutation({
     mutationFn: () => subcontractorsApi.certificates.saveItems(numericId, buildItemsPayload()),
     onSuccess: () => { invalidateItems(); toast('Measurements saved', 'success'); },
-    onError: () => toast('Failed to save measurements', 'error'),
+    onError: (err) => toast(getApiError(err, 'Failed to save measurements'), 'error'),
   });
 
   // Mark Reviewed = save engineer qtys first, then call review endpoint
@@ -177,7 +178,7 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
       setQtysInitialized(false); // re-init qtys from fresh data
       toast('Certificate marked as reviewed', 'success');
     },
-    onError: () => toast('Failed to mark reviewed', 'error'),
+    onError: (err) => toast(getApiError(err, 'Failed to mark reviewed'), 'error'),
   });
 
   const approveMutation = useMutation({
