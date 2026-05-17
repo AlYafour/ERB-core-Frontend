@@ -21,12 +21,14 @@ function ModeToggle({
   onChange: (m: InputMode) => void;
 }) {
   const base: React.CSSProperties = {
-    padding: '3px 10px',
+    padding: '4px 10px',
     fontSize: 11,
     fontWeight: 600,
     border: 'none',
     cursor: 'pointer',
     transition: 'background 120ms, color 120ms',
+    lineHeight: 1,
+    whiteSpace: 'nowrap',
   };
   return (
     <div style={{
@@ -34,7 +36,7 @@ function ModeToggle({
       border: '1px solid var(--border-default)',
       borderRadius: 6,
       overflow: 'hidden',
-      marginBottom: 4,
+      flexShrink: 0,
     }}>
       <button
         type="button"
@@ -324,10 +326,8 @@ function NewCertificateForm() {
                       const claimedQty  = getClaimedQty(item.id, contractQty);
                       const amount      = claimedQty * Number(item.unit_rate);
 
-                      const pctDisabled = contractQty === 0;
-
                       return (
-                        <tr key={item.id} style={{ verticalAlign: 'top' }}>
+                        <tr key={item.id} style={{ verticalAlign: 'middle' }}>
                           {/* Item name */}
                           <td style={{ paddingTop: 10 }}>
                             <div style={{ fontWeight: 500, fontSize: 'var(--text-sm)' }}>
@@ -341,12 +341,12 @@ function NewCertificateForm() {
                           </td>
 
                           {/* Unit */}
-                          <td style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', paddingTop: 10 }}>
+                          <td style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
                             {item.unit || '—'}
                           </td>
 
                           {/* Rate */}
-                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 500, paddingTop: 10 }}>
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
                             {Number(item.unit_rate).toLocaleString()}
                           </td>
 
@@ -365,67 +365,61 @@ function NewCertificateForm() {
                             {contractQty === 0 ? '—' : remaining.toLocaleString()}
                           </td>
 
-                          {/* Input cell: toggle + field */}
+                          {/* Input cell: toggle + field on ONE LINE */}
                           <td style={{ padding: '6px 8px' }}>
-                            <ModeToggle
-                              mode={mode}
-                              onChange={m => {
-                                if (m === 'pct' && pctDisabled) return;
-                                setModes(prev => ({ ...prev, [item.id]: m }));
-                              }}
-                            />
-
-                            {mode === 'qty' ? (
-                              <input
-                                type="number"
-                                min="0"
-                                step="0.001"
-                                placeholder="0.000"
-                                value={quantities[item.id] ?? ''}
-                                onChange={e => setQuantities(q => ({ ...q, [item.id]: e.target.value }))}
-                                style={{
-                                  width: '100%', padding: '5px 10px',
-                                  border: '2px solid var(--brand)', borderRadius: 6,
-                                  fontSize: 'var(--text-sm)', fontFamily: 'monospace',
-                                  textAlign: 'right',
-                                  background: 'var(--surface-primary)',
-                                  color: 'var(--text-primary)', outline: 'none',
-                                  boxSizing: 'border-box',
-                                }}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <ModeToggle
+                                mode={mode}
+                                onChange={m => setModes(prev => ({ ...prev, [item.id]: m }))}
                               />
-                            ) : (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+
+                              {mode === 'qty' ? (
                                 <input
                                   type="number"
                                   min="0"
-                                  max="100"
-                                  step="0.1"
-                                  placeholder="0.0"
-                                  value={percentages[item.id] ?? ''}
-                                  onChange={e => setPercentages(p => ({ ...p, [item.id]: e.target.value }))}
+                                  step="0.001"
+                                  placeholder="0.000"
+                                  value={quantities[item.id] ?? ''}
+                                  onChange={e => setQuantities(q => ({ ...q, [item.id]: e.target.value }))}
                                   style={{
-                                    flex: 1, padding: '5px 8px',
+                                    flex: 1, padding: '4px 8px',
                                     border: '2px solid var(--brand)', borderRadius: 6,
                                     fontSize: 'var(--text-sm)', fontFamily: 'monospace',
                                     textAlign: 'right',
                                     background: 'var(--surface-primary)',
                                     color: 'var(--text-primary)', outline: 'none',
-                                    boxSizing: 'border-box',
+                                    minWidth: 0,
                                   }}
                                 />
-                                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand)', flexShrink: 0 }}>%</span>
-                              </div>
-                            )}
+                              ) : (
+                                <>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="0.1"
+                                    placeholder="0.0"
+                                    value={percentages[item.id] ?? ''}
+                                    onChange={e => setPercentages(p => ({ ...p, [item.id]: e.target.value }))}
+                                    style={{
+                                      flex: 1, padding: '4px 8px',
+                                      border: '2px solid var(--brand)', borderRadius: 6,
+                                      fontSize: 'var(--text-sm)', fontFamily: 'monospace',
+                                      textAlign: 'right',
+                                      background: 'var(--surface-primary)',
+                                      color: 'var(--text-primary)', outline: 'none',
+                                      minWidth: 0,
+                                    }}
+                                  />
+                                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand)', flexShrink: 0 }}>%</span>
+                                </>
+                              )}
+                            </div>
 
-                            {/* Show calculated qty when in % mode */}
+                            {/* Hint: show calculated qty when % mode & contractQty > 0 */}
                             {mode === 'pct' && contractQty > 0 && claimedQty > 0 && (
-                              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 3, textAlign: 'right' }}>
+                              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2, textAlign: 'right' }}>
                                 = {claimedQty.toFixed(3)} {item.unit}
-                              </div>
-                            )}
-                            {mode === 'pct' && pctDisabled && (
-                              <div style={{ fontSize: 11, color: 'var(--status-error)', marginTop: 3 }}>
-                                Set contract qty first
                               </div>
                             )}
                           </td>
