@@ -512,32 +512,31 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                     <tr>
                       <th>Item</th>
                       <th>Unit</th>
-                      <th style={{ textAlign: 'right' }}>Contract Qty</th>
+                      <th style={{ textAlign: 'right' }}>BOQ Qty</th>
                       <th style={{ textAlign: 'right' }}>Rate (AED)</th>
                       <th style={{ textAlign: 'right' }}>Previous</th>
                       <th style={{ textAlign: 'right', color: isDraft ? 'var(--brand)' : undefined }}>
-                        {isDraft ? 'Claimed ✎' : 'Claimed'}
+                        Site Qty{isDraft ? ' ✎' : ''}
                       </th>
                       <th style={{ textAlign: 'right', color: (isSubmitted || isReviewed) ? 'var(--brand)' : undefined }}>
-                        {(isSubmitted || isReviewed) ? 'Approved ✎' : 'Approved'}
+                        Eng Qty{(isSubmitted || isReviewed) ? ' ✎' : ''}
                       </th>
-                      <th style={{ textAlign: 'right' }}>Total to Date</th>
-                      <th style={{ textAlign: 'right' }}>Remaining</th>
-                      <th style={{ textAlign: 'right' }}>Amount (AED)</th>
+                      <th style={{ textAlign: 'right' }}>Variation</th>
+                      <th style={{ textAlign: 'right' }}>Value (AED)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(items ?? []).map(item => {
-                      const claimedQty  = canEditItems
+                      const siteQty = canEditItems
                         ? Number(claimedQtys[item.id] ?? item.contractor_claimed_quantity)
                         : Number(item.contractor_claimed_quantity);
-                      const approvedQty = (isSubmitted || isReviewed)
+                      const engQty = (isSubmitted || isReviewed)
                         ? Number(engineerQtys[item.id] ?? '0')
                         : Number(item.engineer_approved_quantity);
-                      const amount    = isDraft
-                        ? claimedQty * Number(item.unit_rate)
-                        : approvedQty * Number(item.unit_rate);
-                      const remaining = Number(item.remaining_quantity);
+                      const variation = siteQty - engQty;
+                      const value = isDraft
+                        ? siteQty * Number(item.unit_rate)
+                        : engQty * Number(item.unit_rate);
                       const inputStyle: React.CSSProperties = {
                         width: 90, textAlign: 'right', fontFamily: 'monospace',
                         border: '1px solid var(--brand)', borderRadius: 4,
@@ -551,16 +550,18 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                             <div style={{ fontWeight: 500, fontSize: 'var(--text-sm)' }}>{item.item_name}</div>
                           </td>
                           <td style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{item.unit}</td>
-                          <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>
-                            {Number(item.contract_quantity).toLocaleString()}
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>
+                            {Number(item.contract_quantity) > 0 ? Number(item.contract_quantity).toLocaleString() : '—'}
                           </td>
                           <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
                             {Number(item.unit_rate).toLocaleString()}
                           </td>
                           <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>
-                            {Number(item.previous_approved_quantity).toLocaleString()}
+                            {Number(item.previous_approved_quantity) > 0
+                              ? Number(item.previous_approved_quantity).toLocaleString()
+                              : '—'}
                           </td>
-                          {/* Claimed qty — editable in draft */}
+                          {/* Site Qty — editable in draft */}
                           <td style={{ textAlign: 'right' }}>
                             {isDraft ? (
                               <input
@@ -575,7 +576,7 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                               </span>
                             )}
                           </td>
-                          {/* Approved qty — editable when submitted or reviewed */}
+                          {/* Eng Qty — editable when submitted or reviewed */}
                           <td style={{ textAlign: 'right' }}>
                             {(isSubmitted || isReviewed) ? (
                               <input
@@ -585,26 +586,22 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                                 style={inputStyle}
                               />
                             ) : (
-                              <span style={{ fontFamily: 'monospace', fontWeight: 600, color: isApproved ? 'var(--status-success)' : undefined }}>
+                              <span style={{ fontFamily: 'monospace', fontWeight: 600, color: isApproved || isGmApproved ? 'var(--status-success)' : undefined }}>
                                 {Number(item.engineer_approved_quantity).toLocaleString()}
                               </span>
                             )}
                           </td>
-                          <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>
-                            {(isSubmitted || isReviewed)
-                              ? (Number(item.previous_approved_quantity) + approvedQty).toLocaleString()
-                              : Number(item.total_approved_quantity).toLocaleString()
-                            }
-                          </td>
-                          <td style={{ textAlign: 'right', fontFamily: 'monospace', color: remaining <= 0 ? 'var(--status-error)' : 'var(--text-secondary)' }}>
-                            {(isSubmitted || isReviewed)
-                              ? (Number(item.contract_quantity) - Number(item.previous_approved_quantity) - approvedQty).toLocaleString()
-                              : remaining.toLocaleString()
-                            }
+                          {/* Variation = Site - Eng */}
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 500,
+                            color: variation > 0 ? 'var(--status-warning)' : variation < 0 ? 'var(--status-error)' : 'var(--text-tertiary)',
+                          }}>
+                            {variation !== 0
+                              ? (variation > 0 ? '+' : '') + variation.toLocaleString(undefined, { maximumFractionDigits: 3 })
+                              : '—'}
                           </td>
                           <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 500 }}>
                             {canEditItems
-                              ? amount.toLocaleString(undefined, { minimumFractionDigits: 2 })
+                              ? value.toLocaleString(undefined, { minimumFractionDigits: 2 })
                               : Number(item.current_approved_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })
                             }
                           </td>
@@ -614,8 +611,19 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan={9} style={{ textAlign: 'right', fontWeight: 600, padding: '8px 12px' }}>
-                        Total Approved
+                      <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, padding: '8px 12px' }}>
+                        Total Site Claimed
+                      </td>
+                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 600, padding: '8px 12px', color: 'var(--text-secondary)' }}>
+                        {(items ?? []).reduce((sum, item) => {
+                          const siteQty = canEditItems
+                            ? Number(claimedQtys[item.id] ?? item.contractor_claimed_quantity)
+                            : Number(item.contractor_claimed_quantity);
+                          return sum + siteQty * Number(item.unit_rate);
+                        }, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </td>
+                      <td colSpan={2} style={{ textAlign: 'right', fontWeight: 600, padding: '8px 12px' }}>
+                        Total Eng Approved
                       </td>
                       <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, padding: '8px 12px' }}>
                         AED {isDraft
