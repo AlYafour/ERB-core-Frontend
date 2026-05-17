@@ -149,7 +149,7 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
   const submitMutation = useMutation({
     mutationFn: () => subcontractorsApi.certificates.submit(numericId),
     onSuccess: () => { invalidateCert(); toast('Certificate submitted for review', 'success'); },
-    onError: () => toast('Failed to submit', 'error'),
+    onError: (err) => toast(getApiError(err, 'Failed to submit'), 'error'),
   });
 
   const buildItemsPayload = () => (items ?? []).map(item => ({
