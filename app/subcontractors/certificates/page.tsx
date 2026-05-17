@@ -36,24 +36,40 @@ export default function CertificatesPage() {
   const rows       = data?.results ?? [];
   const totalCount = data?.count ?? 0;
 
+  const DELETABLE_STATUSES = new Set(['draft', 'rejected', 'cancelled']);
+
+  const deletableIds = rows
+    .filter(r => selectedItems.has(r.id) && DELETABLE_STATUSES.has(r.status))
+    .map(r => r.id);
+  const nonDeletableCount = selectedItems.size - deletableIds.length;
+
   const deleteMutation = useMutation({
-    mutationFn: async () => {
-      for (const id of selectedItems) {
-        await subcontractorsApi.certificates.delete(id).catch(() => {});
+    mutationFn: async (ids: number[]) => {
+      for (const id of ids) {
+        await subcontractorsApi.certificates.delete(id);
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, ids) => {
       queryClient.invalidateQueries({ queryKey: ['subcon-certificates'] });
-      toast(`Deleted ${selectedItems.size} certificate(s)`, 'success');
+      let msg = `Deleted ${ids.length} certificate(s)`;
+      if (nonDeletableCount > 0) msg += `. ${nonDeletableCount} skipped (not Draft/Rejected/Cancelled).`;
+      toast(msg, 'success');
       clearSelection();
     },
-    onError: () => toast('Failed to delete some certificates', 'error'),
+    onError: () => toast('Failed to delete certificates', 'error'),
   });
 
   const handleBulkDelete = () => {
     if (!selectedItems.size) return;
-    if (!confirm(`Delete ${selectedItems.size} selected certificate(s)? Only Draft/Rejected/Cancelled certificates can be deleted.`)) return;
-    deleteMutation.mutate();
+    if (deletableIds.length === 0) {
+      toast(`None of the selected certificates can be deleted. Only Draft, Rejected, or Cancelled certificates can be deleted.`, 'error');
+      return;
+    }
+    const msg = nonDeletableCount > 0
+      ? `Delete ${deletableIds.length} certificate(s)? ${nonDeletableCount} selected item(s) will be skipped (not in a deletable status).`
+      : `Delete ${deletableIds.length} selected certificate(s)?`;
+    if (!confirm(msg)) return;
+    deleteMutation.mutate(deletableIds);
   };
 
   const columns: Column<ProgressCertificate>[] = [
