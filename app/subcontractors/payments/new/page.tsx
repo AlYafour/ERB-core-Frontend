@@ -62,7 +62,7 @@ function NewPaymentForm() {
   const mutation = useMutation({
     mutationFn: () => subcontractorsApi.payments.create({
       ...form,
-      gross_amount: form.gross_amount || String(grossFromCert),
+      gross_amount: form.gross_amount || String(Number(cert?.gross_approved_amount ?? 0)),
     } as Parameters<typeof subcontractorsApi.payments.create>[0]),
     onSuccess: (data) => {
       toast('Payment created', 'success');
@@ -109,7 +109,7 @@ function NewPaymentForm() {
           <FormField label="Gross Amount (AED)" required>
             <input
               type="number" min="0" step="0.01" className="form-input"
-              placeholder={cert ? String(grossFromCert) : '0.00'}
+              placeholder={cert ? String(Number(cert.gross_approved_amount)) : '0.00'}
               value={form.gross_amount}
               onChange={e => set('gross_amount', e.target.value)}
             />
