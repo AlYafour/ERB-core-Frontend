@@ -111,6 +111,7 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
   const [rejectOpen, setRejectOpen] = useState(false);
   const [engineerQtys, setEngineerQtys] = useState<Record<number, string>>({});
   const [claimedQtys, setClaimedQtys] = useState<Record<number, string>>({});
+  const [managerApprovedQtys, setManagerApprovedQtys] = useState<Record<number, string>>({});
   const [qtysInitialized, setQtysInitialized] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -149,19 +150,24 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
     if (items && items.length > 0) {
       const eng: Record<number, string> = {};
       const claimed: Record<number, string> = {};
+      const mgr: Record<number, string> = {};
       items.forEach(item => {
         eng[item.id]     = String(item.engineer_approved_quantity);
         claimed[item.id] = String(item.contractor_claimed_quantity);
+        mgr[item.id]     = String(item.engineer_approved_quantity);
       });
       setEngineerQtys(eng);
       setClaimedQtys(claimed);
+      setManagerApprovedQtys(mgr);
       setQtysInitialized(true);
     } else if (fallbackBoqItems && fallbackBoqItems.length > 0) {
       const eng: Record<number, string> = {};
       const claimed: Record<number, string> = {};
-      fallbackBoqItems.forEach(item => { eng[item.id] = '0'; claimed[item.id] = '0'; });
+      const mgr: Record<number, string> = {};
+      fallbackBoqItems.forEach(item => { eng[item.id] = '0'; claimed[item.id] = '0'; mgr[item.id] = '0'; });
       setEngineerQtys(eng);
       setClaimedQtys(claimed);
+      setManagerApprovedQtys(mgr);
       setQtysInitialized(true);
     }
   }, [items, fallbackBoqItems, qtysInitialized]);
@@ -191,6 +197,8 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
           : item.contractor_claimed_quantity,
         engineer_approved_quantity: isDraft
           ? '0'
+          : isReviewed
+          ? (managerApprovedQtys[item.id] ?? item.engineer_approved_quantity ?? '0')
           : (engineerQtys[item.id] ?? item.engineer_approved_quantity ?? '0'),
       }));
     }
@@ -227,8 +235,15 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
   });
 
   const approveMutation = useMutation({
-    mutationFn: () => subcontractorsApi.certificates.approve(numericId, {}),
-    onSuccess: () => { invalidateCert(); toast('Certificate approved by manager', 'success'); },
+    mutationFn: async () => {
+      // Save manager's chosen approved quantities before approving
+      const payload = buildItemsPayload();
+      if (payload.length > 0) {
+        await subcontractorsApi.certificates.saveItems(numericId, payload);
+      }
+      return subcontractorsApi.certificates.approve(numericId, {});
+    },
+    onSuccess: () => { invalidateCert(); invalidateItems(); toast('Certificate approved by manager', 'success'); },
     onError: (err) => toast(getApiError(err, 'Failed to approve'), 'error'),
   });
 
@@ -432,8 +447,27 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
               </div>
             )}
             {isReviewed && (
-              <div style={{ marginBottom: 12, padding: '8px 12px', background: 'rgba(245,158,11,0.08)', borderRadius: 6, border: '1px solid rgba(245,158,11,0.3)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-                Certificate is reviewed. You can correct measurement quantities and <strong>Save</strong> if needed.
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ padding: '10px 14px', background: 'rgba(245,158,11,0.08)', borderRadius: 6, border: '1px solid rgba(245,158,11,0.3)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 10 }}>
+                  Choose which quantities to approve, then click <strong>Approve</strong> in the header — quantities are saved automatically.
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontWeight: 500 }}>Quick fill Approved Qty:</span>
+                  <Button variant="secondary" size="sm" onClick={() => {
+                    const qtys: Record<number, string> = {};
+                    items?.forEach(item => { qtys[item.id] = String(item.contractor_claimed_quantity); });
+                    setManagerApprovedQtys(qtys);
+                  }}>
+                    ← Site Qty (الموقع)
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => {
+                    const qtys: Record<number, string> = {};
+                    items?.forEach(item => { qtys[item.id] = String(item.engineer_approved_quantity); });
+                    setManagerApprovedQtys(qtys);
+                  }}>
+                    ← Eng Qty (الهندسي)
+                  </Button>
+                </div>
               </div>
             )}
             {isSubmitted && (
@@ -518,8 +552,11 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                       <th style={{ textAlign: 'right', color: isDraft ? 'var(--brand)' : undefined }}>
                         Site Qty{isDraft ? ' ✎' : ''}
                       </th>
-                      <th style={{ textAlign: 'right', color: (isSubmitted || isReviewed) ? 'var(--brand)' : undefined }}>
-                        Eng Qty{(isSubmitted || isReviewed) ? ' ✎' : ''}
+                      <th style={{ textAlign: 'right', color: isSubmitted ? 'var(--brand)' : undefined }}>
+                        Eng Qty{isSubmitted ? ' ✎' : ''}
+                      </th>
+                      <th style={{ textAlign: 'right', color: isReviewed ? 'var(--brand)' : undefined }}>
+                        {isReviewed ? 'Approved ✎' : 'Approved'}
                       </th>
                       <th style={{ textAlign: 'right' }}>Variation</th>
                       <th style={{ textAlign: 'right' }}>Value (AED)</th>
@@ -527,15 +564,20 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                   </thead>
                   <tbody>
                     {(items ?? []).map(item => {
-                      const siteQty = canEditItems
+                      const siteQty = isDraft
                         ? Number(claimedQtys[item.id] ?? item.contractor_claimed_quantity)
                         : Number(item.contractor_claimed_quantity);
-                      const engQty = (isSubmitted || isReviewed)
+                      const engQty = isSubmitted
                         ? Number(engineerQtys[item.id] ?? '0')
                         : Number(item.engineer_approved_quantity);
-                      const variation = siteQty - engQty;
+                      const approvedQty = isReviewed
+                        ? Number(managerApprovedQtys[item.id] ?? item.engineer_approved_quantity ?? '0')
+                        : Number(item.engineer_approved_quantity);
+                      const variation = siteQty - (isReviewed ? approvedQty : engQty);
                       const value = isDraft
                         ? siteQty * Number(item.unit_rate)
+                        : isReviewed
+                        ? approvedQty * Number(item.unit_rate)
                         : engQty * Number(item.unit_rate);
                       const inputStyle: React.CSSProperties = {
                         width: 90, textAlign: 'right', fontFamily: 'monospace',
@@ -572,13 +614,13 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                               />
                             ) : (
                               <span style={{ fontFamily: 'monospace' }}>
-                                {Number(item.contractor_claimed_quantity).toLocaleString()}
+                                {siteQty.toLocaleString()}
                               </span>
                             )}
                           </td>
-                          {/* Eng Qty — editable when submitted or reviewed */}
+                          {/* Eng Qty — editable in submitted only */}
                           <td style={{ textAlign: 'right' }}>
-                            {(isSubmitted || isReviewed) ? (
+                            {isSubmitted ? (
                               <input
                                 type="number" min="0" step="any"
                                 value={engineerQtys[item.id] ?? '0'}
@@ -586,12 +628,28 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                                 style={inputStyle}
                               />
                             ) : (
-                              <span style={{ fontFamily: 'monospace', fontWeight: 600, color: isApproved || isGmApproved ? 'var(--status-success)' : undefined }}>
+                              <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
                                 {Number(item.engineer_approved_quantity).toLocaleString()}
                               </span>
                             )}
                           </td>
-                          {/* Variation = Site - Eng */}
+                          {/* Approved Qty — editable in reviewed by manager */}
+                          <td style={{ textAlign: 'right' }}>
+                            {isReviewed ? (
+                              <input
+                                type="number" min="0" step="any"
+                                value={managerApprovedQtys[item.id] ?? '0'}
+                                onChange={e => setManagerApprovedQtys(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                style={inputStyle}
+                              />
+                            ) : (
+                              <span style={{ fontFamily: 'monospace', fontWeight: 600,
+                                color: isApproved || isGmApproved ? 'var(--status-success)' : undefined }}>
+                                {approvedQty.toLocaleString()}
+                              </span>
+                            )}
+                          </td>
+                          {/* Variation = Site - Approved */}
                           <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 500,
                             color: variation > 0 ? 'var(--status-warning)' : variation < 0 ? 'var(--status-error)' : 'var(--text-tertiary)',
                           }}>
@@ -611,26 +669,33 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, padding: '8px 12px' }}>
-                        Total Site Claimed
-                      </td>
-                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 600, padding: '8px 12px', color: 'var(--text-secondary)' }}>
+                      <td colSpan={5} style={{ padding: '8px 12px' }} />
+                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 600, padding: '8px 4px', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                        {/* Site total */}
                         {(items ?? []).reduce((sum, item) => {
-                          const siteQty = canEditItems
-                            ? Number(claimedQtys[item.id] ?? item.contractor_claimed_quantity)
-                            : Number(item.contractor_claimed_quantity);
-                          return sum + siteQty * Number(item.unit_rate);
+                          const sq = isDraft ? Number(claimedQtys[item.id] ?? item.contractor_claimed_quantity) : Number(item.contractor_claimed_quantity);
+                          return sum + sq * Number(item.unit_rate);
                         }, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </td>
-                      <td colSpan={2} style={{ textAlign: 'right', fontWeight: 600, padding: '8px 12px' }}>
-                        Total Eng Approved
+                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 600, padding: '8px 4px', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                        {/* Eng total */}
+                        {(items ?? []).reduce((sum, item) => {
+                          const eq = isSubmitted ? Number(engineerQtys[item.id] ?? 0) : Number(item.engineer_approved_quantity);
+                          return sum + eq * Number(item.unit_rate);
+                        }, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </td>
+                      <td colSpan={2} style={{ textAlign: 'right', fontWeight: 600, padding: '8px 12px', fontSize: 'var(--text-sm)' }}>
+                        Total Approved
                       </td>
                       <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, padding: '8px 12px' }}>
                         AED {isDraft
                           ? (items ?? []).reduce((sum, item) => sum + Number(claimedQtys[item.id] ?? item.contractor_claimed_quantity) * Number(item.unit_rate), 0)
                               .toLocaleString(undefined, { minimumFractionDigits: 2 })
-                          : (isSubmitted || isReviewed)
+                          : isSubmitted
                           ? (items ?? []).reduce((sum, item) => sum + Number(engineerQtys[item.id] ?? item.engineer_approved_quantity ?? 0) * Number(item.unit_rate), 0)
+                              .toLocaleString(undefined, { minimumFractionDigits: 2 })
+                          : isReviewed
+                          ? (items ?? []).reduce((sum, item) => sum + Number(managerApprovedQtys[item.id] ?? item.engineer_approved_quantity ?? 0) * Number(item.unit_rate), 0)
                               .toLocaleString(undefined, { minimumFractionDigits: 2 })
                           : (items ?? []).reduce((sum, i) => sum + Number(i.current_approved_amount), 0)
                               .toLocaleString(undefined, { minimumFractionDigits: 2 })
