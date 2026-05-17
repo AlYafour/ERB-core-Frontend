@@ -128,17 +128,11 @@ function NewCertificateForm() {
         notes: form.notes,
       } as Parameters<typeof subcontractorsApi.certificates.create>[0]);
 
-      const items = (boqItems ?? [])
-        .map(item => ({
-          boq_item: item.id,
-          claimed: getClaimedQty(item.id, Number(item.contract_quantity)),
-        }))
-        .filter(x => x.claimed > 0)
-        .map(x => ({
-          boq_item: x.boq_item,
-          contractor_claimed_quantity: String(x.claimed),
-          engineer_approved_quantity: '0',
-        }));
+      const items = (boqItems ?? []).map(item => ({
+        boq_item: item.id,
+        contractor_claimed_quantity: String(getClaimedQty(item.id, Number(item.contract_quantity))),
+        engineer_approved_quantity: '0',
+      }));
 
       if (items.length > 0) {
         await subcontractorsApi.certificates.saveItems(cert.id, items);
