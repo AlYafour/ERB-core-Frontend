@@ -19,15 +19,16 @@ async function fetchPendingCounts(): Promise<PendingCounts> {
 }
 
 export function usePendingCounts(): PendingCounts {
-  const { hasPermission, isAdmin } = usePermissions();
+  const { hasPermission, isAdmin, isLoading: permLoading } = usePermissions();
   const canView = isAdmin || hasPermission('purchase_request', 'view');
+  const enabled = !permLoading && canView;
 
   const { data } = useQuery({
     queryKey: ['pending-counts'],
     queryFn: fetchPendingCounts,
-    enabled: canView,
+    enabled,
     staleTime: 0,
-    refetchInterval: canView ? 60_000 : false,
+    refetchInterval: enabled ? 60_000 : false,
   });
 
   return data ?? ZERO;
