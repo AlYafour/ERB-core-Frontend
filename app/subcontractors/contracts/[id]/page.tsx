@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useMemo } from 'react';
+import { use, useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -300,8 +300,11 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
   const { id } = use(params);
   const [tab, setTab] = useState<Tab>('info');
   const [showImportModal, setShowImportModal] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
   const [editingBoqId, setEditingBoqId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ item_name: '', unit: '', contract_quantity: '0', unit_rate: '0' });
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   const { data: contract, isLoading, error } = useQuery({
@@ -350,6 +353,35 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
     mutationFn: () => subcontractorsApi.contracts.approve(Number(id), {}),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['subcon-contract', id] }); toast('Contract approved', 'success'); },
     onError: () => toast('Failed to approve contract', 'error'),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: (reason: string) => subcontractorsApi.contracts.reject(Number(id), { reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subcon-contract', id] });
+      setRejectOpen(false);
+      setRejectReason('');
+      toast('Contract rejected and returned to draft', 'info');
+    },
+    onError: () => toast('Failed to reject contract', 'error'),
+  });
+
+  const activateMutation = useMutation({
+    mutationFn: () => subcontractorsApi.contracts.activate(Number(id)),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['subcon-contract', id] }); toast('Contract activated', 'success'); },
+    onError: () => toast('Failed to activate contract', 'error'),
+  });
+
+  const uploadAttachmentMutation = useMutation({
+    mutationFn: (file: File) => {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('contract', id);
+      fd.append('document_type', 'general');
+      return subcontractorsApi.attachments.upload(fd);
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['subcon-contract-attachments', id] }); toast('File uploaded', 'success'); },
+    onError: () => toast('Upload failed', 'error'),
   });
 
   const closeMutation = useMutation({
@@ -412,6 +444,30 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
   return (
     <MainLayout>
       <PageShell>
+
+        {/* Reject modal */}
+        {rejectOpen && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+            <div className="card" style={{ width: 440, padding: 24 }}>
+              <div style={{ fontSize: 'var(--text-base)', fontWeight: 600, marginBottom: 12 }}>Rejection Reason</div>
+              <textarea
+                autoFocus value={rejectReason} onChange={e => setRejectReason(e.target.value)}
+                rows={4} placeholder="Enter reason for returning to draft..."
+                style={{ width: '100%', resize: 'vertical', borderRadius: 6, border: '1px solid var(--border-default)', padding: '8px 10px', fontSize: 'var(--text-sm)', background: 'var(--bg-input)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+              />
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
+                <Button variant="secondary" size="sm" onClick={() => setRejectOpen(false)}>Cancel</Button>
+                <Button variant="primary" size="sm"
+                  disabled={!rejectReason.trim() || rejectMutation.isPending}
+                  onClick={() => rejectMutation.mutate(rejectReason.trim())}
+                  style={{ background: 'var(--status-error)', borderColor: 'var(--status-error)' }}>
+                  {rejectMutation.isPending ? 'Rejecting...' : 'Return to Draft'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <PageHeader
           title={`${contract.contract_no} — ${contract.contract_title}`}
           breadcrumbs={[
@@ -423,12 +479,22 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
             <div style={{ display: 'flex', gap: 8 }}>
               {contract.contract_status === 'draft' && (
                 <Button variant="primary" size="sm" onClick={() => submitMutation.mutate()} disabled={submitMutation.isPending}>
-                  Submit for Review
+                  {submitMutation.isPending ? 'Submitting...' : 'Submit for Review'}
                 </Button>
               )}
               {contract.contract_status === 'under_review' && (
-                <Button variant="primary" size="sm" onClick={() => approveMutation.mutate()} disabled={approveMutation.isPending}>
-                  Approve
+                <>
+                  <Button variant="primary" size="sm" onClick={() => approveMutation.mutate()} disabled={approveMutation.isPending}>
+                    {approveMutation.isPending ? 'Approving...' : 'Approve'}
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => setRejectOpen(true)}>
+                    Reject
+                  </Button>
+                </>
+              )}
+              {contract.contract_status === 'approved' && (
+                <Button variant="secondary" size="sm" onClick={() => activateMutation.mutate()} disabled={activateMutation.isPending}>
+                  {activateMutation.isPending ? 'Activating...' : 'Activate Contract'}
                 </Button>
               )}
               {(contract.contract_status === 'approved' || contract.contract_status === 'active') && (
@@ -436,7 +502,9 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                   <Link href={`/subcontractors/certificates/new?contract=${id}`}>
                     <Button variant="primary" size="sm">+ New Certificate</Button>
                   </Link>
-                  <Button variant="secondary" size="sm" onClick={() => closeMutation.mutate()} disabled={closeMutation.isPending}>
+                  <Button variant="secondary" size="sm"
+                    onClick={() => { if (confirm('Close this contract? This will prevent new certificates.')) closeMutation.mutate(); }}
+                    disabled={closeMutation.isPending}>
                     Close Contract
                   </Button>
                 </>
@@ -514,13 +582,17 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                 </p>
               </div>
             )}
-            {(contract.review_notes || contract.rejection_reason) && (
-              <div className="card" style={{ gridColumn: '1 / -1' }}>
-                <div className="info-section-title">Review Notes</div>
-                {contract.review_notes && <InfoRow label="Review Notes"      value={contract.review_notes} />}
-                {contract.rejection_reason && <InfoRow label="Rejection Reason" value={contract.rejection_reason} />}
-              </div>
-            )}
+            <div className="card">
+              <div className="info-section-title">Workflow</div>
+              <InfoRow label="Status"          value={CONTRACT_STATUS_LABEL[contract.contract_status]} />
+              <InfoRow label="Created By"      value={contract.created_by_name} />
+              <InfoRow label="Reviewed By"     value={contract.reviewed_by_name} />
+              <InfoRow label="Approved By"     value={contract.approved_by_name} />
+              <InfoRow label="Review Date"     value={contract.review_date} />
+              <InfoRow label="Approval Date"   value={contract.approval_date} />
+              {contract.review_notes && <InfoRow label="Review Notes" value={contract.review_notes} />}
+              {contract.rejection_reason && <InfoRow label="Rejection Reason" value={contract.rejection_reason} />}
+            </div>
           </div>
         )}
 
@@ -778,7 +850,21 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
         {/* Tab: Attachments */}
         {tab === 'attachments' && (
           <div className="card">
-            <div className="info-section-title">Attachments</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div className="info-section-title" style={{ marginBottom: 0 }}>Attachments</div>
+              <Button variant="secondary" size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadAttachmentMutation.isPending}>
+                {uploadAttachmentMutation.isPending ? 'Uploading...' : '+ Upload File'}
+              </Button>
+              <input
+                ref={fileInputRef} type="file" style={{ display: 'none' }}
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) { uploadAttachmentMutation.mutate(file); e.target.value = ''; }
+                }}
+              />
+            </div>
             {!attachments?.length ? (
               <div className="empty-state"><p>No attachments yet.</p></div>
             ) : (
@@ -791,7 +877,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                         {a.document_type} · {a.uploaded_by_name} · {new Date(a.created_at).toLocaleDateString()}
                       </div>
                     </div>
-                    <a href={a.file} target="_blank" rel="noreferrer">
+                    <a href={a.file_url ?? a.file} target="_blank" rel="noreferrer">
                       <Button variant="view" size="sm">Download</Button>
                     </a>
                   </div>

@@ -173,6 +173,7 @@ export interface SubcontractorPayment {
 export interface ContractAttachment {
   id: number;
   file: string;
+  file_url: string | null;
   file_name: string;
   file_size: number;
   document_type: string;
@@ -306,6 +307,11 @@ export const subcontractorsApi = {
 
     reject: async (id: number, data: { reason: string }): Promise<SubcontractorContract> => {
       const res = await apiClient.post(`${BASE}/contracts/${id}/reject/`, data);
+      return res.data;
+    },
+
+    activate: async (id: number): Promise<SubcontractorContract> => {
+      const res = await apiClient.post(`${BASE}/contracts/${id}/activate/`);
       return res.data;
     },
 

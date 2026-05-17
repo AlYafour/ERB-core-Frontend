@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { subcontractorsApi } from '@/lib/api/subcontractors';
@@ -38,7 +38,26 @@ function NewPaymentForm() {
     notes:                 '',
   });
 
-  const grossFromCert = cert ? Number(cert.net_payable_amount) : 0;
+  // Pre-fill form when certificate loads
+  useEffect(() => {
+    if (cert) {
+      setForm(f => ({
+        ...f,
+        gross_amount:      f.gross_amount || String(Number(cert.gross_approved_amount)),
+        retention_amount:  f.retention_amount === '0' ? String(Number(cert.retention_amount)) : f.retention_amount,
+        advance_deduction: f.advance_deduction === '0' ? String(Number(cert.advance_deduction)) : f.advance_deduction,
+        other_deductions:  f.other_deductions === '0' ? String(Number(cert.other_deductions)) : f.other_deductions,
+      }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cert?.id]);
+
+  const netPayable = cert
+    ? Number(form.gross_amount || cert.gross_approved_amount)
+      - Number(form.retention_amount)
+      - Number(form.advance_deduction)
+      - Number(form.other_deductions)
+    : 0;
 
   const mutation = useMutation({
     mutationFn: () => subcontractorsApi.payments.create({
@@ -70,7 +89,15 @@ function NewPaymentForm() {
 
       <div className="card">
         <div className="info-section-title">Payment Details</div>
-        <div className="form-grid">
+        {cert && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, padding: '8px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+          <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Estimated Net Payable</span>
+          <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-primary)' }}>
+            AED {netPayable.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          </span>
+        </div>
+      )}
+      <div className="form-grid">
           <FormField label="Payment Date" required>
             <input
               type="date" required className="form-input"
