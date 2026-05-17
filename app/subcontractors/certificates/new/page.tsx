@@ -10,6 +10,7 @@ import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import FormField from '@/components/ui/FormField';
 import { PageShell, PageHeader, Button } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 
 type InputMode = 'qty' | 'pct';
 
@@ -149,7 +150,7 @@ function NewCertificateForm() {
       toast('Certificate created successfully', 'success');
       router.push(`/subcontractors/certificates/${cert.id}`);
     },
-    onError: () => toast('Failed to create certificate', 'error'),
+    onError: (err) => toast(getApiError(err, 'Failed to create certificate'), 'error'),
   });
 
   const contractOptions = (contractsData?.results ?? []).map(c => ({

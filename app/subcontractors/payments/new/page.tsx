@@ -10,6 +10,7 @@ import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import FormField from '@/components/ui/FormField';
 import { PageShell, PageHeader, Button } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 
 function NewPaymentForm() {
   const router = useRouter();
@@ -68,7 +69,7 @@ function NewPaymentForm() {
       toast('Payment created', 'success');
       router.push(`/subcontractors/payments/${data.id}`);
     },
-    onError: () => toast('Failed to create payment', 'error'),
+    onError: (err) => toast(getApiError(err, 'Failed to create payment'), 'error'),
   });
 
   const set = (field: string, value: unknown) => setForm(f => ({ ...f, [field]: value }));

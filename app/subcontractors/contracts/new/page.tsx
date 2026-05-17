@@ -10,6 +10,7 @@ import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import FormField from '@/components/ui/FormField';
 import { PageShell, PageHeader, Button } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 
 function NewContractForm() {
   const router = useRouter();
@@ -54,7 +55,7 @@ function NewContractForm() {
       toast('Contract created', 'success');
       router.push(`/subcontractors/contracts/${data.id}`);
     },
-    onError: () => toast('Failed to create contract', 'error'),
+    onError: (err) => toast(getApiError(err, 'Failed to create contract'), 'error'),
   });
 
   const set = (field: string, value: unknown) => setForm(f => ({ ...f, [field]: value }));
