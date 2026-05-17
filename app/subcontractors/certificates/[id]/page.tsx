@@ -121,11 +121,20 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
     enabled: !isNaN(numericId) && numericId > 0,
   });
 
-  // Auto-load items when status is submitted (engineer needs to review)
+  // Auto-load items when status is editable or tab is open
   const { data: items } = useQuery({
     queryKey: ['cert-items', id],
     queryFn: () => subcontractorsApi.certificates.getItems(numericId),
     enabled: (tab === 'items' || ['draft','submitted','reviewed'].includes(cert?.status ?? '')) && !isNaN(numericId) && numericId > 0,
+  });
+
+  const hasCertItems = (items?.length ?? 0) > 0;
+
+  // When cert is editable but has no saved items, load BOQ items as fallback so user can enter quantities
+  const { data: fallbackBoqItems } = useQuery({
+    queryKey: ['cert-boq-fallback', cert?.contract],
+    queryFn: () => subcontractorsApi.boqItems.list(cert!.contract as number),
+    enabled: ['draft','submitted','reviewed'].includes(cert?.status ?? '') && items !== undefined && !hasCertItems && !!cert?.contract,
   });
 
   const { data: attachments } = useQuery({
@@ -134,9 +143,10 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
     enabled: tab === 'attachments' && !isNaN(numericId) && numericId > 0,
   });
 
-  // Initialize qtys once items load
+  // Initialize qtys from cert items, or from fallback BOQ items when cert has none
   useEffect(() => {
-    if (items && !qtysInitialized) {
+    if (qtysInitialized) return;
+    if (items && items.length > 0) {
       const eng: Record<number, string> = {};
       const claimed: Record<number, string> = {};
       items.forEach(item => {
@@ -146,8 +156,15 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
       setEngineerQtys(eng);
       setClaimedQtys(claimed);
       setQtysInitialized(true);
+    } else if (fallbackBoqItems && fallbackBoqItems.length > 0) {
+      const eng: Record<number, string> = {};
+      const claimed: Record<number, string> = {};
+      fallbackBoqItems.forEach(item => { eng[item.id] = '0'; claimed[item.id] = '0'; });
+      setEngineerQtys(eng);
+      setClaimedQtys(claimed);
+      setQtysInitialized(true);
     }
-  }, [items, qtysInitialized]);
+  }, [items, fallbackBoqItems, qtysInitialized]);
 
   const invalidateCert  = () => queryClient.invalidateQueries({ queryKey: ['subcon-cert', id] });
   const invalidateItems = () => queryClient.invalidateQueries({ queryKey: ['cert-items', id] });
@@ -158,15 +175,25 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
     onError: (err) => toast(getApiError(err, 'Failed to submit'), 'error'),
   });
 
-  const buildItemsPayload = () => (items ?? []).map(item => ({
-    boq_item: item.boq_item,
-    contractor_claimed_quantity: isDraft
-      ? (claimedQtys[item.id] ?? item.contractor_claimed_quantity)
-      : item.contractor_claimed_quantity,
-    engineer_approved_quantity: isDraft
-      ? '0'
-      : (engineerQtys[item.id] ?? item.engineer_approved_quantity ?? '0'),
-  }));
+  const buildItemsPayload = () => {
+    if (hasCertItems) {
+      return (items ?? []).map(item => ({
+        boq_item: item.boq_item,
+        contractor_claimed_quantity: isDraft
+          ? (claimedQtys[item.id] ?? item.contractor_claimed_quantity)
+          : item.contractor_claimed_quantity,
+        engineer_approved_quantity: isDraft
+          ? '0'
+          : (engineerQtys[item.id] ?? item.engineer_approved_quantity ?? '0'),
+      }));
+    }
+    // Fallback: building items fresh from BOQ
+    return (fallbackBoqItems ?? []).map(item => ({
+      boq_item: item.id,
+      contractor_claimed_quantity: claimedQtys[item.id] ?? '0',
+      engineer_approved_quantity: engineerQtys[item.id] ?? '0',
+    }));
+  };
 
   const saveItemsMutation = useMutation({
     mutationFn: () => subcontractorsApi.certificates.saveItems(numericId, buildItemsPayload()),
@@ -177,8 +204,9 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
   // Mark Reviewed = save engineer qtys first, then call review endpoint
   const reviewMutation = useMutation({
     mutationFn: async () => {
-      if (items && items.length > 0) {
-        await subcontractorsApi.certificates.saveItems(numericId, buildItemsPayload());
+      const payload = buildItemsPayload();
+      if (payload.length > 0) {
+        await subcontractorsApi.certificates.saveItems(numericId, payload);
       }
       return subcontractorsApi.certificates.review(numericId, {});
     },
@@ -323,7 +351,7 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
         <div style={{ borderBottom: '1px solid var(--border-default)', marginBottom: 'var(--space-4)', display: 'flex', gap: 0 }}>
           <TabBtn label="General Info"  active={tab === 'info'}        onClick={() => setTab('info')} />
           <TabBtn label="Measurements"  active={tab === 'items'}       onClick={() => setTab('items')}
-            badge={isSubmitted ? '!' : undefined} />
+            badge={(isSubmitted || isReviewed) ? '!' : undefined} />
           <TabBtn label="Attachments"   active={tab === 'attachments'} onClick={() => setTab('attachments')} />
         </div>
 
@@ -396,7 +424,68 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
               </div>
             )}
 
-            {!items?.length ? (
+            {!hasCertItems && canEditItems && fallbackBoqItems && fallbackBoqItems.length > 0 ? (
+              /* ── Fallback: no saved items → show BOQ items for fresh entry ── */
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Unit</th>
+                      <th style={{ textAlign: 'right' }}>Rate (AED)</th>
+                      <th style={{ textAlign: 'right', color: 'var(--brand)' }}>{isDraft ? 'Claimed ✎' : 'Approved ✎'}</th>
+                      <th style={{ textAlign: 'right' }}>Amount (AED)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fallbackBoqItems.map(boqItem => {
+                      const qtyMap   = isDraft ? claimedQtys : engineerQtys;
+                      const setQtyMap = isDraft ? setClaimedQtys : setEngineerQtys;
+                      const qty = Number(qtyMap[boqItem.id] ?? '0');
+                      const amount = qty * Number(boqItem.unit_rate);
+                      const inputStyle: React.CSSProperties = {
+                        width: 100, textAlign: 'right', fontFamily: 'monospace',
+                        border: '1px solid var(--brand)', borderRadius: 4,
+                        padding: '3px 6px', fontSize: 'var(--text-sm)',
+                        background: 'var(--bg-input)', color: 'var(--text-primary)',
+                      };
+                      return (
+                        <tr key={boqItem.id} style={{ verticalAlign: 'middle' }}>
+                          <td>
+                            <div style={{ fontWeight: 500, fontSize: 'var(--text-sm)' }}>{boqItem.item_name}</div>
+                            {boqItem.item_code && <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{boqItem.item_code}</div>}
+                          </td>
+                          <td style={{ color: 'var(--text-secondary)' }}>{boqItem.unit || '—'}</td>
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{Number(boqItem.unit_rate).toLocaleString()}</td>
+                          <td style={{ textAlign: 'right' }}>
+                            <input
+                              type="number" min="0" step="any"
+                              value={qtyMap[boqItem.id] ?? '0'}
+                              onChange={e => setQtyMap(prev => ({ ...prev, [boqItem.id]: e.target.value }))}
+                              style={inputStyle}
+                            />
+                          </td>
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace', color: amount > 0 ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+                            {amount > 0 ? amount.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan={4} style={{ textAlign: 'right', fontWeight: 600, padding: '8px 12px' }}>Total</td>
+                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, padding: '8px 12px' }}>
+                        AED {fallbackBoqItems.reduce((sum, item) => {
+                          const qtyMap = isDraft ? claimedQtys : engineerQtys;
+                          return sum + Number(qtyMap[item.id] ?? 0) * Number(item.unit_rate);
+                        }, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            ) : !hasCertItems ? (
               <div className="empty-state"><p>No measurement items.</p></div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
@@ -411,8 +500,8 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                       <th style={{ textAlign: 'right', color: isDraft ? 'var(--brand)' : undefined }}>
                         {isDraft ? 'Claimed ✎' : 'Claimed'}
                       </th>
-                      <th style={{ textAlign: 'right', color: isSubmitted ? 'var(--brand)' : undefined }}>
-                        {isSubmitted ? 'Approved ✎' : 'Approved'}
+                      <th style={{ textAlign: 'right', color: (isSubmitted || isReviewed) ? 'var(--brand)' : undefined }}>
+                        {(isSubmitted || isReviewed) ? 'Approved ✎' : 'Approved'}
                       </th>
                       <th style={{ textAlign: 'right' }}>Total to Date</th>
                       <th style={{ textAlign: 'right' }}>Remaining</th>
@@ -420,11 +509,11 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map(item => {
+                    {(items ?? []).map(item => {
                       const claimedQty  = canEditItems
                         ? Number(claimedQtys[item.id] ?? item.contractor_claimed_quantity)
                         : Number(item.contractor_claimed_quantity);
-                      const approvedQty = isSubmitted
+                      const approvedQty = (isSubmitted || isReviewed)
                         ? Number(engineerQtys[item.id] ?? '0')
                         : Number(item.engineer_approved_quantity);
                       const amount    = isDraft
@@ -468,9 +557,9 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                               </span>
                             )}
                           </td>
-                          {/* Approved qty — editable when submitted */}
+                          {/* Approved qty — editable when submitted or reviewed */}
                           <td style={{ textAlign: 'right' }}>
-                            {isSubmitted ? (
+                            {(isSubmitted || isReviewed) ? (
                               <input
                                 type="number" min="0" step="any"
                                 value={engineerQtys[item.id] ?? '0'}
@@ -484,19 +573,19 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                             )}
                           </td>
                           <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>
-                            {isSubmitted
+                            {(isSubmitted || isReviewed)
                               ? (Number(item.previous_approved_quantity) + approvedQty).toLocaleString()
                               : Number(item.total_approved_quantity).toLocaleString()
                             }
                           </td>
                           <td style={{ textAlign: 'right', fontFamily: 'monospace', color: remaining <= 0 ? 'var(--status-error)' : 'var(--text-secondary)' }}>
-                            {isSubmitted
+                            {(isSubmitted || isReviewed)
                               ? (Number(item.contract_quantity) - Number(item.previous_approved_quantity) - approvedQty).toLocaleString()
                               : remaining.toLocaleString()
                             }
                           </td>
                           <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 500 }}>
-                            {(isDraft || isSubmitted)
+                            {canEditItems
                               ? amount.toLocaleString(undefined, { minimumFractionDigits: 2 })
                               : Number(item.current_approved_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })
                             }
@@ -512,12 +601,12 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                       </td>
                       <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, padding: '8px 12px' }}>
                         AED {isDraft
-                          ? items.reduce((sum, item) => sum + Number(claimedQtys[item.id] ?? item.contractor_claimed_quantity) * Number(item.unit_rate), 0)
+                          ? (items ?? []).reduce((sum, item) => sum + Number(claimedQtys[item.id] ?? item.contractor_claimed_quantity) * Number(item.unit_rate), 0)
                               .toLocaleString(undefined, { minimumFractionDigits: 2 })
-                          : isSubmitted
-                          ? items.reduce((sum, item) => sum + Number(engineerQtys[item.id] ?? 0) * Number(item.unit_rate), 0)
+                          : (isSubmitted || isReviewed)
+                          ? (items ?? []).reduce((sum, item) => sum + Number(engineerQtys[item.id] ?? item.engineer_approved_quantity ?? 0) * Number(item.unit_rate), 0)
                               .toLocaleString(undefined, { minimumFractionDigits: 2 })
-                          : items.reduce((sum, i) => sum + Number(i.current_approved_amount), 0)
+                          : (items ?? []).reduce((sum, i) => sum + Number(i.current_approved_amount), 0)
                               .toLocaleString(undefined, { minimumFractionDigits: 2 })
                         }
                       </td>
