@@ -1,13 +1,14 @@
 'use client';
 
 import MainLayout from '@/components/layout/MainLayout';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subcontractorsApi, ProgressCertificate } from '@/lib/api/subcontractors';
 import Link from 'next/link';
 import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { CERTIFICATE_STATUS } from '@/lib/utils/status-colors';
+import { toast } from '@/lib/hooks/use-toast';
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Draft', submitted: 'Submitted', under_review: 'Under Review',
@@ -24,7 +25,8 @@ const filterFields: FilterField[] = [
 
 export default function CertificatesPage() {
   const tableState = useTableState();
-  const { page, search, filters } = tableState;
+  const { page, search, filters, selectedItems, clearSelection } = tableState;
+  const queryClient = useQueryClient();
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['subcon-certificates', page, search, filters],
@@ -33,6 +35,26 @@ export default function CertificatesPage() {
 
   const rows       = data?.results ?? [];
   const totalCount = data?.count ?? 0;
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      for (const id of selectedItems) {
+        await subcontractorsApi.certificates.delete(id).catch(() => {});
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subcon-certificates'] });
+      toast(`Deleted ${selectedItems.size} certificate(s)`, 'success');
+      clearSelection();
+    },
+    onError: () => toast('Failed to delete some certificates', 'error'),
+  });
+
+  const handleBulkDelete = () => {
+    if (!selectedItems.size) return;
+    if (!confirm(`Delete ${selectedItems.size} selected certificate(s)? Only Draft/Rejected/Cancelled certificates can be deleted.`)) return;
+    deleteMutation.mutate();
+  };
 
   const columns: Column<ProgressCertificate>[] = [
     {
@@ -119,6 +141,27 @@ export default function CertificatesPage() {
           emptyMessage="No certificates found."
           totalCount={totalCount}
           paginatedData={data}
+          selectable
+          toolbarActions={
+            selectedItems.size > 0 ? (
+              <>
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                  {selectedItems.size} selected
+                </span>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  disabled={deleteMutation.isPending}
+                >
+                  {deleteMutation.isPending ? 'Deleting…' : 'Delete Selected'}
+                </Button>
+                <Button variant="secondary" size="sm" onClick={clearSelection}>
+                  Clear
+                </Button>
+              </>
+            ) : undefined
+          }
         />
       </PageShell>
     </MainLayout>
