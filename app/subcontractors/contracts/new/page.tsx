@@ -224,13 +224,29 @@ function NewContractForm() {
               </FormField>
 
               {form.advance_recovery_method === 'percentage' && (
-                <FormField label="Recovery Percentage (%)">
+                <FormField label="Recovery Percentage per IPC (%)">
                   <input
                     type="number" min="0" max="100" step="0.01" className="form-input"
                     value={form.advance_recovery_percentage}
                     onChange={e => set('advance_recovery_percentage', e.target.value)}
                   />
                 </FormField>
+              )}
+              {form.advance_recovery_method === 'fixed_amount' && (
+                <FormField label="Fixed Recovery Amount per IPC (AED)">
+                  <input
+                    type="number" min="0" step="0.01" className="form-input"
+                    placeholder="0.00"
+                    value={form.advance_recovery_percentage}
+                    onChange={e => set('advance_recovery_percentage', e.target.value)}
+                  />
+                </FormField>
+              )}
+              {form.advance_recovery_method === 'percentage' &&
+               Number(form.advance_recovery_percentage) === 0 && (
+                <div style={{ gridColumn: 'span 2', padding: '8px 12px', background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.4)', borderRadius: 6, fontSize: 'var(--text-sm)', color: 'rgb(161,120,0)' }}>
+                  Warning: Recovery % is 0 — the advance will never be automatically deducted from certificates.
+                </div>
               )}
             </div>
           )}

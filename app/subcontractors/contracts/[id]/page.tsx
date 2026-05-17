@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useMemo, useRef } from 'react';
+import { use, useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import { toast } from '@/lib/hooks/use-toast';
 import { CONTRACT_STATUS, CERTIFICATE_STATUS, PAYMENT_STATUS } from '@/lib/utils/status-colors';
 
 type Tab = 'info' | 'boq' | 'certificates' | 'payments' | 'attachments' | 'log';
+const CONTRACT_TABS: Tab[] = ['info', 'boq', 'certificates', 'payments', 'attachments', 'log'];
 
 const CONTRACT_STATUS_LABEL: Record<string, string> = {
   draft: 'Draft', under_review: 'Under Review', approved: 'Approved',
@@ -298,7 +299,13 @@ function ImportModal({
 
 export default function ContractDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [tab, setTab] = useState<Tab>('info');
+  const [tab, setTabState] = useState<Tab>('info');
+  useEffect(() => {
+    const h = window.location.hash.replace('#', '') as Tab;
+    if (CONTRACT_TABS.includes(h)) setTabState(h);
+  }, []);
+  const setTab = (t: Tab) => { setTabState(t); history.replaceState(null, '', `#${t}`); };
+
   const [showImportModal, setShowImportModal] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
@@ -608,6 +615,16 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
               </div>
             </div>
 
+            {boqItems && boqItems.length > 0 && (() => {
+              const boqTotal = boqItems.reduce((s, i) => s + Number(i.total_amount), 0);
+              const cv = Number(contract.contract_value);
+              if (cv > 0 && boqTotal > cv) return (
+                <div style={{ marginBottom: 12, padding: '8px 12px', background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.4)', borderRadius: 6, fontSize: 'var(--text-sm)', color: 'rgb(120,90,0)' }}>
+                  Warning: BOQ total (AED {boqTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}) exceeds contract value (AED {cv.toLocaleString(undefined, { minimumFractionDigits: 2 })}).
+                </div>
+              );
+              return null;
+            })()}
             {!boqItems?.length ? (
               <div className="empty-state">
                 <p style={{ marginBottom: 12 }}>No BOQ items yet.</p>

@@ -10,6 +10,7 @@ import { toast } from '@/lib/hooks/use-toast';
 import { CERTIFICATE_STATUS } from '@/lib/utils/status-colors';
 
 type Tab = 'info' | 'items' | 'attachments';
+const CERT_TABS: Tab[] = ['info', 'items', 'attachments'];
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Draft', submitted: 'Submitted', under_review: 'Under Review',
@@ -99,7 +100,13 @@ function RejectModal({
 export default function CertificateDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const numericId = Number(id);
-  const [tab, setTab] = useState<Tab>('info');
+  const [tab, setTabState] = useState<Tab>('info');
+  useEffect(() => {
+    const h = window.location.hash.replace('#', '') as Tab;
+    if (CERT_TABS.includes(h)) setTabState(h);
+  }, []);
+  const setTab = (t: Tab) => { setTabState(t); history.replaceState(null, '', `#${t}`); };
+
   const [rejectOpen, setRejectOpen] = useState(false);
   const [engineerQtys, setEngineerQtys] = useState<Record<number, string>>({});
   const [qtysInitialized, setQtysInitialized] = useState(false);

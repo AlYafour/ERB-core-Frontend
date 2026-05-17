@@ -173,7 +173,14 @@ function NewCertificateForm() {
 
   return (
     <form
-      onSubmit={e => { e.preventDefault(); mutation.mutate(); }}
+      onSubmit={e => {
+        e.preventDefault();
+        if (form.period_from && form.period_to && form.period_to < form.period_from) {
+          toast('Period "To" date must be on or after the "From" date.', 'error');
+          return;
+        }
+        mutation.mutate();
+      }}
       style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}
     >
       {/* ── Certificate Details ── */}
