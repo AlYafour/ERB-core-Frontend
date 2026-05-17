@@ -125,7 +125,7 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
   const { data: items } = useQuery({
     queryKey: ['cert-items', id],
     queryFn: () => subcontractorsApi.certificates.getItems(numericId),
-    enabled: (tab === 'items' || cert?.status === 'submitted' || cert?.status === 'draft') && !isNaN(numericId) && numericId > 0,
+    enabled: (tab === 'items' || ['draft','submitted','reviewed'].includes(cert?.status ?? '')) && !isNaN(numericId) && numericId > 0,
   });
 
   const { data: attachments } = useQuery({
@@ -163,7 +163,9 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
     contractor_claimed_quantity: isDraft
       ? (claimedQtys[item.id] ?? item.contractor_claimed_quantity)
       : item.contractor_claimed_quantity,
-    engineer_approved_quantity: isDraft ? '0' : (engineerQtys[item.id] ?? '0'),
+    engineer_approved_quantity: isDraft
+      ? '0'
+      : (engineerQtys[item.id] ?? item.engineer_approved_quantity ?? '0'),
   }));
 
   const saveItemsMutation = useMutation({
@@ -228,7 +230,7 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
   const isApproved   = cert.status === 'approved';
   const isDraft      = cert.status === 'draft';
   const isRejected   = cert.status === 'rejected';
-  const canEditItems = isDraft || isSubmitted;
+  const canEditItems = isDraft || isSubmitted || isReviewed;
   const canReject    = isReviewed;
   const canApprove   = isReviewed;
 
@@ -249,7 +251,7 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                   {submitMutation.isPending ? 'Submitting...' : 'Submit for Review'}
                 </Button>
               )}
-              {(isDraft || isSubmitted) && (
+              {canEditItems && (
                 <Button variant="secondary" size="sm" onClick={() => setTab('items')}>
                   {isDraft ? 'Edit Measurements →' : 'Enter Measurements →'}
                 </Button>
@@ -381,6 +383,11 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
             {isDraft && (
               <div style={{ marginBottom: 12, padding: '8px 12px', background: 'rgba(245,158,11,0.08)', borderRadius: 6, border: '1px solid rgba(245,158,11,0.3)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
                 Edit claimed quantities, then <strong>Save</strong>. Submit for review when ready.
+              </div>
+            )}
+            {isReviewed && (
+              <div style={{ marginBottom: 12, padding: '8px 12px', background: 'rgba(245,158,11,0.08)', borderRadius: 6, border: '1px solid rgba(245,158,11,0.3)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                Certificate is reviewed. You can correct measurement quantities and <strong>Save</strong> if needed.
               </div>
             )}
             {isSubmitted && (
