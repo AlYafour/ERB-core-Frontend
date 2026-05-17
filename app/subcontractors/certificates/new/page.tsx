@@ -11,6 +11,58 @@ import FormField from '@/components/ui/FormField';
 import { PageShell, PageHeader, Button } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
 
+type InputMode = 'qty' | 'pct';
+
+function ModeToggle({
+  mode,
+  onChange,
+}: {
+  mode: InputMode;
+  onChange: (m: InputMode) => void;
+}) {
+  const base: React.CSSProperties = {
+    padding: '3px 10px',
+    fontSize: 11,
+    fontWeight: 600,
+    border: 'none',
+    cursor: 'pointer',
+    transition: 'background 120ms, color 120ms',
+  };
+  return (
+    <div style={{
+      display: 'inline-flex',
+      border: '1px solid var(--border-default)',
+      borderRadius: 6,
+      overflow: 'hidden',
+      marginBottom: 4,
+    }}>
+      <button
+        type="button"
+        onClick={() => onChange('qty')}
+        style={{
+          ...base,
+          background: mode === 'qty' ? 'var(--brand)' : 'var(--surface-secondary)',
+          color: mode === 'qty' ? '#fff' : 'var(--text-tertiary)',
+          borderRight: '1px solid var(--border-default)',
+        }}
+      >
+        Qty
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange('pct')}
+        style={{
+          ...base,
+          background: mode === 'pct' ? 'var(--brand)' : 'var(--surface-secondary)',
+          color: mode === 'pct' ? '#fff' : 'var(--text-tertiary)',
+        }}
+      >
+        %
+      </button>
+    </div>
+  );
+}
+
 function NewCertificateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -25,7 +77,11 @@ function NewCertificateForm() {
     period_to: '',
     notes: '',
   });
+
+  // Per-item input mode: 'qty' (absolute) or 'pct' (percentage of contract qty)
+  const [modes, setModes]           = useState<Record<number, InputMode>>({});
   const [quantities, setQuantities] = useState<Record<number, string>>({});
+  const [percentages, setPercentages] = useState<Record<number, string>>({});
 
   const { data: contractsData } = useQuery({
     queryKey: ['subcon-contracts-active'],
@@ -46,6 +102,16 @@ function NewCertificateForm() {
 
   const set = (field: string, value: unknown) => setForm(f => ({ ...f, [field]: value }));
 
+  /** Effective claimed quantity for one item (accounts for both modes) */
+  const getClaimedQty = (itemId: number, contractQty: number): number => {
+    const mode = modes[itemId] ?? 'qty';
+    if (mode === 'pct') {
+      const pct = Number(percentages[itemId] ?? 0);
+      return (pct / 100) * contractQty;
+    }
+    return Number(quantities[itemId] ?? 0);
+  };
+
   const mutation = useMutation({
     mutationFn: async () => {
       if (!contract) throw new Error('No contract selected');
@@ -60,10 +126,14 @@ function NewCertificateForm() {
       } as Parameters<typeof subcontractorsApi.certificates.create>[0]);
 
       const items = (boqItems ?? [])
-        .filter(item => quantities[item.id] && Number(quantities[item.id]) > 0)
         .map(item => ({
           boq_item: item.id,
-          contractor_claimed_quantity: quantities[item.id],
+          claimed: getClaimedQty(item.id, Number(item.contract_quantity)),
+        }))
+        .filter(x => x.claimed > 0)
+        .map(x => ({
+          boq_item: x.boq_item,
+          contractor_claimed_quantity: String(x.claimed),
           engineer_approved_quantity: '0',
         }));
 
@@ -85,14 +155,19 @@ function NewCertificateForm() {
     label: `${c.contract_no} — ${c.subcontractor_name}`,
   }));
 
-  // Running totals
+  const fmt = (v: number) =>
+    `AED ${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   const claimedTotal = (boqItems ?? []).reduce((sum, item) => {
-    const qty = Number(quantities[item.id] ?? 0);
-    const rate = Number(item.unit_rate);
-    return sum + qty * rate;
+    const qty = getClaimedQty(item.id, Number(item.contract_quantity));
+    return sum + qty * Number(item.unit_rate);
   }, 0);
 
-  const fmt = (v: number) => `AED ${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const retentionPct = Number(contract?.retention_percentage ?? 0);
+  const retentionAmt = claimedTotal * (retentionPct / 100);
+  const netPayable   = claimedTotal - retentionAmt;
+
+  const allQtyZero = (boqItems ?? []).every(i => Number(i.contract_quantity) === 0);
 
   return (
     <form
@@ -110,6 +185,8 @@ function NewCertificateForm() {
               onChange={v => {
                 setContractId(v ? Number(v) : null);
                 setQuantities({});
+                setPercentages({});
+                setModes({});
               }}
               placeholder="Select contract…"
             />
@@ -158,38 +235,30 @@ function NewCertificateForm() {
           background: 'var(--brand-subtle)',
           border: '1px solid var(--brand-border, var(--border-default))',
           borderRadius: 8,
-          display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'center',
+          display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'center',
         }}>
           <div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 2 }}>Subcontractor</div>
+            <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 2 }}>Subcontractor</div>
             <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>
               {contract.subcontractor_name}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 2 }}>Contract Value</div>
+            <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 2 }}>Contract Value</div>
             <div style={{ fontWeight: 600, fontFamily: 'monospace', fontSize: 'var(--text-sm)' }}>
               AED {Number(contract.contract_value).toLocaleString()}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 2 }}>Approved to Date</div>
+            <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 2 }}>Approved to Date</div>
             <div style={{ fontWeight: 600, fontFamily: 'monospace', fontSize: 'var(--text-sm)' }}>
               AED {Number(contract.total_approved_to_date ?? 0).toLocaleString()}
             </div>
           </div>
           {contract.retention_enabled && (
             <div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 2 }}>Retention</div>
+              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 2 }}>Retention</div>
               <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{contract.retention_percentage}%</div>
-            </div>
-          )}
-          {contract.advance_payment_enabled && (
-            <div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 2 }}>Advance</div>
-              <div style={{ fontWeight: 600, fontFamily: 'monospace', fontSize: 'var(--text-sm)' }}>
-                AED {Number(contract.advance_payment_amount).toLocaleString()}
-              </div>
             </div>
           )}
         </div>
@@ -198,28 +267,28 @@ function NewCertificateForm() {
       {/* ── Measurements table ── */}
       {contractId && boqItems !== undefined && (
         <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
+          {/* Table header */}
+          <div style={{
+            display: 'flex', justifyContent: 'space-between',
+            alignItems: 'center', marginBottom: 'var(--space-4)',
+          }}>
             <div className="info-section-title" style={{ margin: 0 }}>
               Work Measurements — Contractor Claimed Quantities
             </div>
             {claimedTotal > 0 && (
               <div style={{
-                padding: '6px 14px',
-                background: 'var(--brand-subtle)',
-                borderRadius: 6,
-                fontSize: 'var(--text-sm)',
-                fontWeight: 600,
-                fontFamily: 'monospace',
-                color: 'var(--text-primary)',
+                padding: '6px 14px', background: 'var(--brand-subtle)',
+                borderRadius: 6, fontSize: 'var(--text-sm)', fontWeight: 600,
+                fontFamily: 'monospace', color: 'var(--text-primary)',
               }}>
-                Claiming: {fmt(claimedTotal)}
+                Total: {fmt(claimedTotal)}
               </div>
             )}
           </div>
 
           {boqItems.length === 0 ? (
             <div className="empty-state">
-              <p style={{ marginBottom: 8 }}>No BOQ items found for this contract.</p>
+              <p>No BOQ items found for this contract.</p>
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>
                 Go to the contract BOQ tab and add items first.
               </p>
@@ -230,118 +299,207 @@ function NewCertificateForm() {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th style={{ minWidth: 220 }}>Item</th>
+                      <th style={{ minWidth: 200 }}>Item</th>
                       <th style={{ width: 55 }}>Unit</th>
                       <th style={{ textAlign: 'right', width: 90 }}>Rate (AED)</th>
                       <th style={{ textAlign: 'right', width: 100 }}>Contract Qty</th>
-                      <th style={{ textAlign: 'right', width: 100 }}>Approved</th>
-                      <th style={{ textAlign: 'right', width: 100 }}>Remaining</th>
-                      <th style={{ textAlign: 'right', width: 140, color: 'var(--brand)' }}>Claimed Qty ▼</th>
+                      <th style={{ textAlign: 'right', width: 90 }}>Approved</th>
+                      <th style={{ textAlign: 'right', width: 90 }}>Remaining</th>
+                      {/* Input column — wider to hold toggle + field */}
+                      <th style={{ width: 200, color: 'var(--brand)' }}>
+                        Claimed ▼ &nbsp;
+                        <span style={{ fontWeight: 400, fontSize: 10, color: 'var(--text-tertiary)' }}>
+                          (Qty or %)
+                        </span>
+                      </th>
                       <th style={{ textAlign: 'right', width: 130 }}>Amount (AED)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {boqItems.map(item => {
-                      const claimedQty    = Number(quantities[item.id] ?? 0);
-                      const claimedAmount = claimedQty * Number(item.unit_rate);
-                      const remaining     = Number(item.remaining_quantity);
-                      const contractQty   = Number(item.contract_quantity);
+                      const contractQty = Number(item.contract_quantity);
+                      const approved    = Number(item.approved_quantity_to_date);
+                      const remaining   = Number(item.remaining_quantity);
+                      const mode        = modes[item.id] ?? 'qty';
+                      const claimedQty  = getClaimedQty(item.id, contractQty);
+                      const amount      = claimedQty * Number(item.unit_rate);
+
+                      const pctDisabled = contractQty === 0;
 
                       return (
-                        <tr key={item.id}>
-                          <td>
-                            <div style={{ fontWeight: 500, fontSize: 'var(--text-sm)' }}>{item.item_name}</div>
+                        <tr key={item.id} style={{ verticalAlign: 'top' }}>
+                          {/* Item name */}
+                          <td style={{ paddingTop: 10 }}>
+                            <div style={{ fontWeight: 500, fontSize: 'var(--text-sm)' }}>
+                              {item.item_name}
+                            </div>
                             {item.item_code && (
-                              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
+                              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
                                 {item.item_code}
                               </div>
                             )}
                           </td>
-                          <td style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
+
+                          {/* Unit */}
+                          <td style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', paddingTop: 10 }}>
                             {item.unit || '—'}
                           </td>
-                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+
+                          {/* Rate */}
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 500, paddingTop: 10 }}>
                             {Number(item.unit_rate).toLocaleString()}
                           </td>
-                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: contractQty === 0 ? 'var(--text-tertiary)' : 'var(--text-primary)' }}>
+
+                          {/* Contract Qty */}
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', paddingTop: 10, color: contractQty === 0 ? 'var(--text-tertiary)' : 'var(--text-primary)' }}>
                             {contractQty === 0 ? '—' : contractQty.toLocaleString()}
                           </td>
-                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>
-                            {Number(item.approved_quantity_to_date).toLocaleString()}
+
+                          {/* Approved */}
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', paddingTop: 10, color: 'var(--text-tertiary)' }}>
+                            {approved.toLocaleString()}
                           </td>
-                          <td style={{
-                            textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)',
-                            color: remaining < 0 ? 'var(--status-error)' : contractQty === 0 ? 'var(--text-tertiary)' : 'var(--text-secondary)',
-                          }}>
+
+                          {/* Remaining */}
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', paddingTop: 10, color: remaining < 0 ? 'var(--status-error)' : contractQty === 0 ? 'var(--text-tertiary)' : 'var(--text-secondary)' }}>
                             {contractQty === 0 ? '—' : remaining.toLocaleString()}
                           </td>
+
+                          {/* Input cell: toggle + field */}
                           <td style={{ padding: '6px 8px' }}>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.001"
-                              placeholder="0.000"
-                              value={quantities[item.id] ?? ''}
-                              onChange={e => setQuantities(q => ({ ...q, [item.id]: e.target.value }))}
-                              style={{
-                                width: '100%',
-                                padding: '6px 10px',
-                                border: '2px solid var(--brand)',
-                                borderRadius: 6,
-                                fontSize: 'var(--text-sm)',
-                                fontFamily: 'monospace',
-                                textAlign: 'right',
-                                background: 'var(--surface-primary)',
-                                color: 'var(--text-primary)',
-                                outline: 'none',
-                                boxSizing: 'border-box',
+                            <ModeToggle
+                              mode={mode}
+                              onChange={m => {
+                                if (m === 'pct' && pctDisabled) return;
+                                setModes(prev => ({ ...prev, [item.id]: m }));
                               }}
                             />
+
+                            {mode === 'qty' ? (
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.001"
+                                placeholder="0.000"
+                                value={quantities[item.id] ?? ''}
+                                onChange={e => setQuantities(q => ({ ...q, [item.id]: e.target.value }))}
+                                style={{
+                                  width: '100%', padding: '5px 10px',
+                                  border: '2px solid var(--brand)', borderRadius: 6,
+                                  fontSize: 'var(--text-sm)', fontFamily: 'monospace',
+                                  textAlign: 'right',
+                                  background: 'var(--surface-primary)',
+                                  color: 'var(--text-primary)', outline: 'none',
+                                  boxSizing: 'border-box',
+                                }}
+                              />
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="0.1"
+                                  placeholder="0.0"
+                                  value={percentages[item.id] ?? ''}
+                                  onChange={e => setPercentages(p => ({ ...p, [item.id]: e.target.value }))}
+                                  style={{
+                                    flex: 1, padding: '5px 8px',
+                                    border: '2px solid var(--brand)', borderRadius: 6,
+                                    fontSize: 'var(--text-sm)', fontFamily: 'monospace',
+                                    textAlign: 'right',
+                                    background: 'var(--surface-primary)',
+                                    color: 'var(--text-primary)', outline: 'none',
+                                    boxSizing: 'border-box',
+                                  }}
+                                />
+                                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand)', flexShrink: 0 }}>%</span>
+                              </div>
+                            )}
+
+                            {/* Show calculated qty when in % mode */}
+                            {mode === 'pct' && contractQty > 0 && claimedQty > 0 && (
+                              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 3, textAlign: 'right' }}>
+                                = {claimedQty.toFixed(3)} {item.unit}
+                              </div>
+                            )}
+                            {mode === 'pct' && pctDisabled && (
+                              <div style={{ fontSize: 11, color: 'var(--status-error)', marginTop: 3 }}>
+                                Set contract qty first
+                              </div>
+                            )}
                           </td>
+
+                          {/* Amount */}
                           <td style={{
-                            textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)',
-                            fontWeight: claimedAmount > 0 ? 600 : 400,
-                            color: claimedAmount > 0 ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                            textAlign: 'right', fontFamily: 'monospace',
+                            fontSize: 'var(--text-sm)', paddingTop: 10,
+                            fontWeight: amount > 0 ? 600 : 400,
+                            color: amount > 0 ? 'var(--text-primary)' : 'var(--text-tertiary)',
                           }}>
-                            {claimedAmount > 0 ? claimedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
+                            {amount > 0
+                              ? amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                              : '—'}
                           </td>
                         </tr>
                       );
                     })}
                   </tbody>
-                  {/* Totals footer */}
+
+                  {/* ── Footer totals ── */}
                   <tfoot>
                     <tr style={{ borderTop: '2px solid var(--border-default)' }}>
-                      <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 'var(--text-sm)', padding: '10px 8px', color: 'var(--text-secondary)' }}>
-                        Total Claimed This Certificate
+                      <td colSpan={6} style={{
+                        textAlign: 'right', fontWeight: 600,
+                        fontSize: 'var(--text-sm)', padding: '10px 8px',
+                        color: 'var(--text-secondary)',
+                      }}>
+                        Gross Claimed This Certificate
                       </td>
-                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: 'var(--brand)', padding: '10px 8px' }}>
-                        {(boqItems ?? []).reduce((s, i) => s + Number(quantities[i.id] ?? 0), 0)
-                          .toLocaleString(undefined, { minimumFractionDigits: 3 })}
-                      </td>
-                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: 'var(--brand)', padding: '10px 8px' }}>
+                      <td style={{ padding: '10px 8px' }}></td>
+                      <td style={{
+                        textAlign: 'right', fontFamily: 'monospace',
+                        fontWeight: 700, color: 'var(--brand)', padding: '10px 8px',
+                      }}>
                         {fmt(claimedTotal)}
                       </td>
                     </tr>
+
                     {contract?.retention_enabled && claimedTotal > 0 && (
                       <tr style={{ background: 'var(--surface-secondary)' }}>
-                        <td colSpan={6} style={{ textAlign: 'right', fontSize: 'var(--text-sm)', padding: '6px 8px', color: 'var(--text-tertiary)' }}>
-                          Estimated Retention ({contract.retention_percentage}%)
+                        <td colSpan={6} style={{
+                          textAlign: 'right', fontSize: 'var(--text-sm)',
+                          padding: '6px 8px', color: 'var(--text-tertiary)',
+                        }}>
+                          Retention ({contract.retention_percentage}%)
                         </td>
                         <td></td>
-                        <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', padding: '6px 8px' }}>
-                          − {fmt(claimedTotal * Number(contract.retention_percentage) / 100)}
+                        <td style={{
+                          textAlign: 'right', fontFamily: 'monospace',
+                          fontSize: 'var(--text-sm)', color: 'var(--status-error)',
+                          padding: '6px 8px',
+                        }}>
+                          − {fmt(retentionAmt)}
                         </td>
                       </tr>
                     )}
-                    {contract?.retention_enabled && claimedTotal > 0 && (
+
+                    {claimedTotal > 0 && (
                       <tr style={{ background: 'var(--surface-secondary)' }}>
-                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 'var(--text-sm)', padding: '6px 8px', color: 'var(--text-primary)' }}>
-                          Est. Net Payable
+                        <td colSpan={6} style={{
+                          textAlign: 'right', fontWeight: 700,
+                          fontSize: 'var(--text-sm)', padding: '8px 8px',
+                          color: 'var(--text-primary)',
+                        }}>
+                          Estimated Net Payable
                         </td>
                         <td></td>
-                        <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-primary)', padding: '6px 8px' }}>
-                          {fmt(claimedTotal * (1 - Number(contract.retention_percentage) / 100))}
+                        <td style={{
+                          textAlign: 'right', fontFamily: 'monospace',
+                          fontWeight: 700, color: 'var(--text-primary)',
+                          fontSize: 'var(--text-base)', padding: '8px 8px',
+                        }}>
+                          {fmt(netPayable)}
                         </td>
                       </tr>
                     )}
@@ -349,19 +507,18 @@ function NewCertificateForm() {
                 </table>
               </div>
 
-              {/* Note if contract quantities are all 0 */}
-              {boqItems.every(i => Number(i.contract_quantity) === 0) && (
+              {/* Warning: contract quantities not set */}
+              {allQtyZero && (
                 <div style={{
                   marginTop: 12, padding: '10px 14px',
                   background: 'rgba(245,158,11,0.08)',
                   border: '1px solid rgba(245,158,11,0.3)',
-                  borderRadius: 6,
-                  fontSize: 'var(--text-sm)',
-                  color: 'var(--text-secondary)',
+                  borderRadius: 6, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)',
                 }}>
                   <strong style={{ color: 'var(--text-primary)' }}>Note:</strong>{' '}
-                  Contract quantities are not set yet. You can still enter claimed quantities above.
-                  To set contract quantities, go to the contract BOQ tab and edit each item.
+                  Contract quantities are not set — the <strong>%</strong> mode is disabled for all items.
+                  Use <strong>Qty</strong> mode to enter absolute quantities, or set contract quantities
+                  first from the contract BOQ tab.
                 </div>
               )}
             </>
@@ -383,7 +540,10 @@ function NewCertificateForm() {
         </Link>
         {claimedTotal > 0 && (
           <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginLeft: 8 }}>
-            Total claim: <strong style={{ color: 'var(--text-primary)' }}>{fmt(claimedTotal)}</strong>
+            Gross: <strong style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>{fmt(claimedTotal)}</strong>
+            {contract?.retention_enabled && (
+              <> · Net: <strong style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>{fmt(netPayable)}</strong></>
+            )}
           </span>
         )}
       </div>
