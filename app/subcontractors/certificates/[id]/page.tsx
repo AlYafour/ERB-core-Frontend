@@ -15,8 +15,8 @@ const CERT_TABS: Tab[] = ['info', 'items', 'attachments'];
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Draft', submitted: 'Submitted', under_review: 'Under Review',
-  reviewed: 'Reviewed', approved: 'Approved', rejected: 'Rejected',
-  paid: 'Paid', cancelled: 'Cancelled',
+  reviewed: 'Reviewed', approved: 'Approved', gm_approved: 'GM Approved',
+  rejected: 'Rejected', paid: 'Paid', cancelled: 'Cancelled',
 };
 
 function InfoRow({ label, value }: { label: string; value?: string | number | null }) {
@@ -170,8 +170,15 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
   const invalidateItems = () => queryClient.invalidateQueries({ queryKey: ['cert-items', id] });
 
   const submitMutation = useMutation({
-    mutationFn: () => subcontractorsApi.certificates.submit(numericId),
-    onSuccess: () => { invalidateCert(); toast('Certificate submitted for review', 'success'); },
+    mutationFn: async () => {
+      // Auto-save any pending measurements before submitting
+      const payload = buildItemsPayload();
+      if (payload.length > 0) {
+        await subcontractorsApi.certificates.saveItems(numericId, payload);
+      }
+      return subcontractorsApi.certificates.submit(numericId);
+    },
+    onSuccess: () => { invalidateCert(); invalidateItems(); setQtysInitialized(false); toast('Submitted for review', 'success'); },
     onError: (err) => toast(getApiError(err, 'Failed to submit'), 'error'),
   });
 
@@ -221,8 +228,14 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
 
   const approveMutation = useMutation({
     mutationFn: () => subcontractorsApi.certificates.approve(numericId, {}),
-    onSuccess: () => { invalidateCert(); toast('Certificate approved', 'success'); },
-    onError: () => toast('Failed to approve', 'error'),
+    onSuccess: () => { invalidateCert(); toast('Certificate approved by manager', 'success'); },
+    onError: (err) => toast(getApiError(err, 'Failed to approve'), 'error'),
+  });
+
+  const gmApproveMutation = useMutation({
+    mutationFn: () => subcontractorsApi.certificates.gmApprove(numericId),
+    onSuccess: () => { invalidateCert(); toast('GM approval confirmed — ready for payment', 'success'); },
+    onError: (err) => toast(getApiError(err, 'Failed to approve'), 'error'),
   });
 
   const rejectMutation = useMutation({
@@ -253,11 +266,11 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
     <MainLayout><PageShell><div className="card empty-state"><p style={{ color: 'var(--status-error)' }}>Certificate not found.</p></div></PageShell></MainLayout>
   );
 
+  const isDraft      = cert.status === 'draft';
   const isSubmitted  = cert.status === 'submitted';
   const isReviewed   = cert.status === 'reviewed';
   const isApproved   = cert.status === 'approved';
-  const isDraft      = cert.status === 'draft';
-  const isRejected   = cert.status === 'rejected';
+  const isGmApproved = cert.status === 'gm_approved';
   const canEditItems = isDraft || isSubmitted || isReviewed;
   const canReject    = isReviewed;
   const canApprove   = isReviewed;
@@ -295,6 +308,11 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                 </>
               )}
               {isApproved && (
+                <Button variant="primary" size="sm" onClick={() => gmApproveMutation.mutate()} disabled={gmApproveMutation.isPending}>
+                  {gmApproveMutation.isPending ? 'Approving...' : 'GM Approve'}
+                </Button>
+              )}
+              {isGmApproved && (
                 <Link href={`/subcontractors/payments/new?certificate=${id}&contract=${cert.contract}&amount=${cert.net_payable_amount}`}>
                   <Button variant="primary" size="sm">Create Payment</Button>
                 </Link>

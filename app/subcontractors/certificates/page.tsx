@@ -12,8 +12,8 @@ import { toast } from '@/lib/hooks/use-toast';
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Draft', submitted: 'Submitted', under_review: 'Under Review',
-  reviewed: 'Reviewed', approved: 'Approved', rejected: 'Rejected',
-  paid: 'Paid', cancelled: 'Cancelled',
+  reviewed: 'Reviewed', approved: 'Approved', gm_approved: 'GM Approved',
+  rejected: 'Rejected', paid: 'Paid', cancelled: 'Cancelled',
 };
 
 const filterFields: FilterField[] = [

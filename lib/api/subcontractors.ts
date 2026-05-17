@@ -108,7 +108,7 @@ export interface ProgressCertificate {
   other_deductions_notes: string;
   net_payable_amount: string;
   // Workflow
-  status: 'draft' | 'submitted' | 'under_review' | 'reviewed' | 'approved' | 'rejected' | 'paid' | 'cancelled';
+  status: 'draft' | 'submitted' | 'under_review' | 'reviewed' | 'approved' | 'gm_approved' | 'rejected' | 'paid' | 'cancelled';
   submitted_by_name: string;
   reviewed_by_name: string;
   approved_by_name: string;
@@ -391,6 +391,11 @@ export const subcontractorsApi = {
 
     reject: async (id: number, data: { reason: string }): Promise<ProgressCertificate> => {
       const res = await apiClient.post(`${BASE}/certificates/${id}/reject/`, data);
+      return res.data;
+    },
+
+    gmApprove: async (id: number): Promise<ProgressCertificate> => {
+      const res = await apiClient.post(`${BASE}/certificates/${id}/gm_approve/`);
       return res.data;
     },
 
