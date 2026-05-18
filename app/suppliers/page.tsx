@@ -77,7 +77,7 @@ export default function SuppliersPage() {
       const all = await fetchAllPages<Supplier>(
         (p, ps) => suppliersApi.getAll({ page: p, page_size: ps, search, ...filters }),
       );
-      exportToExcel<Supplier>(
+      await exportToExcel<Supplier>(
         all,
         [
           { header: 'Supplier Number', key: 'supplier_number', width: 18 },

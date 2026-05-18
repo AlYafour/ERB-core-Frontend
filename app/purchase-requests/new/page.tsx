@@ -76,6 +76,7 @@ function NewPurchaseRequestPageContent() {
   const { data: productsData } = useQuery({
     queryKey: ['products-for-table'],
     queryFn: () => productsApi.getAll({ page: 1, page_size: 1000 }),
+    staleTime: 10 * 60 * 1000,
   });
 
   // Handle project selection

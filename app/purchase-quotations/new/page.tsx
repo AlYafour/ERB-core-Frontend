@@ -88,7 +88,8 @@ function NewPurchaseQuotationPageContent() {
 
   const { data: products } = useQuery({
     queryKey: ['products'],
-    queryFn: () => productsApi.getAll({ page: 1, page_size: 1000 }), // Get more products to ensure we have all
+    queryFn: () => productsApi.getAll({ page: 1, page_size: 1000 }),
+    staleTime: 10 * 60 * 1000,
   });
 
   useEffect(() => {

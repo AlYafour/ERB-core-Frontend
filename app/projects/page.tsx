@@ -42,7 +42,7 @@ export default function ProjectsPage() {
     setIsExporting(true);
     try {
       const all = await fetchAllPages<Project>((p, ps) => projectsApi.getAll({ page: p, page_size: ps, search }));
-      exportToExcel<Project>(
+      await exportToExcel<Project>(
         all,
         [
           { header: 'Code',           key: 'code',           width: 15 },

@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
@@ -114,20 +114,6 @@ Terms & Conditions:
     enabled: !!purchaseRequestId,
   });
 
-  // Check for existing active PO from same PR/PQ to warn user before submitting
-  const { data: existingPOs } = useQuery({
-    queryKey: ['po-exists-for-pr', purchaseRequestId, purchaseQuotationId],
-    queryFn: () => purchaseOrdersApi.getAll({
-      ...(purchaseRequestId  ? { purchase_request:  Number(purchaseRequestId)  } : {}),
-      ...(purchaseQuotationId ? { purchase_quotation: Number(purchaseQuotationId) } : {}),
-      page_size: 5,
-    }),
-    enabled: !!(purchaseRequestId || purchaseQuotationId),
-  });
-  const activeExistingPO = existingPOs?.results?.find(
-    o => !['cancelled', 'rejected'].includes(o.status)
-  );
-
   const { data: purchaseQuotation } = useQuery({
     queryKey: ['purchase-quotations', purchaseQuotationId],
     queryFn: () => purchaseQuotationsApi.getById(Number(purchaseQuotationId!)),
@@ -142,6 +128,7 @@ Terms & Conditions:
   const { data: products } = useQuery({
     queryKey: ['products'],
     queryFn: () => productsApi.getAll({ page: 1, page_size: 1000 }),
+    staleTime: 10 * 60 * 1000,
   });
 
   useEffect(() => {
@@ -371,29 +358,24 @@ Terms & Conditions:
     mutation.mutate(payload);
   };
 
-  const calculateSubtotal = () => {
-    return items.reduce((sum, item) => {
-      const itemSubtotal = item.quantity * item.unit_price;
-      const discountAmount = itemSubtotal * ((item.discount ?? 0) / 100) || 0;
-      return sum + itemSubtotal - discountAmount;
-    }, 0);
-  };
+  const calculateSubtotal = useMemo(() => items.reduce((sum, item) => {
+    const itemSubtotal = item.quantity * item.unit_price;
+    const discountAmount = itemSubtotal * ((item.discount ?? 0) / 100) || 0;
+    return sum + itemSubtotal - discountAmount;
+  }, 0), [items]);
 
-  const calculateTaxAmount = () => {
-    return items.reduce((sum, item) => {
-      const itemSubtotal = item.quantity * item.unit_price;
-      const discountAmount = itemSubtotal * ((item.discount ?? 0) / 100) || 0;
-      const afterDiscount = itemSubtotal - discountAmount;
-      return sum + afterDiscount * ((item.tax_rate ?? 0) / 100);
-    }, 0);
-  };
+  const calculateTaxAmount = useMemo(() => items.reduce((sum, item) => {
+    const itemSubtotal = item.quantity * item.unit_price;
+    const discountAmount = itemSubtotal * ((item.discount ?? 0) / 100) || 0;
+    const afterDiscount = itemSubtotal - discountAmount;
+    return sum + afterDiscount * ((item.tax_rate ?? 0) / 100);
+  }, 0), [items]);
 
-  const calculateTotal = () => {
-    const subtotal = calculateSubtotal();
-    const discountAmount = subtotal * (formData.discount / 100) || 0;
-    const afterDiscount = subtotal - discountAmount;
-    return afterDiscount + calculateTaxAmount();
-  };
+  const calculateTotal = useMemo(() => {
+    const discountAmount = calculateSubtotal * (formData.discount / 100) || 0;
+    const afterDiscount = calculateSubtotal - discountAmount;
+    return afterDiscount + calculateTaxAmount;
+  }, [calculateSubtotal, calculateTaxAmount, formData.discount]);
 
   const applyVatToAll = (rate: number) => {
     setItems(items.map((item) => ({ ...item, tax_rate: rate })));
@@ -990,22 +972,22 @@ Terms & Conditions:
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Subtotal:</span>
                     <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
-                      {formatPrice(calculateSubtotal())}
+                      {formatPrice(calculateSubtotal)}
                     </span>
                   </div>
                   {formData.discount > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Discount ({formData.discount}%):</span>
                       <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--color-error)' }}>
-                        - {formatPrice(calculateSubtotal() * (formData.discount / 100) || 0)}
+                        - {formatPrice(calculateSubtotal * (formData.discount / 100) || 0)}
                       </span>
                     </div>
                   )}
-                  {calculateTaxAmount() > 0 && (
+                  {calculateTaxAmount > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>VAT:</span>
                       <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
-                        {formatPrice(calculateTaxAmount())}
+                        {formatPrice(calculateTaxAmount)}
                       </span>
                     </div>
                   )}
@@ -1018,7 +1000,7 @@ Terms & Conditions:
                   }}>
                     <span style={{ fontWeight: 'var(--weight-bold)', color: 'var(--text-primary)' }}>Total:</span>
                     <span style={{ fontWeight: 'var(--weight-bold)', color: 'var(--text-primary)' }}>
-                      {formatPrice(calculateTotal())}
+                      {formatPrice(calculateTotal)}
                     </span>
                   </div>
                 </div>
@@ -1026,19 +1008,11 @@ Terms & Conditions:
             </div>
           </div>
 
-          {/* Warning: duplicate PO */}
-          {activeExistingPO && (
-            <div style={{ marginBottom: 'var(--space-4)', padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, fontSize: 'var(--text-sm)', color: 'var(--status-error)' }}>
-              ⚠️ A purchase order <strong>{activeExistingPO.order_number}</strong> ({activeExistingPO.status}) already exists for this {purchaseRequestId ? 'purchase request' : 'quotation'}.
-              {' '}<a href={`/purchase-orders/${activeExistingPO.id}`} style={{ textDecoration: 'underline' }}>View existing PO</a>
-            </div>
-          )}
-
           {/* Form Actions - Unified */}
           <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
             <button
               type="submit"
-              disabled={mutation.isPending || !!activeExistingPO}
+              disabled={mutation.isPending}
               className="btn btn-primary"
             >
               {mutation.isPending ? t('btn', 'creating') : t('btn', 'createPO')}
