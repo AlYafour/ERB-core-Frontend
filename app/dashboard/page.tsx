@@ -199,36 +199,42 @@ function DashboardContent() {
     queryKey: ['dashboard', 'stats'],
     queryFn: dashboardApi.getStats,
     enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: projectAnalytics, isLoading: projectsLoading } = useQuery({
     queryKey: ['dashboard', 'project-analytics'],
     queryFn: dashboardApi.getProjectAnalytics,
     enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: recentActivity, isLoading: activityLoading } = useQuery({
     queryKey: ['dashboard', 'recent-activity'],
     queryFn: dashboardApi.getRecentActivity,
     enabled: isAuthenticated,
+    staleTime: 2 * 60 * 1000,
   });
 
   const { data: userActivity } = useQuery({
     queryKey: ['dashboard', 'user-activity'],
     queryFn: dashboardApi.getUserActivity,
     enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: cycleMetrics } = useQuery({
     queryKey: ['dashboard', 'cycle-metrics'],
     queryFn: dashboardApi.getProcurementCycleMetrics,
     enabled: isAuthenticated,
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: chartData, isLoading: chartsLoading } = useQuery({
     queryKey: ['dashboard', 'chart-data'],
     queryFn: dashboardApi.getChartData,
     enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {
