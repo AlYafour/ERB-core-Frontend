@@ -114,6 +114,20 @@ Terms & Conditions:
     enabled: !!purchaseRequestId,
   });
 
+  // Check for existing active PO from same PR/PQ to warn user before submitting
+  const { data: existingPOs } = useQuery({
+    queryKey: ['po-exists-for-pr', purchaseRequestId, purchaseQuotationId],
+    queryFn: () => purchaseOrdersApi.getAll({
+      ...(purchaseRequestId  ? { purchase_request:  Number(purchaseRequestId)  } : {}),
+      ...(purchaseQuotationId ? { purchase_quotation: Number(purchaseQuotationId) } : {}),
+      page_size: 5,
+    }),
+    enabled: !!(purchaseRequestId || purchaseQuotationId),
+  });
+  const activeExistingPO = existingPOs?.results?.find(
+    o => !['cancelled', 'rejected'].includes(o.status)
+  );
+
   const { data: purchaseQuotation } = useQuery({
     queryKey: ['purchase-quotations', purchaseQuotationId],
     queryFn: () => purchaseQuotationsApi.getById(Number(purchaseQuotationId!)),
@@ -1012,11 +1026,19 @@ Terms & Conditions:
             </div>
           </div>
 
+          {/* Warning: duplicate PO */}
+          {activeExistingPO && (
+            <div style={{ marginBottom: 'var(--space-4)', padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, fontSize: 'var(--text-sm)', color: 'var(--status-error)' }}>
+              ⚠️ A purchase order <strong>{activeExistingPO.order_number}</strong> ({activeExistingPO.status}) already exists for this {purchaseRequestId ? 'purchase request' : 'quotation'}.
+              {' '}<a href={`/purchase-orders/${activeExistingPO.id}`} style={{ textDecoration: 'underline' }}>View existing PO</a>
+            </div>
+          )}
+
           {/* Form Actions - Unified */}
           <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
             <button
               type="submit"
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || !!activeExistingPO}
               className="btn btn-primary"
             >
               {mutation.isPending ? t('btn', 'creating') : t('btn', 'createPO')}
