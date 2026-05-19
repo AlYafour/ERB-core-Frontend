@@ -50,6 +50,7 @@ export default function PurchaseInvoicesPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['purchase-invoices', page, search, filters],
     queryFn:  () => purchaseInvoicesApi.getAll({ page, search, ...filters }),
+    staleTime: 2 * 60 * 1000,
   });
 
   const deleteMutation = useMutation({

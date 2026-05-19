@@ -50,8 +50,9 @@ export default function PurchaseRequestDetailPage() {
 
   const { data: products } = useQuery({
     queryKey: ['products'],
-    queryFn: () => productsApi.getAll({ page: 1 }),
+    queryFn: () => productsApi.getAll({ page: 1, page_size: 200 }),
     enabled: isSuperAdmin,
+    staleTime: 10 * 60 * 1000,
   });
 
   const updateItemMutation = useMutation({

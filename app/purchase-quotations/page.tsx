@@ -56,6 +56,7 @@ export default function PurchaseQuotationsPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['purchase-quotations', page, search, filters],
     queryFn:  () => purchaseQuotationsApi.getAll({ page, search, ...filters }),
+    staleTime: 2 * 60 * 1000,
   });
 
   const deleteMutation = useMutation({

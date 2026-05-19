@@ -38,6 +38,7 @@ export default function QuotationRequestsPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['quotation-requests', page, search, filters],
     queryFn:  () => quotationRequestsApi.getAll({ page, search, ...filters }),
+    staleTime: 2 * 60 * 1000,
   });
 
   const deleteMutation = useMutation({

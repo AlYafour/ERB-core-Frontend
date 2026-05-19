@@ -42,12 +42,14 @@ export default function PurchaseRequestsPage() {
 
   const { data: projectsData } = useQuery({
     queryKey: ['projects-for-filter'],
-    queryFn:  () => projectsApi.getAll({ page: 1, page_size: 1000, is_active: true }),
+    queryFn:  () => projectsApi.getAll({ page: 1, page_size: 200, is_active: true }),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['purchase-requests', page, search, filters],
     queryFn:  () => purchaseRequestsApi.getAll({ page, search, ...filters }),
+    staleTime: 2 * 60 * 1000,
   });
 
   const approveMutation = useMutation({

@@ -46,6 +46,7 @@ export default function PurchaseOrdersPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['purchase-orders', page, search, filters],
     queryFn:  () => purchaseOrdersApi.getAll({ page, search, ...filters }),
+    staleTime: 2 * 60 * 1000,
   });
 
   const deleteMutation = useMutation({
