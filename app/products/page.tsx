@@ -56,6 +56,7 @@ export default function ProductsPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['products', page, search, filters],
     queryFn:  () => productsApi.getAll({ page, search, ...filters }),
+    staleTime: 2 * 60 * 1000,
   });
 
   const deleteMutation = useMutation({

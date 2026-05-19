@@ -32,6 +32,7 @@ export default function GoodsReceivingPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['grns', page, search],
     queryFn:  () => goodsReceivingApi.getAll({ page, search }),
+    staleTime: 2 * 60 * 1000,
   });
 
   const deleteMutation = useMutation({

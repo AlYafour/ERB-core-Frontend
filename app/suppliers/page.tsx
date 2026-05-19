@@ -44,6 +44,7 @@ export default function SuppliersPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['suppliers', page, search, filters],
     queryFn:  () => suppliersApi.getAll({ page, search, ...filters }),
+    staleTime: 2 * 60 * 1000,
   });
 
   const deleteMutation = useMutation({
