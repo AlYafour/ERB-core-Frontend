@@ -25,6 +25,28 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  webpack(config: import('webpack').Configuration, { isServer }: { isServer: boolean }) {
+    if (!isServer) {
+      const sc = (config.optimization as any)?.splitChunks ?? {};
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          ...sc,
+          cacheGroups: {
+            ...(sc.cacheGroups ?? {}),
+            recharts: {
+              name: 'recharts',
+              test: /[\\/]node_modules[\\/](recharts|d3-[^/\\]+)[\\/]/,
+              chunks: 'all' as const,
+              priority: 20,
+            },
+          },
+        },
+      };
+    }
+    return config;
+  },
+
   async headers() {
     return [
       {
