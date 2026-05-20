@@ -25,7 +25,8 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  webpack(config: import('webpack').Configuration, { isServer }: { isServer: boolean }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  webpack(config: any, { isServer }: { isServer: boolean }) {
     if (!isServer) {
       const sc = (config.optimization as any)?.splitChunks ?? {};
       config.optimization = {
