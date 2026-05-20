@@ -27,7 +27,7 @@ export function usePendingCounts(): PendingCounts {
     queryKey: ['pending-counts'],
     queryFn: fetchPendingCounts,
     enabled,
-    staleTime: 0,
+    staleTime: 60_000,
     refetchInterval: enabled ? 60_000 : false,
   });
 
