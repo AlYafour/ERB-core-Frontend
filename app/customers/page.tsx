@@ -8,39 +8,26 @@ import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useT } from '@/lib/i18n/useT';
-import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
-import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
-import FilterTags from '@/components/ui/FilterTags';
-import DataTable, { Column } from '@/components/ui/DataTable';
+import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { type FilterField } from '@/components/ui/FilterPanel';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { CUSTOMER_TYPE } from '@/lib/utils/status-colors';
 
 const TYPE_LABEL: Record<string, string> = {
-  owner:      'Owner',
-  commercial: 'Commercial',
-  consultant: 'Consultant',
+  owner: 'Owner', commercial: 'Commercial', consultant: 'Consultant',
 };
 
 const filterFields: FilterField[] = [
   { name: 'customer_type', label: 'Type', type: 'select', group: 'Customer',
-    options: [
-      { value: 'owner',      label: 'Owner' },
-      { value: 'commercial', label: 'Commercial' },
-      { value: 'consultant', label: 'Consultant' },
-    ],
-  },
-  { name: 'status',           label: 'Status',          type: 'select', group: 'Customer',
-    options: [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }],
-  },
+    options: [{ value: 'owner', label: 'Owner' }, { value: 'commercial', label: 'Commercial' }, { value: 'consultant', label: 'Consultant' }] },
+  { name: 'status', label: 'Status', type: 'select', group: 'Customer',
+    options: [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }] },
   { name: 'delete_requested', label: 'Delete Requested', type: 'boolean', group: 'Customer' },
 ];
 
 export default function CustomersPage() {
-  const {
-    page, setPage, search, filters, selectedItems,
-    handleSearch, handleFilterChange, handleFilterReset, handleRemoveFilter,
-    toggleSelect, selectPage, clearSelection, isAllPageSelected, isSomePageSelected,
-  } = useTableState();
+  const tableState = useTableState();
+  const { page, search, filters } = tableState;
 
   const queryClient = useQueryClient();
   const { user }    = useAuth();
@@ -64,7 +51,6 @@ export default function CustomersPage() {
 
   const customers  = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
-  const currentIds = customers.map((c: Customer) => c.id);
 
   const columns: Column<Customer>[] = [
     {
@@ -75,7 +61,7 @@ export default function CustomersPage() {
       key: 'name', header: t('col', 'name'),
       render: c => (
         <div>
-          <div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{c.full_name_english}</div>
+          <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{c.full_name_english}</div>
           {c.full_name_arabic && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{c.full_name_arabic}</div>}
         </div>
       ),
@@ -95,7 +81,7 @@ export default function CustomersPage() {
     {
       key: 'actions', header: t('col', 'actions'),
       render: c => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+        <div className="flex items-center gap-2">
           <Link href={`/customers/${c.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>
           {isSuperuser && (
             <Button variant="delete" size="sm" onClick={() => handleDelete(c.id)} disabled={deleteMutation.isPending}>
@@ -116,45 +102,23 @@ export default function CustomersPage() {
           breadcrumbs={[{ label: 'Customers' }]}
           actions={<Link href="/customers/new"><Button variant="primary">{t('btn', 'addCustomer')}</Button></Link>}
         />
-
-        <WorkspaceSurface
-          toolbar={
-            <>
-              <SearchInput value={search} onChange={handleSearch} placeholder="Search by name, email, phone..." />
-              <div style={{ flex: 1 }} />
-              <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="customers" />
-            </>
-          }
-          filterTags={
-            Object.keys(filters).length > 0
-              ? <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
-              : undefined
-          }
-        >
-          <DataTable
-            surface
-            columns={columns}
-            data={customers}
-            isLoading={isLoading}
-            error={error}
-            onRetry={refetch}
-            emptyMessage="No customers found."
-            emptyAction={<Link href="/customers/new"><Button variant="primary">{t('btn', 'addCustomer')}</Button></Link>}
-            selectable={isSuperuser}
-            selectedItems={selectedItems}
-            onToggleSelect={toggleSelect}
-            onToggleSelectAll={() => isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)}
-            isAllSelected={isAllPageSelected(currentIds)}
-            isSomeSelected={isSomePageSelected(currentIds)}
-            rowStyle={c => c.delete_requested ? { opacity: 0.6 } : undefined}
-            page={page}
-            totalCount={totalCount}
-            pageSize={20}
-            hasPrev={!!data?.previous}
-            hasNext={!!data?.next}
-            onPageChange={setPage}
-          />
-        </WorkspaceSurface>
+        <TableShell
+          tableState={tableState}
+          filterFields={filterFields}
+          filterSaveKey="customers"
+          searchPlaceholder="Search by name, email, phone..."
+          columns={columns}
+          data={customers}
+          isLoading={isLoading}
+          error={error}
+          onRetry={refetch}
+          emptyMessage="No customers found."
+          emptyAction={<Link href="/customers/new"><Button variant="primary">{t('btn', 'addCustomer')}</Button></Link>}
+          selectable={isSuperuser}
+          totalCount={totalCount}
+          paginatedData={data}
+          rowStyle={c => c.delete_requested ? { opacity: 0.6 } : undefined}
+        />
       </PageShell>
     </MainLayout>
   );

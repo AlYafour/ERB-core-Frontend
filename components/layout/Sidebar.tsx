@@ -70,9 +70,10 @@ export default function Sidebar() {
     pathname.startsWith('/purchase-invoices') ||
     pathname.startsWith('/payments');
 
-  const isHRActive     = pathname.startsWith('/hr/');
-  const isTasksActive  = pathname.startsWith('/tasks');
-  const isCustomerActive = pathname.startsWith('/customers');
+  const isHRActive           = pathname.startsWith('/hr/');
+  const isTasksActive        = pathname.startsWith('/tasks');
+  const isCustomerActive     = pathname.startsWith('/customers');
+  const isSubcontractorActive = pathname.startsWith('/subcontractors');
 
   /* Top-level nav link (non-collapsible) */
   function navLink(href: string, label: string, icon: React.ReactNode) {
@@ -296,6 +297,19 @@ export default function Sidebar() {
                   { name: t('nav', 'addCustomer'),   href: '/customers/new' },
                 ]}
                 defaultOpen={isCustomerActive}
+                user={user}
+              />
+              <CollapsibleMenu
+                title={t('nav', 'subcontractors')}
+                icon={<BuildingIcon className="w-4 h-4" />}
+                items={[
+                  { name: t('nav', 'subcontractorsList'),  href: '/subcontractors'                    },
+                  { name: t('nav', 'subconContracts'),     href: '/subcontractors/contracts'          },
+                  { name: t('nav', 'subconCertificates'),  href: '/subcontractors/certificates'       },
+                  { name: t('nav', 'subconPayments'),      href: '/subcontractors/payments'           },
+                  { name: 'BOQ Library',                   href: '/subcontractors/boq-library'        },
+                ]}
+                defaultOpen={isSubcontractorActive}
                 user={user}
               />
             </div>

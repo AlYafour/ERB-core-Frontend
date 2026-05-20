@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { formatPrice } from '@/lib/utils/format';
 import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { canAwardQuotation, canCreatePurchaseOrder } from '@/lib/utils/workflow-guards';
@@ -51,7 +52,7 @@ export default function PurchaseQuotationDetailPage() {
       toast('Quotation awarded successfully!', 'success');
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.error || 'Failed to award quotation';
+      const message = getApiError(error, 'Failed to award quotation');
       toast(message, 'error');
     },
   });
@@ -64,7 +65,7 @@ export default function PurchaseQuotationDetailPage() {
       toast('Quotation rejected', 'info');
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.error || 'Failed to reject quotation';
+      const message = getApiError(error, 'Failed to reject quotation');
       toast(message, 'error');
     },
   });

@@ -7,6 +7,8 @@ import { teamsApi } from '@/lib/api/tasks';
 import { usersApi } from '@/lib/api/users';
 import { TaskAvatar } from '../shared/TaskAvatar';
 import { BRAND, BRAND_HEX } from '../shared/constants';
+import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 
 const ROLE_CONFIG: Record<TeamMemberRole, { label: string; color: string; bg: string }> = {
   leader:   { label: 'Leader',   color: '#D97706', bg: '#FEF3C7' },
@@ -72,11 +74,26 @@ export function TeamDetail({ teamId, onEdit, onDelete }: Props) {
       setAddingMember(false);
       invalidate();
     },
+    onError: (err: unknown) => {
+      toast(getApiError(err, 'Failed to add member'), 'error');
+    },
   });
 
   const removeMember = useMutation({
     mutationFn: (userId: number) => teamsApi.removeMember(teamId, userId),
     onSuccess: invalidate,
+    onError: (err: unknown) => {
+      toast(getApiError(err, 'Failed to remove member'), 'error');
+    },
+  });
+
+  const changeRole = useMutation({
+    mutationFn: ({ userId, role }: { userId: number; role: string }) =>
+      teamsApi.updateMemberRole(teamId, userId, role),
+    onSuccess: invalidate,
+    onError: (err: unknown) => {
+      toast(getApiError(err, 'Failed to update role'), 'error');
+    },
   });
 
   if (isLoading) {
@@ -475,7 +492,27 @@ export function TeamDetail({ teamId, onEdit, onDelete }: Props) {
                     @{m.user_detail.username}
                   </p>
                 </div>
-                <RolePill role={m.role} />
+                <select
+                  value={m.role}
+                  onChange={(e) => changeRole.mutate({ userId: m.user, role: e.target.value })}
+                  disabled={changeRole.isPending}
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: 7,
+                    border: `1px solid ${ROLE_CONFIG[m.role].color}40`,
+                    background: ROLE_CONFIG[m.role].bg,
+                    color: ROLE_CONFIG[m.role].color,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    outline: 'none',
+                    flexShrink: 0,
+                  }}
+                >
+                  <option value="leader">Leader</option>
+                  <option value="member">Member</option>
+                  <option value="observer">Observer</option>
+                </select>
                 <button
                   onClick={() => removeMember.mutate(m.user)}
                   disabled={removeMember.isPending}

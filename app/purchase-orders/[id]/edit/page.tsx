@@ -12,6 +12,7 @@ import { PurchaseOrder, PurchaseOrderItem, CostCode } from '@/types';
 import { PurchaseOrderUpdateFormData, toPurchaseOrderUpdateData } from '@/lib/types/form-data';
 import CostCodePicker from '@/components/domain/CostCodePicker';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { formatPrice } from '@/lib/utils/format';
 import RouteGuard from '@/components/auth/RouteGuard';
@@ -128,7 +129,7 @@ function EditPurchaseOrderPageContent() {
       router.push(`/purchase-orders/${id}`);
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.error || 'Failed to update purchase order';
+      const message = getApiError(error, 'Failed to update purchase order');
       toast(message, 'error');
     },
   });
@@ -246,7 +247,7 @@ function EditPurchaseOrderPageContent() {
                 label={t('col', 'supplier')}
                 required
                 options={
-                  suppliers?.results.map((supplier) => ({
+                  suppliers?.results?.map((supplier) => ({
                     value: supplier.id,
                     label: supplier.name,
                     searchText: `${supplier.name} ${supplier.business_name || ''} ${supplier.contact_person || ''}`,
@@ -337,7 +338,7 @@ function EditPurchaseOrderPageContent() {
               <div style={{ gridColumn: 'span 2' }}>
                 <SearchableDropdown
                   options={
-                    products?.results.map((product) => ({
+                    products?.results?.map((product) => ({
                       value: product.id,
                       label: `${product.name} (${product.code})`,
                       searchText: `${product.name} ${product.code} ${product.category || ''}`,
@@ -425,7 +426,7 @@ function EditPurchaseOrderPageContent() {
                   </thead>
                   <tbody>
                     {items.map((item, index) => {
-                      const product = products?.results.find((p) => p.id === item.product_id);
+                      const product = products?.results?.find((p) => p.id === item.product_id);
                       const itemSubtotal = item.quantity * item.unit_price;
                       const discountAmount = itemSubtotal * ((item.discount ?? 0) / 100) || 0;
                       const afterDiscount = itemSubtotal - discountAmount;

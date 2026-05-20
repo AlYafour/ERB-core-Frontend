@@ -13,6 +13,7 @@ import DetailCard, { DetailField } from '@/components/ui/DetailCard';
 import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
 import { PO_STATUS } from '@/lib/utils/status-colors';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { canCreateGRN, canCreateInvoice } from '@/lib/utils/workflow-guards';
@@ -57,7 +58,7 @@ export default function PurchaseOrderDetailPage() {
       toast('Purchase Order approved successfully!', 'success');
     },
     onError: (error: any) => {
-      toast(error?.response?.data?.error || 'Failed to approve purchase order', 'error');
+      toast(getApiError(error, 'Failed to approve purchase order'), 'error');
     },
   });
 
@@ -70,7 +71,7 @@ export default function PurchaseOrderDetailPage() {
       toast('Purchase Order rejected', 'info');
     },
     onError: (error: any) => {
-      toast(error?.response?.data?.error || 'Failed to reject purchase order', 'error');
+      toast(getApiError(error, 'Failed to reject purchase order'), 'error');
     },
   });
 
@@ -83,7 +84,7 @@ export default function PurchaseOrderDetailPage() {
       toast('Purchase Order cancelled', 'info');
     },
     onError: (error: any) => {
-      toast(error?.response?.data?.error || 'Failed to cancel purchase order', 'error');
+      toast(getApiError(error, 'Failed to cancel purchase order'), 'error');
     },
   });
 

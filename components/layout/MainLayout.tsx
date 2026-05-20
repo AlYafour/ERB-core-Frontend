@@ -5,6 +5,7 @@ import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import ToastContainer from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { useRealtimeUpdates } from '@/lib/hooks/use-realtime';
 
 export default function MainLayout({ children }: { children: ReactNode }) {
@@ -22,7 +23,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
             margin: '0 auto',
             padding: 'var(--content-padding)',
           }}>
-            {children}
+            <ErrorBoundary>{children}</ErrorBoundary>
           </div>
         </main>
       </div>

@@ -4,11 +4,9 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useQuery } from '@tanstack/react-query';
 import { hrAttendanceApi } from '@/lib/api/hr';
 import { HRAttendance } from '@/types';
-import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
-import FilterTags from '@/components/ui/FilterTags';
-import { Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
+import { type FilterField } from '@/components/ui/FilterPanel';
+import { Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
-import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { ATTENDANCE_STATUS } from '@/lib/utils/status-colors';
 
@@ -35,12 +33,13 @@ function formatTime(time: string | null): string {
 }
 
 export default function HRAttendancePage() {
-  const { page, setPage, search, filters, handleSearch, handleFilterChange, handleFilterReset, handleRemoveFilter } = useTableState();
+  const tableState = useTableState();
+  const { page, search, filters } = tableState;
   const t = useT();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['hr-attendance', page, search, filters],
-    queryFn: () => hrAttendanceApi.getAll({ page, search, ...filters }),
+    queryFn:  () => hrAttendanceApi.getAll({ page, search, ...filters }),
   });
 
   const records    = Array.isArray(data?.results) ? data!.results : [];
@@ -51,8 +50,8 @@ export default function HRAttendancePage() {
       key: 'employee', header: 'Employee',
       render: r => (
         <div>
-          <div style={{ fontWeight: 'var(--weight-medium)' }}>{r.employee_name}</div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{r.employee_id_code}</div>
+          <div className="font-medium">{r.employee_name}</div>
+          <div className="font-mono" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{r.employee_id_code}</div>
         </div>
       ),
     },
@@ -62,7 +61,14 @@ export default function HRAttendancePage() {
     { key: 'work',     header: 'Work Hours', render: r => <span>{r.work_hours != null ? `${r.work_hours}h` : '—'}</span> },
     { key: 'ot',       header: 'Overtime',   render: r => <span>{r.overtime_hours != null && r.overtime_hours > 0 ? `${r.overtime_hours}h` : '—'}</span> },
     { key: 'status',   header: t('col', 'status'), render: r => <Badge variant={ATTENDANCE_STATUS[r.status] ?? 'default'}>{STATUS_LABEL[r.status] || r.status}</Badge> },
-    { key: 'notes',    header: 'Notes',      render: r => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={r.notes}>{r.notes || '—'}</span> },
+    {
+      key: 'notes', header: 'Notes',
+      render: r => (
+        <span className="block max-w-[240px] truncate" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }} title={r.notes}>
+          {r.notes || '—'}
+        </span>
+      ),
+    },
   ];
 
   return (
@@ -73,35 +79,20 @@ export default function HRAttendancePage() {
           count={totalCount}
           breadcrumbs={[{ label: 'HR' }, { label: 'Attendance' }]}
         />
-        <WorkspaceSurface
-          toolbar={
-            <>
-              <SearchInput value={search} onChange={handleSearch} placeholder="Search by employee name or ID..." />
-              <div style={{ flex: 1 }} />
-              <FilterPanel fields={filterFields} filters={filters} onFilterChange={handleFilterChange} onReset={handleFilterReset} saveKey="hr-attendance" />
-            </>
-          }
-          filterTags={
-            Object.keys(filters).length > 0
-              ? <FilterTags filters={filters} fields={filterFields} onRemoveFilter={handleRemoveFilter} onClearAll={handleFilterReset} />
-              : undefined
-          }
-        >
-          <DataTable
-            surface
-            columns={columns}
-            data={records}
-            isLoading={isLoading}
-            error={error}
-            emptyMessage={t('empty', 'noAttendance')}
-            page={page}
-            totalCount={totalCount}
-            pageSize={50}
-            hasPrev={!!data?.previous}
-            hasNext={!!data?.next}
-            onPageChange={setPage}
-          />
-        </WorkspaceSurface>
+        <TableShell
+          tableState={tableState}
+          filterFields={filterFields}
+          filterSaveKey="hr-attendance"
+          searchPlaceholder="Search by employee name or ID..."
+          columns={columns}
+          data={records}
+          isLoading={isLoading}
+          error={error}
+          emptyMessage={t('empty', 'noAttendance')}
+          totalCount={totalCount}
+          pageSize={50}
+          paginatedData={data}
+        />
       </PageShell>
     </MainLayout>
   );

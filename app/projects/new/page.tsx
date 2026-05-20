@@ -10,6 +10,7 @@ import { Button, PageShell } from '@/components/ui';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import FormField from '@/components/ui/FormField';
 import { useT } from '@/lib/i18n/useT';
@@ -64,7 +65,7 @@ export default function NewProjectPage() {
       router.push('/projects');
     },
     onError: (error: any) => {
-      toast(error?.response?.data?.detail || 'Failed to create project', 'error');
+      toast(getApiError(error, 'Failed to create project'), 'error');
     },
   });
 

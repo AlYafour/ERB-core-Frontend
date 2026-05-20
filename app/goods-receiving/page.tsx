@@ -8,9 +8,8 @@ import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
-import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
+import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
-import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { GRN_STATUS } from '@/lib/utils/status-colors';
 
@@ -19,7 +18,8 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default function GoodsReceivingPage() {
-  const { page, setPage, search, handleSearch } = useTableState();
+  const tableState = useTableState();
+  const { page, search } = tableState;
 
   const queryClient    = useQueryClient();
   const { user }       = useAuth();
@@ -32,6 +32,7 @@ export default function GoodsReceivingPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['grns', page, search],
     queryFn:  () => goodsReceivingApi.getAll({ page, search }),
+    staleTime: 2 * 60 * 1000,
   });
 
   const deleteMutation = useMutation({
@@ -46,10 +47,13 @@ export default function GoodsReceivingPage() {
   const totalCount = data?.count ?? 0;
 
   const columns: Column<GoodsReceivedNote>[] = [
-    { key: 'number', header: 'GRN Number',     render: g => <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)' }}>{g.grn_number}</span> },
-    { key: 'po',     header: 'Purchase Order',  render: g => <span style={{ color: 'var(--text-secondary)' }}>{typeof g.purchase_order === 'object' && g.purchase_order ? (g.purchase_order as any).order_number : g.purchase_order_id}</span> },
-    { key: 'date',   header: 'Receipt Date',    render: g => <span style={{ color: 'var(--text-secondary)' }}>{new Date(g.receipt_date).toLocaleDateString('en-US')}</span> },
-    { key: 'items',  header: 'Total Items',     render: g => g.total_items ?? g.items?.length ?? 0 },
+    {
+      key: 'number', header: 'GRN Number',
+      render: g => <span className="font-mono font-semibold" style={{ fontSize: 'var(--text-sm)' }}>{g.grn_number}</span>,
+    },
+    { key: 'po',    header: 'Purchase Order', render: g => <span style={{ color: 'var(--text-secondary)' }}>{typeof g.purchase_order === 'object' && g.purchase_order ? (g.purchase_order as any).order_number : g.purchase_order_id}</span> },
+    { key: 'date',  header: 'Receipt Date',   render: g => <span style={{ color: 'var(--text-secondary)' }}>{new Date(g.receipt_date).toLocaleDateString('en-US')}</span> },
+    { key: 'items', header: 'Total Items',    render: g => g.total_items ?? g.items?.length ?? 0 },
     { key: 'status', header: t('col', 'status'), render: g => <Badge variant={GRN_STATUS[g.status] ?? 'info'}>{STATUS_LABEL[g.status] || g.status}</Badge> },
     {
       key: 'invoice', header: 'Invoice',
@@ -58,7 +62,7 @@ export default function GoodsReceivingPage() {
     {
       key: 'actions', header: t('col', 'actions'),
       render: g => (
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+        <div className="flex gap-2">
           <Link href={`/goods-receiving/${g.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>
           <Link href={`/print/grn/${g.id}`} target="_blank"><Button variant="secondary" size="sm">Print</Button></Link>
           {canDelete && <Button variant="destructive" size="sm" onClick={() => handleDelete(g.id)}>{t('btn', 'delete')}</Button>}
@@ -75,34 +79,20 @@ export default function GoodsReceivingPage() {
           title="Goods Receiving"
           description="Record and verify goods receipt against purchase orders."
           count={totalCount}
-          actions={
-            canCreate ? <Link href="/goods-receiving/new"><Button variant="primary">+ New GRN</Button></Link> : undefined
-          }
+          actions={canCreate ? <Link href="/goods-receiving/new"><Button variant="primary">+ New GRN</Button></Link> : undefined}
         />
-        <WorkspaceSurface
-          toolbar={
-            <>
-              <SearchInput value={search} onChange={handleSearch} placeholder="Search GRN records…" width={260} />
-              <div style={{ flex: 1 }} />
-            </>
-          }
-        >
-          <DataTable
-            surface
-            columns={columns}
-            data={grns}
-            isLoading={isLoading}
-            error={error}
-            emptyMessage="No goods receiving notes found."
-            emptyAction={canCreate ? <Link href="/goods-receiving/new"><Button variant="primary">Create GRN</Button></Link> : undefined}
-            page={page}
-            totalCount={totalCount}
-            pageSize={20}
-            hasPrev={!!data?.previous}
-            hasNext={!!data?.next}
-            onPageChange={setPage}
-          />
-        </WorkspaceSurface>
+        <TableShell
+          tableState={tableState}
+          searchPlaceholder="Search GRN records…"
+          columns={columns}
+          data={grns}
+          isLoading={isLoading}
+          error={error}
+          emptyMessage="No goods receiving notes found."
+          emptyAction={canCreate ? <Link href="/goods-receiving/new"><Button variant="primary">Create GRN</Button></Link> : undefined}
+          totalCount={totalCount}
+          paginatedData={data}
+        />
       </PageShell>
     </MainLayout>
   );

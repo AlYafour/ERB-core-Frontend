@@ -21,12 +21,11 @@ export default function TeamsPage() {
   const [editTeamId, setEditTeamId] = useState<number | null>(null);
 
   // ── Data ───────────────────────────────────────────────────────────
-  const { data: teams = [], isLoading } = useQuery<Team[]>({
+  const { data: teamsRaw, isLoading } = useQuery({
     queryKey: ['teams'],
     queryFn: () => teamsApi.getAll(),
-    // Auto-select first team when data arrives (only if nothing selected yet)
-    select: (data) => data,
   });
+  const teams: Team[] = teamsRaw ?? [];
 
   // Derive the active team ID — never hold a stale object reference in state
   // Falls back to first team if nothing selected or selected team was deleted

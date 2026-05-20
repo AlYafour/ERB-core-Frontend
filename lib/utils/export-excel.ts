@@ -1,5 +1,3 @@
-import * as XLSX from 'xlsx';
-
 export interface ExportColumn<T> {
   header: string;
   key: keyof T | ((row: T) => string | number | boolean | null | undefined);
@@ -8,17 +6,16 @@ export interface ExportColumn<T> {
 
 /**
  * Export any array of objects to a formatted .xlsx file.
- * @param data       Rows to export
- * @param columns    Column definitions — header label + accessor key or fn
- * @param filename   Output filename WITHOUT extension
- * @param sheetName  Sheet tab name (default: 'Sheet1')
+ * XLSX is dynamically imported on first call — not bundled with the initial page load.
  */
-export function exportToExcel<T extends object>(
+export async function exportToExcel<T extends object>(
   data: T[],
   columns: ExportColumn<T>[],
   filename: string,
   sheetName = 'Sheet1',
 ) {
+  const XLSX = await import('xlsx');
+
   const rows = data.map((row) =>
     columns.map((col) => {
       if (typeof col.key === 'function') return col.key(row) ?? '';
@@ -29,10 +26,8 @@ export function exportToExcel<T extends object>(
 
   const ws = XLSX.utils.aoa_to_sheet([columns.map((c) => c.header), ...rows]);
 
-  // Column widths
   ws['!cols'] = columns.map((c) => ({ wch: c.width ?? 20 }));
 
-  // Style header row bold (xlsx CE supports limited styling via s property)
   const headerRange = XLSX.utils.decode_range(ws['!ref'] ?? 'A1');
   for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
     const cellAddr = XLSX.utils.encode_cell({ r: 0, c: col });
@@ -47,8 +42,6 @@ export function exportToExcel<T extends object>(
 
 /**
  * Fetch ALL pages of a paginated API and return a flat array.
- * @param fetcher  fn(page) → Promise<{ results: T[]; next: string|null }>
- * @param pageSize Number of items per page (default 1000 — minimise requests)
  */
 export async function fetchAllPages<T>(
   fetcher: (page: number, pageSize: number) => Promise<{ results: T[]; next: string | null }>,
@@ -61,7 +54,7 @@ export async function fetchAllPages<T>(
     all.push(...res.results);
     if (!res.next) break;
     page++;
-    if (page > 200) break; // safety
+    if (page > 200) break;
   }
   return all;
 }

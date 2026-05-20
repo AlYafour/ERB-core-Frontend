@@ -16,24 +16,15 @@ import {
 import Link from 'next/link';
 import { Badge, PageShell, PageHeader } from '@/components/ui';
 import { formatPrice } from '@/lib/utils/format';
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
+import dynamic from 'next/dynamic';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { useT } from '@/lib/i18n/useT';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
+
+/* ─── Lazy-load chart components — recharts only downloaded when dashboard renders ─ */
+const StatusPieCard       = dynamic(() => import('./charts').then(m => ({ default: m.StatusPieCard })),       { ssr: false });
+const MonthlyVolumeChart  = dynamic(() => import('./charts').then(m => ({ default: m.MonthlyVolumeChart })),  { ssr: false });
+const ProjectSpendingChart = dynamic(() => import('./charts').then(m => ({ default: m.ProjectSpendingChart })), { ssr: false });
 
 /* ─── Palette (CSS semantic tokens) ─────────────────────────────── */
 const C = {
@@ -42,12 +33,9 @@ const C = {
   amber:  'var(--color-warning)',
   red:    'var(--color-error)',
   purple: '#8B5CF6',
-  pink:   '#EC4899',
   indigo: '#6366F1',
   teal:   '#0D9488',
 };
-
-const PIE_STATUS_COLORS = [C.amber, C.green, C.red, C.teal];
 
 /* ─── Reusable: Section header with optional "View All" link ─────── */
 function SectionHeader({ title, viewAllLabel, href, size = 'lg' }: { title: string; viewAllLabel?: string; href?: string; size?: 'base' | 'lg' }) {
@@ -112,51 +100,6 @@ function MetricBlock({ label, value, color }: { label: string; value: string | n
   );
 }
 
-/* ─── Reusable: Pie chart card ───────────────────────────────────── */
-function StatusPieCard({ title, viewAllLabel, href, data }: {
-  title: string;
-  viewAllLabel?: string;
-  href: string;
-  data: { name: string; value: number }[];
-}) {
-  return (
-    <div className="card">
-      <SectionHeader title={title} viewAllLabel={viewAllLabel} href={href} size="base" />
-      <ResponsiveContainer width="100%" height={180}>
-        <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            innerRadius={40}
-            outerRadius={70}
-            paddingAngle={3}
-            dataKey="value"
-          >
-            {data.map((_, i) => (
-              <Cell key={i} fill={PIE_STATUS_COLORS[i % PIE_STATUS_COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip
-            contentStyle={{
-              backgroundColor: 'var(--card-bg)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 8,
-              color: 'var(--text-primary)',
-              fontSize: 12,
-            }}
-          />
-          <Legend
-            iconType="circle"
-            iconSize={8}
-            wrapperStyle={{ fontSize: 11, color: 'var(--text-secondary)' }}
-          />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
 /* ─── Reusable: Skeleton loader ─────────────────────────────────── */
 function CardSkeleton({ height = 120 }: { height?: number }) {
   return (
@@ -195,41 +138,20 @@ function DashboardContent() {
   const router = useRouter();
   const t = useT();
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['dashboard', 'stats'],
-    queryFn: dashboardApi.getStats,
+  /* Single combined query — replaces 6 individual requests */
+  const { data, isLoading } = useQuery({
+    queryKey: ['dashboard', 'combined'],
+    queryFn: dashboardApi.getCombined,
     enabled: isAuthenticated,
+    staleTime: 2 * 60 * 1000,
   });
 
-  const { data: projectAnalytics, isLoading: projectsLoading } = useQuery({
-    queryKey: ['dashboard', 'project-analytics'],
-    queryFn: dashboardApi.getProjectAnalytics,
-    enabled: isAuthenticated,
-  });
-
-  const { data: recentActivity, isLoading: activityLoading } = useQuery({
-    queryKey: ['dashboard', 'recent-activity'],
-    queryFn: dashboardApi.getRecentActivity,
-    enabled: isAuthenticated,
-  });
-
-  const { data: userActivity } = useQuery({
-    queryKey: ['dashboard', 'user-activity'],
-    queryFn: dashboardApi.getUserActivity,
-    enabled: isAuthenticated,
-  });
-
-  const { data: cycleMetrics } = useQuery({
-    queryKey: ['dashboard', 'cycle-metrics'],
-    queryFn: dashboardApi.getProcurementCycleMetrics,
-    enabled: isAuthenticated,
-  });
-
-  const { data: chartData, isLoading: chartsLoading } = useQuery({
-    queryKey: ['dashboard', 'chart-data'],
-    queryFn: dashboardApi.getChartData,
-    enabled: isAuthenticated,
-  });
+  const stats           = data?.stats;
+  const chartData       = data?.chartData;
+  const recentActivity  = data?.recentActivity;
+  const userActivity    = data?.userActivity;
+  const cycleMetrics    = data?.cycleMetrics;
+  const projectAnalytics = data?.projectAnalytics;
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -266,7 +188,7 @@ function DashboardContent() {
         />
 
         {/* ── MetricGroup KPI row ─────────────────────────────────── */}
-        {statsLoading && (
+        {isLoading && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
             {[130, 130, 130].map((h, i) => <CardSkeleton key={i} height={h} />)}
           </div>
@@ -296,7 +218,7 @@ function DashboardContent() {
         )}
 
         {/* ── Status pie charts ───────────────────────────────────── */}
-        {chartsLoading ? (
+        {isLoading ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-6)' }}>
             <CardSkeleton height={240} />
             <CardSkeleton height={240} />
@@ -304,37 +226,29 @@ function DashboardContent() {
           </div>
         ) : chartData && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-6)' }}>
-            <StatusPieCard
-              title={t('dash', 'prByStatus')}
-              viewAllLabel={t('dash', 'viewAll')}
-              href="/purchase-requests"
-              data={[
-                { name: t('dash', 'pending'),  value: chartData.statusDistribution.purchaseRequests.pending },
-                { name: t('dash', 'approved'), value: chartData.statusDistribution.purchaseRequests.approved },
-                { name: t('dash', 'rejected'), value: chartData.statusDistribution.purchaseRequests.rejected },
-              ]}
-            />
-            <StatusPieCard
-              title={t('dash', 'poByStatus')}
-              viewAllLabel={t('dash', 'viewAll')}
-              href="/purchase-orders"
-              data={[
-                { name: t('dash', 'pending'),   value: chartData.statusDistribution.purchaseOrders.pending },
-                { name: t('dash', 'approved'),  value: chartData.statusDistribution.purchaseOrders.approved },
-                { name: t('dash', 'rejected'),  value: chartData.statusDistribution.purchaseOrders.rejected },
-                { name: t('dash', 'completed'), value: chartData.statusDistribution.purchaseOrders.completed },
-              ]}
-            />
-            <StatusPieCard
-              title={t('dash', 'invByStatus')}
-              viewAllLabel={t('dash', 'viewAll')}
-              href="/purchase-invoices"
-              data={[
-                { name: t('dash', 'pending'),  value: chartData.statusDistribution.invoices.pending },
-                { name: t('dash', 'approved'), value: chartData.statusDistribution.invoices.approved },
-                { name: t('dash', 'paid'),     value: chartData.statusDistribution.invoices.paid },
-              ]}
-            />
+            {[
+              { title: t('dash', 'prByStatus'),  href: '/purchase-requests', data: [
+                  { name: t('dash', 'pending'),  value: chartData.statusDistribution.purchaseRequests.pending },
+                  { name: t('dash', 'approved'), value: chartData.statusDistribution.purchaseRequests.approved },
+                  { name: t('dash', 'rejected'), value: chartData.statusDistribution.purchaseRequests.rejected },
+              ]},
+              { title: t('dash', 'poByStatus'),  href: '/purchase-orders', data: [
+                  { name: t('dash', 'pending'),   value: chartData.statusDistribution.purchaseOrders.pending },
+                  { name: t('dash', 'approved'),  value: chartData.statusDistribution.purchaseOrders.approved },
+                  { name: t('dash', 'rejected'),  value: chartData.statusDistribution.purchaseOrders.rejected },
+                  { name: t('dash', 'completed'), value: chartData.statusDistribution.purchaseOrders.completed },
+              ]},
+              { title: t('dash', 'invByStatus'), href: '/purchase-invoices', data: [
+                  { name: t('dash', 'pending'),  value: chartData.statusDistribution.invoices.pending },
+                  { name: t('dash', 'approved'), value: chartData.statusDistribution.invoices.approved },
+                  { name: t('dash', 'paid'),     value: chartData.statusDistribution.invoices.paid },
+              ]},
+            ].map(({ title, href, data }) => (
+              <div key={href} className="card">
+                <SectionHeader title={title} viewAllLabel={t('dash', 'viewAll')} href={href} size="base" />
+                <StatusPieCard title={title} href={href} data={data} />
+              </div>
+            ))}
           </div>
         )}
 
@@ -345,7 +259,7 @@ function DashboardContent() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
 
             {/* Top spending projects */}
-            {projectsLoading ? (
+            {isLoading ? (
               <CardSkeleton height={220} />
             ) : projectAnalytics && projectAnalytics.length > 0 && (
               <div className="card">
@@ -404,24 +318,7 @@ function DashboardContent() {
             {(chartData?.monthlyProcurement?.length ?? 0) > 0 && chartData && (
               <div className="card">
                 <SectionHeader title={t('dash', 'monthlyVolume')} />
-                <ResponsiveContainer width="100%" height={280}>
-                  <LineChart data={chartData.monthlyProcurement}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                    <XAxis dataKey="month" stroke="var(--text-secondary)" style={{ fontSize: 11 }} />
-                    <YAxis stroke="var(--text-secondary)" style={{ fontSize: 11 }} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'var(--card-bg)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: 8,
-                        color: 'var(--text-primary)',
-                        fontSize: 12,
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Line type="monotone" dataKey="count" stroke={C.blue} strokeWidth={2} dot={false} name={t('dash', 'requests')} />
-                  </LineChart>
-                </ResponsiveContainer>
+                <MonthlyVolumeChart data={chartData.monthlyProcurement} label={t('dash', 'requests')} />
               </div>
             )}
 
@@ -429,31 +326,7 @@ function DashboardContent() {
             {(chartData?.projectSpending?.length ?? 0) > 0 && chartData && (
               <div className="card">
                 <SectionHeader title={t('dash', 'projectSpending')} />
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={chartData.projectSpending} margin={{ bottom: 60 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                    <XAxis
-                      dataKey="project"
-                      stroke="var(--text-secondary)"
-                      style={{ fontSize: 11 }}
-                      angle={-40}
-                      textAnchor="end"
-                      interval={0}
-                    />
-                    <YAxis stroke="var(--text-secondary)" style={{ fontSize: 11 }} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'var(--card-bg)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: 8,
-                        color: 'var(--text-primary)',
-                        fontSize: 12,
-                      }}
-                      formatter={(v: number) => formatPrice(v)}
-                    />
-                    <Bar dataKey="spending" fill={C.green} name={t('dash', 'spendingAed')} radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <ProjectSpendingChart data={chartData.projectSpending} label={t('dash', 'spendingAed')} />
               </div>
             )}
           </div>
@@ -521,7 +394,7 @@ function DashboardContent() {
             )}
 
             {/* Recent activity feed */}
-            {activityLoading ? (
+            {isLoading ? (
               <CardSkeleton height={300} />
             ) : recentActivity && recentActivity.length > 0 && (
               <div className="card">

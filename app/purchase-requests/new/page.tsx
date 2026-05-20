@@ -12,6 +12,7 @@ import { Button, PageShell, PageHeader } from '@/components/ui';
 import { PurchaseRequestItem, Product, Project } from '@/types';
 import { PurchaseRequestFormData, toPurchaseRequestCreateData } from '@/lib/types/form-data';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import ProductSelector from '@/components/features/ProductSelector';
 import QuantityInput from '@/components/ui/QuantityInput';
 import SearchableDropdown, { DropdownOption } from '@/components/ui/SearchableDropdown';
@@ -75,12 +76,13 @@ function NewPurchaseRequestPageContent() {
   const { data: productsData } = useQuery({
     queryKey: ['products-for-table'],
     queryFn: () => productsApi.getAll({ page: 1, page_size: 1000 }),
+    staleTime: 10 * 60 * 1000,
   });
 
   // Handle project selection
   const handleProjectChange = (projectId: number | null | undefined) => {
     if (projectId) {
-      const selectedProject = projectsData?.results.find((p: Project) => p.id === projectId);
+      const selectedProject = projectsData?.results?.find((p: Project) => p.id === projectId);
       if (selectedProject) {
         setFormData({
           ...formData,
@@ -131,7 +133,7 @@ function NewPurchaseRequestPageContent() {
       router.push('/purchase-requests');
     },
     onError: (error: any) => {
-      toast(error?.response?.data?.detail || 'Failed to create purchase request', 'error');
+      toast(getApiError(error, 'Failed to create purchase request'), 'error');
     },
   });
 
@@ -315,7 +317,7 @@ function NewPurchaseRequestPageContent() {
             >
               <SearchableDropdown
                 options={
-                  projectsData?.results.map((project: Project) => ({
+                  projectsData?.results?.map((project: Project) => ({
                     value: project.id,
                     label: `${project.name} (${project.code})`,
                     searchText: `${project.name} ${project.code} ${project.location || ''}`,
@@ -542,7 +544,7 @@ function NewPurchaseRequestPageContent() {
                     </thead>
                     <tbody>
                       {items.map((item, index) => {
-                        const product = item.product || productsData?.results.find((p) => p.id === item.product_id);
+                        const product = item.product || productsData?.results?.find((p) => p.id === item.product_id);
                         return (
                           <tr key={index}>
                             <td>

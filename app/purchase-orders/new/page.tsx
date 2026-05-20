@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
@@ -128,6 +128,7 @@ Terms & Conditions:
   const { data: products } = useQuery({
     queryKey: ['products'],
     queryFn: () => productsApi.getAll({ page: 1, page_size: 1000 }),
+    staleTime: 10 * 60 * 1000,
   });
 
   useEffect(() => {
@@ -357,35 +358,30 @@ Terms & Conditions:
     mutation.mutate(payload);
   };
 
-  const calculateSubtotal = () => {
-    return items.reduce((sum, item) => {
-      const itemSubtotal = item.quantity * item.unit_price;
-      const discountAmount = itemSubtotal * ((item.discount ?? 0) / 100) || 0;
-      return sum + itemSubtotal - discountAmount;
-    }, 0);
-  };
+  const calculateSubtotal = useMemo(() => items.reduce((sum, item) => {
+    const itemSubtotal = item.quantity * item.unit_price;
+    const discountAmount = itemSubtotal * ((item.discount ?? 0) / 100) || 0;
+    return sum + itemSubtotal - discountAmount;
+  }, 0), [items]);
 
-  const calculateTaxAmount = () => {
-    return items.reduce((sum, item) => {
-      const itemSubtotal = item.quantity * item.unit_price;
-      const discountAmount = itemSubtotal * ((item.discount ?? 0) / 100) || 0;
-      const afterDiscount = itemSubtotal - discountAmount;
-      return sum + afterDiscount * ((item.tax_rate ?? 0) / 100);
-    }, 0);
-  };
+  const calculateTaxAmount = useMemo(() => items.reduce((sum, item) => {
+    const itemSubtotal = item.quantity * item.unit_price;
+    const discountAmount = itemSubtotal * ((item.discount ?? 0) / 100) || 0;
+    const afterDiscount = itemSubtotal - discountAmount;
+    return sum + afterDiscount * ((item.tax_rate ?? 0) / 100);
+  }, 0), [items]);
 
-  const calculateTotal = () => {
-    const subtotal = calculateSubtotal();
-    const discountAmount = subtotal * (formData.discount / 100) || 0;
-    const afterDiscount = subtotal - discountAmount;
-    return afterDiscount + calculateTaxAmount();
-  };
+  const calculateTotal = useMemo(() => {
+    const discountAmount = calculateSubtotal * (formData.discount / 100) || 0;
+    const afterDiscount = calculateSubtotal - discountAmount;
+    return afterDiscount + calculateTaxAmount;
+  }, [calculateSubtotal, calculateTaxAmount, formData.discount]);
 
   const applyVatToAll = (rate: number) => {
     setItems(items.map((item) => ({ ...item, tax_rate: rate })));
   };
 
-  const selectedProduct = products?.results.find((p) => p.id === currentItem.product_id);
+  const selectedProduct = products?.results?.find((p) => p.id === currentItem.product_id);
 
   return (
     <MainLayout>
@@ -611,7 +607,7 @@ Terms & Conditions:
               <div style={{ gridColumn: 'span 2' }}>
                 <SearchableDropdown
                   options={
-                    products?.results.map((product) => ({
+                    products?.results?.map((product) => ({
                       value: product.id,
                       label: `${product.name} (${product.code})`,
                       searchText: `${product.name} ${product.code} ${product.category || ''}`,
@@ -976,22 +972,22 @@ Terms & Conditions:
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Subtotal:</span>
                     <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
-                      {formatPrice(calculateSubtotal())}
+                      {formatPrice(calculateSubtotal)}
                     </span>
                   </div>
                   {formData.discount > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Discount ({formData.discount}%):</span>
                       <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--color-error)' }}>
-                        - {formatPrice(calculateSubtotal() * (formData.discount / 100) || 0)}
+                        - {formatPrice(calculateSubtotal * (formData.discount / 100) || 0)}
                       </span>
                     </div>
                   )}
-                  {calculateTaxAmount() > 0 && (
+                  {calculateTaxAmount > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>VAT:</span>
                       <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
-                        {formatPrice(calculateTaxAmount())}
+                        {formatPrice(calculateTaxAmount)}
                       </span>
                     </div>
                   )}
@@ -1004,7 +1000,7 @@ Terms & Conditions:
                   }}>
                     <span style={{ fontWeight: 'var(--weight-bold)', color: 'var(--text-primary)' }}>Total:</span>
                     <span style={{ fontWeight: 'var(--weight-bold)', color: 'var(--text-primary)' }}>
-                      {formatPrice(calculateTotal())}
+                      {formatPrice(calculateTotal)}
                     </span>
                   </div>
                 </div>

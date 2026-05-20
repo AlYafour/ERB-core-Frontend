@@ -1,0 +1,153 @@
+/* ================================================================
+   KANBAN BOARD
+   ================================================================ */
+
+.k-board {
+  display: flex;
+  gap: var(--space-4);
+  overflow-x: auto;
+  align-items: flex-start;
+  padding-bottom: var(--space-6);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-default) transparent;
+}
+
+.k-col {
+  width: 300px;
+  flex-shrink: 0;
+}
+
+.k-col-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-1) var(--space-3);
+}
+
+.k-col-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.k-col-name {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  flex: 1;
+}
+
+.k-col-count {
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  color: var(--text-tertiary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 0 var(--space-2);
+  line-height: 18px;
+  min-width: 22px;
+  text-align: center;
+}
+
+.k-col-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.k-col-empty {
+  border-radius: var(--radius-lg);
+  padding: var(--space-6) 0;
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--text-disabled);
+  border: 1.5px dashed var(--border-subtle);
+}
+
+/* Kanban card */
+.k-card {
+  --k-accent: var(--border-default);
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  box-shadow:
+    inset 3px 0 0 var(--k-accent),
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 0 0 1px var(--border-subtle);
+  cursor: pointer;
+  transition: box-shadow 0.14s, transform 0.14s;
+}
+
+.k-card:hover {
+  box-shadow:
+    inset 3px 0 0 var(--k-accent),
+    0 6px 18px rgba(0, 0, 0, 0.10),
+    0 0 0 1px var(--border-subtle);
+  transform: translateY(-1px);
+}
+
+.k-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.k-card-type {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.k-card-title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  line-height: 1.45;
+  margin-bottom: var(--space-3);
+  margin-top: 0;
+}
+
+.k-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 22px;
+}
+
+.k-card-meta-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.k-card-sub {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.k-card-due {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: var(--weight-normal);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.k-card-due.overdue {
+  color: var(--red-600, #DC2626);
+  font-weight: var(--weight-semibold);
+  background: color-mix(in srgb, var(--red-600, #DC2626) 8%, transparent);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}

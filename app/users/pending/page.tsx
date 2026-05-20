@@ -9,10 +9,11 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { PERMISSIONS_QUERY_KEY } from '@/lib/hooks/use-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { useState } from 'react';
-import { Button, Badge, PageHeader, PageShell, WorkspaceSurface } from '@/components/ui';
+import { Button, Badge, PageHeader, PageShell, WorkspaceSurface, type Column } from '@/components/ui';
+import DataTable from '@/components/ui/DataTable';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
-import DataTable, { Column } from '@/components/ui/DataTable';
 
 export default function PendingUsersPage() {
   const { user: currentUser } = useAuth();
@@ -25,7 +26,7 @@ export default function PendingUsersPage() {
       try {
         return await usersApi.getPending();
       } catch (err: any) {
-        const msg = err?.response?.data?.error || err?.response?.data?.detail || err?.message || 'Failed to fetch pending users';
+        const msg = getApiError(err, 'Failed to fetch pending users');
         toast(msg, 'error');
         throw err;
       }
@@ -86,14 +87,14 @@ export default function PendingUsersPage() {
       key: 'username', header: 'Username',
       render: u => (
         <div>
-          <div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{u.username}</div>
+          <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{u.username}</div>
           {u.first_name && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{u.first_name} {u.last_name}</div>}
         </div>
       ),
     },
-    { key: 'email',    header: 'Email',      render: u => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{u.email}</span> },
-    { key: 'role',     header: 'Role',       render: u => <Badge variant="info">{u.role}</Badge> },
-    { key: 'joined',   header: 'Registered', render: u => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{u.date_joined ? new Date(u.date_joined).toLocaleDateString() : '—'}</span> },
+    { key: 'email',  header: 'Email',      render: u => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{u.email}</span> },
+    { key: 'role',   header: 'Role',       render: u => <Badge variant="info">{u.role}</Badge> },
+    { key: 'joined', header: 'Registered', render: u => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{u.date_joined ? new Date(u.date_joined).toLocaleDateString() : '—'}</span> },
     {
       key: 'permset', header: 'Permission Set',
       render: u => (
@@ -110,7 +111,7 @@ export default function PendingUsersPage() {
     {
       key: 'actions', header: 'Actions',
       render: u => (
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+        <div className="flex gap-2">
           <Button variant="primary" size="sm" onClick={() => handleApprove(u)} isLoading={approveMutation.isPending}>Approve</Button>
           <Button variant="destructive" size="sm" onClick={() => handleReject(u)} isLoading={rejectMutation.isPending}>Reject</Button>
         </div>

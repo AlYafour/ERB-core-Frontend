@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { tasksApi, myTasksApi } from '@/lib/api/tasks';
+import { useAuthStore } from '@/lib/store/auth-store';
 
 export interface TasksBadge {
   myTasks: number;
@@ -19,18 +20,22 @@ const ZERO: TasksBadge = {
 };
 
 export function useTasksBadge(): TasksBadge {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
   const { data: stats } = useQuery({
     queryKey: ['task-stats'],
     queryFn: () => tasksApi.stats(),
+    enabled: isAuthenticated,
     staleTime: 30_000,
-    refetchInterval: 60_000,
+    refetchInterval: isAuthenticated ? 60_000 : false,
   });
 
   const { data: myTodo = 0 } = useQuery<number>({
     queryKey: ['my-tasks-count'],
     queryFn: () => myTasksApi.getAll().then((r) => (Array.isArray(r) ? r : []).filter((t) => !t.is_done).length),
+    enabled: isAuthenticated,
     staleTime: 30_000,
-    refetchInterval: 60_000,
+    refetchInterval: isAuthenticated ? 60_000 : false,
   });
 
   if (!stats) return ZERO;

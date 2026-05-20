@@ -10,6 +10,7 @@ import DropdownButton from '@/components/ui/DropdownButton';
 import { Button, PageHeader, PageShell } from '@/components/ui';
 import { useState } from 'react';
 import { toast, confirm } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { canCreateQuotationRequest, canCreatePurchaseOrder } from '@/lib/utils/workflow-guards';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -49,8 +50,9 @@ export default function PurchaseRequestDetailPage() {
 
   const { data: products } = useQuery({
     queryKey: ['products'],
-    queryFn: () => productsApi.getAll({ page: 1 }),
+    queryFn: () => productsApi.getAll({ page: 1, page_size: 200 }),
     enabled: isSuperAdmin,
+    staleTime: 10 * 60 * 1000,
   });
 
   const updateItemMutation = useMutation({
@@ -91,7 +93,7 @@ export default function PurchaseRequestDetailPage() {
       setRejectDialogOpen(false);
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.error || 'Failed to reject request';
+      const message = getApiError(error, 'Failed to reject request');
       toast(message, 'error');
     },
   });
@@ -352,7 +354,7 @@ export default function PurchaseRequestDetailPage() {
                         <div style={{ minWidth: '220px' }}>
                           <SearchableDropdown
                             options={
-                              products?.results.map((p) => ({
+                              products?.results?.map((p) => ({
                                 value: p.id,
                                 label: `${p.name} (${p.code})`,
                                 searchText: `${p.name} ${p.code}`,
