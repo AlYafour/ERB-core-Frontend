@@ -322,7 +322,7 @@ function ImportModal({
                 <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: 32 }}>No items match "{search}"</p>
               )}
               {filteredGrouped.map(({ code, name, items }) => {
-                const lineItems = items.filter(i => i.item_code !== code);
+                const lineItems = items;
                 const allSel = lineItems.length > 0 && lineItems.every(i => selected.has(i.id));
                 const someSel = lineItems.some(i => selected.has(i.id));
                 const isOpen = searchExpanded.has(code);
