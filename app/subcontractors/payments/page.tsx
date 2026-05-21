@@ -24,10 +24,10 @@ const filterFields: FilterField[] = [
 
 export default function PaymentsPage() {
   const tableState = useTableState();
-  const { page, search, filters } = tableState;
+  const { page, search, filters, selectedItems, clearSelection } = tableState;
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const canCreate = user?.is_superuser || true;
+  const isSuperuser = user?.is_superuser ?? false;
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['subcon-payments', page, search, filters],
@@ -57,6 +57,39 @@ export default function PaymentsPage() {
     onSuccess: () => { invalidate(); toast('Payment cancelled', 'success'); },
     onError:   () => toast('Failed to cancel payment', 'error'),
   });
+
+  // Bulk delete — superusers can delete any status; others cannot delete 'paid'
+  const DELETABLE = new Set(['pending', 'approved', 'cancelled']);
+  const deletableIds = [...selectedItems].filter(id => {
+    const row = rows.find(r => r.id === id);
+    return row && (isSuperuser || DELETABLE.has(row.status));
+  });
+  const nonDeletableCount = selectedItems.size - deletableIds.length;
+
+  const deleteMutation = useMutation({
+    mutationFn: async (ids: number[]) => { for (const id of ids) await subcontractorsApi.payments.delete(id); },
+    onSuccess: (_, ids) => {
+      invalidate();
+      let msg = `Deleted ${ids.length} payment(s)`;
+      if (nonDeletableCount > 0) msg += `. ${nonDeletableCount} skipped (Paid payments are protected).`;
+      toast(msg, 'success');
+      clearSelection();
+    },
+    onError: () => toast('Failed to delete payments', 'error'),
+  });
+
+  const handleBulkDelete = () => {
+    if (!selectedItems.size) return;
+    if (deletableIds.length === 0) {
+      toast('Cannot delete: Paid payments are protected.', 'error');
+      return;
+    }
+    const msg = nonDeletableCount > 0
+      ? `Delete ${deletableIds.length} payment(s)? ${nonDeletableCount} skipped (protected status).`
+      : `Delete ${deletableIds.length} selected payment(s)?`;
+    if (!confirm(msg)) return;
+    deleteMutation.mutate(deletableIds);
+  };
 
   const columns: Column<SubcontractorPayment>[] = [
     {
@@ -164,11 +197,9 @@ export default function PaymentsPage() {
             { label: 'Payments' },
           ]}
           actions={
-            canCreate ? (
-              <Link href="/subcontractors/payments/new">
-                <Button variant="primary">+ New Payment</Button>
-              </Link>
-            ) : undefined
+            <Link href="/subcontractors/payments/new">
+              <Button variant="primary">+ New Payment</Button>
+            </Link>
           }
         />
 
@@ -185,6 +216,22 @@ export default function PaymentsPage() {
           emptyMessage="No payments found."
           totalCount={totalCount}
           paginatedData={data}
+          selectable
+          toolbarActions={
+            selectedItems.size > 0 ? (
+              <>
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                  {selectedItems.size} selected
+                </span>
+                <Button variant="destructive" size="sm"
+                  onClick={handleBulkDelete}
+                  disabled={deleteMutation.isPending}>
+                  {deleteMutation.isPending ? 'Deleting…' : 'Delete Selected'}
+                </Button>
+                <Button variant="secondary" size="sm" onClick={clearSelection}>Clear</Button>
+              </>
+            ) : undefined
+          }
         />
       </PageShell>
     </MainLayout>

@@ -456,6 +456,10 @@ export const subcontractorsApi = {
       const res = await apiClient.post(`${BASE}/payments/${id}/cancel/`);
       return res.data;
     },
+
+    delete: async (id: number): Promise<void> => {
+      await apiClient.delete(`${BASE}/payments/${id}/`);
+    },
   },
 
   // Attachments
