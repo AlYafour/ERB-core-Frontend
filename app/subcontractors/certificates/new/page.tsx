@@ -135,11 +135,31 @@ function NewCertificateForm() {
       } as Parameters<typeof subcontractorsApi.certificates.create>[0]);
 
       const items = (boqItems ?? [])
-        .map(item => ({
-          boq_item: item.id,
-          contractor_claimed_quantity: String(getClaimedQty(item.id, Number(item.contract_quantity), (item.breakdowns?.length ?? 0) > 0)),
-          engineer_approved_quantity: '0',
-        }))
+        .map(item => {
+          const hasBreakdowns = (item.breakdowns?.length ?? 0) > 0;
+          const claimedQty    = getClaimedQty(item.id, Number(item.contract_quantity), hasBreakdowns);
+          if (hasBreakdowns) {
+            const bds = item.breakdowns!
+              .map((bd, i) => ({
+                location: bd.location,
+                contractor_quantity: String(parseFloat((breakdownQty[item.id] ?? {})[bd.location] ?? '0') || 0),
+                engineer_quantity: '0',
+                order: i,
+              }))
+              .filter(bd => Number(bd.contractor_quantity) > 0);
+            return {
+              boq_item: item.id,
+              contractor_claimed_quantity: String(claimedQty),
+              engineer_approved_quantity: '0',
+              breakdowns: bds,
+            };
+          }
+          return {
+            boq_item: item.id,
+            contractor_claimed_quantity: String(claimedQty),
+            engineer_approved_quantity: '0',
+          };
+        })
         .filter(item => Number(item.contractor_claimed_quantity) > 0);
 
       if (items.length > 0) {

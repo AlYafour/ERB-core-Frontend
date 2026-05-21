@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect, useRef } from 'react';
+import React, { use, useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -98,6 +98,13 @@ function RejectModal({
   );
 }
 
+const inputStyle: React.CSSProperties = {
+  width: 90, textAlign: 'right', fontFamily: 'monospace',
+  border: '1px solid var(--brand)', borderRadius: 4,
+  padding: '3px 6px', fontSize: 'var(--text-sm)',
+  background: 'var(--bg-input)', color: 'var(--text-primary)',
+};
+
 export default function CertificateDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const numericId = Number(id);
@@ -109,12 +116,18 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
   const setTab = (t: Tab) => { setTabState(t); history.replaceState(null, '', `#${t}`); };
 
   const [rejectOpen, setRejectOpen] = useState(false);
-  const [engineerQtys, setEngineerQtys] = useState<Record<number, string>>({});
-  const [claimedQtys, setClaimedQtys] = useState<Record<number, string>>({});
-  const [managerApprovedQtys, setManagerApprovedQtys] = useState<Record<number, string>>({});
+
+  // Per-item quantity states (keyed by certificate item id)
+  const [engineerQtys,       setEngineerQtys]       = useState<Record<number, string>>({});
+  const [claimedQtys,        setClaimedQtys]         = useState<Record<number, string>>({});
+  const [managerApprovedQtys,setManagerApprovedQtys] = useState<Record<number, string>>({});
+
+  // Per-location engineer qty for breakdown items: { certItemId: { location: qty } }
+  const [breakdownEngQty, setBreakdownEngQty] = useState<Record<number, Record<string, string>>>({});
+
   const [qtysInitialized, setQtysInitialized] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const queryClient = useQueryClient();
+  const queryClient  = useQueryClient();
 
   const { data: cert, isLoading, error } = useQuery({
     queryKey: ['subcon-cert', id],
@@ -122,7 +135,6 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
     enabled: !isNaN(numericId) && numericId > 0,
   });
 
-  // Auto-load items when status is editable or tab is open
   const { data: items } = useQuery({
     queryKey: ['cert-items', id],
     queryFn: () => subcontractorsApi.certificates.getItems(numericId),
@@ -131,7 +143,6 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
 
   const hasCertItems = (items?.length ?? 0) > 0;
 
-  // When cert is editable but has no saved items, load BOQ items as fallback so user can enter quantities
   const { data: fallbackBoqItems } = useQuery({
     queryKey: ['cert-boq-fallback', cert?.contract],
     queryFn: () => subcontractorsApi.boqItems.list(cert!.contract as number),
@@ -144,26 +155,33 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
     enabled: tab === 'attachments' && !isNaN(numericId) && numericId > 0,
   });
 
-  // Initialize qtys from cert items, or from fallback BOQ items when cert has none
   useEffect(() => {
     if (qtysInitialized) return;
     if (items && items.length > 0) {
-      const eng: Record<number, string> = {};
+      const eng: Record<number, string>     = {};
       const claimed: Record<number, string> = {};
-      const mgr: Record<number, string> = {};
+      const mgr: Record<number, string>     = {};
+      const brkEng: Record<number, Record<string, string>> = {};
       items.forEach(item => {
         eng[item.id]     = String(item.engineer_approved_quantity);
         claimed[item.id] = String(item.contractor_claimed_quantity);
         mgr[item.id]     = String(item.engineer_approved_quantity);
+        if (item.breakdowns && item.breakdowns.length > 0) {
+          brkEng[item.id] = {};
+          item.breakdowns.forEach(bd => {
+            brkEng[item.id][bd.location] = String(bd.engineer_quantity);
+          });
+        }
       });
       setEngineerQtys(eng);
       setClaimedQtys(claimed);
       setManagerApprovedQtys(mgr);
+      setBreakdownEngQty(brkEng);
       setQtysInitialized(true);
     } else if (fallbackBoqItems && fallbackBoqItems.length > 0) {
-      const eng: Record<number, string> = {};
+      const eng: Record<number, string>     = {};
       const claimed: Record<number, string> = {};
-      const mgr: Record<number, string> = {};
+      const mgr: Record<number, string>     = {};
       fallbackBoqItems.forEach(item => { eng[item.id] = '0'; claimed[item.id] = '0'; mgr[item.id] = '0'; });
       setEngineerQtys(eng);
       setClaimedQtys(claimed);
@@ -175,9 +193,87 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
   const invalidateCert  = () => queryClient.invalidateQueries({ queryKey: ['subcon-cert', id] });
   const invalidateItems = () => queryClient.invalidateQueries({ queryKey: ['cert-items', id] });
 
+  const isDraft      = cert?.status === 'draft';
+  const isSubmitted  = cert?.status === 'submitted';
+  const isReviewed   = cert?.status === 'reviewed';
+  const isApproved   = cert?.status === 'approved';
+  const isGmApproved = cert?.status === 'gm_approved';
+  const canEditItems = isDraft || isSubmitted || isReviewed;
+  const canApprove   = isReviewed;
+
+  // Build items payload to send to bulk_save
+  const buildItemsPayload = () => {
+    if (hasCertItems) {
+      return (items ?? []).map(item => {
+        const hasBreakdowns = (item.breakdowns?.length ?? 0) > 0;
+
+        if (isDraft) {
+          // Draft: site engineer can edit claimed qty for non-breakdown items only
+          if (hasBreakdowns) {
+            return {
+              boq_item: item.boq_item,
+              contractor_claimed_quantity: item.contractor_claimed_quantity,
+              engineer_approved_quantity: '0',
+              // No breakdowns key → backend preserves existing breakdown records
+            };
+          }
+          return {
+            boq_item: item.boq_item,
+            contractor_claimed_quantity: claimedQtys[item.id] ?? item.contractor_claimed_quantity,
+            engineer_approved_quantity: '0',
+          };
+        }
+
+        if (isSubmitted) {
+          // Submitted: office engineer enters approved qty per location (or per item)
+          if (hasBreakdowns) {
+            const bds = item.breakdowns!.map(bd => ({
+              location: bd.location,
+              contractor_quantity: bd.contractor_quantity,
+              engineer_quantity: (breakdownEngQty[item.id] ?? {})[bd.location] ?? String(bd.engineer_quantity),
+            }));
+            const engTotal = bds.reduce((s, bd) => s + (parseFloat(bd.engineer_quantity) || 0), 0);
+            return {
+              boq_item: item.boq_item,
+              contractor_claimed_quantity: item.contractor_claimed_quantity,
+              engineer_approved_quantity: String(engTotal),
+              breakdowns: bds,
+            };
+          }
+          return {
+            boq_item: item.boq_item,
+            contractor_claimed_quantity: item.contractor_claimed_quantity,
+            engineer_approved_quantity: engineerQtys[item.id] ?? item.engineer_approved_quantity ?? '0',
+          };
+        }
+
+        if (isReviewed) {
+          // Reviewed: manager approves a total per item (no per-location changes)
+          return {
+            boq_item: item.boq_item,
+            contractor_claimed_quantity: item.contractor_claimed_quantity,
+            engineer_approved_quantity: managerApprovedQtys[item.id] ?? item.engineer_approved_quantity ?? '0',
+          };
+        }
+
+        return {
+          boq_item: item.boq_item,
+          contractor_claimed_quantity: item.contractor_claimed_quantity,
+          engineer_approved_quantity: item.engineer_approved_quantity,
+        };
+      });
+    }
+
+    // Fallback: building items fresh from BOQ (no saved cert items yet)
+    return (fallbackBoqItems ?? []).map(item => ({
+      boq_item: item.id,
+      contractor_claimed_quantity: claimedQtys[item.id] ?? '0',
+      engineer_approved_quantity: engineerQtys[item.id] ?? '0',
+    }));
+  };
+
   const submitMutation = useMutation({
     mutationFn: async () => {
-      // Auto-save any pending measurements before submitting
       const payload = buildItemsPayload();
       if (payload.length > 0) {
         await subcontractorsApi.certificates.saveItems(numericId, payload);
@@ -188,35 +284,12 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
     onError: (err) => toast(getApiError(err, 'Failed to submit'), 'error'),
   });
 
-  const buildItemsPayload = () => {
-    if (hasCertItems) {
-      return (items ?? []).map(item => ({
-        boq_item: item.boq_item,
-        contractor_claimed_quantity: isDraft
-          ? (claimedQtys[item.id] ?? item.contractor_claimed_quantity)
-          : item.contractor_claimed_quantity,
-        engineer_approved_quantity: isDraft
-          ? '0'
-          : isReviewed
-          ? (managerApprovedQtys[item.id] ?? item.engineer_approved_quantity ?? '0')
-          : (engineerQtys[item.id] ?? item.engineer_approved_quantity ?? '0'),
-      }));
-    }
-    // Fallback: building items fresh from BOQ
-    return (fallbackBoqItems ?? []).map(item => ({
-      boq_item: item.id,
-      contractor_claimed_quantity: claimedQtys[item.id] ?? '0',
-      engineer_approved_quantity: engineerQtys[item.id] ?? '0',
-    }));
-  };
-
   const saveItemsMutation = useMutation({
     mutationFn: () => subcontractorsApi.certificates.saveItems(numericId, buildItemsPayload()),
     onSuccess: () => { invalidateItems(); setQtysInitialized(false); toast('Measurements saved', 'success'); },
     onError: (err) => toast(getApiError(err, 'Failed to save measurements'), 'error'),
   });
 
-  // Mark Reviewed = save engineer qtys first, then call review endpoint
   const reviewMutation = useMutation({
     mutationFn: async () => {
       const payload = buildItemsPayload();
@@ -226,9 +299,7 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
       return subcontractorsApi.certificates.review(numericId, {});
     },
     onSuccess: () => {
-      invalidateCert();
-      invalidateItems();
-      setQtysInitialized(false); // re-init qtys from fresh data
+      invalidateCert(); invalidateItems(); setQtysInitialized(false);
       toast('Certificate marked as reviewed', 'success');
     },
     onError: (err) => toast(getApiError(err, 'Failed to mark reviewed'), 'error'),
@@ -236,7 +307,6 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
 
   const approveMutation = useMutation({
     mutationFn: async () => {
-      // Save manager's chosen approved quantities before approving
       const payload = buildItemsPayload();
       if (payload.length > 0) {
         await subcontractorsApi.certificates.saveItems(numericId, payload);
@@ -280,15 +350,6 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
   if (error || !cert) return (
     <MainLayout><PageShell><div className="card empty-state"><p style={{ color: 'var(--status-error)' }}>Certificate not found.</p></div></PageShell></MainLayout>
   );
-
-  const isDraft      = cert.status === 'draft';
-  const isSubmitted  = cert.status === 'submitted';
-  const isReviewed   = cert.status === 'reviewed';
-  const isApproved   = cert.status === 'approved';
-  const isGmApproved = cert.status === 'gm_approved';
-  const canEditItems = isDraft || isSubmitted || isReviewed;
-  const canReject    = isReviewed;
-  const canApprove   = isReviewed;
 
   return (
     <MainLayout>
@@ -336,7 +397,6 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
           }
         />
 
-        {/* Rejection modal */}
         <RejectModal
           open={rejectOpen}
           onClose={() => setRejectOpen(false)}
@@ -344,7 +404,7 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
           isPending={rejectMutation.isPending}
         />
 
-        {/* Financial summary cards */}
+        {/* Financial summary */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-5)', marginBottom: 'var(--space-5)' }}>
           <div className="card">
             <div className="info-section-title">Certificate Summary</div>
@@ -446,6 +506,35 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                 Edit claimed quantities, then <strong>Save</strong>. Submit for review when ready.
               </div>
             )}
+
+            {isSubmitted && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ padding: '8px 12px', background: 'rgba(59,130,246,0.08)', borderRadius: 6, border: '1px solid rgba(59,130,246,0.2)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 8 }}>
+                  Enter engineer-approved quantities per location, then click <strong>Submit Engineer Review</strong>.
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontWeight: 500 }}>Quick fill Eng Qty:</span>
+                  <Button variant="secondary" size="sm" onClick={() => {
+                    const eng: Record<number, string> = {};
+                    const brkEng: Record<number, Record<string, string>> = {};
+                    (items ?? []).forEach(item => {
+                      eng[item.id] = String(item.contractor_claimed_quantity);
+                      if (item.breakdowns && item.breakdowns.length > 0) {
+                        brkEng[item.id] = {};
+                        item.breakdowns.forEach(bd => {
+                          brkEng[item.id][bd.location] = String(bd.contractor_quantity);
+                        });
+                      }
+                    });
+                    setEngineerQtys(eng);
+                    setBreakdownEngQty(brkEng);
+                  }}>
+                    ← Accept Site Qty (الموقع)
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {isReviewed && (
               <div style={{ marginBottom: 12 }}>
                 <div style={{ padding: '10px 14px', background: 'rgba(245,158,11,0.08)', borderRadius: 6, border: '1px solid rgba(245,158,11,0.3)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 10 }}>
@@ -457,27 +546,18 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                     const qtys: Record<number, string> = {};
                     items?.forEach(item => { qtys[item.id] = String(item.contractor_claimed_quantity); });
                     setManagerApprovedQtys(qtys);
-                  }}>
-                    ← Site Qty (الموقع)
-                  </Button>
+                  }}>← Site Qty (الموقع)</Button>
                   <Button variant="secondary" size="sm" onClick={() => {
                     const qtys: Record<number, string> = {};
                     items?.forEach(item => { qtys[item.id] = String(item.engineer_approved_quantity); });
                     setManagerApprovedQtys(qtys);
-                  }}>
-                    ← Eng Qty (الهندسي)
-                  </Button>
+                  }}>← Eng Qty (الهندسي)</Button>
                 </div>
               </div>
             )}
-            {isSubmitted && (
-              <div style={{ marginBottom: 12, padding: '8px 12px', background: 'rgba(59,130,246,0.08)', borderRadius: 6, border: '1px solid rgba(59,130,246,0.2)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-                Enter approved quantities for each item, then click <strong>Submit Engineer Review</strong>.
-              </div>
-            )}
 
+            {/* ── Fallback: no saved items, show BOQ items ── */}
             {!hasCertItems && canEditItems && fallbackBoqItems && fallbackBoqItems.length > 0 ? (
-              /* ── Fallback: no saved items → show BOQ items for fresh entry ── */
               <div style={{ overflowX: 'auto' }}>
                 <table className="data-table">
                   <thead>
@@ -491,16 +571,10 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                   </thead>
                   <tbody>
                     {fallbackBoqItems.map(boqItem => {
-                      const qtyMap   = isDraft ? claimedQtys : engineerQtys;
+                      const qtyMap    = isDraft ? claimedQtys : engineerQtys;
                       const setQtyMap = isDraft ? setClaimedQtys : setEngineerQtys;
-                      const qty = Number(qtyMap[boqItem.id] ?? '0');
+                      const qty    = Number(qtyMap[boqItem.id] ?? '0');
                       const amount = qty * Number(boqItem.unit_rate);
-                      const inputStyle: React.CSSProperties = {
-                        width: 100, textAlign: 'right', fontFamily: 'monospace',
-                        border: '1px solid var(--brand)', borderRadius: 4,
-                        padding: '3px 6px', fontSize: 'var(--text-sm)',
-                        background: 'var(--bg-input)', color: 'var(--text-primary)',
-                      };
                       return (
                         <tr key={boqItem.id} style={{ verticalAlign: 'middle' }}>
                           <td>
@@ -537,9 +611,12 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                   </tfoot>
                 </table>
               </div>
+
             ) : !hasCertItems ? (
               <div className="empty-state"><p>No measurement items.</p></div>
+
             ) : (
+              /* ── Main measurements table ── */
               <div style={{ overflowX: 'auto' }}>
                 <table className="data-table">
                   <thead>
@@ -564,6 +641,130 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                   </thead>
                   <tbody>
                     {(items ?? []).map(item => {
+                      const hasBreakdowns = (item.breakdowns?.length ?? 0) > 0;
+
+                      /* ── Items WITH per-location breakdowns ── */
+                      if (hasBreakdowns) {
+                        const siteTotal = item.breakdowns!.reduce((s, bd) => s + Number(bd.contractor_quantity), 0);
+                        const liveEngTotal = isSubmitted
+                          ? item.breakdowns!.reduce((s, bd) => {
+                              const v = (breakdownEngQty[item.id] ?? {})[bd.location] ?? String(bd.engineer_quantity);
+                              return s + (parseFloat(v) || 0);
+                            }, 0)
+                          : Number(item.engineer_approved_quantity);
+                        const approvedQty = isReviewed
+                          ? Number(managerApprovedQtys[item.id] ?? item.engineer_approved_quantity ?? '0')
+                          : Number(item.engineer_approved_quantity);
+                        const variation = siteTotal - (isReviewed ? approvedQty : liveEngTotal);
+                        const value = isReviewed
+                          ? approvedQty * Number(item.unit_rate)
+                          : liveEngTotal * Number(item.unit_rate);
+
+                        return (
+                          <React.Fragment key={item.id}>
+                            {/* Header row for this item */}
+                            <tr style={{ background: 'var(--surface-secondary)', borderTop: '2px solid var(--border-subtle)' }}>
+                              <td style={{ fontWeight: 700, fontSize: 'var(--text-sm)' }}>
+                                {item.item_name}
+                                <span style={{ fontSize: 10, fontWeight: 400, color: 'var(--text-tertiary)', marginLeft: 6 }}>
+                                  (per location)
+                                </span>
+                              </td>
+                              <td style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{item.unit}</td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>
+                                {Number(item.contract_quantity) > 0 ? Number(item.contract_quantity).toLocaleString() : '—'}
+                              </td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                                {Number(item.unit_rate).toLocaleString()}
+                              </td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>
+                                {Number(item.previous_approved_quantity) > 0 ? Number(item.previous_approved_quantity).toLocaleString() : '—'}
+                              </td>
+                              {/* Site total */}
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 600 }}>
+                                {siteTotal.toLocaleString(undefined, { maximumFractionDigits: 3 })}
+                              </td>
+                              {/* Eng total (live sum of per-location inputs when isSubmitted) */}
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 600, color: isSubmitted ? 'var(--brand)' : undefined }}>
+                                {liveEngTotal.toLocaleString(undefined, { maximumFractionDigits: 3 })}
+                              </td>
+                              {/* Approved — editable by manager in isReviewed */}
+                              <td style={{ textAlign: 'right' }}>
+                                {isReviewed ? (
+                                  <input
+                                    type="number" min="0" step="any"
+                                    value={managerApprovedQtys[item.id] ?? '0'}
+                                    onChange={e => setManagerApprovedQtys(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                    style={inputStyle}
+                                  />
+                                ) : (
+                                  <span style={{ fontFamily: 'monospace', fontWeight: 600, color: isApproved || isGmApproved ? 'var(--status-success)' : undefined }}>
+                                    {approvedQty.toLocaleString()}
+                                  </span>
+                                )}
+                              </td>
+                              {/* Variation */}
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 500,
+                                color: variation > 0 ? 'var(--status-warning)' : variation < 0 ? 'var(--status-error)' : 'var(--text-tertiary)',
+                              }}>
+                                {variation !== 0
+                                  ? (variation > 0 ? '+' : '') + variation.toLocaleString(undefined, { maximumFractionDigits: 3 })
+                                  : '—'}
+                              </td>
+                              {/* Value */}
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 500 }}>
+                                {value > 0 ? value.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '—'}
+                              </td>
+                            </tr>
+
+                            {/* Per-location sub-rows */}
+                            {item.breakdowns!.map((bd, bi) => {
+                              const isLast = bi === item.breakdowns!.length - 1;
+                              const borderStyle = isLast ? '2px solid var(--border-subtle)' : '1px solid var(--border-subtle)';
+                              const locEngVal = (breakdownEngQty[item.id] ?? {})[bd.location] ?? String(bd.engineer_quantity);
+                              return (
+                                <tr key={`${item.id}-bd-${bi}`}>
+                                  {/* Location label spanning 5 columns */}
+                                  <td colSpan={5} style={{
+                                    paddingLeft: 28, paddingTop: 5, paddingBottom: 5,
+                                    fontSize: 'var(--text-sm)', color: 'var(--text-secondary)',
+                                    borderBottom: borderStyle,
+                                  }}>
+                                    <span style={{ color: 'var(--text-tertiary)', marginRight: 6, fontSize: 11 }}>↳</span>
+                                    {bd.location}
+                                  </td>
+                                  {/* Contractor qty — read-only */}
+                                  <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', borderBottom: borderStyle }}>
+                                    {Number(bd.contractor_quantity).toLocaleString(undefined, { maximumFractionDigits: 3 })}
+                                  </td>
+                                  {/* Engineer qty — editable when isSubmitted */}
+                                  <td style={{ textAlign: 'right', borderBottom: borderStyle }}>
+                                    {isSubmitted ? (
+                                      <input
+                                        type="number" min="0" step="any"
+                                        value={locEngVal}
+                                        onChange={e => setBreakdownEngQty(prev => ({
+                                          ...prev,
+                                          [item.id]: { ...(prev[item.id] ?? {}), [bd.location]: e.target.value },
+                                        }))}
+                                        style={{ ...inputStyle, width: 80 }}
+                                      />
+                                    ) : (
+                                      <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                                        {Number(bd.engineer_quantity).toLocaleString(undefined, { maximumFractionDigits: 3 })}
+                                      </span>
+                                    )}
+                                  </td>
+                                  {/* Approved / Variation / Value — empty in sub-rows */}
+                                  <td colSpan={3} style={{ borderBottom: borderStyle }} />
+                                </tr>
+                              );
+                            })}
+                          </React.Fragment>
+                        );
+                      }
+
+                      /* ── Items WITHOUT breakdowns — single row ── */
                       const siteQty = isDraft
                         ? Number(claimedQtys[item.id] ?? item.contractor_claimed_quantity)
                         : Number(item.contractor_claimed_quantity);
@@ -579,12 +780,6 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                         : isReviewed
                         ? approvedQty * Number(item.unit_rate)
                         : engQty * Number(item.unit_rate);
-                      const inputStyle: React.CSSProperties = {
-                        width: 90, textAlign: 'right', fontFamily: 'monospace',
-                        border: '1px solid var(--brand)', borderRadius: 4,
-                        padding: '3px 6px', fontSize: 'var(--text-sm)',
-                        background: 'var(--bg-input)', color: 'var(--text-primary)',
-                      };
 
                       return (
                         <tr key={item.id} style={{ verticalAlign: 'middle' }}>
@@ -613,12 +808,10 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                                 style={inputStyle}
                               />
                             ) : (
-                              <span style={{ fontFamily: 'monospace' }}>
-                                {siteQty.toLocaleString()}
-                              </span>
+                              <span style={{ fontFamily: 'monospace' }}>{siteQty.toLocaleString()}</span>
                             )}
                           </td>
-                          {/* Eng Qty — editable in submitted only */}
+                          {/* Eng Qty — editable in submitted */}
                           <td style={{ textAlign: 'right' }}>
                             {isSubmitted ? (
                               <input
@@ -633,7 +826,7 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                               </span>
                             )}
                           </td>
-                          {/* Approved Qty — editable in reviewed by manager */}
+                          {/* Approved Qty — editable in reviewed */}
                           <td style={{ textAlign: 'right' }}>
                             {isReviewed ? (
                               <input
@@ -649,7 +842,7 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                               </span>
                             )}
                           </td>
-                          {/* Variation = Site - Approved */}
+                          {/* Variation = Site − Eng/Approved */}
                           <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 500,
                             color: variation > 0 ? 'var(--status-warning)' : variation < 0 ? 'var(--status-error)' : 'var(--text-tertiary)',
                           }}>
@@ -671,16 +864,23 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                     <tr>
                       <td colSpan={5} style={{ padding: '8px 12px' }} />
                       <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 600, padding: '8px 4px', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-                        {/* Site total */}
                         {(items ?? []).reduce((sum, item) => {
                           const sq = isDraft ? Number(claimedQtys[item.id] ?? item.contractor_claimed_quantity) : Number(item.contractor_claimed_quantity);
                           return sum + sq * Number(item.unit_rate);
                         }, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </td>
                       <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 600, padding: '8px 4px', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-                        {/* Eng total */}
                         {(items ?? []).reduce((sum, item) => {
-                          const eq = isSubmitted ? Number(engineerQtys[item.id] ?? 0) : Number(item.engineer_approved_quantity);
+                          const hasBreakdowns = (item.breakdowns?.length ?? 0) > 0;
+                          let eq: number;
+                          if (isSubmitted && hasBreakdowns) {
+                            eq = item.breakdowns!.reduce((s, bd) => {
+                              const v = (breakdownEngQty[item.id] ?? {})[bd.location] ?? String(bd.engineer_quantity);
+                              return s + (parseFloat(v) || 0);
+                            }, 0);
+                          } else {
+                            eq = isSubmitted ? Number(engineerQtys[item.id] ?? 0) : Number(item.engineer_approved_quantity);
+                          }
                           return sum + eq * Number(item.unit_rate);
                         }, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </td>
@@ -692,8 +892,19 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
                           ? (items ?? []).reduce((sum, item) => sum + Number(claimedQtys[item.id] ?? item.contractor_claimed_quantity) * Number(item.unit_rate), 0)
                               .toLocaleString(undefined, { minimumFractionDigits: 2 })
                           : isSubmitted
-                          ? (items ?? []).reduce((sum, item) => sum + Number(engineerQtys[item.id] ?? item.engineer_approved_quantity ?? 0) * Number(item.unit_rate), 0)
-                              .toLocaleString(undefined, { minimumFractionDigits: 2 })
+                          ? (items ?? []).reduce((sum, item) => {
+                              const hasBreakdowns = (item.breakdowns?.length ?? 0) > 0;
+                              let eq: number;
+                              if (hasBreakdowns) {
+                                eq = item.breakdowns!.reduce((s, bd) => {
+                                  const v = (breakdownEngQty[item.id] ?? {})[bd.location] ?? String(bd.engineer_quantity);
+                                  return s + (parseFloat(v) || 0);
+                                }, 0);
+                              } else {
+                                eq = Number(engineerQtys[item.id] ?? item.engineer_approved_quantity ?? 0);
+                              }
+                              return sum + eq * Number(item.unit_rate);
+                            }, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })
                           : isReviewed
                           ? (items ?? []).reduce((sum, item) => sum + Number(managerApprovedQtys[item.id] ?? item.engineer_approved_quantity ?? 0) * Number(item.unit_rate), 0)
                               .toLocaleString(undefined, { minimumFractionDigits: 2 })

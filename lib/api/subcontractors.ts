@@ -130,6 +130,14 @@ export interface ProgressCertificate {
   updated_at: string;
 }
 
+export interface CertificateItemBreakdown {
+  id: number;
+  location: string;
+  contractor_quantity: string;
+  engineer_quantity: string;
+  order: number;
+}
+
 export interface ProgressCertificateItem {
   id: number;
   certificate: number;
@@ -148,6 +156,7 @@ export interface ProgressCertificateItem {
   total_approved_amount: string;
   notes: string;
   rejection_reason: string;
+  breakdowns: CertificateItemBreakdown[];
 }
 
 export interface SubcontractorPayment {
@@ -430,7 +439,15 @@ export const subcontractorsApi = {
       return res.data.results ?? res.data;
     },
 
-    saveItems: async (certificateId: number, items: Partial<ProgressCertificateItem>[]): Promise<ProgressCertificateItem[]> => {
+    saveItems: async (
+      certificateId: number,
+      items: Array<{
+        boq_item: number;
+        contractor_claimed_quantity: string;
+        engineer_approved_quantity: string;
+        breakdowns?: Array<{ location: string; contractor_quantity: string; engineer_quantity: string }>;
+      }>,
+    ): Promise<ProgressCertificateItem[]> => {
       const res = await apiClient.post(`${BASE}/certificate-items/bulk_save/`, {
         certificate: certificateId,
         items,
