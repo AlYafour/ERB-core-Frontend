@@ -1,58 +1,100 @@
 'use client';
 
 import MainLayout from '@/components/layout/MainLayout';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subcontractorsApi, SubcontractorPayment } from '@/lib/api/subcontractors';
 import Link from 'next/link';
 import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { PAYMENT_STATUS } from '@/lib/utils/status-colors';
+import { toast } from '@/lib/hooks/use-toast';
+import { useAuth } from '@/lib/hooks/use-auth';
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Pending', approved: 'Approved', paid: 'Paid', cancelled: 'Cancelled',
 };
 
 const filterFields: FilterField[] = [
-  {
-    name: 'status', label: 'Status', type: 'select', group: 'Payment',
-    options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
-  },
+  { name: 'status', label: 'Status', type: 'select', group: 'Payment',
+    options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })) },
+  { name: 'date_from', label: 'Payment Date From', type: 'date', group: 'Dates' },
+  { name: 'date_to',   label: 'Payment Date To',   type: 'date', group: 'Dates' },
 ];
 
 export default function PaymentsPage() {
   const tableState = useTableState();
   const { page, search, filters } = tableState;
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const canCreate = user?.is_superuser || true;
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['subcon-payments', page, search, filters],
     queryFn: () => subcontractorsApi.payments.list({ page, search: search || undefined, ...filters }),
+    staleTime: 2 * 60 * 1000,
   });
 
   const rows       = data?.results ?? [];
   const totalCount = data?.count ?? 0;
 
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['subcon-payments'] });
+
+  const approveMutation = useMutation({
+    mutationFn: (id: number) => subcontractorsApi.payments.approve(id),
+    onSuccess: () => { invalidate(); toast('Payment approved', 'success'); },
+    onError:   () => toast('Failed to approve payment', 'error'),
+  });
+
+  const markPaidMutation = useMutation({
+    mutationFn: (id: number) => subcontractorsApi.payments.markPaid(id, {}),
+    onSuccess: () => { invalidate(); toast('Payment marked as paid', 'success'); },
+    onError:   () => toast('Failed to mark as paid', 'error'),
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: (id: number) => subcontractorsApi.payments.cancel(id),
+    onSuccess: () => { invalidate(); toast('Payment cancelled', 'success'); },
+    onError:   () => toast('Failed to cancel payment', 'error'),
+  });
+
   const columns: Column<SubcontractorPayment>[] = [
     {
       key: 'payment_no', header: 'Payment No.',
-      render: p => <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{p.payment_no}</span>,
+      render: p => (
+        <Link href={`/subcontractors/payments/${p.id}`} style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-brand)', fontWeight: 600 }}>
+          {p.payment_no}
+        </Link>
+      ),
     },
     {
-      key: 'subcontractor_name', header: 'Subcontractor',
+      key: 'subcontractor_name', header: 'Subcontractor / Contract',
       render: p => (
         <div>
-          <div className="font-medium">{p.subcontractor_name}</div>
+          <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{p.subcontractor_name}</div>
           <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{p.contract_no}</div>
         </div>
       ),
     },
     {
-      key: 'payment_date', header: 'Payment Date',
-      render: p => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{p.payment_date}</span>,
+      key: 'project_name', header: 'Project',
+      render: p => p.project_name
+        ? <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{p.project_name}</span>
+        : <span style={{ color: 'var(--text-tertiary)' }}>—</span>,
     },
     {
-      key: 'certificate_no', header: 'IPC No.',
-      render: p => <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{p.certificate_no || '—'}</span>,
+      key: 'payment_date', header: 'Payment Date',
+      render: p => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{p.payment_date}</span>,
+    },
+    {
+      key: 'certificate_no', header: 'IPC Ref.',
+      render: p => p.certificate_no
+        ? (
+          <Link href={`/subcontractors/certificates/${p.certificate}`} style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-brand)' }}>
+            {p.certificate_no}
+          </Link>
+        )
+        : <span style={{ color: 'var(--text-tertiary)' }}>—</span>,
     },
     {
       key: 'gross_amount', header: 'Gross',
@@ -61,7 +103,7 @@ export default function PaymentsPage() {
     {
       key: 'net_paid_amount', header: 'Net Paid',
       render: p => (
-        <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 600 }}>
+        <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 700 }}>
           AED {Number(p.net_paid_amount).toLocaleString()}
         </span>
       ),
@@ -81,9 +123,32 @@ export default function PaymentsPage() {
     {
       key: 'actions', header: '',
       render: p => (
-        <Link href={`/subcontractors/payments/${p.id}`}>
-          <Button variant="view" size="sm">View</Button>
-        </Link>
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          <Link href={`/subcontractors/payments/${p.id}`}>
+            <Button variant="view" size="sm">View</Button>
+          </Link>
+          {p.status === 'pending' && (
+            <Button variant="primary" size="sm"
+              onClick={() => approveMutation.mutate(p.id)}
+              disabled={approveMutation.isPending}>
+              Approve
+            </Button>
+          )}
+          {p.status === 'approved' && (
+            <Button variant="primary" size="sm"
+              onClick={() => { if (confirm('Mark this payment as paid?')) markPaidMutation.mutate(p.id); }}
+              disabled={markPaidMutation.isPending}>
+              Mark Paid
+            </Button>
+          )}
+          {(p.status === 'pending' || p.status === 'approved') && (
+            <Button variant="destructive" size="sm"
+              onClick={() => { if (confirm('Cancel this payment?')) cancelMutation.mutate(p.id); }}
+              disabled={cancelMutation.isPending}>
+              Cancel
+            </Button>
+          )}
+        </div>
       ),
     },
   ];
@@ -98,12 +163,20 @@ export default function PaymentsPage() {
             { label: 'Subcontractors', href: '/subcontractors' },
             { label: 'Payments' },
           ]}
+          actions={
+            canCreate ? (
+              <Link href="/subcontractors/payments/new">
+                <Button variant="primary">+ New Payment</Button>
+              </Link>
+            ) : undefined
+          }
         />
+
         <TableShell
           tableState={tableState}
           filterFields={filterFields}
           filterSaveKey="subcon-payments"
-          searchPlaceholder="Search by payment number, subcontractor..."
+          searchPlaceholder="Search by payment number, subcontractor, contract..."
           columns={columns}
           data={rows}
           isLoading={isLoading}
