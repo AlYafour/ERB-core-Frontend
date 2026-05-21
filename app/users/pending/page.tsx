@@ -31,7 +31,7 @@ export default function PendingUsersPage() {
         throw err;
       }
     },
-    refetchInterval: 5000,
+    refetchInterval: 30_000,
     retry: 2,
   });
 
