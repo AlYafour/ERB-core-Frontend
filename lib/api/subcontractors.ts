@@ -361,6 +361,10 @@ export const subcontractorsApi = {
       const res = await apiClient.post(`${BASE}/boq-breakdowns/bulk_save/`, { boq_item: boqItemId, rows });
       return res.data;
     },
+    getLocations: async (): Promise<string[]> => {
+      const res = await apiClient.get(`${BASE}/boq-breakdowns/locations/`);
+      return res.data;
+    },
   },
 
   // Certificates

@@ -558,12 +558,17 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
     onError: () => toast('Save failed', 'error'),
   });
 
+  const { data: globalLocations = [] } = useQuery({
+    queryKey: ['boq-breakdown-locations'],
+    queryFn: () => subcontractorsApi.boqBreakdowns.getLocations(),
+    staleTime: 5 * 60 * 1000,
+  });
+
   const usedLocations = useMemo(() => {
-    if (!boqItems) return [];
-    const set = new Set<string>();
-    boqItems.forEach(item => (item.breakdowns ?? []).forEach(b => set.add(b.location)));
+    const set = new Set<string>(globalLocations);
+    (boqItems ?? []).forEach(item => (item.breakdowns ?? []).forEach(b => set.add(b.location)));
     return Array.from(set).sort();
-  }, [boqItems]);
+  }, [boqItems, globalLocations]);
 
   if (isLoading) return <MainLayout><PageShell><div className="card empty-state"><p>Loading...</p></div></PageShell></MainLayout>;
   if (error || !contract) return <MainLayout><PageShell><div className="card empty-state"><p style={{ color: 'var(--status-error)' }}>Contract not found.</p></div></PageShell></MainLayout>;
