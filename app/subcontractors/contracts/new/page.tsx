@@ -50,7 +50,16 @@ function NewContractForm() {
   const [projectIds, setProjectIds] = useState<number[]>([]);
 
   const mutation = useMutation({
-    mutationFn: () => subcontractorsApi.contracts.create({ ...form, project_ids: projectIds } as Parameters<typeof subcontractorsApi.contracts.create>[0]),
+    mutationFn: () => {
+      const payload = {
+        ...form,
+        contract_value:          form.contract_value          || '0',
+        advance_payment_amount:  form.advance_payment_enabled ? (form.advance_payment_amount  || '0') : '0',
+        advance_recovery_percentage: form.advance_payment_enabled ? (form.advance_recovery_percentage || '0') : '0',
+        project_ids: projectIds,
+      };
+      return subcontractorsApi.contracts.create(payload as Parameters<typeof subcontractorsApi.contracts.create>[0]);
+    },
     onSuccess: (data) => {
       toast('Contract created', 'success');
       router.push(`/subcontractors/contracts/${data.id}`);
@@ -107,9 +116,9 @@ function NewContractForm() {
             </FormField>
           </div>
 
-          <FormField label="Contract Value (AED)" required>
+          <FormField label="Contract Value (AED)" helperText="Leave blank for unit-rate contracts (BOQ total will be used)">
             <input
-              type="number" required min="0" step="0.01" className="form-input"
+              type="number" min="0" step="0.01" className="form-input"
               placeholder="0.00"
               value={form.contract_value}
               onChange={e => set('contract_value', e.target.value)}
@@ -202,7 +211,7 @@ function NewContractForm() {
 
           {form.advance_payment_enabled && (
             <div className="form-grid">
-              <FormField label="Advance Amount (AED)" required>
+              <FormField label="Advance Amount (AED)">
                 <input
                   type="number" min="0" step="0.01" className="form-input"
                   placeholder="0.00"
