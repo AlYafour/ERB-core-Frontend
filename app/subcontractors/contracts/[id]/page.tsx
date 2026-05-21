@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useMemo, useRef, useEffect } from 'react';
+import React, { use, useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -800,8 +800,10 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                   <tbody>
                     {boqItems.map((item, i) => {
                       const isEditing = editingBoqId === item.id;
+                      const hasBreakdowns = (item.breakdowns?.length ?? 0) > 0;
                       return (
-                        <tr key={item.id}>
+                        <React.Fragment key={item.id}>
+                        <tr style={hasBreakdowns ? { borderBottom: 'none' } : undefined}>
                           <td style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>{i + 1}</td>
                           <td style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
                             {item.item_code || '—'}
@@ -910,6 +912,27 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                             </div>
                           </td>
                         </tr>
+
+                        {/* Per-location breakdown sub-rows */}
+                        {!isEditing && hasBreakdowns && item.breakdowns!.map((bd, bi) => {
+                          const isLast = bi === item.breakdowns!.length - 1;
+                          const borderBottom = isLast ? '2px solid var(--border-subtle)' : '1px solid var(--border-subtle)';
+                          return (
+                            <tr key={`${item.id}-bd-${bi}`} style={{ background: 'var(--surface-secondary)' }}>
+                              <td colSpan={2} style={{ borderBottom }} />
+                              <td style={{ paddingLeft: 28, paddingTop: 5, paddingBottom: 5, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', borderBottom }}>
+                                <span style={{ color: 'var(--text-tertiary)', marginRight: 6, fontSize: 11 }}>↳</span>
+                                {bd.location}
+                              </td>
+                              <td style={{ borderBottom, color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>—</td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', borderBottom }}>
+                                {Number(bd.quantity) > 0 ? Number(bd.quantity).toLocaleString(undefined, { maximumFractionDigits: 3 }) : '—'}
+                              </td>
+                              <td colSpan={5} style={{ borderBottom }} />
+                            </tr>
+                          );
+                        })}
+                        </React.Fragment>
                       );
                     })}
                   </tbody>
