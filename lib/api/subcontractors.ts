@@ -498,7 +498,7 @@ export const subcontractorsApi = {
     },
 
     listAll: async (): Promise<BOQTemplateItem[]> => {
-      const res = await apiClient.get(`${BASE}/boq-templates/`, { params: { page_size: 500, active: 'true' } });
+      const res = await apiClient.get(`${BASE}/boq-templates/`, { params: { page_size: 500, ordering: 'section_code,order,item_name' } });
       return res.data.results ?? res.data;
     },
 
