@@ -134,11 +134,13 @@ function NewCertificateForm() {
         notes: form.notes,
       } as Parameters<typeof subcontractorsApi.certificates.create>[0]);
 
-      const items = (boqItems ?? []).map(item => ({
-        boq_item: item.id,
-        contractor_claimed_quantity: String(getClaimedQty(item.id, Number(item.contract_quantity), (item.breakdowns?.length ?? 0) > 0)),
-        engineer_approved_quantity: '0',
-      }));
+      const items = (boqItems ?? [])
+        .map(item => ({
+          boq_item: item.id,
+          contractor_claimed_quantity: String(getClaimedQty(item.id, Number(item.contract_quantity), (item.breakdowns?.length ?? 0) > 0)),
+          engineer_approved_quantity: '0',
+        }))
+        .filter(item => Number(item.contractor_claimed_quantity) > 0);
 
       if (items.length > 0) {
         await subcontractorsApi.certificates.saveItems(cert.id, items);
