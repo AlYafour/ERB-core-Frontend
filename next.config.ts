@@ -1,13 +1,8 @@
 import type { NextConfig } from "next";
-import path from "path";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   compress: true,
-
-  turbopack: {
-    root: path.resolve(process.cwd()),
-  },
 
   images: {
     formats: ['image/avif', 'image/webp'],
