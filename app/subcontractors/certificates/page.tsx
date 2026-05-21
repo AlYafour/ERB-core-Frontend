@@ -81,7 +81,7 @@ export default function CertificatesPage() {
   const DELETABLE = new Set(['draft', 'submitted', 'under_review', 'reviewed', 'rejected', 'cancelled']);
   const deletableIds = [...selectedItems].filter(id => {
     const row = rows.find(r => r.id === id);
-    return row && DELETABLE.has(row.status);
+    return row && (isSuperuser || DELETABLE.has(row.status));
   });
   const nonDeletableCount = selectedItems.size - deletableIds.length;
 
