@@ -508,7 +508,7 @@ export default function GRNDetailPage() {
             purchaseOrder && purchaseOrder.status === 'approved' && canCreateInvoicePerm && (
               <Button
                 variant="primary"
-                onClick={() => {
+                onClick={async () => {
                   const guard = canCreateInvoice(purchaseOrder.status);
                   if (!guard.canProceed) { toast(guard.reason || 'Cannot create invoice', 'error'); return; }
                   if (guard.warning && !await confirm(guard.warning + '\n\nDo you want to continue?')) return;

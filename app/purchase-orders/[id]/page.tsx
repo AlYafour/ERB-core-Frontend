@@ -156,7 +156,7 @@ export default function PurchaseOrderDetailPage() {
                   }}>Create GRN</Button>
                 )}
                 {order.status === 'approved' && canCreateInvoicePerm && order.has_grn && (
-                  <Button variant="primary" size="sm" onClick={() => {
+                  <Button variant="primary" size="sm" onClick={async () => {
                     const guard = canCreateInvoice(order.status);
                     if (!guard.canProceed) { toast(guard.reason || 'Cannot create invoice', 'error'); return; }
                     if (guard.warning && !await confirm(guard.warning + '\n\nDo you want to continue?')) return;
