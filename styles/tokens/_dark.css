@@ -6,12 +6,14 @@
 [data-theme="dark"] {
 
   /* Surfaces */
-  --surface-app:     #111827;
-  --surface-base:    #1A2235;
-  --surface-raised:  #1F2A40;
-  --surface-overlay: #243045;
-  --surface-subtle:  #1E2D45;
-  --surface-inset:   #1A2235;
+  --surface-app:       #111827;
+  --surface-base:      #1A2235;
+  --surface-raised:    #1F2A40;
+  --surface-overlay:   #243045;
+  --surface-subtle:    #1E2D45;
+  --surface-inset:     #1A2235;
+  --surface-primary:   #1A2235;
+  --surface-secondary: #243045;
 
   /* Text */
   --text-primary:    #F1F5F9;

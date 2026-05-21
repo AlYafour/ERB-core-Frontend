@@ -6,12 +6,15 @@
 :root {
 
   /* Surfaces */
-  --surface-app:     var(--gray-100);
-  --surface-base:    var(--gray-0);
-  --surface-raised:  var(--gray-0);
-  --surface-overlay: var(--gray-50);
-  --surface-subtle:  var(--gray-150);
-  --surface-inset:   var(--gray-100);
+  --surface-app:       var(--gray-100);
+  --surface-base:      var(--gray-0);
+  --surface-raised:    var(--gray-0);
+  --surface-overlay:   var(--gray-50);
+  --surface-subtle:    var(--gray-150);
+  --surface-inset:     var(--gray-100);
+  /* Aliases used in components */
+  --surface-primary:   var(--gray-0);
+  --surface-secondary: var(--gray-50);
 
   /* Text */
   --text-primary:    var(--gray-900);
