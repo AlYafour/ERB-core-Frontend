@@ -803,7 +803,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                       const hasBreakdowns = (item.breakdowns?.length ?? 0) > 0;
                       return (
                         <React.Fragment key={item.id}>
-                        <tr style={hasBreakdowns ? { borderBottom: 'none' } : undefined}>
+                        <tr style={hasBreakdowns ? { borderBottom: 'none', background: 'var(--surface-secondary)' } : undefined}>
                           <td style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>{i + 1}</td>
                           <td style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
                             {item.item_code || '—'}
@@ -913,7 +913,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                           </td>
                         </tr>
 
-                        {/* Per-location breakdown sub-rows */}
+                        {/* Per-location breakdown sub-rows — locations only, no quantities */}
                         {!isEditing && hasBreakdowns && item.breakdowns!.map((bd, bi) => {
                           const isLast = bi === item.breakdowns!.length - 1;
                           const borderBottom = isLast ? '2px solid var(--border-subtle)' : '1px solid var(--border-subtle)';
@@ -924,11 +924,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                                 <span style={{ color: 'var(--text-tertiary)', marginRight: 6, fontSize: 11 }}>↳</span>
                                 {bd.location}
                               </td>
-                              <td style={{ borderBottom, color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>—</td>
-                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', borderBottom }}>
-                                {Number(bd.quantity) > 0 ? Number(bd.quantity).toLocaleString(undefined, { maximumFractionDigits: 3 }) : '—'}
-                              </td>
-                              <td colSpan={5} style={{ borderBottom }} />
+                              <td colSpan={7} style={{ borderBottom }} />
                             </tr>
                           );
                         })}
