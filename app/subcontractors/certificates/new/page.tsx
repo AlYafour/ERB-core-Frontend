@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { subcontractorsApi } from '@/lib/api/subcontractors';
@@ -85,6 +85,8 @@ function NewCertificateForm() {
   const [modes, setModes]           = useState<Record<number, InputMode>>({});
   const [quantities, setQuantities] = useState<Record<number, string>>({});
   const [percentages, setPercentages] = useState<Record<number, string>>({});
+  // Per-location claimed quantities for breakdown items: { itemId: { location: qty } }
+  const [breakdownQty, setBreakdownQty] = useState<Record<number, Record<string, string>>>({});
 
   const { data: contractsData } = useQuery({
     queryKey: ['subcon-contracts-active'],
@@ -105,8 +107,12 @@ function NewCertificateForm() {
 
   const set = (field: string, value: unknown) => setForm(f => ({ ...f, [field]: value }));
 
-  /** Effective claimed quantity for one item (accounts for both modes) */
-  const getClaimedQty = (itemId: number, contractQty: number): number => {
+  /** Effective claimed quantity for one item (accounts for both modes + breakdown) */
+  const getClaimedQty = (itemId: number, contractQty: number, hasBreakdowns = false): number => {
+    if (hasBreakdowns) {
+      const locs = breakdownQty[itemId] ?? {};
+      return Object.values(locs).reduce((s, v) => s + (parseFloat(v) || 0), 0);
+    }
     const mode = modes[itemId] ?? 'qty';
     if (mode === 'pct') {
       const pct = Number(percentages[itemId] ?? 0);
@@ -130,7 +136,7 @@ function NewCertificateForm() {
 
       const items = (boqItems ?? []).map(item => ({
         boq_item: item.id,
-        contractor_claimed_quantity: String(getClaimedQty(item.id, Number(item.contract_quantity))),
+        contractor_claimed_quantity: String(getClaimedQty(item.id, Number(item.contract_quantity), (item.breakdowns?.length ?? 0) > 0)),
         engineer_approved_quantity: '0',
       }));
 
@@ -156,7 +162,7 @@ function NewCertificateForm() {
     `AED ${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const claimedTotal = (boqItems ?? []).reduce((sum, item) => {
-    const qty = getClaimedQty(item.id, Number(item.contract_quantity));
+    const qty = getClaimedQty(item.id, Number(item.contract_quantity), (item.breakdowns?.length ?? 0) > 0);
     return sum + qty * Number(item.unit_rate);
   }, 0);
 
@@ -191,6 +197,7 @@ function NewCertificateForm() {
                 setQuantities({});
                 setPercentages({});
                 setModes({});
+                setBreakdownQty({});
               }}
               placeholder="Select contract…"
             />
@@ -321,121 +328,144 @@ function NewCertificateForm() {
                   </thead>
                   <tbody>
                     {boqItems.map(item => {
-                      const contractQty = Number(item.contract_quantity);
-                      const approved    = Number(item.approved_quantity_to_date);
-                      const remaining   = Number(item.remaining_quantity);
-                      const mode        = modes[item.id] ?? 'qty';
-                      const claimedQty  = getClaimedQty(item.id, contractQty);
-                      const amount      = claimedQty * Number(item.unit_rate);
+                      const contractQty   = Number(item.contract_quantity);
+                      const approved      = Number(item.approved_quantity_to_date);
+                      const remaining     = Number(item.remaining_quantity);
+                      const hasBreakdowns = (item.breakdowns?.length ?? 0) > 0;
 
+                      /* ── Items WITH location breakdown ── */
+                      if (hasBreakdowns) {
+                        const claimedQty = getClaimedQty(item.id, contractQty, true);
+                        const amount     = claimedQty * Number(item.unit_rate);
+                        return (
+                          <React.Fragment key={item.id}>
+                            {/* Header row */}
+                            <tr style={{ background: 'var(--surface-secondary)', borderTop: '2px solid var(--border-subtle)' }}>
+                              <td colSpan={2} style={{ padding: '8px 8px', fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
+                                {item.item_name}
+                                {item.item_code && (
+                                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 8, fontWeight: 400 }}>{item.item_code}</span>
+                                )}
+                              </td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+                                {Number(item.unit_rate) > 0 ? Number(item.unit_rate).toLocaleString() : '—'}
+                              </td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
+                                {contractQty > 0 ? contractQty.toLocaleString() : '—'}
+                              </td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>
+                                {approved.toLocaleString()}
+                              </td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: remaining < 0 ? 'var(--status-error)' : 'var(--text-secondary)' }}>
+                                {contractQty > 0 ? remaining.toLocaleString() : '—'}
+                              </td>
+                              <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: claimedQty > 0 ? 'var(--brand)' : 'var(--text-tertiary)', fontWeight: 600 }}>
+                                {claimedQty > 0 ? `${claimedQty.toFixed(3)} ${item.unit || ''}`.trim() : '—'}
+                              </td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: amount > 0 ? 700 : 400, color: amount > 0 ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+                                {amount > 0 ? amount.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '—'}
+                              </td>
+                            </tr>
+                            {/* Location sub-rows */}
+                            {item.breakdowns!.map((bd, bi) => {
+                              const locVal = (breakdownQty[item.id] ?? {})[bd.location] ?? '';
+                              const isLast = bi === item.breakdowns!.length - 1;
+                              const cellStyle: React.CSSProperties = {
+                                borderBottom: isLast ? '2px solid var(--border-subtle)' : '1px solid var(--border-subtle)',
+                              };
+                              return (
+                                <tr key={`${item.id}-bd-${bi}`}>
+                                  <td colSpan={2} style={{ ...cellStyle, paddingLeft: 28, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', paddingTop: 6, paddingBottom: 6 }}>
+                                    <span style={{ color: 'var(--text-tertiary)', marginRight: 6, fontSize: 11 }}>↳</span>
+                                    {bd.location}
+                                  </td>
+                                  <td style={{ ...cellStyle, textAlign: 'right', color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>—</td>
+                                  <td style={{ ...cellStyle, textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                                    {Number(bd.quantity).toLocaleString()}
+                                  </td>
+                                  <td style={{ ...cellStyle, textAlign: 'right', color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>—</td>
+                                  <td style={{ ...cellStyle, textAlign: 'right', color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>—</td>
+                                  <td style={{ ...cellStyle, padding: '4px 8px' }}>
+                                    <input
+                                      type="number" min="0" step="0.001" placeholder="0.000"
+                                      value={locVal}
+                                      onChange={e => setBreakdownQty(prev => ({
+                                        ...prev,
+                                        [item.id]: { ...(prev[item.id] ?? {}), [bd.location]: e.target.value },
+                                      }))}
+                                      style={{
+                                        width: '100%', padding: '4px 8px',
+                                        border: '2px solid var(--brand)', borderRadius: 6,
+                                        fontSize: 'var(--text-sm)', fontFamily: 'monospace',
+                                        textAlign: 'right',
+                                        background: 'var(--surface-primary)',
+                                        color: 'var(--text-primary)', outline: 'none',
+                                      }}
+                                    />
+                                  </td>
+                                  <td style={{ ...cellStyle, textAlign: 'right', color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>—</td>
+                                </tr>
+                              );
+                            })}
+                          </React.Fragment>
+                        );
+                      }
+
+                      /* ── Items WITHOUT breakdown (original single row) ── */
+                      const mode       = modes[item.id] ?? 'qty';
+                      const claimedQty = getClaimedQty(item.id, contractQty, false);
+                      const amount     = claimedQty * Number(item.unit_rate);
                       return (
                         <tr key={item.id} style={{ verticalAlign: 'middle' }}>
-                          {/* Item name */}
                           <td style={{ paddingTop: 10 }}>
-                            <div style={{ fontWeight: 500, fontSize: 'var(--text-sm)' }}>
-                              {item.item_name}
-                            </div>
+                            <div style={{ fontWeight: 500, fontSize: 'var(--text-sm)' }}>{item.item_name}</div>
                             {item.item_code && (
-                              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
-                                {item.item_code}
-                              </div>
+                              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>{item.item_code}</div>
                             )}
                           </td>
-
-                          {/* Unit */}
-                          <td style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
-                            {item.unit || '—'}
-                          </td>
-
-                          {/* Rate */}
+                          <td style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{item.unit || '—'}</td>
                           <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
                             {Number(item.unit_rate).toLocaleString()}
                           </td>
-
-                          {/* Contract Qty */}
                           <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', paddingTop: 10, color: contractQty === 0 ? 'var(--text-tertiary)' : 'var(--text-primary)' }}>
                             {contractQty === 0 ? '—' : contractQty.toLocaleString()}
                           </td>
-
-                          {/* Approved */}
                           <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', paddingTop: 10, color: 'var(--text-tertiary)' }}>
                             {approved.toLocaleString()}
                           </td>
-
-                          {/* Remaining */}
                           <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', paddingTop: 10, color: remaining < 0 ? 'var(--status-error)' : contractQty === 0 ? 'var(--text-tertiary)' : 'var(--text-secondary)' }}>
                             {contractQty === 0 ? '—' : remaining.toLocaleString()}
                           </td>
-
-                          {/* Input cell: toggle + field on ONE LINE */}
                           <td style={{ padding: '6px 8px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <ModeToggle
-                                mode={mode}
-                                onChange={m => setModes(prev => ({ ...prev, [item.id]: m }))}
-                              />
-
+                              <ModeToggle mode={mode} onChange={m => setModes(prev => ({ ...prev, [item.id]: m }))} />
                               {mode === 'qty' ? (
                                 <input
-                                  type="number"
-                                  min="0"
-                                  step="0.001"
-                                  placeholder="0.000"
+                                  type="number" min="0" step="0.001" placeholder="0.000"
                                   value={quantities[item.id] ?? ''}
                                   onChange={e => setQuantities(q => ({ ...q, [item.id]: e.target.value }))}
-                                  style={{
-                                    flex: 1, padding: '4px 8px',
-                                    border: '2px solid var(--brand)', borderRadius: 6,
-                                    fontSize: 'var(--text-sm)', fontFamily: 'monospace',
-                                    textAlign: 'right',
-                                    background: 'var(--surface-primary)',
-                                    color: 'var(--text-primary)', outline: 'none',
-                                    minWidth: 0,
-                                  }}
+                                  style={{ flex: 1, padding: '4px 8px', border: '2px solid var(--brand)', borderRadius: 6, fontSize: 'var(--text-sm)', fontFamily: 'monospace', textAlign: 'right', background: 'var(--surface-primary)', color: 'var(--text-primary)', outline: 'none', minWidth: 0 }}
                                 />
                               ) : (
                                 <>
                                   <input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    step="0.1"
-                                    placeholder="0.0"
+                                    type="number" min="0" max="100" step="0.1" placeholder="0.0"
                                     value={percentages[item.id] ?? ''}
                                     onChange={e => setPercentages(p => ({ ...p, [item.id]: e.target.value }))}
-                                    style={{
-                                      flex: 1, padding: '4px 8px',
-                                      border: '2px solid var(--brand)', borderRadius: 6,
-                                      fontSize: 'var(--text-sm)', fontFamily: 'monospace',
-                                      textAlign: 'right',
-                                      background: 'var(--surface-primary)',
-                                      color: 'var(--text-primary)', outline: 'none',
-                                      minWidth: 0,
-                                    }}
+                                    style={{ flex: 1, padding: '4px 8px', border: '2px solid var(--brand)', borderRadius: 6, fontSize: 'var(--text-sm)', fontFamily: 'monospace', textAlign: 'right', background: 'var(--surface-primary)', color: 'var(--text-primary)', outline: 'none', minWidth: 0 }}
                                   />
                                   <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand)', flexShrink: 0 }}>%</span>
                                 </>
                               )}
                             </div>
-
-                            {/* Hint: show calculated qty when % mode & contractQty > 0 */}
                             {mode === 'pct' && contractQty > 0 && claimedQty > 0 && (
                               <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2, textAlign: 'right' }}>
                                 = {claimedQty.toFixed(3)} {item.unit}
                               </div>
                             )}
                           </td>
-
-                          {/* Amount */}
-                          <td style={{
-                            textAlign: 'right', fontFamily: 'monospace',
-                            fontSize: 'var(--text-sm)', paddingTop: 10,
-                            fontWeight: amount > 0 ? 600 : 400,
-                            color: amount > 0 ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                          }}>
-                            {amount > 0
-                              ? amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                              : '—'}
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', paddingTop: 10, fontWeight: amount > 0 ? 600 : 400, color: amount > 0 ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+                            {amount > 0 ? amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
                           </td>
                         </tr>
                       );
