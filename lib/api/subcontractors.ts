@@ -70,6 +70,13 @@ export interface SubcontractorContract {
   updated_at: string;
 }
 
+export interface BOQItemBreakdown {
+  id: number;
+  location: string;
+  quantity: string;
+  order: number;
+}
+
 export interface ContractBOQItem {
   id: number;
   contract: number;
@@ -84,6 +91,7 @@ export interface ContractBOQItem {
   notes: string;
   approved_quantity_to_date: string;
   remaining_quantity: string;
+  breakdowns: BOQItemBreakdown[];
 }
 
 export interface ProgressCertificate {
@@ -344,6 +352,13 @@ export const subcontractorsApi = {
 
     bulkCreate: async (contractId: number, items: Partial<ContractBOQItem>[]): Promise<ContractBOQItem[]> => {
       const res = await apiClient.post(`${BASE}/boq-items/bulk_create/`, { contract: contractId, items });
+      return res.data;
+    },
+  },
+
+  boqBreakdowns: {
+    bulkSave: async (boqItemId: number, rows: { location: string; quantity: string }[]): Promise<ContractBOQItem> => {
+      const res = await apiClient.post(`${BASE}/boq-breakdowns/bulk_save/`, { boq_item: boqItemId, rows });
       return res.data;
     },
   },

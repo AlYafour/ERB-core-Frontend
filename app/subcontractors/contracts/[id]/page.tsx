@@ -4,7 +4,7 @@ import { use, useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { subcontractorsApi, BOQTemplateItem } from '@/lib/api/subcontractors';
+import { subcontractorsApi, BOQTemplateItem, ContractBOQItem } from '@/lib/api/subcontractors';
 import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
 import { CONTRACT_STATUS, CERTIFICATE_STATUS, PAYMENT_STATUS } from '@/lib/utils/status-colors';
@@ -61,6 +61,119 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
     </div>
   );
 }
+
+// ── Breakdown Modal ───────────────────────────────────────────────────────────
+
+type BreakdownRow = { location: string; quantity: string };
+
+function BreakdownModal({
+  item,
+  usedLocations,
+  onClose,
+  onSave,
+  isPending,
+}: {
+  item: ContractBOQItem;
+  usedLocations: string[];
+  onClose: () => void;
+  onSave: (rows: BreakdownRow[]) => void;
+  isPending: boolean;
+}) {
+  const [rows, setRows] = useState<BreakdownRow[]>(
+    item.breakdowns?.length
+      ? item.breakdowns.map(b => ({ location: b.location, quantity: String(b.quantity) }))
+      : [{ location: '', quantity: '' }]
+  );
+
+  const total = rows.reduce((s, r) => s + (parseFloat(r.quantity) || 0), 0);
+
+  const update = (i: number, field: keyof BreakdownRow, val: string) =>
+    setRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: val } : r));
+
+  const remove = (i: number) => setRows(prev => prev.filter((_, idx) => idx !== i));
+
+  const validRows = rows.filter(r => r.location.trim());
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div className="card" style={{ width: 520, maxHeight: '80vh', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
+
+        {/* Header */}
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-default)' }}>
+          <div style={{ fontWeight: 600, fontSize: 'var(--text-base)', color: 'var(--text-primary)' }}>
+            Quantity Breakdown
+          </div>
+          <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 2 }}>
+            {item.item_name}
+          </div>
+        </div>
+
+        {/* Rows */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <datalist id="bd-locations">
+            {usedLocations.map(l => <option key={l} value={l} />)}
+          </datalist>
+
+          {rows.map((row, i) => (
+            <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                className="form-input"
+                list="bd-locations"
+                placeholder="Location (e.g. Ground Floor)"
+                value={row.location}
+                onChange={e => update(i, 'location', e.target.value)}
+                style={{ flex: 1, padding: '6px 10px', fontSize: 'var(--text-sm)' }}
+              />
+              <input
+                type="number"
+                className="form-input"
+                placeholder="0.000"
+                min="0"
+                step="0.001"
+                value={row.quantity}
+                onChange={e => update(i, 'quantity', e.target.value)}
+                style={{ width: 110, padding: '6px 10px', fontSize: 'var(--text-sm)', textAlign: 'right' }}
+              />
+              <button
+                onClick={() => remove(i)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 16, padding: '0 4px', lineHeight: 1 }}
+              >✕</button>
+            </div>
+          ))}
+
+          <button
+            onClick={() => setRows(prev => [...prev, { location: '', quantity: '' }])}
+            style={{ alignSelf: 'flex-start', background: 'none', border: '1px dashed var(--border-default)', borderRadius: 6, padding: '5px 12px', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', cursor: 'pointer', marginTop: 4 }}
+          >
+            + Add Location
+          </button>
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>
+            Total: <span style={{ fontFamily: 'monospace', color: 'var(--text-brand)' }}>
+              {total.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {item.unit}
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={onClose}
+              style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border-default)', background: 'var(--surface-raised)', color: 'var(--text-primary)', fontSize: 'var(--text-sm)', cursor: 'pointer' }}
+            >Cancel</button>
+            <button
+              onClick={() => onSave(validRows)}
+              disabled={isPending || validRows.length === 0}
+              style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: 'var(--brand)', color: '#fff', fontSize: 'var(--text-sm)', cursor: isPending ? 'not-allowed' : 'pointer', opacity: (isPending || validRows.length === 0) ? 0.6 : 1 }}
+            >{isPending ? 'Saving…' : 'Save Breakdown'}</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 
 // ── Import from Template Modal ────────────────────────────────────────────────
 
@@ -311,6 +424,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
   const [rejectReason, setRejectReason] = useState('');
   const [editingBoqId, setEditingBoqId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ item_name: '', unit: '', contract_quantity: '0', unit_rate: '0' });
+  const [breakdownItem, setBreakdownItem] = useState<ContractBOQItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -433,6 +547,24 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
     onError: () => toast('Delete failed', 'error'),
   });
 
+  const saveBreakdownMutation = useMutation({
+    mutationFn: ({ itemId, rows }: { itemId: number; rows: { location: string; quantity: string }[] }) =>
+      subcontractorsApi.boqBreakdowns.bulkSave(itemId, rows),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['boq-items', id] });
+      setBreakdownItem(null);
+      toast('Breakdown saved', 'success');
+    },
+    onError: () => toast('Save failed', 'error'),
+  });
+
+  const usedLocations = useMemo(() => {
+    if (!boqItems) return [];
+    const set = new Set<string>();
+    boqItems.forEach(item => (item.breakdowns ?? []).forEach(b => set.add(b.location)));
+    return Array.from(set).sort();
+  }, [boqItems]);
+
   if (isLoading) return <MainLayout><PageShell><div className="card empty-state"><p>Loading...</p></div></PageShell></MainLayout>;
   if (error || !contract) return <MainLayout><PageShell><div className="card empty-state"><p style={{ color: 'var(--status-error)' }}>Contract not found.</p></div></PageShell></MainLayout>;
 
@@ -451,6 +583,17 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
   return (
     <MainLayout>
       <PageShell>
+
+        {/* Breakdown modal */}
+        {breakdownItem && (
+          <BreakdownModal
+            item={breakdownItem}
+            usedLocations={usedLocations}
+            onClose={() => setBreakdownItem(null)}
+            onSave={rows => saveBreakdownMutation.mutate({ itemId: breakdownItem.id, rows })}
+            isPending={saveBreakdownMutation.isPending}
+          />
+        )}
 
         {/* Reject modal */}
         {rejectOpen && (
@@ -679,12 +822,18 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                                 />
                               </td>
                               <td>
-                                <input
-                                  type="number" min="0" step="0.001" className="form-input"
-                                  style={{ padding: '2px 6px', fontSize: 'var(--text-sm)', textAlign: 'right' }}
-                                  value={editForm.contract_quantity}
-                                  onChange={e => setEditForm(f => ({ ...f, contract_quantity: e.target.value }))}
-                                />
+                                {item.breakdowns?.length ? (
+                                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                                    {Number(editForm.contract_quantity).toLocaleString()} <em>(breakdown)</em>
+                                  </span>
+                                ) : (
+                                  <input
+                                    type="number" min="0" step="0.001" className="form-input"
+                                    style={{ padding: '2px 6px', fontSize: 'var(--text-sm)', textAlign: 'right' }}
+                                    value={editForm.contract_quantity}
+                                    onChange={e => setEditForm(f => ({ ...f, contract_quantity: e.target.value }))}
+                                  />
+                                )}
                               </td>
                               <td>
                                 <input
@@ -706,7 +855,14 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                                 {item.description && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item.description}</div>}
                               </td>
                               <td style={{ color: 'var(--text-secondary)' }}>{item.unit || '—'}</td>
-                              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{Number(item.contract_quantity).toLocaleString()}</td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>
+                                <span>{Number(item.contract_quantity).toLocaleString()}</span>
+                                <button
+                                  onClick={() => setBreakdownItem(item)}
+                                  title="Quantity breakdown"
+                                  style={{ marginLeft: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: item.breakdowns?.length ? 'var(--brand)' : 'var(--text-tertiary)', verticalAlign: 'middle' }}
+                                >≡</button>
+                              </td>
                               <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{Number(item.unit_rate).toLocaleString()}</td>
                               <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 500 }}>{Number(item.total_amount).toLocaleString()}</td>
                               <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--status-success)' }}>{Number(item.approved_quantity_to_date).toLocaleString()}</td>
