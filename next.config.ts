@@ -4,43 +4,20 @@ import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig: NextConfig = {
   compress: true,
 
+  // Next.js 16 uses Turbopack by default — handles code splitting automatically
+  turbopack: {},
+
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
-      // Cloudinary CDN (media files)
       { protocol: 'https', hostname: 'res.cloudinary.com', pathname: '/**' },
-      // Railway backend (production)
       { protocol: 'https', hostname: '*.railway.app',      pathname: '/**' },
       { protocol: 'https', hostname: '*.up.railway.app',   pathname: '/**' },
-      // Local development
       { protocol: 'http',  hostname: 'localhost',   port: '9000', pathname: '/**' },
       { protocol: 'http',  hostname: '127.0.0.1',   port: '9000', pathname: '/**' },
       { protocol: 'http',  hostname: 'localhost',   port: '7410', pathname: '/**' },
       { protocol: 'http',  hostname: '127.0.0.1',   port: '7410', pathname: '/**' },
     ],
-  },
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  webpack(config: any, { isServer }: { isServer: boolean }) {
-    if (!isServer) {
-      const sc = (config.optimization as any)?.splitChunks ?? {};
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          ...sc,
-          cacheGroups: {
-            ...(sc.cacheGroups ?? {}),
-            recharts: {
-              name: 'recharts',
-              test: /[\\/]node_modules[\\/](recharts|d3-[^/\\]+)[\\/]/,
-              chunks: 'all' as const,
-              priority: 20,
-            },
-          },
-        },
-      };
-    }
-    return config;
   },
 
   async headers() {
