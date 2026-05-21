@@ -114,7 +114,7 @@ export default function RolesPage() {
     setDrawerOpen(true);
   };
 
-  const handleSaveForm = () => {
+  const handleSaveForm = async () => {
     if (!form.name.trim()) { toast('Name is required', 'error'); return; }
     if (editingDept) updateMutation.mutate({ id: editingDept.id, data: form });
     else createMutation.mutate(form);

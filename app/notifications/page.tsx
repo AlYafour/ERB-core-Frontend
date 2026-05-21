@@ -115,7 +115,7 @@ export default function NotificationsPage() {
     markAsReadMutation.mutate(id);
   };
 
-  const handleMarkAllAsRead = () => {
+  const handleMarkAllAsRead = async () => {
     markAllAsReadMutation.mutate();
   };
 

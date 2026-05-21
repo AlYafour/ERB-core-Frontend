@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { formatPrice } from '@/lib/utils/format';
 import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection';
 import { canCreateInvoice } from '@/lib/utils/workflow-guards';
-import { toast } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -511,7 +511,7 @@ export default function GRNDetailPage() {
                 onClick={() => {
                   const guard = canCreateInvoice(purchaseOrder.status);
                   if (!guard.canProceed) { toast(guard.reason || 'Cannot create invoice', 'error'); return; }
-                  if (guard.warning && !confirm(guard.warning + '\n\nDo you want to continue?')) return;
+                  if (guard.warning && !await confirm(guard.warning + '\n\nDo you want to continue?')) return;
                   router.push(`/purchase-invoices/new?purchase_order_id=${purchaseOrder.id}&grn_id=${id}`);
                 }}
               >

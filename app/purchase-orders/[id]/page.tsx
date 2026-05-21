@@ -12,7 +12,7 @@ import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection
 import DetailCard, { DetailField } from '@/components/ui/DetailCard';
 import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
 import { PO_STATUS } from '@/lib/utils/status-colors';
-import { toast } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -159,7 +159,7 @@ export default function PurchaseOrderDetailPage() {
                   <Button variant="primary" size="sm" onClick={() => {
                     const guard = canCreateInvoice(order.status);
                     if (!guard.canProceed) { toast(guard.reason || 'Cannot create invoice', 'error'); return; }
-                    if (guard.warning && !confirm(guard.warning + '\n\nDo you want to continue?')) return;
+                    if (guard.warning && !await confirm(guard.warning + '\n\nDo you want to continue?')) return;
                     router.push(`/purchase-invoices/new?purchase_order_id=${id}`);
                   }}>Create Invoice</Button>
                 )}

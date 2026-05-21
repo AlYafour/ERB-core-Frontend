@@ -9,7 +9,7 @@ import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { CERTIFICATE_STATUS } from '@/lib/utils/status-colors';
-import { toast } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -97,7 +97,7 @@ export default function CertificatesPage() {
     onError: () => toast('Failed to delete certificates', 'error'),
   });
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (!selectedItems.size) return;
     if (deletableIds.length === 0) {
       toast('Cannot delete: Approved, GM Approved, and Paid certificates are protected.', 'error');
@@ -106,7 +106,7 @@ export default function CertificatesPage() {
     const msg = nonDeletableCount > 0
       ? `Delete ${deletableIds.length} certificate(s)? ${nonDeletableCount} skipped (protected status).`
       : `Delete ${deletableIds.length} selected certificate(s)?`;
-    if (!confirm(msg)) return;
+    if (!await confirm(msg)) return;
     deleteMutation.mutate(deletableIds);
   };
 

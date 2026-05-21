@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subcontractorsApi, BOQTemplateItem } from '@/lib/api/subcontractors';
-import { toast } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 
 const EMPTY_FORM = {
   section_code: '',
@@ -394,8 +394,8 @@ export default function BOQLibraryPage() {
                                           Edit
                                         </button>
                                         <button
-                                          onClick={() => {
-                                            if (confirm(`Delete "${item.item_name}"?`)) {
+                                          onClick={async () => {
+                                            if (await confirm(`Delete "${item.item_name}"?`)) {
                                               deleteMutation.mutate(item.id);
                                             }
                                           }}

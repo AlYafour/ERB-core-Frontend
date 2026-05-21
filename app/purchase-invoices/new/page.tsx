@@ -10,7 +10,7 @@ import { PurchaseInvoiceFormData, toPurchaseInvoiceCreateData } from '@/lib/type
 import { Button, PageHeader, PageShell } from '@/components/ui';
 import MainLayout from '@/components/layout/MainLayout';
 import { formatPrice } from '@/lib/utils/format';
-import { toast } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import FormField from '@/components/ui/FormField';
 import { formatBackendError, validateRequired, validatePositiveNumber, validateDateAfter } from '@/lib/utils/validation';
@@ -208,7 +208,7 @@ function NewPurchaseInvoicePageContent() {
       if (differencePercentage > 5 || difference > 1000) {
         // Show warning but allow proceed with confirmation
         const warningMessage = `Warning: Invoice total (${invoiceTotal.toFixed(2)}) differs from Purchase Order total (${poTotal.toFixed(2)}) by ${differencePercentage.toFixed(2)}%.\n\nDo you want to continue?`;
-        if (!confirm(warningMessage)) {
+        if (!await confirm(warningMessage)) {
           return;
         }
       }

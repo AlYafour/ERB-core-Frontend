@@ -6,7 +6,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subcontractorsApi } from '@/lib/api/subcontractors';
 import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
-import { toast } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import { PAYMENT_STATUS } from '@/lib/utils/status-colors';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -96,8 +96,8 @@ export default function PaymentDetailPage({ params }: { params: Promise<{ id: st
                 </Button>
               )}
               {(payment.status === 'pending' || payment.status === 'approved') && (
-                <Button variant="secondary" size="sm" onClick={() => {
-                  if (confirm('Cancel this payment?')) cancelMutation.mutate();
+                <Button variant="secondary" size="sm" onClick={async () => {
+                  if (await confirm('Cancel this payment?')) cancelMutation.mutate();
                 }} disabled={cancelMutation.isPending}>
                   Cancel
                 </Button>

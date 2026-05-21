@@ -6,7 +6,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subcontractorsApi, BOQTemplateItem, ContractBOQItem } from '@/lib/api/subcontractors';
 import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
-import { toast } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import { CONTRACT_STATUS, CERTIFICATE_STATUS, PAYMENT_STATUS } from '@/lib/utils/status-colors';
 
 type Tab = 'info' | 'boq' | 'certificates' | 'payments' | 'attachments' | 'log';
@@ -257,7 +257,7 @@ function ImportModal({
     });
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     const items = templates.filter(t => selected.has(t.id)).map(t => ({
       item_code: t.item_code,
       item_name: t.item_name,
@@ -653,7 +653,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                     <Button variant="primary" size="sm">+ New Certificate</Button>
                   </Link>
                   <Button variant="secondary" size="sm"
-                    onClick={() => { if (confirm('Close this contract? This will prevent new certificates.')) closeMutation.mutate(); }}
+                    onClick={async () => { if (await confirm('Close this contract? This will prevent new certificates.')) closeMutation.mutate(); }}
                     disabled={closeMutation.isPending}>
                     Close Contract
                   </Button>
@@ -896,7 +896,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                                   <Button variant="view" size="sm" onClick={() => startEdit(item)}>Edit</Button>
                                   <Button
                                     variant="secondary" size="sm"
-                                    onClick={() => { if (confirm('Remove this item?')) deleteBoqMutation.mutate(item.id); }}
+                                    onClick={async () => { if (await confirm('Remove this item?')) deleteBoqMutation.mutate(item.id); }}
                                   >
                                     ✕
                                   </Button>
