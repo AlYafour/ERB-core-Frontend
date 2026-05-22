@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subcontractorsApi, BOQTemplateItem } from '@/lib/api/subcontractors';
@@ -53,6 +53,10 @@ export default function BOQLibraryPage() {
   const [addForm, setAddForm] = useState<FormState>(EMPTY_FORM);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
+  // Location editing state
+  const [locationsItemId, setLocationsItemId] = useState<number | null>(null);
+  const [locationsDraft, setLocationsDraft] = useState<string[]>([]);
+
   const { data: allItems = [], isLoading } = useQuery({
     queryKey: ['boq-templates-manage'],
     queryFn: () => subcontractorsApi.boqTemplates.listAll(),
@@ -96,6 +100,27 @@ export default function BOQLibraryPage() {
     onError: () => toast('Failed to delete', 'error'),
   });
 
+  const saveLocationsMutation = useMutation({
+    mutationFn: ({ id, locations }: { id: number; locations: string[] }) =>
+      subcontractorsApi.boqTemplates.saveLocations(id, locations),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['boq-templates-manage'] });
+      setLocationsItemId(null);
+      toast('Locations saved', 'success');
+    },
+    onError: () => toast('Failed to save locations', 'error'),
+  });
+
+  const openLocations = (item: BOQTemplateItem) => {
+    setLocationsItemId(item.id);
+    setLocationsDraft(
+      item.location_breakdowns?.length
+        ? item.location_breakdowns.map(b => b.location)
+        : ['']
+    );
+    setEditingId(null);
+  };
+
   const grouped = useMemo(() => {
     const q = search.trim().toLowerCase();
     const map = new Map<string, { name: string; items: BOQTemplateItem[] }>();
@@ -111,7 +136,6 @@ export default function BOQLibraryPage() {
     return Array.from(map.entries()).map(([code, v]) => ({ code, ...v }));
   }, [allItems, search]);
 
-  // auto-expand when searching
   const visibleExpanded = useMemo(() => {
     if (!search.trim()) return expandedSections;
     const auto = new Set(expandedSections);
@@ -128,6 +152,7 @@ export default function BOQLibraryPage() {
 
   const startEdit = (item: BOQTemplateItem) => {
     setEditingId(item.id);
+    setLocationsItemId(null);
     setEditForm({
       section_code: item.section_code,
       section_name: item.section_name,
@@ -304,7 +329,7 @@ export default function BOQLibraryPage() {
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
                         <thead>
                           <tr style={{ background: 'var(--surface-secondary)', borderTop: '1px solid var(--border-subtle)' }}>
-                            {['Code', 'Item Name', 'Unit', 'Order', 'Active', ''].map(h => (
+                            {['Code', 'Item Name', 'Unit', 'Order', 'Active', 'Locations', ''].map(h => (
                               <th key={h} style={{
                                 padding: '6px 12px', textAlign: 'left', fontWeight: 600,
                                 fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)',
@@ -318,96 +343,196 @@ export default function BOQLibraryPage() {
                         <tbody>
                           {items.map(item => {
                             const isEditing = editingId === item.id;
+                            const isEditingLocs = locationsItemId === item.id;
+                            const locCount = item.location_breakdowns?.length ?? 0;
                             return (
-                              <tr
-                                key={item.id}
-                                style={{
-                                  borderTop: '1px solid var(--border-subtle)',
-                                  background: isEditing ? 'var(--brand-subtle)' : (item.is_active ? 'transparent' : 'rgba(0,0,0,0.02)'),
-                                }}
-                              >
-                                {isEditing ? (
-                                  <>
-                                    <td style={{ padding: '6px 12px' }}>
-                                      {cellInput(editForm.item_code, v => setEditForm(f => ({ ...f, item_code: v })), { width: 90 })}
-                                    </td>
-                                    <td style={{ padding: '6px 12px' }}>
-                                      {cellInput(editForm.item_name, v => setEditForm(f => ({ ...f, item_name: v })))}
-                                    </td>
-                                    <td style={{ padding: '6px 12px' }}>
-                                      {cellInput(editForm.default_unit, v => setEditForm(f => ({ ...f, default_unit: v })), { width: 80 })}
-                                    </td>
-                                    <td style={{ padding: '6px 12px' }}>
-                                      {cellInput(editForm.order, v => setEditForm(f => ({ ...f, order: Number(v) })), { type: 'number', width: 60 })}
-                                    </td>
-                                    <td style={{ padding: '6px 12px' }}>
-                                      <input
-                                        type="checkbox"
-                                        checked={editForm.is_active}
-                                        onChange={e => setEditForm(f => ({ ...f, is_active: e.target.checked }))}
-                                      />
-                                    </td>
-                                    <td style={{ padding: '6px 12px', whiteSpace: 'nowrap' }}>
-                                      <div style={{ display: 'flex', gap: 6 }}>
+                              <React.Fragment key={item.id}>
+                                <tr
+                                  style={{
+                                    borderTop: '1px solid var(--border-subtle)',
+                                    background: isEditing
+                                      ? 'var(--brand-subtle)'
+                                      : isEditingLocs
+                                      ? 'rgba(var(--brand-rgb, 59,130,246),0.04)'
+                                      : item.is_active ? 'transparent' : 'rgba(0,0,0,0.02)',
+                                  }}
+                                >
+                                  {isEditing ? (
+                                    <>
+                                      <td style={{ padding: '6px 12px' }}>
+                                        {cellInput(editForm.item_code, v => setEditForm(f => ({ ...f, item_code: v })), { width: 90 })}
+                                      </td>
+                                      <td style={{ padding: '6px 12px' }}>
+                                        {cellInput(editForm.item_name, v => setEditForm(f => ({ ...f, item_name: v })))}
+                                      </td>
+                                      <td style={{ padding: '6px 12px' }}>
+                                        {cellInput(editForm.default_unit, v => setEditForm(f => ({ ...f, default_unit: v })), { width: 80 })}
+                                      </td>
+                                      <td style={{ padding: '6px 12px' }}>
+                                        {cellInput(editForm.order, v => setEditForm(f => ({ ...f, order: Number(v) })), { type: 'number', width: 60 })}
+                                      </td>
+                                      <td style={{ padding: '6px 12px' }}>
+                                        <input
+                                          type="checkbox"
+                                          checked={editForm.is_active}
+                                          onChange={e => setEditForm(f => ({ ...f, is_active: e.target.checked }))}
+                                        />
+                                      </td>
+                                      <td style={{ padding: '6px 12px' }} />
+                                      <td style={{ padding: '6px 12px', whiteSpace: 'nowrap' }}>
+                                        <div style={{ display: 'flex', gap: 6 }}>
+                                          <button
+                                            onClick={() => updateMutation.mutate({ id: item.id, data: editForm })}
+                                            disabled={updateMutation.isPending}
+                                            style={{ padding: '3px 10px', background: 'var(--brand-primary)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer', fontWeight: 600 }}
+                                          >
+                                            {updateMutation.isPending ? '…' : 'Save'}
+                                          </button>
+                                          <button
+                                            onClick={() => setEditingId(null)}
+                                            style={{ padding: '3px 8px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 4, fontSize: 12, cursor: 'pointer', color: 'var(--text-secondary)' }}
+                                          >
+                                            Cancel
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
+                                        {item.item_code}
+                                      </td>
+                                      <td style={{ padding: '8px 12px', color: item.is_active ? 'var(--text-primary)' : 'var(--text-tertiary)', fontWeight: 500 }}>
+                                        {item.item_name}
+                                      </td>
+                                      <td style={{ padding: '8px 12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                                        {item.default_unit || '—'}
+                                      </td>
+                                      <td style={{ padding: '8px 12px', color: 'var(--text-tertiary)', textAlign: 'center' }}>
+                                        {item.order}
+                                      </td>
+                                      <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                                        <span style={{
+                                          display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+                                          background: item.is_active ? 'var(--success)' : 'var(--text-tertiary)',
+                                        }} />
+                                      </td>
+                                      <td style={{ padding: '8px 12px' }}>
                                         <button
-                                          onClick={() => updateMutation.mutate({ id: item.id, data: editForm })}
-                                          disabled={updateMutation.isPending}
-                                          style={{ padding: '3px 10px', background: 'var(--brand-primary)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer', fontWeight: 600 }}
+                                          onClick={() => isEditingLocs ? setLocationsItemId(null) : openLocations(item)}
+                                          style={{
+                                            display: 'flex', alignItems: 'center', gap: 5,
+                                            padding: '3px 10px',
+                                            background: isEditingLocs ? 'var(--brand-primary)' : 'transparent',
+                                            color: isEditingLocs ? '#fff' : locCount > 0 ? 'var(--brand-primary)' : 'var(--text-tertiary)',
+                                            border: `1px solid ${isEditingLocs ? 'var(--brand-primary)' : locCount > 0 ? 'var(--brand-primary)' : 'var(--border-default)'}`,
+                                            borderRadius: 4, fontSize: 12, cursor: 'pointer', fontWeight: 500,
+                                            whiteSpace: 'nowrap',
+                                          }}
                                         >
-                                          {updateMutation.isPending ? '…' : 'Save'}
+                                          {locCount > 0 ? `${locCount} locations` : '+ Locations'}
+                                        </button>
+                                      </td>
+                                      <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>
+                                        <div style={{ display: 'flex', gap: 6 }}>
+                                          <button
+                                            onClick={() => startEdit(item)}
+                                            style={{ padding: '3px 10px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 4, fontSize: 12, cursor: 'pointer', color: 'var(--text-secondary)' }}
+                                          >
+                                            Edit
+                                          </button>
+                                          <button
+                                            onClick={async () => {
+                                              if (await confirm(`Delete "${item.item_name}"?`)) {
+                                                deleteMutation.mutate(item.id);
+                                              }
+                                            }}
+                                            style={{ padding: '3px 10px', background: 'transparent', border: '1px solid var(--error-border, #fca5a5)', borderRadius: 4, fontSize: 12, cursor: 'pointer', color: 'var(--error, #dc2626)' }}
+                                          >
+                                            Delete
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </>
+                                  )}
+                                </tr>
+
+                                {/* Location editor sub-row */}
+                                {isEditingLocs && (
+                                  <tr style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                                    <td colSpan={7} style={{ padding: '12px 16px', background: 'var(--surface-secondary)' }}>
+                                      <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        {item.item_name} — Locations
+                                      </div>
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                                        {locationsDraft.map((loc, idx) => (
+                                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            <input
+                                              value={loc}
+                                              onChange={e => setLocationsDraft(d => d.map((v, i) => i === idx ? e.target.value : v))}
+                                              placeholder={`Location ${idx + 1}`}
+                                              style={{
+                                                padding: '5px 10px',
+                                                border: '1px solid var(--border-default)',
+                                                borderRadius: 4,
+                                                fontSize: 'var(--text-sm)',
+                                                background: 'var(--surface-primary)',
+                                                color: 'var(--text-primary)',
+                                                width: 180,
+                                              }}
+                                            />
+                                            <button
+                                              onClick={() => setLocationsDraft(d => d.filter((_, i) => i !== idx))}
+                                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 16, lineHeight: 1, padding: '0 2px' }}
+                                              title="Remove"
+                                            >
+                                              ×
+                                            </button>
+                                          </div>
+                                        ))}
+                                        <button
+                                          onClick={() => setLocationsDraft(d => [...d, ''])}
+                                          style={{
+                                            padding: '5px 12px',
+                                            border: '1px dashed var(--border-default)',
+                                            borderRadius: 4, background: 'transparent',
+                                            fontSize: 'var(--text-sm)', cursor: 'pointer',
+                                            color: 'var(--text-secondary)',
+                                          }}
+                                        >
+                                          + Add
+                                        </button>
+                                      </div>
+                                      <div style={{ display: 'flex', gap: 8 }}>
+                                        <button
+                                          onClick={() => saveLocationsMutation.mutate({
+                                            id: item.id,
+                                            locations: locationsDraft.filter(l => l.trim()),
+                                          })}
+                                          disabled={saveLocationsMutation.isPending}
+                                          style={{
+                                            padding: '5px 14px', background: 'var(--brand-primary)', color: '#fff',
+                                            border: 'none', borderRadius: 5, fontWeight: 600, fontSize: 'var(--text-sm)',
+                                            cursor: 'pointer', opacity: saveLocationsMutation.isPending ? 0.6 : 1,
+                                          }}
+                                        >
+                                          {saveLocationsMutation.isPending ? 'Saving…' : 'Save Locations'}
                                         </button>
                                         <button
-                                          onClick={() => setEditingId(null)}
-                                          style={{ padding: '3px 8px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 4, fontSize: 12, cursor: 'pointer', color: 'var(--text-secondary)' }}
+                                          onClick={() => setLocationsItemId(null)}
+                                          style={{
+                                            padding: '5px 12px', background: 'transparent',
+                                            border: '1px solid var(--border-default)', borderRadius: 5,
+                                            fontSize: 'var(--text-sm)', cursor: 'pointer', color: 'var(--text-secondary)',
+                                          }}
                                         >
                                           Cancel
                                         </button>
                                       </div>
                                     </td>
-                                  </>
-                                ) : (
-                                  <>
-                                    <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
-                                      {item.item_code}
-                                    </td>
-                                    <td style={{ padding: '8px 12px', color: item.is_active ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
-                                      {item.item_name}
-                                    </td>
-                                    <td style={{ padding: '8px 12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                                      {item.default_unit || '—'}
-                                    </td>
-                                    <td style={{ padding: '8px 12px', color: 'var(--text-tertiary)', textAlign: 'center' }}>
-                                      {item.order}
-                                    </td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'center' }}>
-                                      <span style={{
-                                        display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
-                                        background: item.is_active ? 'var(--success)' : 'var(--text-tertiary)',
-                                      }} />
-                                    </td>
-                                    <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>
-                                      <div style={{ display: 'flex', gap: 6 }}>
-                                        <button
-                                          onClick={() => startEdit(item)}
-                                          style={{ padding: '3px 10px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 4, fontSize: 12, cursor: 'pointer', color: 'var(--text-secondary)' }}
-                                        >
-                                          Edit
-                                        </button>
-                                        <button
-                                          onClick={async () => {
-                                            if (await confirm(`Delete "${item.item_name}"?`)) {
-                                              deleteMutation.mutate(item.id);
-                                            }
-                                          }}
-                                          style={{ padding: '3px 10px', background: 'transparent', border: '1px solid var(--error-border, #fca5a5)', borderRadius: 4, fontSize: 12, cursor: 'pointer', color: 'var(--error, #dc2626)' }}
-                                        >
-                                          Delete
-                                        </button>
-                                      </div>
-                                    </td>
-                                  </>
+                                  </tr>
                                 )}
-                              </tr>
+                              </React.Fragment>
                             );
                           })}
                         </tbody>

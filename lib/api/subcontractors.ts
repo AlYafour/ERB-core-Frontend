@@ -199,6 +199,12 @@ export interface ContractAttachment {
   created_at: string;
 }
 
+export interface BOQTemplateItemLocation {
+  id: number;
+  location: string;
+  order: number;
+}
+
 export interface BOQTemplateItem {
   id: number;
   section_code: string;
@@ -210,6 +216,7 @@ export interface BOQTemplateItem {
   order: number;
   is_active: boolean;
   created_at: string;
+  location_breakdowns: BOQTemplateItemLocation[];
 }
 
 export interface ActivityLog {
@@ -562,6 +569,11 @@ export const subcontractorsApi = {
 
     delete: async (id: number): Promise<void> => {
       await apiClient.delete(`${BASE}/boq-templates/${id}/`);
+    },
+
+    saveLocations: async (id: number, locations: string[]): Promise<BOQTemplateItem> => {
+      const res = await apiClient.post(`${BASE}/boq-templates/${id}/save_locations/`, { locations });
+      return res.data;
     },
   },
 
