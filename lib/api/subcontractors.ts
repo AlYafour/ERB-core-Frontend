@@ -216,7 +216,7 @@ export interface BOQTemplateItem {
   order: number;
   is_active: boolean;
   created_at: string;
-  location_breakdowns: BOQTemplateItemLocation[];
+  location_breakdowns?: BOQTemplateItemLocation[];
 }
 
 export interface ActivityLog {
