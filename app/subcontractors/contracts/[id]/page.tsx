@@ -803,7 +803,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                       const hasBreakdowns = (item.breakdowns?.length ?? 0) > 0;
                       return (
                         <React.Fragment key={item.id}>
-                        <tr style={hasBreakdowns ? { borderBottom: 'none', background: 'var(--surface-secondary)' } : undefined}>
+                        <tr>
                           <td style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>{i + 1}</td>
                           <td style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
                             {item.item_code || '—'}
@@ -860,6 +860,22 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                               <td>
                                 <div style={{ fontWeight: 500 }}>{item.item_name}</div>
                                 {item.description && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item.description}</div>}
+                                {hasBreakdowns && (
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 5 }}>
+                                    {item.breakdowns!.map((bd, bi) => (
+                                      <span key={bi} style={{
+                                        fontSize: 10, padding: '1px 7px',
+                                        background: 'var(--surface-tertiary, rgba(0,0,0,0.06))',
+                                        border: '1px solid var(--border-subtle)',
+                                        borderRadius: 10,
+                                        color: 'var(--text-tertiary)',
+                                        whiteSpace: 'nowrap',
+                                      }}>
+                                        {bd.location}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
                               </td>
                               <td style={{ color: 'var(--text-secondary)' }}>{item.unit || '—'}</td>
                               <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>
@@ -913,21 +929,6 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                           </td>
                         </tr>
 
-                        {/* Per-location breakdown sub-rows — locations only, no quantities */}
-                        {!isEditing && hasBreakdowns && item.breakdowns!.map((bd, bi) => {
-                          const isLast = bi === item.breakdowns!.length - 1;
-                          const borderBottom = isLast ? '2px solid var(--border-subtle)' : '1px solid var(--border-subtle)';
-                          return (
-                            <tr key={`${item.id}-bd-${bi}`} style={{ background: 'var(--surface-secondary)' }}>
-                              <td colSpan={2} style={{ borderBottom }} />
-                              <td style={{ paddingLeft: 28, paddingTop: 5, paddingBottom: 5, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', borderBottom }}>
-                                <span style={{ color: 'var(--text-tertiary)', marginRight: 6, fontSize: 11 }}>↳</span>
-                                {bd.location}
-                              </td>
-                              <td colSpan={7} style={{ borderBottom }} />
-                            </tr>
-                          );
-                        })}
                         </React.Fragment>
                       );
                     })}
