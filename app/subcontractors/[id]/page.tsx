@@ -66,7 +66,7 @@ export default function SubcontractorDetailPage({ params }: { params: Promise<{ 
 
   const { data: attachments } = useQuery({
     queryKey: ['subcontractor-attachments', id],
-    queryFn: () => subcontractorsApi.attachments.listForContract(Number(id)),
+    queryFn: () => subcontractorsApi.attachments.listForSubcontractor(Number(id)),
     enabled: tab === 'attachments',
   });
 

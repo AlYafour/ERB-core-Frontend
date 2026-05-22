@@ -231,19 +231,6 @@ export interface ActivityLog {
   created_at: string;
 }
 
-export interface SubcontractorDashboard {
-  total_subcontractors: number;
-  active_subcontractors: number;
-  total_contracts: number;
-  active_contracts: number;
-  total_contract_value: string;
-  total_approved_to_date: string;
-  total_paid_to_date: string;
-  total_retention_balance: string;
-  pending_certificates: number;
-  pending_payments: number;
-}
-
 export interface PaginatedResponse<T> {
   count: number;
   next: string | null;
@@ -350,11 +337,6 @@ export const subcontractorsApi = {
     list: async (contractId: number): Promise<ContractBOQItem[]> => {
       const res = await apiClient.get(`${BASE}/boq-items/`, { params: { contract: contractId, page_size: 200 } });
       return res.data.results ?? res.data;
-    },
-
-    create: async (data: Partial<ContractBOQItem>): Promise<ContractBOQItem> => {
-      const res = await apiClient.post(`${BASE}/boq-items/`, data);
-      return res.data;
     },
 
     update: async (id: number, data: Partial<ContractBOQItem>): Promise<ContractBOQItem> => {
@@ -514,10 +496,6 @@ export const subcontractorsApi = {
       return res.data;
     },
 
-    delete: async (id: number): Promise<void> => {
-      await apiClient.delete(`${BASE}/attachments/${id}/`);
-    },
-
     listForContract: async (contractId: number): Promise<ContractAttachment[]> => {
       const res = await apiClient.get(`${BASE}/attachments/`, { params: { contract: contractId } });
       return res.data.results ?? res.data;
@@ -525,6 +503,11 @@ export const subcontractorsApi = {
 
     listForCertificate: async (certificateId: number): Promise<ContractAttachment[]> => {
       const res = await apiClient.get(`${BASE}/attachments/`, { params: { certificate: certificateId } });
+      return res.data.results ?? res.data;
+    },
+
+    listForSubcontractor: async (subcontractorId: number): Promise<ContractAttachment[]> => {
+      const res = await apiClient.get(`${BASE}/attachments/`, { params: { subcontractor: subcontractorId } });
       return res.data.results ?? res.data;
     },
   },
@@ -539,22 +522,9 @@ export const subcontractorsApi = {
 
   // BOQ Template Library
   boqTemplates: {
-    list: async (params?: Record<string, unknown>): Promise<PaginatedResponse<BOQTemplateItem>> => {
-      const res = await apiClient.get(`${BASE}/boq-templates/`, { params });
-      return res.data;
-    },
-
     listAll: async (): Promise<BOQTemplateItem[]> => {
       const res = await apiClient.get(`${BASE}/boq-templates/`, { params: { page_size: 500, ordering: 'section_code,order,item_name' } });
       return res.data.results ?? res.data;
-    },
-
-    sections: async (): Promise<string[]> => {
-      const res = await apiClient.get(`${BASE}/boq-templates/`, { params: { page_size: 500, active: 'true' } });
-      const items: BOQTemplateItem[] = res.data.results ?? res.data;
-      const seen = new Set<string>();
-      return items.filter(i => { if (seen.has(i.section_code)) return false; seen.add(i.section_code); return true; })
-                  .map(i => i.section_code);
     },
 
     create: async (data: Omit<BOQTemplateItem, 'id' | 'created_at'>): Promise<BOQTemplateItem> => {
@@ -577,9 +547,4 @@ export const subcontractorsApi = {
     },
   },
 
-  // Dashboard
-  getDashboard: async (): Promise<SubcontractorDashboard> => {
-    const res = await apiClient.get(`${BASE}/dashboard/`);
-    return res.data;
-  },
 };
