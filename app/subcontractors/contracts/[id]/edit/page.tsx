@@ -429,6 +429,13 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
                   style={{ display: 'none' }}
                   onChange={e => {
                     const files = Array.from(e.target.files ?? []);
+                    const MAX = 10 * 1024 * 1024;
+                    const oversized = files.filter(f => f.size > MAX);
+                    if (oversized.length > 0) {
+                      toast(`File too large: ${oversized.map(f => f.name).join(', ')}. Max size is 10 MB.`, 'error');
+                      e.target.value = '';
+                      return;
+                    }
                     setPendingFiles(prev => [
                       ...prev,
                       ...files.map(f => ({ file: f, docType: 'contract_pdf' })),

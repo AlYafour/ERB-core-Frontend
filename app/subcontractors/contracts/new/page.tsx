@@ -259,7 +259,15 @@ function NewContractForm() {
                 type="file"
                 accept=".pdf,.doc,.docx,.xls,.xlsx"
                 style={{ display: 'none' }}
-                onChange={e => setContractFile(e.target.files?.[0] ?? null)}
+                onChange={e => {
+                  const f = e.target.files?.[0];
+                  if (f && f.size > 10 * 1024 * 1024) {
+                    toast('File too large. Maximum allowed size is 10 MB.', 'error');
+                    e.target.value = '';
+                    return;
+                  }
+                  setContractFile(f ?? null);
+                }}
               />
             </FormField>
           </div>
