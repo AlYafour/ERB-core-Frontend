@@ -633,6 +633,11 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
           actions={
             <div style={{ display: 'flex', gap: 8 }}>
               {contract.contract_status === 'draft' && (
+                <Link href={`/subcontractors/contracts/${id}/edit`}>
+                  <Button variant="secondary" size="sm">Edit</Button>
+                </Link>
+              )}
+              {contract.contract_status === 'draft' && (
                 <Button variant="primary" size="sm" onClick={() => submitMutation.mutate()} disabled={submitMutation.isPending}>
                   {submitMutation.isPending ? 'Submitting...' : 'Submit for Review'}
                 </Button>

@@ -144,6 +144,11 @@ export default function ContractsPage() {
             <Button variant="view" size="sm">View</Button>
           </Link>
           {c.contract_status === 'draft' && (
+            <Link href={`/subcontractors/contracts/${c.id}/edit`}>
+              <Button variant="secondary" size="sm">Edit</Button>
+            </Link>
+          )}
+          {c.contract_status === 'draft' && (
             <Button variant="secondary" size="sm"
               onClick={() => reviewMutation.mutate(c.id)}
               disabled={reviewMutation.isPending}>
