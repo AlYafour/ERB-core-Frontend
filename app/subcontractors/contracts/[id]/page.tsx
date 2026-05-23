@@ -20,8 +20,8 @@ const CONTRACT_STATUS_LABEL: Record<string, string> = {
 
 const CERT_STATUS_LABEL: Record<string, string> = {
   draft: 'Draft', submitted: 'Submitted', under_review: 'Under Review',
-  reviewed: 'Reviewed', approved: 'Approved', rejected: 'Rejected',
-  paid: 'Paid', cancelled: 'Cancelled',
+  reviewed: 'Reviewed', approved: 'Approved', gm_approved: 'GM Approved',
+  rejected: 'Rejected', paid: 'Paid', cancelled: 'Cancelled',
 };
 
 function InfoRow({ label, value }: { label: string; value?: string | number | boolean | null }) {
@@ -498,7 +498,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
       const fd = new FormData();
       fd.append('file', file);
       fd.append('contract', id);
-      fd.append('document_type', 'general');
+      fd.append('document_type', 'other');
       return subcontractorsApi.attachments.upload(fd);
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['subcon-contract-attachments', id] }); toast('File uploaded', 'success'); },
@@ -1079,7 +1079,9 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                 ref={fileInputRef} type="file" style={{ display: 'none' }}
                 onChange={e => {
                   const file = e.target.files?.[0];
-                  if (file) { uploadAttachmentMutation.mutate(file); e.target.value = ''; }
+                  if (!file) return;
+                  if (file.size > 10 * 1024 * 1024) { toast('File too large. Maximum allowed size is 10 MB.', 'error'); e.target.value = ''; return; }
+                  uploadAttachmentMutation.mutate(file); e.target.value = '';
                 }}
               />
             </div>
