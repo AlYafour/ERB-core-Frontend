@@ -102,7 +102,7 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
         advance_recovery_percentage: form.advance_payment_enabled ? (form.advance_recovery_percentage || '0') : '0',
         project_ids: projectIds,
       };
-      await subcontractorsApi.contracts.update(Number(id), payload);
+      await subcontractorsApi.contracts.update(Number(id), payload as Parameters<typeof subcontractorsApi.contracts.update>[1]);
 
       if (pendingFiles.length > 0) {
         setUploading(true);
