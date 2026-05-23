@@ -700,6 +700,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
               <InfoRow label="Contract Number"  value={contract.contract_no} />
               <InfoRow label="Title"            value={contract.contract_title} />
               <InfoRow label="Subcontractor"    value={contract.subcontractor_name} />
+              <InfoRow label="Contract Type"    value={contract.contract_type === 'lump_sum' ? 'Lump Sum (مقطوع)' : 'Unit Rate'} />
               <InfoRow label="Start Date"       value={contract.start_date} />
               <InfoRow label="End Date"         value={contract.end_date} />
               <InfoRow label="Contract Value"   value={fmt(contract.contract_value)} />
@@ -756,12 +757,26 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
               <div className="info-section-title" style={{ margin: 0 }}>Bill of Quantities</div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <Button variant="secondary" size="sm" onClick={() => setShowImportModal(true)}>
-                  + Import from Template
-                </Button>
-              </div>
+              {contract.contract_type !== 'lump_sum' && (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Button variant="secondary" size="sm" onClick={() => setShowImportModal(true)}>
+                    + Import from Template
+                  </Button>
+                </div>
+              )}
             </div>
+
+            {contract.contract_type === 'lump_sum' && (
+              <div style={{
+                padding: '16px', marginBottom: 16, borderRadius: 8,
+                background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)',
+                fontSize: 'var(--text-sm)', color: 'var(--text-secondary)',
+              }}>
+                This is a <strong style={{ color: 'var(--text-primary)' }}>Lump Sum (مقطوع)</strong> contract with
+                a fixed value of <strong style={{ fontFamily: 'monospace' }}>{fmt(contract.contract_value)}</strong>.
+                Progress certificates are tracked by percentage of completion — no BOQ items are required.
+              </div>
+            )}
 
             {boqItems && boqItems.length > 0 && (() => {
               const boqTotal = boqItems.reduce((s, i) => s + Number(i.total_amount), 0);

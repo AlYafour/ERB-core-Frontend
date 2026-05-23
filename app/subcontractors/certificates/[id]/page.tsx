@@ -460,6 +460,12 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
               <InfoRow label="Date"            value={cert.certificate_date} />
               <InfoRow label="Period From"     value={cert.period_from} />
               <InfoRow label="Period To"       value={cert.period_to} />
+              {cert.lump_sum_claimed_pct != null && (
+                <InfoRow label="Claimed %" value={`${cert.lump_sum_claimed_pct}%`} />
+              )}
+              {cert.lump_sum_approved_pct != null && (
+                <InfoRow label="Approved %" value={`${cert.lump_sum_approved_pct}%`} />
+              )}
               {cert.notes && <InfoRow label="Notes" value={cert.notes} />}
             </div>
             <div className="card">

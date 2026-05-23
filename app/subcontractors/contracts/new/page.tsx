@@ -33,6 +33,7 @@ function NewContractForm() {
 
   const [form, setForm] = useState({
     subcontractor: preselectedSubcontractor ? Number(preselectedSubcontractor) : null as number | null,
+    contract_type: 'unit_rate' as 'unit_rate' | 'lump_sum',
     contract_title: '',
     scope_of_work: '',
     contract_value: '',
@@ -116,10 +117,56 @@ function NewContractForm() {
             </FormField>
           </div>
 
-          <FormField label="Contract Value (AED)" helperText="Leave blank for unit-rate contracts (BOQ total will be used)">
+          <div style={{ gridColumn: 'span 2' }}>
+            <FormField label="Contract Type" required>
+              <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+                {(['unit_rate', 'lump_sum'] as const).map(type => (
+                  <label
+                    key={type}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '12px 16px', borderRadius: 8, cursor: 'pointer',
+                      border: form.contract_type === type
+                        ? '2px solid var(--brand)'
+                        : '2px solid var(--border-default)',
+                      background: form.contract_type === type
+                        ? 'var(--brand-subtle)'
+                        : 'var(--surface-primary)',
+                    }}
+                  >
+                    <input
+                      type="radio" name="contract_type"
+                      value={type}
+                      checked={form.contract_type === type}
+                      onChange={() => set('contract_type', type)}
+                      style={{ width: 16, height: 16, accentColor: 'var(--brand)' }}
+                    />
+                    <div>
+                      <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {type === 'unit_rate' ? 'Unit Rate' : 'Lump Sum (مقطوع)'}
+                      </div>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>
+                        {type === 'unit_rate'
+                          ? 'BOQ with quantities × unit prices. Claims by quantity done.'
+                          : 'Fixed total price. Claims by % complete per period.'}
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </FormField>
+          </div>
+
+          <FormField
+            label="Contract Value (AED)"
+            helperText={form.contract_type === 'unit_rate'
+              ? 'Optional — BOQ total will be used if left blank'
+              : 'Required for lump sum — this is the fixed contract price'}
+          >
             <input
               type="number" min="0" step="0.01" className="form-input"
               placeholder="0.00"
+              required={form.contract_type === 'lump_sum'}
               value={form.contract_value}
               onChange={e => set('contract_value', e.target.value)}
             />

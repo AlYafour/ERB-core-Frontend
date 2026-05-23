@@ -44,6 +44,8 @@ export interface SubcontractorContract {
   // Retention
   retention_enabled: boolean;
   retention_percentage: string;
+  // Contract type
+  contract_type: 'unit_rate' | 'lump_sum';
   // Advance
   advance_payment_enabled: boolean;
   advance_payment_amount: string;
@@ -106,6 +108,8 @@ export interface ProgressCertificate {
   certificate_date: string;
   period_from: string | null;
   period_to: string | null;
+  lump_sum_claimed_pct: string | null;
+  lump_sum_approved_pct: string | null;
   // Financials
   gross_claimed_amount: string;
   gross_approved_amount: string;

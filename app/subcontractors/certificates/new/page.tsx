@@ -87,6 +87,8 @@ function NewCertificateForm() {
   const [percentages, setPercentages] = useState<Record<number, string>>({});
   // Per-location claimed quantities for breakdown items: { itemId: { location: qty } }
   const [breakdownQty, setBreakdownQty] = useState<Record<number, Record<string, string>>>({});
+  // Lump sum: contractor claims % of contract value
+  const [lumpSumPct, setLumpSumPct] = useState('');
 
   const { data: contractsData } = useQuery({
     queryKey: ['subcon-contracts-active'],
@@ -121,49 +123,62 @@ function NewCertificateForm() {
     return Number(quantities[itemId] ?? 0);
   };
 
+  const isLumpSum = contract?.contract_type === 'lump_sum';
+
   const mutation = useMutation({
     mutationFn: async () => {
       if (!contract) throw new Error('No contract selected');
 
-      const cert = await subcontractorsApi.certificates.create({
+      const basePayload: Record<string, unknown> = {
         contract: contractId!,
         subcontractor: contract.subcontractor,
         certificate_date: form.certificate_date,
         period_from: form.period_from || undefined,
         period_to: form.period_to || undefined,
         notes: form.notes,
-      } as Parameters<typeof subcontractorsApi.certificates.create>[0]);
+      };
 
-      const items = (boqItems ?? [])
-        .map(item => {
-          const hasBreakdowns = (item.breakdowns?.length ?? 0) > 0;
-          const claimedQty    = getClaimedQty(item.id, Number(item.contract_quantity), hasBreakdowns);
-          if (hasBreakdowns) {
-            const bds = item.breakdowns!
-              .map((bd, i) => ({
-                location: bd.location,
-                contractor_quantity: String(parseFloat((breakdownQty[item.id] ?? {})[bd.location] ?? '0') || 0),
-                engineer_quantity: '0',
-                order: i,
-              }))
-              .filter(bd => Number(bd.contractor_quantity) > 0);
+      if (isLumpSum) {
+        basePayload.lump_sum_claimed_pct  = lumpSumPct || '0';
+        basePayload.lump_sum_approved_pct = '0';
+      }
+
+      const cert = await subcontractorsApi.certificates.create(
+        basePayload as Parameters<typeof subcontractorsApi.certificates.create>[0]
+      );
+
+      if (!isLumpSum) {
+        const items = (boqItems ?? [])
+          .map(item => {
+            const hasBreakdowns = (item.breakdowns?.length ?? 0) > 0;
+            const claimedQty    = getClaimedQty(item.id, Number(item.contract_quantity), hasBreakdowns);
+            if (hasBreakdowns) {
+              const bds = item.breakdowns!
+                .map((bd, i) => ({
+                  location: bd.location,
+                  contractor_quantity: String(parseFloat((breakdownQty[item.id] ?? {})[bd.location] ?? '0') || 0),
+                  engineer_quantity: '0',
+                  order: i,
+                }))
+                .filter(bd => Number(bd.contractor_quantity) > 0);
+              return {
+                boq_item: item.id,
+                contractor_claimed_quantity: String(claimedQty),
+                engineer_approved_quantity: '0',
+                breakdowns: bds,
+              };
+            }
             return {
               boq_item: item.id,
               contractor_claimed_quantity: String(claimedQty),
               engineer_approved_quantity: '0',
-              breakdowns: bds,
             };
-          }
-          return {
-            boq_item: item.id,
-            contractor_claimed_quantity: String(claimedQty),
-            engineer_approved_quantity: '0',
-          };
-        })
-        .filter(item => Number(item.contractor_claimed_quantity) > 0);
+          })
+          .filter(item => Number(item.contractor_claimed_quantity) > 0);
 
-      if (items.length > 0) {
-        await subcontractorsApi.certificates.saveItems(cert.id, items);
+        if (items.length > 0) {
+          await subcontractorsApi.certificates.saveItems(cert.id, items);
+        }
       }
 
       return cert;
@@ -183,10 +198,16 @@ function NewCertificateForm() {
   const fmt = (v: number) =>
     `AED ${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  const claimedTotal = (boqItems ?? []).reduce((sum, item) => {
-    const qty = getClaimedQty(item.id, Number(item.contract_quantity), (item.breakdowns?.length ?? 0) > 0);
-    return sum + qty * Number(item.unit_rate);
-  }, 0);
+  const lumpSumClaimedAmt = isLumpSum
+    ? Number(contract?.contract_value ?? 0) * (parseFloat(lumpSumPct) || 0) / 100
+    : 0;
+
+  const claimedTotal = isLumpSum
+    ? lumpSumClaimedAmt
+    : (boqItems ?? []).reduce((sum, item) => {
+        const qty = getClaimedQty(item.id, Number(item.contract_quantity), (item.breakdowns?.length ?? 0) > 0);
+        return sum + qty * Number(item.unit_rate);
+      }, 0);
 
   const retentionPct = Number(contract?.retention_percentage ?? 0);
   const retentionAmt = claimedTotal * (retentionPct / 100);
@@ -297,8 +318,64 @@ function NewCertificateForm() {
         </div>
       )}
 
-      {/* ── Measurements table ── */}
-      {contractId && boqItems !== undefined && (
+      {/* ── Lump Sum % input ── */}
+      {contractId && isLumpSum && (
+        <div className="card">
+          <div className="info-section-title">Claim — Lump Sum Contract (مقطوع)</div>
+          <div style={{ maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <div style={{
+              padding: '12px 16px', borderRadius: 8,
+              background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)',
+              fontSize: 'var(--text-sm)', color: 'var(--text-secondary)',
+            }}>
+              This is a lump sum contract. Enter the percentage of work completed this period.
+            </div>
+            <FormField label="% Completed This Period (Contractor Claimed)" required>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                <input
+                  type="number" min="0" max="100" step="0.1"
+                  required className="form-input"
+                  placeholder="e.g. 30"
+                  value={lumpSumPct}
+                  onChange={e => setLumpSumPct(e.target.value)}
+                  style={{ maxWidth: 140, textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-base)', fontWeight: 600 }}
+                />
+                <span style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--brand)' }}>%</span>
+                {lumpSumClaimedAmt > 0 && (
+                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
+                    = {fmt(lumpSumClaimedAmt)}
+                  </span>
+                )}
+              </div>
+            </FormField>
+
+            {lumpSumClaimedAmt > 0 && (
+              <div style={{
+                padding: '12px 16px', borderRadius: 8,
+                background: 'var(--brand-subtle)', border: '1px solid var(--border-default)',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Gross Claimed</span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{fmt(lumpSumClaimedAmt)}</span>
+                </div>
+                {contract?.retention_enabled && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Retention ({retentionPct}%)</span>
+                    <span style={{ fontFamily: 'monospace', color: 'var(--status-error)' }}>− {fmt(retentionAmt)}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-default)', paddingTop: 6 }}>
+                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>Est. Net Payable</span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 'var(--text-base)' }}>{fmt(netPayable)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Measurements table (unit rate contracts only) ── */}
+      {contractId && !isLumpSum && boqItems !== undefined && (
         <div className="card">
           {/* Table header */}
           <div style={{
