@@ -143,7 +143,7 @@ export default function ContractsPage() {
           <Link href={`/subcontractors/contracts/${c.id}`}>
             <Button variant="view" size="sm">View</Button>
           </Link>
-          {c.contract_status === 'draft' && (
+          {!['closed', 'terminated', 'completed'].includes(c.contract_status) && (
             <Link href={`/subcontractors/contracts/${c.id}/edit`}>
               <Button variant="secondary" size="sm">Edit</Button>
             </Link>

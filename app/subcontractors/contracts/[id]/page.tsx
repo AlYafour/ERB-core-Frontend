@@ -632,7 +632,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
           ]}
           actions={
             <div style={{ display: 'flex', gap: 8 }}>
-              {contract.contract_status === 'draft' && (
+              {!['closed', 'terminated', 'completed'].includes(contract.contract_status) && (
                 <Link href={`/subcontractors/contracts/${id}/edit`}>
                   <Button variant="secondary" size="sm">Edit</Button>
                 </Link>

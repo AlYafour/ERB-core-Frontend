@@ -55,6 +55,20 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
   const [projectIds, setProjectIds] = useState<number[]>([]);
   const [ready, setReady] = useState(false);
 
+  // File uploads — multiple files, each with a document type
+  const DOCUMENT_TYPES = [
+    { value: 'contract_pdf',       label: 'Contract PDF' },
+    { value: 'commercial_license', label: 'Commercial License' },
+    { value: 'vat_certificate',    label: 'VAT Certificate' },
+    { value: 'insurance',          label: 'Insurance' },
+    { value: 'drawing',            label: 'Drawing' },
+    { value: 'measurement_sheet',  label: 'Measurement Sheet' },
+    { value: 'invoice',            label: 'Invoice' },
+    { value: 'other',              label: 'Other' },
+  ];
+  const [pendingFiles, setPendingFiles] = useState<{ file: File; docType: string }[]>([]);
+  const [uploading, setUploading] = useState(false);
+
   useEffect(() => {
     if (contract && !ready) {
       setForm({
@@ -80,7 +94,7 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
   }, [contract, ready]);
 
   const mutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const payload = {
         ...form,
         contract_value:              form.contract_value || '0',
@@ -88,13 +102,26 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
         advance_recovery_percentage: form.advance_payment_enabled ? (form.advance_recovery_percentage || '0') : '0',
         project_ids: projectIds,
       };
-      return subcontractorsApi.contracts.update(Number(id), payload);
+      await subcontractorsApi.contracts.update(Number(id), payload);
+
+      if (pendingFiles.length > 0) {
+        setUploading(true);
+        for (const { file, docType } of pendingFiles) {
+          const fd = new FormData();
+          fd.append('file', file);
+          fd.append('contract', id);
+          fd.append('document_type', docType);
+          fd.append('file_name', file.name);
+          await subcontractorsApi.attachments.upload(fd);
+        }
+        setUploading(false);
+      }
     },
     onSuccess: () => {
       toast('Contract updated', 'success');
       router.push(`/subcontractors/contracts/${id}`);
     },
-    onError: (err) => toast(getApiError(err, 'Failed to update contract'), 'error'),
+    onError: (err) => { setUploading(false); toast(getApiError(err, 'Failed to update contract'), 'error'); },
   });
 
   const set = (field: string, value: unknown) => setForm(f => ({ ...f, [field]: value }));
@@ -346,9 +373,76 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
             </div>
           </div>
 
+          {/* Attachments */}
+          <div className="card">
+            <div className="info-section-title">Upload Attachments</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              {pendingFiles.map((pf, idx) => (
+                <div key={idx} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '10px 14px', borderRadius: 8,
+                  border: '1px solid var(--border-default)',
+                  background: 'var(--surface-secondary)',
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>{pf.file.name}</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
+                      {(pf.file.size / 1024).toFixed(0)} KB
+                    </div>
+                  </div>
+                  <select
+                    value={pf.docType}
+                    onChange={e => setPendingFiles(prev => prev.map((f, i) => i === idx ? { ...f, docType: e.target.value } : f))}
+                    style={{
+                      padding: '4px 8px', fontSize: 'var(--text-sm)',
+                      border: '1px solid var(--border-default)', borderRadius: 6,
+                      background: 'var(--surface-primary)', color: 'var(--text-primary)',
+                    }}
+                  >
+                    {DOCUMENT_TYPES.map(dt => (
+                      <option key={dt.value} value={dt.value}>{dt.label}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setPendingFiles(prev => prev.filter((_, i) => i !== idx))}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 18, padding: 4 }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+
+              <label style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 14px', borderRadius: 8, cursor: 'pointer',
+                border: '2px dashed var(--border-default)',
+                background: 'var(--surface-secondary)',
+              }}>
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                  + Click to add file(s) — PDF, Word, Excel accepted
+                </span>
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                  style={{ display: 'none' }}
+                  onChange={e => {
+                    const files = Array.from(e.target.files ?? []);
+                    setPendingFiles(prev => [
+                      ...prev,
+                      ...files.map(f => ({ file: f, docType: 'contract_pdf' })),
+                    ]);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+
           <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-            <Button type="submit" variant="primary" disabled={mutation.isPending || !form.subcontractor}>
-              {mutation.isPending ? 'Saving…' : 'Save Changes'}
+            <Button type="submit" variant="primary" disabled={mutation.isPending || uploading || !form.subcontractor}>
+              {uploading ? 'Uploading files…' : mutation.isPending ? 'Saving…' : 'Save Changes'}
             </Button>
             <Link href={`/subcontractors/contracts/${id}`}>
               <Button variant="secondary">Cancel</Button>
