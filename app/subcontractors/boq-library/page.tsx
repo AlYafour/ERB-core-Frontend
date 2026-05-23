@@ -52,6 +52,8 @@ export default function BOQLibraryPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [addForm, setAddForm] = useState<FormState>(EMPTY_FORM);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const [addingInSection, setAddingInSection] = useState<string | null>(null);
+  const [inlineAddForm, setInlineAddForm] = useState<FormState>(EMPTY_FORM);
 
   // Location editing state
   const [locationsItemId, setLocationsItemId] = useState<number | null>(null);
@@ -73,6 +75,8 @@ export default function BOQLibraryPage() {
       qc.invalidateQueries({ queryKey: ['boq-templates-all'] });
       setShowAdd(false);
       setAddForm(EMPTY_FORM);
+      setAddingInSection(null);
+      setInlineAddForm(EMPTY_FORM);
       toast('Item added', 'success');
     },
     onError: () => toast('Failed to add item', 'error'),
@@ -302,26 +306,43 @@ export default function BOQLibraryPage() {
                   style={{ border: '1px solid var(--border-subtle)', borderRadius: 8, overflow: 'hidden' }}
                 >
                   {/* Section header */}
-                  <button
-                    onClick={() => toggleSection(code)}
-                    style={{
-                      width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '10px 16px',
-                      background: 'var(--surface-secondary)',
-                      border: 'none', cursor: 'pointer', textAlign: 'left',
-                    }}
-                  >
-                    <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', width: 40, flexShrink: 0 }}>
-                      {code}
-                    </span>
-                    <span style={{ flex: 1, fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
-                      {name}
-                    </span>
-                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-                      {items.length} item{items.length !== 1 ? 's' : ''}
-                    </span>
-                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{isOpen ? '▲' : '▼'}</span>
-                  </button>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '10px 16px',
+                    background: 'var(--surface-secondary)',
+                  }}>
+                    <button
+                      onClick={() => toggleSection(code)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}
+                    >
+                      <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', width: 40, flexShrink: 0 }}>
+                        {code}
+                      </span>
+                      <span style={{ flex: 1, fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
+                        {name}
+                      </span>
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                        {items.length} item{items.length !== 1 ? 's' : ''}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{isOpen ? '▲' : '▼'}</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAddingInSection(code);
+                        setInlineAddForm({ ...EMPTY_FORM, section_code: code, section_name: name });
+                        setEditingId(null);
+                        setLocationsItemId(null);
+                        if (!isOpen) toggleSection(code);
+                      }}
+                      style={{
+                        padding: '4px 10px', fontSize: 12, fontWeight: 600,
+                        background: 'var(--brand-primary)', color: '#fff',
+                        border: 'none', borderRadius: 5, cursor: 'pointer', flexShrink: 0,
+                      }}
+                    >
+                      + Add
+                    </button>
+                  </div>
 
                   {/* Items table */}
                   {isOpen && (
@@ -535,6 +556,45 @@ export default function BOQLibraryPage() {
                               </React.Fragment>
                             );
                           })}
+
+                          {/* Inline add row */}
+                          {addingInSection === code ? (
+                            <tr style={{ borderTop: '2px solid var(--brand-primary)', background: 'var(--brand-subtle)' }}>
+                              <td style={{ padding: '6px 12px' }}>
+                                {cellInput(inlineAddForm.item_code, v => setInlineAddForm(f => ({ ...f, item_code: v })), { width: 90, placeholder: `${code}.x` })}
+                              </td>
+                              <td style={{ padding: '6px 12px' }}>
+                                {cellInput(inlineAddForm.item_name, v => setInlineAddForm(f => ({ ...f, item_name: v })), { placeholder: 'Item name' })}
+                              </td>
+                              <td style={{ padding: '6px 12px' }}>
+                                {cellInput(inlineAddForm.default_unit, v => setInlineAddForm(f => ({ ...f, default_unit: v })), { width: 80, placeholder: 'm², No' })}
+                              </td>
+                              <td style={{ padding: '6px 12px' }}>
+                                {cellInput(inlineAddForm.order, v => setInlineAddForm(f => ({ ...f, order: Number(v) })), { type: 'number', width: 60 })}
+                              </td>
+                              <td style={{ padding: '6px 12px' }}>
+                                <input type="checkbox" checked={inlineAddForm.is_active} onChange={e => setInlineAddForm(f => ({ ...f, is_active: e.target.checked }))} />
+                              </td>
+                              <td style={{ padding: '6px 12px' }} />
+                              <td style={{ padding: '6px 12px', whiteSpace: 'nowrap' }}>
+                                <div style={{ display: 'flex', gap: 6 }}>
+                                  <button
+                                    onClick={() => createMutation.mutate(inlineAddForm)}
+                                    disabled={createMutation.isPending || !inlineAddForm.item_code || !inlineAddForm.item_name}
+                                    style={{ padding: '3px 10px', background: 'var(--brand-primary)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer', fontWeight: 600 }}
+                                  >
+                                    {createMutation.isPending ? '…' : 'Add'}
+                                  </button>
+                                  <button
+                                    onClick={() => setAddingInSection(null)}
+                                    style={{ padding: '3px 8px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 4, fontSize: 12, cursor: 'pointer', color: 'var(--text-secondary)' }}
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ) : null}
                         </tbody>
                       </table>
                     </div>
