@@ -87,7 +87,7 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
         advance_recovery_method:  contract.advance_recovery_method ?? 'percentage',
         advance_recovery_percentage: contract.advance_recovery_percentage ?? '10',
       });
-      const linked = ((contract as Record<string, unknown>).contract_projects_detail as { project: number }[] ?? []).map(p => p.project);
+      const linked = ((contract as unknown as Record<string, unknown>).contract_projects_detail as { project: number }[] ?? []).map(p => p.project);
       setProjectIds(linked);
       setReady(true);
     }
