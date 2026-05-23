@@ -49,9 +49,10 @@ function NewContractForm() {
   });
 
   const [projectIds, setProjectIds] = useState<number[]>([]);
+  const [contractFile, setContractFile] = useState<File | null>(null);
 
   const mutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const payload = {
         ...form,
         contract_value:          form.contract_value          || '0',
@@ -59,7 +60,18 @@ function NewContractForm() {
         advance_recovery_percentage: form.advance_payment_enabled ? (form.advance_recovery_percentage || '0') : '0',
         project_ids: projectIds,
       };
-      return subcontractorsApi.contracts.create(payload as Parameters<typeof subcontractorsApi.contracts.create>[0]);
+      const contract = await subcontractorsApi.contracts.create(
+        payload as Parameters<typeof subcontractorsApi.contracts.create>[0]
+      );
+      if (contractFile) {
+        const fd = new FormData();
+        fd.append('file', contractFile);
+        fd.append('contract', String(contract.id));
+        fd.append('document_type', 'contract_pdf');
+        fd.append('file_name', contractFile.name);
+        await subcontractorsApi.attachments.upload(fd);
+      }
+      return contract;
     },
     onSuccess: (data) => {
       toast('Contract created', 'success');
@@ -75,7 +87,8 @@ function NewContractForm() {
   }));
 
   const projectOptions = (projectsData ?? []).map(p => ({
-    value: p.id, label: p.name ?? String(p.id),
+    value: p.id,
+    label: p.code ? `${p.code} — ${p.name}` : (p.name ?? String(p.id)),
   }));
 
   return (
@@ -189,7 +202,7 @@ function NewContractForm() {
             />
           </FormField>
 
-          <FormField label="End Date">
+          <FormField label="End Date" helperText="Optional">
             <input
               type="date" className="form-input"
               value={form.end_date}
@@ -204,6 +217,49 @@ function NewContractForm() {
                 placeholder="Describe the scope of work..."
                 value={form.scope_of_work}
                 onChange={e => set('scope_of_work', e.target.value)}
+              />
+            </FormField>
+          </div>
+
+          <div style={{ gridColumn: 'span 2' }}>
+            <FormField label="Contract Document" helperText="Upload the signed contract PDF or Word file (optional — can also be uploaded later)">
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '10px 14px',
+                border: contractFile ? '2px solid var(--brand)' : '2px dashed var(--border-default)',
+                borderRadius: 8,
+                background: contractFile ? 'var(--brand-subtle)' : 'var(--surface-secondary)',
+                cursor: 'pointer',
+              }}
+                onClick={() => document.getElementById('contract-file-input')?.click()}
+              >
+                <span style={{ fontSize: 16, color: 'var(--text-tertiary)', fontWeight: 600 }}>⊕</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-primary)' }}>
+                    {contractFile ? contractFile.name : 'Click to attach contract document'}
+                  </div>
+                  {contractFile && (
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
+                      {(contractFile.size / 1024).toFixed(0)} KB
+                    </div>
+                  )}
+                </div>
+                {contractFile && (
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); setContractFile(null); }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 18, lineHeight: 1, padding: 4 }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              <input
+                id="contract-file-input"
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx"
+                style={{ display: 'none' }}
+                onChange={e => setContractFile(e.target.files?.[0] ?? null)}
               />
             </FormField>
           </div>
