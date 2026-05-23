@@ -68,6 +68,25 @@ export default function ToastContainer() {
             }}>
               {toast.message}
             </p>
+            {toast.action && (
+              <button
+                onClick={toast.action.onClick}
+                style={{
+                  flexShrink: 0,
+                  padding: '3px 10px',
+                  borderRadius: 4,
+                  border: `1px solid ${s.borderColor}`,
+                  background: 'transparent',
+                  color: s.color,
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  letterSpacing: '0.03em',
+                }}
+              >
+                {toast.action.label}
+              </button>
+            )}
             <button
               onClick={() => removeToast(toast.id)}
               aria-label="Dismiss"

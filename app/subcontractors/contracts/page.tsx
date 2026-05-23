@@ -1,16 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import MainLayout from '@/components/layout/MainLayout';
+import { Suspense, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subcontractorsApi, SubcontractorContract } from '@/lib/api/subcontractors';
 import Link from 'next/link';
-import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { Button, Badge } from '@/components/ui';
 import { type FilterField } from '@/components/ui/FilterPanel';
-import { useTableState } from '@/lib/hooks/use-table-state';
+import { useListState } from '@/lib/hooks/use-list-state';
 import { CONTRACT_STATUS } from '@/lib/utils/status-colors';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { EnterpriseListPage, type EnterpriseColumn, type BulkAction } from '@/components/ui/enterprise';
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Draft', under_review: 'Under Review', approved: 'Approved',
@@ -31,9 +31,9 @@ const filterFields: FilterField[] = [
 
 interface RejectDialog { id: number; reason: string }
 
-export default function ContractsPage() {
-  const tableState = useTableState();
-  const { page, search, filters, selectedItems, clearSelection } = tableState;
+function ContractsContent() {
+  const listState = useListState('subcon-contracts');
+  const { page, search, filters, pageSize, selectedItems, clearSelection } = listState;
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const isSuperuser = user?.is_superuser ?? false;
@@ -41,8 +41,8 @@ export default function ContractsPage() {
   const [rejectDialog, setRejectDialog] = useState<RejectDialog | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['subcon-contracts', page, search, filters],
-    queryFn: () => subcontractorsApi.contracts.list({ page, search: search || undefined, ...filters }),
+    queryKey: ['subcon-contracts', page, pageSize, search, filters],
+    queryFn: () => subcontractorsApi.contracts.list({ page, page_size: pageSize, search: search || undefined, ...filters }),
     staleTime: 2 * 60 * 1000,
   });
 
@@ -78,13 +78,20 @@ export default function ContractsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (ids: number[]) => { for (const id of ids) await subcontractorsApi.contracts.delete(id); },
-    onSuccess: () => { invalidate(); toast('Deleted selected contracts', 'success'); clearSelection(); },
+    onSuccess: (_, ids) => { invalidate(); toast(`Deleted ${ids.length} contract(s)`, 'success'); clearSelection(); },
     onError:   () => toast('Failed to delete', 'error'),
   });
 
-  const columns: Column<SubcontractorContract>[] = [
+  const handleBulkDelete = async () => {
+    if (!selectedItems.size) return;
+    const ids = [...selectedItems];
+    if (!await confirm(`Delete ${ids.length} selected contract(s)?`)) return;
+    deleteMutation.mutate(ids);
+  };
+
+  const columns: EnterpriseColumn<SubcontractorContract>[] = [
     {
-      key: 'contract_no', header: 'Contract No.',
+      key: 'contract_no', header: 'Contract No.', sortable: true, mobileMain: true, width: 140,
       render: c => (
         <Link href={`/subcontractors/contracts/${c.id}`} style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-brand)', fontWeight: 600 }}>
           {c.contract_no}
@@ -92,7 +99,7 @@ export default function ContractsPage() {
       ),
     },
     {
-      key: 'contract_title', header: 'Title / Subcontractor',
+      key: 'contract_title', header: 'Title / Subcontractor', minWidth: 200,
       render: c => (
         <div>
           <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{c.contract_title}</div>
@@ -101,15 +108,20 @@ export default function ContractsPage() {
       ),
     },
     {
-      key: 'contract_value', header: 'Contract Value',
+      key: 'contract_value', header: 'Contract Value', align: 'right', sortable: true, width: 150,
       render: c => (
         <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 600 }}>
           AED {Number(c.contract_value).toLocaleString()}
         </span>
       ),
+      aggregate: (data) => (
+        <span style={{ fontFamily: 'monospace' }}>
+          AED {data.reduce((s, c) => s + Number(c.contract_value), 0).toLocaleString()}
+        </span>
+      ),
     },
     {
-      key: 'total_approved_to_date', header: 'Approved',
+      key: 'total_approved_to_date', header: 'Approved', align: 'right', width: 140,
       render: c => (
         <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
           AED {Number(c.total_approved_to_date).toLocaleString()}
@@ -117,7 +129,7 @@ export default function ContractsPage() {
       ),
     },
     {
-      key: 'total_paid_to_date', header: 'Paid',
+      key: 'total_paid_to_date', header: 'Paid', align: 'right', width: 140,
       render: c => (
         <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
           AED {Number(c.total_paid_to_date).toLocaleString()}
@@ -125,11 +137,11 @@ export default function ContractsPage() {
       ),
     },
     {
-      key: 'contract_status', header: 'Status',
+      key: 'contract_status', header: 'Status', width: 120,
       render: c => <Badge variant={CONTRACT_STATUS[c.contract_status] ?? 'default'}>{STATUS_LABEL[c.contract_status] || c.contract_status}</Badge>,
     },
     {
-      key: 'start_date', header: 'Period',
+      key: 'start_date', header: 'Period', width: 170, mobileHide: true,
       render: c => (
         <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
           {c.start_date ?? '—'}{c.end_date ? ` → ${c.end_date}` : ''}
@@ -137,7 +149,7 @@ export default function ContractsPage() {
       ),
     },
     {
-      key: 'actions', header: '',
+      key: 'actions', header: '', hideable: false, width: 220,
       render: c => (
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
           <Link href={`/subcontractors/contracts/${c.id}`}>
@@ -149,98 +161,73 @@ export default function ContractsPage() {
             </Link>
           )}
           {c.contract_status === 'draft' && (
-            <Button variant="secondary" size="sm"
-              onClick={() => reviewMutation.mutate(c.id)}
-              disabled={reviewMutation.isPending}>
-              Submit
-            </Button>
+            <Button variant="secondary" size="sm" onClick={() => reviewMutation.mutate(c.id)} disabled={reviewMutation.isPending}>Submit</Button>
           )}
           {c.contract_status === 'under_review' && (
-            <Button variant="primary" size="sm"
-              onClick={() => approveMutation.mutate(c.id)}
-              disabled={approveMutation.isPending}>
-              Approve
-            </Button>
+            <Button variant="primary" size="sm" onClick={() => approveMutation.mutate(c.id)} disabled={approveMutation.isPending}>Approve</Button>
           )}
           {c.contract_status === 'approved' && (
-            <Button variant="primary" size="sm"
-              onClick={() => activateMutation.mutate(c.id)}
-              disabled={activateMutation.isPending}>
-              Activate
-            </Button>
+            <Button variant="primary" size="sm" onClick={() => activateMutation.mutate(c.id)} disabled={activateMutation.isPending}>Activate</Button>
           )}
           {(c.contract_status === 'draft' || c.contract_status === 'under_review') && (
-            <Button variant="destructive" size="sm"
-              onClick={() => setRejectDialog({ id: c.id, reason: '' })}>
-              Reject
-            </Button>
+            <Button variant="destructive" size="sm" onClick={() => setRejectDialog({ id: c.id, reason: '' })}>Reject</Button>
           )}
         </div>
       ),
     },
   ];
 
-  return (
-    <MainLayout>
-      <PageShell>
-        <PageHeader
-          title="Subcontractor Contracts"
-          count={totalCount}
-          breadcrumbs={[
-            { label: 'Subcontractors', href: '/subcontractors' },
-            { label: 'Contracts' },
-          ]}
-          actions={
-            <Link href="/subcontractors/contracts/new">
-              <Button variant="primary">+ New Contract</Button>
-            </Link>
-          }
-        />
+  const totalValue    = rows.reduce((s, c) => s + Number(c.contract_value), 0);
+  const activeCount   = rows.filter(c => c.contract_status === 'active').length;
+  const draftCount    = rows.filter(c => c.contract_status === 'draft').length;
 
-        <TableShell
-          tableState={tableState}
-          filterFields={filterFields}
-          filterSaveKey="subcon-contracts"
-          searchPlaceholder="Search by contract number, title, subcontractor..."
-          columns={columns}
-          data={rows}
-          isLoading={isLoading}
-          error={error}
-          onRetry={refetch}
-          emptyMessage="No contracts found."
-          totalCount={totalCount}
-          paginatedData={data}
-          selectable={isSuperuser}
-          toolbarActions={
-            isSuperuser && selectedItems.size > 0 ? (
-              <>
-                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-                  {selectedItems.size} selected
-                </span>
-                <Button variant="destructive" size="sm"
-                  onClick={async () => { if (await confirm(`Delete ${selectedItems.size} contracts?`)) deleteMutation.mutate([...selectedItems]); }}
-                  disabled={deleteMutation.isPending}>
-                  {deleteMutation.isPending ? 'Deleting…' : 'Delete Selected'}
-                </Button>
-                <Button variant="secondary" size="sm" onClick={clearSelection}>Clear</Button>
-              </>
-            ) : undefined
-          }
-        />
-      </PageShell>
+  const kpiCards = [
+    { label: 'Total Contracts', value: totalCount },
+    { label: 'Active', value: activeCount, variant: 'success' as const },
+    { label: 'Drafts', value: draftCount, variant: 'warning' as const },
+    { label: 'Page Value', value: `AED ${(totalValue / 1000000).toFixed(1)}M`, variant: 'default' as const },
+  ];
+
+  const bulkActions: BulkAction[] = isSuperuser ? [
+    {
+      key: 'delete', label: 'Delete Selected', variant: 'destructive',
+      onClick: handleBulkDelete,
+      isLoading: deleteMutation.isPending,
+      disabled: selectedItems.size === 0,
+    },
+  ] : [];
+
+  return (
+    <>
+      <EnterpriseListPage
+        title="Subcontractor Contracts"
+        breadcrumbs={[{ label: 'Subcontractors', href: '/subcontractors' }, { label: 'Contracts' }]}
+        primaryAction={
+          <Link href="/subcontractors/contracts/new">
+            <Button variant="primary">+ New Contract</Button>
+          </Link>
+        }
+        kpiCards={kpiCards}
+        listState={listState}
+        filterFields={filterFields}
+        filterSaveKey="subcon-contracts"
+        searchPlaceholder="Search by contract number, title, subcontractor..."
+        columns={columns}
+        data={rows}
+        totalCount={totalCount}
+        isLoading={isLoading}
+        error={error}
+        onRefetch={refetch}
+        paginatedData={data}
+        selectable={isSuperuser}
+        bulkActions={bulkActions}
+        emptyMessage="No contracts found."
+      />
 
       {/* Reject dialog */}
       {rejectDialog && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 50,
-          background: 'rgba(0,0,0,0.4)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <div style={{
-            background: 'var(--surface-primary)', borderRadius: 10,
-            padding: 24, width: '100%', maxWidth: 440,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
-          }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--surface-primary)', borderRadius: 10, padding: 24, width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
             <h3 style={{ margin: '0 0 8px', fontSize: 'var(--text-lg)', fontWeight: 700 }}>Reject Contract</h3>
             <p style={{ margin: '0 0 16px', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
               Please provide a reason for rejecting this contract.
@@ -250,12 +237,7 @@ export default function ContractsPage() {
               onChange={e => setRejectDialog(d => d ? { ...d, reason: e.target.value } : null)}
               rows={3}
               placeholder="Enter rejection reason..."
-              style={{
-                width: '100%', padding: '8px 12px', borderRadius: 6,
-                border: '1px solid var(--border-default)',
-                background: 'var(--surface-secondary)', color: 'var(--text-primary)',
-                fontSize: 'var(--text-sm)', resize: 'vertical', boxSizing: 'border-box',
-              }}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border-default)', background: 'var(--surface-secondary)', color: 'var(--text-primary)', fontSize: 'var(--text-sm)', resize: 'vertical', boxSizing: 'border-box' }}
             />
             <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
               <Button variant="secondary" size="sm" onClick={() => setRejectDialog(null)}>Cancel</Button>
@@ -268,6 +250,10 @@ export default function ContractsPage() {
           </div>
         </div>
       )}
-    </MainLayout>
+    </>
   );
+}
+
+export default function ContractsPage() {
+  return <Suspense><ContractsContent /></Suspense>;
 }

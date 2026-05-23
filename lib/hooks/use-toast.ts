@@ -8,6 +8,7 @@ export interface Toast {
   id: string;
   message: string;
   type: ToastType;
+  action?: { label: string; onClick: () => void };
 }
 
 let toastId = 0;
@@ -22,12 +23,15 @@ export function toast(message: string, type: ToastType = 'info') {
   const id = `toast-${++toastId}`;
   toasts = [...toasts, { id, message, type }];
   notify();
-  
-  // Auto remove after 5 seconds
-  setTimeout(() => {
-    toasts = toasts.filter((t) => t.id !== id);
-    notify();
-  }, 5000);
+  setTimeout(() => { toasts = toasts.filter((t) => t.id !== id); notify(); }, 5000);
+}
+
+export function toastWithUndo(message: string, onUndo: () => void, durationMs = 5000) {
+  const id = `toast-${++toastId}`;
+  const action = { label: 'Undo', onClick: () => { onUndo(); removeToast(id); } };
+  toasts = [...toasts, { id, message, type: 'success' as ToastType, action }];
+  notify();
+  setTimeout(() => { toasts = toasts.filter((t) => t.id !== id); notify(); }, durationMs);
 }
 
 export function removeToast(id: string) {
