@@ -12,6 +12,17 @@ import { PageShell, PageHeader, Button } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 
+const DOCUMENT_TYPES = [
+  { value: 'contract_pdf',       label: 'Contract PDF' },
+  { value: 'commercial_license', label: 'Commercial License' },
+  { value: 'vat_certificate',    label: 'VAT Certificate' },
+  { value: 'insurance',          label: 'Insurance' },
+  { value: 'drawing',            label: 'Drawing' },
+  { value: 'measurement_sheet',  label: 'Measurement Sheet' },
+  { value: 'invoice',            label: 'Invoice' },
+  { value: 'other',              label: 'Other' },
+];
+
 export default function EditContractPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -54,37 +65,25 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
 
   const [projectIds, setProjectIds] = useState<number[]>([]);
   const [ready, setReady] = useState(false);
-
-  // File uploads — multiple files, each with a document type
-  const DOCUMENT_TYPES = [
-    { value: 'contract_pdf',       label: 'Contract PDF' },
-    { value: 'commercial_license', label: 'Commercial License' },
-    { value: 'vat_certificate',    label: 'VAT Certificate' },
-    { value: 'insurance',          label: 'Insurance' },
-    { value: 'drawing',            label: 'Drawing' },
-    { value: 'measurement_sheet',  label: 'Measurement Sheet' },
-    { value: 'invoice',            label: 'Invoice' },
-    { value: 'other',              label: 'Other' },
-  ];
   const [pendingFiles, setPendingFiles] = useState<{ file: File; docType: string }[]>([]);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (contract && !ready) {
       setForm({
-        subcontractor:            contract.subcontractor,
-        contract_type:            contract.contract_type ?? 'unit_rate',
-        contract_title:           contract.contract_title,
-        scope_of_work:            contract.scope_of_work ?? '',
-        contract_value:           contract.contract_value ?? '',
-        start_date:               contract.start_date ?? '',
-        end_date:                 contract.end_date ?? '',
-        payment_terms:            contract.payment_terms ?? '',
-        retention_enabled:        contract.retention_enabled,
-        retention_percentage:     contract.retention_percentage ?? '5',
-        advance_payment_enabled:  contract.advance_payment_enabled,
-        advance_payment_amount:   contract.advance_payment_amount ?? '',
-        advance_recovery_method:  contract.advance_recovery_method ?? 'percentage',
+        subcontractor:               contract.subcontractor,
+        contract_type:               contract.contract_type ?? 'unit_rate',
+        contract_title:              contract.contract_title,
+        scope_of_work:               contract.scope_of_work ?? '',
+        contract_value:              contract.contract_value ?? '',
+        start_date:                  contract.start_date ?? '',
+        end_date:                    contract.end_date ?? '',
+        payment_terms:               contract.payment_terms ?? '',
+        retention_enabled:           contract.retention_enabled,
+        retention_percentage:        contract.retention_percentage ?? '5',
+        advance_payment_enabled:     contract.advance_payment_enabled,
+        advance_payment_amount:      contract.advance_payment_amount ?? '',
+        advance_recovery_method:     contract.advance_recovery_method ?? 'percentage',
         advance_recovery_percentage: contract.advance_recovery_percentage ?? '10',
       });
       const linked = ((contract as unknown as Record<string, unknown>).contract_projects_detail as { project: number }[] ?? []).map(p => p.project);
@@ -121,7 +120,10 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
       toast('Contract updated', 'success');
       router.push(`/subcontractors/contracts/${id}`);
     },
-    onError: (err) => { setUploading(false); toast(getApiError(err, 'Failed to update contract'), 'error'); },
+    onError: (err) => {
+      setUploading(false);
+      toast(getApiError(err, 'Failed to update contract'), 'error');
+    },
   });
 
   const set = (field: string, value: unknown) => setForm(f => ({ ...f, [field]: value }));
@@ -154,13 +156,16 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
           ]}
         />
 
-        <form
-          onSubmit={e => { e.preventDefault(); mutation.mutate(); }}
-          style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}
-        >
+        <form onSubmit={e => { e.preventDefault(); mutation.mutate(); }} className="form-body">
+
           {/* Contract Details */}
           <div className="card">
-            <div className="info-section-title">Contract Details</div>
+            <div className="form-section-header">
+              <div>
+                <div className="form-section-title">Contract Details</div>
+                <div className="form-section-desc">Core information about this subcontract</div>
+              </div>
+            </div>
             <div className="form-grid">
               <FormField label="Subcontractor" required>
                 <SearchableDropdown
@@ -181,44 +186,35 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
                 />
               </FormField>
 
-              <div style={{ gridColumn: 'span 2' }}>
+              <div className="form-col-full">
                 <FormField label="Contract Title" required>
                   <input
                     type="text" required className="form-input"
+                    placeholder="e.g. Civil Works — Al Reem Project"
                     value={form.contract_title}
                     onChange={e => set('contract_title', e.target.value)}
                   />
                 </FormField>
               </div>
 
-              <div style={{ gridColumn: 'span 2' }}>
+              <div className="form-col-full">
                 <FormField label="Contract Type" required>
-                  <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+                  <div className="type-card-group">
                     {(['unit_rate', 'lump_sum'] as const).map(type => (
                       <label
                         key={type}
-                        style={{
-                          flex: 1, display: 'flex', alignItems: 'center', gap: 10,
-                          padding: '12px 16px', borderRadius: 8, cursor: 'pointer',
-                          border: form.contract_type === type
-                            ? '2px solid var(--brand)'
-                            : '2px solid var(--border-default)',
-                          background: form.contract_type === type
-                            ? 'var(--brand-subtle)'
-                            : 'var(--surface-primary)',
-                        }}
+                        className={`type-card${form.contract_type === type ? ' selected' : ''}`}
                       >
                         <input
                           type="radio" name="contract_type" value={type}
                           checked={form.contract_type === type}
                           onChange={() => set('contract_type', type)}
-                          style={{ width: 16, height: 16, accentColor: 'var(--brand)' }}
                         />
                         <div>
-                          <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          <div className="type-card-label">
                             {type === 'unit_rate' ? 'Unit Rate' : 'Lump Sum (مقطوع)'}
                           </div>
-                          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>
+                          <div className="type-card-desc">
                             {type === 'unit_rate'
                               ? 'BOQ with quantities × unit prices. Claims by quantity done.'
                               : 'Fixed total price. Claims by % complete per period.'}
@@ -234,7 +230,7 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
                 label="Contract Value (AED)"
                 helperText={form.contract_type === 'unit_rate'
                   ? 'Optional — BOQ total will be used if left blank'
-                  : 'Required for lump sum — this is the fixed contract price'}
+                  : 'Required — this is the fixed contract price'}
               >
                 <input
                   type="number" min="0" step="0.01" className="form-input"
@@ -270,11 +266,11 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
                 />
               </FormField>
 
-              <div style={{ gridColumn: 'span 2' }}>
+              <div className="form-col-full">
                 <FormField label="Scope of Work">
                   <textarea
                     rows={4} className="form-textarea"
-                    placeholder="Describe the scope of work..."
+                    placeholder="Describe the scope of work…"
                     value={form.scope_of_work}
                     onChange={e => set('scope_of_work', e.target.value)}
                   />
@@ -285,119 +281,126 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
 
           {/* Retention */}
           <div className="card">
-            <div className="info-section-title">Retention Settings</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
+            <div className="form-section-header">
+              <div>
+                <div className="form-section-title">Retention Settings</div>
+                <div className="form-section-desc">Deduction held from each payment certificate until project completion</div>
+              </div>
+              <label className="toggle-wrap">
                 <input
                   type="checkbox"
                   checked={form.retention_enabled}
                   onChange={e => set('retention_enabled', e.target.checked)}
-                  style={{ width: 16, height: 16 }}
                 />
-                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-primary)' }}>
-                  Enable Retention Deduction
-                </span>
+                <span className="toggle-track"><span className="toggle-thumb" /></span>
+                <span className="toggle-label">{form.retention_enabled ? 'Enabled' : 'Disabled'}</span>
               </label>
-              {form.retention_enabled && (
-                <div className="form-grid">
-                  <FormField label="Retention Percentage (%)">
-                    <input
-                      type="number" min="0" max="100" step="0.01" className="form-input"
-                      value={form.retention_percentage}
-                      onChange={e => set('retention_percentage', e.target.value)}
-                    />
-                  </FormField>
-                </div>
-              )}
             </div>
+
+            {form.retention_enabled && (
+              <div className="form-grid">
+                <FormField label="Retention Percentage (%)">
+                  <input
+                    type="number" min="0" max="100" step="0.01" className="form-input"
+                    placeholder="5.00"
+                    value={form.retention_percentage}
+                    onChange={e => set('retention_percentage', e.target.value)}
+                  />
+                </FormField>
+              </div>
+            )}
           </div>
 
           {/* Advance Payment */}
           <div className="card">
-            <div className="info-section-title">Advance Payment Settings</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
+            <div className="form-section-header">
+              <div>
+                <div className="form-section-title">Advance Payment</div>
+                <div className="form-section-desc">Mobilization advance to be recovered from future certificates</div>
+              </div>
+              <label className="toggle-wrap">
                 <input
                   type="checkbox"
                   checked={form.advance_payment_enabled}
                   onChange={e => set('advance_payment_enabled', e.target.checked)}
-                  style={{ width: 16, height: 16 }}
                 />
-                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-primary)' }}>
-                  Enable Advance Payment
-                </span>
+                <span className="toggle-track"><span className="toggle-thumb" /></span>
+                <span className="toggle-label">{form.advance_payment_enabled ? 'Enabled' : 'Disabled'}</span>
               </label>
-              {form.advance_payment_enabled && (
-                <div className="form-grid">
-                  <FormField label="Advance Amount (AED)">
+            </div>
+
+            {form.advance_payment_enabled && (
+              <div className="form-grid">
+                <FormField label="Advance Amount (AED)">
+                  <input
+                    type="number" min="0" step="0.01" className="form-input"
+                    placeholder="0.00"
+                    value={form.advance_payment_amount}
+                    onChange={e => set('advance_payment_amount', e.target.value)}
+                  />
+                </FormField>
+
+                <FormField label="Recovery Method">
+                  <SearchableDropdown
+                    options={[
+                      { value: 'percentage',   label: 'Percentage per IPC' },
+                      { value: 'fixed_amount', label: 'Fixed Amount per IPC' },
+                      { value: 'full_first',   label: 'Recover in Full (First IPC)' },
+                    ]}
+                    value={form.advance_recovery_method}
+                    onChange={v => set('advance_recovery_method', v)}
+                    placeholder="Select method"
+                  />
+                </FormField>
+
+                {form.advance_recovery_method === 'percentage' && (
+                  <FormField label="Recovery Percentage per IPC (%)">
+                    <input
+                      type="number" min="0" max="100" step="0.01" className="form-input"
+                      placeholder="10.00"
+                      value={form.advance_recovery_percentage}
+                      onChange={e => set('advance_recovery_percentage', e.target.value)}
+                    />
+                  </FormField>
+                )}
+
+                {form.advance_recovery_method === 'fixed_amount' && (
+                  <FormField label="Fixed Recovery Amount per IPC (AED)">
                     <input
                       type="number" min="0" step="0.01" className="form-input"
                       placeholder="0.00"
-                      value={form.advance_payment_amount}
-                      onChange={e => set('advance_payment_amount', e.target.value)}
+                      value={form.advance_recovery_percentage}
+                      onChange={e => set('advance_recovery_percentage', e.target.value)}
                     />
                   </FormField>
-                  <FormField label="Recovery Method">
-                    <SearchableDropdown
-                      options={[
-                        { value: 'percentage',   label: 'Percentage per IPC' },
-                        { value: 'fixed_amount', label: 'Fixed Amount per IPC' },
-                        { value: 'full_first',   label: 'Recover in Full (First IPC)' },
-                      ]}
-                      value={form.advance_recovery_method}
-                      onChange={v => set('advance_recovery_method', v)}
-                      placeholder="Select method"
-                    />
-                  </FormField>
-                  {form.advance_recovery_method === 'percentage' && (
-                    <FormField label="Recovery Percentage per IPC (%)">
-                      <input
-                        type="number" min="0" max="100" step="0.01" className="form-input"
-                        value={form.advance_recovery_percentage}
-                        onChange={e => set('advance_recovery_percentage', e.target.value)}
-                      />
-                    </FormField>
-                  )}
-                  {form.advance_recovery_method === 'fixed_amount' && (
-                    <FormField label="Fixed Recovery Amount per IPC (AED)">
-                      <input
-                        type="number" min="0" step="0.01" className="form-input"
-                        placeholder="0.00"
-                        value={form.advance_recovery_percentage}
-                        onChange={e => set('advance_recovery_percentage', e.target.value)}
-                      />
-                    </FormField>
-                  )}
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Attachments */}
           <div className="card">
-            <div className="info-section-title">Upload Attachments</div>
+            <div className="form-section-header">
+              <div>
+                <div className="form-section-title">Upload Attachments</div>
+                <div className="form-section-desc">Add documents to this contract — PDF, Word, Excel, images (max 10 MB each)</div>
+              </div>
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
               {pendingFiles.map((pf, idx) => (
-                <div key={idx} style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '10px 14px', borderRadius: 8,
-                  border: '1px solid var(--border-default)',
-                  background: 'var(--surface-secondary)',
-                }}>
+                <div key={idx} className="file-row">
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>{pf.file.name}</div>
-                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
-                      {(pf.file.size / 1024).toFixed(0)} KB
-                    </div>
+                    <div className="file-row-name">{pf.file.name}</div>
+                    <div className="file-row-size">{(pf.file.size / 1024).toFixed(0)} KB</div>
                   </div>
                   <select
+                    className="form-select"
+                    style={{ width: 'auto' }}
                     value={pf.docType}
-                    onChange={e => setPendingFiles(prev => prev.map((f, i) => i === idx ? { ...f, docType: e.target.value } : f))}
-                    style={{
-                      padding: '4px 8px', fontSize: 'var(--text-sm)',
-                      border: '1px solid var(--border-default)', borderRadius: 6,
-                      background: 'var(--surface-primary)', color: 'var(--text-primary)',
-                    }}
+                    onChange={e => setPendingFiles(prev =>
+                      prev.map((f, i) => i === idx ? { ...f, docType: e.target.value } : f)
+                    )}
                   >
                     {DOCUMENT_TYPES.map(dt => (
                       <option key={dt.value} value={dt.value}>{dt.label}</option>
@@ -413,15 +416,16 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
                 </div>
               ))}
 
-              <label style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '10px 14px', borderRadius: 8, cursor: 'pointer',
-                border: '2px dashed var(--border-default)',
-                background: 'var(--surface-secondary)',
-              }}>
-                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-                  + Click to add file(s) — PDF, Word, Excel accepted
-                </span>
+              <label className="file-drop-zone" style={{ cursor: 'pointer' }}>
+                <span className="file-drop-icon">📎</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-primary)' }}>
+                    Click to add file(s)
+                  </div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
+                    PDF, Word, Excel, JPG, PNG accepted
+                  </div>
+                </div>
                 <input
                   type="file"
                   multiple
@@ -447,8 +451,12 @@ export default function EditContractPage({ params }: { params: Promise<{ id: str
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-            <Button type="submit" variant="primary" disabled={mutation.isPending || uploading || !form.subcontractor}>
+          <div className="form-actions">
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={mutation.isPending || uploading || !form.subcontractor}
+            >
               {uploading ? 'Uploading files…' : mutation.isPending ? 'Saving…' : 'Save Changes'}
             </Button>
             <Link href={`/subcontractors/contracts/${id}`}>

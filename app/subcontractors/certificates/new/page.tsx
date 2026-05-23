@@ -14,54 +14,17 @@ import { getApiError } from '@/lib/utils/error';
 
 type InputMode = 'qty' | 'pct';
 
-function ModeToggle({
-  mode,
-  onChange,
-}: {
-  mode: InputMode;
-  onChange: (m: InputMode) => void;
-}) {
+function ModeToggle({ mode, onChange }: { mode: InputMode; onChange: (m: InputMode) => void }) {
   const base: React.CSSProperties = {
-    padding: '4px 10px',
-    fontSize: 11,
-    fontWeight: 600,
-    border: 'none',
-    cursor: 'pointer',
+    padding: '4px 10px', fontSize: 11, fontWeight: 600,
+    border: 'none', cursor: 'pointer',
     transition: 'background 120ms, color 120ms',
-    lineHeight: 1,
-    whiteSpace: 'nowrap',
+    lineHeight: 1, whiteSpace: 'nowrap',
   };
   return (
-    <div style={{
-      display: 'inline-flex',
-      border: '1px solid var(--border-default)',
-      borderRadius: 6,
-      overflow: 'hidden',
-      flexShrink: 0,
-    }}>
-      <button
-        type="button"
-        onClick={() => onChange('qty')}
-        style={{
-          ...base,
-          background: mode === 'qty' ? 'var(--brand)' : 'var(--surface-secondary)',
-          color: mode === 'qty' ? '#fff' : 'var(--text-tertiary)',
-          borderRight: '1px solid var(--border-default)',
-        }}
-      >
-        Qty
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange('pct')}
-        style={{
-          ...base,
-          background: mode === 'pct' ? 'var(--brand)' : 'var(--surface-secondary)',
-          color: mode === 'pct' ? '#fff' : 'var(--text-tertiary)',
-        }}
-      >
-        %
-      </button>
+    <div style={{ display: 'inline-flex', border: '1px solid var(--border-default)', borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
+      <button type="button" onClick={() => onChange('qty')} style={{ ...base, background: mode === 'qty' ? 'var(--brand)' : 'var(--surface-secondary)', color: mode === 'qty' ? '#fff' : 'var(--text-tertiary)', borderRight: '1px solid var(--border-default)' }}>Qty</button>
+      <button type="button" onClick={() => onChange('pct')} style={{ ...base, background: mode === 'pct' ? 'var(--brand)' : 'var(--surface-secondary)', color: mode === 'pct' ? '#fff' : 'var(--text-tertiary)' }}>%</button>
     </div>
   );
 }
@@ -81,14 +44,11 @@ function NewCertificateForm() {
     notes: '',
   });
 
-  // Per-item input mode: 'qty' (absolute) or 'pct' (percentage of contract qty)
-  const [modes, setModes]           = useState<Record<number, InputMode>>({});
-  const [quantities, setQuantities] = useState<Record<number, string>>({});
-  const [percentages, setPercentages] = useState<Record<number, string>>({});
-  // Per-location claimed quantities for breakdown items: { itemId: { location: qty } }
+  const [modes, setModes]               = useState<Record<number, InputMode>>({});
+  const [quantities, setQuantities]     = useState<Record<number, string>>({});
+  const [percentages, setPercentages]   = useState<Record<number, string>>({});
   const [breakdownQty, setBreakdownQty] = useState<Record<number, Record<string, string>>>({});
-  // Lump sum: contractor claims % of contract value
-  const [lumpSumPct, setLumpSumPct] = useState('');
+  const [lumpSumPct, setLumpSumPct]     = useState('');
 
   const { data: contractsData } = useQuery({
     queryKey: ['subcon-contracts-active'],
@@ -109,17 +69,13 @@ function NewCertificateForm() {
 
   const set = (field: string, value: unknown) => setForm(f => ({ ...f, [field]: value }));
 
-  /** Effective claimed quantity for one item (accounts for both modes + breakdown) */
   const getClaimedQty = (itemId: number, contractQty: number, hasBreakdowns = false): number => {
     if (hasBreakdowns) {
       const locs = breakdownQty[itemId] ?? {};
       return Object.values(locs).reduce((s, v) => s + (parseFloat(v) || 0), 0);
     }
     const mode = modes[itemId] ?? 'qty';
-    if (mode === 'pct') {
-      const pct = Number(percentages[itemId] ?? 0);
-      return (pct / 100) * contractQty;
-    }
+    if (mode === 'pct') return (Number(percentages[itemId] ?? 0) / 100) * contractQty;
     return Number(quantities[itemId] ?? 0);
   };
 
@@ -161,18 +117,9 @@ function NewCertificateForm() {
                   order: i,
                 }))
                 .filter(bd => Number(bd.contractor_quantity) > 0);
-              return {
-                boq_item: item.id,
-                contractor_claimed_quantity: String(claimedQty),
-                engineer_approved_quantity: '0',
-                breakdowns: bds,
-              };
+              return { boq_item: item.id, contractor_claimed_quantity: String(claimedQty), engineer_approved_quantity: '0', breakdowns: bds };
             }
-            return {
-              boq_item: item.id,
-              contractor_claimed_quantity: String(claimedQty),
-              engineer_approved_quantity: '0',
-            };
+            return { boq_item: item.id, contractor_claimed_quantity: String(claimedQty), engineer_approved_quantity: '0' };
           })
           .filter(item => Number(item.contractor_claimed_quantity) > 0);
 
@@ -212,8 +159,7 @@ function NewCertificateForm() {
   const retentionPct = Number(contract?.retention_percentage ?? 0);
   const retentionAmt = claimedTotal * (retentionPct / 100);
   const netPayable   = claimedTotal - retentionAmt;
-
-  const allQtyZero = (boqItems ?? []).every(i => Number(i.contract_quantity) === 0);
+  const allQtyZero   = (boqItems ?? []).every(i => Number(i.contract_quantity) === 0);
 
   return (
     <form
@@ -225,11 +171,17 @@ function NewCertificateForm() {
         }
         mutation.mutate();
       }}
-      style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}
+      className="form-body"
     >
-      {/* ── Certificate Details ── */}
+
+      {/* Certificate Details */}
       <div className="card">
-        <div className="info-section-title">Certificate Details</div>
+        <div className="form-section-header">
+          <div>
+            <div className="form-section-title">Certificate Details</div>
+            <div className="form-section-desc">Select the contract and set the claim period</div>
+          </div>
+        </div>
         <div className="form-grid">
           <FormField label="Contract" required>
             <SearchableDropdown
@@ -270,10 +222,11 @@ function NewCertificateForm() {
             />
           </FormField>
 
-          <div style={{ gridColumn: 'span 2' }}>
+          <div className="form-col-full">
             <FormField label="Notes">
               <textarea
                 rows={2} className="form-textarea"
+                placeholder="Any remarks for this certificate…"
                 value={form.notes}
                 onChange={e => set('notes', e.target.value)}
               />
@@ -282,54 +235,49 @@ function NewCertificateForm() {
         </div>
       </div>
 
-      {/* ── Contract summary banner ── */}
+      {/* Contract summary */}
       {contract && (
-        <div style={{
-          padding: '12px 16px',
-          background: 'var(--brand-subtle)',
-          border: '1px solid var(--brand-border, var(--border-default))',
-          borderRadius: 8,
-          display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'center',
-        }}>
+        <div className="info-banner">
           <div>
-            <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 2 }}>Subcontractor</div>
-            <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>
-              {contract.subcontractor_name}
-            </div>
+            <div className="info-banner-item-label">Subcontractor</div>
+            <div className="info-banner-item-value">{contract.subcontractor_name}</div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 2 }}>Contract Value</div>
-            <div style={{ fontWeight: 600, fontFamily: 'monospace', fontSize: 'var(--text-sm)' }}>
+            <div className="info-banner-item-label">Contract Value</div>
+            <div className="info-banner-item-value" style={{ fontFamily: 'monospace' }}>
               AED {Number(contract.contract_value).toLocaleString()}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 2 }}>Approved to Date</div>
-            <div style={{ fontWeight: 600, fontFamily: 'monospace', fontSize: 'var(--text-sm)' }}>
+            <div className="info-banner-item-label">Approved to Date</div>
+            <div className="info-banner-item-value" style={{ fontFamily: 'monospace' }}>
               AED {Number(contract.total_approved_to_date ?? 0).toLocaleString()}
             </div>
           </div>
           {contract.retention_enabled && (
             <div>
-              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 2 }}>Retention</div>
-              <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{contract.retention_percentage}%</div>
+              <div className="info-banner-item-label">Retention</div>
+              <div className="info-banner-item-value">{contract.retention_percentage}%</div>
             </div>
           )}
         </div>
       )}
 
-      {/* ── Lump Sum % input ── */}
+      {/* Lump sum % input */}
       {contractId && isLumpSum && (
         <div className="card">
-          <div className="info-section-title">Claim — Lump Sum Contract (مقطوع)</div>
-          <div style={{ maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-            <div style={{
-              padding: '12px 16px', borderRadius: 8,
-              background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)',
-              fontSize: 'var(--text-sm)', color: 'var(--text-secondary)',
-            }}>
-              This is a lump sum contract. Enter the percentage of work completed this period.
+          <div className="form-section-header">
+            <div>
+              <div className="form-section-title">Claim — Lump Sum Contract (مقطوع)</div>
+              <div className="form-section-desc">Enter the percentage of work completed this period</div>
             </div>
+          </div>
+
+          <div className="warning-banner" style={{ marginBottom: 'var(--space-4)' }}>
+            This is a lump sum contract. Enter the percentage of work completed this period.
+          </div>
+
+          <div style={{ maxWidth: 480 }}>
             <FormField label="% Completed This Period (Contractor Claimed)" required>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                 <input
@@ -350,23 +298,20 @@ function NewCertificateForm() {
             </FormField>
 
             {lumpSumClaimedAmt > 0 && (
-              <div style={{
-                padding: '12px 16px', borderRadius: 8,
-                background: 'var(--brand-subtle)', border: '1px solid var(--border-default)',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Gross Claimed</span>
-                  <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{fmt(lumpSumClaimedAmt)}</span>
+              <div className="summary-box" style={{ marginTop: 'var(--space-4)' }}>
+                <div className="summary-row">
+                  <span className="summary-row-label">Gross Claimed</span>
+                  <span className="summary-row-value">{fmt(lumpSumClaimedAmt)}</span>
                 </div>
                 {contract?.retention_enabled && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Retention ({retentionPct}%)</span>
-                    <span style={{ fontFamily: 'monospace', color: 'var(--status-error)' }}>− {fmt(retentionAmt)}</span>
+                  <div className="summary-row">
+                    <span className="summary-row-label">Retention ({retentionPct}%)</span>
+                    <span className="summary-row-value negative">− {fmt(retentionAmt)}</span>
                   </div>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-default)', paddingTop: 6 }}>
-                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>Est. Net Payable</span>
-                  <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 'var(--text-base)' }}>{fmt(netPayable)}</span>
+                <div className="summary-row">
+                  <span className="summary-row-label" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Est. Net Payable</span>
+                  <span className="summary-row-value total">{fmt(netPayable)}</span>
                 </div>
               </div>
             )}
@@ -374,23 +319,16 @@ function NewCertificateForm() {
         </div>
       )}
 
-      {/* ── Measurements table (unit rate contracts only) ── */}
+      {/* Measurements table (unit rate) */}
       {contractId && !isLumpSum && boqItems !== undefined && (
         <div className="card">
-          {/* Table header */}
-          <div style={{
-            display: 'flex', justifyContent: 'space-between',
-            alignItems: 'center', marginBottom: 'var(--space-4)',
-          }}>
-            <div className="info-section-title" style={{ margin: 0 }}>
-              Work Measurements — Contractor Claimed Quantities
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
+            <div>
+              <div className="form-section-title">Work Measurements</div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>Contractor claimed quantities for this certificate</div>
             </div>
             {claimedTotal > 0 && (
-              <div style={{
-                padding: '6px 14px', background: 'var(--brand-subtle)',
-                borderRadius: 6, fontSize: 'var(--text-sm)', fontWeight: 600,
-                fontFamily: 'monospace', color: 'var(--text-primary)',
-              }}>
+              <div style={{ padding: '6px 14px', background: 'var(--brand-subtle)', borderRadius: 6, fontSize: 'var(--text-sm)', fontWeight: 600, fontFamily: 'monospace', color: 'var(--text-primary)' }}>
                 Total: {fmt(claimedTotal)}
               </div>
             )}
@@ -415,12 +353,9 @@ function NewCertificateForm() {
                       <th style={{ textAlign: 'right', width: 100 }}>Contract Qty</th>
                       <th style={{ textAlign: 'right', width: 90 }}>Approved</th>
                       <th style={{ textAlign: 'right', width: 90 }}>Remaining</th>
-                      {/* Input column — wider to hold toggle + field */}
                       <th style={{ width: 200, color: 'var(--brand)' }}>
-                        Claimed ▼ &nbsp;
-                        <span style={{ fontWeight: 400, fontSize: 10, color: 'var(--text-tertiary)' }}>
-                          (Qty or %)
-                        </span>
+                        Claimed ▼&nbsp;
+                        <span style={{ fontWeight: 400, fontSize: 10, color: 'var(--text-tertiary)' }}>(Qty or %)</span>
                       </th>
                       <th style={{ textAlign: 'right', width: 130 }}>Amount (AED)</th>
                     </tr>
@@ -432,74 +367,42 @@ function NewCertificateForm() {
                       const remaining     = Number(item.remaining_quantity);
                       const hasBreakdowns = (item.breakdowns?.length ?? 0) > 0;
 
-                      /* ── Items WITH location breakdown ── */
                       if (hasBreakdowns) {
                         const claimedQty = getClaimedQty(item.id, contractQty, true);
                         const amount     = claimedQty * Number(item.unit_rate);
                         return (
                           <React.Fragment key={item.id}>
-                            {/* Header row */}
                             <tr style={{ background: 'var(--surface-secondary)', borderTop: '2px solid var(--border-subtle)' }}>
-                              <td colSpan={2} style={{ padding: '8px 8px', fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
+                              <td colSpan={2} style={{ padding: '8px', fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
                                 {item.item_name}
-                                {item.item_code && (
-                                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 8, fontWeight: 400 }}>{item.item_code}</span>
-                                )}
+                                {item.item_code && <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 8, fontWeight: 400 }}>{item.item_code}</span>}
                               </td>
-                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
-                                {Number(item.unit_rate) > 0 ? Number(item.unit_rate).toLocaleString() : '—'}
-                              </td>
-                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
-                                {contractQty > 0 ? contractQty.toLocaleString() : '—'}
-                              </td>
-                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>
-                                {approved.toLocaleString()}
-                              </td>
-                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: remaining < 0 ? 'var(--status-error)' : 'var(--text-secondary)' }}>
-                                {contractQty > 0 ? remaining.toLocaleString() : '—'}
-                              </td>
-                              <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: claimedQty > 0 ? 'var(--brand)' : 'var(--text-tertiary)', fontWeight: 600 }}>
-                                {claimedQty > 0 ? `${claimedQty.toFixed(3)} ${item.unit || ''}`.trim() : '—'}
-                              </td>
-                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: amount > 0 ? 700 : 400, color: amount > 0 ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
-                                {amount > 0 ? amount.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '—'}
-                              </td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 500 }}>{Number(item.unit_rate) > 0 ? Number(item.unit_rate).toLocaleString() : '—'}</td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)' }}>{contractQty > 0 ? contractQty.toLocaleString() : '—'}</td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>{approved.toLocaleString()}</td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: remaining < 0 ? 'var(--status-error)' : 'var(--text-secondary)' }}>{contractQty > 0 ? remaining.toLocaleString() : '—'}</td>
+                              <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: claimedQty > 0 ? 'var(--brand)' : 'var(--text-tertiary)', fontWeight: 600 }}>{claimedQty > 0 ? `${claimedQty.toFixed(3)} ${item.unit || ''}`.trim() : '—'}</td>
+                              <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: amount > 0 ? 700 : 400, color: amount > 0 ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>{amount > 0 ? amount.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '—'}</td>
                             </tr>
-                            {/* Location sub-rows */}
                             {item.breakdowns!.map((bd, bi) => {
                               const locVal = (breakdownQty[item.id] ?? {})[bd.location] ?? '';
                               const isLast = bi === item.breakdowns!.length - 1;
-                              const cellStyle: React.CSSProperties = {
-                                borderBottom: isLast ? '2px solid var(--border-subtle)' : '1px solid var(--border-subtle)',
-                              };
+                              const cellStyle: React.CSSProperties = { borderBottom: isLast ? '2px solid var(--border-subtle)' : '1px solid var(--border-subtle)' };
                               return (
                                 <tr key={`${item.id}-bd-${bi}`}>
                                   <td colSpan={2} style={{ ...cellStyle, paddingLeft: 28, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', paddingTop: 6, paddingBottom: 6 }}>
-                                    <span style={{ color: 'var(--text-tertiary)', marginRight: 6, fontSize: 11 }}>↳</span>
-                                    {bd.location}
+                                    <span style={{ color: 'var(--text-tertiary)', marginRight: 6, fontSize: 11 }}>↳</span>{bd.location}
                                   </td>
                                   <td style={{ ...cellStyle, textAlign: 'right', color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>—</td>
-                                  <td style={{ ...cellStyle, textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                                    {Number(bd.quantity).toLocaleString()}
-                                  </td>
+                                  <td style={{ ...cellStyle, textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{Number(bd.quantity).toLocaleString()}</td>
                                   <td style={{ ...cellStyle, textAlign: 'right', color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>—</td>
                                   <td style={{ ...cellStyle, textAlign: 'right', color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>—</td>
                                   <td style={{ ...cellStyle, padding: '4px 8px' }}>
                                     <input
                                       type="number" min="0" step="0.001" placeholder="0.000"
                                       value={locVal}
-                                      onChange={e => setBreakdownQty(prev => ({
-                                        ...prev,
-                                        [item.id]: { ...(prev[item.id] ?? {}), [bd.location]: e.target.value },
-                                      }))}
-                                      style={{
-                                        width: '100%', padding: '4px 8px',
-                                        border: '2px solid var(--brand)', borderRadius: 6,
-                                        fontSize: 'var(--text-sm)', fontFamily: 'monospace',
-                                        textAlign: 'right',
-                                        background: 'var(--surface-primary)',
-                                        color: 'var(--text-primary)', outline: 'none',
-                                      }}
+                                      onChange={e => setBreakdownQty(prev => ({ ...prev, [item.id]: { ...(prev[item.id] ?? {}), [bd.location]: e.target.value } }))}
+                                      style={{ width: '100%', padding: '4px 8px', border: '2px solid var(--brand)', borderRadius: 6, fontSize: 'var(--text-sm)', fontFamily: 'monospace', textAlign: 'right', background: 'var(--surface-primary)', color: 'var(--text-primary)', outline: 'none' }}
                                     />
                                   </td>
                                   <td style={{ ...cellStyle, textAlign: 'right', color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>—</td>
@@ -510,7 +413,6 @@ function NewCertificateForm() {
                         );
                       }
 
-                      /* ── Items WITHOUT breakdown (original single row) ── */
                       const mode       = modes[item.id] ?? 'qty';
                       const claimedQty = getClaimedQty(item.id, contractQty, false);
                       const amount     = claimedQty * Number(item.unit_rate);
@@ -518,23 +420,13 @@ function NewCertificateForm() {
                         <tr key={item.id} style={{ verticalAlign: 'middle' }}>
                           <td style={{ paddingTop: 10 }}>
                             <div style={{ fontWeight: 500, fontSize: 'var(--text-sm)' }}>{item.item_name}</div>
-                            {item.item_code && (
-                              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>{item.item_code}</div>
-                            )}
+                            {item.item_code && <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>{item.item_code}</div>}
                           </td>
                           <td style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{item.unit || '—'}</td>
-                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
-                            {Number(item.unit_rate).toLocaleString()}
-                          </td>
-                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', paddingTop: 10, color: contractQty === 0 ? 'var(--text-tertiary)' : 'var(--text-primary)' }}>
-                            {contractQty === 0 ? '—' : contractQty.toLocaleString()}
-                          </td>
-                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', paddingTop: 10, color: 'var(--text-tertiary)' }}>
-                            {approved.toLocaleString()}
-                          </td>
-                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', paddingTop: 10, color: remaining < 0 ? 'var(--status-error)' : contractQty === 0 ? 'var(--text-tertiary)' : 'var(--text-secondary)' }}>
-                            {contractQty === 0 ? '—' : remaining.toLocaleString()}
-                          </td>
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 500 }}>{Number(item.unit_rate).toLocaleString()}</td>
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', paddingTop: 10, color: contractQty === 0 ? 'var(--text-tertiary)' : 'var(--text-primary)' }}>{contractQty === 0 ? '—' : contractQty.toLocaleString()}</td>
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', paddingTop: 10, color: 'var(--text-tertiary)' }}>{approved.toLocaleString()}</td>
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', paddingTop: 10, color: remaining < 0 ? 'var(--status-error)' : contractQty === 0 ? 'var(--text-tertiary)' : 'var(--text-secondary)' }}>{contractQty === 0 ? '—' : remaining.toLocaleString()}</td>
                           <td style={{ padding: '6px 8px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                               <ModeToggle mode={mode} onChange={m => setModes(prev => ({ ...prev, [item.id]: m }))} />
@@ -571,59 +463,34 @@ function NewCertificateForm() {
                     })}
                   </tbody>
 
-                  {/* ── Footer totals ── */}
                   <tfoot>
                     <tr style={{ borderTop: '2px solid var(--border-default)' }}>
-                      <td colSpan={6} style={{
-                        textAlign: 'right', fontWeight: 600,
-                        fontSize: 'var(--text-sm)', padding: '10px 8px',
-                        color: 'var(--text-secondary)',
-                      }}>
+                      <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 'var(--text-sm)', padding: '10px 8px', color: 'var(--text-secondary)' }}>
                         Gross Claimed This Certificate
                       </td>
-                      <td style={{ padding: '10px 8px' }}></td>
-                      <td style={{
-                        textAlign: 'right', fontFamily: 'monospace',
-                        fontWeight: 700, color: 'var(--brand)', padding: '10px 8px',
-                      }}>
+                      <td style={{ padding: '10px 8px' }} />
+                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: 'var(--brand)', padding: '10px 8px' }}>
                         {fmt(claimedTotal)}
                       </td>
                     </tr>
-
                     {contract?.retention_enabled && claimedTotal > 0 && (
                       <tr style={{ background: 'var(--surface-secondary)' }}>
-                        <td colSpan={6} style={{
-                          textAlign: 'right', fontSize: 'var(--text-sm)',
-                          padding: '6px 8px', color: 'var(--text-tertiary)',
-                        }}>
+                        <td colSpan={6} style={{ textAlign: 'right', fontSize: 'var(--text-sm)', padding: '6px 8px', color: 'var(--text-tertiary)' }}>
                           Retention ({contract.retention_percentage}%)
                         </td>
-                        <td></td>
-                        <td style={{
-                          textAlign: 'right', fontFamily: 'monospace',
-                          fontSize: 'var(--text-sm)', color: 'var(--status-error)',
-                          padding: '6px 8px',
-                        }}>
+                        <td />
+                        <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--status-error)', padding: '6px 8px' }}>
                           − {fmt(retentionAmt)}
                         </td>
                       </tr>
                     )}
-
                     {claimedTotal > 0 && (
                       <tr style={{ background: 'var(--surface-secondary)' }}>
-                        <td colSpan={6} style={{
-                          textAlign: 'right', fontWeight: 700,
-                          fontSize: 'var(--text-sm)', padding: '8px 8px',
-                          color: 'var(--text-primary)',
-                        }}>
+                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700, fontSize: 'var(--text-sm)', padding: '8px', color: 'var(--text-primary)' }}>
                           Estimated Net Payable
                         </td>
-                        <td></td>
-                        <td style={{
-                          textAlign: 'right', fontFamily: 'monospace',
-                          fontWeight: 700, color: 'var(--text-primary)',
-                          fontSize: 'var(--text-base)', padding: '8px 8px',
-                        }}>
+                        <td />
+                        <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-primary)', fontSize: 'var(--text-base)', padding: '8px' }}>
                           {fmt(netPayable)}
                         </td>
                       </tr>
@@ -632,18 +499,11 @@ function NewCertificateForm() {
                 </table>
               </div>
 
-              {/* Warning: contract quantities not set */}
               {allQtyZero && (
-                <div style={{
-                  marginTop: 12, padding: '10px 14px',
-                  background: 'rgba(245,158,11,0.08)',
-                  border: '1px solid rgba(245,158,11,0.3)',
-                  borderRadius: 6, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)',
-                }}>
+                <div className="warning-banner" style={{ marginTop: 12 }}>
                   <strong style={{ color: 'var(--text-primary)' }}>Note:</strong>{' '}
                   Contract quantities are not set — the <strong>%</strong> mode is disabled for all items.
-                  Use <strong>Qty</strong> mode to enter absolute quantities, or set contract quantities
-                  first from the contract BOQ tab.
+                  Use <strong>Qty</strong> mode to enter absolute quantities, or set contract quantities first from the contract BOQ tab.
                 </div>
               )}
             </>
@@ -651,13 +511,8 @@ function NewCertificateForm() {
         </div>
       )}
 
-      {/* ── Actions ── */}
-      <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={mutation.isPending || !contractId}
-        >
+      <div className="form-actions">
+        <Button type="submit" variant="primary" disabled={mutation.isPending || !contractId}>
           {mutation.isPending ? 'Creating…' : 'Create Certificate'}
         </Button>
         <Link href="/subcontractors/certificates">

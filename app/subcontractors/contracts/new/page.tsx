@@ -55,8 +55,8 @@ function NewContractForm() {
     mutationFn: async () => {
       const payload = {
         ...form,
-        contract_value:          form.contract_value          || '0',
-        advance_payment_amount:  form.advance_payment_enabled ? (form.advance_payment_amount  || '0') : '0',
+        contract_value:              form.contract_value || '0',
+        advance_payment_amount:      form.advance_payment_enabled ? (form.advance_payment_amount || '0') : '0',
         advance_recovery_percentage: form.advance_payment_enabled ? (form.advance_recovery_percentage || '0') : '0',
         project_ids: projectIds,
       };
@@ -92,13 +92,16 @@ function NewContractForm() {
   }));
 
   return (
-    <form
-      onSubmit={e => { e.preventDefault(); mutation.mutate(); }}
-      style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}
-    >
-      {/* Basic Info */}
+    <form onSubmit={e => { e.preventDefault(); mutation.mutate(); }} className="form-body">
+
+      {/* Contract Details */}
       <div className="card">
-        <div className="info-section-title">Contract Details</div>
+        <div className="form-section-header">
+          <div>
+            <div className="form-section-title">Contract Details</div>
+            <div className="form-section-desc">Core information about this subcontract</div>
+          </div>
+        </div>
         <div className="form-grid">
           <FormField label="Subcontractor" required>
             <SearchableDropdown
@@ -119,7 +122,7 @@ function NewContractForm() {
             />
           </FormField>
 
-          <div style={{ gridColumn: 'span 2' }}>
+          <div className="form-col-full">
             <FormField label="Contract Title" required>
               <input
                 type="text" required className="form-input"
@@ -130,35 +133,24 @@ function NewContractForm() {
             </FormField>
           </div>
 
-          <div style={{ gridColumn: 'span 2' }}>
+          <div className="form-col-full">
             <FormField label="Contract Type" required>
-              <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+              <div className="type-card-group">
                 {(['unit_rate', 'lump_sum'] as const).map(type => (
                   <label
                     key={type}
-                    style={{
-                      flex: 1, display: 'flex', alignItems: 'center', gap: 10,
-                      padding: '12px 16px', borderRadius: 8, cursor: 'pointer',
-                      border: form.contract_type === type
-                        ? '2px solid var(--brand)'
-                        : '2px solid var(--border-default)',
-                      background: form.contract_type === type
-                        ? 'var(--brand-subtle)'
-                        : 'var(--surface-primary)',
-                    }}
+                    className={`type-card${form.contract_type === type ? ' selected' : ''}`}
                   >
                     <input
-                      type="radio" name="contract_type"
-                      value={type}
+                      type="radio" name="contract_type" value={type}
                       checked={form.contract_type === type}
                       onChange={() => set('contract_type', type)}
-                      style={{ width: 16, height: 16, accentColor: 'var(--brand)' }}
                     />
                     <div>
-                      <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      <div className="type-card-label">
                         {type === 'unit_rate' ? 'Unit Rate' : 'Lump Sum (مقطوع)'}
                       </div>
-                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>
+                      <div className="type-card-desc">
                         {type === 'unit_rate'
                           ? 'BOQ with quantities × unit prices. Claims by quantity done.'
                           : 'Fixed total price. Claims by % complete per period.'}
@@ -174,7 +166,7 @@ function NewContractForm() {
             label="Contract Value (AED)"
             helperText={form.contract_type === 'unit_rate'
               ? 'Optional — BOQ total will be used if left blank'
-              : 'Required for lump sum — this is the fixed contract price'}
+              : 'Required — this is the fixed contract price'}
           >
             <input
               type="number" min="0" step="0.01" className="form-input"
@@ -210,30 +202,27 @@ function NewContractForm() {
             />
           </FormField>
 
-          <div style={{ gridColumn: 'span 2' }}>
+          <div className="form-col-full">
             <FormField label="Scope of Work">
               <textarea
                 rows={4} className="form-textarea"
-                placeholder="Describe the scope of work..."
+                placeholder="Describe the scope of work…"
                 value={form.scope_of_work}
                 onChange={e => set('scope_of_work', e.target.value)}
               />
             </FormField>
           </div>
 
-          <div style={{ gridColumn: 'span 2' }}>
-            <FormField label="Contract Document" helperText="Upload the signed contract PDF or Word file (optional — can also be uploaded later)">
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '10px 14px',
-                border: contractFile ? '2px solid var(--brand)' : '2px dashed var(--border-default)',
-                borderRadius: 8,
-                background: contractFile ? 'var(--brand-subtle)' : 'var(--surface-secondary)',
-                cursor: 'pointer',
-              }}
+          <div className="form-col-full">
+            <FormField
+              label="Contract Document"
+              helperText="Upload the signed contract PDF or Word file (optional — can be uploaded later)"
+            >
+              <div
+                className={`file-drop-zone${contractFile ? ' has-file' : ''}`}
                 onClick={() => document.getElementById('contract-file-input')?.click()}
               >
-                <span style={{ fontSize: 16, color: 'var(--text-tertiary)', fontWeight: 600 }}>⊕</span>
+                <span className="file-drop-icon">📎</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-primary)' }}>
                     {contractFile ? contractFile.name : 'Click to attach contract document'}
@@ -276,105 +265,111 @@ function NewContractForm() {
 
       {/* Retention */}
       <div className="card">
-        <div className="info-section-title">Retention Settings</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
+        <div className="form-section-header">
+          <div>
+            <div className="form-section-title">Retention Settings</div>
+            <div className="form-section-desc">Deduction held from each payment certificate until project completion</div>
+          </div>
+          <label className="toggle-wrap">
             <input
               type="checkbox"
               checked={form.retention_enabled}
               onChange={e => set('retention_enabled', e.target.checked)}
-              style={{ width: 16, height: 16 }}
             />
-            <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-primary)' }}>
-              Enable Retention Deduction
-            </span>
+            <span className="toggle-track"><span className="toggle-thumb" /></span>
+            <span className="toggle-label">{form.retention_enabled ? 'Enabled' : 'Disabled'}</span>
           </label>
-
-          {form.retention_enabled && (
-            <div className="form-grid">
-              <FormField label="Retention Percentage (%)">
-                <input
-                  type="number" min="0" max="100" step="0.01" className="form-input"
-                  value={form.retention_percentage}
-                  onChange={e => set('retention_percentage', e.target.value)}
-                />
-              </FormField>
-            </div>
-          )}
         </div>
+
+        {form.retention_enabled && (
+          <div className="form-grid">
+            <FormField label="Retention Percentage (%)">
+              <input
+                type="number" min="0" max="100" step="0.01" className="form-input"
+                placeholder="5.00"
+                value={form.retention_percentage}
+                onChange={e => set('retention_percentage', e.target.value)}
+              />
+            </FormField>
+          </div>
+        )}
       </div>
 
       {/* Advance Payment */}
       <div className="card">
-        <div className="info-section-title">Advance Payment Settings</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
+        <div className="form-section-header">
+          <div>
+            <div className="form-section-title">Advance Payment</div>
+            <div className="form-section-desc">Mobilization advance to be recovered from future certificates</div>
+          </div>
+          <label className="toggle-wrap">
             <input
               type="checkbox"
               checked={form.advance_payment_enabled}
               onChange={e => set('advance_payment_enabled', e.target.checked)}
-              style={{ width: 16, height: 16 }}
             />
-            <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-primary)' }}>
-              Enable Advance Payment
-            </span>
+            <span className="toggle-track"><span className="toggle-thumb" /></span>
+            <span className="toggle-label">{form.advance_payment_enabled ? 'Enabled' : 'Disabled'}</span>
           </label>
+        </div>
 
-          {form.advance_payment_enabled && (
-            <div className="form-grid">
-              <FormField label="Advance Amount (AED)">
+        {form.advance_payment_enabled && (
+          <div className="form-grid">
+            <FormField label="Advance Amount (AED)">
+              <input
+                type="number" min="0" step="0.01" className="form-input"
+                placeholder="0.00"
+                value={form.advance_payment_amount}
+                onChange={e => set('advance_payment_amount', e.target.value)}
+              />
+            </FormField>
+
+            <FormField label="Recovery Method">
+              <SearchableDropdown
+                options={[
+                  { value: 'percentage',   label: 'Percentage per IPC' },
+                  { value: 'fixed_amount', label: 'Fixed Amount per IPC' },
+                  { value: 'full_first',   label: 'Recover in Full (First IPC)' },
+                ]}
+                value={form.advance_recovery_method}
+                onChange={v => set('advance_recovery_method', v)}
+                placeholder="Select method"
+              />
+            </FormField>
+
+            {form.advance_recovery_method === 'percentage' && (
+              <FormField label="Recovery Percentage per IPC (%)">
+                <input
+                  type="number" min="0" max="100" step="0.01" className="form-input"
+                  placeholder="10.00"
+                  value={form.advance_recovery_percentage}
+                  onChange={e => set('advance_recovery_percentage', e.target.value)}
+                />
+              </FormField>
+            )}
+
+            {form.advance_recovery_method === 'fixed_amount' && (
+              <FormField label="Fixed Recovery Amount per IPC (AED)">
                 <input
                   type="number" min="0" step="0.01" className="form-input"
                   placeholder="0.00"
-                  value={form.advance_payment_amount}
-                  onChange={e => set('advance_payment_amount', e.target.value)}
+                  value={form.advance_recovery_percentage}
+                  onChange={e => set('advance_recovery_percentage', e.target.value)}
                 />
               </FormField>
+            )}
 
-              <FormField label="Recovery Method">
-                <SearchableDropdown
-                  options={[
-                    { value: 'percentage', label: 'Percentage per IPC' },
-                    { value: 'fixed_amount', label: 'Fixed Amount per IPC' },
-                    { value: 'full_first', label: 'Recover in Full (First IPC)' },
-                  ]}
-                  value={form.advance_recovery_method}
-                  onChange={v => set('advance_recovery_method', v)}
-                  placeholder="Select method"
-                />
-              </FormField>
-
-              {form.advance_recovery_method === 'percentage' && (
-                <FormField label="Recovery Percentage per IPC (%)">
-                  <input
-                    type="number" min="0" max="100" step="0.01" className="form-input"
-                    value={form.advance_recovery_percentage}
-                    onChange={e => set('advance_recovery_percentage', e.target.value)}
-                  />
-                </FormField>
-              )}
-              {form.advance_recovery_method === 'fixed_amount' && (
-                <FormField label="Fixed Recovery Amount per IPC (AED)">
-                  <input
-                    type="number" min="0" step="0.01" className="form-input"
-                    placeholder="0.00"
-                    value={form.advance_recovery_percentage}
-                    onChange={e => set('advance_recovery_percentage', e.target.value)}
-                  />
-                </FormField>
-              )}
-              {form.advance_recovery_method === 'percentage' &&
-               Number(form.advance_recovery_percentage) === 0 && (
-                <div style={{ gridColumn: 'span 2', padding: '8px 12px', background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.4)', borderRadius: 6, fontSize: 'var(--text-sm)', color: 'rgb(161,120,0)' }}>
-                  Warning: Recovery % is 0 — the advance will never be automatically deducted from certificates.
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+            {form.advance_recovery_method === 'percentage' &&
+             Number(form.advance_recovery_percentage) === 0 && (
+              <div className="form-col-full warning-banner">
+                Warning: Recovery % is 0 — the advance will never be automatically deducted from certificates.
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+      <div className="form-actions">
         <Button type="submit" variant="primary" disabled={mutation.isPending || !form.subcontractor}>
           {mutation.isPending ? 'Saving…' : 'Create Contract'}
         </Button>
