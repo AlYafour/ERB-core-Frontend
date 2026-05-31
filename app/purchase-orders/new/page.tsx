@@ -90,7 +90,7 @@ Terms & Conditions:
     terms_and_conditions: defaultTermsAndConditions,
     tax_rate: 0,
     discount: 0,
-    status: 'draft',
+    status: 'pending',
   });
 
   const [selectedCostCode, setSelectedCostCode] = useState<import('@/types').CostCode | null>(null);
