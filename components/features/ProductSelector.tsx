@@ -59,6 +59,7 @@ export default function ProductSelector({
   const [catOpen, setCatOpen]     = useState(false);
   const [prodQuery, setProdQuery] = useState('');
   const [prodOpen, setProdOpen]   = useState(false);
+  const [cachedProduct, setCachedProduct] = useState<Product | null>(null);
 
   const catTriggerRef  = useRef<HTMLDivElement>(null);
   const prodTriggerRef = useRef<HTMLDivElement>(null);
@@ -94,9 +95,14 @@ export default function ProductSelector({
 
   const products = productsData?.results ?? [];
 
-  const selectedProduct = selectedProductId
-    ? products.find((p) => p.id === selectedProductId) ?? null
-    : null;
+  // Sync cached product when parent clears the selection externally
+  useEffect(() => {
+    if (!selectedProductId) setCachedProduct(null);
+  }, [selectedProductId]);
+
+  const selectedProduct = cachedProduct?.id === selectedProductId
+    ? cachedProduct
+    : (selectedProductId ? products.find((p) => p.id === selectedProductId) ?? null : null);
 
   // ── Outside-click close ───────────────────────────────────────────────
   useEffect(() => {
@@ -129,13 +135,14 @@ export default function ProductSelector({
   };
 
   const handleProdSelect = (p: Product) => {
+    setCachedProduct(p);
     onProductSelect(p);
     if (p.category && p.category !== selectedCategory) onCategoryChange?.(p.category);
     setProdOpen(false);
     setProdQuery('');
   };
 
-  const clearProduct  = () => { onProductSelect(null); setProdQuery(''); };
+  const clearProduct  = () => { setCachedProduct(null); onProductSelect(null); setProdQuery(''); };
   const clearCategory = () => { onCategoryChange?.(''); onProductSelect(null); setProdQuery(''); };
 
   const catDisplay  = catOpen ? catQuery : (selectedCategory || '');
