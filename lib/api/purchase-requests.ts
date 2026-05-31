@@ -72,6 +72,15 @@ export const purchaseRequestsApi = {
     return response.data;
   },
 
+  addItem: async (data: { purchase_request_id: number; product_id: number; quantity: number; unit?: string; reason?: string; notes?: string }): Promise<PurchaseRequestItem> => {
+    const response = await apiClient.post(`/purchase-requests/items/`, data);
+    return response.data;
+  },
+
+  deleteItem: async (itemId: number): Promise<void> => {
+    await apiClient.delete(`/purchase-requests/items/${itemId}/`);
+  },
+
   undoApproval: async (id: number): Promise<PurchaseRequest> => {
     const response = await apiClient.post(`/purchase-requests/${id}/undo_approval/`);
     return response.data;

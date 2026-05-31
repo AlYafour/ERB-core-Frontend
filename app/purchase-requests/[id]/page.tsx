@@ -17,6 +17,8 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useT } from '@/lib/i18n/useT';
 import { productsApi } from '@/lib/api/products';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
+import ProductSelector from '@/components/features/ProductSelector';
+import { Product } from '@/types';
 
 const statusColors: Record<string, string> = {
   pending: 'badge-warning',
@@ -48,6 +50,11 @@ export default function PurchaseRequestDetailPage() {
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editingProductId, setEditingProductId] = useState<number>(0);
 
+  const [addingProduct, setAddingProduct] = useState(false);
+  const [newProduct, setNewProduct] = useState<Product | null>(null);
+  const [newProductCategory, setNewProductCategory] = useState('');
+  const [newItem, setNewItem] = useState({ quantity: 1, unit: '', reason: '', notes: '' });
+
   const { data: products } = useQuery({
     queryKey: ['products'],
     queryFn: () => productsApi.getAll({ page: 1, page_size: 200 }),
@@ -64,6 +71,29 @@ export default function PurchaseRequestDetailPage() {
       toast('Product updated successfully', 'success');
     },
     onError: () => toast('Failed to update product', 'error'),
+  });
+
+  const addItemMutation = useMutation({
+    mutationFn: (data: { product_id: number; quantity: number; unit?: string; reason?: string; notes?: string }) =>
+      purchaseRequestsApi.addItem({ purchase_request_id: id, ...data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-requests', id] });
+      setAddingProduct(false);
+      setNewProduct(null);
+      setNewProductCategory('');
+      setNewItem({ quantity: 1, unit: '', reason: '', notes: '' });
+      toast('Product added successfully', 'success');
+    },
+    onError: () => toast('Failed to add product', 'error'),
+  });
+
+  const deleteItemMutation = useMutation({
+    mutationFn: (itemId: number) => purchaseRequestsApi.deleteItem(itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-requests', id] });
+      toast('Product removed', 'info');
+    },
+    onError: () => toast('Failed to remove product', 'error'),
   });
   const canApprove = isSuperuser || ((hasPermission('purchase_request', 'approve') ?? false) && 
                      user?.role !== 'procurement_officer' && 
@@ -324,15 +354,81 @@ export default function PurchaseRequestDetailPage() {
 
         {/* Items Section - Unified */}
         <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--text-lg)',
-            fontWeight: 'var(--weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--space-4)',
-          }}>
-            {t('section', 'requestedItems')}
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
+            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', margin: 0 }}>
+              {t('section', 'requestedItems')}
+            </h3>
+            {request.status === 'pending' && (isSuperAdmin || request.created_by === user?.id) && !addingProduct && (
+              <Button variant="primary" onClick={() => setAddingProduct(true)}>
+                + {t('btn', 'addProduct')}
+              </Button>
+            )}
+          </div>
+
+          {/* Add Product Form */}
+          {addingProduct && request.status === 'pending' && (
+            <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-4)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--surface-inset)' }}>
+              <div style={{ marginBottom: 'var(--space-3)' }}>
+                <ProductSelector
+                  selectedProductId={newProduct?.id || null}
+                  onProductSelect={(p) => {
+                    setNewProduct(p);
+                    if (p) setNewItem((prev) => ({ ...prev, unit: p.unit || '' }));
+                  }}
+                  selectedCategory={newProductCategory}
+                  onCategoryChange={setNewProductCategory}
+                />
+              </div>
+              {newProduct && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                  <div>
+                    <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('col', 'quantity')} *</label>
+                    <input type="number" min="1" step="1" className="form-input" style={{ width: 90 }}
+                      value={newItem.quantity}
+                      onChange={(e) => setNewItem({ ...newItem, quantity: Math.floor(Number(e.target.value)) || 1 })}
+                    />
+                  </div>
+                  <div style={{ width: 130 }}>
+                    <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('col', 'unit')}</label>
+                    <input className="form-input" style={{ width: '100%' }}
+                      value={newItem.unit}
+                      onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
+                      placeholder="Unit..."
+                    />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 150 }}>
+                    <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('field', 'reason')}</label>
+                    <input className="form-input" style={{ width: '100%' }}
+                      value={newItem.reason}
+                      onChange={(e) => setNewItem({ ...newItem, reason: e.target.value })}
+                      placeholder="Why is this needed?"
+                    />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 150 }}>
+                    <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('col', 'notes')}</label>
+                    <input className="form-input" style={{ width: '100%' }}
+                      value={newItem.notes}
+                      onChange={(e) => setNewItem({ ...newItem, notes: e.target.value })}
+                      placeholder="Additional notes"
+                    />
+                  </div>
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8, marginTop: 'var(--space-3)' }}>
+                <Button variant="primary" disabled={!newProduct || addItemMutation.isPending} isLoading={addItemMutation.isPending}
+                  onClick={() => {
+                    if (!newProduct) return;
+                    addItemMutation.mutate({ product_id: newProduct.id, quantity: newItem.quantity, unit: newItem.unit, reason: newItem.reason, notes: newItem.notes });
+                  }}>
+                  {t('btn', 'addProduct')}
+                </Button>
+                <Button variant="secondary" onClick={() => { setAddingProduct(false); setNewProduct(null); setNewProductCategory(''); setNewItem({ quantity: 1, unit: '', reason: '', notes: '' }); }}>
+                  {t('btn', 'cancel')}
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div style={{ overflowX: 'auto' }}>
             <table>
               <thead>
@@ -343,7 +439,7 @@ export default function PurchaseRequestDetailPage() {
                   <th>{t('col', 'projectSite')}</th>
                   <th>{t('col', 'purpose')}</th>
                   <th>{t('col', 'notes')}</th>
-                  {isSuperAdmin && <th></th>}
+                  {(isSuperAdmin || request.created_by === user?.id) && request.status === 'pending' && <th></th>}
                 </tr>
               </thead>
               <tbody>
@@ -400,38 +496,33 @@ export default function PurchaseRequestDetailPage() {
                         {item.notes || '-'}
                       </div>
                     </td>
-                    {isSuperAdmin && (
+                    {(isSuperAdmin || request.created_by === user?.id) && request.status === 'pending' && (
                       <td>
-                        {editingItemId === item.id ? (
-                          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                            <button
-                              className="btn btn-primary"
-                              style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
-                              disabled={!editingProductId || updateItemMutation.isPending}
-                              onClick={() => updateItemMutation.mutate({ itemId: item.id!, productId: editingProductId })}
-                            >
-                              {updateItemMutation.isPending ? '...' : 'Save'}
+                        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                          {isSuperAdmin && (editingItemId === item.id ? (
+                            <>
+                              <button className="btn btn-primary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
+                                disabled={!editingProductId || updateItemMutation.isPending}
+                                onClick={() => updateItemMutation.mutate({ itemId: item.id!, productId: editingProductId })}>
+                                {updateItemMutation.isPending ? '...' : 'Save'}
+                              </button>
+                              <button className="btn btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
+                                onClick={() => setEditingItemId(null)}>
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <button className="btn btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
+                              onClick={() => { setEditingItemId(item.id!); setEditingProductId(item.product?.id || 0); }}>
+                              Edit
                             </button>
-                            <button
-                              className="btn btn-secondary"
-                              style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
-                              onClick={() => setEditingItemId(null)}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            className="btn btn-secondary"
-                            style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
-                            onClick={() => {
-                              setEditingItemId(item.id!);
-                              setEditingProductId(item.product?.id || 0);
-                            }}
-                          >
-                            Edit
-                          </button>
-                        )}
+                          ))}
+                          <Button variant="delete" size="sm"
+                            disabled={deleteItemMutation.isPending}
+                            onClick={() => deleteItemMutation.mutate(item.id!)}>
+                            {t('btn', 'delete')}
+                          </Button>
+                        </div>
                       </td>
                     )}
                   </tr>
