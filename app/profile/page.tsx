@@ -32,6 +32,26 @@ export default function ProfilePage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const enterEditMode = (u: any) => {
+    if (!u) return;
+    setForm({
+      first_name: u.first_name || '',
+      last_name: u.last_name || '',
+      full_name_ar: (u as any).full_name_ar || '',
+      phone: u.phone || '',
+      email: u.email || '',
+    });
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    setEditMode(true);
+  };
+
+  const cancelEdit = () => {
+    setEditMode(false);
+    setAvatarFile(null);
+    setAvatarPreview(null);
+  };
+
   const { data: profile, isLoading, refetch } = useQuery({
     queryKey: ['profile'],
     queryFn: () => usersApi.getMe(),
@@ -41,9 +61,7 @@ export default function ProfilePage() {
     mutationFn: (data: any) => usersApi.updateMe(data),
     onSuccess: () => {
       toast('Profile updated successfully!', 'success');
-      setEditMode(false);
-      setAvatarFile(null);
-      setAvatarPreview(null);
+      cancelEdit();
       refetch();
     },
     onError: (error: any) => {
@@ -86,7 +104,7 @@ export default function ProfilePage() {
           description={user.email}
           breadcrumbs={[{ label: 'My Profile' }]}
           actions={
-            <Button variant={editMode ? 'secondary' : 'edit'} onClick={() => setEditMode(e => !e)}>
+            <Button variant={editMode ? 'secondary' : 'edit'} onClick={() => editMode ? cancelEdit() : enterEditMode(user)}>
               {editMode ? 'Cancel' : 'Edit Profile'}
             </Button>
           }
@@ -142,7 +160,7 @@ export default function ProfilePage() {
               </div>
               <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
                 <Button type="submit" variant="primary" isLoading={updateMutation.isPending}>Save Changes</Button>
-                <Button type="button" variant="secondary" onClick={() => setEditMode(false)}>Cancel</Button>
+                <Button type="button" variant="secondary" onClick={cancelEdit}>Cancel</Button>
               </div>
             </form>
           </div>
