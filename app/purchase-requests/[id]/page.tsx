@@ -95,6 +95,19 @@ export default function PurchaseRequestDetailPage() {
     },
     onError: () => toast('Failed to remove product', 'error'),
   });
+
+  const allowAdditionalOrderMutation = useMutation({
+    mutationFn: () => purchaseRequestsApi.allowAdditionalOrder(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-requests', id] });
+      toast('Unlocked — one additional LPO/QR can now be created', 'success');
+    },
+    onError: () => toast('Failed to unlock additional order', 'error'),
+  });
+
+  const canManageAdditionalOrders = isSuperAdmin ||
+    user?.role === 'procurement_manager' ||
+    user?.role === 'super_admin';
   const canApprove = isSuperuser || ((hasPermission('purchase_request', 'approve') ?? false) && 
                      user?.role !== 'procurement_officer' && 
                      user?.role !== 'site_engineer');
@@ -162,7 +175,16 @@ export default function PurchaseRequestDetailPage() {
         {/* Header */}
         <PageHeader
           backHref="/purchase-requests"
-          title={`${t('page', 'purchaseRequests')}: ${request.code}`}
+          title={
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {`${t('page', 'purchaseRequests')}: ${request.code}`}
+              {request.allow_additional_orders && (
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#d97706', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 6, padding: '2px 8px' }}>
+                  🔓 Additional Order Unlocked
+                </span>
+              )}
+            </span>
+          }
           breadcrumbs={[{ label: t('page', 'purchaseRequests'), href: '/purchase-requests' }, { label: request.code }]}
           actions={
             <Button variant="secondary" onClick={() => window.open(`/print/pr/${id}`, '_blank')}>
@@ -598,11 +620,25 @@ export default function PurchaseRequestDetailPage() {
                 {undoApprovalMutation.isPending ? t('btn', 'loading') : t('btn', 'update')}
               </button>
             )}
+            {/* Allow Additional Order button - only for Procurement Manager/Admin */}
+            {canManageAdditionalOrders &&
+             (request.has_purchase_orders || request.has_awarded_quotation) &&
+             !request.allow_additional_orders && (
+              <Button
+                variant="secondary"
+                disabled={allowAdditionalOrderMutation.isPending}
+                isLoading={allowAdditionalOrderMutation.isPending}
+                onClick={() => allowAdditionalOrderMutation.mutate()}
+              >
+                🔓 Allow Additional Order
+              </Button>
+            )}
+
             {/* Create Quotation Request / LPO - Only for Procurement Officer and Super Admin (NOT Procurement Manager) */}
-            {/* Hide if PR has awarded quotation or purchase orders */}
-            {(user?.role === 'procurement_officer' || user?.role === 'super_admin' || user?.is_superuser) && 
-             !request.has_awarded_quotation && 
-             !request.has_purchase_orders && (
+            {/* Hide if PR has awarded quotation or purchase orders — unless manager unlocked */}
+            {(user?.role === 'procurement_officer' || user?.role === 'super_admin' || user?.is_superuser) &&
+             (!request.has_awarded_quotation || request.allow_additional_orders) &&
+             (!request.has_purchase_orders || request.allow_additional_orders) && (
               <DropdownButton
                 label={t('btn', 'create')}
                 variant="primary"

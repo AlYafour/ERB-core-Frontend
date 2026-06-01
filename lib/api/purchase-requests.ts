@@ -86,6 +86,11 @@ export const purchaseRequestsApi = {
     return response.data;
   },
 
+  allowAdditionalOrder: async (id: number): Promise<PurchaseRequest> => {
+    const response = await apiClient.post(`/purchase-requests/${id}/allow_additional_order/`);
+    return response.data;
+  },
+
   getTrackingTimeline: async (id: number): Promise<{
     purchase_request: {
       id: number;
