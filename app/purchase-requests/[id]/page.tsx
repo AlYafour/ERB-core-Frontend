@@ -175,21 +175,19 @@ export default function PurchaseRequestDetailPage() {
         {/* Header */}
         <PageHeader
           backHref="/purchase-requests"
-          title={
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {`${t('page', 'purchaseRequests')}: ${request.code}`}
+          title={`${t('page', 'purchaseRequests')}: ${request.code}`}
+          breadcrumbs={[{ label: t('page', 'purchaseRequests'), href: '/purchase-requests' }, { label: request.code }]}
+          actions={
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               {request.allow_additional_orders && (
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#d97706', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 6, padding: '2px 8px' }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#d97706', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 6, padding: '4px 10px' }}>
                   🔓 Additional Order Unlocked
                 </span>
               )}
-            </span>
-          }
-          breadcrumbs={[{ label: t('page', 'purchaseRequests'), href: '/purchase-requests' }, { label: request.code }]}
-          actions={
-            <Button variant="secondary" onClick={() => window.open(`/print/pr/${id}`, '_blank')}>
-              🖨 {t('btn', 'printPR')}
-            </Button>
+              <Button variant="secondary" onClick={() => window.open(`/print/pr/${id}`, '_blank')}>
+                🖨 {t('btn', 'printPR')}
+              </Button>
+            </div>
           }
         />
 
