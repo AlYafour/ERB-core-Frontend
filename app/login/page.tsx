@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { authApi } from '@/lib/api/auth';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { TextField, PasswordField, Button } from '@/components/ui';
@@ -17,11 +16,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { setAuth, isAuthenticated } = useAuthStore();
-  const router = useRouter();
 
   useEffect(() => {
-    if (isAuthenticated) router.replace('/dashboard');
-  }, [isAuthenticated, router]);
+    if (isAuthenticated) window.location.replace('/dashboard');
+  }, [isAuthenticated]);
 
   const [error, setError] = useState('');
 
@@ -31,7 +29,7 @@ export default function LoginPage() {
     onSuccess: (data) => {
       setError('');
       setAuth(data.user, data.tokens.access, data.tokens.refresh);
-      router.replace('/dashboard');
+      window.location.replace('/dashboard');
     },
     onError: (err: unknown) => {
       setError(getApiError(err, 'Invalid username or password'));
