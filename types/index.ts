@@ -249,6 +249,7 @@ export interface PurchaseRequest {
   has_quotation_requests?: boolean;
   has_purchase_orders?: boolean;
   has_awarded_quotation?: boolean;
+  allow_additional_orders?: boolean;
   created_at: string;
   updated_at: string;
 }
