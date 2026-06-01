@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { usersApi } from '@/lib/api/users';
 import MainLayout from '@/components/layout/MainLayout';
@@ -28,6 +28,9 @@ export default function ProfilePage() {
     phone: '',
     email: '',
   });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: profile, isLoading, refetch } = useQuery({
     queryKey: ['profile'],
@@ -39,12 +42,25 @@ export default function ProfilePage() {
     onSuccess: () => {
       toast('Profile updated successfully!', 'success');
       setEditMode(false);
+      setAvatarFile(null);
+      setAvatarPreview(null);
       refetch();
     },
     onError: (error: any) => {
       toast(getApiError(error, 'Failed to update profile'), 'error');
     },
   });
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast('Image must be under 5MB', 'error');
+      return;
+    }
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
 
   if (isLoading) {
     return (
@@ -79,7 +95,29 @@ export default function ProfilePage() {
         {editMode ? (
           <div className="card">
             <h2 className="section-title">Edit Profile</h2>
-            <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate(form); }}>
+            <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate(avatarFile ? { ...form, avatar: avatarFile } : form); }}>
+              {/* Avatar Upload */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 'var(--space-5)' }}>
+                <div
+                  style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--border-subtle)', background: 'var(--surface-inset)', flexShrink: 0, cursor: 'pointer' }}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {avatarPreview || (user as any).avatar ? (
+                    <img src={avatarPreview || (user as any).avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, color: 'var(--text-secondary)' }}>
+                      {(fullName[0] || '?').toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <button type="button" className="btn btn-secondary" style={{ fontSize: 13 }} onClick={() => fileInputRef.current?.click()}>
+                    Change Photo
+                  </button>
+                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>JPG, PNG — max 5MB</p>
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
+              </div>
               <div className="form-grid">
                 <div className="form-field">
                   <label className="form-label">First Name</label>
@@ -110,6 +148,21 @@ export default function ProfilePage() {
           </div>
         ) : (
           <div className="card">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 'var(--space-5)' }}>
+              <div style={{ width: 72, height: 72, borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--border-subtle)', background: 'var(--surface-inset)', flexShrink: 0 }}>
+                {(user as any).avatar ? (
+                  <img src={(user as any).avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 700, color: 'var(--text-secondary)' }}>
+                    {(fullName[0] || '?').toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{fullName}</div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{roleLabels[user.role] || user.role}</div>
+              </div>
+            </div>
             <div className="info-grid">
               <div>
                 <div className="info-label">Full Name</div>
