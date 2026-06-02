@@ -11,7 +11,8 @@ import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
-import { Button, PageHeader, PageShell, TableShell, RowActions, type Column } from '@/components/ui';
+import { Button, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { RowActions } from '@/components/ui/RowActions';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
 
