@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 
 export interface RowAction {
-  label: string;
+  label?: string;
   href?: string;
   target?: string;
   onClick?: () => void;

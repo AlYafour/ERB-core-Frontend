@@ -98,7 +98,7 @@ export default function QuotationRequestsPage() {
       render: r => (
         <RowActions actions={[
           { label: 'View',   href: `/quotation-requests/${r.id}`, hidden: !canView },
-          { separator: true, hidden: !canDelete } as const,
+          { separator: true, hidden: !canDelete },
           { label: 'Delete', onClick: () => handleDelete(r.id), variant: 'danger', hidden: !canDelete },
         ]} />
       ),

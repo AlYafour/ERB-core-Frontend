@@ -79,7 +79,7 @@ export default function GoodsReceivingPage() {
         <RowActions actions={[
           { label: 'View',  href: `/goods-receiving/${g.id}` },
           { label: 'Print', href: `/print/grn/${g.id}`, target: '_blank' },
-          { separator: true, hidden: !canDelete } as const,
+          { separator: true, hidden: !canDelete },
           { label: 'Delete', onClick: () => handleDelete(g.id), variant: 'danger', hidden: !canDelete },
         ]} />
       ),

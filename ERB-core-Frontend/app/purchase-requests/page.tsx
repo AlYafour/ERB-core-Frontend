@@ -133,7 +133,7 @@ export default function PurchaseRequestsPage() {
           { label: 'View',    href: `/purchase-requests/${r.id}`, hidden: !canView },
           { label: 'Approve', onClick: () => handleApprove(r.id), hidden: r.status !== 'pending' || !canApprove },
           { label: 'Reject',  onClick: () => handleReject(r.id),  hidden: r.status !== 'pending' || !canReject },
-          { separator: true,  hidden: !canDelete } as RowAction,
+          { separator: true,  hidden: !canDelete },
           { label: 'Delete',  onClick: () => handleDelete(r.id), variant: 'danger', hidden: !canDelete },
         ]} />
       ),

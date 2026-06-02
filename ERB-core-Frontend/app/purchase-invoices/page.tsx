@@ -104,7 +104,7 @@ export default function PurchaseInvoicesPage() {
       render: i => (
         <RowActions actions={[
           { label: 'View',   href: `/purchase-invoices/${i.id}`, hidden: !canView },
-          { separator: true, hidden: !canDelete } as const,
+          { separator: true, hidden: !canDelete },
           { label: 'Delete', onClick: () => handleDelete(i.id), variant: 'danger', hidden: !canDelete },
         ]} />
       ),

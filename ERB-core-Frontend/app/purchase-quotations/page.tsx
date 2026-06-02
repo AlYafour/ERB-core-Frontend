@@ -126,7 +126,7 @@ export default function PurchaseQuotationsPage() {
       render: q => (
         <RowActions actions={[
           { label: 'View',   href: `/purchase-quotations/${q.id}`, hidden: !canView },
-          { separator: true, hidden: !canDelete } as const,
+          { separator: true, hidden: !canDelete },
           { label: 'Delete', onClick: () => handleDelete(q.id), variant: 'danger', hidden: !canDelete },
         ]} />
       ),

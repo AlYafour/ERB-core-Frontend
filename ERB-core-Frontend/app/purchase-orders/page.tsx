@@ -111,7 +111,7 @@ export default function PurchaseOrdersPage() {
         <RowActions actions={[
           { label: 'View',  href: `/purchase-orders/${o.id}` },
           { label: 'Print', href: `/print/lpo/${o.id}`, target: '_blank' },
-          { separator: true, hidden: !canDelete } as const,
+          { separator: true, hidden: !canDelete },
           { label: 'Delete', onClick: () => handleDelete(o.id), variant: 'danger', hidden: !canDelete },
         ]} />
       ),
