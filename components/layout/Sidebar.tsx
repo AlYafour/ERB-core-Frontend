@@ -160,17 +160,17 @@ export default function Sidebar() {
             <div style={{
               width: 32, height: 32,
               borderRadius: 8,
-              background: 'rgba(124,45,58,0.42)',
+              background: 'var(--wine-500)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
-              boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+              boxShadow: '0 1px 3px rgba(124,45,58,0.35)',
             }}>
               <img
                 src="/logo.png"
                 alt="Logo"
                 width={22}
                 height={22}
-                style={{ objectFit: 'contain', display: 'block', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' }}
+                style={{ objectFit: 'contain', display: 'block' }}
                 onError={(e) => { e.currentTarget.src = '/logo.svg'; }}
               />
             </div>
@@ -181,7 +181,7 @@ export default function Sidebar() {
                 fontSize: 12,
                 fontWeight: 700,
                 letterSpacing: '-0.01em',
-                color: 'rgba(247,232,234,0.94)',
+                color: 'var(--text-primary)',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -239,7 +239,7 @@ export default function Sidebar() {
               {(user?.role === 'super_admin' || user?.is_superuser || user?.role === 'procurement_manager') &&
                 navLink('/violations', t('nav', 'violations'), <AlertIcon className="w-4 h-4" />)
               }
-              {navLink('/profile', t('nav', 'myProfile'), <UsersIcon className="w-4 h-4" />)}
+              {user?.id && navLink(`/users/${user.id}`, t('nav', 'myProfile'), <UsersIcon className="w-4 h-4" />)}
             </div>
 
             {/* Procurement */}
@@ -358,23 +358,26 @@ export default function Sidebar() {
               <div style={{
                 width: 28, height: 28,
                 borderRadius: '50%',
-                background: 'rgba(124,45,58,0.40)',
-                border: '1px solid rgba(247,168,180,0.22)',
+                background: 'var(--brand-muted)',
+                border: '1px solid var(--border-subtle)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0,
+                overflow: 'hidden',
                 fontSize: 10,
                 fontWeight: 700,
-                color: 'rgba(247,168,180,0.90)',
+                color: 'var(--wine-600)',
                 letterSpacing: '0.02em',
               }}>
-                {initials || '?'}
+                {(user as any).avatar_url ? (
+                  <img src={(user as any).avatar_url} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (initials || '?')}
               </div>
               {/* Name + role */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
                   fontSize: 12,
                   fontWeight: 500,
-                  color: 'rgba(247,232,234,0.88)',
+                  color: 'var(--text-primary)',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',

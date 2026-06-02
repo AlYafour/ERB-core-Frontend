@@ -6,12 +6,15 @@
 :root {
 
   /* Surfaces */
-  --surface-app:     var(--gray-100);
-  --surface-base:    var(--gray-0);
-  --surface-raised:  var(--gray-0);
-  --surface-overlay: var(--gray-50);
-  --surface-subtle:  var(--gray-150);
-  --surface-inset:   var(--gray-100);
+  --surface-app:       #F4F5F7;
+  --surface-base:      var(--gray-0);
+  --surface-raised:    var(--gray-0);
+  --surface-overlay:   var(--gray-50);
+  --surface-subtle:    var(--gray-150);
+  --surface-inset:     var(--gray-100);
+  /* Aliases used in components */
+  --surface-primary:   var(--gray-0);
+  --surface-secondary: var(--gray-50);
 
   /* Text */
   --text-primary:    var(--gray-900);
@@ -92,19 +95,19 @@
   --task-closed-bg:           #F8FAFC;
   --task-closed-border:       #E2E8F0;
 
-  /* Sidebar — always dark regardless of theme */
-  --sidebar-bg:             #2D1A1E;
-  --sidebar-border:         rgba(255, 255, 255, 0.07);
-  --sidebar-text:           rgba(247, 232, 234, 0.52);
-  --sidebar-text-hover:     rgba(247, 232, 234, 0.88);
-  --sidebar-hover:          rgba(255, 255, 255, 0.055);
-  --sidebar-active-bg:      rgba(124, 45, 58, 0.48);
-  --sidebar-active-text:    rgba(247, 232, 234, 0.96);
-  --sidebar-section-label:  rgba(247, 232, 234, 0.28);
+  /* Sidebar — light (Modern SaaS) */
+  --sidebar-bg:             #FFFFFF;
+  --sidebar-border:         #E5E7EB;
+  --sidebar-text:           #6B7280;
+  --sidebar-text-hover:     #111827;
+  --sidebar-hover:          rgba(0, 0, 0, 0.05);
+  --sidebar-active-bg:      var(--wine-50);
+  --sidebar-active-text:    var(--wine-600);
+  --sidebar-section-label:  #9CA3AF;
 
   /* Navbar */
-  --navbar-bg:              var(--gray-0);
-  --navbar-border:          var(--gray-200);
+  --navbar-bg:              #FFFFFF;
+  --navbar-border:          #E5E7EB;
 
   /* Input */
   --input-bg:               var(--gray-0);
@@ -115,8 +118,8 @@
 
   /* Card */
   --card-bg:                var(--gray-0);
-  --card-border:            var(--gray-200);
-  --card-shadow:            0 1px 2px 0 rgb(28 20 20 / 0.04);
+  --card-border:            #E5E7EB;
+  --card-shadow:            0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
 
   /* Table */
   --table-header-bg:        var(--gray-100);
