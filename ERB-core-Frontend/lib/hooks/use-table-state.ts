@@ -11,8 +11,12 @@ export function useTableState() {
     setPage(1);
   }, []);
 
-  const handleFilterChange = useCallback((f: Record<string, unknown>) => {
-    setFilters(f);
+  const handleFilterChange = useCallback((keyOrFilters: string | Record<string, unknown>, value?: unknown) => {
+    if (typeof keyOrFilters === 'string') {
+      setFilters(prev => ({ ...prev, [keyOrFilters]: value }));
+    } else {
+      setFilters(keyOrFilters);
+    }
     setPage(1);
   }, []);
 
