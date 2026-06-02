@@ -17,7 +17,7 @@ interface RowActionsProps {
   actions: RowAction[];
 }
 
-export default function RowActions({ actions }: RowActionsProps) {
+export function RowActions({ actions }: RowActionsProps) {
   const [open, setOpen] = useState(false);
   const [dropPos, setDropPos] = useState<{ top: number; right: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
