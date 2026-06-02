@@ -26,6 +26,7 @@ interface TableShellProps<T extends { id: number }> {
   paginatedData?: { previous?: string | null; next?: string | null } | null;
   selectable?: boolean;
   rowStyle?: (item: T) => React.CSSProperties | undefined;
+  onRowClick?: (item: T) => void;
 }
 
 export default function TableShell<T extends { id: number }>({
@@ -47,6 +48,7 @@ export default function TableShell<T extends { id: number }>({
   paginatedData,
   selectable,
   rowStyle,
+  onRowClick,
 }: TableShellProps<T>) {
   const {
     page, setPage, search, filters,
@@ -111,6 +113,7 @@ export default function TableShell<T extends { id: number }>({
         hasNext={!!paginatedData?.next}
         onPageChange={setPage}
         rowStyle={rowStyle}
+        onRowClick={onRowClick}
       />
     </WorkspaceSurface>
   );

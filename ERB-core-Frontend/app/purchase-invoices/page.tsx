@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseInvoicesApi } from '@/lib/api/purchase-invoices';
 import MainLayout from '@/components/layout/MainLayout';
@@ -36,6 +37,7 @@ const filterFields: FilterField[] = [
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
 export default function PurchaseInvoicesPage() {
+  const router = useRouter();
   const tableState = useTableState();
   const { page, search, filters, selectedItems } = tableState;
   const pending = usePendingCounts();
@@ -103,7 +105,6 @@ export default function PurchaseInvoicesPage() {
       key: 'actions', header: '',
       render: i => (
         <RowActions actions={[
-          { label: 'View',   href: `/purchase-invoices/${i.id}`, hidden: !canView },
           { separator: true, hidden: !canDelete },
           { label: 'Delete', onClick: () => handleDelete(i.id), variant: 'danger', hidden: !canDelete },
         ]} />
@@ -153,6 +154,7 @@ export default function PurchaseInvoicesPage() {
           isLoading={isLoading}
           error={error}
           emptyMessage={t('empty', 'noInvoices')}
+          onRowClick={i => router.push(`/purchase-invoices/${i.id}`)}
           selectable={isAdmin}
           rowStyle={(i) => i.due_date && !['paid', 'cancelled'].includes(i.status) && new Date(i.due_date) < new Date()
             ? { borderLeft: '3px solid var(--status-error)', background: 'rgba(220,38,38,0.03)' }

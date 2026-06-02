@@ -40,8 +40,9 @@ interface DataTableProps<T> {
   hasNext?: boolean;
   onPageChange: (page: number) => void;
 
-  // Row styling
+  // Row styling & click
   rowStyle?: (item: T) => React.CSSProperties | undefined;
+  onRowClick?: (item: T) => void;
 
   /**
    * When true, renders without outer card wrappers — designed to be placed
@@ -118,7 +119,7 @@ export default function DataTable<T>({
   selectable, selectedItems, onToggleSelect, onToggleSelectAll,
   isAllSelected, isSomeSelected,
   page, totalCount, pageSize = 20, hasPrev, hasNext, onPageChange,
-  rowStyle,
+  rowStyle, onRowClick,
   surface = false,
 }: DataTableProps<T>) {
   const getId = getItemId ?? ((item: T) => (item as { id: number }).id);
@@ -220,10 +221,15 @@ export default function DataTable<T>({
         <tbody>
           {safeData.map((item, idx) => {
             const id = getId(item);
+            const clickable = !!onRowClick;
             return (
-              <tr key={id} style={rowStyle?.(item)}>
+              <tr
+                key={id}
+                style={{ ...rowStyle?.(item), cursor: clickable ? 'pointer' : undefined }}
+                onClick={clickable ? () => onRowClick(item) : undefined}
+              >
                 {selectable && (
-                  <td>
+                  <td onClick={e => e.stopPropagation()}>
                     <Checkbox
                       checked={selectedItems?.has(id) ?? false}
                       onChange={() => onToggleSelect?.(id)}
@@ -231,7 +237,11 @@ export default function DataTable<T>({
                   </td>
                 )}
                 {columns.map(col => (
-                  <td key={col.key} className={col.className}>
+                  <td
+                    key={col.key}
+                    className={col.className}
+                    onClick={col.key === 'actions' ? e => e.stopPropagation() : undefined}
+                  >
                     {col.render(item, idx)}
                   </td>
                 ))}

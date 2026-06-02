@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { goodsReceivingApi, GoodsReceivedNote } from '@/lib/api/goods-receiving';
@@ -30,6 +31,7 @@ const filterFields: FilterField[] = [
 ];
 
 export default function GoodsReceivingPage() {
+  const router = useRouter();
   const tableState = useTableState();
   const { page, search, filters } = tableState;
   const statusValue = (filters.status as string) || '';
@@ -77,7 +79,6 @@ export default function GoodsReceivingPage() {
       key: 'actions', header: '',
       render: g => (
         <RowActions actions={[
-          { label: 'View',  href: `/goods-receiving/${g.id}` },
           { label: 'Print', href: `/print/grn/${g.id}`, target: '_blank' },
           { separator: true, hidden: !canDelete },
           { label: 'Delete', onClick: () => handleDelete(g.id), variant: 'danger', hidden: !canDelete },
@@ -119,6 +120,7 @@ export default function GoodsReceivingPage() {
           error={error}
           emptyMessage="No goods receiving notes found."
           emptyAction={canCreate ? <Link href="/goods-receiving/new"><Button variant="primary">Create GRN</Button></Link> : undefined}
+          onRowClick={g => router.push(`/goods-receiving/${g.id}`)}
           totalCount={totalCount}
           paginatedData={data}
         />

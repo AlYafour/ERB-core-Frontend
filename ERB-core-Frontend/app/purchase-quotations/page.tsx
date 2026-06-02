@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseQuotationsApi } from '@/lib/api/purchase-quotations';
@@ -40,6 +41,7 @@ function resolveId(val: number | { id: number } | null | undefined): number | nu
 }
 
 export default function PurchaseQuotationsPage() {
+  const router = useRouter();
   const tableState = useTableState();
   const {
     page, setPage, search, filters, selectedItems,
@@ -125,7 +127,6 @@ export default function PurchaseQuotationsPage() {
       key: 'actions', header: '',
       render: q => (
         <RowActions actions={[
-          { label: 'View',   href: `/purchase-quotations/${q.id}`, hidden: !canView },
           { separator: true, hidden: !canDelete },
           { label: 'Delete', onClick: () => handleDelete(q.id), variant: 'danger', hidden: !canDelete },
         ]} />
@@ -186,6 +187,7 @@ export default function PurchaseQuotationsPage() {
             isLoading={isLoading}
             error={error}
             emptyMessage={t('empty', 'noPQ')}
+            onRowClick={q => router.push(`/purchase-quotations/${q.id}`)}
             selectable={isAdmin}
             selectedItems={selectedItems}
             onToggleSelect={toggleSelect}

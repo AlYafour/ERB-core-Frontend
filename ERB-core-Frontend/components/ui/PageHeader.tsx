@@ -63,7 +63,7 @@ export default function PageHeader({
   return (
     <div style={{ marginBottom: 20 }}>
 
-      {/* Breadcrumbs */}
+      {/* Breadcrumbs — outside the card */}
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav style={{
           display: 'flex',
@@ -111,94 +111,74 @@ export default function PageHeader({
         </nav>
       )}
 
-      {/* Back button */}
-      {backHref !== undefined && (
-        <button
-          onClick={handleBack}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 5,
-            fontSize: 'var(--text-xs)',
-            color: 'var(--text-tertiary)',
-            background: 'transparent',
-            border: 'none',
-            padding: '0 0 10px',
-            cursor: 'pointer',
-            transition: 'color 100ms',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-brand)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)'; }}
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 18l-6-6 6-6" />
-          </svg>
-          Back
-        </button>
-      )}
-
-      {/* Title row */}
+      {/* Card container */}
       <div style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        gap: 16,
-        flexWrap: 'wrap',
+        background: 'var(--card-bg)',
+        border: '1px solid var(--card-border)',
+        borderRadius: 'var(--radius-lg)',
+        boxShadow: 'var(--card-shadow)',
+        padding: '18px 24px',
       }}>
-        {/* Left: title + description */}
-        <div style={{ minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <h1 style={{
-              fontSize: 'var(--text-2xl)',
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-              margin: 0,
-              letterSpacing: '-0.02em',
-              lineHeight: 1.25,
-            }}>
-              {title}
-            </h1>
-            {count !== undefined && count !== null && (
-              <span style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minWidth: 22,
-                height: 20,
-                padding: '0 6px',
-                borderRadius: 'var(--radius-full)',
-                background: 'var(--surface-subtle)',
-                border: '1px solid var(--border-subtle)',
-                fontSize: 'var(--text-xs)',
-                fontWeight: 600,
-                color: 'var(--text-secondary)',
+
+        {/* Back button */}
+        {backHref !== undefined && (
+          <button
+            onClick={handleBack}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)',
+              background: 'transparent', border: 'none',
+              padding: '0 0 12px', cursor: 'pointer', transition: 'color 100ms',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-brand)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)'; }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 18l-6-6 6-6" />
+            </svg>
+            Back
+          </button>
+        )}
+
+        {/* Title row */}
+        <div style={{
+          display: 'flex', alignItems: 'flex-start',
+          justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
+        }}>
+          {/* Left: title + description + metrics */}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <h1 style={{
+                fontSize: 'var(--text-xl)',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                margin: 0,
+                letterSpacing: '-0.015em',
+                lineHeight: 1.3,
               }}>
-                {count}
-              </span>
-            )}
-          </div>
-          {description && (
-            <p style={{
-              fontSize: 'var(--text-sm)',
-              color: 'var(--text-tertiary)',
-              margin: '4px 0 0',
-              lineHeight: 1.5,
-            }}>
-              {description}
-            </p>
-          )}
-          {metrics && metrics.length > 0 && (
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-              {metrics.map((m, i) => {
+                {title}
+              </h1>
+              {count !== undefined && count !== null && (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  minWidth: 24, height: 22, padding: '0 7px',
+                  borderRadius: 'var(--radius-full)',
+                  background: 'var(--surface-subtle)',
+                  border: '1px solid var(--border-subtle)',
+                  fontSize: 12, fontWeight: 600,
+                  color: 'var(--text-secondary)',
+                }}>
+                  {count}
+                </span>
+              )}
+              {metrics && metrics.map((m, i) => {
                 const v = m.variant ?? 'info';
                 return (
                   <span key={i} style={{
                     display: 'inline-flex', alignItems: 'center', gap: 5,
                     padding: '3px 9px', borderRadius: 20,
-                    background: METRIC_BG[v],
-                    border: `1px solid ${METRIC_BORDER[v]}`,
-                    fontSize: 11, fontWeight: 600,
-                    color: METRIC_COLOR[v],
+                    background: METRIC_BG[v], border: `1px solid ${METRIC_BORDER[v]}`,
+                    fontSize: 11, fontWeight: 600, color: METRIC_COLOR[v],
                   }}>
                     <span style={{ width: 5, height: 5, borderRadius: '50%', background: METRIC_COLOR[v], flexShrink: 0 }} />
                     {m.value} {m.label}
@@ -206,21 +186,26 @@ export default function PageHeader({
                 );
               })}
             </div>
+            {description && (
+              <p style={{
+                fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)',
+                margin: '5px 0 0', lineHeight: 1.5,
+              }}>
+                {description}
+              </p>
+            )}
+          </div>
+
+          {/* Right: actions */}
+          {actions && (
+            <div style={{
+              display: 'flex', alignItems: 'center',
+              gap: 8, flexShrink: 0, flexWrap: 'wrap',
+            }}>
+              {actions}
+            </div>
           )}
         </div>
-
-        {/* Right: actions */}
-        {actions && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            flexShrink: 0,
-            flexWrap: 'wrap',
-          }}>
-            {actions}
-          </div>
-        )}
       </div>
     </div>
   );

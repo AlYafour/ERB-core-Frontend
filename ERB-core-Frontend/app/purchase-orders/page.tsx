@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
@@ -34,6 +35,7 @@ const filterFields: FilterField[] = [
 ];
 
 export default function PurchaseOrdersPage() {
+  const router = useRouter();
   const tableState = useTableState();
   const { page, search, filters, selectedItems, clearSelection } = tableState;
   const pending = usePendingCounts();
@@ -109,7 +111,6 @@ export default function PurchaseOrdersPage() {
       key: 'actions', header: '',
       render: o => (
         <RowActions actions={[
-          { label: 'View',  href: `/purchase-orders/${o.id}` },
           { label: 'Print', href: `/print/lpo/${o.id}`, target: '_blank' },
           { separator: true, hidden: !canDelete },
           { label: 'Delete', onClick: () => handleDelete(o.id), variant: 'danger', hidden: !canDelete },
@@ -162,6 +163,7 @@ export default function PurchaseOrdersPage() {
           error={error}
           emptyMessage="No purchase orders found."
           emptyAction={canCreate ? <Link href="/purchase-orders/new"><Button variant="primary">Create Purchase Order</Button></Link> : undefined}
+          onRowClick={o => router.push(`/purchase-orders/${o.id}`)}
           selectable={canDelete}
           totalCount={totalCount}
           paginatedData={data}

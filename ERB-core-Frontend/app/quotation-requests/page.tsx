@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { quotationRequestsApi } from '@/lib/api/quotation-requests';
@@ -22,6 +23,7 @@ const filterFields: FilterField[] = [
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
 export default function QuotationRequestsPage() {
+  const router = useRouter();
   const tableState = useTableState();
   const { page, search, filters, selectedItems } = tableState;
 
@@ -97,7 +99,6 @@ export default function QuotationRequestsPage() {
       key: 'actions', header: '',
       render: r => (
         <RowActions actions={[
-          { label: 'View',   href: `/quotation-requests/${r.id}`, hidden: !canView },
           { separator: true, hidden: !canDelete },
           { label: 'Delete', onClick: () => handleDelete(r.id), variant: 'danger', hidden: !canDelete },
         ]} />
@@ -132,6 +133,7 @@ export default function QuotationRequestsPage() {
           isLoading={isLoading}
           error={error}
           emptyMessage={t('empty', 'noQR')}
+          onRowClick={r => router.push(`/quotation-requests/${r.id}`)}
           selectable={isAdmin}
           totalCount={totalCount}
           pageSize={50}

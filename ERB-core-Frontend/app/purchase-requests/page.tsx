@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseRequestsApi } from '@/lib/api/purchase-requests';
@@ -24,6 +25,7 @@ import { usePendingCounts } from '@/lib/hooks/use-pending-counts';
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
 export default function PurchaseRequestsPage() {
+  const router = useRouter();
   const tableState = useTableState();
   const { page, search, filters, selectedItems } = tableState;
   const pending = usePendingCounts();
@@ -130,7 +132,6 @@ export default function PurchaseRequestsPage() {
       key: 'actions', header: '',
       render: r => (
         <RowActions actions={[
-          { label: 'View',    href: `/purchase-requests/${r.id}`, hidden: !canView },
           { label: 'Approve', onClick: () => handleApprove(r.id), hidden: r.status !== 'pending' || !canApprove },
           { label: 'Reject',  onClick: () => handleReject(r.id),  hidden: r.status !== 'pending' || !canReject },
           { separator: true,  hidden: !canDelete },
@@ -183,6 +184,7 @@ export default function PurchaseRequestsPage() {
           isLoading={isLoading}
           error={error}
           emptyMessage={t('empty', 'noPR')}
+          onRowClick={r => router.push(`/purchase-requests/${r.id}`)}
           selectable={isAdmin}
           rowStyle={(r) => r.status === 'pending' && new Date(r.required_by) < new Date()
             ? { borderLeft: '3px solid var(--status-warning)', background: 'rgba(217,119,6,0.03)' }
