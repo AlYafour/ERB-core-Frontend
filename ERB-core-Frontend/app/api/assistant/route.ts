@@ -1,11 +1,34 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest } from 'next/server';
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const MODEL = 'claude-opus-4-7';
 const MAX_TOKENS = 4096;
 const MAX_ITERATIONS = 6;
+const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
+
+// ── Types ──────────────────────────────────────────────────────────────────────
+interface ContentBlock {
+  type: 'text' | 'tool_use';
+  text?: string;
+  id?: string;
+  name?: string;
+  input?: Record<string, unknown>;
+}
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string | ContentBlock[];
+}
+
+interface ToolResultBlock {
+  type: 'tool_result';
+  tool_use_id: string;
+  content: string;
+}
+
+interface AnthropicResponse {
+  content: ContentBlock[];
+  stop_reason: 'end_turn' | 'tool_use' | string;
+}
 
 // ── System prompt ──────────────────────────────────────────────────────────────
 function buildSystem(page: string): string {
@@ -41,12 +64,12 @@ Mirror the user's language exactly — Arabic ↔ English. Never mix unless the 
 }
 
 // ── Tools ──────────────────────────────────────────────────────────────────────
-const TOOLS: Anthropic.Tool[] = [
+const TOOLS = [
   {
     name: 'search_products',
     description: 'Search the product/material catalog by name, code, or SKU',
     input_schema: {
-      type: 'object' as const,
+      type: 'object',
       properties: {
         query: { type: 'string', description: 'Search term' },
         category: { type: 'string', description: 'Optional category filter' },
@@ -59,7 +82,7 @@ const TOOLS: Anthropic.Tool[] = [
     name: 'get_projects',
     description: 'Get list of projects',
     input_schema: {
-      type: 'object' as const,
+      type: 'object',
       properties: {
         is_active: { type: 'boolean', description: 'Filter active projects only (default true)' },
       },
@@ -69,7 +92,7 @@ const TOOLS: Anthropic.Tool[] = [
     name: 'get_suppliers',
     description: 'Get list of approved suppliers/vendors',
     input_schema: {
-      type: 'object' as const,
+      type: 'object',
       properties: {
         search: { type: 'string', description: 'Optional search query' },
       },
@@ -79,7 +102,7 @@ const TOOLS: Anthropic.Tool[] = [
     name: 'get_pending_approvals',
     description: 'Get items pending approval across the procurement cycle',
     input_schema: {
-      type: 'object' as const,
+      type: 'object',
       properties: {
         module: {
           type: 'string',
@@ -94,7 +117,7 @@ const TOOLS: Anthropic.Tool[] = [
     name: 'get_records',
     description: 'Get records from any procurement module with optional filters',
     input_schema: {
-      type: 'object' as const,
+      type: 'object',
       properties: {
         module: {
           type: 'string',
@@ -112,7 +135,7 @@ const TOOLS: Anthropic.Tool[] = [
     name: 'navigate_to',
     description: 'Navigate the user to a specific page in the ERP system',
     input_schema: {
-      type: 'object' as const,
+      type: 'object',
       properties: {
         path: { type: 'string', description: 'Route path (e.g. /purchase-requests, /purchase-orders/42)' },
         label: { type: 'string', description: 'Human-readable destination name' },
@@ -124,7 +147,7 @@ const TOOLS: Anthropic.Tool[] = [
     name: 'create_purchase_request',
     description: 'Create a new purchase request in the system',
     input_schema: {
-      type: 'object' as const,
+      type: 'object',
       properties: {
         project_id: { type: 'number', description: 'Project ID' },
         title: { type: 'string', description: 'Request title' },
@@ -138,12 +161,12 @@ const TOOLS: Anthropic.Tool[] = [
 
 // ── Tool executor ──────────────────────────────────────────────────────────────
 const MODULE_PATHS: Record<string, string> = {
-  purchase_requests:    'purchase-requests',
-  purchase_orders:      'purchase-orders',
-  purchase_quotations:  'purchase-quotations',
-  quotation_requests:   'quotation-requests',
-  goods_receiving:      'goods-receiving',
-  purchase_invoices:    'purchase-invoices',
+  purchase_requests:   'purchase-requests',
+  purchase_orders:     'purchase-orders',
+  purchase_quotations: 'purchase-quotations',
+  quotation_requests:  'quotation-requests',
+  goods_receiving:     'goods-receiving',
+  purchase_invoices:   'purchase-invoices',
 };
 
 async function executeTool(
@@ -162,7 +185,6 @@ async function executeTool(
 
   try {
     switch (name) {
-
       case 'search_products': {
         const qs = new URLSearchParams({ search: String(input.query), page_size: String(input.page_size ?? 8) });
         if (input.category) qs.set('category', String(input.category));
@@ -219,10 +241,7 @@ async function executeTool(
         if (input.status) qs.set('status', String(input.status));
         if (input.search) qs.set('search', String(input.search));
         const d = await get(`${base}/${path}/?${qs}`);
-        return {
-          data: { count: d.count, results: d.results?.slice(0, 10) },
-          summary: `${d.count ?? 0} records found`,
-        };
+        return { data: { count: d.count, results: d.results?.slice(0, 10) }, summary: `${d.count ?? 0} records found` };
       }
 
       case 'navigate_to':
@@ -275,32 +294,50 @@ type SSEEvent =
   | { t: 'done' }
   | { t: 'error'; msg: string };
 
+// ── Anthropic API call ─────────────────────────────────────────────────────────
+async function callAnthropic(messages: Message[], system: string): Promise<AnthropicResponse> {
+  const res = await fetch(ANTHROPIC_API, {
+    method: 'POST',
+    headers: {
+      'x-api-key': process.env.ANTHROPIC_API_KEY!,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: MAX_TOKENS,
+      system,
+      messages,
+      tools: TOOLS,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.statusText);
+    throw new Error(`Anthropic API ${res.status}: ${err}`);
+  }
+
+  return res.json() as Promise<AnthropicResponse>;
+}
+
 // ── Agentic loop ───────────────────────────────────────────────────────────────
 async function runLoop(
-  messages: Anthropic.MessageParam[],
+  messages: Message[],
   authToken: string,
   currentPage: string,
   send: (e: SSEEvent) => void,
 ): Promise<void> {
-  const history: Anthropic.MessageParam[] = [...messages];
+  const history: Message[] = [...messages];
+  const system = buildSystem(currentPage);
 
   for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
-    const response = await client.messages.create({
-      model: MODEL,
-      max_tokens: MAX_TOKENS,
-      system: buildSystem(currentPage),
-      messages: history,
-      tools: TOOLS,
-    });
+    const response = await callAnthropic(history, system);
 
-    // Push assistant turn to history
     history.push({ role: 'assistant', content: response.content });
 
-    // ── end_turn: stream text ──────────────────────────────────────────────
     if (response.stop_reason === 'end_turn') {
       for (const block of response.content) {
         if (block.type === 'text' && block.text) {
-          // Chunk into small pieces for streaming feel
           const chunks = block.text.match(/[\s\S]{1,4}/g) ?? [];
           for (const chunk of chunks) {
             send({ t: 'text', v: chunk });
@@ -311,22 +348,21 @@ async function runLoop(
       return;
     }
 
-    // ── tool_use: execute and loop ─────────────────────────────────────────
     if (response.stop_reason === 'tool_use') {
-      const toolResults: Anthropic.ToolResultBlockParam[] = [];
+      const toolResults: ToolResultBlock[] = [];
 
       for (const block of response.content) {
         if (block.type !== 'tool_use') continue;
 
-        send({ t: 'tool_start', name: block.name });
+        send({ t: 'tool_start', name: block.name! });
 
         const result = await executeTool(
-          block.name,
+          block.name!,
           block.input as Record<string, unknown>,
           authToken,
         );
 
-        send({ t: 'tool_done', name: block.name, summary: result.summary });
+        send({ t: 'tool_done', name: block.name!, summary: result.summary });
 
         if (result.nav) {
           send({ t: 'nav', path: result.nav, label: result.summary });
@@ -334,16 +370,15 @@ async function runLoop(
 
         toolResults.push({
           type: 'tool_result',
-          tool_use_id: block.id,
+          tool_use_id: block.id!,
           content: JSON.stringify(result.data),
         });
       }
 
-      history.push({ role: 'user', content: toolResults });
+      history.push({ role: 'user', content: toolResults as unknown as ContentBlock[] });
     }
   }
 
-  // Fallback if max iterations hit
   send({ t: 'text', v: 'I reached the maximum reasoning steps. Please try a more specific question.' });
 }
 
@@ -354,7 +389,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { messages, authToken, currentPage } = await req.json() as {
-    messages: Anthropic.MessageParam[];
+    messages: Message[];
     authToken: string;
     currentPage: string;
   };
