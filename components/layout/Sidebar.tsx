@@ -239,7 +239,7 @@ export default function Sidebar() {
               {(user?.role === 'super_admin' || user?.is_superuser || user?.role === 'procurement_manager') &&
                 navLink('/violations', t('nav', 'violations'), <AlertIcon className="w-4 h-4" />)
               }
-              {navLink('/profile', t('nav', 'myProfile'), <UsersIcon className="w-4 h-4" />)}
+              {user?.id && navLink(`/users/${user.id}`, t('nav', 'myProfile'), <UsersIcon className="w-4 h-4" />)}
             </div>
 
             {/* Procurement */}

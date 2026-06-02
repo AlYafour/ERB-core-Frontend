@@ -54,7 +54,7 @@ export default function Navbar() {
 
           {/* User */}
           <Link
-            href="/profile"
+            href={user?.id ? `/users/${user.id}` : '/users'}
             className="flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors duration-150"
             style={{ color: 'var(--text-secondary)' }}
             onMouseEnter={(e) => {
