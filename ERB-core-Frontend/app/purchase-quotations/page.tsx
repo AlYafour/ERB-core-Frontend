@@ -12,7 +12,7 @@ import { usePermissions } from '@/lib/hooks/use-permissions';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
 import StatusTabs from '@/components/ui/StatusTabs';
-import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
+import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface, RowActions } from '@/components/ui';
 import { formatPrice } from '@/lib/utils/format';
 import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
@@ -122,12 +122,13 @@ export default function PurchaseQuotationsPage() {
     { key: 'delivery', header: t('col', 'deliveryMethod'), render: q => <span style={{ color: 'var(--text-primary)' }}>{q.delivery_method ? (q.delivery_method === 'pickup' ? 'Pick Up' : 'Delivery') : '—'}</span> },
     { key: 'total',    header: t('col', 'totalAmount'),  render: q => <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{formatPrice(q.total || 0)}</span> },
     {
-      key: 'actions', header: t('col', 'actions'),
+      key: 'actions', header: '',
       render: q => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          {canView && <Link href={`/purchase-quotations/${q.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>}
-          {canDelete && <Button variant="delete" size="sm" onClick={() => handleDelete(q.id)} isLoading={deleteMutation.isPending}>{t('btn', 'delete')}</Button>}
-        </div>
+        <RowActions actions={[
+          { label: 'View',   href: `/purchase-quotations/${q.id}`, hidden: !canView },
+          { separator: true, hidden: !canDelete } as const,
+          { label: 'Delete', onClick: () => handleDelete(q.id), variant: 'danger', hidden: !canDelete },
+        ]} />
       ),
     },
   ];

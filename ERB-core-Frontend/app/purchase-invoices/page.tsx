@@ -10,7 +10,7 @@ import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
-import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { Button, Badge, PageHeader, PageShell, TableShell, RowActions, type Column } from '@/components/ui';
 import StatusTabs from '@/components/ui/StatusTabs';
 import { usePendingCounts } from '@/lib/hooks/use-pending-counts';
 import { PurchaseInvoice } from '@/types';
@@ -100,12 +100,13 @@ export default function PurchaseInvoicesPage() {
     { key: 'total',  header: t('col', 'total'),        render: i => <span className="font-semibold">{formatPrice(Number(i.total || 0))}</span> },
     { key: 'paid',   header: t('misc', 'paidAmount'),  render: i => <span>{formatPrice(Number(i.paid_amount || 0))}</span> },
     {
-      key: 'actions', header: t('col', 'actions'),
+      key: 'actions', header: '',
       render: i => (
-        <div className="flex items-center gap-2">
-          {canView   && <Link href={`/purchase-invoices/${i.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>}
-          {canDelete && <Button variant="destructive" size="sm" onClick={() => handleDelete(i.id)} isLoading={deleteMutation.isPending}>{t('btn', 'delete')}</Button>}
-        </div>
+        <RowActions actions={[
+          { label: 'View',   href: `/purchase-invoices/${i.id}`, hidden: !canView },
+          { separator: true, hidden: !canDelete } as const,
+          { label: 'Delete', onClick: () => handleDelete(i.id), variant: 'danger', hidden: !canDelete },
+        ]} />
       ),
     },
   ];

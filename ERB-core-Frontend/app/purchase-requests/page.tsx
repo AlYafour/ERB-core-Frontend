@@ -14,7 +14,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
-import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { Button, Badge, PageHeader, PageShell, TableShell, RowActions, type RowAction, type Column } from '@/components/ui';
 import StatusTabs from '@/components/ui/StatusTabs';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
@@ -127,18 +127,15 @@ export default function PurchaseRequestsPage() {
       render: r => <Badge variant={PR_STATUS[r.status] ?? 'info'}>{t('status', r.status as any) || r.status}</Badge>,
     },
     {
-      key: 'actions', header: t('col', 'actions'),
+      key: 'actions', header: '',
       render: r => (
-        <div className="flex items-center gap-2">
-          {canView && <Link href={`/purchase-requests/${r.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>}
-          {r.status === 'pending' && canApprove && (
-            <Button variant="success" size="sm" onClick={() => handleApprove(r.id)} isLoading={approveMutation.isPending}>{t('btn', 'approve')}</Button>
-          )}
-          {r.status === 'pending' && canReject && (
-            <Button variant="delete" size="sm" onClick={() => handleReject(r.id)} isLoading={rejectMutation.isPending}>{t('btn', 'reject')}</Button>
-          )}
-          {canDelete && <Button variant="destructive" size="sm" onClick={() => handleDelete(r.id)} isLoading={deleteMutation.isPending}>{t('btn', 'delete')}</Button>}
-        </div>
+        <RowActions actions={[
+          { label: 'View',    href: `/purchase-requests/${r.id}`, hidden: !canView },
+          { label: 'Approve', onClick: () => handleApprove(r.id), hidden: r.status !== 'pending' || !canApprove },
+          { label: 'Reject',  onClick: () => handleReject(r.id),  hidden: r.status !== 'pending' || !canReject },
+          { separator: true,  hidden: !canDelete } as RowAction,
+          { label: 'Delete',  onClick: () => handleDelete(r.id), variant: 'danger', hidden: !canDelete },
+        ]} />
       ),
     },
   ];

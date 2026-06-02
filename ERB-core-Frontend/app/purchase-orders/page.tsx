@@ -10,7 +10,7 @@ import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
-import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { Button, Badge, PageHeader, PageShell, TableShell, RowActions, type Column } from '@/components/ui';
 import StatusTabs from '@/components/ui/StatusTabs';
 import { usePendingCounts } from '@/lib/hooks/use-pending-counts';
 import { formatPrice } from '@/lib/utils/format';
@@ -106,13 +106,14 @@ export default function PurchaseOrdersPage() {
     { key: 'total',     header: t('col', 'totalAmount'),   render: o => <span className="font-semibold">{formatPrice(o.total)}</span> },
     { key: 'status',    header: t('col', 'status'),        render: o => <Badge variant={PO_STATUS[o.status] ?? 'info'}>{STATUS_LABEL[o.status] || o.status}</Badge> },
     {
-      key: 'actions', header: t('col', 'actions'),
+      key: 'actions', header: '',
       render: o => (
-        <div className="flex gap-2">
-          <Link href={`/purchase-orders/${o.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>
-          <Link href={`/print/lpo/${o.id}`} target="_blank"><Button variant="secondary" size="sm">Print</Button></Link>
-          {canDelete && <Button variant="destructive" size="sm" onClick={() => handleDelete(o.id)}>{t('btn', 'delete')}</Button>}
-        </div>
+        <RowActions actions={[
+          { label: 'View',  href: `/purchase-orders/${o.id}` },
+          { label: 'Print', href: `/print/lpo/${o.id}`, target: '_blank' },
+          { separator: true, hidden: !canDelete } as const,
+          { label: 'Delete', onClick: () => handleDelete(o.id), variant: 'danger', hidden: !canDelete },
+        ]} />
       ),
     },
   ];

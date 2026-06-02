@@ -26,10 +26,22 @@ interface PageHeaderProps {
 }
 
 const METRIC_COLOR: Record<string, string> = {
-  warning: 'var(--status-warning)',
-  success: 'var(--status-success)',
-  error:   'var(--status-error)',
-  info:    'var(--brand)',
+  warning: '#92400e',
+  success: '#065f46',
+  error:   '#991b1b',
+  info:    'var(--wine-700, #6b21a8)',
+};
+const METRIC_BG: Record<string, string> = {
+  warning: '#fef3c7',
+  success: '#d1fae5',
+  error:   '#fee2e2',
+  info:    'var(--wine-50, #f5f3ff)',
+};
+const METRIC_BORDER: Record<string, string> = {
+  warning: '#fde68a',
+  success: '#6ee7b7',
+  error:   '#fca5a5',
+  info:    'var(--wine-100, #ede9fe)',
 };
 
 export default function PageHeader({
@@ -176,20 +188,23 @@ export default function PageHeader({
             </p>
           )}
           {metrics && metrics.length > 0 && (
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
-              {metrics.map((m, i) => (
-                <span key={i} style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  fontSize: 'var(--text-xs)', color: 'var(--text-secondary)',
-                }}>
-                  <span style={{
-                    width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-                    background: METRIC_COLOR[m.variant ?? 'info'],
-                  }} />
-                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{m.value}</span>
-                  {' '}{m.label}
-                </span>
-              ))}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+              {metrics.map((m, i) => {
+                const v = m.variant ?? 'info';
+                return (
+                  <span key={i} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    padding: '3px 9px', borderRadius: 20,
+                    background: METRIC_BG[v],
+                    border: `1px solid ${METRIC_BORDER[v]}`,
+                    fontSize: 11, fontWeight: 600,
+                    color: METRIC_COLOR[v],
+                  }}>
+                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: METRIC_COLOR[v], flexShrink: 0 }} />
+                    {m.value} {m.label}
+                  </span>
+                );
+              })}
             </div>
           )}
         </div>

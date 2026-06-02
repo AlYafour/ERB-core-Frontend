@@ -9,7 +9,7 @@ import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
-import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { Button, Badge, PageHeader, PageShell, TableShell, RowActions, type Column } from '@/components/ui';
 import StatusTabs from '@/components/ui/StatusTabs';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
@@ -74,13 +74,14 @@ export default function GoodsReceivingPage() {
       render: g => <Badge variant={g.invoice_delivery_status === 'delivered' ? 'success' : 'warning'}>{g.invoice_delivery_status === 'delivered' ? 'Delivered' : 'Pending'}</Badge>,
     },
     {
-      key: 'actions', header: t('col', 'actions'),
+      key: 'actions', header: '',
       render: g => (
-        <div className="flex gap-2">
-          <Link href={`/goods-receiving/${g.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>
-          <Link href={`/print/grn/${g.id}`} target="_blank"><Button variant="secondary" size="sm">Print</Button></Link>
-          {canDelete && <Button variant="destructive" size="sm" onClick={() => handleDelete(g.id)}>{t('btn', 'delete')}</Button>}
-        </div>
+        <RowActions actions={[
+          { label: 'View',  href: `/goods-receiving/${g.id}` },
+          { label: 'Print', href: `/print/grn/${g.id}`, target: '_blank' },
+          { separator: true, hidden: !canDelete } as const,
+          { label: 'Delete', onClick: () => handleDelete(g.id), variant: 'danger', hidden: !canDelete },
+        ]} />
       ),
     },
   ];

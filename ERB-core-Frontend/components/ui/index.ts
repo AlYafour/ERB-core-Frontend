@@ -87,6 +87,8 @@ export { default as DataTable }    from './DataTable';
 export type { Column }             from './DataTable';
 export { default as TableShell }   from './TableShell';
 export { default as DropdownButton } from './DropdownButton';
+export { default as RowActions }    from './RowActions';
+export type { RowAction }           from './RowActions';
 
 // Forms
 export { default as FormSection }  from './FormSection';

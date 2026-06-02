@@ -10,7 +10,7 @@ import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
-import { Button, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { Button, PageHeader, PageShell, TableShell, RowActions, type Column } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
 
@@ -94,12 +94,13 @@ export default function QuotationRequestsPage() {
     },
     { key: 'date', header: t('col', 'requestDate'), render: r => <span style={{ color: 'var(--text-secondary)' }}>{fmtDate(r.created_at)}</span> },
     {
-      key: 'actions', header: t('col', 'actions'),
+      key: 'actions', header: '',
       render: r => (
-        <div className="flex items-center gap-2">
-          {canView   && <Link href={`/quotation-requests/${r.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>}
-          {canDelete && <Button variant="delete" size="sm" onClick={() => handleDelete(r.id)} isLoading={deleteMutation.isPending}>{t('btn', 'delete')}</Button>}
-        </div>
+        <RowActions actions={[
+          { label: 'View',   href: `/quotation-requests/${r.id}`, hidden: !canView },
+          { separator: true, hidden: !canDelete } as const,
+          { label: 'Delete', onClick: () => handleDelete(r.id), variant: 'danger', hidden: !canDelete },
+        ]} />
       ),
     },
   ];
