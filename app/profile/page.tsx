@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersApi } from '@/lib/api/users';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button, PageHeader, PageShell } from '@/components/ui';
@@ -20,6 +20,7 @@ const roleLabels: Record<string, string> = {
 export default function ProfilePage() {
   const t = useT();
   const { user: authUser } = useAuth();
+  const queryClient = useQueryClient();
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({
     first_name: '',
@@ -63,6 +64,7 @@ export default function ProfilePage() {
       toast('Profile updated successfully!', 'success');
       cancelEdit();
       refetch();
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
     },
     onError: (error: any) => {
       toast(getApiError(error, 'Failed to update profile'), 'error');

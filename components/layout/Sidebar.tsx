@@ -362,12 +362,15 @@ export default function Sidebar() {
                 border: '1px solid rgba(247,168,180,0.22)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0,
+                overflow: 'hidden',
                 fontSize: 10,
                 fontWeight: 700,
                 color: 'rgba(247,168,180,0.90)',
                 letterSpacing: '0.02em',
               }}>
-                {initials || '?'}
+                {(user as any).avatar_url ? (
+                  <img src={(user as any).avatar_url} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (initials || '?')}
               </div>
               {/* Name + role */}
               <div style={{ flex: 1, minWidth: 0 }}>
