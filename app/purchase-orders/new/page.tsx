@@ -470,10 +470,14 @@ Terms & Conditions:
                 <span style={{ color: 'var(--info-banner-text)' }}>Title:</span>{' '}
                 <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{purchaseRequest.title}</span>
               </div>
-              {purchaseRequest.project_code && (
+              {(purchaseRequest.project || purchaseRequest.project_code) && (
                 <div>
                   <span style={{ color: 'var(--info-banner-text)' }}>Project:</span>{' '}
-                  <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{purchaseRequest.project_code}</span>
+                  <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>
+                    {typeof purchaseRequest.project === 'object' && purchaseRequest.project
+                      ? purchaseRequest.project.name
+                      : purchaseRequest.project_code}
+                  </span>
                 </div>
               )}
             </div>
