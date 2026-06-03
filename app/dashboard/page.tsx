@@ -134,7 +134,7 @@ export default function DashboardPage() {
 
 /* ─── Main content ───────────────────────────────────────────────── */
 function DashboardContent() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const router = useRouter();
   const t = useT();
 
@@ -155,9 +155,9 @@ function DashboardContent() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login');
+      logout();
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, logout]);
 
   if (!isAuthenticated) {
     return null;
