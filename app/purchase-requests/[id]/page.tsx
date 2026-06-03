@@ -105,9 +105,10 @@ export default function PurchaseRequestDetailPage() {
     onError: () => toast('Failed to unlock additional order', 'error'),
   });
 
-  const canManageAdditionalOrders = isSuperAdmin ||
+  const canManageAdditionalOrders =
     user?.role === 'procurement_manager' ||
-    user?.role === 'super_admin';
+    user?.role === 'super_admin' ||
+    user?.is_platform_admin === true;
   const canApprove = isSuperuser || ((hasPermission('purchase_request', 'approve') ?? false) && 
                      user?.role !== 'procurement_officer' && 
                      user?.role !== 'site_engineer');
