@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '@/lib/store/auth-store';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:9000/api';
 
@@ -64,18 +65,14 @@ apiClient.interceptors.response.use(
         });
 
         const { access, refresh: newRefresh } = response.data;
-        localStorage.setItem('access_token', access);
-        if (newRefresh) localStorage.setItem('refresh_token', newRefresh);
-        // Keep cookie in sync — 30 min matches server ACCESS_TOKEN_LIFETIME
-        const exp = new Date(Date.now() + 30 * 60 * 1000).toUTCString();
-        document.cookie = `access_token=${access};expires=${exp};path=/;SameSite=Strict`;
+        // Sync store first (decodes JWT claims: tenant_id, modules, is_platform_admin)
+        useAuthStore.getState().setTokens(access, newRefresh || localStorage.getItem('refresh_token') || '');
         processRefreshQueue(access);
 
         originalRequest.headers.Authorization = `Bearer ${access}`;
         return apiClient(originalRequest);
       } catch {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        useAuthStore.getState().logout();
         window.location.href = '/login';
         return Promise.reject(error);
       } finally {
