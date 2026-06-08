@@ -76,13 +76,13 @@ function EditPurchaseOrderPageContent() {
   });
 
   const { data: suppliers } = useQuery({
-    queryKey: ['suppliers'],
-    queryFn: () => suppliersApi.getAll({ page: 1 }),
+    queryKey: ['suppliers-all-active'],
+    queryFn: () => suppliersApi.getAllActive(),
   });
 
   const { data: products } = useQuery({
-    queryKey: ['products'],
-    queryFn: () => productsApi.getAll({ page: 1 }),
+    queryKey: ['products-all'],
+    queryFn: () => productsApi.getAll({ page: 1, page_size: 1000 }),
   });
 
   useEffect(() => {
@@ -247,7 +247,7 @@ function EditPurchaseOrderPageContent() {
                 label={t('col', 'supplier')}
                 required
                 options={
-                  suppliers?.results?.map((supplier) => ({
+                  suppliers?.map((supplier) => ({
                     value: supplier.id,
                     label: supplier.name,
                     searchText: `${supplier.name} ${supplier.business_name || ''} ${supplier.contact_person || ''}`,
