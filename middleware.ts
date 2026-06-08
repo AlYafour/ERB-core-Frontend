@@ -47,9 +47,14 @@ export default function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL(dest, request.url));
       }
 
-      // Platform-admin guard: tenant users must not reach /super-admin/*
+      // Path 1 guard: company users must not reach /super-admin/*
       if (pathname.startsWith("/super-admin") && !isPlatformAdmin) {
         return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
+
+      // Path 2 guard: platform admins must not reach company dashboard
+      if (!pathname.startsWith("/super-admin") && isPlatformAdmin) {
+        return NextResponse.redirect(new URL("/super-admin", request.url));
       }
     }
   }

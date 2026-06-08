@@ -137,6 +137,14 @@ export default function CompanyLoginPage() {
     mutationFn: () => authApi.login(username, password),
     onSuccess: (data) => {
       setError('');
+      // Reject platform admins — they must use the platform login portal
+      try {
+        const claims = JSON.parse(atob(data.tokens.access.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        if (claims.is_platform_admin) {
+          setError('Platform administrators must use the Platform Admin Login, not the Company Login.');
+          return;
+        }
+      } catch { /* ignore decode errors — proceed normally */ }
       setAuth(data.user, data.tokens.access, data.tokens.refresh);
       window.location.replace('/dashboard');
     },
@@ -298,6 +306,12 @@ export default function CompanyLoginPage() {
               </button>
             </form>
 
+            <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--text-tertiary)' }}>
+              Platform administrator?{' '}
+              <a href="/platform-login" style={{ color: 'var(--text-secondary)', textDecoration: 'underline' }}>
+                Use Platform Login →
+              </a>
+            </div>
 
           </div>
         </div>
