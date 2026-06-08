@@ -1,12 +1,19 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { User } from '@/types';
+import { decodeJwt } from '@/lib/utils/jwt';
 
 interface AuthState {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  /** UUID of the tenant this user belongs to (from JWT claim). */
+  tenantId: string | null;
+  /** True for ERB platform staff who manage all tenants. */
+  isPlatformAdmin: boolean;
+  /** Module keys enabled for this user's tenant (from JWT claim). */
+  enabledModules: string[];
   setAuth: (user: User, accessToken: string, refreshToken: string) => void;
   setUser: (user: User) => void;
   setTokens: (accessToken: string, refreshToken: string) => void;
@@ -45,18 +52,49 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
+      tenantId: null,
+      isPlatformAdmin: false,
+      enabledModules: [],
+
       setAuth: (user, accessToken, refreshToken) => {
         saveTokens(accessToken, refreshToken);
-        set({ user, accessToken, refreshToken, isAuthenticated: true });
+        const claims = decodeJwt(accessToken);
+        set({
+          user,
+          accessToken,
+          refreshToken,
+          isAuthenticated: true,
+          tenantId: claims.tenant_id ?? null,
+          isPlatformAdmin: claims.is_platform_admin ?? false,
+          enabledModules: claims.modules ?? [],
+        });
       },
+
       setUser: (user) => set({ user }),
+
       setTokens: (accessToken, refreshToken) => {
         saveTokens(accessToken, refreshToken);
-        set({ accessToken, refreshToken });
+        const claims = decodeJwt(accessToken);
+        set({
+          accessToken,
+          refreshToken,
+          tenantId: claims.tenant_id ?? null,
+          isPlatformAdmin: claims.is_platform_admin ?? false,
+          enabledModules: claims.modules ?? [],
+        });
       },
+
       logout: () => {
         clearTokens();
-        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          isAuthenticated: false,
+          tenantId: null,
+          isPlatformAdmin: false,
+          enabledModules: [],
+        });
       },
     }),
     {
@@ -67,7 +105,15 @@ export const useAuthStore = create<AuthState>()(
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
+        tenantId: state.tenantId,
+        isPlatformAdmin: state.isPlatformAdmin,
+        enabledModules: state.enabledModules,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state?.accessToken && state?.isAuthenticated) {
+          setCookie('access_token', state.accessToken, 1);
+        }
+      },
     }
   )
 );
