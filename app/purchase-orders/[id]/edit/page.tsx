@@ -88,8 +88,12 @@ function EditPurchaseOrderPageContent() {
   useEffect(() => {
     if (order) {
       const supplierId = typeof order.supplier === 'object' ? order.supplier.id : order.supplier;
+      const prId = typeof order.purchase_request === 'object' ? (order.purchase_request as any)?.id : order.purchase_request;
+      const pqId = typeof order.purchase_quotation === 'object' ? (order.purchase_quotation as any)?.id : order.purchase_quotation;
       setFormData({
         supplier_id: supplierId,
+        purchase_request_id: prId ?? undefined,
+        purchase_quotation_id: pqId ?? undefined,
         order_date: order.order_date,
         delivery_date: order.delivery_date || '',
         delivery_method: order.delivery_method || '',
@@ -173,25 +177,33 @@ function EditPurchaseOrderPageContent() {
 
   const calculateSubtotal = () => {
     return items.reduce((sum, item) => {
-      const itemSubtotal = item.quantity * item.unit_price;
-      const discountAmount = itemSubtotal * ((item.discount ?? 0) / 100) || 0;
-      return sum + itemSubtotal - discountAmount;
+      const base = item.quantity * item.unit_price;
+      const disc = base * ((item.discount ?? 0) / 100);
+      return sum + base - disc;
+    }, 0);
+  };
+
+  const calculateItemVAT = () => {
+    return items.reduce((sum, item) => {
+      const base = item.quantity * item.unit_price;
+      const disc = base * ((item.discount ?? 0) / 100);
+      return sum + (base - disc) * ((item.tax_rate ?? 0) / 100);
     }, 0);
   };
 
   const calculateTaxAmount = () => {
-    const subtotal = calculateSubtotal();
-    const discountAmount = subtotal * ((formData.discount ?? 0) / 100) || 0;
-    const afterDiscount = subtotal - discountAmount;
+    const subtotalWithVAT = calculateSubtotal() + calculateItemVAT();
+    const discountAmount = subtotalWithVAT * ((formData.discount ?? 0) / 100) || 0;
+    const afterDiscount = subtotalWithVAT - discountAmount;
     return afterDiscount * ((formData.tax_rate ?? 0) / 100) || 0;
   };
 
   const calculateTotal = () => {
-    const subtotal = calculateSubtotal();
-    const discountAmount = subtotal * ((formData.discount ?? 0) / 100) || 0;
-    const afterDiscount = subtotal - discountAmount;
-    const taxAmount = afterDiscount * ((formData.tax_rate ?? 0) / 100) || 0;
-    return afterDiscount + taxAmount;
+    const subtotalWithVAT = calculateSubtotal() + calculateItemVAT();
+    const discountAmount = subtotalWithVAT * ((formData.discount ?? 0) / 100) || 0;
+    const afterDiscount = subtotalWithVAT - discountAmount;
+    const orderTax = afterDiscount * ((formData.tax_rate ?? 0) / 100) || 0;
+    return afterDiscount + orderTax;
   };
 
   if (isLoading) {
@@ -426,7 +438,8 @@ function EditPurchaseOrderPageContent() {
                   </thead>
                   <tbody>
                     {items.map((item, index) => {
-                      const product = products?.results?.find((p) => p.id === item.product_id);
+                      const product = products?.results?.find((p) => p.id === item.product_id)
+                        ?? order?.items?.find((oi) => (oi.product?.id ?? oi.product_id) === item.product_id)?.product;
                       const itemSubtotal = item.quantity * item.unit_price;
                       const discountAmount = itemSubtotal * ((item.discount ?? 0) / 100) || 0;
                       const afterDiscount = itemSubtotal - discountAmount;
@@ -593,14 +606,24 @@ function EditPurchaseOrderPageContent() {
                   <span style={{ color: 'var(--text-secondary)' }}>Subtotal:</span>
                   <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateSubtotal())}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Discount:</span>
-                  <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateSubtotal() * ((formData.discount ?? 0) / 100) || 0)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Tax:</span>
-                  <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateTaxAmount())}</span>
-                </div>
+                {calculateItemVAT() > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>VAT:</span>
+                    <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateItemVAT())}</span>
+                  </div>
+                )}
+                {(formData.discount ?? 0) > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Discount:</span>
+                    <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-danger)' }}>-{formatPrice((calculateSubtotal() + calculateItemVAT()) * ((formData.discount ?? 0) / 100))}</span>
+                  </div>
+                )}
+                {(formData.tax_rate ?? 0) > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Additional Tax ({formData.tax_rate}%):</span>
+                    <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateTaxAmount())}</span>
+                  </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-2)', fontSize: 'var(--text-base)' }}>
                   <span style={{ fontWeight: 'var(--weight-bold)' }}>Total:</span>
                   <span style={{ fontWeight: 'var(--weight-bold)' }}>{formatPrice(calculateTotal())}</span>
