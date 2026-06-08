@@ -63,7 +63,7 @@ export default function PurchaseRequestsPage() {
   const approveMutation = useMutation({
     mutationFn: purchaseRequestsApi.approve,
     onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['purchase-requests'] }); queryClient.invalidateQueries({ queryKey: ['pending-count'] }); toast('Request approved', 'success'); },
-    onError:    () => toast('Failed to approve request', 'error'),
+    onError:    (e: unknown) => toast(getApiError(e, 'Failed to approve request'), 'error'),
   });
 
   const rejectMutation = useMutation({
@@ -75,13 +75,13 @@ export default function PurchaseRequestsPage() {
   const deleteMutation = useMutation({
     mutationFn: purchaseRequestsApi.delete,
     onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['purchase-requests'] }); queryClient.invalidateQueries({ queryKey: ['pending-count'] }); toast('Request deleted', 'success'); },
-    onError:    () => toast('Failed to delete request', 'error'),
+    onError:    (e: unknown) => toast(getApiError(e, 'Failed to delete request'), 'error'),
   });
 
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: number[]) => { await Promise.all(ids.map(id => purchaseRequestsApi.delete(id))); },
     onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['purchase-requests'] }); queryClient.invalidateQueries({ queryKey: ['pending-count'] }); toast(`${selectedItems.size} request(s) deleted`, 'success'); tableState.clearSelection(); },
-    onError:    () => toast('Failed to delete some requests', 'error'),
+    onError:    (e: unknown) => toast(getApiError(e, 'Failed to delete some requests'), 'error'),
   });
 
   const handleApprove = async (id: number) => { if (await confirm('Approve this request?')) approveMutation.mutate(id); };
@@ -128,6 +128,41 @@ export default function PurchaseRequestsPage() {
     {
       key: 'status', header: t('col', 'status'),
       render: r => <Badge variant={PR_STATUS[r.status] ?? 'info'}>{t('status', r.status as any) || r.status}</Badge>,
+    },
+    {
+      key: 'procurement', header: 'Procurement',
+      render: r => {
+        if (r.status !== 'approved') return <span style={{ color: 'var(--text-muted)' }}>—</span>;
+        const hasQR = r.has_quotation_requests;
+        const hasPO = r.has_purchase_orders;
+        if (!hasQR && !hasPO) {
+          return (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '4px',
+              padding: '2px 8px', borderRadius: '999px', fontSize: 'var(--text-xs)', fontWeight: 600,
+              background: 'rgba(217,119,6,0.12)', color: 'rgb(180,83,9)',
+            }}>
+              ⚠ Not Started
+            </span>
+          );
+        }
+        return (
+          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+            {hasQR && (
+              <span style={{
+                padding: '2px 8px', borderRadius: '999px', fontSize: 'var(--text-xs)', fontWeight: 600,
+                background: 'rgba(59,130,246,0.12)', color: 'rgb(29,78,216)',
+              }}>QR</span>
+            )}
+            {hasPO && (
+              <span style={{
+                padding: '2px 8px', borderRadius: '999px', fontSize: 'var(--text-xs)', fontWeight: 600,
+                background: 'rgba(34,197,94,0.12)', color: 'rgb(21,128,61)',
+              }}>LPO</span>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: 'actions', header: '',
