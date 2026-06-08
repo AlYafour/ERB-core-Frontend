@@ -1,0 +1,177 @@
+/* ================================================================
+   DARK THEME — deep charcoal, enterprise-grade.
+   NO aurora. NO glass. NO glow. NO pure black.
+   Charcoal base: #18181B (zinc-900) — never #000.
+   Inspired by Linear / GitHub / Stripe dark modes.
+   ================================================================ */
+[data-theme="dark"] {
+
+  /* Surfaces — deep charcoal stack */
+  --surface-app:       var(--zinc-900);     /* #18181B — app bg */
+  --surface-base:      #1C1C20;             /* card/panel base */
+  --surface-raised:    #212126;             /* raised surfaces */
+  --surface-overlay:   #27272C;             /* modals, popovers */
+  --surface-subtle:    #27272C;             /* inset backgrounds */
+  --surface-inset:     var(--zinc-900);
+  --surface-primary:   #1C1C20;
+  --surface-secondary: #27272C;
+
+  /* Text */
+  --text-primary:    var(--zinc-50);     /* #FAFAFA */
+  --text-secondary:  var(--zinc-400);    /* #A1A1AA */
+  --text-tertiary:   var(--zinc-500);    /* #71717A */
+  --text-disabled:   var(--zinc-600);    /* #52525B */
+  --text-brand:      var(--wine-400);
+
+  /* Border — low contrast, subtle depth */
+  --border-subtle:   #2E2E33;
+  --border-default:  #3A3A42;
+  --border-strong:   var(--zinc-600);    /* #52525B */
+  --border-focus:    var(--wine-400);
+
+  /* Brand */
+  --brand:           var(--wine-400);
+  --brand-hover:     var(--wine-300);
+  --brand-active:    var(--wine-200);
+  --brand-subtle:    rgba(124, 45, 58, 0.10);
+  --brand-muted:     rgba(124, 45, 58, 0.16);
+
+  /* Status */
+  --status-success:         #4ADE80;
+  --status-success-bg:      rgba(34, 197, 94, 0.08);
+  --status-success-border:  rgba(34, 197, 94, 0.18);
+  --status-warning:         #FBBF24;
+  --status-warning-bg:      rgba(245, 158, 11, 0.08);
+  --status-warning-border:  rgba(245, 158, 11, 0.18);
+  --status-error:           #F87171;
+  --status-error-bg:        rgba(239, 68, 68, 0.08);
+  --status-error-border:    rgba(239, 68, 68, 0.18);
+  --status-info:            var(--wine-400);
+  --status-info-bg:         rgba(184, 85, 112, 0.08);
+  --status-info-border:     rgba(184, 85, 112, 0.18);
+
+  /* Priority */
+  --priority-critical:        #FCA5A5;
+  --priority-critical-bg:     rgba(220, 38, 38, 0.10);
+  --priority-critical-border: rgba(220, 38, 38, 0.22);
+  --priority-high:            #FDBA74;
+  --priority-high-bg:         rgba(234, 88, 12, 0.10);
+  --priority-high-border:     rgba(234, 88, 12, 0.22);
+  --priority-medium:          #FDE047;
+  --priority-medium-bg:       rgba(202, 138, 4, 0.10);
+  --priority-medium-border:   rgba(202, 138, 4, 0.22);
+  --priority-low:             var(--zinc-400);
+  --priority-low-bg:          rgba(161, 161, 170, 0.10);
+  --priority-low-border:      rgba(161, 161, 170, 0.22);
+
+  /* Task status */
+  --task-draft:               var(--zinc-400);
+  --task-draft-bg:            rgba(161, 161, 170, 0.10);
+  --task-draft-border:        rgba(161, 161, 170, 0.22);
+  --task-assigned:            #93C5FD;
+  --task-assigned-bg:         rgba(37, 99, 235, 0.10);
+  --task-assigned-border:     rgba(37, 99, 235, 0.22);
+  --task-accepted:            #C4B5FD;
+  --task-accepted-bg:         rgba(124, 58, 237, 0.10);
+  --task-accepted-border:     rgba(124, 58, 237, 0.22);
+  --task-in_progress:         #FCD34D;
+  --task-in_progress-bg:      rgba(217, 119, 6, 0.10);
+  --task-in_progress-border:  rgba(217, 119, 6, 0.22);
+  --task-submitted:           #6EE7B7;
+  --task-submitted-bg:        rgba(5, 150, 105, 0.10);
+  --task-submitted-border:    rgba(5, 150, 105, 0.22);
+  --task-review:              #FDBA74;
+  --task-review-bg:           rgba(234, 88, 12, 0.10);
+  --task-review-border:       rgba(234, 88, 12, 0.22);
+  --task-approved:            #86EFAC;
+  --task-approved-bg:         rgba(22, 163, 74, 0.10);
+  --task-approved-border:     rgba(22, 163, 74, 0.22);
+  --task-rejected:            #FCA5A5;
+  --task-rejected-bg:         rgba(220, 38, 38, 0.10);
+  --task-rejected-border:     rgba(220, 38, 38, 0.22);
+  --task-closed:              var(--zinc-500);
+  --task-closed-bg:           rgba(113, 113, 122, 0.10);
+  --task-closed-border:       rgba(113, 113, 122, 0.22);
+
+  /* Sidebar — deep charcoal, slightly darker than base */
+  --sidebar-bg:             var(--zinc-925);   /* #141417 */
+  --sidebar-border:         #2A2A2F;
+  --sidebar-text:           var(--zinc-400);
+  --sidebar-text-hover:     var(--zinc-50);
+  --sidebar-hover:          rgba(255, 255, 255, 0.05);
+  --sidebar-active-bg:      rgba(124, 45, 58, 0.14);
+  --sidebar-active-text:    var(--wine-300);
+  --sidebar-section-label:  var(--zinc-600);
+
+  /* Navbar */
+  --navbar-bg:              var(--zinc-900);   /* #18181B */
+  --navbar-border:          #2A2A2F;
+
+  /* Input */
+  --input-bg:               #212126;
+  --input-border:           #3A3A42;
+  --input-placeholder:      var(--zinc-600);
+  --input-focus-border:     var(--wine-400);
+  --input-focus-ring:       rgba(184, 85, 112, 0.12);
+
+  /* Card — solid, no glass */
+  --card-bg:                #1C1C20;
+  --card-border:            #2E2E33;
+  --card-shadow:            0 1px 3px rgba(0, 0, 0, 0.20);
+
+  /* Table */
+  --table-header-bg:        var(--zinc-900);
+  --table-header-text:      var(--zinc-400);
+  --table-row-hover:        rgba(255, 255, 255, 0.03);
+  --table-border:           #2E2E33;
+
+  /* Dropdown */
+  --dropdown-bg:            #212126;
+  --dropdown-border:        #3A3A42;
+  --dropdown-shadow:        0 4px 16px rgba(0, 0, 0, 0.35), 0 1px 4px rgba(0, 0, 0, 0.25);
+  --dropdown-item-hover:    rgba(255, 255, 255, 0.05);
+  --dropdown-item-active:   rgba(124, 45, 58, 0.14);
+
+  /* Info banner */
+  --info-banner-bg:         rgba(124, 45, 58, 0.10);
+  --info-banner-border:     var(--wine-400);
+  --info-banner-text:       var(--wine-300);
+
+  /* Shadows */
+  --shadow-xs:  0 1px 2px 0 rgba(0, 0, 0, 0.18);
+  --shadow-sm:  0 1px 3px 0 rgba(0, 0, 0, 0.24), 0 1px 2px -1px rgba(0, 0, 0, 0.16);
+  --shadow-md:  0 4px 8px -2px rgba(0, 0, 0, 0.28), 0 2px 4px -2px rgba(0, 0, 0, 0.20);
+  --shadow-lg:  0 10px 20px -4px rgba(0, 0, 0, 0.32), 0 4px 8px -4px rgba(0, 0, 0, 0.24);
+  --shadow-xl:  0 20px 40px -8px rgba(0, 0, 0, 0.40), 0 8px 16px -6px rgba(0, 0, 0, 0.28);
+
+  /* Legacy overrides */
+  --bg-primary:          #1C1C20;
+  --bg-secondary:        var(--zinc-900);
+  --bg-tertiary:         #27272C;
+  --color-orange-500:    var(--wine-400);
+  --color-orange-600:    var(--wine-500);
+  --color-success:       var(--status-success);
+  --color-success-light: var(--status-success-bg);
+  --color-warning:       var(--status-warning);
+  --color-warning-light: var(--status-warning-bg);
+  --color-error:         var(--status-error);
+  --color-error-light:   var(--status-error-bg);
+  --color-info:          var(--status-info);
+  --color-info-light:    var(--status-info-bg);
+  --brand-orange:        var(--wine-400);
+  --brand-orange-hover:  var(--wine-300);
+  --background:          var(--surface-app);
+  --foreground:          var(--text-primary);
+  --border:              var(--border-subtle);
+  --border-primary:      var(--border-subtle);
+  --border-secondary:    var(--border-default);
+  --muted:               var(--card-bg);
+  --hover-surface:       var(--surface-subtle);
+  --accent:              var(--surface-subtle);
+  --accent-foreground:   var(--text-primary);
+  --secondary:           var(--surface-subtle);
+  --secondary-hover:     var(--border-subtle);
+  --primary:             var(--wine-400);
+  --primary-hover:       var(--wine-300);
+  --ring:                var(--wine-400);
+}

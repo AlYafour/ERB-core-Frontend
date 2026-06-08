@@ -1,0 +1,96 @@
+/* ================================================================
+   ANIMATIONS + KEYFRAMES
+   ================================================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(6px); opacity: 0; }
+  to   { transform: translateY(0);   opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-6px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes slideInFromRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* Alias used by .task-drawer-panel */
+@keyframes slideInRight {
+  from { transform: translateX(40px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.96); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+@keyframes fadeScaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50%     { opacity: 0.5; }
+}
+
+@keyframes skeleton-sweep {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+/* Auth-specific */
+@keyframes auth-float {
+  0%,100% { transform: translateY(0)    translateX(0); }
+  25%     { transform: translateY(-20px) translateX(10px); }
+  50%     { transform: translateY(-10px) translateX(-10px); }
+  75%     { transform: translateY(-30px) translateX(5px); }
+}
+
+@keyframes auth-pulse {
+  0%,100% { opacity: 0.3; transform: scale(1); }
+  50%     { opacity: 0.6; transform: scale(1.1); }
+}
+
+@keyframes auth-fade-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes auth-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes notif-ping {
+  0%        { transform: scale(1);   opacity: 0.7; }
+  75%, 100% { transform: scale(2.4); opacity: 0; }
+}
+
+/* Utility animation classes */
+.animate-fade-in   { animation: fadeIn  var(--duration-base) var(--ease-out) both; }
+.animate-slide-up  { animation: slideUp var(--duration-base) var(--ease-spring) both; }
+.animate-scale-in  { animation: scaleIn var(--duration-base) var(--ease-spring) both; }
+.animate-spin      { animation: spin 1s linear infinite; }
+.animate-pulse     { animation: pulse 2s ease-in-out infinite; }
+.animate-notif-ping { animation: notif-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite; }
+
