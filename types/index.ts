@@ -43,6 +43,9 @@ export interface User {
   /** Full PermissionSet object returned by the API */
   permission_set?: PermissionSet | null;
   created_at?: string;
+  /** SaaS multi-tenant fields */
+  is_platform_admin?: boolean;
+  tenant?: string | null;
 }
 
 export interface MunicipalViolation {
@@ -339,6 +342,24 @@ export interface PurchaseOrderItem {
   created_at?: string;
 }
 
+export interface POAmendmentRequest {
+  id: number;
+  purchase_order: number;
+  requested_by: number | null;
+  requested_by_name: string | null;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewed_by: number | null;
+  reviewed_by_name: string | null;
+  reviewed_at: string | null;
+  manager_notes: string;
+  revision_po: number | null;
+  revision_po_id: number | null;
+  revision_po_number: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PurchaseOrder {
   terms_and_conditions?: string;
   cost_code?: CostCode | null;
@@ -350,7 +371,7 @@ export interface PurchaseOrder {
   supplier: number | Supplier;
   order_date: string;
   delivery_date?: string;
-  status: 'draft' | 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
+  status: 'draft' | 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled' | 'amendment_requested' | 'superseded';
   subtotal: number;
   tax_rate: number;
   tax_amount: number;
@@ -375,6 +396,12 @@ export interface PurchaseOrder {
   project_location?: string | null;
   has_grn?: boolean;
   grns_count?: number;
+  revision_number?: number;
+  parent_po?: number | null;
+  parent_order_number?: string | null;
+  pending_amendment?: POAmendmentRequest | null;
+  latest_approved_amendment?: POAmendmentRequest | null;
+  revisions_count?: number;
   created_at: string;
   updated_at: string;
   items: PurchaseOrderItem[];

@@ -25,6 +25,8 @@ const statusColors: Record<string, string> = {
   rejected: 'badge-error',
   completed: 'badge-success',
   cancelled: 'badge-error',
+  amendment_requested: 'badge-warning',
+  superseded: 'badge-neutral',
 };
 
 const statusLabels: Record<string, string> = {
@@ -34,6 +36,8 @@ const statusLabels: Record<string, string> = {
   rejected: 'Rejected',
   completed: 'Completed',
   cancelled: 'Cancelled',
+  amendment_requested: 'Amendment Requested',
+  superseded: 'Superseded',
 };
 
 export default function PurchaseOrderDetailPage() {
@@ -44,6 +48,8 @@ export default function PurchaseOrderDetailPage() {
   const { user } = useAuth();
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [amendmentDialogOpen, setAmendmentDialogOpen] = useState(false);
+  const [rejectAmendmentOpen, setRejectAmendmentOpen] = useState(false);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['purchase-orders', id],
@@ -88,6 +94,42 @@ export default function PurchaseOrderDetailPage() {
     },
   });
 
+  const requestAmendmentMutation = useMutation({
+    mutationFn: (reason: string) => purchaseOrdersApi.requestAmendment(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      setAmendmentDialogOpen(false);
+      toast('Amendment request submitted. Awaiting manager review.', 'success');
+    },
+    onError: (error: any) => {
+      toast(getApiError(error, 'Failed to submit amendment request'), 'error');
+    },
+  });
+
+  const approveAmendmentMutation = useMutation({
+    mutationFn: () => purchaseOrdersApi.approveAmendment(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      toast('Amendment approved. Revision draft created.', 'success');
+      router.push(`/purchase-orders/${data.revision_po.id}`);
+    },
+    onError: (error: any) => {
+      toast(getApiError(error, 'Failed to approve amendment'), 'error');
+    },
+  });
+
+  const rejectAmendmentMutation = useMutation({
+    mutationFn: (manager_notes: string) => purchaseOrdersApi.rejectAmendment(id, manager_notes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      setRejectAmendmentOpen(false);
+      toast('Amendment request rejected.', 'info');
+    },
+    onError: (error: any) => {
+      toast(getApiError(error, 'Failed to reject amendment'), 'error');
+    },
+  });
+
   const { hasPermission } = usePermissions();
   const isSuperuser = user?.is_superuser ?? false;
 
@@ -103,7 +145,12 @@ export default function PurchaseOrderDetailPage() {
   const canEdit = order && canUpdate &&
     (order.status === 'draft' || order.status === 'pending' || order.status === 'rejected');
   const canCancelOrder = order && canCancel &&
-    order.status !== 'completed' && order.status !== 'cancelled';
+    order.status !== 'completed' && order.status !== 'cancelled' &&
+    order.status !== 'superseded';
+  const canRequestAmendment = order && canUpdate &&
+    order.status === 'approved' && !order.pending_amendment;
+  const canManageAmendment = order && canApprove &&
+    order.status === 'amendment_requested';
 
   if (isLoading) {
     return (
@@ -166,6 +213,11 @@ export default function PurchaseOrderDetailPage() {
                 {order.status === 'approved' && canCreateInvoicePerm && !order.has_grn && (
                   <Button variant="secondary" size="sm" disabled>Create Invoice (GRN Required)</Button>
                 )}
+                {canRequestAmendment && (
+                  <Button variant="secondary" size="sm" onClick={() => setAmendmentDialogOpen(true)}>
+                    Request Amendment
+                  </Button>
+                )}
               </div>
             }
           />
@@ -182,6 +234,94 @@ export default function PurchaseOrderDetailPage() {
               purchaseOrder: { id: order.id, order_number: order.order_number },
             }}
           />
+
+          {/* ── Revision banner (this PO is a revision of an original) ── */}
+          {order.revision_number != null && order.revision_number > 0 && order.parent_po && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '10px 16px', borderRadius: 8,
+              background: '#eff6ff', border: '1px solid #93c5fd', color: '#1d4ed8',
+              fontSize: 'var(--text-sm)',
+            }}>
+              <span style={{ fontSize: 16 }}>📋</span>
+              <span>
+                This is <strong>Revision R{order.revision_number}</strong> of{' '}
+                <Link href={`/purchase-orders/${order.parent_po}`} style={{ fontWeight: 700, textDecoration: 'underline', color: '#1d4ed8' }}>
+                  {order.parent_order_number || `PO #${order.parent_po}`}
+                </Link>
+                . Edit the items then submit for approval.
+              </span>
+            </div>
+          )}
+
+          {/* ── Superseded banner ── */}
+          {order.status === 'superseded' && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '10px 16px', borderRadius: 8,
+              background: '#f3f4f6', border: '1px solid #d1d5db', color: '#6b7280',
+              fontSize: 'var(--text-sm)',
+            }}>
+              <span style={{ fontSize: 16 }}>🔁</span>
+              <span>
+                This LPO has been <strong>superseded</strong> by an amendment.
+                {order.latest_approved_amendment?.revision_po_id && (
+                  <>
+                    {' '}See revision{' '}
+                    <Link href={`/purchase-orders/${order.latest_approved_amendment.revision_po_id}`} style={{ fontWeight: 700, textDecoration: 'underline', color: '#374151' }}>
+                      {order.latest_approved_amendment.revision_po_number}
+                    </Link>.
+                  </>
+                )}
+              </span>
+            </div>
+          )}
+
+          {/* ── Amendment requested banner ── */}
+          {order.status === 'amendment_requested' && order.pending_amendment && (
+            <div style={{
+              padding: '14px 16px', borderRadius: 8,
+              background: '#fffbeb', border: '1px solid #fcd34d',
+              fontSize: 'var(--text-sm)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: 16 }}>⚠️</span>
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 4 }}>
+                      Amendment Requested by {order.pending_amendment.requested_by_name || 'a team member'}
+                    </div>
+                    <div style={{ color: '#78350f', lineHeight: 1.5 }}>
+                      <strong>Reason:</strong> {order.pending_amendment.reason}
+                    </div>
+                    <div style={{ color: '#a16207', fontSize: 'var(--text-xs)', marginTop: 4 }}>
+                      Requested on {new Date(order.pending_amendment.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </div>
+                  </div>
+                </div>
+                {canManageAmendment && (
+                  <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                    <Button
+                      variant="success"
+                      size="sm"
+                      onClick={() => approveAmendmentMutation.mutate()}
+                      isLoading={approveAmendmentMutation.isPending}
+                    >
+                      Approve Amendment
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setRejectAmendmentOpen(true)}
+                      disabled={rejectAmendmentMutation.isPending}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Order Information */}
           <DetailCard title="Order Information">
@@ -368,6 +508,22 @@ export default function PurchaseOrderDetailPage() {
             onConfirm={(reason) => cancelMutation.mutate(reason)}
             title="Cancel Purchase Order"
             message="Please provide a reason for cancelling this purchase order."
+          />
+
+          <RejectionReasonDialog
+            isOpen={amendmentDialogOpen}
+            onClose={() => setAmendmentDialogOpen(false)}
+            onConfirm={(reason) => requestAmendmentMutation.mutate(reason)}
+            title="Request Amendment"
+            message="Describe what needs to be changed in this Purchase Order. The manager will review your request."
+          />
+
+          <RejectionReasonDialog
+            isOpen={rejectAmendmentOpen}
+            onClose={() => setRejectAmendmentOpen(false)}
+            onConfirm={(reason) => rejectAmendmentMutation.mutate(reason)}
+            title="Reject Amendment Request"
+            message="Please provide a reason for rejecting this amendment request."
           />
         </PageShell>
       </div>

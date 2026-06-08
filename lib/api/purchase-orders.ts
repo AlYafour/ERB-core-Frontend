@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { PurchaseOrder, PurchaseOrderItem, PaginatedResponse } from '@/types';
+import { PurchaseOrder, PurchaseOrderItem, POAmendmentRequest, PaginatedResponse } from '@/types';
 
 export const purchaseOrdersApi = {
   getAll: async (params?: {
@@ -82,6 +82,21 @@ export const purchaseOrdersApi = {
 
   cancel: async (id: number, cancel_reason: string): Promise<PurchaseOrder> => {
     const response = await apiClient.post(`/purchase-orders/${id}/cancel/`, { cancel_reason });
+    return response.data;
+  },
+
+  requestAmendment: async (id: number, reason: string): Promise<PurchaseOrder> => {
+    const response = await apiClient.post(`/purchase-orders/${id}/request-amendment/`, { reason });
+    return response.data;
+  },
+
+  approveAmendment: async (id: number, manager_notes?: string): Promise<{ detail: string; revision_po: PurchaseOrder }> => {
+    const response = await apiClient.post(`/purchase-orders/${id}/approve-amendment/`, { manager_notes: manager_notes ?? '' });
+    return response.data;
+  },
+
+  rejectAmendment: async (id: number, manager_notes: string): Promise<PurchaseOrder> => {
+    const response = await apiClient.post(`/purchase-orders/${id}/reject-amendment/`, { manager_notes });
     return response.data;
   },
 };
