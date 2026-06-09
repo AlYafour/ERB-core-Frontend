@@ -5,8 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
 import { PurchaseOrder, PurchaseOrderItem, PurchaseRequest, Supplier } from '@/types';
-import { fmt, fmtDate, StatusBadge, COMPANY } from '@/components/print/PrintTemplate';
-import Image from 'next/image';
+import { fmt, fmtDate, StatusBadge } from '@/components/print/PrintTemplate';
+import { useTenantBranding } from '@/lib/hooks/use-tenant';
 
 function toWords(n: number): string {
   if (!n || isNaN(n) || n <= 0) return 'Zero Dirhams Only';
@@ -48,6 +48,15 @@ function InfoLabel({ text }: { text: string }) {
 export default function PrintLPOPage() {
   const { id } = useParams<{ id: string }>();
   const [hasToken, setHasToken] = useState(false);
+  const { data: branding } = useTenantBranding();
+  const company = {
+    name:    branding?.company_legal_name || '',
+    address: branding?.company_address    || '',
+    phone:   branding?.company_phone      || '',
+    email:   branding?.company_email      || '',
+    trn:     branding?.company_trn        || '',
+    logo:    branding?.logo_url           || '',
+  };
 
   useEffect(() => { setHasToken(!!localStorage.getItem('access_token')); }, []);
 
@@ -190,18 +199,20 @@ export default function PrintLPOPage() {
 
             {/* Logo */}
             <div style={{ flexShrink:0, paddingTop:2, display:'flex', alignItems:'flex-start' }}>
-              <Image src={COMPANY.logo} alt="Logo" width={64} height={64}
-                style={{ objectFit:'contain', display:'block' }} priority unoptimized />
+              {company.logo
+                ? <img src={company.logo} alt="Logo" style={{ width:64, height:64, objectFit:'contain', display:'block' }} />
+                : <div style={{ width:64, height:64, display:'flex', alignItems:'center', justifyContent:'center', background:'#f1f5f9', color:GREY, fontSize:'9pt', fontWeight:700 }}>LOGO</div>
+              }
             </div>
 
             {/* Company + project/engineer/costcode */}
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontSize:'12.5pt', fontWeight:800, color:NAVY,
-                letterSpacing:'-.3px', lineHeight:1.2 }}>{COMPANY.name}</div>
+                letterSpacing:'-.3px', lineHeight:1.2 }}>{company.name}</div>
               <div style={{ fontSize:'7.5pt', color:GREY, marginTop:2, lineHeight:1.6 }}>
-                {COMPANY.address} &nbsp;·&nbsp; {COMPANY.phone} &nbsp;·&nbsp; {COMPANY.email}
+                {company.address} &nbsp;·&nbsp; {company.phone} &nbsp;·&nbsp; {company.email}
               </div>
-              <div style={{ fontSize:'7.5pt', color:GREY }}>TRN: {COMPANY.trn}</div>
+              <div style={{ fontSize:'7.5pt', color:GREY }}>TRN: {company.trn}</div>
 
               {/* Project / Engineer / Cost Code — compact chips row */}
               {(po.project_name || po.pr_created_by_name || po.cost_code) && (
@@ -511,9 +522,8 @@ export default function PrintLPOPage() {
                   {/* Stamp — centred in the top area */}
                   <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
                     {s.stamp && (
-                      <Image src={s.stamp} alt="stamp" width={80} height={80}
-                        style={{ objectFit:'contain', opacity:0.78, transform:'rotate(-8deg)' }}
-                        unoptimized priority />
+                      <img src={s.stamp} alt="stamp"
+                        style={{ width:80, height:80, objectFit:'contain', opacity:0.78, transform:'rotate(-8deg)' }} />
                     )}
                   </div>
                   {/* Label + name — pinned to bottom, same height for all */}
@@ -534,7 +544,7 @@ export default function PrintLPOPage() {
               marginTop:10, paddingTop:7, borderTop:`1px solid ${BORDER}`,
               fontSize:'6.5pt', color:'#94a3b8', gap:12 }}>
               <span>This document is computer-generated and valid without a handwritten signature unless otherwise stated.</span>
-              <span style={{ whiteSpace:'nowrap' }}>{COMPANY.name} · {COMPANY.address}</span>
+              <span style={{ whiteSpace:'nowrap' }}>{company.name} · {company.address}</span>
             </div>
           </div>
 

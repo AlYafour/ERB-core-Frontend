@@ -58,6 +58,7 @@ export default function CompanyLoginPage() {
     onSuccess: (data, code) => {
       const upper = code.toUpperCase();
       lsSet(LAST_CODE_KEY, upper);
+      lsSet(LAST_VALID_KEY, 'true');
       lsSet(LAST_NAME_KEY, data.tenant_name ?? '');
       if (data.branding) lsSet(LAST_BRANDING_KEY, JSON.stringify(data.branding));
       setError('');
@@ -117,6 +118,13 @@ export default function CompanyLoginPage() {
       }
       setStep(2);
       setIsInitializing(false);
+      // Background refresh — silently update branding with latest from server
+      tenantApi.validateCompanyCode(savedCode).then((data) => {
+        if (data.branding) {
+          setBranding(data.branding);
+          lsSet(LAST_BRANDING_KEY, JSON.stringify(data.branding));
+        }
+      }).catch(() => { /* silent — already showing step 2 */ });
       return;
     }
 
