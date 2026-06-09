@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { purchaseRequestsApi } from '@/lib/api/purchase-requests';
 import { productsApi } from '@/lib/api/products';
@@ -35,6 +35,9 @@ export default function NewPurchaseRequestPage() {
 function NewPurchaseRequestPageContent() {
   const t = useT();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const draftId = searchParams.get('draft_id') ? Number(searchParams.get('draft_id')) : null;
+
   const [formData, setFormData] = useState<PurchaseRequestFormData>({
     project_id: undefined,
     project_code: '',
@@ -63,6 +66,37 @@ function NewPurchaseRequestPageContent() {
     reason: '',
     notes: '',
   });
+
+  // Load existing draft for editing
+  const { data: draftData } = useQuery({
+    queryKey: ['purchase-request', draftId],
+    queryFn: () => purchaseRequestsApi.getById(draftId!),
+    enabled: !!draftId,
+  });
+
+  useEffect(() => {
+    if (!draftData || draftData.status !== 'draft') return;
+    const proj = typeof draftData.project === 'object' ? draftData.project as Project : null;
+    setFormData({
+      project_id: proj?.id ?? (draftData.project_id as number | undefined) ?? undefined,
+      project_code: draftData.project_code || '',
+      title: draftData.title || '',
+      request_date: draftData.request_date,
+      required_by: draftData.required_by,
+      notes: draftData.notes || '',
+    });
+    if (draftData.items?.length) {
+      setItems(draftData.items.map((item: PurchaseRequestItem) => ({
+        product_id: typeof item.product === 'object' ? (item.product as Product).id : (item as any).product_id ?? 0,
+        product: typeof item.product === 'object' ? item.product as Product : undefined,
+        quantity: item.quantity,
+        unit: item.unit || '',
+        project_site: (item as any).project_site || '',
+        reason: (item as any).reason || '',
+        notes: item.notes || '',
+      })));
+    }
+  }, [draftData]);
 
   // Fetch projects
   const { data: projectsData } = useQuery({
@@ -127,11 +161,48 @@ function NewPurchaseRequestPageContent() {
   const mutation = useMutation({
     mutationFn: purchaseRequestsApi.create,
     onSuccess: () => {
-      toast('Purchase request created successfully!', 'success');
+      toast('Purchase request submitted for approval!', 'success');
       router.push('/purchase-requests');
     },
     onError: (error: any) => {
       toast(getApiError(error, 'Failed to create purchase request'), 'error');
+    },
+  });
+
+  const draftMutation = useMutation({
+    mutationFn: (data: Parameters<typeof purchaseRequestsApi.create>[0]) =>
+      purchaseRequestsApi.create({ ...data, status: 'draft' }),
+    onSuccess: () => {
+      toast('Draft saved — you can submit it later from the list.', 'info');
+      router.push('/purchase-requests?status=draft');
+    },
+    onError: (error: any) => {
+      toast(getApiError(error, 'Failed to save draft'), 'error');
+    },
+  });
+
+  const submitFromDraftMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Parameters<typeof purchaseRequestsApi.create>[0] }) => {
+      await purchaseRequestsApi.updateDraft(id, data);
+      return purchaseRequestsApi.submit(id);
+    },
+    onSuccess: () => {
+      toast('Request submitted for approval!', 'success');
+      router.push('/purchase-requests?status=pending');
+    },
+    onError: (error: any) => {
+      toast(getApiError(error, 'Failed to submit request'), 'error');
+    },
+  });
+
+  const updateDraftMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Parameters<typeof purchaseRequestsApi.updateDraft>[1] }) =>
+      purchaseRequestsApi.updateDraft(id, data),
+    onSuccess: () => {
+      toast('Draft saved.', 'info');
+    },
+    onError: (error: any) => {
+      toast(getApiError(error, 'Failed to save draft'), 'error');
     },
   });
 
@@ -238,23 +309,41 @@ function NewPurchaseRequestPageContent() {
     setItems(updatedItems);
   };
 
+  const buildItemsPayload = () => items.map((item) => ({
+    product_id: item.product_id,
+    quantity: item.quantity,
+    unit: item.unit,
+    project_site: item.project_site || '',
+    reason: item.reason,
+    notes: item.notes,
+  }));
+
+  const isAnyPending =
+    mutation.isPending || draftMutation.isPending ||
+    submitFromDraftMutation.isPending || updateDraftMutation.isPending;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0) {
       toast('Please add at least one product', 'warning');
       return;
     }
-    
-    const itemsToSubmit = items.map((item) => ({
-      product_id: item.product_id,
-      quantity: item.quantity,
-      unit: item.unit,
-      project_site: item.project_site || '',
-      reason: item.reason,
-      notes: item.notes,
-    }));
-    
-    mutation.mutate(toPurchaseRequestCreateData(formData, itemsToSubmit));
+    const payload = toPurchaseRequestCreateData(formData, buildItemsPayload());
+    if (draftId) {
+      submitFromDraftMutation.mutate({ id: draftId, data: payload });
+    } else {
+      mutation.mutate(payload);
+    }
+  };
+
+  const handleSaveAsDraft = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const payload = toPurchaseRequestCreateData(formData, buildItemsPayload());
+    if (draftId) {
+      updateDraftMutation.mutate({ id: draftId, data: payload });
+    } else {
+      draftMutation.mutate(payload);
+    }
   };
 
   const SectionHeader = ({ label, children }: { label: string; children?: React.ReactNode }) => (
@@ -278,12 +367,12 @@ function NewPurchaseRequestPageContent() {
     <MainLayout>
       <PageShell>
         <PageHeader
-          title={t('page', 'newPR')}
-          description="Create a new purchase request with required products"
+          title={draftId ? 'Edit Draft Request' : t('page', 'newPR')}
+          description={draftId ? 'Update your draft and submit when ready' : 'Create a new purchase request with required products'}
           backHref="/purchase-requests"
           breadcrumbs={[
             { label: t('page', 'purchaseRequests'), href: '/purchase-requests' },
-            { label: t('page', 'newPR') },
+            { label: draftId ? 'Edit Draft' : t('page', 'newPR') },
           ]}
         />
 
@@ -536,15 +625,29 @@ function NewPurchaseRequestPageContent() {
             borderTop: '1px solid var(--border-subtle)',
             background: 'var(--surface-subtle)',
           }}>
-            <Button type="submit" variant="primary" disabled={mutation.isPending} isLoading={mutation.isPending}>
-              {t('btn', 'save')}
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={isAnyPending}
+              isLoading={mutation.isPending || submitFromDraftMutation.isPending}
+            >
+              Submit for Approval
             </Button>
-            <Button type="button" variant="secondary" onClick={() => router.push('/purchase-requests')}>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={isAnyPending}
+              isLoading={draftMutation.isPending || updateDraftMutation.isPending}
+              onClick={handleSaveAsDraft}
+            >
+              Save as Draft
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => router.push('/purchase-requests')}>
               {t('btn', 'cancel')}
             </Button>
             {items.length > 0 && (
               <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-tertiary)' }}>
-                {items.length} product{items.length !== 1 ? 's' : ''} ready to submit
+                {items.length} product{items.length !== 1 ? 's' : ''} added
               </span>
             )}
           </div>

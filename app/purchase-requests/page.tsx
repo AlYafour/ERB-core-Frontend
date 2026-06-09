@@ -60,6 +60,12 @@ export default function PurchaseRequestsPage() {
     staleTime: 2 * 60 * 1000,
   });
 
+  const submitDraftMutation = useMutation({
+    mutationFn: purchaseRequestsApi.submit,
+    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['purchase-requests'] }); queryClient.invalidateQueries({ queryKey: ['pending-count'] }); toast('Request submitted for approval', 'success'); },
+    onError:    (e: unknown) => toast(getApiError(e, 'Failed to submit request'), 'error'),
+  });
+
   const approveMutation = useMutation({
     mutationFn: purchaseRequestsApi.approve,
     onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['purchase-requests'] }); queryClient.invalidateQueries({ queryKey: ['pending-count'] }); toast('Request approved', 'success'); },
@@ -84,9 +90,10 @@ export default function PurchaseRequestsPage() {
     onError:    (e: unknown) => toast(getApiError(e, 'Failed to delete some requests'), 'error'),
   });
 
-  const handleApprove = async (id: number) => { if (await confirm('Approve this request?')) approveMutation.mutate(id); };
-  const handleReject  = (id: number) => { setRejectingId(id); setRejectDialogOpen(true); };
-  const handleDelete  = async (id: number) => { if (await confirm('Delete this request?')) deleteMutation.mutate(id); };
+  const handleApprove     = async (id: number) => { if (await confirm('Approve this request?')) approveMutation.mutate(id); };
+  const handleReject      = (id: number) => { setRejectingId(id); setRejectDialogOpen(true); };
+  const handleDelete      = async (id: number) => { if (await confirm('Delete this request?')) deleteMutation.mutate(id); };
+  const handleSubmitDraft = async (id: number) => { if (await confirm('Submit this draft for approval?')) submitDraftMutation.mutate(id); };
   const handleBulkDelete = async () => { if (selectedItems.size && await confirm(`Delete ${selectedItems.size} request(s)?`)) bulkDeleteMutation.mutate(Array.from(selectedItems)); };
 
   const filterFields: FilterField[] = [
@@ -95,7 +102,7 @@ export default function PurchaseRequestsPage() {
     { name: 'project',              label: 'Project',           type: 'select', group: 'Request Info',
       options: projectsData?.results?.map((p: Project) => ({ value: p.id, label: `${p.name} (${p.code})` })) || [] },
     { name: 'status',               label: 'Status',            type: 'select', group: 'Status',
-      options: [{ value: 'pending', label: 'Pending' }, { value: 'approved', label: 'Approved' }, { value: 'rejected', label: 'Rejected' }] },
+      options: [{ value: 'draft', label: 'Draft' }, { value: 'pending', label: 'Pending' }, { value: 'approved', label: 'Approved' }, { value: 'rejected', label: 'Rejected' }] },
     { name: 'request_date_after',   label: 'Request Date From', type: 'date',   group: 'Dates' },
     { name: 'request_date_before',  label: 'Request Date To',   type: 'date',   group: 'Dates' },
     { name: 'required_by_after',    label: 'Required By From',  type: 'date',   group: 'Dates' },
@@ -168,6 +175,8 @@ export default function PurchaseRequestsPage() {
       key: 'actions', header: '',
       render: r => (
         <RowActions actions={[
+          { label: 'Submit',  onClick: () => handleSubmitDraft(r.id), hidden: r.status !== 'draft' || r.created_by !== user?.id },
+          { label: 'Edit',    onClick: () => router.push(`/purchase-requests/new?draft_id=${r.id}`), hidden: r.status !== 'draft' || r.created_by !== user?.id },
           { label: 'Approve', onClick: () => handleApprove(r.id), hidden: r.status !== 'pending' || !canApprove },
           { label: 'Reject',  onClick: () => handleReject(r.id),  hidden: r.status !== 'pending' || !canReject },
           { separator: true,  hidden: !canDelete },
@@ -197,6 +206,7 @@ export default function PurchaseRequestsPage() {
           tabs={
             <StatusTabs
               options={[
+                { value: 'draft',    label: 'Drafts' },
                 { value: 'pending',  label: 'Pending',  count: pending.pr },
                 { value: 'approved', label: 'Approved' },
                 { value: 'rejected', label: 'Rejected' },

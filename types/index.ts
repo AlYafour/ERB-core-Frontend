@@ -238,7 +238,7 @@ export interface PurchaseRequest {
   project_code?: string;
   request_date: string;
   required_by: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'draft' | 'pending' | 'approved' | 'rejected';
   notes: string;
   rejection_reason?: string;
   created_by: number;

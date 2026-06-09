@@ -40,6 +40,7 @@ export const purchaseRequestsApi = {
     request_date: string;
     required_by: string;
     notes?: string;
+    status?: string;
     items: Omit<PurchaseRequestItem, 'product' | 'created_at'>[];
   }): Promise<PurchaseRequest> => {
     const response = await apiClient.post('/purchase-requests/', data);
@@ -79,6 +80,23 @@ export const purchaseRequestsApi = {
 
   deleteItem: async (itemId: number): Promise<void> => {
     await apiClient.delete(`/purchase-requests/items/${itemId}/`);
+  },
+
+  submit: async (id: number): Promise<PurchaseRequest> => {
+    const response = await apiClient.post(`/purchase-requests/${id}/submit/`);
+    return response.data;
+  },
+
+  updateDraft: async (id: number, data: {
+    project_id?: number | null;
+    title?: string;
+    request_date?: string;
+    required_by?: string;
+    notes?: string;
+    items?: Omit<PurchaseRequestItem, 'product' | 'created_at'>[];
+  }): Promise<PurchaseRequest> => {
+    const response = await apiClient.patch(`/purchase-requests/${id}/update-draft/`, data);
+    return response.data;
   },
 
   undoApproval: async (id: number): Promise<PurchaseRequest> => {
