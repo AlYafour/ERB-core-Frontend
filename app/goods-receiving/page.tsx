@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { goodsReceivingApi, GoodsReceivedNote } from '@/lib/api/goods-receiving';
+import { PurchaseOrder } from '@/types';
 import Link from 'next/link';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
@@ -44,8 +45,9 @@ export default function GoodsReceivingPage() {
   const t              = useT();
   const { hasPermission } = usePermissions();
   const isSuperuser = user?.is_superuser ?? false;
+  const isAdmin     = user?.role === 'admin' || user?.is_staff || isSuperuser;
   const canCreate   = isSuperuser || (hasPermission('goods_receiving', 'create') ?? false);
-  const canDelete   = isSuperuser;
+  const canDelete   = isAdmin;
 
   const isMineActive = filters.pr_created_by === user?.id;
   const toggleMine = () => {
@@ -67,15 +69,59 @@ export default function GoodsReceivingPage() {
 
   const handleDelete = async (id: number) => { if (await confirm('Delete this GRN?')) deleteMutation.mutate(id); };
 
+  const { selectedItems, clearSelection } = tableState;
+
+  const handleBulkDelete = async () => {
+    if (!selectedItems.size || !await confirm(`Delete ${selectedItems.size} GRNs?`)) return;
+    for (const id of selectedItems) await goodsReceivingApi.delete(id).catch(() => {});
+    queryClient.invalidateQueries({ queryKey: ['grns'] });
+    toast(`Deleted ${selectedItems.size} GRNs`, 'success');
+    clearSelection();
+  };
+
   const grns       = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
+
+  const getPo = (g: GoodsReceivedNote) =>
+    typeof g.purchase_order === 'object' && g.purchase_order ? g.purchase_order as PurchaseOrder : null;
 
   const columns: Column<GoodsReceivedNote>[] = [
     {
       key: 'number', header: 'GRN Number',
       render: g => <span className="font-mono font-semibold" style={{ fontSize: 'var(--text-sm)' }}>{g.grn_number}</span>,
     },
-    { key: 'po',    header: 'Purchase Order', render: g => <span style={{ color: 'var(--text-secondary)' }}>{typeof g.purchase_order === 'object' && g.purchase_order ? (g.purchase_order as any).order_number : g.purchase_order_id}</span> },
+    {
+      key: 'po', header: 'Purchase Order',
+      render: g => {
+        const po = getPo(g);
+        return po
+          ? <Link href={`/purchase-orders/${po.id}`} className="font-mono font-semibold" style={{ color: 'var(--text-brand)' }} onClick={e => e.stopPropagation()}>{po.order_number}</Link>
+          : <span style={{ color: 'var(--text-secondary)' }}>{g.purchase_order_id}</span>;
+      },
+    },
+    {
+      key: 'project', header: t('col', 'project'),
+      render: g => {
+        const po = getPo(g);
+        return po?.project_name
+          ? (
+            <div>
+              <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{po.project_name}</div>
+              {po.project_code && <div className="font-mono" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{po.project_code}</div>}
+            </div>
+          )
+          : <span style={{ color: 'var(--text-secondary)' }}>—</span>;
+      },
+    },
+    {
+      key: 'engineer', header: 'Engineer',
+      render: g => {
+        const po = getPo(g);
+        return po?.pr_created_by_name
+          ? <span style={{ color: 'var(--text-primary)' }}>{po.pr_created_by_name}</span>
+          : <span style={{ color: 'var(--text-secondary)' }}>—</span>;
+      },
+    },
     { key: 'date',  header: 'Receipt Date',   render: g => <span style={{ color: 'var(--text-secondary)' }}>{new Date(g.receipt_date).toLocaleDateString('en-US')}</span> },
     { key: 'items', header: 'Total Items',    render: g => g.total_items ?? g.items?.length ?? 0 },
     { key: 'status', header: t('col', 'status'), render: g => <Badge variant={GRN_STATUS[g.status] ?? 'info'}>{STATUS_LABEL[g.status] || g.status}</Badge> },
@@ -120,18 +166,23 @@ export default function GoodsReceivingPage() {
             />
           }
           toolbarActions={
-            <button
-              onClick={toggleMine}
-              style={{
-                padding: '5px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                border: '1.5px solid', transition: 'all 0.15s',
-                backgroundColor: isMineActive ? 'var(--color-wine-500)' : 'transparent',
-                borderColor: isMineActive ? 'var(--color-wine-500)' : 'var(--border)',
-                color: isMineActive ? 'white' : 'var(--text-secondary)',
-              }}
-            >
-              {isMineActive ? '✕ My GRNs' : 'My GRNs'}
-            </button>
+            <>
+              <button
+                onClick={toggleMine}
+                style={{
+                  padding: '5px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  border: '1.5px solid', transition: 'all 0.15s',
+                  backgroundColor: isMineActive ? 'var(--color-wine-500)' : 'transparent',
+                  borderColor: isMineActive ? 'var(--color-wine-500)' : 'var(--border)',
+                  color: isMineActive ? 'white' : 'var(--text-secondary)',
+                }}
+              >
+                {isMineActive ? '✕ My GRNs' : 'My GRNs'}
+              </button>
+              {canDelete && selectedItems.size > 0 && (
+                <Button variant="destructive" onClick={handleBulkDelete}>Delete {selectedItems.size}</Button>
+              )}
+            </>
           }
           filterFields={filterFields}
           filterSaveKey="goods-receiving"
@@ -143,6 +194,7 @@ export default function GoodsReceivingPage() {
           emptyMessage="No goods receiving notes found."
           emptyAction={canCreate ? <Link href="/goods-receiving/new"><Button variant="primary">Create GRN</Button></Link> : undefined}
           onRowClick={g => router.push(`/goods-receiving/${g.id}`)}
+          selectable={isAdmin}
           totalCount={totalCount}
           paginatedData={data}
         />
