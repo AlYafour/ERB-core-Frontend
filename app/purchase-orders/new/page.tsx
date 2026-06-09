@@ -375,20 +375,23 @@ Terms & Conditions:
     return sum + afterDiscount * ((item.tax_rate ?? 0) / 100);
   }, 0), [items]);
 
-  const calculateOrderTaxAmount = useMemo(() => {
-    const discountAmount = calculateSubtotal * (formData.discount / 100) || 0;
-    const afterDiscount = calculateSubtotal - discountAmount;
-    const taxableBase = formData.transport_vat_included
-      ? afterDiscount + (formData.transportation_charge || 0)
-      : afterDiscount;
-    return taxableBase * ((formData.tax_rate || 0) / 100) || 0;
-  }, [calculateSubtotal, formData.discount, formData.transportation_charge, formData.transport_vat_included, formData.tax_rate]);
+  // Effective VAT rate derived from item-level tax amounts (e.g. if items are 5%, this is 0.05)
+  const effectiveVatRate = useMemo(() => {
+    if (calculateSubtotal <= 0 || calculateTaxAmount <= 0) return 0;
+    return calculateTaxAmount / calculateSubtotal;
+  }, [calculateSubtotal, calculateTaxAmount]);
+
+  // Transport VAT = transport × effective rate, only when toggle is checked
+  const calculateTransportVat = useMemo(() => {
+    if (!formData.transport_vat_included || !(formData.transportation_charge > 0) || effectiveVatRate <= 0) return 0;
+    return (formData.transportation_charge || 0) * effectiveVatRate;
+  }, [formData.transport_vat_included, formData.transportation_charge, effectiveVatRate]);
 
   const calculateTotal = useMemo(() => {
     const discountAmount = calculateSubtotal * (formData.discount / 100) || 0;
     const afterDiscount = calculateSubtotal - discountAmount;
-    return afterDiscount + (formData.transportation_charge || 0) + calculateOrderTaxAmount;
-  }, [calculateSubtotal, calculateOrderTaxAmount, formData.discount, formData.transportation_charge]);
+    return afterDiscount + (formData.transportation_charge || 0) + calculateTaxAmount + calculateTransportVat;
+  }, [calculateSubtotal, calculateTaxAmount, calculateTransportVat, formData.discount, formData.transportation_charge]);
 
   const applyVatToAll = (rate: number) => {
     setItems(items.map((item) => ({ ...item, tax_rate: rate })));
@@ -1030,9 +1033,19 @@ Terms & Conditions:
                   )}
                   {calculateTaxAmount > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>VAT:</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>VAT (items):</span>
                       <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
                         {formatPrice(calculateTaxAmount)}
+                      </span>
+                    </div>
+                  )}
+                  {calculateTransportVat > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>
+                        VAT (transport {Math.round(effectiveVatRate * 100)}%):
+                      </span>
+                      <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
+                        {formatPrice(calculateTransportVat)}
                       </span>
                     </div>
                   )}
