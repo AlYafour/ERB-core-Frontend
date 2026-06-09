@@ -21,7 +21,8 @@ import ProductSelector from '@/components/features/ProductSelector';
 import { Product } from '@/types';
 
 const statusColors: Record<string, string> = {
-  pending: 'badge-warning',
+  draft:    'badge-info',
+  pending:  'badge-warning',
   approved: 'badge-success',
   rejected: 'badge-error',
 };
@@ -35,7 +36,8 @@ export default function PurchaseRequestDetailPage() {
   const { hasPermission } = usePermissions();
   const t = useT();
   const statusLabels: Record<string, string> = {
-    pending: t('status', 'pending'),
+    draft:    'Draft',
+    pending:  t('status', 'pending'),
     approved: t('status', 'approved'),
     rejected: t('status', 'rejected'),
   };
@@ -149,6 +151,22 @@ export default function PurchaseRequestDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['pending-count'] });
     },
   });
+
+  const submitDraftMutation = useMutation({
+    mutationFn: () => purchaseRequestsApi.submit(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-requests', id] });
+      queryClient.invalidateQueries({ queryKey: ['purchase-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-count'] });
+      toast('Request submitted for approval!', 'success');
+    },
+    onError: (e: unknown) => toast(getApiError(e, 'Failed to submit request'), 'error'),
+  });
+
+  const canEditItems = !!request && (
+    (request.status === 'pending' && (isSuperAdmin || request.created_by === user?.id)) ||
+    (request.status === 'draft' && request.created_by === user?.id)
+  );
 
   if (isLoading) {
     return (
@@ -379,7 +397,7 @@ export default function PurchaseRequestDetailPage() {
             <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', margin: 0 }}>
               {t('section', 'requestedItems')}
             </h3>
-            {request.status === 'pending' && (isSuperAdmin || request.created_by === user?.id) && !addingProduct && (
+            {canEditItems && !addingProduct && (
               <Button variant="primary" onClick={() => setAddingProduct(true)}>
                 + {t('btn', 'addProduct')}
               </Button>
@@ -387,7 +405,7 @@ export default function PurchaseRequestDetailPage() {
           </div>
 
           {/* Add Product Form */}
-          {addingProduct && request.status === 'pending' && (
+          {addingProduct && canEditItems && (
             <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-4)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--surface-inset)' }}>
               <div style={{ marginBottom: 'var(--space-3)' }}>
                 <ProductSelector
@@ -460,7 +478,7 @@ export default function PurchaseRequestDetailPage() {
                   <th>{t('col', 'projectSite')}</th>
                   <th>{t('col', 'purpose')}</th>
                   <th>{t('col', 'notes')}</th>
-                  {(isSuperAdmin || request.created_by === user?.id) && request.status === 'pending' && <th></th>}
+                  {canEditItems && <th></th>}
                 </tr>
               </thead>
               <tbody>
@@ -517,7 +535,7 @@ export default function PurchaseRequestDetailPage() {
                         {item.notes || '-'}
                       </div>
                     </td>
-                    {(isSuperAdmin || request.created_by === user?.id) && request.status === 'pending' && (
+                    {canEditItems && (
                       <td>
                         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                           {isSuperAdmin && (editingItemId === item.id ? (
@@ -552,6 +570,26 @@ export default function PurchaseRequestDetailPage() {
             </table>
           </div>
         </div>
+
+        {/* Draft Actions */}
+        {request.status === 'draft' && request.created_by === user?.id && (
+          <div style={{ display: 'flex', gap: 12, padding: '12px 16px', background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)', flex: 1 }}>
+              This request is saved as a draft. Add items and submit when ready.
+            </span>
+            <Button variant="secondary" onClick={() => router.push(`/purchase-requests/new?draft_id=${id}`)}>
+              Edit Draft
+            </Button>
+            <Button
+              variant="primary"
+              isLoading={submitDraftMutation.isPending}
+              disabled={submitDraftMutation.isPending || !request.items?.length}
+              onClick={async () => { if (await confirm('Submit this draft for approval?')) submitDraftMutation.mutate(); }}
+            >
+              Submit for Approval
+            </Button>
+          </div>
+        )}
 
         {/* Actions - Unified */}
         {request.status === 'pending' && (canApprove || canReject) && (
