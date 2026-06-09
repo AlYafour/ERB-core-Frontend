@@ -14,7 +14,7 @@ import {
   BriefcaseIcon,
 } from '@/components/icons';
 import Link from 'next/link';
-import { Badge, PageShell, PageHeader } from '@/components/ui';
+import { PageShell, PageHeader } from '@/components/ui';
 import { formatPrice } from '@/lib/utils/format';
 import dynamic from 'next/dynamic';
 import RouteGuard from '@/components/auth/RouteGuard';
@@ -22,7 +22,6 @@ import { useT } from '@/lib/i18n/useT';
 import { useEffect, useMemo, useState } from 'react';
 
 /* ─── Lazy-load chart components — recharts only downloaded when dashboard renders ─ */
-const StatusPieCard       = dynamic(() => import('./charts').then(m => ({ default: m.StatusPieCard })),       { ssr: false });
 const MonthlyVolumeChart  = dynamic(() => import('./charts').then(m => ({ default: m.MonthlyVolumeChart })),  { ssr: false });
 const ProjectSpendingChart = dynamic(() => import('./charts').then(m => ({ default: m.ProjectSpendingChart })), { ssr: false });
 
@@ -90,16 +89,6 @@ function MetricGroup({ title, href, metrics }: { title: string; href: string; me
   );
 }
 
-/* ─── Reusable: Metric block (cycle time, etc.) ─────────────────── */
-function MetricBlock({ label, value, color }: { label: string; value: string | number; color: string }) {
-  return (
-    <div style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--surface-subtle)' }}>
-      <div style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', marginBottom: 'var(--space-1)', color: 'var(--text-secondary)' }}>{label}</div>
-      <div style={{ fontSize: '1.25rem', fontWeight: 700, color }}>{value}</div>
-    </div>
-  );
-}
-
 /* ─── Reusable: Skeleton loader ─────────────────────────────────── */
 function CardSkeleton({ height = 120 }: { height?: number }) {
   return (
@@ -153,29 +142,13 @@ function DashboardContent() {
     staleTime: 2 * 60 * 1000,
   });
 
-  const stats           = data?.stats;
-  const chartData       = data?.chartData;
-  const recentActivity  = data?.recentActivity;
-  const userActivity    = data?.userActivity;
-  const cycleMetrics    = data?.cycleMetrics;
+  const stats            = data?.stats;
+  const chartData        = data?.chartData;
   const projectAnalytics = data?.projectAnalytics;
 
   if (!isAuthenticated) {
     return null;
   }
-
-  const actionBadge = (action: string) =>
-    action === 'approved' || action === 'paid' ? 'success'
-    : action === 'rejected' ? 'error'
-    : 'info';
-
-  const typeLabel: Record<string, string> = {
-    purchase_request: t('dash', 'purchaseRequest'),
-    quotation:        t('dash', 'quotation'),
-    purchase_order:   t('dash', 'purchaseOrder'),
-    grn:              t('dash', 'grn'),
-    invoice:          t('dash', 'invoice'),
-  };
 
   return (
     <MainLayout>
@@ -218,46 +191,8 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* ── Status pie charts ───────────────────────────────────── */}
-        {isLoading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-6)' }}>
-            <CardSkeleton height={240} />
-            <CardSkeleton height={240} />
-            <CardSkeleton height={240} />
-          </div>
-        ) : chartData && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-6)' }}>
-            {[
-              { title: t('dash', 'prByStatus'),  href: '/purchase-requests', data: [
-                  { name: t('dash', 'pending'),  value: chartData.statusDistribution.purchaseRequests.pending },
-                  { name: t('dash', 'approved'), value: chartData.statusDistribution.purchaseRequests.approved },
-                  { name: t('dash', 'rejected'), value: chartData.statusDistribution.purchaseRequests.rejected },
-              ]},
-              { title: t('dash', 'poByStatus'),  href: '/purchase-orders', data: [
-                  { name: t('dash', 'pending'),   value: chartData.statusDistribution.purchaseOrders.pending },
-                  { name: t('dash', 'approved'),  value: chartData.statusDistribution.purchaseOrders.approved },
-                  { name: t('dash', 'rejected'),  value: chartData.statusDistribution.purchaseOrders.rejected },
-                  { name: t('dash', 'completed'), value: chartData.statusDistribution.purchaseOrders.completed },
-              ]},
-              { title: t('dash', 'invByStatus'), href: '/purchase-invoices', data: [
-                  { name: t('dash', 'pending'),  value: chartData.statusDistribution.invoices.pending },
-                  { name: t('dash', 'approved'), value: chartData.statusDistribution.invoices.approved },
-                  { name: t('dash', 'paid'),     value: chartData.statusDistribution.invoices.paid },
-              ]},
-            ].map(({ title, href, data }) => (
-              <div key={href} className="card">
-                <SectionHeader title={title} viewAllLabel={t('dash', 'viewAll')} href={href} size="base" />
-                <StatusPieCard title={title} href={href} data={data} />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ── Main content: 2/3 left + 1/3 right ─────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--space-6)' }}>
-
-          {/* Left column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+        {/* ── Main content: full width ─────────────────────────────── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
 
             {/* Top spending projects */}
             {isLoading ? (
@@ -330,107 +265,6 @@ function DashboardContent() {
                 <ProjectSpendingChart data={chartData.projectSpending} label={t('dash', 'spendingAed')} />
               </div>
             )}
-          </div>
-
-          {/* Right column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-
-            {/* Procurement cycle metrics */}
-            {cycleMetrics && (
-              <div className="card">
-                <SectionHeader title={t('dash', 'procCycle')} />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                  <MetricBlock label={t('dash', 'prToPoAvg')}   value={`${cycleMetrics.avgPRToPO} ${t('dash', 'days')}`}        color={C.blue} />
-                  <MetricBlock label={t('dash', 'poToGrnAvg')}  value={`${cycleMetrics.avgPOToGRN} ${t('dash', 'days')}`}       color={C.green} />
-                  <MetricBlock label={t('dash', 'grnToInvAvg')} value={`${cycleMetrics.avgGRNToInvoice} ${t('dash', 'days')}`}  color={C.purple} />
-                </div>
-                {cycleMetrics.bottlenecks?.length > 0 && (
-                  <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
-                    <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', marginBottom: 'var(--space-3)', color: 'var(--text-primary)' }}>{t('dash', 'bottlenecks')}</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                      {cycleMetrics.bottlenecks.map((b, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-2)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--surface-inset)' }}>
-                          <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{b.stage}</span>
-                          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: b.avgDays > 7 ? C.red : b.avgDays > 3 ? C.amber : C.green }}>
-                            {b.avgDays}d
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Top active users */}
-            {userActivity && userActivity.length > 0 && (
-              <div className="card">
-                <SectionHeader title={t('dash', 'topUsers')} viewAllLabel={t('dash', 'viewAll')} href="/users" />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                  {userActivity.slice(0, 5).map((u) => {
-                    const total = u.createdPR + u.approvedRequests + u.createdPO + u.createdInvoices;
-                    return (
-                      <Link
-                        key={u.id}
-                        href={`/users/view/${u.id}`}
-                        style={{ display: 'block', padding: 'var(--space-3)', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', textDecoration: 'none' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--surface-inset)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--surface-subtle)'; }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-1)' }}>
-                          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{u.username}</span>
-                          <Badge variant="info">{total}</Badge>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-1)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                          <span>PR: {u.createdPR}</span>
-                          <span>Approved: {u.approvedRequests}</span>
-                          <span>PO: {u.createdPO}</span>
-                          <span>Invoices: {u.createdInvoices}</span>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Recent activity feed */}
-            {isLoading ? (
-              <CardSkeleton height={300} />
-            ) : recentActivity && recentActivity.length > 0 && (
-              <div className="card">
-                <SectionHeader title={t('dash', 'recentActivity')} />
-                <div>
-                  {recentActivity.slice(0, 8).map((a, i) => (
-                    <Link
-                      key={`${a.type}-${a.id}`}
-                      href={a.link}
-                      style={{ display: 'block', textDecoration: 'none', padding: '9px 0', borderBottom: i < 7 ? '1px solid var(--border-subtle)' : 'none' }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.paddingLeft = '8px';
-                        e.currentTarget.style.borderLeft = `2px solid ${actionBadge(a.action) === 'success' ? C.green : actionBadge(a.action) === 'error' ? C.red : C.blue}`;
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.paddingLeft = '0';
-                        e.currentTarget.style.borderLeft = 'none';
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: actionBadge(a.action) === 'success' ? C.green : actionBadge(a.action) === 'error' ? C.red : C.blue, flexShrink: 0 }} />
-                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{typeLabel[a.type] ?? a.type}</span>
-                        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 'auto' }}>{new Date(a.timestamp).toLocaleDateString('en-GB')}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 12 }}>
-                        <span style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{a.title}</span>
-                        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0 }}>{a.user}</span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
-          </div>
         </div>
       </PageShell>
     </MainLayout>
