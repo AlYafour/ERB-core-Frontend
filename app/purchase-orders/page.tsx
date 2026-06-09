@@ -42,7 +42,7 @@ export default function PurchaseOrdersPage() {
   const t              = useT();
   const { hasPermission } = usePermissions();
   const isSuperuser = user?.is_superuser ?? false;
-  const isAdmin     = user?.role === 'admin' || user?.is_staff || isSuperuser;
+  const isAdmin     = user?.role === 'admin' || isSuperuser;
   const canCreate   = isSuperuser || (hasPermission('purchase_order', 'create') ?? false);
   const canDelete   = isAdmin;
 

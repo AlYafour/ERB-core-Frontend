@@ -40,7 +40,7 @@ export default function PurchaseRequestsPage() {
   const { user }       = useAuth();
   const t              = useT();
   const { hasPermission } = usePermissions();
-  const isCompanyAdmin = !!(user?.is_superuser || user?.is_staff || user?.role === 'admin');
+  const isCompanyAdmin = !!(user?.is_superuser || user?.role === 'admin');
   const isAdmin        = isCompanyAdmin;
   const canCreate   = isCompanyAdmin || (hasPermission('purchase_request', 'create') ?? false);
   const canView     = isCompanyAdmin || (hasPermission('purchase_request', 'view') ?? false);

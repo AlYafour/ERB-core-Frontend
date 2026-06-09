@@ -31,7 +31,7 @@ const sel = 'form-select';
 
 export default function UsersPage() {
   const { user: me } = useAuth();
-  const isAdmin = me?.role === 'admin' || me?.is_staff || me?.is_superuser;
+  const isAdmin = me?.role === 'admin' || me?.is_superuser;
 
   const { page, setPage, search, handleSearch } = useTableState();
   const [role,   setRole]   = useState('');

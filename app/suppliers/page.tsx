@@ -39,7 +39,7 @@ export default function SuppliersPage() {
   const { user }      = useAuth();
   const t             = useT();
   const isSuperuser   = user?.is_superuser ?? false;
-  const isAdmin       = isSuperuser || user?.role === 'admin' || user?.is_staff;
+  const isAdmin       = isSuperuser || user?.role === 'admin' || user?.is_superuser;
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['suppliers', page, search, filters],

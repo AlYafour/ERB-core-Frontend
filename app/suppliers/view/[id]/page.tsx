@@ -30,7 +30,7 @@ export default function SupplierDetailPage() {
     queryFn: () => suppliersApi.getById(id),
   });
 
-  const isAdmin = user?.role === 'admin' || user?.is_staff;
+  const isAdmin = user?.role === 'admin' || user?.is_superuser;
 
   if (isLoading) {
     return (

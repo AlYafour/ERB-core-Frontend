@@ -45,7 +45,7 @@ export default function GoodsReceivingPage() {
   const t              = useT();
   const { hasPermission } = usePermissions();
   const isSuperuser = user?.is_superuser ?? false;
-  const isAdmin     = user?.role === 'admin' || user?.is_staff || isSuperuser;
+  const isAdmin     = user?.role === 'admin' || isSuperuser;
   const canCreate   = isSuperuser || (hasPermission('goods_receiving', 'create') ?? false);
   const canDelete   = isAdmin;
 

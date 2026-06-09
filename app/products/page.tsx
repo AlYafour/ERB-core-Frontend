@@ -49,7 +49,7 @@ export default function ProductsPage() {
   const t             = useT();
   const { hasPermission } = usePermissions();
   const isSuperuser = user?.is_superuser ?? false;
-  const isAdmin     = isSuperuser || user?.role === 'admin' || user?.is_staff;
+  const isAdmin     = isSuperuser || user?.role === 'admin' || user?.is_superuser;
   const canCreate   = isSuperuser || (hasPermission('product', 'create') ?? false);
   const canDelete   = isSuperuser;
 

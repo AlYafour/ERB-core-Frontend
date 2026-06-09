@@ -51,7 +51,7 @@ export default function PurchaseInvoicesPage() {
   const t           = useT();
   const { hasPermission } = usePermissions();
   const isSuperuser = user?.is_superuser ?? false;
-  const isAdmin     = user?.role === 'admin' || user?.is_staff;
+  const isAdmin     = user?.role === 'admin' || user?.is_superuser;
   const canCreate   = isSuperuser || (hasPermission('purchase_invoice', 'create') ?? false);
   const canView     = isSuperuser || (hasPermission('purchase_invoice', 'view') ?? false);
   const canDelete   = isSuperuser;

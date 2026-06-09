@@ -234,7 +234,7 @@ function EditPurchaseOrderPageContent() {
     );
   }
 
-  const isSuperAdmin = !!(user?.is_superuser || user?.is_staff);
+  const isSuperAdmin = !!(user?.is_superuser);
 
   if ((order.status === 'approved' || order.status === 'completed') && !isSuperAdmin) {
     return (

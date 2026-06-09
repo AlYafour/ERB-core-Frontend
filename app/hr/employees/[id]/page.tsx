@@ -90,7 +90,7 @@ export default function EmployeeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.is_staff || currentUser?.is_superuser;
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.is_superuser;
 
   const [activeTab,     setActiveTab]     = useState('Profile');
   const [editSection,   setEditSection]   = useState<'personal' | 'professional' | 'contact' | 'legal' | 'salary' | 'account' | null>(null);

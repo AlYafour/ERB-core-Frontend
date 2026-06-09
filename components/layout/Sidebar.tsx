@@ -427,7 +427,7 @@ export default function Sidebar() {
               {otherItems
                 .filter((item) => {
                   if (item.superAdminOnly) return user?.role === 'admin' || user?.is_superuser;
-                  if (item.adminOnly)      return user?.role === 'admin' || user?.is_staff || user?.is_superuser;
+                  if (item.adminOnly)      return user?.role === 'admin' || user?.is_superuser;
                   return true;
                 })
                 .map((item) => {

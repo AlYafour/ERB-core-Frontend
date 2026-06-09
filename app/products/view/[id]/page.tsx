@@ -32,7 +32,7 @@ export default function ProductDetailPage() {
     queryFn: () => productsApi.getById(id),
   });
 
-  const isAdmin = user?.role === 'admin' || user?.is_staff;
+  const isAdmin = user?.role === 'admin' || user?.is_superuser;
 
   if (isLoading) {
     return (

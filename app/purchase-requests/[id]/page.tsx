@@ -46,7 +46,7 @@ export default function PurchaseRequestDetailPage() {
   // Only Procurement Manager, Super Admin, and Superuser can approve/reject
   // Procurement Officer and Site Engineer should NOT be able to approve/reject
   const { user } = useAuth();
-  const isSuperAdmin = !!(user?.is_superuser || user?.is_staff || user?.role === 'admin');
+  const isSuperAdmin = !!(user?.is_superuser || user?.role === 'admin');
   const isSuperuser = isSuperAdmin;
 
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
