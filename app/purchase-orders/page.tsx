@@ -28,13 +28,15 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const filterFields: FilterField[] = [
-  { name: 'order_number',      label: 'Order Number',    type: 'text',   group: 'Order Info' },
-  { name: 'status',            label: 'Status',          type: 'select', group: 'Status',
+  { name: 'order_number',          label: 'Order Number',        type: 'text',   group: 'Order Info' },
+  { name: 'status',                label: 'Status',              type: 'select', group: 'Status',
     options: Object.entries(STATUS_LABEL).map(([v, l]) => ({ value: v, label: l })) },
-  { name: 'order_date_after',  label: 'Order Date From', type: 'date',   group: 'Dates' },
-  { name: 'order_date_before', label: 'Order Date To',   type: 'date',   group: 'Dates' },
-  { name: 'total_min',         label: 'Min Total',       type: 'number', group: 'Amount' },
-  { name: 'total_max',         label: 'Max Total',       type: 'number', group: 'Amount' },
+  { name: 'created_by_name',       label: 'Responsible Engineer', type: 'text',  group: 'People' },
+  { name: 'project_engineer_name', label: 'Project Engineer',     type: 'text',  group: 'People' },
+  { name: 'order_date_after',      label: 'Order Date From',     type: 'date',   group: 'Dates' },
+  { name: 'order_date_before',     label: 'Order Date To',       type: 'date',   group: 'Dates' },
+  { name: 'total_min',             label: 'Min Total',           type: 'number', group: 'Amount' },
+  { name: 'total_max',             label: 'Max Total',           type: 'number', group: 'Amount' },
 ];
 
 export default function PurchaseOrdersPage() {
@@ -50,6 +52,7 @@ export default function PurchaseOrdersPage() {
   const t              = useT();
   const { hasPermission } = usePermissions();
   const isSuperuser = user?.is_superuser ?? false;
+  const isAdmin     = user?.role === 'admin' || user?.is_staff || isSuperuser;
   const canCreate   = isSuperuser || (hasPermission('purchase_order', 'create') ?? false);
   const canDelete   = isSuperuser;
 
@@ -156,6 +159,7 @@ export default function PurchaseOrdersPage() {
             />
           }
           filterFields={filterFields}
+          filterSaveKey="purchase-orders"
           searchPlaceholder="Search purchase orders…"
           toolbarActions={
             canDelete && selectedItems.size > 0 ? (
@@ -169,7 +173,7 @@ export default function PurchaseOrdersPage() {
           emptyMessage="No purchase orders found."
           emptyAction={canCreate ? <Link href="/purchase-orders/new"><Button variant="primary">Create Purchase Order</Button></Link> : undefined}
           onRowClick={o => router.push(`/purchase-orders/${o.id}`)}
-          selectable={canDelete}
+          selectable={isAdmin}
           totalCount={totalCount}
           paginatedData={data}
         />
