@@ -75,7 +75,7 @@ export default function PurchaseOrdersPage() {
     { name: 'order_number',    label: 'Order Number', type: 'text',   group: 'Order Info' },
     { name: 'status',          label: 'Status',       type: 'select', group: 'Status',
       options: Object.entries(STATUS_LABEL).map(([v, l]) => ({ value: v, label: l })) },
-    { name: 'created_by',      label: 'Responsible Engineer', type: 'select', group: 'People', options: userOptions },
+    { name: 'pr_created_by',   label: 'Responsible Engineer', type: 'select', group: 'People', options: userOptions },
     { name: 'project_engineer', label: 'Project Engineer',   type: 'select', group: 'People', options: engineerOptions },
     { name: 'order_date_after',  label: 'Order Date From', type: 'date',   group: 'Dates' },
     { name: 'order_date_before', label: 'Order Date To',   type: 'date',   group: 'Dates' },
@@ -140,13 +140,13 @@ export default function PurchaseOrdersPage() {
       key: 'engineer', header: 'Engineer',
       render: o => (
         <div>
-          {o.created_by_name && (
-            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{o.created_by_name}</div>
+          {o.pr_created_by_name && (
+            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{o.pr_created_by_name}</div>
           )}
           {o.project_engineer_name && (
             <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{o.project_engineer_name}</div>
           )}
-          {!o.created_by_name && !o.project_engineer_name && (
+          {!o.pr_created_by_name && !o.project_engineer_name && (
             <span style={{ color: 'var(--text-secondary)' }}>—</span>
           )}
         </div>
