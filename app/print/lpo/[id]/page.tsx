@@ -76,8 +76,10 @@ export default function PrintLPOPage() {
 
   const supplier   = typeof po.supplier === 'object' && po.supplier ? po.supplier as Supplier : null;
   const pr         = typeof po.purchase_request === 'object' && po.purchase_request ? po.purchase_request as PurchaseRequest : null;
-  const discount   = Number(po.discount  ?? 0);
-  const hasDiscount = discount > 0;
+  const discount            = Number(po.discount           ?? 0);
+  const transportationCharge = Number(po.transportation_charge ?? 0);
+  const hasDiscount          = discount > 0;
+  const hasTransportation    = transportationCharge > 0;
 
   // Compute from per-item data (backend tax_amount may be 0 if stored with old global tax_rate)
   const subtotal = po.items.reduce((sum, item) => {
@@ -85,12 +87,16 @@ export default function PrintLPOPage() {
     const d = s * ((Number(item.discount) || 0) / 100);
     return sum + s - d;
   }, 0);
-  const taxAmount = po.items.reduce((sum, item) => {
+  const itemTaxAmount = po.items.reduce((sum, item) => {
     const s = Number(item.quantity) * Number(item.unit_price);
     const d = s * ((Number(item.discount) || 0) / 100);
     return sum + (s - d) * ((Number(item.tax_rate) || 0) / 100);
   }, 0);
-  const total = subtotal - discount + taxAmount;
+  const taxableBase = subtotal - discount + transportationCharge;
+  const taxAmount   = Number(po.tax_rate) > 0
+    ? taxableBase * (Number(po.tax_rate) / 100)
+    : itemTaxAmount;
+  const total = taxableBase + taxAmount;
 
   const USER_STAMPS: Record<string, string> = {
     abdel: '/stamps/abdo-stamp.svg',
@@ -426,11 +432,18 @@ export default function PrintLPOPage() {
                   <span style={{ fontWeight:600, color:'#dc2626' }}>− AED {fmt(discount)}</span>
                 </div>
               )}
+              {hasTransportation && (
+                <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 12px',
+                  fontSize:'8pt', background:'#fafafa', borderBottom:`1px solid #f1f5f9` }}>
+                  <span style={{ color:GREY }}>Transportation</span>
+                  <span style={{ fontWeight:600 }}>AED {fmt(transportationCharge)}</span>
+                </div>
+              )}
               {taxAmount > 0 && (
                 <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 12px',
-                  fontSize:'8pt', background: hasDiscount ? '#fafafa' : '#fff',
+                  fontSize:'8pt', background: (hasDiscount || hasTransportation) ? '#fafafa' : '#fff',
                   borderBottom:`1px solid #f1f5f9` }}>
-                  <span style={{ color:GREY }}>VAT</span>
+                  <span style={{ color:GREY }}>VAT{Number(po.tax_rate) > 0 ? ` (${po.tax_rate}%)` : ''}</span>
                   <span style={{ fontWeight:600 }}>AED {fmt(taxAmount)}</span>
                 </div>
               )}

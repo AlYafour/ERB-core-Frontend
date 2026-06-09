@@ -438,11 +438,16 @@ export default function PurchaseOrderDetailPage() {
               return sum + (s - d) * ((Number(item.tax_rate) || 0) / 100);
             }, 0);
             const globalDiscount = Number(order.discount) || 0;
-            const computedTotal = itemsSubtotal - globalDiscount + itemsVat;
+            const transportCharge = Number(order.transportation_charge) || 0;
+            const taxableBase = itemsSubtotal - globalDiscount + transportCharge;
+            const vatAmount = Number(order.tax_rate) > 0
+              ? taxableBase * (Number(order.tax_rate) / 100)
+              : itemsVat;
+            const computedTotal = taxableBase + vatAmount;
             return (
               <DetailCard title="Financial Summary">
                 <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end' }}>
-                  <div style={{ width: 256, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                  <div style={{ width: 280, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Subtotal:</span>
                       <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(itemsSubtotal)}</span>
@@ -450,13 +455,21 @@ export default function PurchaseOrderDetailPage() {
                     {globalDiscount > 0 && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                         <span style={{ color: 'var(--text-secondary)' }}>Discount:</span>
-                        <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--color-error)' }}>- {formatPrice(globalDiscount)}</span>
+                        <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--color-error)' }}>− {formatPrice(globalDiscount)}</span>
                       </div>
                     )}
-                    {itemsVat > 0 && (
+                    {transportCharge > 0 && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                        <span style={{ color: 'var(--text-secondary)' }}>VAT:</span>
-                        <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(itemsVat)}</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>Transportation:</span>
+                        <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(transportCharge)}</span>
+                      </div>
+                    )}
+                    {vatAmount > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>
+                          VAT{Number(order.tax_rate) > 0 ? ` (${order.tax_rate}%)` : ''}:
+                        </span>
+                        <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(vatAmount)}</span>
                       </div>
                     )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-2)', fontSize: 'var(--text-base)' }}>

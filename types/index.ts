@@ -376,6 +376,7 @@ export interface PurchaseOrder {
   tax_rate: number;
   tax_amount: number;
   discount: number;
+  transportation_charge: number;
   total: number;
   payment_terms?: string;
   delivery_method?: 'pickup' | 'delivery';

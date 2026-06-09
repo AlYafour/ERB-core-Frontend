@@ -103,6 +103,7 @@ export interface PurchaseOrderFormData {
   delivery_terms: string;
   tax_rate: number;
   discount: number;
+  transportation_charge: number;
   notes: string;
   terms_and_conditions: string;
   status?: string;
@@ -132,6 +133,7 @@ export function toPurchaseOrderCreateData(form: PurchaseOrderFormData, items?: A
     delivery_terms: form.delivery_terms,
     tax_rate: form.tax_rate,
     discount: form.discount,
+    transportation_charge: form.transportation_charge ?? 0,
     notes: form.notes,
     terms_and_conditions: form.terms_and_conditions,
     status: form.status,

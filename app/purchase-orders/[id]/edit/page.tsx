@@ -58,6 +58,7 @@ function EditPurchaseOrderPageContent() {
     terms_and_conditions: '',
     tax_rate: 0,
     discount: 0,
+    transportation_charge: 0,
     status: 'draft',
     cost_code_id: null,
   });
@@ -103,6 +104,7 @@ function EditPurchaseOrderPageContent() {
         terms_and_conditions: (order as any).terms_and_conditions || '',
         tax_rate: order.tax_rate || 0,
         discount: order.discount || 0,
+        transportation_charge: order.transportation_charge || 0,
         status: order.status,
       });
       setItems(
@@ -193,17 +195,15 @@ function EditPurchaseOrderPageContent() {
 
   const calculateTaxAmount = () => {
     const subtotalWithVAT = calculateSubtotal() + calculateItemVAT();
-    const discountAmount = subtotalWithVAT * ((formData.discount ?? 0) / 100) || 0;
-    const afterDiscount = subtotalWithVAT - discountAmount;
-    return afterDiscount * ((formData.tax_rate ?? 0) / 100) || 0;
+    const taxableBase = subtotalWithVAT - (formData.discount ?? 0) + (formData.transportation_charge ?? 0);
+    return taxableBase * ((formData.tax_rate ?? 0) / 100) || 0;
   };
 
   const calculateTotal = () => {
     const subtotalWithVAT = calculateSubtotal() + calculateItemVAT();
-    const discountAmount = subtotalWithVAT * ((formData.discount ?? 0) / 100) || 0;
-    const afterDiscount = subtotalWithVAT - discountAmount;
-    const orderTax = afterDiscount * ((formData.tax_rate ?? 0) / 100) || 0;
-    return afterDiscount + orderTax;
+    const taxableBase = subtotalWithVAT - (formData.discount ?? 0) + (formData.transportation_charge ?? 0);
+    const orderTax = taxableBase * ((formData.tax_rate ?? 0) / 100) || 0;
+    return taxableBase + orderTax;
   };
 
   if (isLoading) {
@@ -601,26 +601,39 @@ function EditPurchaseOrderPageContent() {
                 />
               </div>
 
+              <div>
+                <label className="form-label">Transportation Charge (AED)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.transportation_charge ?? 0}
+                  onChange={(e) => setFormData({ ...formData, transportation_charge: parseFloat(e.target.value) || 0 })}
+                  className="form-input"
+                  placeholder="0.00"
+                />
+              </div>
+
               <div className="card" style={{ backgroundColor: 'var(--surface-subtle)', padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                   <span style={{ color: 'var(--text-secondary)' }}>Subtotal:</span>
                   <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateSubtotal())}</span>
                 </div>
-                {calculateItemVAT() > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>VAT:</span>
-                    <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateItemVAT())}</span>
-                  </div>
-                )}
                 {(formData.discount ?? 0) > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Discount:</span>
-                    <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-danger)' }}>-{formatPrice((calculateSubtotal() + calculateItemVAT()) * ((formData.discount ?? 0) / 100))}</span>
+                    <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-danger)' }}>− {formatPrice(formData.discount ?? 0)}</span>
+                  </div>
+                )}
+                {(formData.transportation_charge ?? 0) > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Transportation:</span>
+                    <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(formData.transportation_charge ?? 0)}</span>
                   </div>
                 )}
                 {(formData.tax_rate ?? 0) > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Additional Tax ({formData.tax_rate}%):</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>VAT ({formData.tax_rate}%):</span>
                     <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateTaxAmount())}</span>
                   </div>
                 )}
