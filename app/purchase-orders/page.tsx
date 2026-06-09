@@ -138,19 +138,9 @@ export default function PurchaseOrdersPage() {
     { key: 'supplier',  header: t('col', 'supplier'),    render: o => <span style={{ color: 'var(--text-secondary)' }}>{typeof o.supplier === 'object' ? o.supplier.name : '—'}</span> },
     {
       key: 'engineer', header: 'Engineer',
-      render: o => (
-        <div>
-          {o.pr_created_by_name && (
-            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{o.pr_created_by_name}</div>
-          )}
-          {o.project_engineer_name && (
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{o.project_engineer_name}</div>
-          )}
-          {!o.pr_created_by_name && !o.project_engineer_name && (
-            <span style={{ color: 'var(--text-secondary)' }}>—</span>
-          )}
-        </div>
-      ),
+      render: o => o.pr_created_by_name
+        ? <span style={{ color: 'var(--text-primary)' }}>{o.pr_created_by_name}</span>
+        : <span style={{ color: 'var(--text-secondary)' }}>—</span>,
     },
     { key: 'date',     header: 'Order Date',            render: o => <span style={{ color: 'var(--text-secondary)' }}>{new Date(o.order_date).toLocaleDateString('en-US')}</span> },
     { key: 'total',    header: t('col', 'totalAmount'),  render: o => <span className="font-semibold">{formatPrice(o.total)}</span> },
