@@ -78,7 +78,8 @@ function NewGRNPageContent() {
   const searchParams = useSearchParams();
   const purchaseOrderIdParam = searchParams.get('purchase_order_id');
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.is_superuser || user?.is_staff;
+  /* Only actual admins and platform superusers see all — site engineers see only their own */
+  const isAdmin = user?.role === 'admin' || user?.is_superuser === true;
 
   const [formData, setFormData] = useState<GRNFormData & { invoice_delivery_status: 'not_delivered' | 'delivered' }>({
     purchase_order_id: purchaseOrderIdParam ? Number(purchaseOrderIdParam) : 0,
@@ -347,7 +348,6 @@ function NewGRNPageContent() {
                       <th style={{ width: 108 }}>Received</th>
                       <th style={{ width: 108 }}>Rejected</th>
                       <th style={{ width: 126 }}>Quality</th>
-                      <th>Notes</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -382,10 +382,6 @@ function NewGRNPageContent() {
                               <option value="defective">Defective</option>
                               <option value="missing">Missing</option>
                             </select>
-                          </td>
-                          <td>
-                            <input type="text" value={item.notes || ''} onChange={e => updateItem(i, 'notes', e.target.value)}
-                              className="form-input" placeholder="—" />
                           </td>
                         </tr>
                       );
