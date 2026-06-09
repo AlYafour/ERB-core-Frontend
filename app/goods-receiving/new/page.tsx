@@ -281,7 +281,19 @@ function NewGRNPageContent() {
               </div>
               <div>
                 <label style={lbl}>Status</label>
-                <select value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value as typeof formData.status })} className="form-select">
+                <select
+                  value={formData.status}
+                  onChange={e => {
+                    const s = e.target.value as typeof formData.status;
+                    if (s === 'completed') {
+                      setItems(prev => prev.map(item => ({ ...item, received_quantity: item.ordered_quantity, rejected_quantity: 0, quality_status: 'good' as const })));
+                      setFormData(f => ({ ...f, status: s, notes: f.notes || 'All items received in full — goods verified and in good condition.' }));
+                    } else {
+                      setFormData(f => ({ ...f, status: s }));
+                    }
+                  }}
+                  className="form-select"
+                >
                   <option value="draft">Draft</option>
                   <option value="partial">Partially Received</option>
                   <option value="completed">Fully Received</option>
