@@ -34,7 +34,7 @@ export default function ProjectsPage() {
   const t           = useT();
   const { hasPermission } = usePermissions();
   const isSuperuser = user?.is_superuser ?? false;
-  const isAdmin     = isSuperuser || user?.role === 'super_admin' || user?.is_staff;
+  const isAdmin     = isSuperuser || user?.role === 'admin' || user?.is_staff;
   const canCreate   = isSuperuser || (hasPermission('project', 'create') ?? false);
   const canDelete   = isSuperuser;
 

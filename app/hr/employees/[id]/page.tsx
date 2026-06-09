@@ -47,7 +47,7 @@ const ROLES = [
   { value: 'site_engineer',       label: 'Site Engineer' },
   { value: 'procurement_manager', label: 'Procurement Manager' },
   { value: 'procurement_officer', label: 'Procurement Officer' },
-  { value: 'super_admin',         label: 'Super Admin' },
+  { value: 'admin',               label: 'Admin' },
 ];
 
 const TABS = [
@@ -90,7 +90,7 @@ export default function EmployeeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
-  const isAdmin = currentUser?.role === 'super_admin' || currentUser?.is_staff || currentUser?.is_superuser;
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.is_staff || currentUser?.is_superuser;
 
   const [activeTab,     setActiveTab]     = useState('Profile');
   const [editSection,   setEditSection]   = useState<'personal' | 'professional' | 'contact' | 'legal' | 'salary' | 'account' | null>(null);

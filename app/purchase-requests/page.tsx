@@ -40,13 +40,13 @@ export default function PurchaseRequestsPage() {
   const { user }       = useAuth();
   const t              = useT();
   const { hasPermission } = usePermissions();
-  const isSuperuser = user?.is_superuser ?? false;
-  const isAdmin     = user?.role === 'super_admin' || user?.is_staff;
-  const canCreate   = isSuperuser || (hasPermission('purchase_request', 'create') ?? false);
-  const canView     = isSuperuser || (hasPermission('purchase_request', 'view') ?? false);
-  const canDelete   = isSuperuser;
-  const canApprove  = isSuperuser || ((hasPermission('purchase_request', 'approve') ?? false) && user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
-  const canReject   = isSuperuser || ((hasPermission('purchase_request', 'reject') ?? false) && user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
+  const isCompanyAdmin = !!(user?.is_superuser || user?.is_staff || user?.role === 'admin');
+  const isAdmin        = isCompanyAdmin;
+  const canCreate   = isCompanyAdmin || (hasPermission('purchase_request', 'create') ?? false);
+  const canView     = isCompanyAdmin || (hasPermission('purchase_request', 'view') ?? false);
+  const canDelete   = isCompanyAdmin;
+  const canApprove  = isCompanyAdmin || ((hasPermission('purchase_request', 'approve') ?? false) && user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
+  const canReject   = isCompanyAdmin || ((hasPermission('purchase_request', 'reject') ?? false) && user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
 
   const { data: projectsData } = useQuery({
     queryKey: ['projects-for-filter'],

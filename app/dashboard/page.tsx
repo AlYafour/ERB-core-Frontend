@@ -117,7 +117,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!mounted) return;
-    if (user && user.role !== 'super_admin' && !user.is_superuser) {
+    if (user && user.role !== 'admin' && !user.is_superuser) {
       router.push('/purchase-requests');
     }
   }, [mounted, user, router]);
@@ -126,7 +126,7 @@ export default function DashboardPage() {
     return null;
   }
 
-  if (user && user.role !== 'super_admin' && !user.is_superuser) {
+  if (user && user.role !== 'admin' && !user.is_superuser) {
     return null;
   }
 

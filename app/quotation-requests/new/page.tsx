@@ -41,7 +41,7 @@ function NewQuotationRequestPageContent() {
 
   // Only Procurement Officer and Super Admin can create Quotation Request
   // Procurement Manager should NOT be able to create Quotation Request
-  if (user && user.role !== 'procurement_officer' && user.role !== 'super_admin' && !user.is_superuser) {
+  if (user && user.role !== 'procurement_officer' && user.role !== 'admin' && !user.is_superuser) {
     router.push('/quotation-requests');
     return null;
   }

@@ -326,10 +326,10 @@ export default function Sidebar() {
 
             {/* Workspace links */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {(user?.role === 'super_admin' || user?.is_superuser) &&
+              {(user?.role === 'admin' || user?.is_superuser) &&
                 navLink('/dashboard', t('nav', 'dashboard'), <DashboardIcon className="w-4 h-4" />)
               }
-              {showModule('violations') && (user?.role === 'super_admin' || user?.is_superuser || user?.role === 'procurement_manager') &&
+              {showModule('violations') && (user?.role === 'admin' || user?.is_superuser || user?.role === 'procurement_manager') &&
                 navLink('/violations', t('nav', 'violations'), <AlertIcon className="w-4 h-4" />)
               }
               {user?.id && navLink(`/users/${user.id}`, t('nav', 'myProfile'), <UsersIcon className="w-4 h-4" />)}
@@ -426,8 +426,8 @@ export default function Sidebar() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1, paddingBottom: 8 }}>
               {otherItems
                 .filter((item) => {
-                  if (item.superAdminOnly) return user?.role === 'super_admin' || user?.is_superuser;
-                  if (item.adminOnly)      return user?.role === 'super_admin' || user?.role === 'admin' || user?.is_staff || user?.is_superuser;
+                  if (item.superAdminOnly) return user?.role === 'admin' || user?.is_superuser;
+                  if (item.adminOnly)      return user?.role === 'admin' || user?.is_staff || user?.is_superuser;
                   return true;
                 })
                 .map((item) => {

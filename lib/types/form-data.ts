@@ -387,6 +387,6 @@ export interface UserFormData {
   last_name: string;
   full_name_ar: string;
   phone: string;
-  role: 'site_engineer' | 'procurement_manager' | 'procurement_officer' | 'super_admin';
+  role: 'site_engineer' | 'procurement_manager' | 'procurement_officer' | 'admin';
   is_staff: boolean;
 }

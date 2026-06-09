@@ -46,8 +46,8 @@ export default function PurchaseRequestDetailPage() {
   // Only Procurement Manager, Super Admin, and Superuser can approve/reject
   // Procurement Officer and Site Engineer should NOT be able to approve/reject
   const { user } = useAuth();
-  const isSuperAdmin = !!(user?.is_superuser || user?.is_staff);
-  const isSuperuser = user?.is_superuser ?? false;
+  const isSuperAdmin = !!(user?.is_superuser || user?.is_staff || user?.role === 'admin');
+  const isSuperuser = isSuperAdmin;
 
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editingProductId, setEditingProductId] = useState<number>(0);
@@ -109,7 +109,7 @@ export default function PurchaseRequestDetailPage() {
 
   const canManageAdditionalOrders =
     user?.role === 'procurement_manager' ||
-    user?.role === 'super_admin' ||
+    user?.role === 'admin' ||
     user?.is_platform_admin === true;
   const canApprove = isSuperuser || ((hasPermission('purchase_request', 'approve') ?? false) && 
                      user?.role !== 'procurement_officer' && 
@@ -646,7 +646,7 @@ export default function PurchaseRequestDetailPage() {
         {request.status === 'approved' && (
           <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
             {/* Undo Approval - Only for Procurement Manager and Super Admin, and only if no quotation requests or purchase orders exist */}
-            {(canApprove || user?.role === 'super_admin' || user?.is_superuser) && 
+            {(canApprove || user?.role === 'admin' || user?.is_superuser) &&
              !request.has_quotation_requests && 
              !request.has_purchase_orders && (
               <button
@@ -673,7 +673,7 @@ export default function PurchaseRequestDetailPage() {
 
             {/* Create Quotation Request / LPO - Only for Procurement Officer and Super Admin (NOT Procurement Manager) */}
             {/* Hide if PR has awarded quotation or purchase orders — unless manager unlocked */}
-            {(user?.role === 'procurement_officer' || user?.role === 'super_admin' || user?.is_superuser) &&
+            {(user?.role === 'procurement_officer' || user?.role === 'admin' || user?.is_superuser) &&
              (!request.has_awarded_quotation || request.allow_additional_orders) &&
              (!request.has_purchase_orders || request.allow_additional_orders) && (
               <DropdownButton
@@ -685,7 +685,7 @@ export default function PurchaseRequestDetailPage() {
                     onClick: () => {
                       const canCreateQR = hasPermission('quotation_request', 'create') ?? false;
                       // Only Procurement Officer can create Quotation Request
-                      if (user?.role !== 'procurement_officer' && user?.role !== 'super_admin' && !user?.is_superuser) {
+                      if (user?.role !== 'procurement_officer' && user?.role !== 'admin' && !user?.is_superuser) {
                         toast('Only Procurement Officer can create Quotation Request', 'error');
                         return;
                       }
@@ -711,7 +711,7 @@ export default function PurchaseRequestDetailPage() {
                     label: t('page', 'newPO'),
                     onClick: async () => {
                       // Only Procurement Officer can create LPO
-                      if (user?.role !== 'procurement_officer' && user?.role !== 'super_admin' && !user?.is_superuser) {
+                      if (user?.role !== 'procurement_officer' && user?.role !== 'admin' && !user?.is_superuser) {
                         toast('Only Procurement Officer can create Purchase Order', 'error');
                         return;
                       }

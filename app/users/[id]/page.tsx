@@ -52,7 +52,7 @@ const ROLES = [
   { value: 'site_engineer',       label: 'Site Engineer' },
   { value: 'procurement_manager', label: 'Procurement Manager' },
   { value: 'procurement_officer', label: 'Procurement Officer' },
-  { value: 'super_admin',         label: 'Super Admin' },
+  { value: 'admin',               label: 'Admin' },
 ];
 
 type DrawerSection = 'account' | 'employment' | 'personal' | 'legal' | null;

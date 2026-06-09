@@ -70,7 +70,7 @@ export default function PendingUsersPage() {
     if (await confirm(`Reject user "${user.username}"? This will delete the account.`)) rejectMutation.mutate(user.id);
   };
 
-  if (currentUser?.role !== 'super_admin' && !currentUser?.is_superuser) {
+  if (currentUser?.role !== 'admin' && !currentUser?.is_superuser) {
     return (
       <MainLayout>
         <div className="card" style={{ borderColor: 'var(--color-error)', background: 'color-mix(in srgb, var(--color-error) 10%, transparent)' }}>

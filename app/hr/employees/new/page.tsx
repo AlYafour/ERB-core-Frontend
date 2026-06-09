@@ -330,7 +330,7 @@ function NewEmployeeForm() {
                     <option value="site_engineer">Site Engineer</option>
                     <option value="procurement_officer">Procurement Officer</option>
                     <option value="procurement_manager">Procurement Manager</option>
-                    <option value="super_admin">Super Admin</option>
+                    <option value="admin">Admin</option>
                   </select>
                 </div>
               )}

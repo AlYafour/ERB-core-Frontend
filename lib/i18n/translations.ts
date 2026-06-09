@@ -470,7 +470,7 @@ export const translations = {
     site_engineer:       { en: 'Site Engineer',         ar: 'مهندس الموقع' },
     procurement_manager: { en: 'Procurement Manager',   ar: 'مدير المشتريات' },
     procurement_officer: { en: 'Procurement Officer',   ar: 'موظف المشتريات' },
-    super_admin:         { en: 'Super Admin',            ar: 'المدير العام' },
+    admin:               { en: 'Admin',                  ar: 'المدير' },
   },
 
   // ── Misc labels ──────────────────────────────────────────────────────

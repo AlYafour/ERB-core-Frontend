@@ -77,7 +77,7 @@ export default function PurchaseQuotationDetailPage() {
   // Procurement Officer cannot award - only Procurement Manager, Super Admin, and Superuser can award
   const canAward = isSuperuser || ((hasPermission('purchase_quotation', 'award') ?? false) &&
                    user?.role !== 'procurement_officer' &&
-                   (user?.role === 'procurement_manager' || user?.role === 'super_admin'));
+                   (user?.role === 'procurement_manager' || user?.role === 'admin'));
   const canReject = isSuperuser || (hasPermission('purchase_quotation', 'reject') ?? false);
   // Only Procurement Officer, Super Admin, and Superuser can convert awarded quotations to LPO
   // Procurement Manager should NOT be able to create LPO - this is Procurement Officer's responsibility
@@ -85,7 +85,7 @@ export default function PurchaseQuotationDetailPage() {
                      (hasPermission('purchase_order', 'convert') ?? false) ||
                      (hasPermission('purchase_order', 'create') ?? false) ||
                      (user?.role === 'procurement_officer') ||
-                     (user?.role === 'super_admin');
+                     (user?.role === 'admin');
 
   if (isLoading) {
     return (

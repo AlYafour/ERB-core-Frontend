@@ -34,7 +34,7 @@ const ACTION_LABELS: Record<string, string> = {
 export default function RolesPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'super_admin' || user?.is_staff || user?.is_superuser;
+  const isAdmin = user?.role === 'admin' || user?.is_staff || user?.is_superuser;
 
   const [selected, setSelected]     = useState<HRDepartment | null>(null);
   const [search, setSearch]         = useState('');

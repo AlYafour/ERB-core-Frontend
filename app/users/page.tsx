@@ -14,14 +14,14 @@ import { useTableState } from '@/lib/hooks/use-table-state';
 
 const ROLES = [
   { value: '',                    label: 'All Roles' },
-  { value: 'super_admin',         label: 'Super Admin' },
+  { value: 'admin',               label: 'Admin' },
   { value: 'procurement_manager', label: 'Procurement Manager' },
   { value: 'procurement_officer', label: 'Procurement Officer' },
   { value: 'site_engineer',       label: 'Site Engineer' },
 ];
 
 const ROLE_BADGE: Record<string, 'warning' | 'info' | 'success'> = {
-  super_admin:          'warning',
+  admin:                'warning',
   procurement_manager:  'info',
   procurement_officer:  'info',
   site_engineer:        'success',
@@ -31,7 +31,7 @@ const sel = 'form-select';
 
 export default function UsersPage() {
   const { user: me } = useAuth();
-  const isAdmin = me?.role === 'super_admin' || me?.is_staff || me?.is_superuser;
+  const isAdmin = me?.role === 'admin' || me?.is_staff || me?.is_superuser;
 
   const { page, setPage, search, handleSearch } = useTableState();
   const [role,   setRole]   = useState('');

@@ -20,7 +20,7 @@ export default function PayrollDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'super_admin' || user?.is_staff || user?.is_superuser;
+  const isAdmin = user?.role === 'admin' || user?.is_staff || user?.is_superuser;
 
   const { data: payroll, isLoading, error } = useQuery({
     queryKey: ['hr-payroll', id],

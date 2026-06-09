@@ -52,7 +52,7 @@ function NewPurchaseOrderPageContent() {
 
   // Only Procurement Officer and Super Admin can create Purchase Order
   // Procurement Manager should NOT be able to create Purchase Order
-  if (user && user.role !== 'procurement_officer' && user.role !== 'super_admin' && !user.is_superuser) {
+  if (user && user.role !== 'procurement_officer' && user.role !== 'admin' && !user.is_superuser) {
     router.push('/purchase-orders');
     return null;
   }

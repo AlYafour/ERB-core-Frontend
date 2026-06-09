@@ -58,7 +58,7 @@ export default function PurchaseQuotationsPage() {
   const t              = useT();
   const { hasPermission } = usePermissions();
   const isSuperuser = user?.is_superuser ?? false;
-  const isAdmin     = user?.role === 'super_admin' || user?.is_staff;
+  const isAdmin     = user?.role === 'admin' || user?.is_staff;
   const canCreate   = isSuperuser || (hasPermission('purchase_quotation', 'create') ?? false);
   const canView     = isSuperuser || (hasPermission('purchase_quotation', 'view') ?? false);
   const canDelete   = isSuperuser;

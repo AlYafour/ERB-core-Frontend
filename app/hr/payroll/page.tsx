@@ -44,7 +44,7 @@ export default function HRPayrollPage() {
   const queryClient = useQueryClient();
   const { user }    = useAuth();
   const t           = useT();
-  const isAdmin     = user?.role === 'super_admin' || user?.is_staff || user?.is_superuser;
+  const isAdmin     = user?.role === 'admin' || user?.is_staff || user?.is_superuser;
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['hr-payroll', page, search, filters],
