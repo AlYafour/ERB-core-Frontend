@@ -47,6 +47,12 @@ export default function GoodsReceivingPage() {
   const canCreate   = isSuperuser || (hasPermission('goods_receiving', 'create') ?? false);
   const canDelete   = isSuperuser;
 
+  const isMineActive = filters.pr_created_by === user?.id;
+  const toggleMine = () => {
+    tableState.handleFilterChange('pr_created_by', isMineActive ? '' : user?.id);
+    tableState.setPage(1);
+  };
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['grns', page, search, filters],
     queryFn:  () => goodsReceivingApi.getAll({ page, search, ...filters }),
@@ -112,6 +118,20 @@ export default function GoodsReceivingPage() {
               value={statusValue}
               onChange={handleStatusTab}
             />
+          }
+          toolbarActions={
+            <button
+              onClick={toggleMine}
+              style={{
+                padding: '5px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                border: '1.5px solid', transition: 'all 0.15s',
+                backgroundColor: isMineActive ? 'var(--color-wine-500)' : 'transparent',
+                borderColor: isMineActive ? 'var(--color-wine-500)' : 'var(--border)',
+                color: isMineActive ? 'white' : 'var(--text-secondary)',
+              }}
+            >
+              {isMineActive ? '✕ My GRNs' : 'My GRNs'}
+            </button>
           }
           filterFields={filterFields}
           filterSaveKey="goods-receiving"

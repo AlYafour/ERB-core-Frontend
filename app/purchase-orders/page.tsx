@@ -46,6 +46,12 @@ export default function PurchaseOrdersPage() {
   const canCreate   = isSuperuser || (hasPermission('purchase_order', 'create') ?? false);
   const canDelete   = isAdmin;
 
+  const isMineActive = filters.pr_created_by === user?.id;
+  const toggleMine = () => {
+    tableState.handleFilterChange('pr_created_by', isMineActive ? '' : user?.id);
+    tableState.setPage(1);
+  };
+
   /* Fetch all users for the engineer dropdowns */
   const { data: usersData } = useQuery({
     queryKey: ['users-all'],
@@ -194,9 +200,23 @@ export default function PurchaseOrdersPage() {
           filterSaveKey="purchase-orders"
           searchPlaceholder="Search purchase orders…"
           toolbarActions={
-            canDelete && selectedItems.size > 0 ? (
-              <Button variant="destructive" onClick={handleBulkDelete}>Delete {selectedItems.size}</Button>
-            ) : undefined
+            <>
+              <button
+                onClick={toggleMine}
+                style={{
+                  padding: '5px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  border: '1.5px solid', transition: 'all 0.15s',
+                  backgroundColor: isMineActive ? 'var(--color-wine-500)' : 'transparent',
+                  borderColor: isMineActive ? 'var(--color-wine-500)' : 'var(--border)',
+                  color: isMineActive ? 'white' : 'var(--text-secondary)',
+                }}
+              >
+                {isMineActive ? '✕ My LPOs' : 'My LPOs'}
+              </button>
+              {canDelete && selectedItems.size > 0 && (
+                <Button variant="destructive" onClick={handleBulkDelete}>Delete {selectedItems.size}</Button>
+              )}
+            </>
           }
           columns={columns}
           data={orders}
