@@ -357,14 +357,14 @@ export default function GRNDetailPage() {
               <Button variant="primary">View Invoice</Button>
             </Link>
           ) : (
-            purchaseOrder && (purchaseOrder as any).status === 'approved' && canCreateInvoicePerm && (
+            po && po.status === 'approved' && canCreateInvoicePerm && (
               <Button
                 variant="primary"
                 onClick={async () => {
-                  const guard = canCreateInvoice((purchaseOrder as any).status);
+                  const guard = canCreateInvoice(po.status);
                   if (!guard.canProceed) { toast(guard.reason || 'Cannot create invoice', 'error'); return; }
                   if (guard.warning && !await confirm(guard.warning + '\n\nDo you want to continue?')) return;
-                  router.push(`/purchase-invoices/new?purchase_order_id=${(purchaseOrder as any).id}&grn_id=${id}`);
+                  router.push(`/purchase-invoices/new?purchase_order_id=${po.id}&grn_id=${id}`);
                 }}
               >
                 Create Invoice
