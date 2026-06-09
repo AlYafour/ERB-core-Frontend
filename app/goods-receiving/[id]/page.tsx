@@ -105,7 +105,7 @@ export default function GRNDetailPage() {
         {/* ── Header ── */}
         <PageHeader
           backHref="/goods-receiving"
-          breadcrumbs={[{ label: 'Goods Receiving', href: '/goods-receiving' }, { label: grn.grn_number }]}
+          breadcrumbs={[{ label: 'Goods Receiving', href: '/goods-receiving' }, { label: `GRN ${grn.grn_number}` }]}
           title={`GRN ${grn.grn_number}`}
           actions={
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -371,9 +371,6 @@ export default function GRNDetailPage() {
               </Button>
             )
           )}
-          <Button variant="secondary" onClick={() => window.open(`/print/grn/${id}`, '_blank')}>
-            🖨 Print GRN
-          </Button>
         </div>
 
       </PageShell>
