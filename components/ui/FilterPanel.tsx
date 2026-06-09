@@ -355,24 +355,36 @@ export default function FilterPanel({ fields, filters, onFilterChange, onReset, 
             </div>
 
             {/* Footer */}
-            <div className="flex gap-3 px-5 py-4 border-t border-gray-200 bg-gray-50">
+            <div
+              className="flex gap-3 px-5 py-4 border-t"
+              style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface-subtle, var(--muted))' }}
+            >
               {saveKey && (
                 <button
                   onClick={handleSaveFilters}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 text-sm font-medium rounded-md border transition-colors"
+                  style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--card-bg)', borderColor: 'var(--border)' }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--surface-hover, var(--accent))'; }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; }}
                 >
                   Save
                 </button>
               )}
               <button
                 onClick={handleReset}
-                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2 text-sm font-medium rounded-md border transition-colors"
+                style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--card-bg)', borderColor: 'var(--border)' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--surface-hover, var(--accent))'; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; }}
               >
                 Reset
               </button>
               <button
                 onClick={handleApply}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white rounded-md transition-colors shadow-sm" style={{ backgroundColor: 'var(--color-wine-500)' }}
+                className="flex-1 px-4 py-2 text-sm font-semibold text-white rounded-md transition-opacity shadow-sm"
+                style={{ backgroundColor: 'var(--color-wine-500)' }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
               >
                 Apply Filters
               </button>

@@ -397,6 +397,7 @@ export interface PurchaseOrder {
   project_name?: string | null;
   project_code?: string | null;
   project_location?: string | null;
+  project_engineer_name?: string | null;
   has_grn?: boolean;
   grns_count?: number;
   revision_number?: number;
