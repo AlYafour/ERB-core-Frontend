@@ -44,7 +44,7 @@ export default function PurchaseOrdersPage() {
   const isSuperuser = user?.is_superuser ?? false;
   const isAdmin     = user?.role === 'admin' || user?.is_staff || isSuperuser;
   const canCreate   = isSuperuser || (hasPermission('purchase_order', 'create') ?? false);
-  const canDelete   = isSuperuser;
+  const canDelete   = isAdmin;
 
   /* Fetch all users for the engineer dropdowns */
   const { data: usersData } = useQuery({
