@@ -104,6 +104,7 @@ export interface PurchaseOrderFormData {
   tax_rate: number;
   discount: number;
   transportation_charge: number;
+  transport_vat_included?: boolean;
   notes: string;
   terms_and_conditions: string;
   status?: string;
@@ -135,6 +136,7 @@ export function toPurchaseOrderCreateData(form: PurchaseOrderFormData, items?: A
     tax_rate: form.tax_rate,
     discount: form.discount,
     transportation_charge: form.transportation_charge ?? 0,
+    transport_vat_included: form.transport_vat_included ?? true,
     notes: form.notes,
     terms_and_conditions: form.terms_and_conditions,
     status: form.status,
@@ -143,7 +145,34 @@ export function toPurchaseOrderCreateData(form: PurchaseOrderFormData, items?: A
 }
 
 export function toPurchaseOrderUpdateData(form: PurchaseOrderUpdateFormData, items?: Array<any>) {
-  return toPurchaseOrderCreateData(form as PurchaseOrderFormData, items);
+  // NOTE: purchase_request_id and purchase_quotation_id are intentionally excluded —
+  // sending them as null would clear the existing PR/PQ link on the backend.
+  const allItems = (items ?? []).map((item: any) => ({
+    product_id: item.product_id as number,
+    quantity: item.quantity,
+    unit_price: item.unit_price ?? 0,
+    discount: item.discount ?? 0,
+    tax_rate: item.tax_rate ?? 0,
+    unit: item.unit || '',
+    notes: item.notes ?? '',
+  }));
+  return {
+    supplier_id: form.supplier_id as number,
+    cost_code_id: form.cost_code_id ?? null,
+    order_date: form.order_date,
+    delivery_date: form.delivery_date || undefined,
+    payment_terms: form.payment_terms,
+    delivery_method: form.delivery_method || undefined,
+    delivery_terms: form.delivery_terms,
+    tax_rate: form.tax_rate,
+    discount: form.discount,
+    transportation_charge: form.transportation_charge ?? 0,
+    transport_vat_included: form.transport_vat_included ?? true,
+    notes: form.notes,
+    terms_and_conditions: form.terms_and_conditions,
+    status: form.status,
+    items: allItems,
+  };
 }
 
 export interface PurchaseOrderItemFormData {

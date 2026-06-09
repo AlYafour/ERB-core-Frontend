@@ -101,11 +101,15 @@ export default function PrintLPOPage() {
     const d = s * ((Number(item.discount) || 0) / 100);
     return sum + (s - d) * ((Number(item.tax_rate) || 0) / 100);
   }, 0);
-  const taxableBase = subtotal - discount + transportationCharge;
+  const transportVatIncluded = (po as any).transport_vat_included ?? true;
+  const afterDiscount = subtotal - discount;
+  const taxableBase = transportVatIncluded
+    ? afterDiscount + transportationCharge
+    : afterDiscount;
   const taxAmount   = Number(po.tax_rate) > 0
     ? taxableBase * (Number(po.tax_rate) / 100)
     : itemTaxAmount;
-  const total = taxableBase + taxAmount;
+  const total = afterDiscount + transportationCharge + taxAmount;
 
   const USER_STAMPS: Record<string, string> = {
     abdel: '/stamps/abdo-stamp.svg',

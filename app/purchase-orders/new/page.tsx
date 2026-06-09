@@ -92,6 +92,7 @@ Terms & Conditions:
     tax_rate: 0,
     discount: 0,
     transportation_charge: 0,
+    transport_vat_included: true,
     status: 'pending',
   });
 
@@ -374,11 +375,20 @@ Terms & Conditions:
     return sum + afterDiscount * ((item.tax_rate ?? 0) / 100);
   }, 0), [items]);
 
+  const calculateOrderTaxAmount = useMemo(() => {
+    const discountAmount = calculateSubtotal * (formData.discount / 100) || 0;
+    const afterDiscount = calculateSubtotal - discountAmount;
+    const taxableBase = formData.transport_vat_included
+      ? afterDiscount + (formData.transportation_charge || 0)
+      : afterDiscount;
+    return taxableBase * ((formData.tax_rate || 0) / 100) || 0;
+  }, [calculateSubtotal, formData.discount, formData.transportation_charge, formData.transport_vat_included, formData.tax_rate]);
+
   const calculateTotal = useMemo(() => {
     const discountAmount = calculateSubtotal * (formData.discount / 100) || 0;
-    const afterDiscount = calculateSubtotal - discountAmount + (formData.transportation_charge || 0);
-    return afterDiscount + calculateTaxAmount;
-  }, [calculateSubtotal, calculateTaxAmount, formData.discount, formData.transportation_charge]);
+    const afterDiscount = calculateSubtotal - discountAmount;
+    return afterDiscount + (formData.transportation_charge || 0) + calculateOrderTaxAmount;
+  }, [calculateSubtotal, calculateOrderTaxAmount, formData.discount, formData.transportation_charge]);
 
   const applyVatToAll = (rate: number) => {
     setItems(items.map((item) => ({ ...item, tax_rate: rate })));
@@ -972,6 +982,14 @@ Terms & Conditions:
                   className="form-input"
                   placeholder="0.00"
                 />
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, cursor: 'pointer', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.transport_vat_included ?? true}
+                    onChange={(e) => setFormData({ ...formData, transport_vat_included: e.target.checked })}
+                  />
+                  Apply VAT on transportation charge
+                </label>
               </div>
 
               <div className="card" style={{

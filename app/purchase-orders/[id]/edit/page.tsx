@@ -59,6 +59,7 @@ function EditPurchaseOrderPageContent() {
     tax_rate: 0,
     discount: 0,
     transportation_charge: 0,
+    transport_vat_included: true,
     status: 'draft',
     cost_code_id: null,
   });
@@ -106,6 +107,7 @@ function EditPurchaseOrderPageContent() {
         tax_rate: order.tax_rate || 0,
         discount: order.discount || 0,
         transportation_charge: order.transportation_charge || 0,
+        transport_vat_included: (order as any).transport_vat_included ?? true,
         status: order.status,
       });
       setItems(
@@ -198,15 +200,18 @@ function EditPurchaseOrderPageContent() {
 
   const calculateTaxAmount = () => {
     const subtotalWithVAT = calculateSubtotal() + calculateItemVAT();
-    const taxableBase = subtotalWithVAT - (formData.discount ?? 0) + (formData.transportation_charge ?? 0);
+    const afterDiscount = subtotalWithVAT - (formData.discount ?? 0);
+    const taxableBase = formData.transport_vat_included
+      ? afterDiscount + (formData.transportation_charge ?? 0)
+      : afterDiscount;
     return taxableBase * ((formData.tax_rate ?? 0) / 100) || 0;
   };
 
   const calculateTotal = () => {
     const subtotalWithVAT = calculateSubtotal() + calculateItemVAT();
-    const taxableBase = subtotalWithVAT - (formData.discount ?? 0) + (formData.transportation_charge ?? 0);
-    const orderTax = taxableBase * ((formData.tax_rate ?? 0) / 100) || 0;
-    return taxableBase + orderTax;
+    const afterDiscount = subtotalWithVAT - (formData.discount ?? 0);
+    const orderTax = calculateTaxAmount();
+    return afterDiscount + (formData.transportation_charge ?? 0) + orderTax;
   };
 
   if (isLoading) {
@@ -627,6 +632,14 @@ function EditPurchaseOrderPageContent() {
                   className="form-input"
                   placeholder="0.00"
                 />
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, cursor: 'pointer', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.transport_vat_included ?? true}
+                    onChange={(e) => setFormData({ ...formData, transport_vat_included: e.target.checked })}
+                  />
+                  Apply VAT on transportation charge
+                </label>
               </div>
 
               <div className="card" style={{ backgroundColor: 'var(--surface-subtle)', padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>

@@ -378,6 +378,7 @@ export interface PurchaseOrder {
   tax_amount: number;
   discount: number;
   transportation_charge: number;
+  transport_vat_included: boolean;
   total: number;
   payment_terms?: string;
   delivery_method?: 'pickup' | 'delivery';
