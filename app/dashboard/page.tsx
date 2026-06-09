@@ -5,16 +5,8 @@ import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api/dashboard';
-import {
-  FileTextIcon,
-  BuildingIcon,
-  PackageIcon,
-  DollarIcon,
-  ShoppingCartIcon,
-  BriefcaseIcon,
-} from '@/components/icons';
 import Link from 'next/link';
-import { PageShell, PageHeader } from '@/components/ui';
+import { Badge, PageShell, PageHeader } from '@/components/ui';
 import { formatPrice } from '@/lib/utils/format';
 import dynamic from 'next/dynamic';
 import RouteGuard from '@/components/auth/RouteGuard';
