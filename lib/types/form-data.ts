@@ -119,6 +119,7 @@ export function toPurchaseOrderCreateData(form: PurchaseOrderFormData, items?: A
     unit_price: item.unit_price ?? 0,
     discount: item.discount ?? 0,
     tax_rate: item.tax_rate ?? 0,
+    unit: item.unit || item._unit || '',
     notes: item.notes ?? '',
   }));
   return {
@@ -152,6 +153,7 @@ export interface PurchaseOrderItemFormData {
   unit_price: number;
   discount: number;
   tax_rate: number;
+  unit?: string;
   notes: string;
 }
 

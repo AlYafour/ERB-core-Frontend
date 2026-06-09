@@ -338,6 +338,7 @@ export interface PurchaseOrderItem {
   discount?: number;
   tax_rate?: number;
   total: number;
+  unit?: string;
   notes?: string;
   created_at?: string;
 }

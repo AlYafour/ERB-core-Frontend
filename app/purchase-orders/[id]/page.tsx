@@ -412,7 +412,7 @@ export default function PurchaseOrderDetailPage() {
                         <div style={{ fontWeight: 'var(--weight-medium)' }}>{item.product?.name || 'N/A'}</div>
                         <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item.product?.code || ''}</div>
                       </td>
-                      <td style={{ color: 'var(--text-secondary)' }}>{item.product?.unit?.toUpperCase() || '—'}</td>
+                      <td style={{ color: 'var(--text-secondary)' }}>{(item.unit || item.product?.unit)?.toUpperCase() || '—'}</td>
                       <td>{item.quantity}</td>
                       <td style={{ color: 'var(--text-secondary)' }}>{formatPrice(item.unit_price)}</td>
                       <td style={{ color: 'var(--text-secondary)' }}>{item.discount || 0}%</td>

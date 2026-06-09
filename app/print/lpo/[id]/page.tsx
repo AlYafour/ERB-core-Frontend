@@ -386,7 +386,7 @@ export default function PrintLPOPage() {
                       <div style={{ fontSize:'7.5pt', color:'#777', marginTop:1 }}>{item.notes}</div>
                     )}
                   </td>
-                  <td style={{ padding:'5px 8px', textAlign:'center' }}>{item.product?.unit?.toUpperCase() || '—'}</td>
+                  <td style={{ padding:'5px 8px', textAlign:'center' }}>{(item.unit || item.product?.unit)?.toUpperCase() || '—'}</td>
                   <td style={{ padding:'5px 8px', textAlign:'right' }}>{fmt(item.quantity, 2)}</td>
                   <td style={{ padding:'5px 8px', textAlign:'right' }}>AED {fmt(item.unit_price)}</td>
                   {hasDiscount && (

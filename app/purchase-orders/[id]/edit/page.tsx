@@ -73,6 +73,7 @@ function EditPurchaseOrderPageContent() {
     unit_price: 0,
     discount: 0,
     tax_rate: 0,
+    unit: '',
     notes: '',
   });
 
@@ -115,6 +116,7 @@ function EditPurchaseOrderPageContent() {
           unit_price: item.unit_price,
           discount: item.discount ?? 0,
           tax_rate: item.tax_rate ?? 0,
+          unit: item.unit || item.product?.unit || '',
           notes: item.notes || '',
         }))
       );
@@ -149,6 +151,7 @@ function EditPurchaseOrderPageContent() {
         unit_price: 0,
         discount: 0,
         tax_rate: 0,
+        unit: '',
         notes: '',
       });
     }
@@ -428,6 +431,7 @@ function EditPurchaseOrderPageContent() {
                   <thead>
                     <tr>
                       <th>{t('col', 'product')}</th>
+                      <th>{t('col', 'unit')}</th>
                       <th>{t('col', 'quantity')}</th>
                       <th>{t('col', 'unitPrice')}</th>
                       <th>{t('col', 'discountPct')}</th>
@@ -451,6 +455,17 @@ function EditPurchaseOrderPageContent() {
                           <td>
                             <div style={{ fontWeight: 'var(--weight-medium)' }}>{product?.name || 'N/A'}</div>
                             <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{product?.code || ''}</div>
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              value={(item as any).unit || ''}
+                              onChange={(e) =>
+                                handleUpdateItem(index, 'unit', e.target.value)
+                              }
+                              className="form-input" style={{ width: 80 }}
+                              placeholder={product?.unit || ''}
+                            />
                           </td>
                           <td>
                             <input

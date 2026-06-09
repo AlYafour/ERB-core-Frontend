@@ -91,6 +91,7 @@ Terms & Conditions:
     terms_and_conditions: defaultTermsAndConditions,
     tax_rate: 0,
     discount: 0,
+    transportation_charge: 0,
     status: 'pending',
   });
 
@@ -182,8 +183,10 @@ Terms & Conditions:
           unit_price: 0,
           discount: 0,
           tax_rate: 0,
+          unit: item.unit || '',
           notes: item.notes || '',
           _product: item.product || null,
+          _unit: item.unit || null,
         }));
         setItems(requestItems);
       }
@@ -373,9 +376,9 @@ Terms & Conditions:
 
   const calculateTotal = useMemo(() => {
     const discountAmount = calculateSubtotal * (formData.discount / 100) || 0;
-    const afterDiscount = calculateSubtotal - discountAmount;
+    const afterDiscount = calculateSubtotal - discountAmount + (formData.transportation_charge || 0);
     return afterDiscount + calculateTaxAmount;
-  }, [calculateSubtotal, calculateTaxAmount, formData.discount]);
+  }, [calculateSubtotal, calculateTaxAmount, formData.discount, formData.transportation_charge]);
 
   const applyVatToAll = (rate: number) => {
     setItems(items.map((item) => ({ ...item, tax_rate: rate })));
@@ -745,7 +748,7 @@ Terms & Conditions:
                                 </div>
                               )}
                             </td>
-                            <td style={{ color: 'var(--text-secondary)' }}>{product?.unit?.toUpperCase() || 'â€"'}</td>
+                            <td style={{ color: 'var(--text-secondary)' }}>{((item as any)._unit || product?.unit)?.toUpperCase() || '—'}</td>
                             <td>
                               <input
                                 type="number"
@@ -958,6 +961,18 @@ Terms & Conditions:
                   />
                 </div>
               )}
+              <div>
+                <label className="form-label">Transportation Charge (AED)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.transportation_charge || ''}
+                  onChange={(e) => setFormData({ ...formData, transportation_charge: parseFloat(e.target.value) || 0 })}
+                  className="form-input"
+                  placeholder="0.00"
+                />
+              </div>
 
               <div className="card" style={{
                 backgroundColor: 'var(--surface-inset)',
@@ -984,6 +999,14 @@ Terms & Conditions:
                       <span style={{ color: 'var(--text-secondary)' }}>Discount ({formData.discount}%):</span>
                       <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--color-error)' }}>
                         - {formatPrice(calculateSubtotal * (formData.discount / 100) || 0)}
+                      </span>
+                    </div>
+                  )}
+                  {(formData.transportation_charge ?? 0) > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Transportation:</span>
+                      <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
+                        {formatPrice(formData.transportation_charge)}
                       </span>
                     </div>
                   )}
