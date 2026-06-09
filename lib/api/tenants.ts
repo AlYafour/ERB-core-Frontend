@@ -104,6 +104,14 @@ export const tenantApi = {
     return r.data;
   },
 
+  uploadTenantBranding: async (id: string, file: File, type: 'logo' | 'login_bg'): Promise<{ url: string; type: string }> => {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('type', type);
+    const r = await apiClient.post(`/super/tenants/${id}/upload-branding-asset/`, fd);
+    return r.data;
+  },
+
   getBranding: async (id: string): Promise<TenantBrandingData> => {
     const r = await apiClient.get(`/super/tenants/${id}/branding/`);
     return r.data;

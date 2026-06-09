@@ -224,6 +224,7 @@ export default function Sidebar() {
     { name: t('nav', 'settings'), href: '/settings/permissions', icon: UsersIcon, adminOnly: true, superAdminOnly: true, subItems: [
       { name: t('nav', 'users'),       href: '/users'                },
       { name: t('nav', 'permissions'), href: '/settings/permissions' },
+      ...(user?.role === 'admin' ? [{ name: 'Company Settings', href: '/settings/company' }] : []),
     ]},
   ];
 
@@ -426,7 +427,7 @@ export default function Sidebar() {
               {otherItems
                 .filter((item) => {
                   if (item.superAdminOnly) return user?.role === 'super_admin' || user?.is_superuser;
-                  if (item.adminOnly)      return user?.role === 'super_admin' || user?.is_staff || user?.is_superuser;
+                  if (item.adminOnly)      return user?.role === 'super_admin' || user?.role === 'admin' || user?.is_staff || user?.is_superuser;
                   return true;
                 })
                 .map((item) => {

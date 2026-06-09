@@ -31,7 +31,7 @@ export interface User {
   first_name: string;
   last_name: string;
   full_name_ar?: string;
-  role: 'site_engineer' | 'procurement_manager' | 'procurement_officer' | 'super_admin';
+  role: 'site_engineer' | 'procurement_manager' | 'procurement_officer' | 'super_admin' | 'admin';
   phone: string;
   job_title?: string;
   avatar?: string;

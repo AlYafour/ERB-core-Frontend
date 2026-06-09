@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tenantApi } from '@/lib/api/tenants';
 import type { CreateTenantPayload, CreateTenantResponse } from '@/lib/api/tenants';
@@ -672,6 +673,7 @@ function DrawerShell({ children, onClose, title, footer }: { children: React.Rea
 
 // ── Main page ────────────────────────────────────────────────────────────────
 export default function CompaniesPage() {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
@@ -766,8 +768,13 @@ export default function CompaniesPage() {
                 {tenants.map((t) => (
                   <tr key={t.id}>
                     <td style={tdStyle}>
-                      <div style={{ fontWeight: 600 }}>{t.name}</div>
-                      {t.email && <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{t.email}</div>}
+                      <button
+                        onClick={() => router.push(`/super-admin/companies/${t.id}`)}
+                        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+                      >
+                        <div style={{ fontWeight: 600, color: 'var(--color-primary)', textDecoration: 'underline', textDecorationStyle: 'dotted' }}>{t.name}</div>
+                        {t.email && <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{t.email}</div>}
+                      </button>
                     </td>
                     <td style={tdStyle}><StatusBadge status={t.status} /></td>
                     <td style={tdStyle}>{t.plan?.name ?? '—'}</td>
