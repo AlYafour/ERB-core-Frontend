@@ -443,7 +443,6 @@ export default function PurchaseOrderDetailPage() {
             const vatAmount = Number(order.tax_rate) > 0
               ? taxableBase * (Number(order.tax_rate) / 100)
               : itemsVat;
-            const computedTotal = taxableBase + vatAmount;
             return (
               <DetailCard title="Financial Summary">
                 <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end' }}>
@@ -474,7 +473,7 @@ export default function PurchaseOrderDetailPage() {
                     )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-2)', fontSize: 'var(--text-base)' }}>
                       <span style={{ fontWeight: 'var(--weight-bold)' }}>Total:</span>
-                      <span style={{ fontWeight: 'var(--weight-bold)' }}>{formatPrice(computedTotal)}</span>
+                      <span style={{ fontWeight: 'var(--weight-bold)' }}>{formatPrice(order.total)}</span>
                     </div>
                   </div>
                 </div>
