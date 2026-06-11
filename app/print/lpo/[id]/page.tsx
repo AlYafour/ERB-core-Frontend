@@ -475,10 +475,7 @@ export default function PrintLPOPage() {
               )}
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
                 padding:'8px 12px', background:NAVY, color:'#fff', fontSize:'10pt', fontWeight:800 }}>
-                <div>
-                  <div>TOTAL</div>
-                  <div style={{ fontSize:'6pt', fontWeight:400, opacity:.7, fontStyle:'italic' }}>incl. VAT</div>
-                </div>
+                <span>TOTAL incl. VAT</span>
                 <span>AED {fmt(Number(po.total))}</span>
               </div>
             </div>
