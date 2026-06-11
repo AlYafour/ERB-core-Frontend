@@ -636,6 +636,19 @@ export interface HREmergencyContact {
   updated_at: string;
 }
 
+export interface OfficeLocation {
+  id: number;
+  name: string;
+  name_ar: string;
+  latitude: number;
+  longitude: number;
+  radius_m: number;
+  address: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface HRAttendance {
   id: number;
   employee: number;
@@ -649,6 +662,9 @@ export interface HRAttendance {
   check_out_lat: number | null;
   check_out_lng: number | null;
   check_in_address: string;
+  matched_location: number | null;
+  matched_location_name: string | null;
+  is_out_of_range: boolean;
   break_start: string | null;
   break_end: string | null;
   status: 'present' | 'absent' | 'late' | 'half_day' | 'holiday' | 'on_leave';

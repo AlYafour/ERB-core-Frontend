@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, PaginatedResponse } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse } from '@/types';
 
 // ── Location Types ─────────────────────────────────────────────────────────────
 
@@ -217,5 +217,25 @@ export const hrPayrollApi = {
   getSummary: async (month: number, year: number) => {
     const response = await apiClient.get('/hr/payroll/summary/', { params: { month, year } });
     return response.data;
+  },
+};
+
+// ── Office Locations (Geofence check-in points) ────────────────────────────────
+
+export const hrOfficeLocationsApi = {
+  getAll: async (params?: { search?: string; is_active?: boolean }): Promise<PaginatedResponse<OfficeLocation>> => {
+    const response = await apiClient.get('/hr/office-locations/', { params: { page_size: 200, ...params } });
+    return response.data;
+  },
+  create: async (data: Partial<OfficeLocation>): Promise<OfficeLocation> => {
+    const response = await apiClient.post('/hr/office-locations/', data);
+    return response.data;
+  },
+  update: async (id: number, data: Partial<OfficeLocation>): Promise<OfficeLocation> => {
+    const response = await apiClient.patch(`/hr/office-locations/${id}/`, data);
+    return response.data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/office-locations/${id}/`);
   },
 };
