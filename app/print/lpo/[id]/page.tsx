@@ -89,8 +89,9 @@ export default function PrintLPOPage() {
   const transportationCharge = Number(po.transportation_charge ?? 0);
   const hasDiscount          = discount > 0;
   const hasTransportation    = transportationCharge > 0;
+  const transportVatIncluded = (po as any).transport_vat_included ?? true;
 
-  // Compute from per-item data (backend tax_amount may be 0 if stored with old global tax_rate)
+  // subtotal = sum of per-item (qty × unit_price × (1 − disc%)) — excl. VAT
   const subtotal = po.items.reduce((sum, item) => {
     const s = Number(item.quantity) * Number(item.unit_price);
     const d = s * ((Number(item.discount) || 0) / 100);
@@ -363,39 +364,51 @@ export default function PrintLPOPage() {
                   letterSpacing:'.5px', textTransform:'uppercase', width:75 }}>Unit Price</th>
                 {hasDiscount && (
                   <th style={{ padding:'6px 8px', textAlign:'right', fontSize:'6.5pt', fontWeight:700,
-                    letterSpacing:'.5px', textTransform:'uppercase', width:50 }}>Disc%</th>
+                    letterSpacing:'.5px', textTransform:'uppercase', width:44 }}>Disc%</th>
                 )}
                 <th style={{ padding:'6px 8px', textAlign:'right', fontSize:'6.5pt', fontWeight:700,
-                  letterSpacing:'.5px', textTransform:'uppercase', width:80 }}>Amount</th>
+                  letterSpacing:'.5px', textTransform:'uppercase', width:78 }}>Excl. VAT</th>
+                <th style={{ padding:'6px 8px', textAlign:'right', fontSize:'6.5pt', fontWeight:700,
+                  letterSpacing:'.5px', textTransform:'uppercase', width:68 }}>VAT</th>
+                <th style={{ padding:'6px 8px', textAlign:'right', fontSize:'6.5pt', fontWeight:700,
+                  letterSpacing:'.5px', textTransform:'uppercase', width:82 }}>Total</th>
               </tr>
             </thead>
             <tbody>
-              {po.items.map((item: PurchaseOrderItem, idx: number) => (
-                <tr key={item.id ?? idx} style={{
-                  borderBottom:`1px solid #f1f5f9`,
-                  background: idx%2===0 ? '#fff' : '#fafafa',
-                }}>
-                  <td style={{ padding:'5px 8px', textAlign:'center', color:'#94a3b8' }}>{idx+1}</td>
-                  <td style={{ padding:'5px 8px' }}>
-                    <div style={{ fontWeight:600, color:NAVY, lineHeight:1.3 }}>
-                      {item.product?.name ?? `Item #${item.product_id}`}
-                    </div>
-                    {item.product?.code && (
-                      <div style={{ fontSize:'7pt', color:'#94a3b8', marginTop:1 }}>{item.product.code}</div>
+              {po.items.map((item: PurchaseOrderItem, idx: number) => {
+                const iExcl = Number(item.quantity) * Number(item.unit_price) * (1 - (Number(item.discount) || 0) / 100);
+                const iVat  = Number(item.total) - iExcl;
+                return (
+                  <tr key={item.id ?? idx} style={{
+                    borderBottom:`1px solid #f1f5f9`,
+                    background: idx%2===0 ? '#fff' : '#fafafa',
+                  }}>
+                    <td style={{ padding:'5px 8px', textAlign:'center', color:'#94a3b8' }}>{idx+1}</td>
+                    <td style={{ padding:'5px 8px' }}>
+                      <div style={{ fontWeight:600, color:NAVY, lineHeight:1.3 }}>
+                        {item.product?.name ?? `Item #${item.product_id}`}
+                      </div>
+                      {item.product?.code && (
+                        <div style={{ fontSize:'7pt', color:'#94a3b8', marginTop:1 }}>{item.product.code}</div>
+                      )}
+                      {item.notes && (
+                        <div style={{ fontSize:'7.5pt', color:'#777', marginTop:1 }}>{item.notes}</div>
+                      )}
+                    </td>
+                    <td style={{ padding:'5px 8px', textAlign:'center' }}>{(item.unit || item.product?.unit)?.toUpperCase() || '—'}</td>
+                    <td style={{ padding:'5px 8px', textAlign:'right' }}>{fmt(item.quantity, 2)}</td>
+                    <td style={{ padding:'5px 8px', textAlign:'right' }}>AED {fmt(item.unit_price)}</td>
+                    {hasDiscount && (
+                      <td style={{ padding:'5px 8px', textAlign:'right' }}>{fmt(item.discount ?? 0, 1)}%</td>
                     )}
-                    {item.notes && (
-                      <div style={{ fontSize:'7.5pt', color:'#777', marginTop:1 }}>{item.notes}</div>
-                    )}
-                  </td>
-                  <td style={{ padding:'5px 8px', textAlign:'center' }}>{(item.unit || item.product?.unit)?.toUpperCase() || '—'}</td>
-                  <td style={{ padding:'5px 8px', textAlign:'right' }}>{fmt(item.quantity, 2)}</td>
-                  <td style={{ padding:'5px 8px', textAlign:'right' }}>AED {fmt(item.unit_price)}</td>
-                  {hasDiscount && (
-                    <td style={{ padding:'5px 8px', textAlign:'right' }}>{fmt(item.discount ?? 0, 1)}%</td>
-                  )}
-                  <td style={{ padding:'5px 8px', textAlign:'right', fontWeight:600 }}>AED {fmt(item.total)}</td>
-                </tr>
-              ))}
+                    <td style={{ padding:'5px 8px', textAlign:'right' }}>AED {fmt(iExcl)}</td>
+                    <td style={{ padding:'5px 8px', textAlign:'right', color: iVat > 0 ? '#64748b' : '#cbd5e1' }}>
+                      {iVat > 0 ? `AED ${fmt(iVat)}` : '—'}
+                    </td>
+                    <td style={{ padding:'5px 8px', textAlign:'right', fontWeight:600 }}>AED {fmt(Number(item.total))}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
 
@@ -420,10 +433,13 @@ export default function PrintLPOPage() {
             </div>
 
             {/* Totals box */}
-            <div style={{ width:240, border:`1px solid ${BORDER}`, borderRadius:8, overflow:'hidden', flexShrink:0 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 12px',
-                fontSize:'8pt', background:'#fafafa', borderBottom:`1px solid #f1f5f9` }}>
-                <span style={{ color:GREY }}>Subtotal</span>
+            <div style={{ width:255, border:`1px solid ${BORDER}`, borderRadius:8, overflow:'hidden', flexShrink:0 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+                padding:'4px 12px', fontSize:'8pt', background:'#fafafa', borderBottom:`1px solid #f1f5f9` }}>
+                <div>
+                  <div style={{ color:GREY }}>Subtotal</div>
+                  <div style={{ fontSize:'6pt', color:'#94a3b8', fontStyle:'italic' }}>excl. VAT</div>
+                </div>
                 <span style={{ fontWeight:600 }}>AED {fmt(subtotal)}</span>
               </div>
               {hasDiscount && (
@@ -434,23 +450,33 @@ export default function PrintLPOPage() {
                 </div>
               )}
               {hasTransportation && (
-                <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 12px',
-                  fontSize:'8pt', background:'#fafafa', borderBottom:`1px solid #f1f5f9` }}>
-                  <span style={{ color:GREY }}>Transportation</span>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+                  padding:'4px 12px', fontSize:'8pt', background:'#fafafa', borderBottom:`1px solid #f1f5f9` }}>
+                  <div>
+                    <div style={{ color:GREY }}>Transportation</div>
+                    <div style={{ fontSize:'6pt', color:'#94a3b8', fontStyle:'italic' }}>
+                      {transportVatIncluded ? 'VAT applicable' : 'excl. VAT'}
+                    </div>
+                  </div>
                   <span style={{ fontWeight:600 }}>AED {fmt(transportationCharge)}</span>
                 </div>
               )}
               {Number(po.tax_amount) > 0 && (
-                <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 12px',
-                  fontSize:'8pt', background: (hasDiscount || hasTransportation) ? '#fafafa' : '#fff',
-                  borderBottom:`1px solid #f1f5f9` }}>
-                  <span style={{ color:GREY }}>VAT{Number(po.tax_rate) > 0 ? ` (${po.tax_rate}%)` : ''}</span>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+                  padding:'4px 12px', fontSize:'8pt', background:'#fff', borderBottom:`1px solid #f1f5f9` }}>
+                  <div>
+                    <div style={{ color:GREY }}>VAT</div>
+                    <div style={{ fontSize:'6pt', color:'#94a3b8', fontStyle:'italic' }}>5%</div>
+                  </div>
                   <span style={{ fontWeight:600 }}>AED {fmt(Number(po.tax_amount))}</span>
                 </div>
               )}
-              <div style={{ display:'flex', justifyContent:'space-between',
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
                 padding:'8px 12px', background:NAVY, color:'#fff', fontSize:'10pt', fontWeight:800 }}>
-                <span>TOTAL</span>
+                <div>
+                  <div>TOTAL</div>
+                  <div style={{ fontSize:'6pt', fontWeight:400, opacity:.7, fontStyle:'italic' }}>incl. VAT</div>
+                </div>
                 <span>AED {fmt(Number(po.total))}</span>
               </div>
             </div>
