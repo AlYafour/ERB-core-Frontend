@@ -373,7 +373,7 @@ export default function PrintLPOPage() {
                 <th style={{ padding:'6px 8px', textAlign:'right', fontSize:'6.5pt', fontWeight:700,
                   letterSpacing:'.5px', textTransform:'uppercase', width:68 }}>VAT</th>
                 <th style={{ padding:'6px 8px', textAlign:'right', fontSize:'6.5pt', fontWeight:700,
-                  letterSpacing:'.5px', textTransform:'uppercase', width:82 }}>Total</th>
+                  letterSpacing:'.5px', textTransform:'uppercase', width:82 }}>Total incl. VAT</th>
               </tr>
             </thead>
             <tbody>
