@@ -97,6 +97,8 @@ export default function PrintLPOPage() {
     const d = s * ((Number(item.discount) || 0) / 100);
     return sum + s - d;
   }, 0);
+  // totalVat covers both per-item VAT and any transport VAT — works regardless of where VAT is stored
+  const totalVat = Math.max(0, Number(po.total) - subtotal + discount - transportationCharge);
 
   const USER_STAMPS: Record<string, string> = {
     abdel: '/stamps/abdo-stamp.svg',
@@ -114,7 +116,7 @@ export default function PrintLPOPage() {
   }
 
   const signatories = [
-    { label: 'Prepared By', name: po.pr_created_by_name        || '',        stamp: resolveStamp(po.pr_created_by_name) },
+    { label: 'Requested By', name: po.pr_created_by_name        || '',        stamp: resolveStamp(po.pr_created_by_name) },
     { label: 'Checked By',  name: po.quotation_created_by_name || 'Noura',   stamp: resolveStamp(po.quotation_created_by_name) ?? '/stamps/noura-stamp.svg' },
     { label: 'Approved By', name: po.approved_by_name          || 'Saif',    stamp: resolveStamp(po.approved_by_name)          ?? '/stamps/saif-stamp.svg'  },
     { label: 'Supplier',    name: supplier?.name ?? '',                       stamp: null },
@@ -461,14 +463,14 @@ export default function PrintLPOPage() {
                   <span style={{ fontWeight:600 }}>AED {fmt(transportationCharge)}</span>
                 </div>
               )}
-              {Number(po.tax_amount) > 0 && (
+              {totalVat > 0 && (
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
                   padding:'4px 12px', fontSize:'8pt', background:'#fff', borderBottom:`1px solid #f1f5f9` }}>
                   <div>
                     <div style={{ color:GREY }}>VAT</div>
                     <div style={{ fontSize:'6pt', color:'#94a3b8', fontStyle:'italic' }}>5%</div>
                   </div>
-                  <span style={{ fontWeight:600 }}>AED {fmt(Number(po.tax_amount))}</span>
+                  <span style={{ fontWeight:600 }}>AED {fmt(totalVat)}</span>
                 </div>
               )}
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
