@@ -239,3 +239,35 @@ export const hrOfficeLocationsApi = {
     await apiClient.delete(`/hr/office-locations/${id}/`);
   },
 };
+
+// ── Employee ↔ OfficeLocation assignments (GPS check-in) ──────────────────────
+// Nested under /hr/attendance/employees/{employeePk}/locations/
+
+export interface EmployeeLocationAssignment {
+  id: number;
+  office_location: number;
+  office_location_name: string;
+  office_location_latitude: number;
+  office_location_longitude: number;
+  office_location_radius_m: number;
+  assigned_by: number | null;
+  assigned_by_name: string | null;
+  assigned_at: string;
+}
+
+export const hrEmployeeLocationsApi = {
+  getAll: async (employeePk: number): Promise<EmployeeLocationAssignment[]> => {
+    const response = await apiClient.get(`/hr/attendance/employees/${employeePk}/locations/`);
+    // Handle both paginated { results: [...] } and plain array responses
+    return Array.isArray(response.data) ? response.data : (response.data.results ?? []);
+  },
+  assign: async (employeePk: number, officeLocationId: number): Promise<EmployeeLocationAssignment> => {
+    const response = await apiClient.post(`/hr/attendance/employees/${employeePk}/locations/`, {
+      office_location: officeLocationId,
+    });
+    return response.data;
+  },
+  remove: async (employeePk: number, assignmentId: number): Promise<void> => {
+    await apiClient.delete(`/hr/attendance/employees/${employeePk}/locations/${assignmentId}/`);
+  },
+};
