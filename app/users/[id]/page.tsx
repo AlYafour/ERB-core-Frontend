@@ -10,7 +10,6 @@ import { Loader, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/u
 import { useAuth } from '@/lib/hooks/use-auth';
 import OverviewTab from '@/components/users/OverviewTab';
 import AttendanceTab from '@/components/users/AttendanceTab';
-import WorkLocationsTab from '@/components/users/WorkLocationsTab';
 import RequestsTab from '@/components/users/RequestsTab';
 import DocumentsTab from '@/components/users/DocumentsTab';
 
@@ -96,7 +95,6 @@ export default function UserProfilePage() {
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
-            <TabsTrigger value="work-locations">Work Locations</TabsTrigger>
             <TabsTrigger value="requests">Requests</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
           </TabsList>
@@ -106,9 +104,6 @@ export default function UserProfilePage() {
           </TabsContent>
           <TabsContent value="attendance">
             <AttendanceTab {...tabProps} />
-          </TabsContent>
-          <TabsContent value="work-locations">
-            <WorkLocationsTab {...tabProps} />
           </TabsContent>
           <TabsContent value="requests">
             <RequestsTab {...tabProps} />
