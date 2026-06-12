@@ -261,12 +261,12 @@ export default function Sidebar() {
                 title={t('nav', 'hrModule')}
                 icon={<UsersIcon className="w-4 h-4" />}
                 items={[
-                  { name: t('nav', 'hrDepartments'),  href: '/hr/departments'         },
-                  { name: t('nav', 'hrLocations'),    href: '/hr/locations'           },
-                  { name: t('nav', 'hrAttendance'),   href: '/hr/attendance'          },
+                  { name: t('nav', 'hrDepartments'),  href: '/hr/departments'                        },
+                  { name: t('nav', 'hrAttendance'),   href: '/hr/attendance'                         },
                   { name: 'Employee Locations',        href: '/hr/employee-locations', adminOnly: true },
-                  { name: t('nav', 'hrRequests'),     href: '/hr/requests'            },
-                  { name: t('nav', 'hrPayroll'),      href: '/hr/payroll'             },
+                  { name: t('nav', 'hrRequests'),     href: '/hr/requests'                           },
+                  { name: t('nav', 'hrPayroll'),      href: '/hr/payroll'                            },
+                  { name: 'HR Settings',               href: '/hr/settings',           adminOnly: true },
                 ]}
                 defaultOpen={isHRActive}
                 user={user}
