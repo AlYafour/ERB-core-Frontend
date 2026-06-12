@@ -44,6 +44,7 @@ export default function EmployeeLocationsPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const isAdmin = !!(
+    user?.role === 'admin' ||
     user?.role === 'super_admin' ||
     user?.is_staff ||
     user?.is_superuser
