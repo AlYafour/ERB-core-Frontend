@@ -8,6 +8,7 @@ import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi, hrLocationsApi } from
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import { Button, Badge, Loader } from '@/components/ui';
+import { useAuth } from '@/lib/hooks/use-auth';
 import { toast } from '@/lib/hooks/use-toast';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -64,6 +65,12 @@ export default function UserProfilePage() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // ── A4: Access guard ──────────────────────────────────────────────────────
+  const { user: me } = useAuth();
+  const isAdmin = !!(me?.role === 'super_admin' || me?.is_staff || me?.is_superuser);
+  const isSelf  = !!me && me.id === userId;
+  const canView = isSelf || isAdmin;
+
   const [drawer, setDrawer]             = useState<DrawerSection>(null);
   const [avatarFile, setAvatarFile]     = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -74,13 +81,13 @@ export default function UserProfilePage() {
   const { data: user, isLoading: uLoading } = useQuery({
     queryKey: ['user', userId],
     queryFn:  () => usersApi.getById(userId),
-    enabled:  !!userId,
+    enabled:  !!userId && canView,
   });
 
   const { data: empData, isLoading: eLoading } = useQuery({
     queryKey: ['employee-by-user', userId],
     queryFn:  () => hrEmployeesApi.getAll({ user: userId }),
-    enabled:  !!userId,
+    enabled:  !!userId && canView,
   });
 
   const { data: depts }     = useQuery({ queryKey: ['hr-depts'],     queryFn: () => hrDepartmentsApi.getAll({ page: 1 }) });
@@ -204,6 +211,21 @@ export default function UserProfilePage() {
     toast('Saved successfully', 'success');
     setDrawer(null);
   };
+
+  // ── A4: Guard renders ─────────────────────────────────────────────────────
+  if (!me) return (
+    <MainLayout>
+      <div className="card empty-state"><Loader /></div>
+    </MainLayout>
+  );
+
+  if (!canView) return (
+    <MainLayout>
+      <div className="card empty-state">
+        <p style={{ color: 'var(--color-error)', margin: 0 }}>Access denied.</p>
+      </div>
+    </MainLayout>
+  );
 
   // ── Loading / Error ────────────────────────────────────────────────────────
   if (uLoading || eLoading) return (
