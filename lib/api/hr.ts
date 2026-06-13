@@ -99,10 +99,6 @@ export const hrDepartmentsApi = {
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/hr/employees/departments/${id}/`);
   },
-  assignPermissions: async (id: number, permissionIds: number[]): Promise<HRDepartment> => {
-    const response = await apiClient.post(`/hr/employees/departments/${id}/assign_permissions/`, { permission_ids: permissionIds });
-    return response.data;
-  },
 };
 
 // ── Positions ──────────────────────────────────────────────────────────────────
@@ -269,5 +265,65 @@ export const hrEmployeeLocationsApi = {
   },
   remove: async (employeePk: number, assignmentId: number): Promise<void> => {
     await apiClient.delete(`/hr/attendance/employees/${employeePk}/locations/${assignmentId}/`);
+  },
+};
+
+// ── Self Check-in / Check-out (employee self-service) ──────────────────────────
+
+export interface AttendanceRecord {
+  id: number;
+  employee: number;
+  employee_name: string;
+  employee_id_code: string;
+  date: string;
+  check_in: string | null;
+  check_out: string | null;
+  check_in_lat: number | null;
+  check_in_lng: number | null;
+  check_out_lat: number | null;
+  check_out_lng: number | null;
+  check_in_address: string;
+  matched_location: number | null;
+  matched_location_name: string | null;
+  is_out_of_range: boolean;
+  status: string;
+  work_hours: number | null;
+  duration_hours: number | null;
+  notes: string;
+}
+
+export interface EmployeeAssignmentFlat {
+  id: number;
+  employee_pk: number;
+  employee_name: string;
+  employee_id_code: string;
+  office_location: number;
+  office_location_name: string;
+  assigned_at: string;
+}
+
+export const hrAllAssignmentsApi = {
+  getAll: async (): Promise<EmployeeAssignmentFlat[]> => {
+    const response = await apiClient.get('/hr/attendance/assignments/');
+    return response.data;
+  },
+};
+
+export const hrSelfAttendanceApi = {
+  getToday: async (employeeId: number): Promise<AttendanceRecord | null> => {
+    const today = new Date().toISOString().slice(0, 10);
+    const response = await apiClient.get('/hr/attendance/', {
+      params: { date: today, employee: employeeId, page_size: 1 },
+    });
+    const results: AttendanceRecord[] = response.data?.results ?? [];
+    return results[0] ?? null;
+  },
+  checkIn: async (data: { latitude: number; longitude: number; address?: string }): Promise<AttendanceRecord> => {
+    const response = await apiClient.post('/hr/attendance/self-check-in/', data);
+    return response.data;
+  },
+  checkOut: async (data?: { latitude?: number; longitude?: number }): Promise<AttendanceRecord> => {
+    const response = await apiClient.post('/hr/attendance/self-check-out/', data ?? {});
+    return response.data;
   },
 };
