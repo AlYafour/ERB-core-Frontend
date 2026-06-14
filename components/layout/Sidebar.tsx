@@ -40,6 +40,7 @@ export default function Sidebar() {
   const t = useT();
   const pending = usePendingCounts();
   const tasksBadge = useTasksBadge();
+  const isAdmin = !!(user?.role === 'admin' || user?.role === 'super_admin' || user?.is_staff || user?.is_superuser);
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + '/');
@@ -57,7 +58,7 @@ export default function Sidebar() {
     { name: t('nav', 'suppliers'),      href: '/suppliers',            icon: BuildingIcon, subItems: [{ name: t('nav', 'supplierList'), href: '/suppliers' }] },
     { name: t('nav', 'itemsProducts'),  href: '/products',             icon: PackageIcon,  subItems: [{ name: t('nav', 'itemsList'),    href: '/products'  }] },
     { name: t('nav', 'projects'),       href: '/projects',             icon: BuildingIcon, subItems: [{ name: t('nav', 'projectsList'), href: '/projects'  }] },
-    { name: t('nav', 'settings'),       href: '/settings/permissions', icon: UsersIcon, adminOnly: true, superAdminOnly: true, subItems: [
+    { name: t('nav', 'settings'),       href: '/settings/permissions', icon: UsersIcon, adminOnly: true, subItems: [
       { name: t('nav', 'users'),        href: '/users'                },
       { name: t('nav', 'permissions'),  href: '/settings/permissions' },
     ]},
@@ -233,10 +234,10 @@ export default function Sidebar() {
 
             {/* Workspace items */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {(user?.role === 'super_admin' || user?.is_superuser) &&
+              {isAdmin &&
                 navLink('/dashboard', t('nav', 'dashboard'), <DashboardIcon className="w-4 h-4" />)
               }
-              {(user?.role === 'super_admin' || user?.is_superuser || user?.role === 'procurement_manager') &&
+              {(isAdmin || user?.role === 'procurement_manager') &&
                 navLink('/violations', t('nav', 'violations'), <AlertIcon className="w-4 h-4" />)
               }
               {user?.id && navLink(`/users/${user.id}`, t('nav', 'myProfile'), <UsersIcon className="w-4 h-4" />)}
@@ -320,8 +321,8 @@ export default function Sidebar() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1, paddingBottom: 8 }}>
               {otherItems
                 .filter((item) => {
-                  if (item.superAdminOnly) return user?.role === 'super_admin' || user?.is_superuser;
-                  if (item.adminOnly)      return user?.role === 'super_admin' || user?.is_staff || user?.is_superuser;
+                  if (item.superAdminOnly) return isAdmin;
+                  if (item.adminOnly)      return isAdmin;
                   return true;
                 })
                 .map((item) => {
