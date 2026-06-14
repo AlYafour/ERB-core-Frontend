@@ -614,6 +614,7 @@ export interface HREmployee {
   indirect_manager_name?: string | null;
   employee_group?: number | null;
   employee_group_name?: string | null;
+  employee_group_code?: string | null;
   // Contact
   mobile_number?: string;
   extension_number?: string;

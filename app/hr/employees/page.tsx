@@ -249,10 +249,14 @@ export default function EmployeesPage() {
               const isPickerOpen      = pickerOpenId === emp.id;
               const isGroupPickerOpen = groupPickerOpenId === emp.id;
               const override          = managerOverrides[emp.id];
-              const managerName       = override !== undefined ? override?.name ?? null : null;
+              const managerName       = override !== undefined ? override?.name ?? null : (emp.direct_manager_name ?? null);
               const hasManager        = managerName !== null;
               const groupOverride     = groupOverrides[emp.id];
-              const currentGroup      = groupOverride !== undefined ? groupOverride : null;
+              const currentGroup: GroupRecord = groupOverride !== undefined
+                ? groupOverride
+                : emp.employee_group != null && emp.employee_group_code != null
+                  ? { id: emp.employee_group, code: emp.employee_group_code, name: emp.employee_group_name ?? '' }
+                  : null;
               const isSavingManager   = setManagerMutation.isPending && setManagerMutation.variables?.empId === emp.id;
               const isSavingGroup     = setGroupMutation.isPending && setGroupMutation.variables?.empId === emp.id;
               const isLast            = idx === filtered.length - 1;
