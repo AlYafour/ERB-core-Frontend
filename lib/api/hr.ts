@@ -221,6 +221,11 @@ export const hrRequestsApi = {
   cancel: async (id: number): Promise<void> => {
     await apiClient.post(`/hr/requests/${id}/cancel/`);
   },
+  getPendingMyApproval: async (): Promise<HRRequest[]> => {
+    const response = await apiClient.get('/hr/requests/pending-my-approval/');
+    const data = response.data;
+    return Array.isArray(data) ? data : (data.results ?? []);
+  },
 };
 
 // ── Approvals (request types) ──────────────────────────────────────────────────
