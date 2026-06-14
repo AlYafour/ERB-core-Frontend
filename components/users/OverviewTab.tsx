@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { usersApi } from '@/lib/api/users';
 import { hrEmployeesApi } from '@/lib/api/hr';
+import { permissionsApi } from '@/lib/api/permissions';
 import { Button, Badge } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
 
@@ -46,10 +47,15 @@ const fld = 'form-field';
 const lbl = 'form-label';
 
 const ROLES = [
+  { value: 'employee',            label: 'Employee' },
   { value: 'site_engineer',       label: 'Site Engineer' },
+  { value: 'site_manager',        label: 'Site Manager' },
+  { value: 'supervisor',          label: 'Supervisor' },
+  { value: 'hr_manager',          label: 'HR Manager' },
+  { value: 'company_director',    label: 'Company Director' },
   { value: 'procurement_manager', label: 'Procurement Manager' },
   { value: 'procurement_officer', label: 'Procurement Officer' },
-  { value: 'super_admin',         label: 'Super Admin' },
+  { value: 'admin',               label: 'Admin' },
 ];
 
 type DrawerSection = 'account' | 'employment' | 'personal' | 'legal' | null;
@@ -75,6 +81,8 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [changePassword, setChangePassword] = useState(false);
   const [form, setForm]                   = useState<Record<string, any>>({});
+  const [roleEditMode, setRoleEditMode]   = useState(false);
+  const [roleEditValue, setRoleEditValue] = useState('');
 
   // ── Open drawer & pre-fill ─────────────────────────────────────────────────
   const openDrawer = (section: DrawerSection) => {
@@ -123,6 +131,13 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
 
   const f = (k: string) => (e: React.ChangeEvent<any>) => setForm(p => ({ ...p, [k]: e.target.value }));
 
+  // ── Role & Access queries (admin-only) ────────────────────────────────────
+  const { data: permSummary } = useQuery({
+    queryKey: ['user-permission-summary', userId],
+    queryFn:  () => permissionsApi.getUserPermissionSummary(userId),
+    enabled:  isAdmin && !!userId,
+  });
+
   // ── Mutations ──────────────────────────────────────────────────────────────
   const userMutation = useMutation({
     mutationFn: (data: any) => usersApi.update(userId, { ...data, ...(avatarFile ? { avatar: avatarFile } : {}) }),
@@ -137,6 +152,17 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
   const updateEmpMutation = useMutation({
     mutationFn: (data: any) => hrEmployeesApi.update(emp!.id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['employee-by-user', userId] }); },
+  });
+
+  const roleMutation = useMutation({
+    mutationFn: (newRole: string) => usersApi.update(userId, { role: newRole }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', userId] });
+      queryClient.invalidateQueries({ queryKey: ['user-permission-summary', userId] });
+      toast('Role updated', 'success');
+      setRoleEditMode(false);
+    },
+    onError: () => toast('Failed to update role', 'error'),
   });
 
   const isSaving = userMutation.isPending || createEmpMutation.isPending || updateEmpMutation.isPending;
@@ -316,6 +342,65 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
                 <span style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', color: 'var(--sidebar-active-text)' }}>
                   {totalSalary.toLocaleString('en-US', { minimumFractionDigits: 2 })} AED
                 </span>
+              </div>
+            </Section>
+          )}
+
+          {/* Role & Access — admin-only */}
+          {isAdmin && (
+            <Section title="Role & Access">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-5)' }}>
+
+                {/* Role */}
+                <div>
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>Role</p>
+                  {roleEditMode ? (
+                    <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-1)', alignItems: 'center' }}>
+                      <select
+                        className={sel}
+                        value={roleEditValue}
+                        onChange={e => setRoleEditValue(e.target.value)}
+                        style={{ flex: 1 }}
+                      >
+                        {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                      </select>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        isLoading={roleMutation.isPending}
+                        onClick={() => roleMutation.mutate(roleEditValue)}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setRoleEditMode(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-1)' }}>
+                      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', margin: 0 }}>{roleLabel}</p>
+                      <button
+                        onClick={() => { setRoleEditValue(user.role || 'employee'); setRoleEditMode(true); }}
+                        style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', padding: 'var(--space-0-5) var(--space-2)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                      >
+                        Change
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Permission Set */}
+                <div>
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>Permission Set</p>
+                  <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', marginTop: 'var(--space-1)', marginBottom: 0 }}>
+                    {permSummary?.permission_set?.name || '—'}
+                  </p>
+                </div>
+
               </div>
             </Section>
           )}
