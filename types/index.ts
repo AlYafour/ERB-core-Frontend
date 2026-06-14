@@ -548,6 +548,18 @@ export interface HRPosition {
   updated_at: string;
 }
 
+export interface EmployeeGroup {
+  id: number;
+  name: string;
+  name_ar: string;
+  code: string;
+  description: string;
+  is_active: boolean;
+  member_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface HREmployeeUser {
   id: number;
   username: string;
@@ -600,6 +612,8 @@ export interface HREmployee {
   direct_manager_name?: string | null;
   indirect_manager?: number | null;
   indirect_manager_name?: string | null;
+  employee_group?: number | null;
+  employee_group_name?: string | null;
   // Contact
   mobile_number?: string;
   extension_number?: string;

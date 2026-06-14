@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup } from '@/types';
 
 export interface WhosOffEntry {
   employee_name: string;
@@ -385,6 +385,28 @@ export const hrShiftAssignmentsApi = {
   getAll: async (params?: { employee?: number; shift?: number }): Promise<PaginatedResponse<ShiftAssignment>> => {
     const response = await apiClient.get('/hr/attendance/shift-assignments/', { params });
     return response.data;
+  },
+};
+
+// ── Employee Groups ────────────────────────────────────────────────────────────
+
+export const hrEmployeeGroupsApi = {
+  getAll: async (): Promise<PaginatedResponse<EmployeeGroup>> => {
+    const response = await apiClient.get('/hr/employees/groups/', { params: { page_size: 200 } });
+    const data = response.data;
+    if (Array.isArray(data)) return { results: data, count: data.length, next: null, previous: null };
+    return data;
+  },
+  create: async (data: Partial<EmployeeGroup>): Promise<EmployeeGroup> => {
+    const response = await apiClient.post('/hr/employees/groups/', data);
+    return response.data;
+  },
+  update: async (id: number, data: Partial<EmployeeGroup>): Promise<EmployeeGroup> => {
+    const response = await apiClient.patch(`/hr/employees/groups/${id}/`, data);
+    return response.data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/employees/groups/${id}/`);
   },
 };
 
