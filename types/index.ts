@@ -596,6 +596,10 @@ export interface HREmployee {
   position_detail?: HRPosition;
   manager: number | null;
   manager_detail?: HREmployee;
+  direct_manager?: number | null;
+  direct_manager_name?: string | null;
+  indirect_manager?: number | null;
+  indirect_manager_name?: string | null;
   // Contact
   mobile_number?: string;
   extension_number?: string;
