@@ -778,6 +778,39 @@ export interface HRPayroll {
   updated_at: string;
 }
 
+// ── Approval Chains ───────────────────────────────────────────────────────────
+
+export type ApproverStrategy = 'DIRECT_MANAGER' | 'INDIRECT_MANAGER' | 'ROLE' | 'SPECIFIC_USER';
+export type ConditionOperator = 'gt' | 'gte' | 'lt' | 'lte' | 'eq';
+
+export interface ApprovalStep {
+  id: number;
+  policy: number;
+  order: number;
+  approver_strategy: ApproverStrategy;
+  role_name: string;
+  specific_user: number | null;
+  escalation_after_hours: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApprovalPolicy {
+  id: number;
+  request_type: number;
+  name: string;
+  is_active: boolean;
+  priority: number;
+  employee_group: number | null;
+  employee_group_name: string | null;
+  condition_field: string;
+  condition_operator: ConditionOperator | '';
+  condition_value: string | null;
+  steps: ApprovalStep[];
+  created_at: string;
+  updated_at: string;
+}
+
 // ── Tasks Module ──────────────────────────────────────────────────────────────
 
 export type TaskStatus =

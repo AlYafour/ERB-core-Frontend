@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, ApprovalPolicy, ApprovalStep } from '@/types';
 
 export interface WhosOffEntry {
   employee_name: string;
@@ -244,6 +244,42 @@ export const hrApprovalsApi = {
     const response = await apiClient.get('/hr/approvals/request-types/');
     const data = response.data;
     return Array.isArray(data) ? data : (data.results ?? []);
+  },
+
+  // ── Policies ────────────────────────────────────────────────────────────────
+  getPolicies: async (): Promise<ApprovalPolicy[]> => {
+    const response = await apiClient.get('/hr/approvals/policies/', { params: { page_size: 200 } });
+    const data = response.data;
+    return Array.isArray(data) ? data : (data.results ?? []);
+  },
+  createPolicy: async (data: Partial<ApprovalPolicy>): Promise<ApprovalPolicy> => {
+    const response = await apiClient.post('/hr/approvals/policies/', data);
+    return response.data;
+  },
+  updatePolicy: async (id: number, data: Partial<ApprovalPolicy>): Promise<ApprovalPolicy> => {
+    const response = await apiClient.patch(`/hr/approvals/policies/${id}/`, data);
+    return response.data;
+  },
+  deletePolicy: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/approvals/policies/${id}/`);
+  },
+
+  // ── Steps ───────────────────────────────────────────────────────────────────
+  getSteps: async (policyId: number): Promise<ApprovalStep[]> => {
+    const response = await apiClient.get('/hr/approvals/steps/', { params: { policy: policyId, page_size: 50 } });
+    const data = response.data;
+    return Array.isArray(data) ? data : (data.results ?? []);
+  },
+  createStep: async (data: Partial<ApprovalStep>): Promise<ApprovalStep> => {
+    const response = await apiClient.post('/hr/approvals/steps/', data);
+    return response.data;
+  },
+  updateStep: async (id: number, data: Partial<ApprovalStep>): Promise<ApprovalStep> => {
+    const response = await apiClient.patch(`/hr/approvals/steps/${id}/`, data);
+    return response.data;
+  },
+  deleteStep: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/approvals/steps/${id}/`);
   },
 };
 

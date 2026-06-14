@@ -371,6 +371,7 @@ export default function Sidebar() {
                       { name: t('nav', 'hrRequests'),     href: '/hr/requests'                           },
                       { name: t('nav', 'hrPayroll'),      href: '/hr/payroll'                            },
                       { name: 'HR Settings',               href: '/hr/settings',           adminOnly: true },
+                      { name: 'Approval Chains',           href: '/hr/approvals/chains',   adminOnly: true },
                     ]}
                     defaultOpen={isHRActive}
                     {...collapsibleProps}
