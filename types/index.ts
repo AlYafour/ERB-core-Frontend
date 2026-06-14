@@ -558,6 +558,8 @@ export interface EmployeeGroup {
   member_count: number;
   default_shift?: number | null;
   default_shift_name?: string | null;
+  default_manager?: number | null;
+  default_manager_name?: string | null;
   created_at: string;
   updated_at: string;
 }

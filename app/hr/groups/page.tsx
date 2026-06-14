@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
-import { hrEmployeeGroupsApi, hrShiftsApi } from '@/lib/api/hr';
+import { hrEmployeeGroupsApi, hrShiftsApi, hrEmployeesApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { toast } from '@/lib/hooks/use-toast';
-import type { EmployeeGroup, HRShift } from '@/types';
+import type { EmployeeGroup, HRShift, HREmployee } from '@/types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const isAdmin = (user: any) =>
@@ -27,7 +27,8 @@ const EMPTY_FORM = {
   code: '',
   description: '',
   is_active: true,
-  default_shift: null as number | null,
+  default_shift:   null as number | null,
+  default_manager: null as number | null,
 };
 type FormState = typeof EMPTY_FORM;
 
@@ -37,16 +38,184 @@ const LABEL_STYLE: React.CSSProperties = {
   letterSpacing: '0.05em', display: 'block', marginBottom: 'var(--space-1-5)',
 };
 
+// ── Manager Picker ─────────────────────────────────────────────────────────────
+function ManagerPicker({
+  value,
+  onChange,
+  employees,
+  fallbackName,
+}: {
+  value: number | null;
+  onChange: (id: number | null) => void;
+  employees: HREmployee[];
+  fallbackName?: string | null;
+}) {
+  const [search, setSearch]   = useState('');
+  const [open, setOpen]       = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const selected = value ? employees.find(e => e.id === value) : null;
+  const label    = selected?.full_name ?? (value && fallbackName ? fallbackName : null);
+
+  const filtered = employees.filter(e =>
+    e.is_active && (
+      !search ||
+      e.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      e.employee_id.toLowerCase().includes(search.toLowerCase())
+    )
+  );
+
+  const select = (id: number | null) => {
+    onChange(id);
+    setOpen(false);
+    setSearch('');
+  };
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      {/* Trigger */}
+      <button
+        type="button"
+        onClick={() => { setOpen(o => !o); setSearch(''); }}
+        className="form-input"
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', gap: 'var(--space-2)',
+          cursor: 'pointer', textAlign: 'left', fontSize: 'var(--text-sm)',
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0, flex: 1, overflow: 'hidden' }}>
+          {label ? (
+            <>
+              <span style={{
+                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                background: selected ? (selected.user?.id ? '#10b981' : '#f59e0b') : '#9ca3af',
+              }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+            </>
+          ) : (
+            <span style={{ color: 'var(--text-secondary)' }}>— No default manager —</span>
+          )}
+        </span>
+        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', flexShrink: 0 }}>▾</span>
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 200,
+          background: 'var(--surface-default)', border: '1px solid var(--border-default)',
+          borderRadius: 'var(--radius-md)', boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          overflow: 'hidden',
+        }}>
+          {/* Search input */}
+          <div style={{ padding: 'var(--space-2)', borderBottom: '1px solid var(--border-subtle)' }}>
+            <input
+              autoFocus
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search by name or ID…"
+              className="form-input"
+              style={{ width: '100%', fontSize: 'var(--text-sm)', padding: 'var(--space-1-5) var(--space-2-5)' }}
+            />
+          </div>
+
+          {/* Option list */}
+          <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+            {/* Clear option */}
+            <div
+              onClick={() => select(null)}
+              style={{
+                padding: 'var(--space-2) var(--space-3)', cursor: 'pointer',
+                fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontStyle: 'italic',
+                background: value === null ? 'var(--surface-subtle)' : undefined,
+                borderBottom: '1px solid var(--border-subtle)',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-subtle)')}
+              onMouseLeave={e => (e.currentTarget.style.background = value === null ? 'var(--surface-subtle)' : 'transparent')}
+            >
+              — No default manager —
+            </div>
+
+            {filtered.length === 0 ? (
+              <div style={{ padding: 'var(--space-3)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                No employees found
+              </div>
+            ) : filtered.map(emp => {
+              const hasUser  = !!emp.user?.id;
+              const isSel    = emp.id === value;
+              return (
+                <div
+                  key={emp.id}
+                  onClick={() => select(emp.id)}
+                  style={{
+                    padding: 'var(--space-2) var(--space-3)', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+                    background: isSel ? 'var(--sidebar-active-bg)' : undefined,
+                  }}
+                  onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = 'var(--surface-subtle)'; }}
+                  onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  {/* Account status dot */}
+                  <span style={{
+                    width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                    background: hasUser ? '#10b981' : '#f59e0b',
+                  }} />
+
+                  {/* Name + ID */}
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{
+                      fontSize: 'var(--text-sm)',
+                      fontWeight: isSel ? 'var(--weight-semibold)' : 'var(--weight-normal)',
+                      color: isSel ? 'var(--sidebar-active-text)' : undefined,
+                      display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {emp.full_name}
+                    </span>
+                    <span style={{
+                      fontSize: 'var(--text-xs)',
+                      color: isSel ? 'var(--sidebar-active-text)' : 'var(--text-secondary)',
+                      display: 'flex', alignItems: 'center', gap: 'var(--space-1-5)',
+                    }}>
+                      {emp.employee_id}
+                      {!hasUser && (
+                        <span style={{ color: '#f59e0b', fontWeight: 'var(--weight-medium)' }}>
+                          · won't route approvals
+                        </span>
+                      )}
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Modal ─────────────────────────────────────────────────────────────────────
 function GroupModal({
   group,
   shifts,
+  employees,
   onClose,
   onSave,
   isSaving,
 }: {
   group: EmployeeGroup | null;
   shifts: HRShift[];
+  employees: HREmployee[];
   onClose: () => void;
   onSave: (data: FormState) => void;
   isSaving: boolean;
@@ -54,12 +223,13 @@ function GroupModal({
   const [form, setForm] = useState<FormState>(
     group
       ? {
-          name:          group.name,
-          name_ar:       group.name_ar,
-          code:          group.code,
-          description:   group.description,
-          is_active:     group.is_active,
-          default_shift: group.default_shift ?? null,
+          name:            group.name,
+          name_ar:         group.name_ar,
+          code:            group.code,
+          description:     group.description,
+          is_active:       group.is_active,
+          default_shift:   group.default_shift   ?? null,
+          default_manager: group.default_manager ?? null,
         }
       : EMPTY_FORM,
   );
@@ -80,8 +250,9 @@ function GroupModal({
       style={{
         position: 'fixed', inset: 0, zIndex: 50,
         background: 'rgba(0,0,0,0.4)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 'var(--space-4)',
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+        padding: 'var(--space-8) var(--space-4)',
+        overflowY: 'auto',
       }}
       onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
     >
@@ -173,7 +344,23 @@ function GroupModal({
               ))}
             </select>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
-              Group members will inherit this shift schedule. Individual overrides apply in a later phase.
+              Group members inherit this shift. Individual overrides apply in a later phase.
+            </p>
+          </div>
+
+          {/* Default Manager */}
+          <div>
+            <label style={LABEL_STYLE}>Default Manager</label>
+            <ManagerPicker
+              value={form.default_manager}
+              onChange={id => set('default_manager', id)}
+              employees={employees}
+              fallbackName={group?.default_manager_name}
+            />
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
+              Approval fallback when an employee has no direct manager.{' '}
+              <span style={{ color: '#10b981', fontWeight: 'var(--weight-semibold)' }}>●</span> Has login · routes approvals.{' '}
+              <span style={{ color: '#f59e0b', fontWeight: 'var(--weight-semibold)' }}>●</span> No account · approvals won't deliver.
             </p>
           </div>
 
@@ -236,10 +423,16 @@ export default function EmployeeGroupsPage() {
     staleTime: 120_000,
   });
 
-  const groups: EmployeeGroup[] = raw?.results ?? [];
-  const shifts: HRShift[]        = shiftsRaw?.results ?? [];
+  const { data: employeesRaw } = useQuery({
+    queryKey: ['hr-employees-active'],
+    queryFn: () => hrEmployeesApi.getAll({ is_active: true }),
+    staleTime: 120_000,
+  });
 
-  // map id → shift for quick lookup in list rows
+  const groups: EmployeeGroup[] = raw?.results ?? [];
+  const shifts: HRShift[]       = shiftsRaw?.results ?? [];
+  const employees: HREmployee[] = employeesRaw?.results ?? [];
+
   const shiftById = new Map(shifts.map(s => [s.id, s]));
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['hr-employee-groups'] });
@@ -284,8 +477,8 @@ export default function EmployeeGroupsPage() {
     );
   }
 
-  // grid: Code | Name | Name_AR | Members | Default Shift | Status | Actions
-  const GRID = '100px 1fr 1fr 80px 160px 80px 100px';
+  // Code | Name | Name_AR | Members | Default Shift | Default Manager | Status | Actions
+  const GRID = '90px 1fr 1fr 70px 130px 160px 70px 90px';
 
   return (
     <MainLayout>
@@ -327,7 +520,7 @@ export default function EmployeeGroupsPage() {
             gap: 'var(--space-3)', padding: 'var(--space-3) var(--space-5)',
             borderBottom: '1px solid var(--border-subtle)', background: 'var(--surface-subtle)',
           }}>
-            {['Code', 'Name', 'Name (Arabic)', 'Members', 'Default Shift', 'Status', ''].map(h => (
+            {['Code', 'Name', 'Name (Arabic)', 'Members', 'Default Shift', 'Default Manager', 'Status', ''].map(h => (
               <span key={h} style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {h}
               </span>
@@ -351,10 +544,11 @@ export default function EmployeeGroupsPage() {
               const isLast      = idx === groups.length - 1;
               const isDeleting  = deletingId === group.id;
               const shiftDetail = group.default_shift ? shiftById.get(group.default_shift) : null;
+              const mgrEmp      = group.default_manager ? employees.find(e => e.id === group.default_manager) : null;
+              const mgrHasUser  = mgrEmp ? !!mgrEmp.user?.id : null;
 
               return (
                 <div key={group.id} style={{ borderBottom: !isLast ? '1px solid var(--border-subtle)' : 'none' }}>
-                  {/* Main row */}
                   <div style={{
                     display: 'grid', gridTemplateColumns: GRID,
                     gap: 'var(--space-3)', padding: 'var(--space-4) var(--space-5)', alignItems: 'center',
@@ -386,7 +580,7 @@ export default function EmployeeGroupsPage() {
                       {group.name_ar || '—'}
                     </p>
 
-                    {/* Member count */}
+                    {/* Members */}
                     <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
                       {group.member_count} active
                     </p>
@@ -405,9 +599,24 @@ export default function EmployeeGroupsPage() {
                           )}
                         </>
                       ) : (
-                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic' }}>
-                          None
-                        </p>
+                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic' }}>None</p>
+                      )}
+                    </div>
+
+                    {/* Default Manager */}
+                    <div style={{ minWidth: 0 }}>
+                      {group.default_manager_name ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                          <span style={{
+                            width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+                            background: mgrHasUser === false ? '#f59e0b' : '#10b981',
+                          }} />
+                          <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {group.default_manager_name}
+                          </p>
+                        </div>
+                      ) : (
+                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic' }}>None</p>
                       )}
                     </div>
 
@@ -427,14 +636,12 @@ export default function EmployeeGroupsPage() {
                     <div style={{ display: 'flex', gap: 'var(--space-1)', justifyContent: 'flex-end' }}>
                       <button
                         onClick={() => setModalGroup(group)}
-                        title="Edit"
                         style={{ padding: '6px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => setDeletingId(isDeleting ? null : group.id)}
-                        title="Delete"
                         style={{ padding: '6px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)', color: isDeleting ? '#dc2626' : 'var(--text-secondary)' }}
                       >
                         Delete
@@ -446,8 +653,7 @@ export default function EmployeeGroupsPage() {
                   {isDeleting && (
                     <div style={{
                       padding: 'var(--space-3) var(--space-5)',
-                      borderTop: '1px solid var(--border-subtle)',
-                      background: '#fef2f2',
+                      borderTop: '1px solid var(--border-subtle)', background: '#fef2f2',
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-4)',
                     }}>
                       <div>
@@ -487,7 +693,7 @@ export default function EmployeeGroupsPage() {
         {!isLoading && groups.length > 0 && (
           <div style={{ padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)' }}>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
-              <strong>G3 active.</strong> Assign a default shift to each group above. Approval policy (G4) and reporting-line manager (G5) follow in subsequent phases. Assign employees to groups from the{' '}
+              <strong>G4 active.</strong> Set a default manager per group — used as approval fallback when employees have no direct manager assigned. Default shift (G3) is also live. Assign employees to groups from the{' '}
               <a href="/hr/employees" style={{ color: 'var(--sidebar-active-text)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>Employees page</a>.
             </p>
           </div>
@@ -500,6 +706,7 @@ export default function EmployeeGroupsPage() {
         <GroupModal
           group={modalGroup === 'new' ? null : modalGroup}
           shifts={shifts}
+          employees={employees}
           onClose={() => setModalGroup(null)}
           onSave={handleSave}
           isSaving={isSaving}
