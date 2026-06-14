@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, ApprovalPolicy, ApprovalStep } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier } from '@/types';
 
 export interface WhosOffEntry {
   employee_name: string;
@@ -484,5 +484,42 @@ export const hrSelfAttendanceApi = {
   checkOut: async (data?: { latitude?: number; longitude?: number }): Promise<AttendanceRecord> => {
     const response = await apiClient.post('/hr/attendance/self-check-out/', data ?? {});
     return response.data;
+  },
+};
+
+// ── Penalty Rules (P2) ────────────────────────────────────────────────────────
+
+export const hrPenaltyRulesApi = {
+  getAll: async (): Promise<PenaltyRule[]> => {
+    const response = await apiClient.get('/hr/attendance/penalty-rules/', { params: { page_size: 200 } });
+    const data = response.data;
+    return Array.isArray(data) ? data : (data.results ?? []);
+  },
+  create: async (data: Partial<PenaltyRule>): Promise<PenaltyRule> => {
+    const response = await apiClient.post('/hr/attendance/penalty-rules/', data);
+    return response.data;
+  },
+  update: async (id: number, data: Partial<PenaltyRule>): Promise<PenaltyRule> => {
+    const response = await apiClient.patch(`/hr/attendance/penalty-rules/${id}/`, data);
+    return response.data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/attendance/penalty-rules/${id}/`);
+  },
+  getTiers: async (ruleId: number): Promise<PenaltyTier[]> => {
+    const response = await apiClient.get('/hr/attendance/penalty-tiers/', { params: { rule: ruleId, page_size: 100 } });
+    const data = response.data;
+    return Array.isArray(data) ? data : (data.results ?? []);
+  },
+  createTier: async (data: Partial<PenaltyTier>): Promise<PenaltyTier> => {
+    const response = await apiClient.post('/hr/attendance/penalty-tiers/', data);
+    return response.data;
+  },
+  updateTier: async (id: number, data: Partial<PenaltyTier>): Promise<PenaltyTier> => {
+    const response = await apiClient.patch(`/hr/attendance/penalty-tiers/${id}/`, data);
+    return response.data;
+  },
+  deleteTier: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/attendance/penalty-tiers/${id}/`);
   },
 };

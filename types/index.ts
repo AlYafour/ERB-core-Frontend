@@ -811,6 +811,39 @@ export interface ApprovalPolicy {
   updated_at: string;
 }
 
+// ── Penalty Rules (P2) ───────────────────────────────────────────────────────
+
+export type PenaltyRuleType = 'LATENESS' | 'EARLY_LEAVE' | 'ABSENCE';
+export type PenaltyPenaltyType = 'FIXED_AMOUNT' | 'HOURLY_RATE' | 'DAILY_FRACTION' | 'WARNING_ONLY';
+
+export interface PenaltyTier {
+  id: number;
+  rule: number;
+  order: number;
+  min_minutes: number;
+  max_minutes: number | null;
+  penalty_type: PenaltyPenaltyType;
+  penalty_value: string;
+  label: string;
+  created_at: string;
+}
+
+export interface PenaltyRule {
+  id: number;
+  name: string;
+  rule_type: PenaltyRuleType;
+  is_active: boolean;
+  priority: number;
+  employee_group: number | null;
+  employee_group_name: string | null;
+  grace_minutes: number;
+  allow_compensation: boolean;
+  counts_extra_as_overtime: boolean;
+  tiers: PenaltyTier[];
+  created_at: string;
+  updated_at: string;
+}
+
 // ── Tasks Module ──────────────────────────────────────────────────────────────
 
 export type TaskStatus =
