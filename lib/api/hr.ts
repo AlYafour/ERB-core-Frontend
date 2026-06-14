@@ -1,6 +1,22 @@
 import apiClient from './client';
 import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse } from '@/types';
 
+export interface WhosOffEntry {
+  employee_name: string;
+  employee_id:   string;
+  leave_type:    string;
+  start_date:    string;
+  end_date:      string;
+}
+
+export interface UpcomingBirthday {
+  employee_id:   string;
+  full_name:     string;
+  date_of_birth: string;
+  days_until:    number;
+  birthday_date: string;
+}
+
 // ── Location Types ─────────────────────────────────────────────────────────────
 
 export const hrLocationTypesApi = {
@@ -86,6 +102,10 @@ export const hrEmployeesApi = {
   },
   updateEmergencyContact: async (empId: number, data: { name: string; relationship: string; phone: string }) => {
     const response = await apiClient.patch(`/hr/employees/${empId}/emergency-contact/`, data);
+    return response.data;
+  },
+  getUpcomingBirthdays: async (days = 30): Promise<UpcomingBirthday[]> => {
+    const response = await apiClient.get('/hr/employees/upcoming-birthdays/', { params: { days } });
     return response.data;
   },
 };
@@ -192,6 +212,10 @@ export const hrRequestsApi = {
   },
   getLeaveBalances: async (params?: { employee?: number; year?: number }): Promise<PaginatedResponse<HRLeaveBalance>> => {
     const response = await apiClient.get('/hr/requests/leave-balances/', { params });
+    return response.data;
+  },
+  getWhosOffToday: async (): Promise<WhosOffEntry[]> => {
+    const response = await apiClient.get('/hr/requests/whos-off-today/');
     return response.data;
   },
 };
