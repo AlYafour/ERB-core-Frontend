@@ -50,7 +50,12 @@ export const hrLocationsApi = {
 export const hrEmployeesApi = {
   getAll: async (params?: { page?: number; search?: string; department?: number; position?: number; is_active?: boolean; employment_type?: string; user?: number }): Promise<PaginatedResponse<HREmployee>> => {
     const response = await apiClient.get('/hr/employees/', { params });
-    return response.data;
+    const data = response.data;
+    // EmployeeViewSet sets pagination_class=None → returns a bare array instead of {results,[]}
+    if (Array.isArray(data)) {
+      return { results: data, count: data.length, next: null, previous: null };
+    }
+    return data;
   },
   getById: async (id: number): Promise<HREmployee> => {
     const response = await apiClient.get(`/hr/employees/${id}/`);
