@@ -1,6 +1,11 @@
 /* ================================================================
-   APP SHELL — sidebar, navbar, content wrapper
+   APP SHELL — Variant A (Floated) baked in permanently.
+   Sidebar: floating rounded card. Navbar: floating pill.
    ================================================================ */
+
+:root {
+  --sidebar-width-rail: 60px;
+}
 
 /* Sidebar */
 .app-sidebar {
@@ -12,21 +17,39 @@
   z-index: 50;
   overflow-y: auto;
   overflow-x: hidden;
-  border-inline-end: 1px solid var(--sidebar-border);
   background-color: var(--sidebar-bg);
   transform: translateX(-100%);
-  transition: transform var(--transition-slow);
+  transition:
+    transform var(--transition-slow),
+    width 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 [dir="rtl"] .app-sidebar {
   transform: translateX(100%);
 }
-.app-sidebar.sidebar-open,
-.app-sidebar.sidebar-open-desktop {
+.app-sidebar.sidebar-open {
   transform: translateX(0);
 }
+
 @media (min-width: 1024px) {
   .app-sidebar {
     transform: translateX(0) !important;
+    margin: 8px;
+    height: calc(100vh - 16px);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+    box-shadow:
+      0 8px 28px -6px rgba(0, 0, 0, 0.10),
+      0 2px 8px  -2px rgba(0, 0, 0, 0.06),
+      0 0  0   1px rgba(0, 0, 0, 0.03);
+  }
+  [data-theme="dark"] .app-sidebar {
+    box-shadow:
+      0 8px 28px -6px rgba(0, 0, 0, 0.45),
+      0 2px 8px  -2px rgba(0, 0, 0, 0.28);
+  }
+  .app-sidebar.sidebar-collapsed {
+    width: var(--sidebar-width-rail);
   }
 }
 
@@ -38,13 +61,27 @@
   inset-inline-end: 0;
   height: var(--navbar-height);
   z-index: 40;
-  border-bottom: 1px solid var(--navbar-border);
   background-color: var(--navbar-bg);
-  box-shadow: 0 1px 0 0 var(--navbar-border);
+  transition:
+    inset-inline-start 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    inset-inline-end   200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 @media (min-width: 1024px) {
   .app-navbar {
-    inset-inline-start: var(--sidebar-width);
+    inset-inline-start: calc(var(--sidebar-width) + 16px);
+    inset-inline-end: 8px;
+    top: 8px;
+    border-radius: 12px;
+    border: 1px solid var(--navbar-border);
+    box-shadow:
+      0 1px 4px rgba(0, 0, 0, 0.06),
+      0 0  0  1px rgba(0, 0, 0, 0.025);
+  }
+  [data-theme="dark"] .app-navbar {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  }
+  body:has(.app-sidebar.sidebar-collapsed) .app-navbar {
+    inset-inline-start: calc(var(--sidebar-width-rail) + 16px);
   }
 }
 
@@ -56,11 +93,15 @@
   padding-top: var(--navbar-height);
   margin-inline-start: 0;
   background-color: var(--surface-app);
-  transition: margin-inline-start var(--transition-slow);
+  transition: margin-inline-start 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 @media (min-width: 1024px) {
   .app-content {
-    margin-inline-start: var(--sidebar-width);
+    margin-inline-start: calc(var(--sidebar-width) + 16px);
+    padding-top: calc(var(--navbar-height) + 14px);
+  }
+  body:has(.app-sidebar.sidebar-collapsed) .app-content {
+    margin-inline-start: calc(var(--sidebar-width-rail) + 16px);
   }
 }
 
@@ -71,7 +112,6 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.48);
   z-index: 49;
-  backdrop-filter: blur(2px);
 }
 .sidebar-backdrop.active {
   display: block;
