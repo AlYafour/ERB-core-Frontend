@@ -3,10 +3,23 @@
 import { useState, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { usersApi } from '@/lib/api/users';
-import { hrEmployeesApi } from '@/lib/api/hr';
+import { hrEmployeesApi, hrRequestsApi, hrShiftAssignmentsApi } from '@/lib/api/hr';
 import { permissionsApi } from '@/lib/api/permissions';
 import { Button, Badge } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
+
+// ── Constants ──────────────────────────────────────────────────────────────────
+const CURRENT_YEAR = new Date().getFullYear();
+
+const LEAVE_LABELS: Record<string, string> = {
+  annual_leave:    'Annual Leave',
+  sick_leave:      'Sick Leave',
+  emergency_leave: 'Emergency Leave',
+  unpaid_leave:    'Unpaid Leave',
+};
+const LEAVE_ORDER = ['annual_leave', 'sick_leave', 'emergency_leave', 'unpaid_leave'];
+
+const EC_RELATIONSHIPS = ['Spouse', 'Parent', 'Sibling', 'Child', 'Friend', 'Other'];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function fmtDate(d?: string | null) {
@@ -40,7 +53,7 @@ function Section({ title, onEdit, children }: { title: string; onEdit?: () => vo
   );
 }
 
-// ── Drawer input helpers ───────────────────────────────────────────────────────
+// ── Drawer helpers ─────────────────────────────────────────────────────────────
 const inp = 'form-input';
 const sel = 'form-select';
 const fld = 'form-field';
@@ -58,7 +71,7 @@ const ROLES = [
   { value: 'admin',               label: 'Admin' },
 ];
 
-type DrawerSection = 'account' | 'employment' | 'personal' | 'legal' | null;
+type DrawerSection = 'account' | 'employment' | 'personal' | 'legal' | 'emergency' | null;
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 export interface UserTabProps {
@@ -83,19 +96,28 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
   const [form, setForm]                   = useState<Record<string, any>>({});
   const [roleEditMode, setRoleEditMode]   = useState(false);
   const [roleEditValue, setRoleEditValue] = useState('');
+  const [dmSearch, setDmSearch]           = useState('');
+  const [imSearch, setImSearch]           = useState('');
 
   // ── Open drawer & pre-fill ─────────────────────────────────────────────────
   const openDrawer = (section: DrawerSection) => {
     setAvatarFile(null); setAvatarPreview(null); setChangePassword(false);
+    setDmSearch(''); setImSearch('');
     setForm({
-      username:   user?.username   || '',
-      email:      user?.email      || '',
-      first_name: user?.first_name || '',
-      last_name:  user?.last_name  || '',
-      phone:      user?.phone      || '',
-      role:       user?.role       || 'site_engineer',
-      is_active:  user?.is_active  ?? true,
+      // account
+      username:     user?.username     || '',
+      email:        user?.email        || '',
+      first_name:   user?.first_name   || '',
+      last_name:    user?.last_name    || '',
+      second_name:  user?.second_name  || '',
+      third_name:   user?.third_name   || '',
+      full_name_ar: user?.full_name_ar || '',
+      job_title:    user?.job_title    || '',
+      phone:        user?.phone        || '',
+      role:         user?.role         || 'site_engineer',
+      is_active:    user?.is_active    ?? true,
       password: '', password2: '',
+      // employment
       employment_type:     emp?.employment_type     || 'full_time',
       join_date:           emp?.join_date           || '',
       department:          emp?.department          ?? '',
@@ -107,6 +129,12 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
       housing_allowance:   emp?.housing_allowance   || '0',
       transport_allowance: emp?.transport_allowance || '0',
       other_allowances:    emp?.other_allowances    || '0',
+      direct_manager:      emp?.direct_manager      ?? '',
+      indirect_manager:    emp?.indirect_manager    ?? '',
+      probation_end_date:  emp?.probation_end_date  || '',
+      end_date:            emp?.end_date            || '',
+      extension_number:    emp?.extension_number    || '',
+      // personal
       gender:               emp?.gender               || '',
       date_of_birth:        emp?.date_of_birth        || '',
       nationality:          emp?.nationality          || '',
@@ -118,6 +146,7 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
       personal_email:       emp?.personal_email       || '',
       mobile_number:        emp?.mobile_number        || '',
       address:              emp?.address              || '',
+      // legal
       resident_id:       emp?.resident_id       || '',
       labor_card:        emp?.labor_card        || '',
       labor_card_expiry: emp?.labor_card_expiry || '',
@@ -125,18 +154,42 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
       sponsor_name:      emp?.sponsor_name      || '',
       sponsor_id:        emp?.sponsor_id        || '',
       is_citizen:        emp?.is_citizen        ?? false,
+      // emergency contact
+      emergency_name:         emp?.emergency_contact?.name         || '',
+      emergency_relationship: emp?.emergency_contact?.relationship || '',
+      emergency_phone:        emp?.emergency_contact?.phone        || '',
     });
     setDrawer(section);
   };
 
   const f = (k: string) => (e: React.ChangeEvent<any>) => setForm(p => ({ ...p, [k]: e.target.value }));
 
-  // ── System Access queries (admin-only) ────────────────────────────────────
+  // ── Queries ────────────────────────────────────────────────────────────────
   const { data: permSummary } = useQuery({
     queryKey: ['user-permission-summary', userId],
     queryFn:  () => permissionsApi.getUserPermissionSummary(userId),
     enabled:  isAdmin && !!userId,
   });
+
+  const { data: allEmployees } = useQuery({
+    queryKey: ['all-employees-picker'],
+    queryFn:  () => hrEmployeesApi.getAll({ page_size: 200, is_active: true } as any),
+    enabled:  isAdmin && !!emp,
+  });
+
+  const { data: leaveBalances } = useQuery({
+    queryKey: ['leave-balances', emp?.id],
+    queryFn:  () => hrRequestsApi.getLeaveBalances({ employee: emp!.id, year: CURRENT_YEAR }),
+    enabled:  !!emp,
+  });
+
+  const { data: shiftAssignments } = useQuery({
+    queryKey: ['shift-assignments', emp?.id],
+    queryFn:  () => hrShiftAssignmentsApi.getAll({ employee: emp!.id }),
+    enabled:  !!emp,
+  });
+
+  const currentShift = shiftAssignments?.results?.[0] ?? null;
 
   // ── Mutations ──────────────────────────────────────────────────────────────
   const userMutation = useMutation({
@@ -154,6 +207,12 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['employee-by-user', userId] }); },
   });
 
+  const emergencyMutation = useMutation({
+    mutationFn: (data: { name: string; relationship: string; phone: string }) =>
+      hrEmployeesApi.updateEmergencyContact(emp!.id, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['employee-by-user', userId] }); },
+  });
+
   const roleMutation = useMutation({
     mutationFn: (newRole: string) => usersApi.update(userId, { role: newRole }),
     onSuccess: () => {
@@ -165,13 +224,13 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
     onError: () => toast('Failed to update role', 'error'),
   });
 
-  const isSaving = userMutation.isPending || createEmpMutation.isPending || updateEmpMutation.isPending;
+  const isSaving = userMutation.isPending || createEmpMutation.isPending || updateEmpMutation.isPending || emergencyMutation.isPending;
 
   const buildEmpPayload = () => ({
-    user_id: userId,
+    user_id:              userId,
     employment_type:      form.employment_type,
-    join_date:            form.join_date            || null,
-    department:           form.department           || null,
+    join_date:            form.join_date             || null,
+    department:           form.department            || null,
     position:             form.position             || null,
     work_location:        form.work_location,
     location:             form.location             || null,
@@ -180,6 +239,11 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
     housing_allowance:    form.housing_allowance,
     transport_allowance:  form.transport_allowance,
     other_allowances:     form.other_allowances,
+    direct_manager:       form.direct_manager       || null,
+    indirect_manager:     form.indirect_manager     || null,
+    probation_end_date:   form.probation_end_date   || null,
+    end_date:             form.end_date             || null,
+    extension_number:     form.extension_number,
     gender:               form.gender,
     date_of_birth:        form.date_of_birth        || null,
     nationality:          form.nationality,
@@ -206,10 +270,28 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
         if (!form.password || form.password.length < 8) { toast('Min 8 characters', 'error'); return; }
         if (form.password !== form.password2) { toast('Passwords do not match', 'error'); return; }
       }
-      const d: any = { username: form.username, email: form.email, first_name: form.first_name,
-        last_name: form.last_name, phone: form.phone, role: form.role, is_active: form.is_active };
+      const d: any = {
+        username:     form.username,
+        email:        form.email,
+        first_name:   form.first_name,
+        last_name:    form.last_name,
+        second_name:  form.second_name,
+        third_name:   form.third_name,
+        full_name_ar: form.full_name_ar,
+        job_title:    form.job_title,
+        phone:        form.phone,
+        role:         form.role,
+        is_active:    form.is_active,
+      };
       if (changePassword && form.password) d.password = form.password;
       await userMutation.mutateAsync(d);
+    } else if (drawer === 'emergency') {
+      if (!form.emergency_name || !form.emergency_phone) { toast('Name and phone are required', 'error'); return; }
+      await emergencyMutation.mutateAsync({
+        name:         form.emergency_name,
+        relationship: form.emergency_relationship,
+        phone:        form.emergency_phone,
+      });
     } else {
       if (emp) await updateEmpMutation.mutateAsync(buildEmpPayload());
       else if (form.join_date) await createEmpMutation.mutateAsync(buildEmpPayload());
@@ -223,10 +305,18 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
   const displayName  = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username;
   const avatarLetter = displayName[0].toUpperCase();
   const roleLabel    = ROLES.find(r => r.value === user.role)?.label || user.role || '—';
-  const totalSalary  = ['basic_salary','housing_allowance','transport_allowance','other_allowances']
+  const totalSalary  = ['basic_salary', 'housing_allowance', 'transport_allowance', 'other_allowances']
     .reduce((s, k) => s + parseFloat((emp as any)?.[k] || '0'), 0);
   const deptName     = depts?.results?.find((d: any) => d.id === emp?.department)?.name;
   const posName      = positions?.results?.find((p: any) => p.id === emp?.position)?.title;
+
+  const filteredDM = (allEmployees?.results ?? [])
+    .filter((e: any) => e.id !== emp?.id)
+    .filter((e: any) => !dmSearch || `${e.full_name || ''} ${e.employee_id}`.toLowerCase().includes(dmSearch.toLowerCase()));
+
+  const filteredIM = (allEmployees?.results ?? [])
+    .filter((e: any) => e.id !== emp?.id)
+    .filter((e: any) => !imSearch || `${e.full_name || ''} ${e.employee_id}`.toLowerCase().includes(imSearch.toLowerCase()));
 
   return (
     <>
@@ -274,17 +364,31 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
           {/* Personal Info */}
           <Section title="Personal Info" onEdit={() => openDrawer('personal')}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
-              <InfoRow label="Gender"      value={emp?.gender ? emp.gender.charAt(0).toUpperCase() + emp.gender.slice(1) : '—'} />
-              <InfoRow label="Nationality" value={emp?.nationality} />
-              <InfoRow label="Birth Date"  value={fmtDate(emp?.date_of_birth)} />
-              <InfoRow label="Marital"     value={emp?.marital_status} />
-              <InfoRow label="National ID" value={emp?.national_id} />
-              <InfoRow label="Mobile"      value={emp?.mobile_number || user.phone} />
+              <InfoRow label="Gender"         value={emp?.gender ? emp.gender.charAt(0).toUpperCase() + emp.gender.slice(1) : '—'} />
+              <InfoRow label="Nationality"    value={emp?.nationality} />
+              <InfoRow label="Birth Date"     value={fmtDate(emp?.date_of_birth)} />
+              <InfoRow label="Marital"        value={emp?.marital_status} />
+              <InfoRow label="National ID"    value={emp?.national_id} />
+              <InfoRow label="Mobile"         value={emp?.mobile_number || user.phone} />
+              <InfoRow label="Personal Email" value={emp?.personal_email} />
             </div>
+            {emp?.address && (
+              <div style={{ marginTop: 'var(--space-2)' }}>
+                <InfoRow label="Address" value={emp.address} />
+              </div>
+            )}
             {emp?.passport_number && (
               <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 'var(--space-3)', paddingTop: 'var(--space-3)', display: 'flex', flexDirection: 'column', gap: 'var(--space-1-5)' }}>
                 <InfoRow label="Passport No."    value={emp.passport_number} />
+                <InfoRow label="Passport Issued" value={fmtDate(emp.passport_issue_date)} />
                 <InfoRow label="Passport Expiry" value={fmtDate(emp.passport_expiry_date)} />
+              </div>
+            )}
+            {(user.second_name || user.third_name || user.full_name_ar) && (
+              <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 'var(--space-3)', paddingTop: 'var(--space-3)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)' }}>
+                {user.second_name  && <InfoRow label="2nd Name"    value={user.second_name} />}
+                {user.third_name   && <InfoRow label="3rd Name"    value={user.third_name} />}
+                {user.full_name_ar && <InfoRow label="Arabic Name" value={user.full_name_ar} />}
               </div>
             )}
           </Section>
@@ -292,27 +396,52 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
           {/* UAE Legal */}
           <Section title="UAE Legal" onEdit={() => openDrawer('legal')}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              <InfoRow label="Resident ID"  value={emp?.resident_id} />
-              <InfoRow label="Labor Card"   value={emp?.labor_card} />
-              <InfoRow label="MOL Number"   value={emp?.mol_number} />
-              <InfoRow label="Sponsor Name" value={emp?.sponsor_name} />
-              <InfoRow label="Citizen"      value={emp?.is_citizen ? 'Yes' : 'No'} />
+              <InfoRow label="Resident ID"       value={emp?.resident_id} />
+              <InfoRow label="Labor Card"        value={emp?.labor_card} />
+              <InfoRow label="Labor Card Expiry" value={fmtDate(emp?.labor_card_expiry)} />
+              <InfoRow label="MOL Number"        value={emp?.mol_number} />
+              <InfoRow label="Sponsor Name"      value={emp?.sponsor_name} />
+              <InfoRow label="Sponsor ID"        value={emp?.sponsor_id} />
+              <InfoRow label="Citizen"           value={emp ? (emp.is_citizen ? 'Yes' : 'No') : '—'} />
             </div>
+          </Section>
+
+          {/* Emergency Contact */}
+          <Section title="Emergency Contact" onEdit={emp ? () => openDrawer('emergency') : undefined}>
+            {emp?.emergency_contact?.name ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <InfoRow label="Name"         value={emp.emergency_contact.name} />
+                <InfoRow label="Relationship" value={emp.emergency_contact.relationship} />
+                <InfoRow label="Phone"        value={emp.emergency_contact.phone} />
+              </div>
+            ) : (
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
+                {emp ? 'No emergency contact set.' : 'Set up an employee profile first.'}
+              </p>
+            )}
           </Section>
         </div>
 
-        {/* ── MAIN ── */}
+        {/* ── MAIN AREA ── */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
 
-          {/* Employment */}
+          {/* Employment Details */}
           <Section title="Employment Details" onEdit={() => openDrawer('employment')}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', columnGap: 'var(--space-8)', rowGap: 'var(--space-5)' }}>
-              <InfoRow label="Position"    value={posName || emp?.position_title} />
-              <InfoRow label="Department"  value={deptName || emp?.department_name} />
-              <InfoRow label="Work Type"   value={emp?.employment_type?.replace('_', ' ')} />
-              <InfoRow label="Hiring Date" value={fmtDate(emp?.join_date)} />
-              <InfoRow label="Location"    value={emp?.location_name || emp?.work_location} />
-              <InfoRow label="Email"       value={user.email} />
+              <InfoRow label="Position"        value={posName || emp?.position_title} />
+              <InfoRow label="Department"      value={deptName || emp?.department_name} />
+              <InfoRow label="Work Type"       value={emp?.employment_type?.replace(/_/g, ' ')} />
+              <InfoRow label="Hiring Date"     value={fmtDate(emp?.join_date)} />
+              <InfoRow label="Location"        value={emp?.location_name || emp?.work_location} />
+              <InfoRow label="Email"           value={user.email} />
+              <InfoRow label="Direct Manager"  value={emp?.direct_manager_name} />
+              <InfoRow label="Indirect Mgr."   value={emp?.indirect_manager_name} />
+              <InfoRow label="Current Shift"   value={currentShift?.shift_name} />
+              <InfoRow label="Job Title"       value={user.job_title} />
+              <InfoRow label="Extension No."   value={emp?.extension_number} />
+              <InfoRow label="Salary Name"     value={emp?.salary_display_name} />
+              {emp?.probation_end_date && <InfoRow label="Probation End" value={fmtDate(emp.probation_end_date)} />}
+              {emp?.end_date           && <InfoRow label="Contract End"  value={fmtDate(emp.end_date)} />}
             </div>
             {!emp && (
               <div style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3)', borderRadius: 'var(--radius-lg)', textAlign: 'center', background: 'var(--surface-subtle)' }}>
@@ -324,7 +453,7 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
             )}
           </Section>
 
-          {/* Salary */}
+          {/* Salary Package */}
           {emp && (
             <Section title="Salary Package" onEdit={() => openDrawer('employment')}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-4)' }}>
@@ -346,6 +475,49 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
             </Section>
           )}
 
+          {/* Time Off Balances */}
+          {emp && (
+            <Section title="Time Off Balances">
+              {leaveBalances?.results && leaveBalances.results.length > 0 ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-4)' }}>
+                  {LEAVE_ORDER.map(type => {
+                    const bal = leaveBalances.results.find((b: any) => b.leave_type === type);
+                    if (!bal) return null;
+                    const total     = parseFloat(bal.total_days)   || 0;
+                    const used      = parseFloat(bal.used_days)    || 0;
+                    const pending   = parseFloat(bal.pending_days) || 0;
+                    const remaining = Math.max(0, total - used - pending);
+                    const pct       = total > 0 ? Math.min(100, (remaining / total) * 100) : 0;
+                    const barColor  = remaining > 5   ? 'var(--sidebar-active-text)'
+                                    : remaining > 0   ? '#f59e0b'
+                                    : '#ef4444';
+                    return (
+                      <div key={type} style={{ borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)', background: 'var(--surface-subtle)' }}>
+                        <p style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)', margin: '0 0 var(--space-2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          {LEAVE_LABELS[type]}
+                        </p>
+                        <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-bold)', margin: '0 0 var(--space-2)', color: remaining > 0 ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                          {remaining.toFixed(1)}
+                          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-normal)', color: 'var(--text-secondary)', marginLeft: 4 }}>days</span>
+                        </p>
+                        <div style={{ height: 4, borderRadius: 2, background: 'var(--border-default)', overflow: 'hidden', marginBottom: 'var(--space-2)' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, borderRadius: 2, background: barColor, transition: 'width 400ms ease' }} />
+                        </div>
+                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
+                          {used} used · {pending} pending · {total} total
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
+                  No leave balances recorded for {CURRENT_YEAR}.
+                </p>
+              )}
+            </Section>
+          )}
+
           {/* System Access — admin-only */}
           {isAdmin && (
             <Section title="System Access">
@@ -356,37 +528,17 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
                   <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>Role</p>
                   {roleEditMode ? (
                     <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-1)', alignItems: 'center' }}>
-                      <select
-                        className={sel}
-                        value={roleEditValue}
-                        onChange={e => setRoleEditValue(e.target.value)}
-                        style={{ flex: 1 }}
-                      >
+                      <select className={sel} value={roleEditValue} onChange={e => setRoleEditValue(e.target.value)} style={{ flex: 1 }}>
                         {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                       </select>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        isLoading={roleMutation.isPending}
-                        onClick={() => roleMutation.mutate(roleEditValue)}
-                      >
-                        Save
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setRoleEditMode(false)}
-                      >
-                        Cancel
-                      </Button>
+                      <Button variant="primary" size="sm" isLoading={roleMutation.isPending} onClick={() => roleMutation.mutate(roleEditValue)}>Save</Button>
+                      <Button variant="secondary" size="sm" onClick={() => setRoleEditMode(false)}>Cancel</Button>
                     </div>
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-1)' }}>
                       <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', margin: 0 }}>{roleLabel}</p>
-                      <button
-                        onClick={() => { setRoleEditValue(user.role || 'employee'); setRoleEditMode(true); }}
-                        style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', padding: 'var(--space-0-5) var(--space-2)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
-                      >
+                      <button onClick={() => { setRoleEditValue(user.role || 'employee'); setRoleEditMode(true); }}
+                        style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', padding: 'var(--space-0-5) var(--space-2)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
                         Change
                       </button>
                     </div>
@@ -413,19 +565,23 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
           <div style={{ marginLeft: 'auto', width: '100%', maxWidth: 560, height: '100%', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', background: 'var(--card-bg)' }}
             onClick={e => e.stopPropagation()}>
 
+            {/* Drawer header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-4) var(--space-6)', borderBottom: '1px solid var(--border-subtle)' }}>
               <h2 style={{ fontWeight: 'var(--weight-semibold)', margin: 0 }}>
-                {drawer === 'account' ? 'Edit Account' : drawer === 'employment' ? 'Edit Employment' :
-                 drawer === 'personal' ? 'Edit Personal Info' : 'Edit UAE Legal'}
+                {drawer === 'account'    ? 'Edit Account'       :
+                 drawer === 'employment' ? 'Edit Employment'    :
+                 drawer === 'personal'   ? 'Edit Personal Info' :
+                 drawer === 'legal'      ? 'Edit UAE Legal'     :
+                                          'Emergency Contact'}
               </h2>
               <button onClick={() => setDrawer(null)} style={{ fontSize: 'var(--text-lg)', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1 }}>✕</button>
             </div>
 
+            {/* Drawer body */}
             <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--space-5) var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
-              {/* Account */}
+              {/* ── Account ── */}
               {drawer === 'account' && <>
-                {/* Avatar */}
                 <div className={fld}>
                   <label className={lbl}>Profile Picture</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
@@ -451,9 +607,13 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
                   <div className={fld}><label className={lbl}>First Name</label><input className={inp} value={form.first_name} onChange={f('first_name')} /></div>
                   <div className={fld}><label className={lbl}>Last Name</label><input className={inp} value={form.last_name} onChange={f('last_name')} /></div>
+                  <div className={fld}><label className={lbl}>2nd Name</label><input className={inp} value={form.second_name} onChange={f('second_name')} placeholder="Optional" /></div>
+                  <div className={fld}><label className={lbl}>3rd Name</label><input className={inp} value={form.third_name} onChange={f('third_name')} placeholder="Optional" /></div>
+                  <div className={fld} style={{ gridColumn: '1 / -1' }}><label className={lbl}>Arabic Full Name</label><input className={inp} value={form.full_name_ar} onChange={f('full_name_ar')} placeholder="Optional" dir="rtl" /></div>
                   <div className={fld}><label className={lbl}>Username</label><input className={inp} value={form.username} onChange={f('username')} /></div>
                   <div className={fld}><label className={lbl}>Email</label><input className={inp} type="email" value={form.email} onChange={f('email')} /></div>
                   <div className={fld}><label className={lbl}>Phone</label><input className={inp} type="tel" value={form.phone} onChange={f('phone')} /></div>
+                  <div className={fld}><label className={lbl}>Job Title</label><input className={inp} value={form.job_title} onChange={f('job_title')} placeholder="e.g. Senior Engineer" /></div>
                   <div className={fld}><label className={lbl}>Role</label>
                     <select className={sel} value={form.role} onChange={f('role')}>
                       {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
@@ -481,47 +641,79 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
                 </div>
               </>}
 
-              {/* Employment */}
+              {/* ── Employment ── */}
               {drawer === 'employment' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
-                  <div className={fld}><label className={lbl}>Hiring Date</label><input className={inp} type="date" value={form.join_date} onChange={f('join_date')} /></div>
-                  <div className={fld}><label className={lbl}>Employment Type</label>
-                    <select className={sel} value={form.employment_type} onChange={f('employment_type')}>
-                      <option value="full_time">Full Time</option><option value="part_time">Part Time</option>
-                      <option value="contract">Contract</option><option value="intern">Intern</option>
-                    </select>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                  {/* Manager pickers — admin only */}
+                  {isAdmin && (
+                    <>
+                      <div className={fld}>
+                        <label className={lbl}>Direct Manager</label>
+                        <input className={inp} placeholder="Search by name or ID..." value={dmSearch}
+                          onChange={e => setDmSearch(e.target.value)} style={{ marginBottom: 'var(--space-1)' }} />
+                        <select className={sel} value={form.direct_manager ?? ''} onChange={f('direct_manager')}>
+                          <option value="">— None —</option>
+                          {filteredDM.map((e: any) => (
+                            <option key={e.id} value={e.id}>{e.full_name || e.employee_id} ({e.employee_id})</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className={fld}>
+                        <label className={lbl}>Indirect Manager</label>
+                        <input className={inp} placeholder="Search by name or ID..." value={imSearch}
+                          onChange={e => setImSearch(e.target.value)} style={{ marginBottom: 'var(--space-1)' }} />
+                        <select className={sel} value={form.indirect_manager ?? ''} onChange={f('indirect_manager')}>
+                          <option value="">— None —</option>
+                          {filteredIM.map((e: any) => (
+                            <option key={e.id} value={e.id}>{e.full_name || e.employee_id} ({e.employee_id})</option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                    <div className={fld}><label className={lbl}>Hiring Date</label><input className={inp} type="date" value={form.join_date} onChange={f('join_date')} /></div>
+                    <div className={fld}><label className={lbl}>Employment Type</label>
+                      <select className={sel} value={form.employment_type} onChange={f('employment_type')}>
+                        <option value="full_time">Full Time</option><option value="part_time">Part Time</option>
+                        <option value="contract">Contract</option><option value="intern">Intern</option>
+                      </select>
+                    </div>
+                    <div className={fld}><label className={lbl}>Department</label>
+                      <select className={sel} value={form.department} onChange={f('department')}>
+                        <option value="">— None —</option>
+                        {depts?.results?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                      </select>
+                    </div>
+                    <div className={fld}><label className={lbl}>Position</label>
+                      <select className={sel} value={form.position} onChange={f('position')}>
+                        <option value="">— None —</option>
+                        {positions?.results?.map((p: any) => <option key={p.id} value={p.id}>{p.title}</option>)}
+                      </select>
+                    </div>
+                    <div className={fld}><label className={lbl}>Location</label>
+                      <select className={sel} value={form.location ?? ''} onChange={f('location')}>
+                        <option value="">— None —</option>
+                        {locations?.results?.map((l: any) => (
+                          <option key={l.id} value={l.id}>
+                            {l.location_type_icon ? `${l.location_type_icon} ` : ''}{l.parent_name ? `${l.parent_name} › ` : ''}{l.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className={fld}><label className={lbl}>Work Location (notes)</label><input className={inp} value={form.work_location} onChange={f('work_location')} /></div>
+                    <div className={fld}><label className={lbl}>Probation End</label><input className={inp} type="date" value={form.probation_end_date} onChange={f('probation_end_date')} /></div>
+                    <div className={fld}><label className={lbl}>Contract End</label><input className={inp} type="date" value={form.end_date} onChange={f('end_date')} /></div>
+                    <div className={fld}><label className={lbl}>Extension No.</label><input className={inp} value={form.extension_number} onChange={f('extension_number')} placeholder="e.g. 4412" /></div>
+                    <div className={fld} style={{ gridColumn: '1 / -1' }}><label className={lbl}>Salary Display Name</label><input className={inp} value={form.salary_display_name} onChange={f('salary_display_name')} /></div>
+                    {[['basic_salary', 'Basic (AED)'], ['housing_allowance', 'Housing (AED)'], ['transport_allowance', 'Transport (AED)'], ['other_allowances', 'Other (AED)']].map(([k, l]) => (
+                      <div key={k} className={fld}><label className={lbl}>{l}</label><input className={inp} type="number" min="0" value={form[k]} onChange={f(k)} /></div>
+                    ))}
                   </div>
-                  <div className={fld}><label className={lbl}>Department</label>
-                    <select className={sel} value={form.department} onChange={f('department')}>
-                      <option value="">— None —</option>
-                      {depts?.results?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                    </select>
-                  </div>
-                  <div className={fld}><label className={lbl}>Position</label>
-                    <select className={sel} value={form.position} onChange={f('position')}>
-                      <option value="">— None —</option>
-                      {positions?.results?.map((p: any) => <option key={p.id} value={p.id}>{p.title}</option>)}
-                    </select>
-                  </div>
-                  <div className={fld}><label className={lbl}>Location</label>
-                    <select className={sel} value={form.location ?? ''} onChange={f('location')}>
-                      <option value="">— None —</option>
-                      {locations?.results?.map((l: any) => (
-                        <option key={l.id} value={l.id}>
-                          {l.location_type_icon ? `${l.location_type_icon} ` : ''}{l.parent_name ? `${l.parent_name} › ` : ''}{l.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={fld}><label className={lbl}>Work Location (notes)</label><input className={inp} value={form.work_location} onChange={f('work_location')} /></div>
-                  <div className={fld} style={{ gridColumn: '1 / -1' }}><label className={lbl}>Salary Display Name</label><input className={inp} value={form.salary_display_name} onChange={f('salary_display_name')} /></div>
-                  {[['basic_salary','Basic (AED)'],['housing_allowance','Housing (AED)'],['transport_allowance','Transport (AED)'],['other_allowances','Other (AED)']].map(([k,l]) => (
-                    <div key={k} className={fld}><label className={lbl}>{l}</label><input className={inp} type="number" min="0" value={form[k]} onChange={f(k)} /></div>
-                  ))}
                 </div>
               )}
 
-              {/* Personal */}
+              {/* ── Personal ── */}
               {drawer === 'personal' && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
                   <div className={fld}><label className={lbl}>Gender</label>
@@ -547,7 +739,7 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
                 </div>
               )}
 
-              {/* Legal */}
+              {/* ── Legal ── */}
               {drawer === 'legal' && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
                   <div className={fld}><label className={lbl}>Resident ID</label><input className={inp} value={form.resident_id} onChange={f('resident_id')} /></div>
@@ -564,8 +756,33 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
                   </div>
                 </div>
               )}
+
+              {/* ── Emergency Contact ── */}
+              {drawer === 'emergency' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
+                    Who should be contacted in an emergency?
+                  </p>
+                  <div className={fld}>
+                    <label className={lbl}>Contact Name *</label>
+                    <input className={inp} value={form.emergency_name} onChange={f('emergency_name')} placeholder="Full name" />
+                  </div>
+                  <div className={fld}>
+                    <label className={lbl}>Relationship</label>
+                    <select className={sel} value={form.emergency_relationship} onChange={f('emergency_relationship')}>
+                      <option value="">— Select —</option>
+                      {EC_RELATIONSHIPS.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </div>
+                  <div className={fld}>
+                    <label className={lbl}>Phone Number *</label>
+                    <input className={inp} type="tel" value={form.emergency_phone} onChange={f('emergency_phone')} placeholder="+971 50 000 0000" />
+                  </div>
+                </div>
+              )}
             </div>
 
+            {/* Drawer footer */}
             <div style={{ padding: 'var(--space-4) var(--space-6)', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
               <Button variant="secondary" onClick={() => setDrawer(null)}>Cancel</Button>
               <Button variant="primary" onClick={handleSave} isLoading={isSaving}>

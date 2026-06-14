@@ -79,6 +79,10 @@ export const hrEmployeesApi = {
     const response = await apiClient.post(`/hr/employees/${id}/deactivate/`);
     return response.data;
   },
+  updateEmergencyContact: async (empId: number, data: { name: string; relationship: string; phone: string }) => {
+    const response = await apiClient.patch(`/hr/employees/${empId}/emergency-contact/`, data);
+    return response.data;
+  },
 };
 
 // ── Departments ────────────────────────────────────────────────────────────────
@@ -305,6 +309,25 @@ export interface EmployeeAssignmentFlat {
 export const hrAllAssignmentsApi = {
   getAll: async (): Promise<EmployeeAssignmentFlat[]> => {
     const response = await apiClient.get('/hr/attendance/assignments/');
+    return response.data;
+  },
+};
+
+// ── Shift Assignments ──────────────────────────────────────────────────────────
+
+export interface ShiftAssignment {
+  id: number;
+  employee: number;
+  employee_name: string;
+  shift: number;
+  shift_name: string;
+  start_date: string;
+  end_date: string | null;
+}
+
+export const hrShiftAssignmentsApi = {
+  getAll: async (params?: { employee?: number; shift?: number }): Promise<PaginatedResponse<ShiftAssignment>> => {
+    const response = await apiClient.get('/hr/attendance/shift-assignments/', { params });
     return response.data;
   },
 };
