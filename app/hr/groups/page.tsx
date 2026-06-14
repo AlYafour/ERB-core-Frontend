@@ -3,37 +3,68 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
-import { hrEmployeeGroupsApi } from '@/lib/api/hr';
+import { hrEmployeeGroupsApi, hrShiftsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { toast } from '@/lib/hooks/use-toast';
-import type { EmployeeGroup } from '@/types';
+import type { EmployeeGroup, HRShift } from '@/types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const isAdmin = (user: any) =>
   !!(user?.role === 'admin' || user?.role === 'super_admin' || user?.is_staff || user?.is_superuser);
 
-const EMPTY_FORM = { name: '', name_ar: '', code: '', description: '', is_active: true };
+function fmtTime(t: string): string {
+  if (!t) return '';
+  const [h, m] = t.split(':');
+  const hour = parseInt(h, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  return `${hour % 12 || 12}:${m} ${ampm}`;
+}
+
+// ── FormState ─────────────────────────────────────────────────────────────────
+const EMPTY_FORM = {
+  name: '',
+  name_ar: '',
+  code: '',
+  description: '',
+  is_active: true,
+  default_shift: null as number | null,
+};
 type FormState = typeof EMPTY_FORM;
+
+const LABEL_STYLE: React.CSSProperties = {
+  fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)',
+  color: 'var(--text-secondary)', textTransform: 'uppercase',
+  letterSpacing: '0.05em', display: 'block', marginBottom: 'var(--space-1-5)',
+};
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
 function GroupModal({
   group,
+  shifts,
   onClose,
   onSave,
   isSaving,
 }: {
   group: EmployeeGroup | null;
+  shifts: HRShift[];
   onClose: () => void;
   onSave: (data: FormState) => void;
   isSaving: boolean;
 }) {
   const [form, setForm] = useState<FormState>(
     group
-      ? { name: group.name, name_ar: group.name_ar, code: group.code, description: group.description, is_active: group.is_active }
+      ? {
+          name:          group.name,
+          name_ar:       group.name_ar,
+          code:          group.code,
+          description:   group.description,
+          is_active:     group.is_active,
+          default_shift: group.default_shift ?? null,
+        }
       : EMPTY_FORM,
   );
 
-  const set = (key: keyof FormState, value: string | boolean) =>
+  const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -41,6 +72,8 @@ function GroupModal({
     if (!form.name.trim() || !form.code.trim()) return;
     onSave(form);
   };
+
+  const activeShifts = shifts.filter(s => s.is_active);
 
   return (
     <div
@@ -58,9 +91,10 @@ function GroupModal({
         </h2>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+
           {/* Code */}
           <div>
-            <label style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 'var(--space-1-5)' }}>
+            <label style={LABEL_STYLE}>
               Code <span style={{ color: 'var(--color-error)' }}>*</span>
             </label>
             <input
@@ -83,9 +117,7 @@ function GroupModal({
           {/* Name */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
             <div>
-              <label style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 'var(--space-1-5)' }}>
-                Name <span style={{ color: 'var(--color-error)' }}>*</span>
-              </label>
+              <label style={LABEL_STYLE}>Name <span style={{ color: 'var(--color-error)' }}>*</span></label>
               <input
                 value={form.name}
                 onChange={e => set('name', e.target.value)}
@@ -96,9 +128,7 @@ function GroupModal({
               />
             </div>
             <div>
-              <label style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 'var(--space-1-5)' }}>
-                Name (Arabic)
-              </label>
+              <label style={LABEL_STYLE}>Name (Arabic)</label>
               <input
                 value={form.name_ar}
                 onChange={e => set('name_ar', e.target.value)}
@@ -112,17 +142,39 @@ function GroupModal({
 
           {/* Description */}
           <div>
-            <label style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 'var(--space-1-5)' }}>
-              Description
-            </label>
+            <label style={LABEL_STYLE}>Description</label>
             <textarea
               value={form.description}
               onChange={e => set('description', e.target.value)}
               placeholder="Optional — describe what this group covers"
               className="form-input"
-              rows={3}
+              rows={2}
               style={{ width: '100%', fontSize: 'var(--text-sm)', resize: 'vertical' }}
             />
+          </div>
+
+          {/* Default Shift */}
+          <div>
+            <label style={LABEL_STYLE}>Default Shift</label>
+            <select
+              value={form.default_shift ?? ''}
+              onChange={e => set('default_shift', e.target.value ? parseInt(e.target.value, 10) : null)}
+              className="form-input"
+              style={{ width: '100%', fontSize: 'var(--text-sm)' }}
+            >
+              <option value="">— No default shift —</option>
+              {activeShifts.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                  {s.start_time && s.end_time
+                    ? ` (${fmtTime(s.start_time)} – ${fmtTime(s.end_time)})`
+                    : ''}
+                </option>
+              ))}
+            </select>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
+              Group members will inherit this shift schedule. Individual overrides apply in a later phase.
+            </p>
           </div>
 
           {/* Active toggle */}
@@ -178,7 +230,17 @@ export default function EmployeeGroupsPage() {
     staleTime: 60_000,
   });
 
+  const { data: shiftsRaw } = useQuery({
+    queryKey: ['hr-shifts'],
+    queryFn: () => hrShiftsApi.getAll(),
+    staleTime: 120_000,
+  });
+
   const groups: EmployeeGroup[] = raw?.results ?? [];
+  const shifts: HRShift[]        = shiftsRaw?.results ?? [];
+
+  // map id → shift for quick lookup in list rows
+  const shiftById = new Map(shifts.map(s => [s.id, s]));
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['hr-employee-groups'] });
 
@@ -222,6 +284,9 @@ export default function EmployeeGroupsPage() {
     );
   }
 
+  // grid: Code | Name | Name_AR | Members | Default Shift | Status | Actions
+  const GRID = '100px 1fr 1fr 80px 160px 80px 100px';
+
   return (
     <MainLayout>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
@@ -238,7 +303,7 @@ export default function EmployeeGroupsPage() {
               )}
             </h1>
             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
-              Workforce categories that carry default shift, approval policy, and reporting line.
+              Workforce categories that carry a default shift, approval policy, and reporting line.
             </p>
           </div>
           <button
@@ -258,11 +323,11 @@ export default function EmployeeGroupsPage() {
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           {/* Header row */}
           <div style={{
-            display: 'grid', gridTemplateColumns: '100px 1fr 1fr 90px 80px 100px',
+            display: 'grid', gridTemplateColumns: GRID,
             gap: 'var(--space-3)', padding: 'var(--space-3) var(--space-5)',
             borderBottom: '1px solid var(--border-subtle)', background: 'var(--surface-subtle)',
           }}>
-            {['Code', 'Name', 'Name (Arabic)', 'Members', 'Status', ''].map(h => (
+            {['Code', 'Name', 'Name (Arabic)', 'Members', 'Default Shift', 'Status', ''].map(h => (
               <span key={h} style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {h}
               </span>
@@ -283,14 +348,15 @@ export default function EmployeeGroupsPage() {
             </div>
           ) : (
             groups.map((group, idx) => {
-              const isLast = idx === groups.length - 1;
-              const isDeleting = deletingId === group.id;
+              const isLast      = idx === groups.length - 1;
+              const isDeleting  = deletingId === group.id;
+              const shiftDetail = group.default_shift ? shiftById.get(group.default_shift) : null;
 
               return (
                 <div key={group.id} style={{ borderBottom: !isLast ? '1px solid var(--border-subtle)' : 'none' }}>
                   {/* Main row */}
                   <div style={{
-                    display: 'grid', gridTemplateColumns: '100px 1fr 1fr 90px 80px 100px',
+                    display: 'grid', gridTemplateColumns: GRID,
                     gap: 'var(--space-3)', padding: 'var(--space-4) var(--space-5)', alignItems: 'center',
                   }}>
                     {/* Code */}
@@ -324,6 +390,26 @@ export default function EmployeeGroupsPage() {
                     <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
                       {group.member_count} active
                     </p>
+
+                    {/* Default Shift */}
+                    <div style={{ minWidth: 0 }}>
+                      {group.default_shift_name ? (
+                        <>
+                          <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {group.default_shift_name}
+                          </p>
+                          {shiftDetail && (
+                            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '2px 0 0', whiteSpace: 'nowrap' }}>
+                              {fmtTime(shiftDetail.start_time)} – {fmtTime(shiftDetail.end_time)}
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic' }}>
+                          None
+                        </p>
+                      )}
+                    </div>
 
                     {/* Status */}
                     <span style={{
@@ -397,11 +483,11 @@ export default function EmployeeGroupsPage() {
           )}
         </div>
 
-        {/* Context note — shown once there are groups */}
+        {/* Context note */}
         {!isLoading && groups.length > 0 && (
           <div style={{ padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)' }}>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
-              <strong>Phase G2 — foundation only.</strong> Default shift (G3), approval policy (G4), and reporting-line manager (G5) will be wired to each group in subsequent phases. Assign employees to groups from the{' '}
+              <strong>G3 active.</strong> Assign a default shift to each group above. Approval policy (G4) and reporting-line manager (G5) follow in subsequent phases. Assign employees to groups from the{' '}
               <a href="/hr/employees" style={{ color: 'var(--sidebar-active-text)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>Employees page</a>.
             </p>
           </div>
@@ -413,6 +499,7 @@ export default function EmployeeGroupsPage() {
       {modalGroup !== null && (
         <GroupModal
           group={modalGroup === 'new' ? null : modalGroup}
+          shifts={shifts}
           onClose={() => setModalGroup(null)}
           onSave={handleSave}
           isSaving={isSaving}
