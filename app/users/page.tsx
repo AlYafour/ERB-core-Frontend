@@ -109,7 +109,7 @@ export default function UsersPage() {
           title="Users"
           count={total}
           breadcrumbs={[{ label: 'Users' }]}
-          actions={<Link href="/hr/employees/new"><Button variant="primary">+ New User</Button></Link>}
+          actions={<Link href="/hr/employees/new"><Button variant="primary">+ New Employee</Button></Link>}
         />
 
         <WorkspaceSurface

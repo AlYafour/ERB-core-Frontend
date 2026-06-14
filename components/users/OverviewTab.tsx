@@ -131,7 +131,7 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
 
   const f = (k: string) => (e: React.ChangeEvent<any>) => setForm(p => ({ ...p, [k]: e.target.value }));
 
-  // ── Role & Access queries (admin-only) ────────────────────────────────────
+  // ── System Access queries (admin-only) ────────────────────────────────────
   const { data: permSummary } = useQuery({
     queryKey: ['user-permission-summary', userId],
     queryFn:  () => permissionsApi.getUserPermissionSummary(userId),
@@ -346,9 +346,9 @@ export default function OverviewTab({ user, emp, depts, positions, locations, is
             </Section>
           )}
 
-          {/* Role & Access — admin-only */}
+          {/* System Access — admin-only */}
           {isAdmin && (
-            <Section title="Role & Access">
+            <Section title="System Access">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-5)' }}>
 
                 {/* Role */}
