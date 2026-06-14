@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
 import {
@@ -16,12 +16,11 @@ import {
   hrEmployeesApi,
   hrOfficeLocationsApi,
   hrEmployeeLocationsApi,
-  type EmployeeLocationAssignment,
+  hrAllAssignmentsApi,
+  type EmployeeAssignmentFlat,
 } from '@/lib/api/hr';
 import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
-
-const PAGE_SIZE = 20;
 
 const th: React.CSSProperties = {
   textAlign: 'left',
@@ -40,6 +39,13 @@ const td: React.CSSProperties = {
   fontSize: 'var(--text-sm)',
 };
 
+interface GroupedRow {
+  employee_pk:      number;
+  employee_name:    string;
+  employee_id_code: string;
+  assignments:      EmployeeAssignmentFlat[];
+}
+
 export default function EmployeeLocationsPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -52,7 +58,6 @@ export default function EmployeeLocationsPage() {
 
   // ── Table state ──────────────────────────────────────────────────────────
   const [tableSearch, setTableSearch] = useState('');
-  const [tablePage, setTablePage]     = useState(1);
 
   // ── Drawer state ─────────────────────────────────────────────────────────
   const [drawerOpen, setDrawerOpen]         = useState(false);
@@ -66,47 +71,29 @@ export default function EmployeeLocationsPage() {
     return () => clearTimeout(t);
   }, [empSearchTerm]);
 
-  // ── Table queries ────────────────────────────────────────────────────────
-  const { data: empData, isLoading: loadingEmps } = useQuery({
-    queryKey: ['hr-emp-loc-table', tablePage, tableSearch],
-    queryFn:  () =>
-      hrEmployeesApi.getAll({
-        page: tablePage,
-        search: tableSearch || undefined,
-        page_size: PAGE_SIZE,
-      } as any),
-    enabled: isAdmin,
+  // ── Single flat assignments query ─────────────────────────────────────────
+  const { data: assignments = [], isLoading } = useQuery({
+    queryKey: ['hr-emp-assignments'],
+    queryFn:  hrAllAssignmentsApi.getAll,
+    enabled:  isAdmin,
+    staleTime: 30_000,
   });
-  const tableEmployees = empData?.results ?? [];
-
-  const locationResults = useQueries({
-    queries: tableEmployees.map(emp => ({
-      queryKey: ['emp-locations', emp.id],
-      queryFn:  () => hrEmployeeLocationsApi.getAll(emp.id),
-      staleTime: 30_000,
-      enabled:  isAdmin,
-    })),
-  });
-
-  const locationsLoaded =
-    tableEmployees.length === 0 ||
-    locationResults.every(r => !r.isLoading && !r.isFetching);
 
   // ── Drawer: search-as-you-type employee picker ───────────────────────────
   const { data: empSearchData, isLoading: searchingEmps } = useQuery({
     queryKey: ['emp-search-drawer', debouncedEmpSearch],
     queryFn:  () =>
       hrEmployeesApi.getAll({ search: debouncedEmpSearch, page_size: 10 } as any),
-    enabled: isAdmin && debouncedEmpSearch.length >= 2,
+    enabled:  isAdmin && debouncedEmpSearch.length >= 2,
     staleTime: 30_000,
   });
 
   // ── Office locations for multi-select ────────────────────────────────────
   const { data: officeLocsData } = useQuery({
-    queryKey: ['office-locations'],
+    queryKey: ['hr-office-locations', 'active'],
     queryFn:  () => hrOfficeLocationsApi.getAll({ is_active: true }),
     enabled:  isAdmin,
-    staleTime: 5 * 60_000,
+    staleTime: 60_000,
   });
   const officeLocs: any[] = officeLocsData?.results ?? [];
 
@@ -126,6 +113,7 @@ export default function EmployeeLocationsPage() {
       return { assigned, duplicates, failed };
     },
     onSuccess: ({ assigned, duplicates, failed }, { empId }) => {
+      queryClient.invalidateQueries({ queryKey: ['hr-emp-assignments'] });
       queryClient.invalidateQueries({ queryKey: ['emp-locations', empId] });
       closeDrawer();
       if (failed > 0) {
@@ -145,6 +133,7 @@ export default function EmployeeLocationsPage() {
     mutationFn: ({ empId, assignId }: { empId: number; assignId: number }) =>
       hrEmployeeLocationsApi.remove(empId, assignId),
     onSuccess: (_, { empId }) => {
+      queryClient.invalidateQueries({ queryKey: ['hr-emp-assignments'] });
       queryClient.invalidateQueries({ queryKey: ['emp-locations', empId] });
       toast('Location removed', 'success');
     },
@@ -176,11 +165,6 @@ export default function EmployeeLocationsPage() {
     });
   };
 
-  const handleTableSearch = (val: string) => {
-    setTableSearch(val);
-    setTablePage(1);
-  };
-
   // ── Guards ────────────────────────────────────────────────────────────────
   if (!user) return <MainLayout><div className="card empty-state"><Loader /></div></MainLayout>;
   if (!isAdmin) return (
@@ -193,26 +177,42 @@ export default function EmployeeLocationsPage() {
     </MainLayout>
   );
 
-  // ── Derived ───────────────────────────────────────────────────────────────
-  const totalCount  = empData?.count ?? 0;
-  const showLoader  = loadingEmps || !locationsLoaded;
+  // ── Derived: group assignments by employee, filter client-side ────────────
+  const grouped = useMemo<GroupedRow[]>(() => {
+    const map = new Map<number, GroupedRow>();
+    for (const a of assignments) {
+      if (!map.has(a.employee_pk)) {
+        map.set(a.employee_pk, {
+          employee_pk:      a.employee_pk,
+          employee_name:    a.employee_name,
+          employee_id_code: a.employee_id_code,
+          assignments:      [],
+        });
+      }
+      map.get(a.employee_pk)!.assignments.push(a);
+    }
+    return Array.from(map.values());
+  }, [assignments]);
 
-  const allRows = tableEmployees.map((emp, i) => ({
-    emp,
-    assignments: (locationResults[i]?.data ?? []) as EmployeeLocationAssignment[],
-  }));
-  const assignedRows = allRows.filter(r => r.assignments.length > 0);
+  const filteredRows = useMemo<GroupedRow[]>(() => {
+    if (!tableSearch) return grouped;
+    const q = tableSearch.toLowerCase();
+    return grouped.filter(r =>
+      r.employee_name.toLowerCase().includes(q) ||
+      r.employee_id_code.toLowerCase().includes(q)
+    );
+  }, [grouped, tableSearch]);
 
-  const showTrueEmpty = !showLoader && tableEmployees.length === 0 && tablePage === 1 && !tableSearch;
-  const showNoMatch   = !showLoader && tableEmployees.length > 0 && assignedRows.length === 0;
-
-  // Already-assigned IDs for the selected employee (for picker labelling)
-  const alreadyAssignedIds = new Set(
-    (selectedEmp
-      ? allRows.find(r => r.emp.id === selectedEmp.id)?.assignments ?? []
+  const alreadyAssignedIds = new Set<number>(
+    selectedEmp
+      ? assignments
+          .filter(a => a.employee_pk === selectedEmp.id)
+          .map(a => a.office_location)
       : []
-    ).map((a: EmployeeLocationAssignment) => a.office_location),
   );
+
+  const showTrueEmpty = !isLoading && grouped.length === 0;
+  const showNoMatch   = !isLoading && grouped.length > 0 && filteredRows.length === 0;
 
   return (
     <MainLayout>
@@ -230,13 +230,13 @@ export default function EmployeeLocationsPage() {
         <div style={{ marginBottom: 'var(--space-4)' }}>
           <SearchInput
             value={tableSearch}
-            onChange={handleTableSearch}
+            onChange={setTableSearch}
             placeholder="Search by employee name or number..."
             width={360}
           />
         </div>
 
-        {showLoader ? (
+        {isLoading ? (
           <div className="card empty-state"><Loader /></div>
 
         ) : showTrueEmpty ? (
@@ -250,9 +250,7 @@ export default function EmployeeLocationsPage() {
         ) : showNoMatch ? (
           <div className="card empty-state">
             <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: 'var(--text-sm)' }}>
-              {tableSearch
-                ? `No assigned employees match "${tableSearch}".`
-                : 'No assignments on this page — try the next page or search by name.'}
+              No assigned employees match &quot;{tableSearch}&quot;.
             </p>
           </div>
 
@@ -269,22 +267,22 @@ export default function EmployeeLocationsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {assignedRows.map(({ emp, assignments }) => (
+                  {filteredRows.map(row => (
                     <tr
-                      key={emp.id}
+                      key={row.employee_pk}
                       style={{ borderBottom: '1px solid var(--border-subtle)' }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-subtle)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
                       <td style={{ ...td, fontFamily: 'monospace', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                        {emp.employee_id}
+                        {row.employee_id_code}
                       </td>
                       <td style={{ ...td, fontWeight: 600 }}>
-                        {emp.full_name || '—'}
+                        {row.employee_name || '—'}
                       </td>
                       <td style={td}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-1-5)' }}>
-                          {assignments.map(a => (
+                          {row.assignments.map(a => (
                             <span
                               key={a.id}
                               style={{
@@ -301,7 +299,7 @@ export default function EmployeeLocationsPage() {
                             >
                               {a.office_location_name}
                               <button
-                                onClick={() => removeMutation.mutate({ empId: emp.id, assignId: a.id })}
+                                onClick={() => removeMutation.mutate({ empId: row.employee_pk, assignId: a.id })}
                                 title={`Remove ${a.office_location_name}`}
                                 style={{
                                   background: 'none', border: 'none', cursor: 'pointer',
@@ -318,7 +316,11 @@ export default function EmployeeLocationsPage() {
                       </td>
                       <td style={{ ...td, textAlign: 'right', whiteSpace: 'nowrap' }}>
                         <button
-                          onClick={() => openDrawer(emp)}
+                          onClick={() => openDrawer({
+                            id:          row.employee_pk,
+                            full_name:   row.employee_name,
+                            employee_id: row.employee_id_code,
+                          })}
                           style={{
                             fontSize: 'var(--text-xs)', fontWeight: 500,
                             color: 'var(--sidebar-active-text)',
@@ -333,22 +335,6 @@ export default function EmployeeLocationsPage() {
                 </tbody>
               </table>
             </div>
-
-            {totalCount > PAGE_SIZE && (
-              <div style={{
-                padding: 'var(--space-3) var(--space-4)',
-                borderTop: '1px solid var(--border-subtle)',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              }}>
-                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-                  {(tablePage - 1) * PAGE_SIZE + 1}–{Math.min(tablePage * PAGE_SIZE, totalCount)} of {totalCount} employees
-                </span>
-                <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                  <Button variant="secondary" size="sm" onClick={() => setTablePage(p => p - 1)} disabled={tablePage <= 1}>Prev</Button>
-                  <Button variant="secondary" size="sm" onClick={() => setTablePage(p => p + 1)} disabled={tablePage * PAGE_SIZE >= totalCount}>Next</Button>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -434,7 +420,7 @@ export default function EmployeeLocationsPage() {
                         </div>
                       ) : (empSearchData?.results ?? []).length === 0 ? (
                         <p style={{ padding: 'var(--space-3) var(--space-4)', color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: 0 }}>
-                          No employees found for "{debouncedEmpSearch}"
+                          No employees found for &quot;{debouncedEmpSearch}&quot;
                         </p>
                       ) : (
                         empSearchData!.results.map(emp => (

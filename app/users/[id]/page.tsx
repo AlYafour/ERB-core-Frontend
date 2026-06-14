@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { Loader, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
 import { useAuth } from '@/lib/hooks/use-auth';
 import OverviewTab from '@/components/users/OverviewTab';
+import HomeTab from '@/components/users/HomeTab';
 import AttendanceTab from '@/components/users/AttendanceTab';
 import RequestsTab from '@/components/users/RequestsTab';
 import DocumentsTab from '@/components/users/DocumentsTab';
@@ -19,7 +20,7 @@ export default function UserProfilePage() {
 
   // ── A4: Access guard ──────────────────────────────────────────────────────
   const { user: me } = useAuth();
-  const isAdmin = !!(me?.role === 'super_admin' || me?.is_staff || me?.is_superuser);
+  const isAdmin = !!(me?.role === 'admin' || me?.role === 'super_admin' || me?.is_staff || me?.is_superuser);
   const isSelf  = !!me && me.id === userId;
   const canView = isSelf || isAdmin;
 
@@ -91,14 +92,20 @@ export default function UserProfilePage() {
         </div>
 
         {/* Tab bar + content */}
-        <Tabs defaultValue="overview">
+        <Tabs defaultValue={isSelf ? 'home' : 'overview'}>
           <TabsList>
+            {isSelf && <TabsTrigger value="home">Home</TabsTrigger>}
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
             <TabsTrigger value="requests">Requests</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
           </TabsList>
 
+          {isSelf && (
+            <TabsContent value="home">
+              <HomeTab {...tabProps} />
+            </TabsContent>
+          )}
           <TabsContent value="overview">
             <OverviewTab {...tabProps} />
           </TabsContent>
