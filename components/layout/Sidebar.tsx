@@ -208,7 +208,7 @@ export default function Sidebar() {
   const showModule = (key: string) => !hasModules || enabledModules.includes(key);
 
   const tenantName = tenantData?.name ?? '';
-  const logoUrl    = brandingData?.branding_logo_url || undefined;
+  const logoUrl    = brandingData?.logo_url || undefined;
 
   const purchaseItems = [
     { name: t('nav', 'prList'),         href: '/purchase-requests',   icon: <FileTextIcon className="w-4 h-4" />,      badge: pending.pr        },
