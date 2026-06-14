@@ -67,11 +67,9 @@ function ManagerPicker({
   const label    = selected?.full_name ?? (value && fallbackName ? fallbackName : null);
 
   const filtered = employees.filter(e =>
-    e.is_active && (
-      !search ||
-      e.full_name.toLowerCase().includes(search.toLowerCase()) ||
-      e.employee_id.toLowerCase().includes(search.toLowerCase())
-    )
+    !search ||
+    e.full_name.toLowerCase().includes(search.toLowerCase()) ||
+    e.employee_id.toLowerCase().includes(search.toLowerCase())
   );
 
   const select = (id: number | null) => {
@@ -152,7 +150,9 @@ function ManagerPicker({
               </div>
             ) : filtered.map(emp => {
               const hasUser  = !!emp.user?.id;
+              const inactive = !emp.is_active;
               const isSel    = emp.id === value;
+              const dotColor = !hasUser ? '#f59e0b' : inactive ? '#9ca3af' : '#10b981';
               return (
                 <div
                   key={emp.id}
@@ -161,15 +161,13 @@ function ManagerPicker({
                     padding: 'var(--space-2) var(--space-3)', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
                     background: isSel ? 'var(--sidebar-active-bg)' : undefined,
+                    opacity: inactive ? 0.6 : 1,
                   }}
                   onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = 'var(--surface-subtle)'; }}
                   onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = 'transparent'; }}
                 >
-                  {/* Account status dot */}
-                  <span style={{
-                    width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                    background: hasUser ? '#10b981' : '#f59e0b',
-                  }} />
+                  {/* green=active+account, grey=inactive employee, amber=no login account */}
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: dotColor }} />
 
                   {/* Name + ID */}
                   <span style={{ flex: 1, minWidth: 0 }}>
@@ -187,7 +185,8 @@ function ManagerPicker({
                       display: 'flex', alignItems: 'center', gap: 'var(--space-1-5)',
                     }}>
                       {emp.employee_id}
-                      {!hasUser && (
+                      {inactive && <span style={{ color: '#9ca3af' }}>· inactive</span>}
+                      {!hasUser && !inactive && (
                         <span style={{ color: '#f59e0b', fontWeight: 'var(--weight-medium)' }}>
                           · won't route approvals
                         </span>
@@ -424,8 +423,8 @@ export default function EmployeeGroupsPage() {
   });
 
   const { data: employeesRaw } = useQuery({
-    queryKey: ['hr-employees-active'],
-    queryFn: () => hrEmployeesApi.getAll({ is_active: true }),
+    queryKey: ['hr-employees-all'],
+    queryFn: () => hrEmployeesApi.getAll(),
     staleTime: 120_000,
   });
 
