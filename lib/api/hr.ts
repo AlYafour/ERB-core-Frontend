@@ -218,6 +218,28 @@ export const hrRequestsApi = {
     const response = await apiClient.get('/hr/requests/whos-off-today/');
     return response.data;
   },
+  cancel: async (id: number): Promise<void> => {
+    await apiClient.post(`/hr/requests/${id}/cancel/`);
+  },
+};
+
+// ── Approvals (request types) ──────────────────────────────────────────────────
+
+export interface HRRequestType {
+  id:          number;
+  code:        string;
+  name:        string;
+  name_ar:     string;
+  description: string;
+  is_active:   boolean;
+}
+
+export const hrApprovalsApi = {
+  getRequestTypes: async (): Promise<HRRequestType[]> => {
+    const response = await apiClient.get('/hr/approvals/request-types/');
+    const data = response.data;
+    return Array.isArray(data) ? data : (data.results ?? []);
+  },
 };
 
 // ── Payroll ────────────────────────────────────────────────────────────────────

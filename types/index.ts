@@ -701,6 +701,12 @@ export interface HRRequest {
   rejected_at: string | null;
   reject_reason: string;
   notes: string;
+  approval_instance_id: number | null;
+  current_approval_step: {
+    step_order: number;
+    strategy: string;
+    resolved_approver_id: number | null;
+  } | null;
   created_at: string;
   updated_at: string;
 }
