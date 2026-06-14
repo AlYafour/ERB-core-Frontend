@@ -364,6 +364,7 @@ export default function Sidebar() {
                     items={[
                       { name: 'Employees',                 href: '/hr/employees',         adminOnly: true },
                       { name: 'Employee Groups',           href: '/hr/groups',            adminOnly: true },
+                      { name: 'Work Shifts',               href: '/hr/shifts',            adminOnly: true },
                       { name: t('nav', 'hrDepartments'),  href: '/hr/departments'                        },
                       { name: t('nav', 'hrAttendance'),   href: '/hr/attendance'                         },
                       { name: 'Employee Locations',        href: '/hr/employee-locations', adminOnly: true },

@@ -388,6 +388,28 @@ export const hrShiftAssignmentsApi = {
   },
 };
 
+// ── Shifts CRUD ───────────────────────────────────────────────────────────────
+
+export const hrShiftsApi = {
+  getAll: async (): Promise<PaginatedResponse<HRShift>> => {
+    const response = await apiClient.get('/hr/attendance/shifts/', { params: { page_size: 200 } });
+    const data = response.data;
+    if (Array.isArray(data)) return { results: data, count: data.length, next: null, previous: null };
+    return data;
+  },
+  create: async (data: Partial<HRShift>): Promise<HRShift> => {
+    const response = await apiClient.post('/hr/attendance/shifts/', data);
+    return response.data;
+  },
+  update: async (id: number, data: Partial<HRShift>): Promise<HRShift> => {
+    const response = await apiClient.patch(`/hr/attendance/shifts/${id}/`, data);
+    return response.data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/attendance/shifts/${id}/`);
+  },
+};
+
 // ── Employee Groups ────────────────────────────────────────────────────────────
 
 export const hrEmployeeGroupsApi = {

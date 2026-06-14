@@ -556,6 +556,8 @@ export interface EmployeeGroup {
   description: string;
   is_active: boolean;
   member_count: number;
+  default_shift?: number | null;
+  default_shift_name?: string | null;
   created_at: string;
   updated_at: string;
 }
