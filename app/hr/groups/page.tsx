@@ -65,9 +65,12 @@ function GroupModal({
             </label>
             <input
               value={form.code}
-              onChange={e => set('code', e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''))}
+              onChange={e => set('code', e.target.value.toUpperCase())}
+              onBlur={e => set('code', e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '').trim())}
               placeholder="e.g. SITE, OFFICE, MAINTENANCE"
               required
+              autoComplete="off"
+              spellCheck={false}
               className="form-input"
               style={{ width: '100%', fontFamily: 'monospace', fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}
               maxLength={30}

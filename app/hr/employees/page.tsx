@@ -4,10 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
-import { hrEmployeesApi } from '@/lib/api/hr';
+import { hrEmployeesApi, hrEmployeeGroupsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { toast } from '@/lib/hooks/use-toast';
-import type { HREmployee } from '@/types';
+import type { HREmployee, EmployeeGroup } from '@/types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const isAdmin = (user: any) =>
@@ -17,6 +17,7 @@ const hasLogin = (emp: HREmployee): boolean => !!(emp.user?.id);
 const canApprove = (emp: HREmployee): boolean => hasLogin(emp) && emp.is_active;
 
 type ManagerRecord = { id: number; name: string } | null;
+type GroupRecord  = { id: number; code: string; name: string } | null;
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function EmployeesPage() {
@@ -26,9 +27,11 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('');
   const [showInactive, setShowInactive] = useState(false);
-  const [pickerOpenId, setPickerOpenId] = useState<number | null>(null);
-  const [pickerSearch, setPickerSearch] = useState('');
+  const [pickerOpenId, setPickerOpenId]         = useState<number | null>(null);
+  const [pickerSearch, setPickerSearch]         = useState('');
   const [managerOverrides, setManagerOverrides] = useState<Record<number, ManagerRecord>>({});
+  const [groupPickerOpenId, setGroupPickerOpenId] = useState<number | null>(null);
+  const [groupOverrides, setGroupOverrides]       = useState<Record<number, GroupRecord>>({});
 
   // ── Data ──────────────────────────────────────────────────────────────────
   const { data: raw, isLoading } = useQuery({
@@ -37,7 +40,14 @@ export default function EmployeesPage() {
     staleTime: 60_000,
   });
 
+  const { data: groupsRaw } = useQuery({
+    queryKey: ['hr-employee-groups'],
+    queryFn: () => hrEmployeeGroupsApi.getAll(),
+    staleTime: 300_000,
+  });
+
   const employees: HREmployee[] = raw?.results ?? [];
+  const groups: EmployeeGroup[] = groupsRaw?.results ?? [];
 
   // ── Derived filters ───────────────────────────────────────────────────────
   const departments = Array.from(
@@ -51,6 +61,33 @@ export default function EmployeesPage() {
     if (q && !e.full_name.toLowerCase().includes(q) && !e.employee_id.toLowerCase().includes(q)) return false;
     return true;
   });
+
+  // ── Group PATCH ────────────────────────────────────────────────────────────
+  const setGroupMutation = useMutation({
+    mutationFn: ({ empId, groupId }: { empId: number; groupId: number | null }) =>
+      hrEmployeesApi.update(empId, { employee_group: groupId } as Partial<HREmployee>),
+    onSuccess: (data: any, vars) => {
+      if (vars.groupId !== null) {
+        const g = groups.find(x => x.id === vars.groupId);
+        setGroupOverrides(prev => ({
+          ...prev,
+          [vars.empId]: g ? { id: g.id, code: g.code, name: g.name } : null,
+        }));
+      } else {
+        setGroupOverrides(prev => ({ ...prev, [vars.empId]: null }));
+      }
+      setGroupPickerOpenId(null);
+      toast(vars.groupId !== null ? 'Group assigned' : 'Group cleared', 'success');
+    },
+    onError: () => toast('Failed to update group', 'error'),
+  });
+
+  const openGroupPicker = useCallback((empId: number) => {
+    setGroupPickerOpenId(prev => (prev === empId ? null : empId));
+    // close manager picker if open
+    setPickerOpenId(null);
+    setPickerSearch('');
+  }, []);
 
   // ── Manager PATCH ──────────────────────────────────────────────────────────
   const setManagerMutation = useMutation({
@@ -72,6 +109,8 @@ export default function EmployeesPage() {
   const openPicker = useCallback((empId: number) => {
     setPickerOpenId(prev => (prev === empId ? null : empId));
     setPickerSearch('');
+    // close group picker if open
+    setGroupPickerOpenId(null);
   }, []);
 
   // Close picker on Escape
@@ -184,11 +223,11 @@ export default function EmployeesPage() {
           {/* Header row */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1.6fr 100px 160px 160px 90px 1fr',
+            gridTemplateColumns: '1.4fr 90px 130px 130px 80px 110px 1fr',
             gap: 'var(--space-3)', padding: 'var(--space-3) var(--space-5)',
             borderBottom: '1px solid var(--border-subtle)', background: 'var(--surface-subtle)',
           }}>
-            {['Employee', 'ID', 'Department', 'Position', 'Status', 'Direct Manager'].map(h => (
+            {['Employee', 'ID', 'Department', 'Position', 'Status', 'Group', 'Direct Manager'].map(h => (
               <span key={h} style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {h}
               </span>
@@ -207,18 +246,22 @@ export default function EmployeesPage() {
             </div>
           ) : (
             filtered.map((emp, idx) => {
-              const isPickerOpen = pickerOpenId === emp.id;
-              const override = managerOverrides[emp.id];
-              const managerName = override !== undefined ? override?.name ?? null : null;
-              const hasManager = managerName !== null;
-              const isSaving = setManagerMutation.isPending && setManagerMutation.variables?.empId === emp.id;
-              const isLast = idx === filtered.length - 1;
+              const isPickerOpen      = pickerOpenId === emp.id;
+              const isGroupPickerOpen = groupPickerOpenId === emp.id;
+              const override          = managerOverrides[emp.id];
+              const managerName       = override !== undefined ? override?.name ?? null : null;
+              const hasManager        = managerName !== null;
+              const groupOverride     = groupOverrides[emp.id];
+              const currentGroup      = groupOverride !== undefined ? groupOverride : null;
+              const isSavingManager   = setManagerMutation.isPending && setManagerMutation.variables?.empId === emp.id;
+              const isSavingGroup     = setGroupMutation.isPending && setGroupMutation.variables?.empId === emp.id;
+              const isLast            = idx === filtered.length - 1;
 
               return (
-                <div key={emp.id} style={{ borderBottom: !isLast || isPickerOpen ? '1px solid var(--border-subtle)' : 'none' }}>
+                <div key={emp.id} style={{ borderBottom: !isLast || isPickerOpen || isGroupPickerOpen ? '1px solid var(--border-subtle)' : 'none' }}>
                   {/* Main row */}
                   <div style={{
-                    display: 'grid', gridTemplateColumns: '1.6fr 100px 160px 160px 90px 1fr',
+                    display: 'grid', gridTemplateColumns: '1.4fr 90px 130px 130px 80px 110px 1fr',
                     gap: 'var(--space-3)', padding: 'var(--space-3) var(--space-5)', alignItems: 'center',
                   }}>
                     {/* Name */}
@@ -269,9 +312,50 @@ export default function EmployeesPage() {
                       {emp.is_active ? 'Active' : 'Inactive'}
                     </span>
 
+                    {/* Group cell */}
+                    <div>
+                      {isSavingGroup ? (
+                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>Saving…</p>
+                      ) : currentGroup ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1-5)' }}>
+                          <button
+                            onClick={() => openGroupPicker(emp.id)}
+                            style={{
+                              fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)',
+                              background: '#ede9fe', color: '#5b21b6',
+                              border: 'none', borderRadius: 99, cursor: 'pointer',
+                              padding: '2px 8px', fontFamily: 'monospace', whiteSpace: 'nowrap',
+                            }}
+                            title={currentGroup.name}
+                          >
+                            {currentGroup.code}
+                          </button>
+                          <button
+                            onClick={() => setGroupMutation.mutate({ empId: emp.id, groupId: null })}
+                            disabled={setGroupMutation.isPending}
+                            title="Clear group"
+                            style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', flexShrink: 0, lineHeight: 1 }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => openGroupPicker(emp.id)}
+                          style={{
+                            fontSize: 'var(--text-xs)', color: 'var(--text-secondary)',
+                            background: 'none', border: '1px dashed var(--border-default)',
+                            borderRadius: 'var(--radius-sm)', cursor: 'pointer', padding: '3px 10px',
+                          }}
+                        >
+                          Assign group
+                        </button>
+                      )}
+                    </div>
+
                     {/* Manager cell */}
                     <div>
-                      {isSaving ? (
+                      {isSavingManager ? (
                         <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>Saving…</p>
                       ) : hasManager && managerName ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
@@ -390,6 +474,74 @@ export default function EmployeesPage() {
                       </div>
                       <button
                         onClick={() => { setPickerOpenId(null); setPickerSearch(''); }}
+                        style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', marginTop: 'var(--space-2)', padding: 0 }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Inline group picker */}
+                  {isGroupPickerOpen && (
+                    <div style={{
+                      padding: 'var(--space-3) var(--space-5) var(--space-4)',
+                      borderTop: '1px solid var(--border-subtle)',
+                      background: 'var(--surface-subtle)',
+                    }}>
+                      <p style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)', margin: '0 0 var(--space-2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Set employee group for {emp.full_name}
+                      </p>
+                      <div style={{
+                        border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)',
+                        background: 'var(--card-bg)', maxHeight: 280, overflowY: 'auto',
+                      }}>
+                        {groups.length === 0 ? (
+                          <p style={{ padding: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
+                            No groups defined yet.
+                          </p>
+                        ) : (
+                          groups.filter(g => g.is_active).map((g, gi) => {
+                            const isLastGroup = gi === groups.filter(x => x.is_active).length - 1;
+                            const isSelected  = currentGroup?.id === g.id;
+                            return (
+                              <button
+                                key={g.id}
+                                onClick={() => setGroupMutation.mutate({ empId: emp.id, groupId: g.id })}
+                                disabled={setGroupMutation.isPending || isSelected}
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                                  padding: 'var(--space-2-5) var(--space-4)',
+                                  border: 'none',
+                                  borderBottom: !isLastGroup ? '1px solid var(--border-subtle)' : 'none',
+                                  background: isSelected ? '#f5f3ff' : 'transparent',
+                                  cursor: isSelected ? 'default' : 'pointer',
+                                  textAlign: 'left', width: '100%',
+                                }}
+                                onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-subtle)'; }}
+                                onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                              >
+                                <span style={{
+                                  fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)',
+                                  background: '#ede9fe', color: '#5b21b6',
+                                  borderRadius: 99, padding: '2px 8px', fontFamily: 'monospace',
+                                  flexShrink: 0,
+                                }}>
+                                  {g.code}
+                                </span>
+                                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {g.name}
+                                  {g.name_ar ? ` · ${g.name_ar}` : ''}
+                                </span>
+                                {isSelected && (
+                                  <span style={{ fontSize: 'var(--text-xs)', color: '#5b21b6', flexShrink: 0 }}>✓ Current</span>
+                                )}
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setGroupPickerOpenId(null)}
                         style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', marginTop: 'var(--space-2)', padding: 0 }}
                       >
                         Cancel
