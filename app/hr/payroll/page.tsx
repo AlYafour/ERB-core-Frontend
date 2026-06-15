@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { hrPayrollApi } from '@/lib/api/hr';
@@ -12,6 +13,7 @@ import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { PAYROLL_STATUS } from '@/lib/utils/status-colors';
+import { GeneratePayrollModal } from '@/components/hr/GeneratePayrollModal';
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Draft', processed: 'Processed', paid: 'Paid',
@@ -45,6 +47,7 @@ export default function HRPayrollPage() {
   const { user }    = useAuth();
   const t           = useT();
   const isAdmin     = user?.role === 'super_admin' || user?.is_staff || user?.is_superuser;
+  const [showGenerate, setShowGenerate] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['hr-payroll', page, search, filters],
@@ -129,6 +132,16 @@ export default function HRPayrollPage() {
           title={t('page', 'hrPayroll')}
           count={totalCount}
           breadcrumbs={[{ label: 'HR' }, { label: 'Payroll' }]}
+          actions={isAdmin ? (
+            <Button variant="primary" size="sm" onClick={() => setShowGenerate(true)}>
+              + Generate Payroll
+            </Button>
+          ) : undefined}
+        />
+        <GeneratePayrollModal
+          isOpen={showGenerate}
+          onClose={() => setShowGenerate(false)}
+          onSuccess={() => queryClient.invalidateQueries({ queryKey: ['hr-payroll'] })}
         />
         <TableShell
           tableState={tableState}

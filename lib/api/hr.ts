@@ -312,6 +312,27 @@ export const hrPayrollApi = {
   },
 };
 
+// ── Penalty Applications (preview for payroll generation) ─────────────────────
+
+export interface PenaltyApplicationPreview {
+  id: number;
+  attendance_date: string;
+  penalty_amount: string;
+  status: string;
+  rule_name: string | null;
+  tier_label: string | null;
+  rule_type: string;
+  minutes_evaluated: number;
+  was_compensated: boolean;
+}
+
+export const hrPenaltyApplicationsApi = {
+  getAll: async (params?: { employee?: number; year?: number; month?: number; status?: string; page?: number }): Promise<PaginatedResponse<PenaltyApplicationPreview>> => {
+    const response = await apiClient.get('/hr/attendance/penalty-applications/', { params });
+    return response.data;
+  },
+};
+
 // ── Office Locations (Geofence check-in points) ────────────────────────────────
 
 export const hrOfficeLocationsApi = {
