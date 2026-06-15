@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan } from '@/types';
 
 export interface WhosOffEntry {
   employee_name: string;
@@ -504,6 +504,39 @@ export const hrSelfAttendanceApi = {
   },
   checkOut: async (data?: { latitude?: number; longitude?: number }): Promise<AttendanceRecord> => {
     const response = await apiClient.post('/hr/attendance/self-check-out/', data ?? {});
+    return response.data;
+  },
+};
+
+// ── Employee Loans / Advances ──────────────────────────────────────────────────
+
+export const hrLoansApi = {
+  getAll: async (params?: { page?: number; search?: string; employee?: number; status?: string; page_size?: number }): Promise<PaginatedResponse<EmployeeLoan>> => {
+    const response = await apiClient.get('/hr/payroll/loans/', { params });
+    return response.data;
+  },
+  getById: async (id: number): Promise<EmployeeLoan> => {
+    const response = await apiClient.get(`/hr/payroll/loans/${id}/`);
+    return response.data;
+  },
+  create: async (data: Partial<EmployeeLoan>): Promise<EmployeeLoan> => {
+    const response = await apiClient.post('/hr/payroll/loans/', data);
+    return response.data;
+  },
+  update: async (id: number, data: Partial<EmployeeLoan>): Promise<EmployeeLoan> => {
+    const response = await apiClient.patch(`/hr/payroll/loans/${id}/`, data);
+    return response.data;
+  },
+  cancel: async (id: number): Promise<EmployeeLoan> => {
+    const response = await apiClient.post(`/hr/payroll/loans/${id}/cancel/`);
+    return response.data;
+  },
+  pause: async (id: number): Promise<EmployeeLoan> => {
+    const response = await apiClient.post(`/hr/payroll/loans/${id}/pause/`);
+    return response.data;
+  },
+  resume: async (id: number): Promise<EmployeeLoan> => {
+    const response = await apiClient.post(`/hr/payroll/loans/${id}/resume/`);
     return response.data;
   },
 };

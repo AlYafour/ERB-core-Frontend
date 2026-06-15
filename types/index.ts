@@ -774,9 +774,11 @@ export interface HRPayroll {
   deductions: string;
   absence_deduction: string;
   penalty_deduction: string;
+  loan_deduction: string;
   gross_salary: string;
   net_salary: string;
   confirmed_penalties: ConfirmedPenalty[];
+  loan_installments: PayrollLoanInstallment[];
   working_days: number;
   present_days: number;
   absent_days: number;
@@ -784,6 +786,36 @@ export interface HRPayroll {
   status: 'draft' | 'processed' | 'paid';
   paid_at: string | null;
   notes: string;
+  created_by: number | null;
+  created_by_name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PayrollLoanInstallment {
+  id: number;
+  loan_id: number;
+  amount: string;
+  loan_notes: string;
+  loan_total: string;
+  loan_remaining: string;
+}
+
+export interface EmployeeLoan {
+  id: number;
+  employee: number;
+  employee_name: string;
+  employee_id_code: string;
+  hr_request: number | null;
+  total_amount: string;
+  installment_amount: string;
+  remaining_balance: string;
+  start_month: number;
+  start_year: number;
+  status: 'active' | 'completed' | 'cancelled' | 'paused';
+  notes: string;
+  number_of_installments: number;
+  installments_taken: number;
   created_by: number | null;
   created_by_name: string | null;
   created_at: string;

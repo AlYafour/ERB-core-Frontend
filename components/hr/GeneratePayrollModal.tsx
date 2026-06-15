@@ -5,9 +5,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { BaseModal } from '@/components/ui/base/BaseModal';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { Button } from '@/components/ui';
-import { hrEmployeesApi, hrPayrollApi, hrPenaltyApplicationsApi, type PenaltyApplicationPreview } from '@/lib/api/hr';
+import { hrEmployeesApi, hrPayrollApi, hrPenaltyApplicationsApi, hrLoansApi, type PenaltyApplicationPreview } from '@/lib/api/hr';
 import { toast } from '@/lib/hooks/use-toast';
-import type { HREmployee } from '@/types';
+import type { HREmployee, EmployeeLoan } from '@/types';
 
 const MONTH_NAMES = [
   '', 'January', 'February', 'March', 'April', 'May', 'June',
@@ -150,6 +150,29 @@ export function GeneratePayrollModal({ isOpen, onClose, onSuccess }: Props) {
   const confirmedPenalties: PenaltyApplicationPreview[] = penaltyData?.results ?? [];
   const penaltyTotal = confirmedPenalties.reduce((s, p) => s + toDec(p.penalty_amount), 0);
 
+  // Active loans preview — queries all active loans for the employee, filtered client-side
+  const { data: loansData, isLoading: loansLoading } = useQuery({
+    queryKey: ['loans-preview', form.employeeId],
+    queryFn:  () => hrLoansApi.getAll({ employee: form.employeeId!, status: 'active', page_size: 50 }),
+    enabled:  previewReady,
+    staleTime: 30_000,
+  });
+
+  const activeLoans: EmployeeLoan[] = useMemo(() => {
+    const all = loansData?.results ?? [];
+    // Mirror _populate_loan_deduction: include loans that have started by this month/year
+    return all.filter(loan => {
+      if (loan.start_year < form.year) return true;
+      if (loan.start_year === form.year && loan.start_month <= form.month) return true;
+      return false;
+    });
+  }, [loansData?.results, form.year, form.month]);
+
+  const loanTotal = activeLoans.reduce((s, loan) => {
+    const due = Math.min(toDec(loan.installment_amount), toDec(loan.remaining_balance));
+    return s + Math.max(0, due);
+  }, 0);
+
   // Live net (mirrors backend calculate_net exactly)
   const gross = toDec(form.basic_salary)
     + toDec(form.housing_allowance)
@@ -160,7 +183,8 @@ export function GeneratePayrollModal({ isOpen, onClose, onSuccess }: Props) {
   const netPreview = gross
     - toDec(form.deductions)
     - toDec(form.absence_deduction)
-    - penaltyTotal;
+    - penaltyTotal
+    - loanTotal;
 
   // Field helpers
   const handleEmployeeChange = (value: string | number | null) => {
@@ -400,6 +424,59 @@ export function GeneratePayrollModal({ isOpen, onClose, onSuccess }: Props) {
                 </div>
               )}
             </div>
+
+            {/* Loan deductions preview — read-only, auto-filled from active loans on save */}
+            <div>
+              <label style={LABEL}>
+                Loan Deductions
+                <span style={{ marginLeft: 6, fontWeight: 400, color: 'var(--text-tertiary)' }}>
+                  — auto-filled from active loans on save
+                </span>
+              </label>
+              <div style={{
+                ...READONLY,
+                color: loanTotal > 0 ? 'var(--color-error)' : 'var(--text-tertiary)',
+                fontFamily: 'var(--font-mono, monospace)',
+              }}>
+                {loansLoading && previewReady
+                  ? 'Checking active loans…'
+                  : loanTotal > 0
+                    ? `AED ${fmtNum(loanTotal)}`
+                    : '— no active loans this period'
+                }
+              </div>
+
+              {activeLoans.length > 0 && (
+                <div style={{
+                  marginTop: 6,
+                  borderLeft: '2px solid var(--border-subtle)',
+                  paddingLeft: 10,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 4,
+                }}>
+                  {activeLoans.map(loan => {
+                    const due = Math.min(toDec(loan.installment_amount), toDec(loan.remaining_balance));
+                    return (
+                      <div key={loan.id} style={{
+                        display: 'flex', justifyContent: 'space-between',
+                        fontSize: 'var(--text-xs)', gap: 8,
+                      }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>
+                          {loan.notes || `Loan #${loan.id}`}
+                          <span style={{ color: 'var(--text-tertiary)', marginLeft: 4 }}>
+                            · remaining AED {fmtNum(loan.remaining_balance)}
+                          </span>
+                        </span>
+                        <span style={{ color: 'var(--color-error)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                          -AED {fmtNum(due)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -459,6 +536,7 @@ export function GeneratePayrollModal({ isOpen, onClose, onSuccess }: Props) {
               {toDec(form.deductions) > 0 && ` − ded. AED ${fmtNum(form.deductions)}`}
               {toDec(form.absence_deduction) > 0 && ` − abs. AED ${fmtNum(form.absence_deduction)}`}
               {penaltyTotal > 0 && ` − penalties AED ${fmtNum(penaltyTotal)}`}
+              {loanTotal > 0 && ` − loans AED ${fmtNum(loanTotal)}`}
             </p>
           </div>
           <p style={{ margin: 0, fontSize: 'var(--text-xl)', fontWeight: 700 }}>

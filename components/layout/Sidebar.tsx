@@ -370,6 +370,7 @@ export default function Sidebar() {
                       { name: 'Employee Locations',        href: '/hr/employee-locations', adminOnly: true },
                       { name: t('nav', 'hrRequests'),     href: '/hr/requests'                           },
                       { name: t('nav', 'hrPayroll'),      href: '/hr/payroll'                            },
+                      { name: 'Loans & Advances',          href: '/hr/loans',              adminOnly: true },
                       { name: 'HR Settings',               href: '/hr/settings',           adminOnly: true },
                       { name: 'Approval Chains',           href: '/hr/approvals/chains',   adminOnly: true },
                       { name: 'Penalty Rules',             href: '/hr/penalties',           adminOnly: true },

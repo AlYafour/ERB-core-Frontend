@@ -23,6 +23,7 @@ export default function PayrollDetailPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'super_admin' || user?.is_staff || user?.is_superuser;
   const [penaltyExpanded, setPenaltyExpanded] = useState(false);
+  const [loanExpanded, setLoanExpanded]       = useState(false);
 
   const { data: payroll, isLoading, error } = useQuery({
     queryKey: ['hr-payroll', id],
@@ -158,7 +159,65 @@ export default function PayrollDetailPage() {
                 </>
               );
             })()}
-          </div>
+
+            {/* Loan deductions — expandable when loan_installments exist */}
+            {(() => {
+              const loanAmount = parseFloat(payroll.loan_deduction ?? '0');
+              const hasLoans   = (payroll.loan_installments ?? []).length > 0;
+
+              return (
+                <>
+                  <div
+                    onClick={() => hasLoans && setLoanExpanded(o => !o)}
+                    style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      fontSize: 'var(--text-sm)',
+                      cursor: hasLoans ? 'pointer' : 'default',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: hasLoans ? '2px 4px' : undefined,
+                      marginLeft: hasLoans ? -4 : undefined,
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-secondary)' }}>
+                      {hasLoans && (
+                        <span style={{ fontSize: 10, lineHeight: 1, color: 'var(--text-tertiary)', transition: 'transform 0.15s', display: 'inline-block', transform: loanExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                      )}
+                      Loan Deductions
+                      {hasLoans && <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>({payroll.loan_installments.length})</span>}
+                    </span>
+                    <span style={{ color: loanAmount > 0 ? 'var(--color-error)' : 'var(--text-tertiary)' }}>
+                      {loanAmount > 0 ? `-${fmt(payroll.loan_deduction)}` : '—'}
+                    </span>
+                  </div>
+
+                  {loanExpanded && hasLoans && (
+                    <div style={{
+                      marginLeft: 12, marginTop: -4,
+                      borderLeft: '2px solid var(--border-subtle)', paddingLeft: 10,
+                      display: 'flex', flexDirection: 'column', gap: 6,
+                    }}>
+                      {payroll.loan_installments.map(inst => (
+                        <div key={inst.id} style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                          fontSize: 'var(--text-xs)', gap: 8,
+                        }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>
+                            {inst.loan_notes || `Loan #${inst.loan_id}`}
+                            <span style={{ color: 'var(--text-tertiary)', marginLeft: 4 }}>
+                              · remaining {fmt(inst.loan_remaining)}
+                            </span>
+                          </span>
+                          <span style={{ color: 'var(--color-error)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            -{fmt(inst.amount)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>{/* /deductions */}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-base)', fontWeight: 'var(--weight-bold)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)' }}>
             <span>Net Salary</span>
