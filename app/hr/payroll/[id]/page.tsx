@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
@@ -21,6 +22,7 @@ export default function PayrollDetailPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const isAdmin = user?.role === 'super_admin' || user?.is_staff || user?.is_superuser;
+  const [penaltyExpanded, setPenaltyExpanded] = useState(false);
 
   const { data: payroll, isLoading, error } = useQuery({
     queryKey: ['hr-payroll', id],
@@ -87,15 +89,75 @@ export default function PayrollDetailPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
             <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', margin: 0 }}>Deductions</p>
+
+            {/* Static deduction rows */}
             {[
               ['General Deductions', payroll.deductions],
-              ['Absence Deduction', payroll.absence_deduction],
+              ['Absence Deduction',  payroll.absence_deduction],
             ].map(([label, value]) => (
               <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
                 <span style={{ color: 'var(--color-error)' }}>-{fmt(value)}</span>
               </div>
             ))}
+
+            {/* Penalty deductions — expandable when confirmed penalties exist */}
+            {(() => {
+              const penaltyAmount = parseFloat(payroll.penalty_deduction ?? '0');
+              const hasPenalties  = (payroll.confirmed_penalties ?? []).length > 0;
+
+              return (
+                <>
+                  <div
+                    onClick={() => hasPenalties && setPenaltyExpanded(o => !o)}
+                    style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      fontSize: 'var(--text-sm)',
+                      cursor: hasPenalties ? 'pointer' : 'default',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: hasPenalties ? '2px 4px' : undefined,
+                      marginLeft: hasPenalties ? -4 : undefined,
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-secondary)' }}>
+                      {hasPenalties && (
+                        <span style={{ fontSize: 10, lineHeight: 1, color: 'var(--text-tertiary)', transition: 'transform 0.15s', display: 'inline-block', transform: penaltyExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                      )}
+                      Penalty Deductions
+                      {hasPenalties && <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>({payroll.confirmed_penalties.length})</span>}
+                    </span>
+                    <span style={{ color: penaltyAmount > 0 ? 'var(--color-error)' : 'var(--text-tertiary)' }}>
+                      {penaltyAmount > 0 ? `-${fmt(payroll.penalty_deduction)}` : '—'}
+                    </span>
+                  </div>
+
+                  {penaltyExpanded && hasPenalties && (
+                    <div style={{
+                      marginLeft: 12, marginTop: -4,
+                      borderLeft: '2px solid var(--border-subtle)', paddingLeft: 10,
+                      display: 'flex', flexDirection: 'column', gap: 6,
+                    }}>
+                      {payroll.confirmed_penalties.map(p => (
+                        <div key={p.id} style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                          fontSize: 'var(--text-xs)', gap: 8,
+                        }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>
+                            {p.date}
+                            {p.rule_name && <> · {p.rule_name}</>}
+                            {p.tier_label && <> · {p.tier_label}</>}
+                            <span style={{ color: 'var(--text-tertiary)', marginLeft: 4 }}>({p.minutes_evaluated} min late)</span>
+                          </span>
+                          <span style={{ color: 'var(--color-error)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            -{fmt(p.amount)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-base)', fontWeight: 'var(--weight-bold)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)' }}>

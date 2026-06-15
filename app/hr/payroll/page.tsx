@@ -88,7 +88,7 @@ export default function HRPayrollPage() {
     {
       key: 'deductions', header: 'Deductions',
       render: r => {
-        const total = parseFloat(r.deductions) + parseFloat(r.absence_deduction);
+        const total = parseFloat(r.deductions) + parseFloat(r.absence_deduction) + parseFloat(r.penalty_deduction ?? '0');
         return <span className="font-mono" style={{ color: 'var(--color-error)' }}>{total > 0 ? `AED ${formatCurrency(total.toString())}` : '—'}</span>;
       },
     },

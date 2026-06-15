@@ -748,6 +748,16 @@ export interface HRLeaveBalance {
   updated_at: string;
 }
 
+export interface ConfirmedPenalty {
+  id: number;
+  date: string;
+  amount: string;
+  rule_name: string | null;
+  tier_label: string | null;
+  minutes_evaluated: number;
+  was_compensated: boolean;
+}
+
 export interface HRPayroll {
   id: number;
   employee: number;
@@ -763,8 +773,10 @@ export interface HRPayroll {
   overtime_amount: string;
   deductions: string;
   absence_deduction: string;
+  penalty_deduction: string;
   gross_salary: string;
   net_salary: string;
+  confirmed_penalties: ConfirmedPenalty[];
   working_days: number;
   present_days: number;
   absent_days: number;
