@@ -5,9 +5,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { BaseModal } from '@/components/ui/base/BaseModal';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { Button } from '@/components/ui';
-import { hrEmployeesApi, hrPayrollApi, hrPenaltyApplicationsApi, hrLoansApi, type PenaltyApplicationPreview } from '@/lib/api/hr';
+import { hrEmployeesApi, hrPayrollApi, hrPenaltyApplicationsApi, hrLoansApi, hrLeaveEncashmentsApi, type PenaltyApplicationPreview } from '@/lib/api/hr';
 import { toast } from '@/lib/hooks/use-toast';
-import type { HREmployee, EmployeeLoan } from '@/types';
+import type { HREmployee, EmployeeLoan, LeaveEncashment } from '@/types';
 
 const MONTH_NAMES = [
   '', 'January', 'February', 'March', 'April', 'May', 'June',
@@ -173,12 +173,31 @@ export function GeneratePayrollModal({ isOpen, onClose, onSuccess }: Props) {
     return s + Math.max(0, due);
   }, 0);
 
-  // Live net (mirrors backend calculate_net exactly)
-  const gross = toDec(form.basic_salary)
+  // Approved leave encashments — EARNING, adds to gross
+  const { data: encData, isLoading: encLoading } = useQuery({
+    queryKey: ['enc-preview', form.employeeId, form.month, form.year],
+    queryFn:  () => hrLeaveEncashmentsApi.getAll({
+      employee:  form.employeeId!,
+      month:     form.month,
+      year:      form.year,
+      status:    'approved',
+      page_size: 50,
+    }),
+    enabled:   previewReady,
+    staleTime: 30_000,
+  });
+
+  const approvedEncashments: LeaveEncashment[] = encData?.results ?? [];
+  const encashmentTotal = approvedEncashments.reduce((s, e) => s + toDec(e.encashment_amount), 0);
+
+  // Live gross & net (mirrors backend calculate_net exactly — encashment is part of gross)
+  const componentSum = toDec(form.basic_salary)
     + toDec(form.housing_allowance)
     + toDec(form.transport_allowance)
     + toDec(form.other_allowances)
     + toDec(form.overtime_amount);
+
+  const gross = componentSum + encashmentTotal;  // leave_encashment is an EARNING
 
   const netPreview = gross
     - toDec(form.deductions)
@@ -341,6 +360,50 @@ export function GeneratePayrollModal({ isOpen, onClose, onSuccess }: Props) {
                 />
               </div>
             ))}
+
+            {/* Leave Encashment — EARNING, auto-filled from approved encashments */}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={LABEL}>
+                Leave Encashment
+                <span style={{ marginLeft: 6, fontWeight: 400, color: 'var(--text-tertiary)' }}>
+                  — auto-filled from approved encashments on save (EARNING)
+                </span>
+              </label>
+              <div style={{
+                ...READONLY,
+                color: encashmentTotal > 0 ? 'var(--color-success)' : 'var(--text-tertiary)',
+                fontFamily: 'var(--font-mono, monospace)',
+              }}>
+                {encLoading && previewReady
+                  ? 'Checking approved encashments…'
+                  : encashmentTotal > 0
+                    ? `+AED ${fmtNum(encashmentTotal)}`
+                    : '— no approved encashments this period'
+                }
+              </div>
+              {approvedEncashments.length > 0 && (
+                <div style={{
+                  marginTop: 6,
+                  borderLeft: '2px solid var(--border-subtle)', paddingLeft: 10,
+                  display: 'flex', flexDirection: 'column', gap: 4,
+                }}>
+                  {approvedEncashments.map(e => (
+                    <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', gap: 8 }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>
+                        {e.leave_type === 'annual_leave' ? 'Annual Leave' : 'Sick Leave'}
+                        <span style={{ color: 'var(--text-tertiary)', marginLeft: 4 }}>
+                          · {e.days_encashed} days × AED {parseFloat(e.rate_per_day).toFixed(4)}/day
+                        </span>
+                      </span>
+                      <span style={{ color: 'var(--color-success)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        +AED {fmtNum(e.encashment_amount)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div>
               <label style={LABEL}>Gross (computed)</label>
               <div style={{ ...READONLY, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono, monospace)' }}>
@@ -533,6 +596,7 @@ export function GeneratePayrollModal({ isOpen, onClose, onSuccess }: Props) {
             <p style={{ margin: 0, fontSize: 'var(--text-sm)', fontWeight: 600 }}>Net Salary Preview</p>
             <p style={{ margin: 0, fontSize: 'var(--text-xs)', opacity: 0.75, marginTop: 2 }}>
               Gross AED {fmtNum(gross)}
+              {encashmentTotal > 0 && ` (incl. encashment +AED ${fmtNum(encashmentTotal)})`}
               {toDec(form.deductions) > 0 && ` − ded. AED ${fmtNum(form.deductions)}`}
               {toDec(form.absence_deduction) > 0 && ` − abs. AED ${fmtNum(form.absence_deduction)}`}
               {penaltyTotal > 0 && ` − penalties AED ${fmtNum(penaltyTotal)}`}

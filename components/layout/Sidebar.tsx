@@ -371,6 +371,8 @@ export default function Sidebar() {
                       { name: t('nav', 'hrRequests'),     href: '/hr/requests'                           },
                       { name: t('nav', 'hrPayroll'),      href: '/hr/payroll'                            },
                       { name: 'Loans & Advances',          href: '/hr/loans',              adminOnly: true },
+                      { name: 'Leave Policies',            href: '/hr/leave-policies',     adminOnly: true },
+                      { name: 'Leave Encashments',         href: '/hr/leave-encashments',  adminOnly: true },
                       { name: 'HR Settings',               href: '/hr/settings',           adminOnly: true },
                       { name: 'Approval Chains',           href: '/hr/approvals/chains',   adminOnly: true },
                       { name: 'Penalty Rules',             href: '/hr/penalties',           adminOnly: true },

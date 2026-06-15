@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment } from '@/types';
 
 export interface WhosOffEntry {
   employee_name: string;
@@ -537,6 +537,75 @@ export const hrLoansApi = {
   },
   resume: async (id: number): Promise<EmployeeLoan> => {
     const response = await apiClient.post(`/hr/payroll/loans/${id}/resume/`);
+    return response.data;
+  },
+};
+
+// ── Penalty Rules (P2) ────────────────────────────────────────────────────────
+
+// ── Leave Policies ─────────────────────────────────────────────────────────────
+
+export interface AccrualResult {
+  year:                 number;
+  month:                number;
+  dry_run:              boolean;
+  accrued:              number;
+  skipped_no_policy:    number;
+  skipped_already_run:  number;
+  details: Array<{
+    employee_id:   string;
+    leave_type:    string;
+    status:        'accrued' | 'would_accrue' | 'no_policy' | 'already_run';
+    days_added:    string | null;
+    balance_after: string | null;
+  }>;
+}
+
+export const hrLeavePoliciesApi = {
+  getAll: async (params?: { leave_type?: string; is_active?: boolean; employee_group?: number | null }): Promise<PaginatedResponse<LeavePolicy>> => {
+    const response = await apiClient.get('/hr/requests/leave-policies/', { params: { page_size: 200, ...params } });
+    const data = response.data;
+    if (Array.isArray(data)) return { results: data, count: data.length, next: null, previous: null };
+    return data;
+  },
+  create: async (data: Partial<LeavePolicy>): Promise<LeavePolicy> => {
+    const response = await apiClient.post('/hr/requests/leave-policies/', data);
+    return response.data;
+  },
+  update: async (id: number, data: Partial<LeavePolicy>): Promise<LeavePolicy> => {
+    const response = await apiClient.patch(`/hr/requests/leave-policies/${id}/`, data);
+    return response.data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/requests/leave-policies/${id}/`);
+  },
+  accrueLeave: async (params: { month: number; year: number; dry_run?: boolean }): Promise<AccrualResult> => {
+    const response = await apiClient.post('/hr/requests/accrue-leave/', params);
+    return response.data;
+  },
+};
+
+// ── Leave Encashments ──────────────────────────────────────────────────────────
+
+export const hrLeaveEncashmentsApi = {
+  getAll: async (params?: { page?: number; employee?: number; status?: string; month?: number; year?: number; leave_type?: string; page_size?: number }): Promise<PaginatedResponse<LeaveEncashment>> => {
+    const response = await apiClient.get('/hr/requests/leave-encashments/', { params });
+    return response.data;
+  },
+  create: async (data: Partial<LeaveEncashment>): Promise<LeaveEncashment> => {
+    const response = await apiClient.post('/hr/requests/leave-encashments/', data);
+    return response.data;
+  },
+  approve: async (id: number): Promise<LeaveEncashment> => {
+    const response = await apiClient.post(`/hr/requests/leave-encashments/${id}/approve/`);
+    return response.data;
+  },
+  reject: async (id: number): Promise<LeaveEncashment> => {
+    const response = await apiClient.post(`/hr/requests/leave-encashments/${id}/reject/`);
+    return response.data;
+  },
+  cancel: async (id: number): Promise<LeaveEncashment> => {
+    const response = await apiClient.post(`/hr/requests/leave-encashments/${id}/cancel/`);
     return response.data;
   },
 };

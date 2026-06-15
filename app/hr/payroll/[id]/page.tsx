@@ -22,8 +22,9 @@ export default function PayrollDetailPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const isAdmin = user?.role === 'super_admin' || user?.is_staff || user?.is_superuser;
-  const [penaltyExpanded, setPenaltyExpanded] = useState(false);
-  const [loanExpanded, setLoanExpanded]       = useState(false);
+  const [penaltyExpanded,     setPenaltyExpanded]     = useState(false);
+  const [loanExpanded,        setLoanExpanded]         = useState(false);
+  const [encashmentExpanded,  setEncashmentExpanded]   = useState(false);
 
   const { data: payroll, isLoading, error } = useQuery({
     queryKey: ['hr-payroll', id],
@@ -71,17 +72,79 @@ export default function PayrollDetailPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
             <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', margin: 0 }}>Earnings</p>
             {[
-              ['Basic Salary', payroll.basic_salary],
-              ['Housing Allowance', payroll.housing_allowance],
-              ['Transport Allowance', payroll.transport_allowance],
-              ['Other Allowances', payroll.other_allowances],
-              ['Overtime', payroll.overtime_amount],
+              ['Basic Salary',       payroll.basic_salary],
+              ['Housing Allowance',  payroll.housing_allowance],
+              ['Transport Allowance',payroll.transport_allowance],
+              ['Other Allowances',   payroll.other_allowances],
+              ['Overtime',           payroll.overtime_amount],
             ].map(([label, value]) => (
               <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
                 <span>{fmt(value)}</span>
               </div>
             ))}
+
+            {/* Leave Encashment earning — expandable when approved_encashments exist */}
+            {(() => {
+              const encAmount  = parseFloat(payroll.leave_encashment ?? '0');
+              const encRows    = payroll.approved_encashments ?? [];
+              const hasEnc     = encRows.length > 0;
+
+              return (
+                <>
+                  {(encAmount > 0 || hasEnc) && (
+                    <div
+                      onClick={() => hasEnc && setEncashmentExpanded(o => !o)}
+                      style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        fontSize: 'var(--text-sm)',
+                        cursor: hasEnc ? 'pointer' : 'default',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: hasEnc ? '2px 4px' : undefined,
+                        marginLeft: hasEnc ? -4 : undefined,
+                      }}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-secondary)' }}>
+                        {hasEnc && (
+                          <span style={{ fontSize: 10, lineHeight: 1, color: 'var(--text-tertiary)', transition: 'transform 0.15s', display: 'inline-block', transform: encashmentExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                        )}
+                        Leave Encashment
+                        {hasEnc && <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>({encRows.length})</span>}
+                      </span>
+                      <span style={{ color: encAmount > 0 ? 'var(--color-success)' : 'var(--text-tertiary)' }}>
+                        {encAmount > 0 ? `+${fmt(payroll.leave_encashment)}` : '—'}
+                      </span>
+                    </div>
+                  )}
+
+                  {encashmentExpanded && hasEnc && (
+                    <div style={{
+                      marginLeft: 12, marginTop: -4,
+                      borderLeft: '2px solid var(--border-subtle)', paddingLeft: 10,
+                      display: 'flex', flexDirection: 'column', gap: 6,
+                    }}>
+                      {encRows.map(e => (
+                        <div key={e.id} style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                          fontSize: 'var(--text-xs)', gap: 8,
+                        }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>
+                            {e.leave_type === 'annual_leave' ? 'Annual Leave' : 'Sick Leave'}
+                            <span style={{ color: 'var(--text-tertiary)', marginLeft: 4 }}>
+                              · {e.days_encashed} days × AED {parseFloat(e.rate_per_day).toFixed(4)}/day
+                            </span>
+                          </span>
+                          <span style={{ color: 'var(--color-success)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            +{fmt(e.encashment_amount)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-2)' }}>
               <span>Gross Salary</span>
               <span>{fmt(payroll.gross_salary)}</span>

@@ -758,6 +758,14 @@ export interface ConfirmedPenalty {
   was_compensated: boolean;
 }
 
+export interface PayrollLeaveEncashmentRow {
+  id: number;
+  leave_type: string;
+  days_encashed: string;
+  rate_per_day: string;
+  encashment_amount: string;
+}
+
 export interface HRPayroll {
   id: number;
   employee: number;
@@ -771,6 +779,7 @@ export interface HRPayroll {
   transport_allowance: string;
   other_allowances: string;
   overtime_amount: string;
+  leave_encashment: string;
   deductions: string;
   absence_deduction: string;
   penalty_deduction: string;
@@ -779,6 +788,7 @@ export interface HRPayroll {
   net_salary: string;
   confirmed_penalties: ConfirmedPenalty[];
   loan_installments: PayrollLoanInstallment[];
+  approved_encashments: PayrollLeaveEncashmentRow[];
   working_days: number;
   present_days: number;
   absent_days: number;
@@ -799,6 +809,49 @@ export interface PayrollLoanInstallment {
   loan_notes: string;
   loan_total: string;
   loan_remaining: string;
+}
+
+// ── Leave Management ──────────────────────────────────────────────────────────
+
+export interface LeavePolicy {
+  id: number;
+  tenant: string | null;
+  employee_group: number | null;
+  employee_group_name: string | null;
+  leave_type: 'annual_leave' | 'sick_leave';
+  annual_entitlement_days: string;
+  monthly_accrual_days: string;
+  max_accrual_days: string;
+  accrual_start_month: number;
+  effective_from: string;
+  encashment_rate_base: 'basic' | 'total';
+  encashment_rate_divisor: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeaveEncashment {
+  id: number;
+  tenant: string | null;
+  employee: number;
+  employee_name: string;
+  leave_type: 'annual_leave' | 'sick_leave';
+  days_encashed: string;
+  rate_per_day: string;
+  encashment_amount: string;
+  month: number;
+  year: number;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  notes: string;
+  hr_request: number | null;
+  payroll: number | null;
+  created_by: number | null;
+  approved_by: number | null;
+  approved_by_name: string | null;
+  approved_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface EmployeeLoan {
