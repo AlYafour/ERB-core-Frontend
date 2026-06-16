@@ -43,6 +43,40 @@ function NewPurchaseOrderPageContent() {
   const purchaseQuotationId = searchParams.get('purchase_quotation_id');
   const { user } = useAuth();
 
+  // PO must always originate from a PR or PQ — no standalone PO creation allowed
+  if (!purchaseRequestId && !purchaseQuotationId) {
+    router.push('/purchase-requests');
+    return null;
+  }
+
+  // Only Procurement Officer and Super Admin can create Purchase Order
+  // Procurement Manager should NOT be able to create Purchase Order
+  if (user && user.role !== 'procurement_officer' && user.role !== 'super_admin' && !user.is_superuser) {
+    router.push('/purchase-orders');
+    return null;
+  }
+
+  // Default Terms & Conditions
+  const defaultTermsAndConditions = `Conditions: -
+
+1- The Company reserves the right to return items partially or completely in the following instances: non-compliance with specifications, failure to meet the delivery date, or in the case of defective materials.
+
+2- This purchase order is confidential and intended exclusively for use by the specified supplier and our organization.
+
+3- Please acknowledge the receipt & confirm the delivery dates
+
+4- This LPO must be signed and stamped by the authorized
+
+Terms & Conditions:
+
+1- The Company reserves the right to return items partially or completely in the following instances: non-compliance with specifications, failure to meet the delivery date, or in the case of defective materials.
+
+2- Please note that this purchase order is confidential and intended for exclusive use by the supplier specified above and our organization only.
+
+3- Please acknowledge the receipt & confirm the delivery dates.
+
+4- طلب الشراء هذا يجب أن يكون موقعاً ومختوماً من المفوض بالتوقيع`;
+
   const [formData, setFormData] = useState<PurchaseOrderFormData>({
     purchase_request_id: purchaseRequestId ? Number(purchaseRequestId) : undefined,
     purchase_quotation_id: purchaseQuotationId ? Number(purchaseQuotationId) : undefined,
@@ -53,7 +87,7 @@ function NewPurchaseOrderPageContent() {
     payment_terms: '',
     delivery_terms: '',
     notes: '',
-    terms_and_conditions: '',
+    terms_and_conditions: defaultTermsAndConditions,
     tax_rate: 0,
     discount: 0,
     status: 'pending',
@@ -73,18 +107,6 @@ function NewPurchaseOrderPageContent() {
     notes: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const { data: poDefaults } = useQuery({
-    queryKey: ['purchase-orders', 'defaults'],
-    queryFn: () => purchaseOrdersApi.getDefaults(),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  useEffect(() => {
-    if (poDefaults?.default_terms_and_conditions) {
-      setFormData(prev => ({ ...prev, terms_and_conditions: poDefaults.default_terms_and_conditions }));
-    }
-  }, [poDefaults]);
 
   const { data: purchaseRequest } = useQuery({
     queryKey: ['purchase-requests', purchaseRequestId],
@@ -360,16 +382,6 @@ function NewPurchaseOrderPageContent() {
   };
 
   const selectedProduct = products?.results?.find((p) => p.id === currentItem.product_id);
-
-  if (!purchaseRequestId && !purchaseQuotationId) {
-    router.push('/purchase-requests');
-    return null;
-  }
-
-  if (user && user.role !== 'procurement_officer' && user.role !== 'super_admin' && !user.is_superuser) {
-    router.push('/purchase-orders');
-    return null;
-  }
 
   return (
     <MainLayout>
