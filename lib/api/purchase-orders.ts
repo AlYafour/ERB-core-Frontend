@@ -99,5 +99,10 @@ export const purchaseOrdersApi = {
     const response = await apiClient.post(`/purchase-orders/${id}/reject-amendment/`, { manager_notes });
     return response.data;
   },
+
+  getDefaults: async (): Promise<{ default_terms_and_conditions: string }> => {
+    const response = await apiClient.get('/purchase-orders/defaults/');
+    return response.data;
+  },
 };
 
