@@ -1,17 +1,19 @@
-﻿'use client';
+'use client';
 
+import React from 'react';
 import { useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsApi } from '@/lib/api/products';
 import { PageShell } from '@/components/ui';
 import MainLayout from '@/components/layout/MainLayout';
-import Link from 'next/link';
 import { formatPrice, formatPercentage, formatNumber } from '@/lib/utils/format';
 import EntityHeader from '@/components/ui/EntityHeader';
 import { useAuth } from '@/lib/hooks/use-auth';
 import BilingualName from '@/components/domain/BilingualName';
 import { useT } from '@/lib/i18n/useT';
-import React from 'react';
+import Drawer from '@/components/ui/Drawer';
+import { toast } from '@/lib/hooks/use-toast';
+import { Product } from '@/types';
 
 function Field({ label, value, mono, full }: { label: string; value?: string | null; mono?: boolean; full?: boolean }) {
   return (
@@ -22,11 +24,18 @@ function Field({ label, value, mono, full }: { label: string; value?: string | n
   );
 }
 
+const UNITS: Product['unit'][] = [
+  'piece','pcs','kg','kl','meter','lm','liter','box','pack','pkt','bag',
+  'roll','ctn','ton','trip','sqm','cbm','pump','sheet','brd','drm','doz',
+  'ls','set','ream','bundle','nos','mtr','qty','pair','can','gal','day','hour','month',
+];
+
 export default function ProductDetailPage() {
   const t = useT();
   const params = useParams();
   const id = Number(params.id);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['products', id],
@@ -34,11 +43,47 @@ export default function ProductDetailPage() {
     staleTime: 2 * 60 * 1000,
   });
 
-  // ✅ أي useState/useEffect لازم يكون هنا — قبل أي early return
-  // لو حطيته بعد if (isLoading) أو if (!product) الصفحة هتعمل reload loop
+  // ── all state before any early return ──────────────────────────────────
   const [copied, setCopied] = React.useState(false);
+  const [isEditOpen, setIsEditOpen] = React.useState(false);
+  const [form, setForm] = React.useState<Partial<Product>>({});
 
   const isAdmin = user?.role === 'super_admin' || user?.is_staff || user?.role === 'admin';
+
+  const updateMutation = useMutation({
+    mutationFn: (data: Partial<Product>) => productsApi.update(id, data),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['products', id], updated);
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      setIsEditOpen(false);
+      toast('Product updated successfully', 'success');
+    },
+    onError: () => {
+      toast('Failed to update product', 'error');
+    },
+  });
+
+  const openEdit = () => {
+    if (!product) return;
+    setForm({
+      name:        product.name,
+      name_ar:     product.name_ar ?? '',
+      code:        product.code,
+      sku:         product.sku ?? '',
+      brand:       product.brand ?? '',
+      unit:        product.unit,
+      buy_price:   product.buy_price,
+      sell_price:  product.sell_price ?? product.unit_price,
+      description: product.description ?? '',
+      is_active:   product.is_active,
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!form.name?.trim()) { toast('Product name is required', 'error'); return; }
+    updateMutation.mutate(form);
+  };
 
   const handleCopyCode = () => {
     if (!product?.code) return;
@@ -47,6 +92,7 @@ export default function ProductDetailPage() {
       setTimeout(() => setCopied(false), 2000);
     });
   };
+  // ───────────────────────────────────────────────────────────────────────
 
   if (isLoading) {
     return (
@@ -103,9 +149,9 @@ export default function ProductDetailPage() {
           backLabel={`${t('btn', 'back')} ${t('page', 'products')}`}
           actions={
             isAdmin ? (
-              <Link href={`/products/${id}`} className="btn btn-edit">
+              <button onClick={openEdit} className="btn btn-edit">
                 {t('btn', 'edit')}
-              </Link>
+              </button>
             ) : undefined
           }
         />
@@ -229,6 +275,156 @@ export default function ProductDetailPage() {
             </div>
           )}
         </div>
+
+        {/* ── Edit Drawer ───────────────────────────────────────────────── */}
+        <Drawer
+          isOpen={isEditOpen}
+          onClose={() => setIsEditOpen(false)}
+          title="Edit Product"
+          description={product.code}
+          size="md"
+          footer={
+            <>
+              <button className="btn btn-ghost" onClick={() => setIsEditOpen(false)} disabled={updateMutation.isPending}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={handleSave} disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? 'Saving…' : 'Save Changes'}
+              </button>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Name EN */}
+            <div>
+              <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>
+                Product Name (English) <span style={{ color: 'var(--color-error)' }}>*</span>
+              </label>
+              <input
+                className="input"
+                value={form.name ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                placeholder="Product name in English"
+                autoFocus
+              />
+            </div>
+
+            {/* Name AR */}
+            <div>
+              <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>اسم المنتج (عربي)</label>
+              <input
+                className="input"
+                dir="rtl"
+                value={form.name_ar ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, name_ar: e.target.value }))}
+                placeholder="اسم المنتج بالعربي"
+              />
+            </div>
+
+            {/* Code + SKU */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>Product Code</label>
+                <input
+                  className="input"
+                  style={{ fontFamily: 'monospace' }}
+                  value={form.code ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
+                  placeholder="MAT-0000"
+                />
+              </div>
+              <div>
+                <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>SKU</label>
+                <input
+                  className="input"
+                  style={{ fontFamily: 'monospace' }}
+                  value={form.sku ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, sku: e.target.value }))}
+                  placeholder="Optional"
+                />
+              </div>
+            </div>
+
+            {/* Unit + Brand */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>Unit</label>
+                <select
+                  className="input"
+                  value={form.unit ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value as Product['unit'] }))}
+                >
+                  {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>Brand</label>
+                <input
+                  className="input"
+                  value={form.brand ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, brand: e.target.value }))}
+                  placeholder="Optional"
+                />
+              </div>
+            </div>
+
+            {/* Buy Price + Sell Price */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>Purchase Price (AED)</label>
+                <input
+                  className="input"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.buy_price ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, buy_price: Number(e.target.value) }))}
+                />
+              </div>
+              <div>
+                <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>Selling Price (AED)</label>
+                <input
+                  className="input"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.sell_price ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, sell_price: Number(e.target.value) }))}
+                />
+              </div>
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>Description</label>
+              <textarea
+                className="input"
+                rows={3}
+                style={{ resize: 'vertical' }}
+                value={form.description ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                placeholder="Optional product description"
+              />
+            </div>
+
+            {/* Active toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <input
+                type="checkbox"
+                id="is_active"
+                checked={form.is_active ?? true}
+                onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
+                style={{ width: 16, height: 16, cursor: 'pointer' }}
+              />
+              <label htmlFor="is_active" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                Active product
+              </label>
+            </div>
+
+          </div>
+        </Drawer>
+
       </PageShell>
     </MainLayout>
   );
