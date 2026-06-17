@@ -404,9 +404,9 @@ export default function PurchaseRequestDetailPage() {
                 <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                   <div>
                     <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('col', 'quantity')} *</label>
-                    <input type="number" min="1" step="1" className="form-input" style={{ width: 90 }}
+                    <input type="number" min="0.001" step="0.001" className="form-input" style={{ width: 90 }}
                       value={newItem.quantity}
-                      onChange={(e) => setNewItem({ ...newItem, quantity: Math.floor(Number(e.target.value)) || 1 })}
+                      onChange={(e) => setNewItem({ ...newItem, quantity: Number(e.target.value) || 0 })}
                     />
                   </div>
                   <div style={{ width: 130 }}>
@@ -496,9 +496,9 @@ export default function PurchaseRequestDetailPage() {
                     </td>
                     <td>
                       {editingItemId === item.id ? (
-                        <input type="number" min="1" step="1" className="form-input" style={{ width: 80 }}
+                        <input type="number" min="0.001" step="0.001" className="form-input" style={{ width: 90 }}
                           value={editingForm.quantity}
-                          onChange={(e) => setEditingForm(f => ({ ...f, quantity: Math.floor(Number(e.target.value)) || 1 }))}
+                          onChange={(e) => setEditingForm(f => ({ ...f, quantity: Number(e.target.value) || 0 }))}
                         />
                       ) : (
                         <div style={{ color: 'var(--text-primary)' }}>{item.quantity}</div>
