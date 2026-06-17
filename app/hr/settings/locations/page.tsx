@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { hrLocationTypesApi, hrLocationsApi, hrOfficeLocationsApi } from '@/lib/api/hr';
@@ -21,11 +22,12 @@ const tdStyle: React.CSSProperties = { padding: 'var(--space-3) var(--space-4)' 
 export default function HRSettingsLocationsPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const router = useRouter();
   const isAdmin = !!(
-    user?.role === 'admin' ||
-    user?.role === 'super_admin' ||
-    user?.is_staff ||
-    user?.is_superuser
+    user?.role === 'admin' || user?.role === 'super_admin' ||
+    user?.role === 'hr_manager' || user?.role === 'hr_secretary' ||
+    user?.role === 'company_director' ||
+    user?.is_staff || user?.is_superuser
   );
 
   const [selectedType,  setSelectedType]  = useState<HRLocationType | null>(null);
@@ -125,6 +127,11 @@ export default function HRSettingsLocationsPage() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['hr-office-locations'] }); toast('Deleted', 'success'); },
     onError: () => toast('Failed', 'error'),
   });
+
+  useEffect(() => {
+    if (user && !isAdmin) router.replace('/');
+  }, [user, isAdmin, router]);
+  if (user && !isAdmin) return null;
 
   const openTypeCreate = () => {
     setTypeForm({ name: '', name_ar: '', icon: '📍', color: '#6b7280' });

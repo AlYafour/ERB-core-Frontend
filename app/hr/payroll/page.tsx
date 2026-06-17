@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { hrPayrollApi } from '@/lib/api/hr';
@@ -45,8 +46,14 @@ export default function HRPayrollPage() {
 
   const queryClient = useQueryClient();
   const { user }    = useAuth();
+  const router      = useRouter();
   const t           = useT();
-  const isAdmin     = user?.role === 'super_admin' || user?.is_staff || user?.is_superuser;
+  const isAdmin     = !!(
+    user?.role === 'admin' || user?.role === 'super_admin' ||
+    user?.role === 'hr_manager' || user?.role === 'hr_secretary' ||
+    user?.role === 'company_director' ||
+    user?.is_staff || user?.is_superuser
+  );
   const [showGenerate, setShowGenerate] = useState(false);
 
   const { data, isLoading, error } = useQuery({
@@ -63,6 +70,11 @@ export default function HRPayrollPage() {
   const handleMarkPaid = async (id: number, employeeName: string, monthName: string) => {
     if (await confirm(`Mark payroll for ${employeeName} (${monthName}) as paid?`)) markPaidMutation.mutate(id);
   };
+
+  useEffect(() => {
+    if (user && !isAdmin) router.replace('/');
+  }, [user, isAdmin, router]);
+  if (user && !isAdmin) return null;
 
   const records    = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;

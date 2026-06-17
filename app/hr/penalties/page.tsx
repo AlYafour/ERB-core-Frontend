@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { hrPenaltyRulesApi, hrEmployeeGroupsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -11,7 +12,10 @@ import type { PenaltyRule, PenaltyTier, PenaltyRuleType, PenaltyPenaltyType, Emp
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const isAdmin = (user: any) =>
-  !!(user?.role === 'admin' || user?.role === 'super_admin' || user?.is_staff || user?.is_superuser);
+  !!(user?.role === 'admin' || user?.role === 'super_admin' ||
+     user?.role === 'hr_manager' || user?.role === 'hr_secretary' ||
+     user?.role === 'company_director' ||
+     user?.is_staff || user?.is_superuser);
 
 const RULE_TYPES: { value: PenaltyRuleType; label: string; color: string; bg: string }[] = [
   { value: 'LATENESS',    label: 'Lateness',    color: '#92400e', bg: '#fef3c7' },
@@ -599,6 +603,7 @@ function RuleBuilder({
 
 export default function PenaltyRulesPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const qc = useQueryClient();
   const admin = isAdmin(user);
 
@@ -642,6 +647,11 @@ export default function PenaltyRulesPage() {
     const ok = await confirm(`Delete rule "${r.name}"? This cannot be undone.`);
     if (ok) deleteRule.mutate(r.id);
   }, [deleteRule]);
+
+  useEffect(() => {
+    if (user && !admin) router.replace('/');
+  }, [user, admin, router]);
+  if (user && !admin) return null;
 
   // Client-side filters
   const filtered = rules.filter(r => {

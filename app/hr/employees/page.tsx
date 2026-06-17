@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { hrEmployeesApi, hrEmployeeGroupsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -11,7 +12,10 @@ import type { HREmployee, EmployeeGroup } from '@/types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const isAdmin = (user: any) =>
-  !!(user?.role === 'admin' || user?.role === 'super_admin' || user?.is_staff || user?.is_superuser);
+  !!(user?.role === 'admin' || user?.role === 'super_admin' ||
+     user?.role === 'hr_manager' || user?.role === 'hr_secretary' ||
+     user?.role === 'company_director' ||
+     user?.is_staff || user?.is_superuser);
 
 const hasLogin = (emp: HREmployee): boolean => !!(emp.user?.id);
 const canApprove = (emp: HREmployee): boolean => hasLogin(emp) && emp.is_active;
@@ -22,6 +26,7 @@ type GroupRecord  = { id: number; code: string; name: string } | null;
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function EmployeesPage() {
   const { user: me } = useAuth();
+  const router = useRouter();
   const admin = isAdmin(me);
 
   const [search, setSearch] = useState('');
@@ -123,6 +128,10 @@ export default function EmployeesPage() {
     return () => window.removeEventListener('keydown', handler);
   }, [pickerOpenId]);
 
+  useEffect(() => {
+    if (me && !admin) router.replace('/');
+  }, [me, admin, router]);
+
   // ── Summary counts ────────────────────────────────────────────────────────
   const noLoginCount = employees.filter(e => !hasLogin(e)).length;
 
@@ -134,18 +143,7 @@ export default function EmployeesPage() {
     return e.full_name.toLowerCase().includes(q) || e.employee_id.toLowerCase().includes(q);
   });
 
-  // ── Access guard ──────────────────────────────────────────────────────────
-  if (!admin) {
-    return (
-      <MainLayout>
-        <div className="card" style={{ padding: 'var(--space-8)', textAlign: 'center' }}>
-          <p style={{ color: 'var(--color-error)', margin: 0, fontSize: 'var(--text-sm)' }}>
-            Admin access required to view the employee list.
-          </p>
-        </div>
-      </MainLayout>
-    );
-  }
+  if (!admin) return null;
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (

@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { hrLeavePoliciesApi, hrEmployeeGroupsApi, type AccrualResult } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -413,7 +414,13 @@ export default function LeavePoliciesPage() {
   const tableState = useTableState();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'super_admin' || user?.is_staff || user?.is_superuser;
+  const router = useRouter();
+  const isAdmin = !!(
+    user?.role === 'admin' || user?.role === 'super_admin' ||
+    user?.role === 'hr_manager' || user?.role === 'hr_secretary' ||
+    user?.role === 'company_director' ||
+    user?.is_staff || user?.is_superuser
+  );
 
   const [showModal,  setShowModal]  = useState(false);
   const [editTarget, setEditTarget] = useState<LeavePolicy | null>(null);
@@ -437,6 +444,11 @@ export default function LeavePoliciesPage() {
     onSuccess: () => { toast('Policy deleted', 'success'); queryClient.invalidateQueries({ queryKey: ['leave-policies'] }); },
     onError:   () => toast('Delete failed', 'error'),
   });
+
+  useEffect(() => {
+    if (user && !isAdmin) router.replace('/');
+  }, [user, isAdmin, router]);
+  if (user && !isAdmin) return null;
 
   const handleDelete = async (policy: LeavePolicy) => {
     const ok = await confirm(`Delete policy for ${LEAVE_TYPE_LABELS[policy.leave_type]} — ${policy.employee_group_name ?? 'Any group'}?`);

@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { hrLeaveEncashmentsApi, hrLeavePoliciesApi, hrEmployeesApi, hrRequestsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -347,7 +348,13 @@ export default function LeaveEncashmentsPage() {
   const tableState = useTableState();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'super_admin' || user?.is_staff || user?.is_superuser;
+  const router = useRouter();
+  const isAdmin = !!(
+    user?.role === 'admin' || user?.role === 'super_admin' ||
+    user?.role === 'hr_manager' || user?.role === 'hr_secretary' ||
+    user?.role === 'company_director' ||
+    user?.is_staff || user?.is_superuser
+  );
 
   const [showNew, setShowNew] = useState(false);
 
@@ -382,6 +389,11 @@ export default function LeaveEncashmentsPage() {
     onSuccess: () => { toast('Encashment cancelled', 'success'); queryClient.invalidateQueries({ queryKey: ['leave-encashments'] }); },
     onError:   () => toast('Cancel failed', 'error'),
   });
+
+  useEffect(() => {
+    if (user && !isAdmin) router.replace('/');
+  }, [user, isAdmin, router]);
+  if (user && !isAdmin) return null;
 
   const handleApprove = async (enc: LeaveEncashment) => {
     const ok = await confirm(`Approve encashment of ${enc.days_encashed} days for ${enc.employee_name}?\nThis will deduct from their leave balance.`);
