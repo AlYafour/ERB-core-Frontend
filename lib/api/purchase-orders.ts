@@ -17,6 +17,7 @@ export const purchaseOrdersApi = {
     purchase_request?: number;
     purchase_quotation?: number;
     created_by?: number;
+    pr_created_by?: number;
     // Status filter
     status?: string;
     // Range filters

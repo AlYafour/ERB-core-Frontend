@@ -74,7 +74,7 @@ export default function PurchaseOrdersPage() {
     queryKey: ['purchase-orders', page, search, filters, isMyPOs],
     queryFn: () => purchaseOrdersApi.getAll({
       page, search, ...filters,
-      ...(isMyPOs && user?.id ? { created_by: user.id } : {}),
+      ...(isMyPOs && user?.id ? { pr_created_by: user.id } : {}),
     }),
     staleTime: 2 * 60 * 1000,
   });
