@@ -11,6 +11,7 @@ import EntityHeader from '@/components/ui/EntityHeader';
 import { useAuth } from '@/lib/hooks/use-auth';
 import BilingualName from '@/components/domain/BilingualName';
 import { useT } from '@/lib/i18n/useT';
+import React from 'react';
 
 function Field({ label, value, mono, full }: { label: string; value?: string | null; mono?: boolean; full?: boolean }) {
   return (
@@ -30,9 +31,22 @@ export default function ProductDetailPage() {
   const { data: product, isLoading } = useQuery({
     queryKey: ['products', id],
     queryFn: () => productsApi.getById(id),
+    staleTime: 2 * 60 * 1000,
   });
 
-  const isAdmin = user?.role === 'super_admin' || user?.is_staff;
+  // ✅ أي useState/useEffect لازم يكون هنا — قبل أي early return
+  // لو حطيته بعد if (isLoading) أو if (!product) الصفحة هتعمل reload loop
+  const [copied, setCopied] = React.useState(false);
+
+  const isAdmin = user?.role === 'super_admin' || user?.is_staff || user?.role === 'admin';
+
+  const handleCopyCode = () => {
+    if (!product?.code) return;
+    navigator.clipboard.writeText(product.code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   if (isLoading) {
     return (
@@ -102,7 +116,28 @@ export default function ProductDetailPage() {
           <div className="info-grid">
             <div className="info-full">
               <div className="info-label">Product Name</div>
-              <BilingualName nameEn={product.name} nameAr={product.name_ar} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
+                <BilingualName nameEn={product.name} nameAr={product.name_ar} />
+                {product.code && (
+                  <button
+                    onClick={handleCopyCode}
+                    title="Copy product code"
+                    style={{
+                      background: 'none',
+                      border: '1px solid var(--border-primary)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '2px 8px',
+                      cursor: 'pointer',
+                      fontSize: 'var(--font-xs)',
+                      color: copied ? 'var(--color-success)' : 'var(--text-secondary)',
+                      fontFamily: 'monospace',
+                      transition: 'color 0.2s',
+                    }}
+                  >
+                    {copied ? '✓ Copied' : product.code}
+                  </button>
+                )}
+              </div>
             </div>
             <Field label="Product Code" value={product.code} mono />
             <Field label="SKU" value={product.sku} mono />
