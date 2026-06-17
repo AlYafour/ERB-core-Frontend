@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
+import { projectsApi } from '@/lib/api/projects';
 import { PurchaseOrder } from '@/types';
 import Link from 'next/link';
 import { toast } from '@/lib/hooks/use-toast';
@@ -25,17 +27,6 @@ const STATUS_LABEL: Record<string, string> = {
   rejected: 'Rejected', completed: 'Completed', cancelled: 'Cancelled',
 };
 
-const filterFields: FilterField[] = [
-  { name: 'order_number',      label: 'Order Number',    type: 'text',   group: 'Order Info' },
-  { name: 'project_name',      label: 'Project',         type: 'text',   group: 'Order Info' },
-  { name: 'status',            label: 'Status',          type: 'select', group: 'Status',
-    options: Object.entries(STATUS_LABEL).map(([v, l]) => ({ value: v, label: l })) },
-  { name: 'order_date_after',  label: 'Order Date From', type: 'date',   group: 'Dates' },
-  { name: 'order_date_before', label: 'Order Date To',   type: 'date',   group: 'Dates' },
-  { name: 'total_min',         label: 'Min Total',       type: 'number', group: 'Amount' },
-  { name: 'total_max',         label: 'Max Total',       type: 'number', group: 'Amount' },
-];
-
 export default function PurchaseOrdersPage() {
   const router = useRouter();
   const tableState = useTableState();
@@ -52,21 +43,45 @@ export default function PurchaseOrdersPage() {
   const canCreate   = isSuperuser || (hasPermission('purchase_order', 'create') ?? false);
   const canDelete   = isSuperuser;
 
-  const isMyPOs = filters.created_by === user?.id || filters.created_by === String(user?.id);
-  const toggleMyPOs = () => {
-    tableState.handleFilterChange('created_by', isMyPOs ? '' : (user?.id ?? ''));
-    tableState.setPage(1);
-  };
+  // My POs — separate state so it never appears as a filter chip
+  const [isMyPOs, setIsMyPOs] = useState(false);
+  const toggleMyPOs = () => { setIsMyPOs(v => !v); tableState.setPage(1); };
+
+  // Projects list for the dropdown filter
+  const { data: projectsData } = useQuery({
+    queryKey: ['projects-list-filter'],
+    queryFn: () => projectsApi.getAll({ page: 1, page_size: 200, is_active: true }),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const filterFields: FilterField[] = [
+    { name: 'order_number', label: 'Order Number', type: 'text',   group: 'Order Info' },
+    {
+      name: 'project_name', label: 'Project', type: 'select', group: 'Order Info',
+      options: projectsData?.results?.map(p => ({ value: p.name, label: p.name })) ?? [],
+    },
+    {
+      name: 'status', label: 'Status', type: 'select', group: 'Status',
+      options: Object.entries(STATUS_LABEL).map(([v, l]) => ({ value: v, label: l })),
+    },
+    { name: 'order_date_after',  label: 'Order Date From', type: 'date',   group: 'Dates' },
+    { name: 'order_date_before', label: 'Order Date To',   type: 'date',   group: 'Dates' },
+    { name: 'total_min',         label: 'Min Total',       type: 'number', group: 'Amount' },
+    { name: 'total_max',         label: 'Max Total',       type: 'number', group: 'Amount' },
+  ];
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['purchase-orders', page, search, filters],
-    queryFn:  () => purchaseOrdersApi.getAll({ page, search, ...filters }),
+    queryKey: ['purchase-orders', page, search, filters, isMyPOs],
+    queryFn: () => purchaseOrdersApi.getAll({
+      page, search, ...filters,
+      ...(isMyPOs && user?.id ? { created_by: user.id } : {}),
+    }),
     staleTime: 2 * 60 * 1000,
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => purchaseOrdersApi.delete(id),
-    onSuccess:  () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       queryClient.invalidateQueries({ queryKey: ['pending-count'] });
       toast('Purchase Order deleted', 'success');
@@ -92,7 +107,7 @@ export default function PurchaseOrdersPage() {
 
   const columns: Column<PurchaseOrder>[] = [
     {
-      key: 'number', header: 'Order Number',
+      key: 'number', header: 'Order #',
       render: o => (
         <Link href={`/purchase-orders/${o.id}`} className="font-mono font-semibold" style={{ color: 'var(--text-brand)' }}>
           {o.order_number}
@@ -103,29 +118,59 @@ export default function PurchaseOrdersPage() {
       key: 'pr', header: 'PR #',
       render: o => {
         if (!o.purchase_request) return <span style={{ color: 'var(--text-secondary)' }}>—</span>;
-        if (typeof o.purchase_request === 'object') {
-          const pr = o.purchase_request as any;
-          return <span className="font-mono" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{pr.request_number || pr.code || `PR #${pr.id}`}</span>;
-        }
-        return <span className="font-mono" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>PR #{o.purchase_request}</span>;
+        const prId = typeof o.purchase_request === 'object' ? (o.purchase_request as any).id : o.purchase_request;
+        const prCode = typeof o.purchase_request === 'object'
+          ? ((o.purchase_request as any).code || `#${prId}`)
+          : `#${prId}`;
+        return (
+          <Link
+            href={`/purchase-requests/${prId}`}
+            className="font-mono"
+            style={{ color: 'var(--text-brand)', fontWeight: 600, fontSize: 'var(--text-sm)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {prCode}
+          </Link>
+        );
       },
     },
     {
-      key: 'project', header: t('col', 'project'),
-      render: o => o.project_name
-        ? (
-          <div>
-            <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{o.project_name}</div>
-            {o.project_code && <div className="font-mono" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{o.project_code}</div>}
-          </div>
-        )
-        : <span style={{ color: 'var(--text-secondary)' }}>—</span>,
+      key: 'requested_by', header: 'Requested By',
+      render: o => (
+        <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
+          {o.pr_created_by_name || '—'}
+        </span>
+      ),
     },
-    { key: 'supplier',  header: t('col', 'supplier'),      render: o => <span style={{ color: 'var(--text-secondary)' }}>{typeof o.supplier === 'object' ? o.supplier.name : '—'}</span> },
-    { key: 'date',      header: 'Order Date',              render: o => <span style={{ color: 'var(--text-secondary)' }}>{new Date(o.order_date).toLocaleDateString('en-US')}</span> },
-    { key: 'delivery',  header: 'Delivery Date',           render: o => <span style={{ color: 'var(--text-secondary)' }}>{o.delivery_date ? new Date(o.delivery_date).toLocaleDateString('en-US') : '—'}</span> },
-    { key: 'total',     header: t('col', 'totalAmount'),   render: o => <span className="font-semibold">{formatPrice(o.total)}</span> },
-    { key: 'status',    header: t('col', 'status'),        render: o => <Badge variant={PO_STATUS[o.status] ?? 'info'}>{STATUS_LABEL[o.status] || o.status}</Badge> },
+    {
+      key: 'project', header: t('col', 'project'),
+      render: o => o.project_name ? (
+        <div>
+          <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{o.project_name}</div>
+          {o.project_code && (
+            <div className="font-mono" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+              {o.project_code}
+            </div>
+          )}
+        </div>
+      ) : <span style={{ color: 'var(--text-secondary)' }}>—</span>,
+    },
+    {
+      key: 'supplier', header: t('col', 'supplier'),
+      render: o => <span style={{ color: 'var(--text-secondary)' }}>{typeof o.supplier === 'object' ? (o.supplier as any).name : '—'}</span>,
+    },
+    {
+      key: 'date', header: 'Order Date',
+      render: o => <span style={{ color: 'var(--text-secondary)' }}>{new Date(o.order_date).toLocaleDateString('en-US')}</span>,
+    },
+    {
+      key: 'total', header: t('col', 'totalAmount'),
+      render: o => <span className="font-semibold">{formatPrice(o.total)}</span>,
+    },
+    {
+      key: 'status', header: t('col', 'status'),
+      render: o => <Badge variant={PO_STATUS[o.status] ?? 'info'}>{STATUS_LABEL[o.status] || o.status}</Badge>,
+    },
     {
       key: 'actions', header: '',
       render: o => (
@@ -172,12 +217,17 @@ export default function PurchaseOrdersPage() {
           filterFields={filterFields}
           searchPlaceholder="Search purchase orders…"
           toolbarActions={
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Button variant={isMyPOs ? 'primary' : 'secondary'} onClick={toggleMyPOs}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button
+                onClick={toggleMyPOs}
+                className={isMyPOs ? 'btn btn-primary' : 'btn btn-secondary'}
+              >
                 {isMyPOs ? '✓ My POs' : 'My POs'}
-              </Button>
+              </button>
               {canDelete && selectedItems.size > 0 && (
-                <Button variant="destructive" onClick={handleBulkDelete}>Delete {selectedItems.size}</Button>
+                <Button variant="destructive" onClick={handleBulkDelete}>
+                  Delete {selectedItems.size}
+                </Button>
               )}
             </div>
           }
@@ -186,7 +236,11 @@ export default function PurchaseOrdersPage() {
           isLoading={isLoading}
           error={error}
           emptyMessage="No purchase orders found."
-          emptyAction={canCreate ? <Link href="/purchase-orders/new"><Button variant="primary">Create Purchase Order</Button></Link> : undefined}
+          emptyAction={
+            canCreate
+              ? <Link href="/purchase-orders/new"><Button variant="primary">Create Purchase Order</Button></Link>
+              : undefined
+          }
           onRowClick={o => router.push(`/purchase-orders/${o.id}`)}
           selectable={canDelete}
           totalCount={totalCount}
