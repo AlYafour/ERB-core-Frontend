@@ -8,6 +8,7 @@ export const purchaseOrdersApi = {
     search?: string;
     // Text filters
     order_number?: string;
+    project_name?: string;
     notes?: string;
     payment_terms?: string;
     delivery_terms?: string;

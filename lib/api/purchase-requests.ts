@@ -67,7 +67,7 @@ export const purchaseRequestsApi = {
     return response.data;
   },
 
-  updateItem: async (itemId: number, data: { product_id?: number; quantity?: number; unit?: string; notes?: string }): Promise<PurchaseRequestItem> => {
+  updateItem: async (itemId: number, data: { product_id?: number; quantity?: number; unit?: string; reason?: string; notes?: string }): Promise<PurchaseRequestItem> => {
     const response = await apiClient.patch(`/purchase-requests/items/${itemId}/`, data);
     return response.data;
   },

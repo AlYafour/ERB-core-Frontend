@@ -48,7 +48,7 @@ export default function PurchaseRequestDetailPage() {
   const isSuperuser = user?.is_superuser ?? false;
 
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
-  const [editingProductId, setEditingProductId] = useState<number>(0);
+  const [editingForm, setEditingForm] = useState<{ productId: number; quantity: number; unit: string; reason: string; notes: string }>({ productId: 0, quantity: 1, unit: '', reason: '', notes: '' });
 
   const [addingProduct, setAddingProduct] = useState(false);
   const [newProduct, setNewProduct] = useState<Product | null>(null);
@@ -63,14 +63,14 @@ export default function PurchaseRequestDetailPage() {
   });
 
   const updateItemMutation = useMutation({
-    mutationFn: ({ itemId, productId }: { itemId: number; productId: number }) =>
-      purchaseRequestsApi.updateItem(itemId, { product_id: productId }),
+    mutationFn: ({ itemId, data }: { itemId: number; data: { product_id: number; quantity: number; unit?: string; reason?: string; notes?: string } }) =>
+      purchaseRequestsApi.updateItem(itemId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-requests', id] });
       setEditingItemId(null);
-      toast('Product updated successfully', 'success');
+      toast('Item updated successfully', 'success');
     },
-    onError: () => toast('Failed to update product', 'error'),
+    onError: () => toast('Failed to update item', 'error'),
   });
 
   const addItemMutation = useMutation({
@@ -477,8 +477,8 @@ export default function PurchaseRequestDetailPage() {
                                 searchText: `${p.name} ${p.code}`,
                               })) || []
                             }
-                            value={editingProductId}
-                            onChange={(val) => setEditingProductId(val ? Number(val) : 0)}
+                            value={editingForm.productId}
+                            onChange={(val) => setEditingForm(f => ({ ...f, productId: val ? Number(val) : 0 }))}
                             placeholder="Select product..."
                             searchPlaceholder="Search products..."
                           />
@@ -495,27 +495,50 @@ export default function PurchaseRequestDetailPage() {
                       )}
                     </td>
                     <td>
-                      <div style={{ color: 'var(--text-primary)' }}>{item.quantity}</div>
+                      {editingItemId === item.id ? (
+                        <input type="number" min="1" step="1" className="form-input" style={{ width: 80 }}
+                          value={editingForm.quantity}
+                          onChange={(e) => setEditingForm(f => ({ ...f, quantity: Math.floor(Number(e.target.value)) || 1 }))}
+                        />
+                      ) : (
+                        <div style={{ color: 'var(--text-primary)' }}>{item.quantity}</div>
+                      )}
                     </td>
                     <td>
-                      <div style={{ color: 'var(--text-secondary)' }}>
-                        {item.unit || item.product?.unit || '-'}
-                      </div>
+                      {editingItemId === item.id ? (
+                        <input className="form-input" style={{ width: 100 }}
+                          value={editingForm.unit}
+                          onChange={(e) => setEditingForm(f => ({ ...f, unit: e.target.value }))}
+                          placeholder="Unit"
+                        />
+                      ) : (
+                        <div style={{ color: 'var(--text-secondary)' }}>{item.unit || item.product?.unit || '-'}</div>
+                      )}
                     </td>
                     <td>
-                      <div style={{ color: 'var(--text-secondary)' }}>
-                        {item.project_site || '-'}
-                      </div>
+                      <div style={{ color: 'var(--text-secondary)' }}>{item.project_site || '-'}</div>
                     </td>
                     <td>
-                      <div style={{ color: 'var(--text-secondary)', maxWidth: '256px' }}>
-                        {item.reason || '-'}
-                      </div>
+                      {editingItemId === item.id ? (
+                        <input className="form-input" style={{ minWidth: 120 }}
+                          value={editingForm.reason}
+                          onChange={(e) => setEditingForm(f => ({ ...f, reason: e.target.value }))}
+                          placeholder="Purpose..."
+                        />
+                      ) : (
+                        <div style={{ color: 'var(--text-secondary)', maxWidth: '256px' }}>{item.reason || '-'}</div>
+                      )}
                     </td>
                     <td>
-                      <div style={{ color: 'var(--text-secondary)', maxWidth: '256px' }}>
-                        {item.notes || '-'}
-                      </div>
+                      {editingItemId === item.id ? (
+                        <input className="form-input" style={{ minWidth: 120 }}
+                          value={editingForm.notes}
+                          onChange={(e) => setEditingForm(f => ({ ...f, notes: e.target.value }))}
+                          placeholder="Notes..."
+                        />
+                      ) : (
+                        <div style={{ color: 'var(--text-secondary)', maxWidth: '256px' }}>{item.notes || '-'}</div>
+                      )}
                     </td>
                     {(isSuperAdmin || request.created_by === user?.id) && request.status === 'pending' && (
                       <td>
@@ -523,8 +546,8 @@ export default function PurchaseRequestDetailPage() {
                           {isSuperAdmin && (editingItemId === item.id ? (
                             <>
                               <button className="btn btn-primary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
-                                disabled={!editingProductId || updateItemMutation.isPending}
-                                onClick={() => updateItemMutation.mutate({ itemId: item.id!, productId: editingProductId })}>
+                                disabled={!editingForm.productId || updateItemMutation.isPending}
+                                onClick={() => updateItemMutation.mutate({ itemId: item.id!, data: { product_id: editingForm.productId, quantity: editingForm.quantity, unit: editingForm.unit, reason: editingForm.reason, notes: editingForm.notes } })}>
                                 {updateItemMutation.isPending ? '...' : 'Save'}
                               </button>
                               <button className="btn btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
@@ -534,7 +557,7 @@ export default function PurchaseRequestDetailPage() {
                             </>
                           ) : (
                             <button className="btn btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
-                              onClick={() => { setEditingItemId(item.id!); setEditingProductId(item.product?.id || 0); }}>
+                              onClick={() => { setEditingItemId(item.id!); setEditingForm({ productId: item.product?.id || 0, quantity: item.quantity, unit: item.unit || item.product?.unit || '', reason: (item as any).reason || '', notes: item.notes || '' }); }}>
                               Edit
                             </button>
                           ))}

@@ -27,6 +27,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const filterFields: FilterField[] = [
   { name: 'order_number',      label: 'Order Number',    type: 'text',   group: 'Order Info' },
+  { name: 'project_name',      label: 'Project',         type: 'text',   group: 'Order Info' },
   { name: 'status',            label: 'Status',          type: 'select', group: 'Status',
     options: Object.entries(STATUS_LABEL).map(([v, l]) => ({ value: v, label: l })) },
   { name: 'order_date_after',  label: 'Order Date From', type: 'date',   group: 'Dates' },
@@ -50,6 +51,12 @@ export default function PurchaseOrdersPage() {
   const isSuperuser = user?.is_superuser ?? false;
   const canCreate   = isSuperuser || (hasPermission('purchase_order', 'create') ?? false);
   const canDelete   = isSuperuser;
+
+  const isMyPOs = filters.created_by === user?.id || filters.created_by === String(user?.id);
+  const toggleMyPOs = () => {
+    tableState.handleFilterChange('created_by', isMyPOs ? '' : (user?.id ?? ''));
+    tableState.setPage(1);
+  };
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['purchase-orders', page, search, filters],
@@ -91,6 +98,17 @@ export default function PurchaseOrdersPage() {
           {o.order_number}
         </Link>
       ),
+    },
+    {
+      key: 'pr', header: 'PR #',
+      render: o => {
+        if (!o.purchase_request) return <span style={{ color: 'var(--text-secondary)' }}>—</span>;
+        if (typeof o.purchase_request === 'object') {
+          const pr = o.purchase_request as any;
+          return <span className="font-mono" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{pr.request_number || pr.code || `PR #${pr.id}`}</span>;
+        }
+        return <span className="font-mono" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>PR #{o.purchase_request}</span>;
+      },
     },
     {
       key: 'project', header: t('col', 'project'),
@@ -154,9 +172,14 @@ export default function PurchaseOrdersPage() {
           filterFields={filterFields}
           searchPlaceholder="Search purchase orders…"
           toolbarActions={
-            canDelete && selectedItems.size > 0 ? (
-              <Button variant="destructive" onClick={handleBulkDelete}>Delete {selectedItems.size}</Button>
-            ) : undefined
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Button variant={isMyPOs ? 'primary' : 'secondary'} onClick={toggleMyPOs}>
+                {isMyPOs ? '✓ My POs' : 'My POs'}
+              </Button>
+              {canDelete && selectedItems.size > 0 && (
+                <Button variant="destructive" onClick={handleBulkDelete}>Delete {selectedItems.size}</Button>
+              )}
+            </div>
           }
           columns={columns}
           data={orders}
