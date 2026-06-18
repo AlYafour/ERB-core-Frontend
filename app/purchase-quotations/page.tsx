@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -81,14 +82,16 @@ export default function PurchaseQuotationsPage() {
     onError:    () => toast('Failed to delete some quotations', 'error'),
   });
 
-  const handleDelete     = async (id: number) => { if (await confirm('Delete this quotation?')) deleteMutation.mutate(id); };
+  const handleDelete     = useCallback(async (id: number) => {
+    if (await confirm('Delete this quotation?')) deleteMutation.mutate(id);
+  }, [deleteMutation.mutate]);
   const handleBulkDelete = async () => { if (selectedItems.size && await confirm(`Delete ${selectedItems.size} quotation(s)?`)) bulkDeleteMutation.mutate(Array.from(selectedItems)); };
 
   const quotations = data?.results ?? [];
   const totalCount = data?.count ?? 0;
   const currentIds = quotations.map((q: PurchaseQuotation) => q.id);
 
-  const columns: Column<PurchaseQuotation>[] = [
+  const columns = useMemo((): Column<PurchaseQuotation>[] => [
     { key: 'number', header: t('col', 'quotationNumber'), render: q => <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{q.quotation_number}</span> },
     {
       key: 'status', header: t('col', 'status'),
@@ -134,7 +137,7 @@ export default function PurchaseQuotationsPage() {
         ]} />
       ),
     },
-  ];
+  ], [t, canDelete, handleDelete]);
 
   return (
     <MainLayout>

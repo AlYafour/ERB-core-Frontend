@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -57,7 +58,9 @@ export default function QuotationRequestsPage() {
     onError:    () => toast('Failed to delete some requests', 'error'),
   });
 
-  const handleDelete = async (id: number) => { if (await confirm('Delete this request?')) deleteMutation.mutate(id); };
+  const handleDelete = useCallback(async (id: number) => {
+    if (await confirm('Delete this request?')) deleteMutation.mutate(id);
+  }, [deleteMutation.mutate]);
   const handleBulkDelete = async () => {
     if (selectedItems.size && await confirm(`Delete ${selectedItems.size} request(s)?`))
       bulkDeleteMutation.mutate(Array.from(selectedItems));
@@ -66,7 +69,7 @@ export default function QuotationRequestsPage() {
   const requests   = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
 
-  const columns: Column<QuotationRequest>[] = [
+  const columns = useMemo((): Column<QuotationRequest>[] => [
     {
       key: 'code', header: t('col', 'code'),
       render: r => (
@@ -106,7 +109,7 @@ export default function QuotationRequestsPage() {
         ]} />
       ),
     },
-  ];
+  ], [t, canDelete, handleDelete]);
 
   return (
     <MainLayout>

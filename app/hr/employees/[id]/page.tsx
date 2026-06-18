@@ -97,12 +97,14 @@ function RolesTab({ empUserId, isAdmin }: { empUserId?: number; isAdmin: boolean
     queryKey: ['user-roles', empUserId],
     queryFn: () => rolesApi.getUserRoles(empUserId!),
     enabled: !!empUserId,
+    staleTime: 60_000,
   });
 
   const { data: allRoles = [] } = useQuery({
     queryKey: ['roles'],
     queryFn: () => rolesApi.getAll(),
     enabled: isAdmin,
+    staleTime: 300_000,
   });
 
   const assignMutation = useMutation({
@@ -270,12 +272,13 @@ export default function EmployeeDetailPage() {
     queryKey: ['hr-employee', id],
     queryFn:  () => hrEmployeesApi.getById(Number(id)),
   });
-  const { data: depts }     = useQuery({ queryKey: ['hr-departments-all'], queryFn: () => hrDepartmentsApi.getAll({ page: 1 }) });
-  const { data: positions } = useQuery({ queryKey: ['hr-positions-all'],   queryFn: () => hrPositionsApi.getAll({ page: 1 }) });
+  const { data: depts }     = useQuery({ queryKey: ['hr-departments-all'], queryFn: () => hrDepartmentsApi.getAll({ page: 1 }), staleTime: 300_000 });
+  const { data: positions } = useQuery({ queryKey: ['hr-positions-all'],   queryFn: () => hrPositionsApi.getAll({ page: 1 }), staleTime: 300_000 });
   const { data: summary }   = useQuery({
     queryKey: ['hr-emp-summary', id],
     queryFn:  () => hrEmployeesApi.getAttendanceSummary(Number(id)),
     enabled:  !!id,
+    staleTime: 60_000,
   });
 
   // ── Mutations ──────────────────────────────────────────────────────────────

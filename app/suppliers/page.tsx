@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useMemo, useCallback, useRef } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { suppliersApi } from '@/lib/api/suppliers';
@@ -69,9 +69,9 @@ export default function SuppliersPage() {
     onError: () => toast('Failed to delete some suppliers', 'error'),
   });
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = useCallback(async (id: number) => {
     if (await confirm('Delete this supplier?')) deleteMutation.mutate(id);
-  };
+  }, [deleteMutation.mutate]);
 
   const handleBulkDelete = async () => {
     if (!selectedItems.size) return;
@@ -120,7 +120,7 @@ export default function SuppliersPage() {
   const suppliers  = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
 
-  const columns: Column<Supplier>[] = [
+  const columns = useMemo((): Column<Supplier>[] => [
     {
       key: 'name', header: t('col', 'name'),
       render: s => <BilingualName nameEn={s.business_name || s.name} nameAr={s.business_name_ar} />,
@@ -145,7 +145,7 @@ export default function SuppliersPage() {
         </div>
       ),
     },
-  ];
+  ], [t, canEdit, canDelete, handleDelete, deleteMutation.isPending]);
 
   return (
     <MainLayout>

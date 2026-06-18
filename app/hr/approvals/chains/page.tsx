@@ -740,6 +740,7 @@ export default function ApprovalChainsPage() {
   const { data: policies = [], isLoading } = useQuery({
     queryKey: ['approval-chains'],
     queryFn: hrApprovalsApi.getPolicies,
+    staleTime: 60_000,
   });
 
   const { data: groups = [] } = useQuery({
@@ -748,11 +749,13 @@ export default function ApprovalChainsPage() {
       const res = await hrEmployeeGroupsApi.getAll();
       return res.results ?? [];
     },
+    staleTime: 300_000,
   });
 
   const { data: requestTypes = [] } = useQuery({
     queryKey: ['approval-request-types'],
     queryFn: hrApprovalsApi.getRequestTypes,
+    staleTime: 300_000,
   });
 
   const { data: employees = [] } = useQuery({
@@ -761,6 +764,7 @@ export default function ApprovalChainsPage() {
       const res = await hrEmployeesApi.getAll();
       return res.results ?? [];
     },
+    staleTime: 300_000,
   });
 
   const toggleActive = useMutation({

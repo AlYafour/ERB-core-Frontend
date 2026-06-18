@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useCallback } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customersApi, Customer } from '@/lib/api/customers';
@@ -48,14 +49,14 @@ export default function CustomersPage() {
     onError:    () => toast('Failed to delete customer', 'error'),
   });
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = useCallback(async (id: number) => {
     if (await confirm('Delete this customer?')) deleteMutation.mutate(id);
-  };
+  }, [deleteMutation.mutate]);
 
   const customers  = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
 
-  const columns: Column<Customer>[] = [
+  const columns = useMemo((): Column<Customer>[] => [
     {
       key: 'code', header: t('col', 'code'), width: 110,
       render: c => <span style={{ fontSize: 'var(--text-xs)', fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>{c.code || '—'}</span>,
@@ -94,7 +95,7 @@ export default function CustomersPage() {
         </div>
       ),
     },
-  ];
+  ], [t, isAdmin, handleDelete, deleteMutation.isPending]);
 
   return (
     <MainLayout>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseInvoicesApi } from '@/lib/api/purchase-invoices';
@@ -83,7 +84,9 @@ export default function PurchaseInvoicesPage() {
     onError: () => toast('Failed to delete some invoices', 'error'),
   });
 
-  const handleDelete = async (id: number) => { if (await confirm('Delete this invoice?')) deleteMutation.mutate(id); };
+  const handleDelete = useCallback(async (id: number) => {
+    if (await confirm('Delete this invoice?')) deleteMutation.mutate(id);
+  }, [deleteMutation.mutate]);
   const handleBulkDelete = async () => {
     if (selectedItems.size && await confirm(`Delete ${selectedItems.size} invoice(s)?`))
       bulkDeleteMutation.mutate(Array.from(selectedItems));
@@ -92,7 +95,7 @@ export default function PurchaseInvoicesPage() {
   const invoices   = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
 
-  const columns: Column<PurchaseInvoice>[] = [
+  const columns = useMemo((): Column<PurchaseInvoice>[] => [
     { key: 'number',  header: t('col', 'invoiceNumber'), render: i => <span className="font-medium">{i.invoice_number}</span> },
     {
       key: 'po', header: t('col', 'relatedPO'),
@@ -112,7 +115,7 @@ export default function PurchaseInvoicesPage() {
         ]} />
       ),
     },
-  ];
+  ], [t, canDelete, handleDelete]);
 
   return (
     <MainLayout>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -60,12 +61,14 @@ export default function GoodsReceivingPage() {
     onError:    () => toast('Failed to delete GRN', 'error'),
   });
 
-  const handleDelete = async (id: number) => { if (await confirm('Delete this GRN?')) deleteMutation.mutate(id); };
+  const handleDelete = useCallback(async (id: number) => {
+    if (await confirm('Delete this GRN?')) deleteMutation.mutate(id);
+  }, [deleteMutation.mutate]);
 
   const grns       = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
 
-  const columns: Column<GoodsReceivedNote>[] = [
+  const columns = useMemo((): Column<GoodsReceivedNote>[] => [
     {
       key: 'number', header: 'GRN Number',
       render: g => <span className="font-mono font-semibold" style={{ fontSize: 'var(--text-sm)' }}>{g.grn_number}</span>,
@@ -88,7 +91,7 @@ export default function GoodsReceivingPage() {
         ]} />
       ),
     },
-  ];
+  ], [t, canDelete, handleDelete]);
 
   return (
     <MainLayout>

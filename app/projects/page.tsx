@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectsApi } from '@/lib/api/projects';
@@ -104,7 +104,9 @@ export default function ProjectsPage() {
     onError:    () => toast('Failed to delete some projects', 'error'),
   });
 
-  const handleDelete = async (id: number) => { if (await confirm('Delete this project?')) deleteMutation.mutate(id); };
+  const handleDelete = useCallback(async (id: number) => {
+    if (await confirm('Delete this project?')) deleteMutation.mutate(id);
+  }, [deleteMutation.mutate]);
   const handleBulkDelete = async () => {
     if (selectedItems.size && await confirm(`Delete ${selectedItems.size} project(s)?`))
       bulkDeleteMutation.mutate(Array.from(selectedItems));
@@ -113,7 +115,7 @@ export default function ProjectsPage() {
   const projects   = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
 
-  const columns: Column<Project>[] = [
+  const columns = useMemo((): Column<Project>[] => [
     {
       key: 'code', header: 'Code',
       render: p => <span className="font-mono" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{p.code}</span>,
@@ -139,7 +141,7 @@ export default function ProjectsPage() {
         </div>
       ),
     },
-  ];
+  ], [t, canEdit, canDelete, handleDelete, deleteMutation.isPending]);
 
   return (
     <MainLayout>

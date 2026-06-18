@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -83,9 +83,16 @@ export default function PurchaseRequestsPage() {
     onError:    (e: unknown) => toast(getApiError(e, 'Failed to delete some requests'), 'error'),
   });
 
-  const handleApprove = async (id: number) => { if (await confirm('Approve this request?')) approveMutation.mutate(id); };
-  const handleReject  = (id: number) => { setRejectingId(id); setRejectDialogOpen(true); };
-  const handleDelete  = async (id: number) => { if (await confirm('Delete this request?')) deleteMutation.mutate(id); };
+  const handleApprove = useCallback(async (id: number) => {
+    if (await confirm('Approve this request?')) approveMutation.mutate(id);
+  }, [approveMutation.mutate]);
+  const handleReject  = useCallback((id: number) => {
+    setRejectingId(id);
+    setRejectDialogOpen(true);
+  }, []);
+  const handleDelete  = useCallback(async (id: number) => {
+    if (await confirm('Delete this request?')) deleteMutation.mutate(id);
+  }, [deleteMutation.mutate]);
   const handleBulkDelete = async () => { if (selectedItems.size && await confirm(`Delete ${selectedItems.size} request(s)?`)) bulkDeleteMutation.mutate(Array.from(selectedItems)); };
 
   const filterFields: FilterField[] = [
@@ -104,7 +111,7 @@ export default function PurchaseRequestsPage() {
   const requests   = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
 
-  const columns: Column<PurchaseRequest>[] = [
+  const columns = useMemo((): Column<PurchaseRequest>[] => [
     {
       key: 'code', header: t('col', 'code'),
       render: r => <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{r.code}</span>,
@@ -174,7 +181,7 @@ export default function PurchaseRequestsPage() {
         ]} />
       ),
     },
-  ];
+  ], [t, canApprove, canReject, canDelete, handleApprove, handleReject, handleDelete]);
 
   return (
     <MainLayout>

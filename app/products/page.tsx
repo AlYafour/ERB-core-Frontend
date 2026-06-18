@@ -1,7 +1,7 @@
 'use client';
 
 import { fetchAllPages } from '@/lib/utils/export-excel';
-import { useRef } from 'react';
+import { useMemo, useCallback, useRef } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsApi } from '@/lib/api/products';
@@ -66,9 +66,9 @@ export default function ProductsPage() {
     onError:    () => toast('Failed to delete product', 'error'),
   });
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = useCallback(async (id: number) => {
     if (await confirm('Delete this product?')) deleteMutation.mutate(id);
-  };
+  }, [deleteMutation.mutate]);
 
   const handleBulkDelete = async () => {
     if (!selectedItems.size) return;
@@ -113,7 +113,7 @@ export default function ProductsPage() {
   const products   = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
 
-  const columns: Column<Product>[] = [
+  const columns = useMemo((): Column<Product>[] => [
     {
       key: 'name', header: 'Product',
       render: p => (
@@ -145,7 +145,7 @@ export default function ProductsPage() {
         </div>
       ),
     },
-  ];
+  ], [t, canDelete, handleDelete]);
 
   return (
     <MainLayout>

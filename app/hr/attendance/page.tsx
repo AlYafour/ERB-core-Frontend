@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery } from '@tanstack/react-query';
 import { hrAttendanceApi } from '@/lib/api/hr';
@@ -45,7 +46,7 @@ export default function HRAttendancePage() {
   const records    = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
 
-  const columns: Column<HRAttendance>[] = [
+  const columns = useMemo((): Column<HRAttendance>[] => [
     {
       key: 'employee', header: 'Employee',
       render: r => (
@@ -69,7 +70,7 @@ export default function HRAttendancePage() {
         </span>
       ),
     },
-  ];
+  ], [t]);
 
   return (
     <MainLayout>

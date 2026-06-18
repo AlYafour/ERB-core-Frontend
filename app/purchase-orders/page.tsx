@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -91,9 +91,9 @@ export default function PurchaseOrdersPage() {
     onError: () => toast('Failed to delete purchase order', 'error'),
   });
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = useCallback(async (id: number) => {
     if (await confirm('Delete this purchase order?')) deleteMutation.mutate(id);
-  };
+  }, [deleteMutation.mutate]);
 
   const handleBulkDelete = async () => {
     if (!selectedItems.size || !await confirm(`Delete ${selectedItems.size} purchase orders?`)) return;
@@ -107,7 +107,7 @@ export default function PurchaseOrdersPage() {
   const orders     = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
 
-  const columns: Column<PurchaseOrder>[] = [
+  const columns = useMemo((): Column<PurchaseOrder>[] => [
     {
       key: 'number', header: 'Order #',
       render: o => (
@@ -183,7 +183,7 @@ export default function PurchaseOrdersPage() {
         ]} />
       ),
     },
-  ];
+  ], [t, canDelete, handleDelete]);
 
   return (
     <MainLayout>

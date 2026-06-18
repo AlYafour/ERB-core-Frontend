@@ -68,8 +68,8 @@ function NewEmployeeForm() {
     }
   }, [existingUser]);
 
-  const { data: depts }     = useQuery({ queryKey: ['hr-depts'],     queryFn: () => hrDepartmentsApi.getAll({ page: 1 }) });
-  const { data: positions } = useQuery({ queryKey: ['hr-positions'], queryFn: () => hrPositionsApi.getAll({ page: 1 }) });
+  const { data: depts }     = useQuery({ queryKey: ['hr-depts'],     queryFn: () => hrDepartmentsApi.getAll({ page: 1 }), staleTime: 300_000 });
+  const { data: positions } = useQuery({ queryKey: ['hr-positions'], queryFn: () => hrPositionsApi.getAll({ page: 1 }), staleTime: 300_000 });
 
   const selectedPosition: HRPosition | undefined = positions?.results?.find(
     (pos: HRPosition) => String(pos.id) === String(employment.position)
