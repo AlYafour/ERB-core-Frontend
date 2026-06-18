@@ -91,6 +91,8 @@ Terms & Conditions:
     terms_and_conditions: defaultTermsAndConditions,
     tax_rate: 0,
     discount: 0,
+    transportation_charge: 0,
+    transport_vat_included: true,
     status: 'pending',
   });
 
@@ -372,11 +374,21 @@ Terms & Conditions:
     return sum + afterDiscount * ((item.tax_rate ?? 0) / 100);
   }, 0), [items]);
 
+  const effectiveVatRate = useMemo(() => {
+    const base = calculateSubtotal || 0;
+    return base > 0 ? calculateTaxAmount / base : 0;
+  }, [calculateSubtotal, calculateTaxAmount]);
+
+  const calculateTransportVat = useMemo(() => {
+    if (!formData.transport_vat_included || !(formData.transportation_charge > 0) || effectiveVatRate <= 0) return 0;
+    return (formData.transportation_charge || 0) * effectiveVatRate;
+  }, [formData.transport_vat_included, formData.transportation_charge, effectiveVatRate]);
+
   const calculateTotal = useMemo(() => {
     const discountAmount = calculateSubtotal * (formData.discount / 100) || 0;
     const afterDiscount = calculateSubtotal - discountAmount;
-    return afterDiscount + calculateTaxAmount;
-  }, [calculateSubtotal, calculateTaxAmount, formData.discount]);
+    return afterDiscount + (formData.transportation_charge || 0) + calculateTaxAmount + calculateTransportVat;
+  }, [calculateSubtotal, calculateTaxAmount, calculateTransportVat, formData.discount, formData.transportation_charge]);
 
   const applyVatToAll = (rate: number) => {
     setItems(items.map((item) => ({ ...item, tax_rate: rate })));
@@ -960,6 +972,27 @@ Terms & Conditions:
                 </div>
               )}
 
+              <div>
+                <label className="form-label">Transportation Charge (AED)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.transportation_charge || ''}
+                  onChange={(e) => setFormData({ ...formData, transportation_charge: parseFloat(e.target.value) || 0 })}
+                  className="form-input"
+                  placeholder="0.00"
+                />
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, cursor: 'pointer', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.transport_vat_included ?? true}
+                    onChange={(e) => setFormData({ ...formData, transport_vat_included: e.target.checked })}
+                  />
+                  Apply VAT on transportation charge
+                </label>
+              </div>
+
               <div className="card" style={{
                 backgroundColor: 'var(--surface-inset)',
                 padding: 'var(--space-4)',
@@ -988,11 +1021,27 @@ Terms & Conditions:
                       </span>
                     </div>
                   )}
+                  {(formData.transportation_charge || 0) > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Transportation:</span>
+                      <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
+                        {formatPrice(formData.transportation_charge || 0)}
+                      </span>
+                    </div>
+                  )}
                   {calculateTaxAmount > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>VAT:</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>VAT (items):</span>
                       <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
                         {formatPrice(calculateTaxAmount)}
+                      </span>
+                    </div>
+                  )}
+                  {calculateTransportVat > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>VAT (transport {Math.round(effectiveVatRate * 100)}%):</span>
+                      <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
+                        {formatPrice(calculateTransportVat)}
                       </span>
                     </div>
                   )}
