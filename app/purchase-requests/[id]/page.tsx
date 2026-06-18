@@ -380,7 +380,7 @@ export default function PurchaseRequestDetailPage() {
             <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', margin: 0 }}>
               {t('section', 'requestedItems')}
             </h3>
-            {request.status === 'pending' && (isSuperAdmin || request.created_by === user?.id) && !addingProduct && (
+            {request.status === 'pending' && (isAdmin || request.created_by === user?.id) && !addingProduct && (
               <Button variant="primary" onClick={() => setAddingProduct(true)}>
                 + {t('btn', 'addProduct')}
               </Button>
@@ -461,7 +461,7 @@ export default function PurchaseRequestDetailPage() {
                   <th>{t('col', 'projectSite')}</th>
                   <th>{t('col', 'purpose')}</th>
                   <th>{t('col', 'notes')}</th>
-                  {(isSuperAdmin || request.created_by === user?.id) && request.status === 'pending' && <th></th>}
+                  {(isAdmin || request.created_by === user?.id) && request.status === 'pending' && <th></th>}
                 </tr>
               </thead>
               <tbody>
@@ -541,10 +541,10 @@ export default function PurchaseRequestDetailPage() {
                         <div style={{ color: 'var(--text-secondary)', maxWidth: '256px' }}>{item.notes || '-'}</div>
                       )}
                     </td>
-                    {(isSuperAdmin || request.created_by === user?.id) && request.status === 'pending' && (
+                    {(isAdmin || request.created_by === user?.id) && request.status === 'pending' && (
                       <td>
                         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                          {isSuperAdmin && (editingItemId === item.id ? (
+                          {isAdmin && (editingItemId === item.id ? (
                             <>
                               <button className="btn btn-primary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
                                 disabled={!editingForm.productId || updateItemMutation.isPending}

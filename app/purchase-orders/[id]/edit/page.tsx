@@ -17,6 +17,7 @@ import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { formatPrice } from '@/lib/utils/format';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { Button, PageHeader, PageShell } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
 
@@ -41,6 +42,7 @@ function EditPurchaseOrderPageContent() {
   const id = Number(params.id);
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['purchase-orders', id],
@@ -226,9 +228,9 @@ function EditPurchaseOrderPageContent() {
     );
   }
 
-  const isSuperAdmin = !!(user?.is_superuser || user?.is_staff);
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
 
-  if ((order.status === 'approved' || order.status === 'completed') && !isSuperAdmin) {
+  if ((order.status === 'approved' || order.status === 'completed') && !isAdmin) {
     return (
       <MainLayout>
         <div className="card empty-state">
@@ -322,8 +324,8 @@ function EditPurchaseOrderPageContent() {
               >
                 <option value="draft">{t('status', 'draft')}</option>
                 <option value="pending">{t('status', 'pending')}</option>
-                {isSuperAdmin && <option value="approved">{t('status', 'approved')}</option>}
-                {isSuperAdmin && <option value="completed">{t('status', 'completed')}</option>}
+                {isAdmin && <option value="approved">{t('status', 'approved')}</option>}
+                {isAdmin && <option value="completed">{t('status', 'completed')}</option>}
                 <option value="rejected">{t('status', 'rejected')}</option>
                 <option value="cancelled">{t('status', 'cancelled')}</option>
               </select>
