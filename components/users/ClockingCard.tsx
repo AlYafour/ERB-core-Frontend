@@ -46,7 +46,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
       hrSelfAttendanceApi.checkIn(coords),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance-today', emp?.id] });
-      toast({ title: 'Checked in successfully.' });
+      toast('Checked in successfully.', 'success');
     },
     onError: (err: any) => {
       setGpsError(err?.response?.data?.detail ?? 'Check-in failed. Please try again.');
@@ -59,7 +59,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
       hrSelfAttendanceApi.checkOut(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance-today', emp?.id] });
-      toast({ title: 'Checked out successfully.' });
+      toast('Checked out successfully.', 'success');
     },
     onError: (err: any) => {
       setGpsError(err?.response?.data?.detail ?? 'Check-out failed. Please try again.');
