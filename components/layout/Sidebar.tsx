@@ -200,7 +200,7 @@ export default function Sidebar() {
   const { data: tenantData } = useTenantInfo();
   const { data: brandingData } = useTenantBranding();
 
-  const isAdmin = !!(user?.role === 'admin' || user?.role === 'super_admin' || user?.is_staff || user?.is_superuser);
+  const isAdmin = !!(user?.role === 'admin' || user?.is_superuser || isPlatformAdmin);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 

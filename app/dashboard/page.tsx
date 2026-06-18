@@ -20,6 +20,7 @@ import dynamic from 'next/dynamic';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { useT } from '@/lib/i18n/useT';
 import { useEffect, useMemo } from 'react';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 
 /* ─── Lazy-load chart components — recharts only downloaded when dashboard renders ─ */
 const StatusPieCard       = dynamic(() => import('./charts').then(m => ({ default: m.StatusPieCard })),       { ssr: false });
@@ -111,14 +112,15 @@ function CardSkeleton({ height = 120 }: { height?: number }) {
 export default function DashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
 
   useEffect(() => {
-    if (user && user.role !== 'super_admin' && !user.is_superuser) {
+    if (user && !isTenantAdmin && !isPlatformAdmin) {
       router.push('/purchase-requests');
     }
-  }, [user, router]);
+  }, [user, isTenantAdmin, isPlatformAdmin, router]);
 
-  if (user && user.role !== 'super_admin' && !user.is_superuser) {
+  if (user && !isTenantAdmin && !isPlatformAdmin) {
     return null;
   }
 

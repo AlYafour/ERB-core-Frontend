@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import MainLayout from '@/components/layout/MainLayout';
 import { Loader } from '@/components/ui';
 
@@ -23,6 +24,7 @@ export default function RouteGuard({
   const router = useRouter();
   const { hasPermission, isLoading: permissionsLoading } = usePermissions();
   const { user, isLoading: authLoading } = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -39,7 +41,7 @@ export default function RouteGuard({
       return;
     }
 
-    const hasAccess = hasPermission(
+    const hasAccess = isTenantAdmin || isPlatformAdmin || hasPermission(
       requiredPermission.category,
       requiredPermission.action
     );
@@ -49,7 +51,7 @@ export default function RouteGuard({
     if (!hasAccess && redirectTo) {
       router.push(redirectTo);
     }
-  }, [user, authLoading, permissionsLoading, hasPermission, requiredPermission, redirectTo, router]);
+  }, [user, authLoading, permissionsLoading, isTenantAdmin, isPlatformAdmin, hasPermission, requiredPermission, redirectTo, router]);
 
   // Show loading while checking permissions
   if (authLoading || permissionsLoading || isAuthorized === null) {

@@ -273,7 +273,7 @@ export default function ViolationsPage() {
   const [selectAllPages, setSelectAllPages] = useState(false);
   const [confirmDelete, setConfirmDelete]   = useState(false);
 
-  const isAdmin = user?.role === 'super_admin' || user?.is_superuser || user?.role === 'procurement_manager';
+  const isAdmin = user?.role === 'admin' || !!user?.is_superuser || user?.role === 'procurement_manager';
 
   const { data: stats } = useQuery({
     queryKey: ['violations-stats'],
