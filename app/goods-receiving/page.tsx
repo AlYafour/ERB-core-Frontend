@@ -18,10 +18,7 @@ import StatusTabs from '@/components/ui/StatusTabs';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { GRN_STATUS } from '@/lib/utils/status-colors';
-
-const STATUS_LABEL: Record<string, string> = {
-  draft: 'Draft', partial: 'Partial', completed: 'Completed', cancelled: 'Cancelled',
-};
+import { GRN_LABEL } from '@/lib/constants/status-labels';
 
 const filterFields: FilterField[] = [
   { name: 'status', label: 'Status', type: 'select', group: 'Status',
@@ -76,7 +73,7 @@ export default function GoodsReceivingPage() {
     { key: 'po',    header: 'Purchase Order', render: g => <span style={{ color: 'var(--text-secondary)' }}>{typeof g.purchase_order === 'object' && g.purchase_order ? (g.purchase_order as any).order_number : g.purchase_order_id}</span> },
     { key: 'date',  header: 'Receipt Date',   render: g => <span style={{ color: 'var(--text-secondary)' }}>{new Date(g.receipt_date).toLocaleDateString('en-US')}</span> },
     { key: 'items', header: 'Total Items',    render: g => g.total_items ?? g.items?.length ?? 0 },
-    { key: 'status', header: t('col', 'status'), render: g => <Badge variant={GRN_STATUS[g.status] ?? 'info'}>{STATUS_LABEL[g.status] || g.status}</Badge> },
+    { key: 'status', header: t('col', 'status'), render: g => <Badge variant={GRN_STATUS[g.status] ?? 'info'}>{GRN_LABEL[g.status] || g.status}</Badge> },
     {
       key: 'invoice', header: 'Invoice',
       render: g => <Badge variant={g.invoice_delivery_status === 'delivered' ? 'success' : 'warning'}>{g.invoice_delivery_status === 'delivered' ? 'Delivered' : 'Pending'}</Badge>,

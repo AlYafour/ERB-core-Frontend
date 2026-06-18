@@ -16,12 +16,14 @@ export const PR_STATUS: Record<string, Variant> = {
 };
 
 export const PO_STATUS: Record<string, Variant> = {
-  draft:     'info',
-  pending:   'warning',
-  approved:  'success',
-  rejected:  'error',
-  completed: 'success',
-  cancelled: 'error',
+  draft:               'info',
+  pending:             'warning',
+  approved:            'success',
+  rejected:            'error',
+  completed:           'success',
+  cancelled:           'error',
+  amendment_requested: 'warning',
+  superseded:          'default',
 };
 
 export const PQ_STATUS: Record<string, Variant> = {
@@ -115,4 +117,11 @@ export const PAYMENT_STATUS: Record<string, Variant> = {
   approved:  'info',
   paid:      'success',
   cancelled: 'error',
+};
+
+export const QUALITY_STATUS: Record<string, Variant> = {
+  good:      'success',
+  damaged:   'error',
+  defective: 'error',
+  missing:   'warning',
 };

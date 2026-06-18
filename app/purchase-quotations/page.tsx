@@ -22,10 +22,7 @@ import { useT } from '@/lib/i18n/useT';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { PQ_STATUS } from '@/lib/utils/status-colors';
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: 'Pending', awarded: 'Awarded', rejected: 'Rejected', expired: 'Expired',
-};
+import { PQ_LABEL } from '@/lib/constants/status-labels';
 
 const filterFields: FilterField[] = [
   { name: 'quotation_number',      label: 'Quotation Number',   type: 'text',   group: 'Quotation Info' },
@@ -95,7 +92,7 @@ export default function PurchaseQuotationsPage() {
     { key: 'number', header: t('col', 'quotationNumber'), render: q => <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{q.quotation_number}</span> },
     {
       key: 'status', header: t('col', 'status'),
-      render: q => <Badge variant={PQ_STATUS[q.status ?? 'pending'] ?? 'info'}>{STATUS_LABEL[q.status ?? 'pending'] || q.status}</Badge>,
+      render: q => <Badge variant={PQ_STATUS[q.status ?? 'pending'] ?? 'info'}>{PQ_LABEL[q.status ?? 'pending'] || q.status}</Badge>,
     },
     {
       key: 'pr', header: 'PR',

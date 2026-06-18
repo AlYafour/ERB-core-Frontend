@@ -22,11 +22,7 @@ import { formatPrice } from '@/lib/utils/format';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { PO_STATUS } from '@/lib/utils/status-colors';
-
-const STATUS_LABEL: Record<string, string> = {
-  draft: 'Draft', pending: 'Pending', approved: 'Approved',
-  rejected: 'Rejected', completed: 'Completed', cancelled: 'Cancelled',
-};
+import { PO_LABEL } from '@/lib/constants/status-labels';
 
 export default function PurchaseOrdersPage() {
   const router = useRouter();
@@ -64,7 +60,7 @@ export default function PurchaseOrdersPage() {
     },
     {
       name: 'status', label: 'Status', type: 'select', group: 'Status',
-      options: Object.entries(STATUS_LABEL).map(([v, l]) => ({ value: v, label: l })),
+      options: Object.entries(PO_LABEL).map(([v, l]) => ({ value: v, label: l })),
     },
     { name: 'order_date_after',  label: 'Order Date From', type: 'date',   group: 'Dates' },
     { name: 'order_date_before', label: 'Order Date To',   type: 'date',   group: 'Dates' },
@@ -171,7 +167,7 @@ export default function PurchaseOrdersPage() {
     },
     {
       key: 'status', header: t('col', 'status'),
-      render: o => <Badge variant={PO_STATUS[o.status] ?? 'info'}>{STATUS_LABEL[o.status] || o.status}</Badge>,
+      render: o => <Badge variant={PO_STATUS[o.status] ?? 'info'}>{PO_LABEL[o.status] || o.status}</Badge>,
     },
     {
       key: 'actions', header: '',

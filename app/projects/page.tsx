@@ -17,10 +17,7 @@ import BilingualName from '@/components/domain/BilingualName';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { PROJECT_STATUS } from '@/lib/utils/status-colors';
-
-const STATUS_LABEL: Record<string, string> = {
-  on_going: 'On Going', completed: 'Completed', on_hold: 'On Hold', cancelled: 'Cancelled',
-};
+import { PROJECT_LABEL } from '@/lib/constants/status-labels';
 
 export default function ProjectsPage() {
   const tableState = useTableState();
@@ -129,7 +126,7 @@ export default function ProjectsPage() {
       ),
     },
     { key: 'location', header: 'Location', render: p => <span style={{ color: 'var(--text-secondary)' }}>{p.location || '—'}</span> },
-    { key: 'status',   header: 'Status',   render: p => <Badge variant={PROJECT_STATUS[p.project_status] ?? 'info'}>{STATUS_LABEL[p.project_status] || p.project_status}</Badge> },
+    { key: 'status',   header: 'Status',   render: p => <Badge variant={PROJECT_STATUS[p.project_status] ?? 'info'}>{PROJECT_LABEL[p.project_status] || p.project_status}</Badge> },
     { key: 'active',   header: 'Active',   render: p => <Badge variant={p.is_active ? 'success' : 'error'}>{p.is_active ? 'Yes' : 'No'}</Badge> },
     {
       key: 'actions', header: t('col', 'actions'),

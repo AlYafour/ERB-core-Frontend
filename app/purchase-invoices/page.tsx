@@ -21,16 +21,12 @@ import { PurchaseInvoice } from '@/types';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { INVOICE_STATUS } from '@/lib/utils/status-colors';
-
-const STATUS_LABEL: Record<string, string> = {
-  draft: 'Draft', pending: 'Pending Approval', approved: 'Approved',
-  rejected: 'Rejected', paid: 'Paid', cancelled: 'Cancelled',
-};
+import { INVOICE_LABEL } from '@/lib/constants/status-labels';
 
 const filterFields: FilterField[] = [
   { name: 'invoice_number',       label: 'Invoice Number',    type: 'text',   group: 'Invoice Info' },
   { name: 'status',               label: 'Status',            type: 'select', group: 'Status',
-    options: Object.entries(STATUS_LABEL).map(([v, l]) => ({ value: v, label: l })) },
+    options: Object.entries(INVOICE_LABEL).map(([v, l]) => ({ value: v, label: l })) },
   { name: 'invoice_date_after',   label: 'Invoice Date From', type: 'date',   group: 'Dates' },
   { name: 'invoice_date_before',  label: 'Invoice Date To',   type: 'date',   group: 'Dates' },
   { name: 'due_date_after',       label: 'Due Date From',     type: 'date',   group: 'Dates' },
@@ -103,7 +99,7 @@ export default function PurchaseInvoicesPage() {
     },
     { key: 'date',   header: t('col', 'invoiceDate'),  render: i => <span style={{ color: 'var(--text-secondary)' }}>{fmtDate(i.invoice_date)}</span> },
     { key: 'due',    header: t('col', 'deliveryDate'), render: i => <span style={{ color: 'var(--text-secondary)' }}>{i.due_date ? fmtDate(i.due_date) : '—'}</span> },
-    { key: 'status', header: t('col', 'status'),       render: i => <Badge variant={INVOICE_STATUS[i.status] ?? 'info'}>{STATUS_LABEL[i.status] || i.status}</Badge> },
+    { key: 'status', header: t('col', 'status'),       render: i => <Badge variant={INVOICE_STATUS[i.status] ?? 'info'}>{INVOICE_LABEL[i.status] || i.status}</Badge> },
     { key: 'total',  header: t('col', 'total'),        render: i => <span className="font-semibold">{formatPrice(Number(i.total || 0))}</span> },
     { key: 'paid',   header: t('misc', 'paidAmount'),  render: i => <span>{formatPrice(Number(i.paid_amount || 0))}</span> },
     {
@@ -134,7 +130,7 @@ export default function PurchaseInvoicesPage() {
             <StatusTabs
               options={[
                 { value: 'draft',      label: 'Draft'     },
-                { value: 'pending',    label: 'Pending',  count: pending.invoice },
+                { value: 'pending',    label: 'Pending Approval',  count: pending.invoice },
                 { value: 'approved',   label: 'Approved'  },
                 { value: 'rejected',   label: 'Rejected'  },
                 { value: 'paid',       label: 'Paid'      },
