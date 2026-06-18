@@ -355,7 +355,7 @@ export default function Sidebar() {
             )}
 
             {/* HR */}
-            {showModule('hr') && (
+            {showModule('hr') && (isAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '')) && (
               <>
                 <SectionDivider collapsed={sidebarCollapsed} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>

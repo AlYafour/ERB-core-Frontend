@@ -6,7 +6,8 @@ import { customersApi, Customer } from '@/lib/api/customers';
 import Link from 'next/link';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
-import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
+import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useT } from '@/lib/i18n/useT';
 import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
 import { type FilterField } from '@/components/ui/FilterPanel';
@@ -30,9 +31,11 @@ export default function CustomersPage() {
   const { page, search, filters } = tableState;
 
   const queryClient = useQueryClient();
-  const { user }    = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const { hasPermission } = usePermissions();
   const t           = useT();
-  const isSuperuser = user?.is_superuser ?? false;
+  const isAdmin     = isTenantAdmin || isPlatformAdmin;
+  const canCreate   = isAdmin || (hasPermission('customer', 'create') ?? false);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['customers', page, search, filters],
@@ -83,7 +86,7 @@ export default function CustomersPage() {
       render: c => (
         <div className="flex items-center gap-2">
           <Link href={`/customers/${c.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>
-          {isSuperuser && (
+          {isAdmin && (
             <Button variant="delete" size="sm" onClick={() => handleDelete(c.id)} disabled={deleteMutation.isPending}>
               {t('btn', 'delete')}
             </Button>
@@ -100,7 +103,7 @@ export default function CustomersPage() {
           title={t('nav', 'customers')}
           count={totalCount}
           breadcrumbs={[{ label: 'Customers' }]}
-          actions={<Link href="/customers/new"><Button variant="primary">{t('btn', 'addCustomer')}</Button></Link>}
+          actions={canCreate ? <Link href="/customers/new"><Button variant="primary">{t('btn', 'addCustomer')}</Button></Link> : undefined}
         />
         <TableShell
           tableState={tableState}
@@ -113,8 +116,8 @@ export default function CustomersPage() {
           error={error}
           onRetry={refetch}
           emptyMessage="No customers found."
-          emptyAction={<Link href="/customers/new"><Button variant="primary">{t('btn', 'addCustomer')}</Button></Link>}
-          selectable={isSuperuser}
+          emptyAction={canCreate ? <Link href="/customers/new"><Button variant="primary">{t('btn', 'addCustomer')}</Button></Link> : undefined}
+          selectable={isAdmin}
           totalCount={totalCount}
           paginatedData={data}
           rowStyle={c => c.delete_requested ? { opacity: 0.6 } : undefined}

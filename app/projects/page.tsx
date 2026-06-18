@@ -38,6 +38,7 @@ export default function ProjectsPage() {
   const isAdmin   = isTenantAdmin || isPlatformAdmin;
   const canCreate = isAdmin || (hasPermission('project', 'create') ?? false);
   const canDelete = isAdmin;
+  const canEdit   = isAdmin || (hasPermission('project', 'update') ?? false);
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -133,7 +134,7 @@ export default function ProjectsPage() {
       render: p => (
         <div className="flex gap-2">
           <Link href={`/projects/view/${p.id}`}><Button variant="view" size="sm">View</Button></Link>
-          <Link href={`/projects/${p.id}`}><Button variant="edit" size="sm">Edit</Button></Link>
+          {canEdit && <Link href={`/projects/${p.id}`}><Button variant="edit" size="sm">Edit</Button></Link>}
           {canDelete && <Button variant="delete" size="sm" onClick={() => handleDelete(p.id)} isLoading={deleteMutation.isPending}>{t('btn', 'delete')}</Button>}
         </div>
       ),

@@ -10,6 +10,7 @@ import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
+import { usePermissions } from '@/lib/hooks/use-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
 import { exportToExcel, fetchAllPages } from '@/lib/utils/export-excel';
@@ -39,8 +40,12 @@ export default function SuppliersPage() {
   const queryClient   = useQueryClient();
   const { user }      = useAuth();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const { hasPermission } = usePermissions();
   const t             = useT();
   const isAdmin       = isTenantAdmin || isPlatformAdmin;
+  const canCreate     = isAdmin || (hasPermission('supplier', 'create') ?? false);
+  const canEdit       = isAdmin || (hasPermission('supplier', 'update') ?? false);
+  const canDelete     = isAdmin;
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['suppliers', page, search, filters],
@@ -131,8 +136,8 @@ export default function SuppliersPage() {
       render: s => (
         <div className="flex items-center gap-2">
           <Link href={`/suppliers/view/${s.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>
-          <Link href={`/suppliers/${s.id}`}><Button variant="edit" size="sm">{t('btn', 'edit')}</Button></Link>
-          {isSuperuser && (
+          {canEdit && <Link href={`/suppliers/${s.id}`}><Button variant="edit" size="sm">{t('btn', 'edit')}</Button></Link>}
+          {canDelete && (
             <Button variant="delete" size="sm" onClick={() => handleDelete(s.id)} disabled={deleteMutation.isPending}>
               {t('btn', 'delete')}
             </Button>
@@ -158,7 +163,7 @@ export default function SuppliersPage() {
                   <Button variant="secondary" onClick={() => importFileRef.current?.click()}>⬆ {t('btn', 'import')}</Button>
                 </>
               )}
-              <Link href="/suppliers/new"><Button variant="primary">{t('btn', 'addSupplier')}</Button></Link>
+              {canCreate && <Link href="/suppliers/new"><Button variant="primary">{t('btn', 'addSupplier')}</Button></Link>}
             </div>
           }
         />
