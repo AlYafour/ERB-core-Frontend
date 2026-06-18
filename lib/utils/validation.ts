@@ -141,14 +141,21 @@ export function formatBackendError(error: any): string {
       return data.detail;
     }
     
-    // Handle field errors
+    // Handle field errors — flat: { field: ["msg"] }
+    // or nested item errors: { items: [{ field: ["msg"] }, ...] }
     if (typeof data === 'object') {
-      const firstError = Object.entries(data)[0];
-      if (firstError) {
-        const [field, messages] = firstError;
-        const fieldName = formatFieldName(field);
-        const message = Array.isArray(messages) ? messages[0] : messages;
-        return `${fieldName}: ${message}`;
+      for (const [field, messages] of Object.entries(data)) {
+        if (Array.isArray(messages) && messages.length > 0) {
+          const first = messages[0];
+          if (typeof first === 'string') {
+            return `${formatFieldName(field)}: ${first}`;
+          } else if (typeof first === 'object' && first !== null) {
+            for (const [nk, nv] of Object.entries(first as Record<string, unknown>)) {
+              const msg = Array.isArray(nv) ? nv[0] : nv;
+              return `${formatFieldName(field)}[0].${nk}: ${String(msg)}`;
+            }
+          }
+        }
       }
     }
     
