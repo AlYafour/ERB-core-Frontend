@@ -467,6 +467,14 @@ export default function PurchaseOrderDetailPage() {
                         <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(transportationCharge)}</span>
                       </div>
                     )}
+                    {Number(order.tax_amount) > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>
+                          {Number(order.tax_rate) > 0 ? `Additional Tax (${order.tax_rate}%):` : 'Transport VAT:'}
+                        </span>
+                        <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(Number(order.tax_amount))}</span>
+                      </div>
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-2)', fontSize: 'var(--text-base)' }}>
                       <span style={{ fontWeight: 'var(--weight-bold)' }}>Total:</span>
                       <span style={{ fontWeight: 'var(--weight-bold)' }}>{formatPrice(Number(order.total))}</span>

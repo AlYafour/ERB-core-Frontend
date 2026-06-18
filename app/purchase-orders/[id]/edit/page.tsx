@@ -202,13 +202,22 @@ function EditPurchaseOrderPageContent() {
     return afterDiscount * ((formData.tax_rate ?? 0) / 100) || 0;
   };
 
+  const calculateTransportVat = () => {
+    const transport = Number(formData.transportation_charge) || 0;
+    if (!(formData.transport_vat_included ?? true) || transport <= 0 || (formData.tax_rate ?? 0) > 0) return 0;
+    const subtotal = calculateSubtotal();
+    const vat = calculateItemVAT();
+    if (subtotal <= 0 || vat <= 0) return 0;
+    return transport * (vat / subtotal);
+  };
+
   const calculateTotal = () => {
     const subtotalWithVAT = calculateSubtotal() + calculateItemVAT();
     const discountAmount = subtotalWithVAT * ((formData.discount ?? 0) / 100) || 0;
     const afterDiscount = subtotalWithVAT - discountAmount;
     const orderTax = afterDiscount * ((formData.tax_rate ?? 0) / 100) || 0;
-    const transport = Number(order?.transportation_charge) || 0;
-    return afterDiscount + transport + orderTax;
+    const transport = Number(formData.transportation_charge) || 0;
+    return afterDiscount + transport + orderTax + calculateTransportVat();
   };
 
   if (isLoading) {
@@ -629,10 +638,16 @@ function EditPurchaseOrderPageContent() {
                     <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateTaxAmount())}</span>
                   </div>
                 )}
-                {(Number(order?.transportation_charge) || 0) > 0 && (
+                {(Number(formData.transportation_charge) || 0) > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Transportation:</span>
-                    <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(Number(order?.transportation_charge))}</span>
+                    <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(Number(formData.transportation_charge))}</span>
+                  </div>
+                )}
+                {calculateTransportVat() > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Transport VAT:</span>
+                    <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateTransportVat())}</span>
                   </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-2)', fontSize: 'var(--text-base)' }}>
