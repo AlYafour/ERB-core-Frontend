@@ -98,7 +98,8 @@ export default function PrintLPOPage() {
     const d = s * ((Number(item.discount) || 0) / 100);
     return sum + (s - d) * ((Number(item.tax_rate) || 0) / 100);
   }, 0);
-  const total = subtotal - discount + taxAmount;
+  const transportCharge = Number(po.transportation_charge) || 0;
+  const transportVat    = Number(po.tax_amount) || 0;
 
   const USER_STAMPS: Record<string, string> = {
     abdel: '/stamps/abdo-stamp.svg',
@@ -417,7 +418,7 @@ export default function PrintLPOPage() {
             }}>
               <div style={{ fontSize:'6pt', fontWeight:700, textTransform:'uppercase',
                 letterSpacing:'.6px', color:GREY, marginBottom:3 }}>Amount in Words</div>
-              <div style={{ fontStyle:'italic' }}>{toWords(total)}</div>
+              <div style={{ fontStyle:'italic' }}>{toWords(Number(po.total))}</div>
             </div>
 
             {/* Totals box */}
@@ -442,10 +443,24 @@ export default function PrintLPOPage() {
                   <span style={{ fontWeight:600 }}>AED {fmt(taxAmount)}</span>
                 </div>
               )}
+              {transportCharge > 0 && (
+                <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 12px',
+                  fontSize:'8pt', background:'#fafafa', borderBottom:`1px solid #f1f5f9` }}>
+                  <span style={{ color:GREY }}>Transportation</span>
+                  <span style={{ fontWeight:600 }}>AED {fmt(transportCharge)}</span>
+                </div>
+              )}
+              {transportVat > 0 && (
+                <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 12px',
+                  fontSize:'8pt', background:'#fff', borderBottom:`1px solid #f1f5f9` }}>
+                  <span style={{ color:GREY }}>{Number(po.tax_rate) > 0 ? `Tax (${po.tax_rate}%)` : 'Transport VAT'}</span>
+                  <span style={{ fontWeight:600 }}>AED {fmt(transportVat)}</span>
+                </div>
+              )}
               <div style={{ display:'flex', justifyContent:'space-between',
                 padding:'8px 12px', background:NAVY, color:'#fff', fontSize:'10pt', fontWeight:800 }}>
                 <span>TOTAL</span>
-                <span>AED {fmt(total)}</span>
+                <span>AED {fmt(Number(po.total))}</span>
               </div>
             </div>
           </div>
