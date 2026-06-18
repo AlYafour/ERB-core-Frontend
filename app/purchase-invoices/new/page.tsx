@@ -429,7 +429,7 @@ function NewPurchaseInvoicePageContent() {
                           <input
                             type="number"
                             min="0"
-                            step="0.01"
+                            step="any"
                             value={item.quantity}
                             onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
                             className="form-input" style={{ width: 96 }}

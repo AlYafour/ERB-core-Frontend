@@ -528,7 +528,7 @@ function NewGRNPageContent() {
                           type="number"
                           min="0"
                           max={item.ordered_quantity}
-                          step="0.01"
+                          step="any"
                           value={item.received_quantity}
                           onChange={(e) =>
                             updateItem(index, 'received_quantity', parseFloat(e.target.value) || 0)
@@ -541,7 +541,7 @@ function NewGRNPageContent() {
                           type="number"
                           min="0"
                           max={item.ordered_quantity - item.received_quantity}
-                          step="0.01"
+                          step="any"
                           value={item.rejected_quantity}
                           onChange={(e) =>
                             updateItem(index, 'rejected_quantity', parseFloat(e.target.value) || 0)

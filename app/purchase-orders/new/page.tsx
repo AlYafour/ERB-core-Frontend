@@ -610,7 +610,7 @@ Terms & Conditions:
                 <input
                   type="number"
                   min="0"
-                  step="0.01"
+                  step="any"
                   value={currentItem.quantity || ''}
                   onChange={(e) =>
                     setCurrentItem({ ...currentItem, quantity: parseFloat(e.target.value) || 0 })
@@ -729,7 +729,7 @@ Terms & Conditions:
                               <input
                                 type="number"
                                 min="0"
-                                step="0.01"
+                                step="any"
                                 value={item.quantity}
                                 onChange={(e) =>
                                   handleUpdateItem(index, 'quantity', parseFloat(e.target.value) || 0)

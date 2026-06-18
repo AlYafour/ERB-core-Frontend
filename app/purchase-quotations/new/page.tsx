@@ -678,7 +678,7 @@ function NewPurchaseQuotationPageContent() {
                               <input
                                 type="number"
                                 min="1"
-                                step="0.01"
+                                step="any"
                                 value={item.quantity}
                                 onChange={(e) => handleUpdateItem(index, 'quantity', Number(e.target.value))}
                                 className="form-input"
