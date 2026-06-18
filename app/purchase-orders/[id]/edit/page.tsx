@@ -205,7 +205,8 @@ function EditPurchaseOrderPageContent() {
     const discountAmount = subtotalWithVAT * ((formData.discount ?? 0) / 100) || 0;
     const afterDiscount = subtotalWithVAT - discountAmount;
     const orderTax = afterDiscount * ((formData.tax_rate ?? 0) / 100) || 0;
-    return afterDiscount + orderTax;
+    const transport = Number(order?.transportation_charge) || 0;
+    return afterDiscount + transport + orderTax;
   };
 
   if (isLoading) {
@@ -624,6 +625,12 @@ function EditPurchaseOrderPageContent() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Additional Tax ({formData.tax_rate}%):</span>
                     <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateTaxAmount())}</span>
+                  </div>
+                )}
+                {(Number(order?.transportation_charge) || 0) > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Transportation:</span>
+                    <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(Number(order?.transportation_charge))}</span>
                   </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-2)', fontSize: 'var(--text-base)' }}>

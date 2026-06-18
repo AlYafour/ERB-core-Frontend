@@ -440,7 +440,7 @@ export default function PurchaseOrderDetailPage() {
               return sum + (s - d) * ((Number(item.tax_rate) || 0) / 100);
             }, 0);
             const globalDiscount = Number(order.discount) || 0;
-            const computedTotal = itemsSubtotal - globalDiscount + itemsVat;
+            const transportationCharge = Number(order.transportation_charge) || 0;
             return (
               <DetailCard title="Financial Summary">
                 <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end' }}>
@@ -461,9 +461,15 @@ export default function PurchaseOrderDetailPage() {
                         <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(itemsVat)}</span>
                       </div>
                     )}
+                    {transportationCharge > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Transportation:</span>
+                        <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(transportationCharge)}</span>
+                      </div>
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-2)', fontSize: 'var(--text-base)' }}>
                       <span style={{ fontWeight: 'var(--weight-bold)' }}>Total:</span>
-                      <span style={{ fontWeight: 'var(--weight-bold)' }}>{formatPrice(computedTotal)}</span>
+                      <span style={{ fontWeight: 'var(--weight-bold)' }}>{formatPrice(Number(order.total))}</span>
                     </div>
                   </div>
                 </div>
