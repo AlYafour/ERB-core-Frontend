@@ -9,7 +9,8 @@ import { usersApi } from '@/lib/api/users';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
-import { Button, Badge, PageShell, PageHeader, Drawer } from '@/components/ui';
+import { Button, Badge, PageShell, PageHeader, Drawer, Loader } from '@/components/ui';
+import { rolesApi, Role, UserRoles, AdditionalRoleAssignment } from '@/lib/api/roles';
 import { HREmployee } from '@/types';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -52,7 +53,7 @@ const ROLES = [
 ];
 
 const TABS = [
-  'Profile', 'Bank Accounts', 'Family Info', 'Documents', 'Competencies',
+  'Profile', 'Roles', 'Bank Accounts', 'Family Info', 'Documents', 'Competencies',
   'Insurance', 'Air Ticket', 'Timeoff Setup', 'Assets', 'Projects', 'Contracts',
 ];
 
@@ -86,6 +87,168 @@ function SectionHead({ title, onEdit, isAdmin }: { title: string; onEdit?: () =>
 }
 
 // ── Main Page ──────────────────────────────────────────────────────────────────
+
+// ── Roles Tab ─────────────────────────────────────────────────────────────────
+
+function RolesTab({ empUserId, isAdmin }: { empUserId?: number; isAdmin: boolean }) {
+  const queryClient = useQueryClient();
+
+  const { data: userRoles, isLoading } = useQuery({
+    queryKey: ['user-roles', empUserId],
+    queryFn: () => rolesApi.getUserRoles(empUserId!),
+    enabled: !!empUserId,
+  });
+
+  const { data: allRoles = [] } = useQuery({
+    queryKey: ['roles'],
+    queryFn: () => rolesApi.getAll(),
+    enabled: isAdmin,
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: ({ roleId, roleType }: { roleId: number; roleType: 'primary' | 'additional' }) =>
+      rolesApi.assignToUser(roleId, empUserId!, roleType),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-roles', empUserId] });
+      toast('Role assigned', 'success');
+    },
+    onError: (err: any) => toast(err?.response?.data?.detail ?? 'Failed to assign role', 'error'),
+  });
+
+  const unassignMutation = useMutation({
+    mutationFn: ({ roleId, roleType }: { roleId: number; roleType: 'primary' | 'additional' }) =>
+      rolesApi.unassignFromUser(roleId, empUserId!, roleType),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-roles', empUserId] });
+      toast('Role removed', 'success');
+    },
+    onError: (err: any) => toast(err?.response?.data?.detail ?? 'Failed to remove role', 'error'),
+  });
+
+  if (!empUserId) return <p style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>No linked user account.</p>;
+  if (isLoading) return <Loader />;
+  if (!userRoles) return null;
+
+  const additionalRoleIds = new Set(userRoles.additional_roles.map((a) => a.role.id));
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+
+      {/* Primary role */}
+      <div className="card">
+        <h3 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: 'var(--space-3)' }}>Primary Role</h3>
+        {userRoles.primary_role ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+            <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: userRoles.primary_role.color || 'var(--border-subtle)', flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 500, fontSize: '0.875rem' }}>{userRoles.primary_role.name}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Level {userRoles.primary_role.level} · {userRoles.primary_role.permissions_count} permissions</div>
+            </div>
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                size="sm"
+                style={{ color: 'var(--error)' }}
+                disabled={unassignMutation.isPending}
+                onClick={() => unassignMutation.mutate({ roleId: userRoles.primary_role!.id, roleType: 'primary' })}
+              >
+                Remove
+              </Button>
+            )}
+          </div>
+        ) : (
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>No primary role assigned.</p>
+        )}
+        {isAdmin && (
+          <div style={{ marginTop: 'var(--space-3)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <select
+              className="form-select"
+              style={{ maxWidth: 240 }}
+              defaultValue=""
+              onChange={(e) => {
+                if (!e.target.value) return;
+                assignMutation.mutate({ roleId: Number(e.target.value), roleType: 'primary' });
+                e.target.value = '';
+              }}
+            >
+              <option value="">Set primary role…</option>
+              {allRoles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* Additional roles */}
+      <div className="card">
+        <h3 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: 'var(--space-3)' }}>Additional Roles</h3>
+        {userRoles.additional_roles.length === 0 ? (
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>No additional roles assigned.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            {userRoles.additional_roles.map((assignment) => (
+              <div key={assignment.assignment_id} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--surface-subtle)' }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: assignment.role.color || 'var(--border-subtle)', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 500, fontSize: '0.875rem' }}>{assignment.role.name}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                    Level {assignment.role.level}
+                    {assignment.granted_by && ` · Granted by ${assignment.granted_by}`}
+                  </div>
+                </div>
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    style={{ color: 'var(--error)' }}
+                    disabled={unassignMutation.isPending}
+                    onClick={() => unassignMutation.mutate({ roleId: assignment.role.id, roleType: 'additional' })}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        {isAdmin && (
+          <div style={{ marginTop: 'var(--space-3)' }}>
+            <select
+              className="form-select"
+              style={{ maxWidth: 240 }}
+              defaultValue=""
+              onChange={(e) => {
+                if (!e.target.value) return;
+                assignMutation.mutate({ roleId: Number(e.target.value), roleType: 'additional' });
+                e.target.value = '';
+              }}
+            >
+              <option value="">Add additional role…</option>
+              {allRoles.filter((r) => !additionalRoleIds.has(r.id)).map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* Effective permissions */}
+      {userRoles.effective_permissions.length > 0 && (
+        <div className="card">
+          <h3 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: 'var(--space-3)' }}>
+            Effective Permissions ({userRoles.effective_permissions.length})
+          </h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+            {userRoles.effective_permissions.map((p) => (
+              <span key={p} style={{ fontSize: '0.6875rem', padding: '2px 8px', borderRadius: 4, background: 'var(--surface-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)', fontFamily: 'monospace' }}>
+                {p}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function EmployeeDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -292,7 +455,9 @@ export default function EmployeeDetailPage() {
         </div>
 
         {/* ── Tab content ── */}
-        {activeTab !== 'Profile' ? (
+        {activeTab === 'Roles' ? (
+          <RolesTab empUserId={emp.user?.id} isAdmin={isAdmin} />
+        ) : activeTab !== 'Profile' ? (
           <div className="card empty-state">
             <svg className="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path strokeLinecap="round" strokeLinejoin="round"
