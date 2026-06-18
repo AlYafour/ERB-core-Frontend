@@ -7,6 +7,8 @@ import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
 import { PurchaseOrder, PurchaseOrderItem, PurchaseRequest, Supplier } from '@/types';
 import { fmt, fmtDate, StatusBadge, COMPANY } from '@/components/print/PrintTemplate';
 import Image from 'next/image';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
+import { usePermissions } from '@/lib/hooks/use-permissions';
 
 function toWords(n: number): string {
   if (!n || isNaN(n) || n <= 0) return 'Zero Dirhams Only';
@@ -51,10 +53,15 @@ export default function PrintLPOPage() {
 
   useEffect(() => { setHasToken(!!localStorage.getItem('access_token')); }, []);
 
+  const { hasPermission, isLoading: permsLoading } = usePermissions();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
+  const canView = isAdmin || (hasPermission('purchase_order', 'view') ?? false);
+
   const { data: po, isLoading, isError } = useQuery<PurchaseOrder>({
     queryKey: ['purchase-order', id],
     queryFn: () => purchaseOrdersApi.getById(Number(id)),
-    enabled: hasToken,
+    enabled: hasToken && canView,
     retry: 1,
   });
 
@@ -63,10 +70,11 @@ export default function PrintLPOPage() {
     return () => { document.title = 'ERB Procurement'; };
   }, [po?.order_number]);
 
-  if (!hasToken || isLoading) return (
+  if (!hasToken || isLoading || permsLoading) return (
     <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center',
       fontFamily:'Inter,sans-serif', color:'#888' }}>Loading…</div>
   );
+  if (!canView) return <PrintPermissionDenied />;
   if (isError || !po) return (
     <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center',
       fontFamily:'Inter,sans-serif', color:'#ef4444' }}>
@@ -526,6 +534,19 @@ export default function PrintLPOPage() {
           </div>
 
         </div>
+      </div>
+    </div>
+  );
+}
+
+function PrintPermissionDenied() {
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center',
+      justifyContent: 'center', fontFamily: 'Inter,sans-serif', textAlign: 'center',
+      color: '#374151' }}>
+      <div>
+        <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>Access Denied</div>
+        <div style={{ color: '#6b7280', fontSize: '14px' }}>You don&apos;t have permission to view this document.</div>
       </div>
     </div>
   );

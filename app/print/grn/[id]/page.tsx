@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react';
 import { goodsReceivingApi, GoodsReceivedNote, GRNItem } from '@/lib/api/goods-receiving';
 import { PurchaseOrder, Supplier } from '@/types';
 import Image from 'next/image';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
+import { usePermissions } from '@/lib/hooks/use-permissions';
 import PrintTemplate, {
   SectionTitle, InfoGrid, NotesBox, StatusBadge,
   fmt, fmtDate,
@@ -49,14 +51,20 @@ export default function PrintGRNPage() {
 
   useEffect(() => { setHasToken(!!localStorage.getItem('access_token')); }, []);
 
+  const { hasPermission, isLoading: permsLoading } = usePermissions();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
+  const canView = isAdmin || (hasPermission('goods_receiving', 'view') ?? false);
+
   const { data: grn, isLoading, isError } = useQuery<GoodsReceivedNote>({
     queryKey: ['grn', id],
     queryFn: () => goodsReceivingApi.getById(Number(id)),
-    enabled: hasToken,
+    enabled: hasToken && canView,
     retry: 1,
   });
 
-  if (!hasToken || isLoading) return <PrintLoader />;
+  if (!hasToken || isLoading || permsLoading) return <PrintLoader />;
+  if (!canView) return <PrintPermissionDenied />;
   if (isError || !grn) return <PrintError msg="Goods received note not found. Please make sure you are logged in." />;
 
   const po       = typeof grn.purchase_order === 'object' && grn.purchase_order ? grn.purchase_order as PurchaseOrder : null;
@@ -304,6 +312,18 @@ function PrintError({ msg }: { msg: string }) {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter,sans-serif', color: '#ef4444' }}>
       {msg}
+    </div>
+  );
+}
+function PrintPermissionDenied() {
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center',
+      justifyContent: 'center', fontFamily: 'Inter,sans-serif', textAlign: 'center',
+      color: '#374151' }}>
+      <div>
+        <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>Access Denied</div>
+        <div style={{ color: '#6b7280', fontSize: '14px' }}>You don&apos;t have permission to view this document.</div>
+      </div>
     </div>
   );
 }

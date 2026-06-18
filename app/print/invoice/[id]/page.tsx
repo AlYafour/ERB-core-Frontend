@@ -9,6 +9,8 @@ import PrintTemplate, {
   SectionTitle, InfoGrid, SignatureRow, NotesBox, StatusBadge,
   fmt, fmtDate,
 } from '@/components/print/PrintTemplate';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
+import { usePermissions } from '@/lib/hooks/use-permissions';
 
 const NAVY   = '#1a1a2e';
 const ORANGE = '#f97316';
@@ -43,14 +45,20 @@ export default function PrintInvoicePage() {
 
   useEffect(() => { setHasToken(!!localStorage.getItem('access_token')); }, []);
 
+  const { hasPermission, isLoading: permsLoading } = usePermissions();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
+  const canView = isAdmin || (hasPermission('purchase_invoice', 'view') ?? false);
+
   const { data: invoice, isLoading, isError } = useQuery<PurchaseInvoice>({
     queryKey: ['purchase-invoice', id],
     queryFn: () => purchaseInvoicesApi.getById(Number(id)),
-    enabled: hasToken,
+    enabled: hasToken && canView,
     retry: 1,
   });
 
-  if (!hasToken || isLoading) return <PrintLoader />;
+  if (!hasToken || isLoading || permsLoading) return <PrintLoader />;
+  if (!canView) return <PrintPermissionDenied />;
   if (isError || !invoice) return <PrintError msg="Purchase invoice not found. Please make sure you are logged in." />;
 
   const po       = typeof invoice.purchase_order === 'object' && invoice.purchase_order ? invoice.purchase_order as PurchaseOrder : null;
@@ -299,6 +307,18 @@ function PrintError({ msg }: { msg: string }) {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter,sans-serif', color: '#ef4444' }}>
       {msg}
+    </div>
+  );
+}
+function PrintPermissionDenied() {
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center',
+      justifyContent: 'center', fontFamily: 'Inter,sans-serif', textAlign: 'center',
+      color: '#374151' }}>
+      <div>
+        <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>Access Denied</div>
+        <div style={{ color: '#6b7280', fontSize: '14px' }}>You don&apos;t have permission to view this document.</div>
+      </div>
     </div>
   );
 }
