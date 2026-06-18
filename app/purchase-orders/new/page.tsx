@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
@@ -23,6 +23,7 @@ import { canCreatePurchaseOrder } from '@/lib/utils/workflow-guards';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { useT } from '@/lib/i18n/useT';
+import { usePOFormTotals } from '@/lib/hooks/use-po-form-totals';
 
 export default function NewPurchaseOrderPage() {
   return (
@@ -353,34 +354,7 @@ Terms & Conditions:
     mutation.mutate(payload);
   };
 
-  const calculateSubtotal = useMemo(() => items.reduce((sum, item) => {
-    const itemSubtotal = item.quantity * item.unit_price;
-    const discountAmount = itemSubtotal * ((item.discount ?? 0) / 100) || 0;
-    return sum + itemSubtotal - discountAmount;
-  }, 0), [items]);
-
-  const calculateTaxAmount = useMemo(() => items.reduce((sum, item) => {
-    const itemSubtotal = item.quantity * item.unit_price;
-    const discountAmount = itemSubtotal * ((item.discount ?? 0) / 100) || 0;
-    const afterDiscount = itemSubtotal - discountAmount;
-    return sum + afterDiscount * ((item.tax_rate ?? 0) / 100);
-  }, 0), [items]);
-
-  const effectiveVatRate = useMemo(() => {
-    const base = calculateSubtotal || 0;
-    return base > 0 ? calculateTaxAmount / base : 0;
-  }, [calculateSubtotal, calculateTaxAmount]);
-
-  const calculateTransportVat = useMemo(() => {
-    if (!formData.transport_vat_included || !(formData.transportation_charge > 0) || effectiveVatRate <= 0) return 0;
-    return (formData.transportation_charge || 0) * effectiveVatRate;
-  }, [formData.transport_vat_included, formData.transportation_charge, effectiveVatRate]);
-
-  const calculateTotal = useMemo(() => {
-    const discountAmount = calculateSubtotal * (formData.discount / 100) || 0;
-    const afterDiscount = calculateSubtotal - discountAmount;
-    return afterDiscount + (formData.transportation_charge || 0) + calculateTaxAmount + calculateTransportVat;
-  }, [calculateSubtotal, calculateTaxAmount, calculateTransportVat, formData.discount, formData.transportation_charge]);
+  const totals = usePOFormTotals(formData, items);
 
   const applyVatToAll = (rate: number) => {
     setItems(items.map((item) => ({ ...item, tax_rate: rate })));
@@ -1002,14 +976,14 @@ Terms & Conditions:
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Subtotal:</span>
                     <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
-                      {formatPrice(calculateSubtotal)}
+                      {formatPrice(totals.subtotal)}
                     </span>
                   </div>
                   {formData.discount > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Discount ({formData.discount}%):</span>
                       <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--color-error)' }}>
-                        - {formatPrice(calculateSubtotal * (formData.discount / 100) || 0)}
+                        - {formatPrice((totals.subtotal + totals.itemVat) * (formData.discount / 100) || 0)}
                       </span>
                     </div>
                   )}
@@ -1021,19 +995,27 @@ Terms & Conditions:
                       </span>
                     </div>
                   )}
-                  {calculateTaxAmount > 0 && (
+                  {totals.itemVat > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>VAT (items):</span>
                       <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
-                        {formatPrice(calculateTaxAmount)}
+                        {formatPrice(totals.itemVat)}
                       </span>
                     </div>
                   )}
-                  {calculateTransportVat > 0 && (
+                  {totals.taxAmount > 0 && (formData.tax_rate || 0) === 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>VAT (transport {Math.round(effectiveVatRate * 100)}%):</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>VAT (transport {Math.round(totals.effectiveVatRate * 100)}%):</span>
                       <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
-                        {formatPrice(calculateTransportVat)}
+                        {formatPrice(totals.taxAmount)}
+                      </span>
+                    </div>
+                  )}
+                  {totals.taxAmount > 0 && (formData.tax_rate || 0) > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Additional Tax ({formData.tax_rate}%):</span>
+                      <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
+                        {formatPrice(totals.taxAmount)}
                       </span>
                     </div>
                   )}
@@ -1046,7 +1028,7 @@ Terms & Conditions:
                   }}>
                     <span style={{ fontWeight: 'var(--weight-bold)', color: 'var(--text-primary)' }}>Total:</span>
                     <span style={{ fontWeight: 'var(--weight-bold)', color: 'var(--text-primary)' }}>
-                      {formatPrice(calculateTotal)}
+                      {formatPrice(totals.total)}
                     </span>
                   </div>
                 </div>

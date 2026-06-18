@@ -13,6 +13,7 @@ import DetailCard, { DetailField } from '@/components/ui/DetailCard';
 import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
 import { PO_STATUS } from '@/lib/utils/status-colors';
 import { PO_LABEL } from '@/lib/constants/status-labels';
+import { poItemBreakdown } from '@/lib/utils/po-item-totals';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -405,16 +406,7 @@ export default function PurchaseOrderDetailPage() {
 
           {/* Financial Summary */}
           {(() => {
-            const itemsSubtotal = order.items.reduce((sum, item) => {
-              const s = Number(item.quantity) * Number(item.unit_price);
-              const d = s * ((Number(item.discount) || 0) / 100);
-              return sum + s - d;
-            }, 0);
-            const itemsVat = order.items.reduce((sum, item) => {
-              const s = Number(item.quantity) * Number(item.unit_price);
-              const d = s * ((Number(item.discount) || 0) / 100);
-              return sum + (s - d) * ((Number(item.tax_rate) || 0) / 100);
-            }, 0);
+            const { itemsSubtotal, itemsVat } = poItemBreakdown(order.items);
             const globalDiscount = Number(order.discount) || 0;
             const transportationCharge = Number(order.transportation_charge) || 0;
             return (

@@ -20,6 +20,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { Button, PageHeader, PageShell } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
+import { usePOFormTotals } from '@/lib/hooks/use-po-form-totals';
 
 export default function EditPurchaseOrderPage() {
   const params = useParams();
@@ -179,46 +180,7 @@ function EditPurchaseOrderPageContent() {
     mutation.mutate(formData);
   };
 
-  const calculateSubtotal = () => {
-    return items.reduce((sum, item) => {
-      const base = item.quantity * item.unit_price;
-      const disc = base * ((item.discount ?? 0) / 100);
-      return sum + base - disc;
-    }, 0);
-  };
-
-  const calculateItemVAT = () => {
-    return items.reduce((sum, item) => {
-      const base = item.quantity * item.unit_price;
-      const disc = base * ((item.discount ?? 0) / 100);
-      return sum + (base - disc) * ((item.tax_rate ?? 0) / 100);
-    }, 0);
-  };
-
-  const calculateTaxAmount = () => {
-    const subtotalWithVAT = calculateSubtotal() + calculateItemVAT();
-    const discountAmount = subtotalWithVAT * ((formData.discount ?? 0) / 100) || 0;
-    const afterDiscount = subtotalWithVAT - discountAmount;
-    return afterDiscount * ((formData.tax_rate ?? 0) / 100) || 0;
-  };
-
-  const calculateTransportVat = () => {
-    const transport = Number(formData.transportation_charge) || 0;
-    if (!(formData.transport_vat_included ?? true) || transport <= 0 || (formData.tax_rate ?? 0) > 0) return 0;
-    const subtotal = calculateSubtotal();
-    const vat = calculateItemVAT();
-    if (subtotal <= 0 || vat <= 0) return 0;
-    return transport * (vat / subtotal);
-  };
-
-  const calculateTotal = () => {
-    const subtotalWithVAT = calculateSubtotal() + calculateItemVAT();
-    const discountAmount = subtotalWithVAT * ((formData.discount ?? 0) / 100) || 0;
-    const afterDiscount = subtotalWithVAT - discountAmount;
-    const orderTax = afterDiscount * ((formData.tax_rate ?? 0) / 100) || 0;
-    const transport = Number(formData.transportation_charge) || 0;
-    return afterDiscount + transport + orderTax + calculateTransportVat();
-  };
+  const totals = usePOFormTotals(formData, items);
 
   if (isLoading) {
     return (
@@ -618,24 +580,24 @@ function EditPurchaseOrderPageContent() {
               <div className="card" style={{ backgroundColor: 'var(--surface-subtle)', padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                   <span style={{ color: 'var(--text-secondary)' }}>Subtotal:</span>
-                  <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateSubtotal())}</span>
+                  <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(totals.subtotal)}</span>
                 </div>
-                {calculateItemVAT() > 0 && (
+                {totals.itemVat > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>VAT:</span>
-                    <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateItemVAT())}</span>
+                    <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(totals.itemVat)}</span>
                   </div>
                 )}
                 {(formData.discount ?? 0) > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Discount:</span>
-                    <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-danger)' }}>-{formatPrice((calculateSubtotal() + calculateItemVAT()) * ((formData.discount ?? 0) / 100))}</span>
+                    <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-danger)' }}>-{formatPrice((totals.subtotal + totals.itemVat) * ((formData.discount ?? 0) / 100))}</span>
                   </div>
                 )}
                 {(formData.tax_rate ?? 0) > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Additional Tax ({formData.tax_rate}%):</span>
-                    <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateTaxAmount())}</span>
+                    <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(totals.taxAmount)}</span>
                   </div>
                 )}
                 {(Number(formData.transportation_charge) || 0) > 0 && (
@@ -644,15 +606,15 @@ function EditPurchaseOrderPageContent() {
                     <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(Number(formData.transportation_charge))}</span>
                   </div>
                 )}
-                {calculateTransportVat() > 0 && (
+                {totals.taxAmount > 0 && (formData.tax_rate ?? 0) === 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Transport VAT:</span>
-                    <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(calculateTransportVat())}</span>
+                    <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(totals.taxAmount)}</span>
                   </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-2)', fontSize: 'var(--text-base)' }}>
                   <span style={{ fontWeight: 'var(--weight-bold)' }}>Total:</span>
-                  <span style={{ fontWeight: 'var(--weight-bold)' }}>{formatPrice(calculateTotal())}</span>
+                  <span style={{ fontWeight: 'var(--weight-bold)' }}>{formatPrice(totals.total)}</span>
                 </div>
               </div>
             </div>

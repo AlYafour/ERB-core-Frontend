@@ -9,6 +9,7 @@ import { fmt, fmtDate, StatusBadge, COMPANY } from '@/components/print/PrintTemp
 import Image from 'next/image';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
+import { poItemBreakdown } from '@/lib/utils/po-item-totals';
 
 function toWords(n: number): string {
   if (!n || isNaN(n) || n <= 0) return 'Zero Dirhams Only';
@@ -87,17 +88,7 @@ export default function PrintLPOPage() {
   const discount   = Number(po.discount  ?? 0);
   const hasDiscount = discount > 0;
 
-  // Compute from per-item data (backend tax_amount may be 0 if stored with old global tax_rate)
-  const subtotal = po.items.reduce((sum, item) => {
-    const s = Number(item.quantity) * Number(item.unit_price);
-    const d = s * ((Number(item.discount) || 0) / 100);
-    return sum + s - d;
-  }, 0);
-  const taxAmount = po.items.reduce((sum, item) => {
-    const s = Number(item.quantity) * Number(item.unit_price);
-    const d = s * ((Number(item.discount) || 0) / 100);
-    return sum + (s - d) * ((Number(item.tax_rate) || 0) / 100);
-  }, 0);
+  const { itemsSubtotal: subtotal, itemsVat: itemTaxAmount } = poItemBreakdown(po.items);
   const transportCharge = Number(po.transportation_charge) || 0;
   const transportVat    = Number(po.tax_amount) || 0;
 
@@ -435,12 +426,12 @@ export default function PrintLPOPage() {
                   <span style={{ fontWeight:600, color:'#dc2626' }}>− AED {fmt(discount)}</span>
                 </div>
               )}
-              {taxAmount > 0 && (
+              {itemTaxAmount > 0 && (
                 <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 12px',
                   fontSize:'8pt', background: hasDiscount ? '#fafafa' : '#fff',
                   borderBottom:`1px solid #f1f5f9` }}>
                   <span style={{ color:GREY }}>VAT</span>
-                  <span style={{ fontWeight:600 }}>AED {fmt(taxAmount)}</span>
+                  <span style={{ fontWeight:600 }}>AED {fmt(itemTaxAmount)}</span>
                 </div>
               )}
               {transportCharge > 0 && (
