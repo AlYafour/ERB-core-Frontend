@@ -12,33 +12,13 @@ import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection
 import DetailCard, { DetailField } from '@/components/ui/DetailCard';
 import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
 import { PO_STATUS } from '@/lib/utils/status-colors';
+import { PO_LABEL } from '@/lib/constants/status-labels';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { canCreateGRN, canCreateInvoice } from '@/lib/utils/workflow-guards';
 
-const statusColors: Record<string, string> = {
-  draft: 'badge-info',
-  pending: 'badge-warning',
-  approved: 'badge-success',
-  rejected: 'badge-error',
-  completed: 'badge-success',
-  cancelled: 'badge-error',
-  amendment_requested: 'badge-warning',
-  superseded: 'badge-neutral',
-};
-
-const statusLabels: Record<string, string> = {
-  draft: 'Draft',
-  pending: 'Pending',
-  approved: 'Approved',
-  rejected: 'Rejected',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-  amendment_requested: 'Amendment Requested',
-  superseded: 'Superseded',
-};
 
 export default function PurchaseOrderDetailPage() {
   const params = useParams();
@@ -179,7 +159,7 @@ export default function PurchaseOrderDetailPage() {
             breadcrumbs={[{ label: 'Purchase Orders', href: '/purchase-orders' }, { label: order.order_number }]}
             actions={
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <Badge variant={PO_STATUS[order.status] ?? 'info'}>{statusLabels[order.status] || order.status}</Badge>
+                <Badge variant={PO_STATUS[order.status] ?? 'info'}>{PO_LABEL[order.status] || order.status}</Badge>
                 <Button variant="secondary" size="sm" onClick={() => window.open(`/print/lpo/${id}`, '_blank')}>Print LPO</Button>
                 {canEdit && (
                   <Link href={`/purchase-orders/${id}/edit`}><Button variant="edit" size="sm">Edit</Button></Link>

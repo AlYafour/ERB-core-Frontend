@@ -12,28 +12,12 @@ import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
 import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection';
 import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
 import { INVOICE_STATUS } from '@/lib/utils/status-colors';
+import { INVOICE_LABEL } from '@/lib/constants/status-labels';
 import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 
-const statusColors: Record<string, string> = {
-  draft: 'badge-info',
-  pending: 'badge-warning',
-  approved: 'badge-success',
-  rejected: 'badge-error',
-  paid: 'badge-success',
-  cancelled: 'badge-error',
-};
-
-const statusLabels: Record<string, string> = {
-  draft: 'Draft',
-  pending: 'Pending Approval',
-  approved: 'Approved',
-  rejected: 'Rejected',
-  paid: 'Paid',
-  cancelled: 'Cancelled',
-};
 
 export default function PurchaseInvoiceDetailPage() {
   const params = useParams();
@@ -120,7 +104,7 @@ export default function PurchaseInvoiceDetailPage() {
           breadcrumbs={[{ label: 'Purchase Invoices', href: '/purchase-invoices' }, { label: invoice.invoice_number }]}
           actions={
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Badge variant={INVOICE_STATUS[invoice.status] ?? 'info'}>{statusLabels[invoice.status] || invoice.status}</Badge>
+              <Badge variant={INVOICE_STATUS[invoice.status] ?? 'info'}>{INVOICE_LABEL[invoice.status] || invoice.status}</Badge>
               <Link href={`/print/invoice/${invoice.id}`} target="_blank">
                 <Button variant="secondary" size="sm">Print</Button>
               </Link>

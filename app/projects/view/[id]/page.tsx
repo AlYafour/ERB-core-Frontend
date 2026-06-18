@@ -3,25 +3,14 @@
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { projectsApi } from '@/lib/api/projects';
-import { PageShell } from '@/components/ui';
+import { Badge, PageShell } from '@/components/ui';
+import { PROJECT_STATUS } from '@/lib/utils/status-colors';
+import { PROJECT_LABEL } from '@/lib/constants/status-labels';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import EntityHeader from '@/components/ui/EntityHeader';
 import { useAuth } from '@/lib/hooks/use-auth';
 
-const statusColors: Record<string, string> = {
-  on_going: 'badge-warning',
-  completed: 'badge-success',
-  on_hold: 'badge-info',
-  cancelled: 'badge-error',
-};
-
-const statusLabels: Record<string, string> = {
-  on_going: 'On Going',
-  completed: 'Completed',
-  on_hold: 'On Hold',
-  cancelled: 'Cancelled',
-};
 
 function Field({ label, value, mono, full }: { label: string; value?: string | null; mono?: boolean; full?: boolean }) {
   return (
@@ -67,15 +56,6 @@ export default function ProjectDetailPage() {
     );
   }
 
-  const getStatusVariant = (): 'success' | 'error' | 'warning' | 'info' => {
-    switch (project.project_status) {
-      case 'completed': return 'success';
-      case 'cancelled': return 'error';
-      case 'on_going':  return 'warning';
-      default:          return 'info';
-    }
-  };
-
   const fmt = (dt: string) =>
     new Date(dt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -88,8 +68,8 @@ export default function ProjectDetailPage() {
           image={project.image_url || project.image}
           imageAlt={project.name}
           entityType="project"
-          statusBadge={statusLabels[project.project_status] || project.project_status}
-          statusVariant={getStatusVariant()}
+          statusBadge={PROJECT_LABEL[project.project_status] || project.project_status}
+          statusVariant={PROJECT_STATUS[project.project_status] ?? 'info'}
           backHref="/projects"
           backLabel="Back to Projects"
           actions={
@@ -126,15 +106,15 @@ export default function ProjectDetailPage() {
             <div className="info-grid">
               <div>
                 <div className="info-label">Project Status</div>
-                <span className={`badge ${statusColors[project.project_status] || 'badge-info'}`}>
-                  {statusLabels[project.project_status] || project.project_status}
-                </span>
+                <Badge variant={PROJECT_STATUS[project.project_status] ?? 'info'}>
+                  {PROJECT_LABEL[project.project_status] || project.project_status}
+                </Badge>
               </div>
               <div>
                 <div className="info-label">Active</div>
-                <span className={`badge ${project.is_active ? 'badge-success' : 'badge-error'}`}>
+                <Badge variant={project.is_active ? 'success' : 'error'}>
                   {project.is_active ? 'Yes' : 'No'}
-                </span>
+                </Badge>
               </div>
               {project.created_at && <Field label="Created" value={fmt(project.created_at)} />}
               {project.updated_at && <Field label="Last Updated" value={fmt(project.updated_at)} />}

@@ -13,23 +13,11 @@ import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
-import { Button, PageShell } from '@/components/ui';
+import { Button, Badge, PageShell } from '@/components/ui';
+import { QUALITY_STATUS } from '@/lib/utils/status-colors';
 import Image from 'next/image';
 import { useT } from '@/lib/i18n/useT';
 
-const statusColors: Record<string, string> = {
-  draft: 'badge-info',
-  partial: 'badge-warning',
-  completed: 'badge-success',
-  cancelled: 'badge-error',
-};
-
-const qualityStatusColors: Record<string, string> = {
-  good: 'badge-success',
-  damaged: 'badge-error',
-  defective: 'badge-error',
-  missing: 'badge-warning',
-};
 
 export default function GRNDetailPage() {
   const params = useParams();
@@ -38,12 +26,6 @@ export default function GRNDetailPage() {
   const queryClient = useQueryClient();
   const { hasPermission } = usePermissions();
   const t = useT();
-  const statusLabels: Record<string, string> = {
-    draft: t('status', 'draft'),
-    partial: t('status', 'partial'),
-    completed: t('status', 'completed'),
-    cancelled: t('status', 'cancelled'),
-  };
   const qualityStatusLabels: Record<string, string> = {
     good: t('status', 'good'),
     damaged: t('status', 'damaged'),
@@ -317,11 +299,11 @@ export default function GRNDetailPage() {
                   {t('col', 'invoiceDelivery')}
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                  <span className={`badge ${grn.invoice_delivery_status === 'delivered' ? 'badge-success' : 'badge-warning'}`}>
+                  <Badge variant={grn.invoice_delivery_status === 'delivered' ? 'success' : 'warning'}>
                     {grn.invoice_delivery_status === 'delivered' 
                       ? t('status', 'delivered')
                       : t('status', 'notDelivered')}
-                  </span>
+                  </Badge>
                   {grn.invoice_delivery_status === 'not_delivered' && canMarkInvoice && (
                     <Button
                       variant="primary"
@@ -395,9 +377,9 @@ export default function GRNDetailPage() {
                         <div style={{ color: 'var(--color-error)' }}>{item.rejected_quantity}</div>
                       </td>
                       <td>
-                        <span className={`badge ${qualityStatusColors[item.quality_status] || 'badge-info'}`}>
+                        <Badge variant={QUALITY_STATUS[item.quality_status] ?? 'info'}>
                           {qualityStatusLabels[item.quality_status] || item.quality_status}
-                        </span>
+                        </Badge>
                       </td>
                       <td>
                         <div style={{ 

@@ -17,25 +17,12 @@ import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { canAwardQuotation, canCreatePurchaseOrder } from '@/lib/utils/workflow-guards';
 import { useT } from '@/lib/i18n/useT';
 
-const statusColors: Record<string, string> = {
-  pending: 'badge-warning',
-  awarded: 'badge-success',
-  rejected: 'badge-error',
-  expired: 'badge-info',
-};
-
 export default function PurchaseQuotationDetailPage() {
   const t = useT();
   const params = useParams();
   const router = useRouter();
   const id = Number(params.id);
 
-  const statusLabels: Record<string, string> = {
-    pending: t('status', 'pending'),
-    awarded: t('status', 'awarded'),
-    rejected: t('status', 'rejected'),
-    expired: t('status', 'expired'),
-  };
   const queryClient = useQueryClient();
   const { data: quotation, isLoading } = useQuery({
     queryKey: ['purchase-quotations', id],

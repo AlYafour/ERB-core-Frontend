@@ -21,12 +21,6 @@ import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import ProductSelector from '@/components/features/ProductSelector';
 import { Product } from '@/types';
 
-const statusColors: Record<string, string> = {
-  pending: 'badge-warning',
-  approved: 'badge-success',
-  rejected: 'badge-error',
-};
-
 export default function PurchaseRequestDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -35,11 +29,6 @@ export default function PurchaseRequestDetailPage() {
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const { hasPermission } = usePermissions();
   const t = useT();
-  const statusLabels: Record<string, string> = {
-    pending: t('status', 'pending'),
-    approved: t('status', 'approved'),
-    rejected: t('status', 'rejected'),
-  };
 
   const { user } = useAuth();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
