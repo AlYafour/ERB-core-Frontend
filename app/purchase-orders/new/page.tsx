@@ -22,6 +22,7 @@ import { formatBackendError, validateRequired, validatePositiveNumber, validateD
 import { canCreatePurchaseOrder } from '@/lib/utils/workflow-guards';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { useT } from '@/lib/i18n/useT';
 
 export default function NewPurchaseOrderPage() {
@@ -42,6 +43,7 @@ function NewPurchaseOrderPageContent() {
   const purchaseRequestId = searchParams.get('purchase_request_id');
   const purchaseQuotationId = searchParams.get('purchase_quotation_id');
   const { user } = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
 
   // PO must always originate from a PR or PQ — no standalone PO creation allowed
   if (!purchaseRequestId && !purchaseQuotationId) {
@@ -49,9 +51,8 @@ function NewPurchaseOrderPageContent() {
     return null;
   }
 
-  // Only Procurement Officer and Super Admin can create Purchase Order
-  // Procurement Manager should NOT be able to create Purchase Order
-  if (user && user.role !== 'procurement_officer' && user.role !== 'super_admin' && !user.is_superuser) {
+  // Only Procurement Officer and Admins can create Purchase Order
+  if (user && user.role !== 'procurement_officer' && !isTenantAdmin && !isPlatformAdmin) {
     router.push('/purchase-orders');
     return null;
   }

@@ -9,6 +9,7 @@ import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
 import { RowActions } from '@/components/ui/RowActions';
@@ -42,9 +43,10 @@ export default function GoodsReceivingPage() {
   const { user }       = useAuth();
   const t              = useT();
   const { hasPermission } = usePermissions();
-  const isSuperuser = user?.is_superuser ?? false;
-  const canCreate   = isSuperuser || (hasPermission('goods_receiving', 'create') ?? false);
-  const canDelete   = isSuperuser;
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin     = isTenantAdmin || isPlatformAdmin;
+  const canCreate   = isAdmin || (hasPermission('goods_receiving', 'create') ?? false);
+  const canDelete   = isAdmin;
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['grns', page, search, filters],

@@ -13,6 +13,7 @@ import { confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
 import { Button, Badge, PageHeader, PageShell, TableShell, type RowAction, type Column } from '@/components/ui';
@@ -40,13 +41,13 @@ export default function PurchaseRequestsPage() {
   const { user }       = useAuth();
   const t              = useT();
   const { hasPermission } = usePermissions();
-  const isSuperuser = user?.is_superuser ?? false;
-  const isAdmin     = user?.role === 'super_admin' || user?.is_staff;
-  const canCreate   = isSuperuser || (hasPermission('purchase_request', 'create') ?? false);
-  const canView     = isSuperuser || (hasPermission('purchase_request', 'view') ?? false);
-  const canDelete   = isSuperuser;
-  const canApprove  = isSuperuser || ((hasPermission('purchase_request', 'approve') ?? false) && user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
-  const canReject   = isSuperuser || ((hasPermission('purchase_request', 'reject') ?? false) && user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin     = isTenantAdmin || isPlatformAdmin;
+  const canCreate   = isAdmin || (hasPermission('purchase_request', 'create') ?? false);
+  const canView     = isAdmin || (hasPermission('purchase_request', 'view') ?? false);
+  const canDelete   = isAdmin;
+  const canApprove  = isAdmin || ((hasPermission('purchase_request', 'approve') ?? false) && user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
+  const canReject   = isAdmin || ((hasPermission('purchase_request', 'reject') ?? false) && user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
 
   const { data: projectsData } = useQuery({
     queryKey: ['projects-for-filter'],

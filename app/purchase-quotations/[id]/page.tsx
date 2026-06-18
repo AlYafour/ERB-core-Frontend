@@ -14,6 +14,7 @@ import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { canAwardQuotation, canCreatePurchaseOrder } from '@/lib/utils/workflow-guards';
 import { useT } from '@/lib/i18n/useT';
 
@@ -72,20 +73,18 @@ export default function PurchaseQuotationDetailPage() {
 
   const { hasPermission } = usePermissions();
   
-  // Permission checks - Superuser has all permissions
-  const isSuperuser = user?.is_superuser ?? false;
-  // Procurement Officer cannot award - only Procurement Manager, Super Admin, and Superuser can award
-  const canAward = isSuperuser || ((hasPermission('purchase_quotation', 'award') ?? false) &&
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
+  // Procurement Officer cannot award - only Procurement Manager and Admins can award
+  const canAward = isAdmin || ((hasPermission('purchase_quotation', 'award') ?? false) &&
                    user?.role !== 'procurement_officer' &&
-                   (user?.role === 'procurement_manager' || user?.role === 'super_admin'));
-  const canReject = isSuperuser || (hasPermission('purchase_quotation', 'reject') ?? false);
-  // Only Procurement Officer, Super Admin, and Superuser can convert awarded quotations to LPO
-  // Procurement Manager should NOT be able to create LPO - this is Procurement Officer's responsibility
-  const canConvert = isSuperuser || 
+                   user?.role === 'procurement_manager');
+  const canReject = isAdmin || (hasPermission('purchase_quotation', 'reject') ?? false);
+  // Only Procurement Officer and Admins can convert awarded quotations to LPO
+  const canConvert = isAdmin ||
                      (hasPermission('purchase_order', 'convert') ?? false) ||
                      (hasPermission('purchase_order', 'create') ?? false) ||
-                     (user?.role === 'procurement_officer') ||
-                     (user?.role === 'super_admin');
+                     (user?.role === 'procurement_officer');
 
   if (isLoading) {
     return (

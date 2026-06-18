@@ -10,6 +10,7 @@ import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { Button, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
 import { RowActions } from '@/components/ui/RowActions';
@@ -32,11 +33,11 @@ export default function QuotationRequestsPage() {
   const { user }    = useAuth();
   const t           = useT();
   const { hasPermission } = usePermissions();
-  const isSuperuser = user?.is_superuser ?? false;
-  const isAdmin     = user?.role === 'super_admin' || user?.is_staff;
-  const canCreate   = isSuperuser || (hasPermission('quotation_request', 'create') ?? false);
-  const canView     = isSuperuser || (hasPermission('quotation_request', 'view') ?? false);
-  const canDelete   = isSuperuser;
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin     = isTenantAdmin || isPlatformAdmin;
+  const canCreate   = isAdmin || (hasPermission('quotation_request', 'create') ?? false);
+  const canView     = isAdmin || (hasPermission('quotation_request', 'view') ?? false);
+  const canDelete   = isAdmin;
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['quotation-requests', page, search, filters],

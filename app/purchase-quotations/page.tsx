@@ -10,6 +10,7 @@ import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
 import StatusTabs from '@/components/ui/StatusTabs';
@@ -56,11 +57,11 @@ export default function PurchaseQuotationsPage() {
   const { user }       = useAuth();
   const t              = useT();
   const { hasPermission } = usePermissions();
-  const isSuperuser = user?.is_superuser ?? false;
-  const isAdmin     = user?.role === 'super_admin' || user?.is_staff;
-  const canCreate   = isSuperuser || (hasPermission('purchase_quotation', 'create') ?? false);
-  const canView     = isSuperuser || (hasPermission('purchase_quotation', 'view') ?? false);
-  const canDelete   = isSuperuser;
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin     = isTenantAdmin || isPlatformAdmin;
+  const canCreate   = isAdmin || (hasPermission('purchase_quotation', 'create') ?? false);
+  const canView     = isAdmin || (hasPermission('purchase_quotation', 'view') ?? false);
+  const canDelete   = isAdmin;
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['purchase-quotations', page, search, filters],

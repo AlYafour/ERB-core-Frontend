@@ -14,6 +14,7 @@ import { getApiError } from '@/lib/utils/error';
 import { canCreateQuotationRequest, canCreatePurchaseOrder } from '@/lib/utils/workflow-guards';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { useT } from '@/lib/i18n/useT';
 import { productsApi } from '@/lib/api/products';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
@@ -44,8 +45,8 @@ export default function PurchaseRequestDetailPage() {
   // Only Procurement Manager, Super Admin, and Superuser can approve/reject
   // Procurement Officer and Site Engineer should NOT be able to approve/reject
   const { user } = useAuth();
-  const isSuperAdmin = !!(user?.is_superuser || user?.is_staff);
-  const isSuperuser = user?.is_superuser ?? false;
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
 
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editingForm, setEditingForm] = useState<{ productId: number; quantity: number; unit: string; reason: string; notes: string }>({ productId: 0, quantity: 1, unit: '', reason: '', notes: '' });
@@ -58,7 +59,7 @@ export default function PurchaseRequestDetailPage() {
   const { data: products } = useQuery({
     queryKey: ['products'],
     queryFn: () => productsApi.getAll({ page: 1, page_size: 200 }),
-    enabled: isSuperAdmin,
+    enabled: isAdmin,
     staleTime: 10 * 60 * 1000,
   });
 
@@ -106,14 +107,14 @@ export default function PurchaseRequestDetailPage() {
   });
 
   const canManageAdditionalOrders =
+    isTenantAdmin ||
     user?.role === 'procurement_manager' ||
-    user?.role === 'super_admin' ||
-    user?.is_platform_admin === true;
-  const canApprove = isSuperuser || ((hasPermission('purchase_request', 'approve') ?? false) && 
-                     user?.role !== 'procurement_officer' && 
+    isPlatformAdmin;
+  const canApprove = isAdmin || ((hasPermission('purchase_request', 'approve') ?? false) &&
+                     user?.role !== 'procurement_officer' &&
                      user?.role !== 'site_engineer');
-  const canReject = isSuperuser || ((hasPermission('purchase_request', 'reject') ?? false) && 
-                    user?.role !== 'procurement_officer' && 
+  const canReject = isAdmin || ((hasPermission('purchase_request', 'reject') ?? false) &&
+                    user?.role !== 'procurement_officer' &&
                     user?.role !== 'site_engineer');
 
   const { data: request, isLoading } = useQuery({

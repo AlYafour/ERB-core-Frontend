@@ -16,6 +16,7 @@ import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 
 const statusColors: Record<string, string> = {
   draft: 'badge-info',
@@ -87,12 +88,13 @@ export default function PurchaseInvoiceDetailPage() {
     },
   });
 
-  const isSuperuser = user?.is_superuser ?? false;
-  const canApprove = isSuperuser || ((hasPermission('purchase_invoice', 'approve') ?? false) &&
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
+  const canApprove = isAdmin || ((hasPermission('purchase_invoice', 'approve') ?? false) &&
     user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
-  const canReject = isSuperuser || ((hasPermission('purchase_invoice', 'reject') ?? false) &&
+  const canReject = isAdmin || ((hasPermission('purchase_invoice', 'reject') ?? false) &&
     user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
-  const canMarkPaid = isSuperuser || (hasPermission('purchase_invoice', 'update') ?? false);
+  const canMarkPaid = isAdmin || (hasPermission('purchase_invoice', 'update') ?? false);
 
   if (isLoading) {
     return (

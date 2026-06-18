@@ -13,6 +13,7 @@ import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { Button, PageShell } from '@/components/ui';
 import Image from 'next/image';
 import { useT } from '@/lib/i18n/useT';
@@ -52,14 +53,12 @@ export default function GRNDetailPage() {
     missing: t('empty', 'notFound'),
   };
   
-  // Check if user can mark invoice as delivered (Procurement Officer or Super Admin)
-  const isSuperuser = user?.is_superuser ?? false;
-  const canMarkInvoice = isSuperuser || 
-    (user?.role === 'procurement_officer' && 
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
+  const canMarkInvoice = isAdmin ||
+    (user?.role === 'procurement_officer' &&
      (hasPermission('goods_receiving', 'update') ?? false));
-  
-  // Check if user can create invoice - Site Engineer should NOT be able to create invoice
-  const canCreateInvoicePerm = isSuperuser || 
+  const canCreateInvoicePerm = isAdmin ||
     ((hasPermission('purchase_invoice', 'create') ?? false) &&
      user?.role !== 'site_engineer');
 

@@ -16,6 +16,7 @@ import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { canCreateGRN, canCreateInvoice } from '@/lib/utils/workflow-guards';
 
 const statusColors: Record<string, string> = {
@@ -131,16 +132,17 @@ export default function PurchaseOrderDetailPage() {
   });
 
   const { hasPermission } = usePermissions();
-  const isSuperuser = user?.is_superuser ?? false;
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
 
-  const canApprove = isSuperuser || ((hasPermission('purchase_order', 'approve') ?? false) &&
+  const canApprove = isAdmin || ((hasPermission('purchase_order', 'approve') ?? false) &&
     user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
-  const canReject = isSuperuser || ((hasPermission('purchase_order', 'reject') ?? false) &&
+  const canReject = isAdmin || ((hasPermission('purchase_order', 'reject') ?? false) &&
     user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
-  const canCancel = isSuperuser || (hasPermission('purchase_order', 'cancel') ?? false);
-  const canUpdate = isSuperuser || (hasPermission('purchase_order', 'update') ?? false);
-  const canCreateGRNPerm = isSuperuser || (hasPermission('goods_receiving', 'create') ?? false);
-  const canCreateInvoicePerm = isSuperuser || (hasPermission('purchase_invoice', 'create') ?? false);
+  const canCancel = isAdmin || (hasPermission('purchase_order', 'cancel') ?? false);
+  const canUpdate = isAdmin || (hasPermission('purchase_order', 'update') ?? false);
+  const canCreateGRNPerm = isAdmin || (hasPermission('goods_receiving', 'create') ?? false);
+  const canCreateInvoicePerm = isAdmin || (hasPermission('purchase_invoice', 'create') ?? false);
 
   const canEdit = order && canUpdate &&
     (order.status === 'draft' || order.status === 'pending' || order.status === 'rejected');
