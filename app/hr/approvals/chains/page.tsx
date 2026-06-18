@@ -5,14 +5,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { hrApprovalsApi, hrEmployeeGroupsApi, hrEmployeesApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import { ROLES } from '@/lib/constants/roles';
 import type { ApprovalPolicy, ApprovalStep, ApproverStrategy, ConditionOperator, EmployeeGroup, HREmployee } from '@/types';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-
-const isAdmin = (user: any) =>
-  !!(user?.role === 'admin' || user?.role === 'super_admin' || user?.is_staff || user?.is_superuser);
 
 const STRATEGIES: { value: ApproverStrategy; label: string }[] = [
   { value: 'DIRECT_MANAGER',   label: 'Direct Manager' },
@@ -730,8 +728,9 @@ function ChainBuilder({
 
 export default function ApprovalChainsPage() {
   const { user } = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const qc = useQueryClient();
-  const admin = isAdmin(user);
+  const admin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
 
   const [filterGroup, setFilterGroup]   = useState<string>('');
   const [filterType,  setFilterType]    = useState<string>('');

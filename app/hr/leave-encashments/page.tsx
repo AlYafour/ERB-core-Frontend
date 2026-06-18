@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { hrLeaveEncashmentsApi, hrLeavePoliciesApi, hrEmployeesApi, hrRequestsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
@@ -348,13 +349,9 @@ export default function LeaveEncashmentsPage() {
   const tableState = useTableState();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const router = useRouter();
-  const isAdmin = !!(
-    user?.role === 'admin' || user?.role === 'super_admin' ||
-    user?.role === 'hr_manager' || user?.role === 'hr_secretary' ||
-    user?.role === 'company_director' ||
-    user?.is_staff || user?.is_superuser
-  );
+  const isAdmin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
 
   const [showNew, setShowNew] = useState(false);
 

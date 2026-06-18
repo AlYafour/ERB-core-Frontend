@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
@@ -46,12 +47,12 @@ export default function ProductsPage() {
   const importFileRef = useRef<HTMLInputElement>(null);
   const queryClient   = useQueryClient();
   const { user }      = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const t             = useT();
   const { hasPermission } = usePermissions();
-  const isSuperuser = user?.is_superuser ?? false;
-  const isAdmin     = isSuperuser || user?.role === 'super_admin' || user?.is_staff;
-  const canCreate   = isSuperuser || (hasPermission('product', 'create') ?? false);
-  const canDelete   = isSuperuser;
+  const isAdmin   = isTenantAdmin || isPlatformAdmin;
+  const canCreate = isAdmin || (hasPermission('product', 'create') ?? false);
+  const canDelete = isAdmin;
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['products', page, search, filters],

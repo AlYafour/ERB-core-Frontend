@@ -7,15 +7,11 @@ import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { hrEmployeesApi, hrEmployeeGroupsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import type { HREmployee, EmployeeGroup } from '@/types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const isAdmin = (user: any) =>
-  !!(user?.role === 'admin' || user?.role === 'super_admin' ||
-     user?.role === 'hr_manager' || user?.role === 'hr_secretary' ||
-     user?.role === 'company_director' ||
-     user?.is_staff || user?.is_superuser);
 
 const hasLogin = (emp: HREmployee): boolean => !!(emp.user?.id);
 const canApprove = (emp: HREmployee): boolean => hasLogin(emp) && emp.is_active;
@@ -26,8 +22,9 @@ type GroupRecord  = { id: number; code: string; name: string } | null;
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function EmployeesPage() {
   const { user: me } = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const router = useRouter();
-  const admin = isAdmin(me);
+  const admin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(me?.role ?? '');
 
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('');

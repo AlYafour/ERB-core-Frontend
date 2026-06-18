@@ -5,12 +5,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { hrEmployeeGroupsApi, hrShiftsApi, hrEmployeesApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import type { EmployeeGroup, HRShift, HREmployee } from '@/types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const isAdmin = (user: any) =>
-  !!(user?.role === 'admin' || user?.role === 'super_admin' || user?.is_staff || user?.is_superuser);
 
 function fmtTime(t: string): string {
   if (!t) return '';
@@ -404,7 +403,8 @@ function GroupModal({
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function EmployeeGroupsPage() {
   const { user: me } = useAuth();
-  const admin = isAdmin(me);
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const admin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(me?.role ?? '');
   const queryClient = useQueryClient();
 
   const [modalGroup, setModalGroup] = useState<EmployeeGroup | null | 'new'>(null);

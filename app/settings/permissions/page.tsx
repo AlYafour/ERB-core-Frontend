@@ -6,6 +6,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { permissionsApi, Permission, PermissionSet, UserPermission } from '@/lib/api/permissions';
 import { usersApi } from '@/lib/api/users';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { PERMISSIONS_QUERY_KEY } from '@/lib/hooks/use-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import { Button, TextField, Checkbox, Loader, Badge, PageShell, PageHeader } from '@/components/ui';
@@ -16,7 +17,8 @@ type ActiveTab = 'sets' | 'users';
 
 export default function PermissionsPage() {
   const { user: currentUser } = useAuth();
-  const isAdmin = currentUser?.role === 'super_admin' || currentUser?.is_staff;
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
   const queryClient = useQueryClient();
   const t = useT();
 

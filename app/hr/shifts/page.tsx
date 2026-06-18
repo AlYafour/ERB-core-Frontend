@@ -5,13 +5,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { hrShiftsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import type { HRShift } from '@/types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-const isAdmin = (user: any) =>
-  !!(user?.role === 'admin' || user?.role === 'super_admin' || user?.is_staff || user?.is_superuser);
 
 const WEEKDAYS = [
   { label: 'Mon', value: 0 },
@@ -310,7 +308,8 @@ function ShiftModal({
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function ShiftsPage() {
   const { user: me } = useAuth();
-  const admin = isAdmin(me);
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const admin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(me?.role ?? '');
   const queryClient = useQueryClient();
 
   const [modalShift, setModalShift] = useState<HRShift | null | 'new'>(null);

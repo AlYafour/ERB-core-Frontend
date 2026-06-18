@@ -7,6 +7,7 @@ import { usersApi } from '@/lib/api/users';
 import { User } from '@/types';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
 import Avatar from '@/components/ui/Avatar';
 import DataTable, { Column } from '@/components/ui/DataTable';
@@ -31,7 +32,8 @@ const sel = 'form-select';
 
 export default function UsersPage() {
   const { user: me } = useAuth();
-  const isAdmin = me?.role === 'super_admin' || me?.is_staff || me?.is_superuser;
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
 
   const { page, setPage, search, handleSearch } = useTableState();
   const [role,   setRole]   = useState('');

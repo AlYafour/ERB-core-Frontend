@@ -8,12 +8,14 @@ import { HRDepartment } from '@/types';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { Button, Loader, PageHeader, SearchInput, Drawer, PageShell } from '@/components/ui';
 
 export default function DepartmentsPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const isAdmin = !!(user?.role === 'admin' || user?.role === 'super_admin' || user?.is_staff || user?.is_superuser);
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
 
   const [search, setSearch]           = useState('');
   const [drawerOpen, setDrawerOpen]   = useState(false);

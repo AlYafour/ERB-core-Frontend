@@ -9,6 +9,7 @@ import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
 import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
@@ -46,8 +47,9 @@ export default function HRRequestsPage() {
 
   const queryClient = useQueryClient();
   const { user }    = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const t           = useT();
-  const isAdmin     = user?.role === 'super_admin' || user?.is_staff || user?.is_superuser;
+  const isAdmin     = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['hr-requests', page, search, filters],

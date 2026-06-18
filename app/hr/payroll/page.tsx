@@ -9,6 +9,7 @@ import { HRPayroll } from '@/types';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
@@ -46,14 +47,10 @@ export default function HRPayrollPage() {
 
   const queryClient = useQueryClient();
   const { user }    = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const router      = useRouter();
   const t           = useT();
-  const isAdmin     = !!(
-    user?.role === 'admin' || user?.role === 'super_admin' ||
-    user?.role === 'hr_manager' || user?.role === 'hr_secretary' ||
-    user?.role === 'company_director' ||
-    user?.is_staff || user?.is_superuser
-  );
+  const isAdmin     = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
   const [showGenerate, setShowGenerate] = useState(false);
 
   const { data, isLoading, error } = useQuery({

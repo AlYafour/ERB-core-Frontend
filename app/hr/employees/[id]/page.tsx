@@ -7,6 +7,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi } from '@/lib/api/hr';
 import { usersApi } from '@/lib/api/users';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import { Button, Badge, PageShell, PageHeader, Drawer } from '@/components/ui';
 import { HREmployee } from '@/types';
@@ -90,7 +91,8 @@ export default function EmployeeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
-  const isAdmin = currentUser?.role === 'super_admin' || currentUser?.is_staff || currentUser?.is_superuser;
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(currentUser?.role ?? '');
 
   const [activeTab,     setActiveTab]     = useState('Profile');
   const [editSection,   setEditSection]   = useState<'personal' | 'professional' | 'contact' | 'legal' | 'salary' | 'account' | null>(null);

@@ -9,6 +9,7 @@ import { HRLocationType, HRLocation, OfficeLocation } from '@/types';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { Button, Badge, Loader, PageHeader, PageShell, SearchInput, Drawer } from '@/components/ui';
 import HRSettingsNav from '@/components/hr/HRSettingsNav';
 
@@ -22,13 +23,9 @@ const tdStyle: React.CSSProperties = { padding: 'var(--space-3) var(--space-4)' 
 export default function HRSettingsLocationsPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const router = useRouter();
-  const isAdmin = !!(
-    user?.role === 'admin' || user?.role === 'super_admin' ||
-    user?.role === 'hr_manager' || user?.role === 'hr_secretary' ||
-    user?.role === 'company_director' ||
-    user?.is_staff || user?.is_superuser
-  );
+  const isAdmin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
 
   const [selectedType,  setSelectedType]  = useState<HRLocationType | null>(null);
   const [searchLoc,     setSearchLoc]     = useState('');

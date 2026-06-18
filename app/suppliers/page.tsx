@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
 import { exportToExcel, fetchAllPages } from '@/lib/utils/export-excel';
@@ -37,9 +38,9 @@ export default function SuppliersPage() {
   const importFileRef = useRef<HTMLInputElement>(null);
   const queryClient   = useQueryClient();
   const { user }      = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const t             = useT();
-  const isSuperuser   = user?.is_superuser ?? false;
-  const isAdmin       = isSuperuser || user?.role === 'super_admin' || user?.is_staff;
+  const isAdmin       = isTenantAdmin || isPlatformAdmin;
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['suppliers', page, search, filters],

@@ -6,16 +6,11 @@ import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { hrPenaltyRulesApi, hrEmployeeGroupsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import type { PenaltyRule, PenaltyTier, PenaltyRuleType, PenaltyPenaltyType, EmployeeGroup } from '@/types';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-
-const isAdmin = (user: any) =>
-  !!(user?.role === 'admin' || user?.role === 'super_admin' ||
-     user?.role === 'hr_manager' || user?.role === 'hr_secretary' ||
-     user?.role === 'company_director' ||
-     user?.is_staff || user?.is_superuser);
 
 const RULE_TYPES: { value: PenaltyRuleType; label: string; color: string; bg: string }[] = [
   { value: 'LATENESS',    label: 'Lateness',    color: '#92400e', bg: '#fef3c7' },
@@ -603,9 +598,10 @@ function RuleBuilder({
 
 export default function PenaltyRulesPage() {
   const { user } = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const router = useRouter();
   const qc = useQueryClient();
-  const admin = isAdmin(user);
+  const admin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
 
   const [filterGroup,    setFilterGroup]   = useState('');
   const [filterType,     setFilterType]    = useState('');
