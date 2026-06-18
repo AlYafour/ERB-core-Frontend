@@ -105,6 +105,8 @@ function EditPurchaseOrderPageContent() {
         terms_and_conditions: (order as any).terms_and_conditions || '',
         tax_rate: order.tax_rate || 0,
         discount: order.discount || 0,
+        transportation_charge: Number(order.transportation_charge) || 0,
+        transport_vat_included: order.transport_vat_included ?? true,
         status: order.status,
       });
       setItems(
