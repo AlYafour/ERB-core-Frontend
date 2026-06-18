@@ -45,7 +45,7 @@ export default function SuppliersPage() {
   const isAdmin       = isTenantAdmin || isPlatformAdmin;
   const canCreate     = isAdmin || (hasPermission('supplier', 'create') ?? false);
   const canEdit       = isAdmin || (hasPermission('supplier', 'update') ?? false);
-  const canDelete     = isAdmin;
+  const canDelete     = isAdmin || (hasPermission('supplier', 'delete') ?? false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['suppliers', page, search, filters],

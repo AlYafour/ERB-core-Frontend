@@ -61,7 +61,7 @@ export default function PurchaseQuotationsPage() {
   const isAdmin     = isTenantAdmin || isPlatformAdmin;
   const canCreate   = isAdmin || (hasPermission('purchase_quotation', 'create') ?? false);
   const canView     = isAdmin || (hasPermission('purchase_quotation', 'view') ?? false);
-  const canDelete   = isAdmin;
+  const canDelete   = isAdmin || (hasPermission('purchase_quotation', 'delete') ?? false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['purchase-quotations', page, search, filters],

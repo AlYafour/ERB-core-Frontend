@@ -37,7 +37,7 @@ export default function QuotationRequestsPage() {
   const isAdmin     = isTenantAdmin || isPlatformAdmin;
   const canCreate   = isAdmin || (hasPermission('quotation_request', 'create') ?? false);
   const canView     = isAdmin || (hasPermission('quotation_request', 'view') ?? false);
-  const canDelete   = isAdmin;
+  const canDelete   = isAdmin || (hasPermission('quotation_request', 'delete') ?? false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['quotation-requests', page, search, filters],

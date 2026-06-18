@@ -94,7 +94,7 @@ export default function PurchaseInvoiceDetailPage() {
     user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
   const canReject = isAdmin || ((hasPermission('purchase_invoice', 'reject') ?? false) &&
     user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
-  const canMarkPaid = isAdmin || (hasPermission('purchase_invoice', 'update') ?? false);
+  const canMarkPaid = isAdmin || (hasPermission('purchase_invoice', 'mark_paid') ?? false);
 
   if (isLoading) {
     return (

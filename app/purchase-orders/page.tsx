@@ -43,7 +43,7 @@ export default function PurchaseOrdersPage() {
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const isAdmin     = isTenantAdmin || isPlatformAdmin;
   const canCreate   = isAdmin || (hasPermission('purchase_order', 'create') ?? false);
-  const canDelete   = isAdmin;
+  const canDelete   = isAdmin || (hasPermission('purchase_order', 'delete') ?? false);
 
   // My POs — separate state so it never appears as a filter chip
   const [isMyPOs, setIsMyPOs] = useState(false);

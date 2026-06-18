@@ -52,7 +52,7 @@ export default function ProductsPage() {
   const { hasPermission } = usePermissions();
   const isAdmin   = isTenantAdmin || isPlatformAdmin;
   const canCreate = isAdmin || (hasPermission('product', 'create') ?? false);
-  const canDelete = isAdmin;
+  const canDelete = isAdmin || (hasPermission('product', 'delete') ?? false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['products', page, search, filters],

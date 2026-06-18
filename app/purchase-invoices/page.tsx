@@ -54,7 +54,7 @@ export default function PurchaseInvoicesPage() {
   const isAdmin     = isTenantAdmin || isPlatformAdmin;
   const canCreate   = isAdmin || (hasPermission('purchase_invoice', 'create') ?? false);
   const canView     = isAdmin || (hasPermission('purchase_invoice', 'view') ?? false);
-  const canDelete   = isAdmin;
+  const canDelete   = isAdmin || (hasPermission('purchase_invoice', 'delete') ?? false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['purchase-invoices', page, search, filters],

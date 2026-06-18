@@ -45,7 +45,7 @@ export default function PurchaseRequestsPage() {
   const isAdmin     = isTenantAdmin || isPlatformAdmin;
   const canCreate   = isAdmin || (hasPermission('purchase_request', 'create') ?? false);
   const canView     = isAdmin || (hasPermission('purchase_request', 'view') ?? false);
-  const canDelete   = isAdmin;
+  const canDelete   = isAdmin || (hasPermission('purchase_request', 'delete') ?? false);
   const canApprove  = isAdmin || ((hasPermission('purchase_request', 'approve') ?? false) && user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
   const canReject   = isAdmin || ((hasPermission('purchase_request', 'reject') ?? false) && user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
 

@@ -46,7 +46,7 @@ export default function GoodsReceivingPage() {
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const isAdmin     = isTenantAdmin || isPlatformAdmin;
   const canCreate   = isAdmin || (hasPermission('goods_receiving', 'create') ?? false);
-  const canDelete   = isAdmin;
+  const canDelete   = isAdmin || (hasPermission('goods_receiving', 'delete') ?? false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['grns', page, search, filters],

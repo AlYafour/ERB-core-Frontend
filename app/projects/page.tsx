@@ -37,7 +37,7 @@ export default function ProjectsPage() {
   const { hasPermission } = usePermissions();
   const isAdmin   = isTenantAdmin || isPlatformAdmin;
   const canCreate = isAdmin || (hasPermission('project', 'create') ?? false);
-  const canDelete = isAdmin;
+  const canDelete = isAdmin || (hasPermission('project', 'delete') ?? false);
   const canEdit   = isAdmin || (hasPermission('project', 'update') ?? false);
 
   const handleExport = async () => {
