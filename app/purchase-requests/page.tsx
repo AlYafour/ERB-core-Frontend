@@ -11,7 +11,6 @@ import Link from 'next/link';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
-import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
@@ -38,7 +37,6 @@ export default function PurchaseRequestsPage() {
   const [rejectingId, setRejectingId]           = useState<number | null>(null);
 
   const queryClient    = useQueryClient();
-  const { user }       = useAuth();
   const t              = useT();
   const { hasPermission } = usePermissions();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
@@ -46,8 +44,8 @@ export default function PurchaseRequestsPage() {
   const canCreate   = isAdmin || (hasPermission('purchase_request', 'create') ?? false);
   const canView     = isAdmin || (hasPermission('purchase_request', 'view') ?? false);
   const canDelete   = isAdmin || (hasPermission('purchase_request', 'delete') ?? false);
-  const canApprove  = isAdmin || ((hasPermission('purchase_request', 'approve') ?? false) && user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
-  const canReject   = isAdmin || ((hasPermission('purchase_request', 'reject') ?? false) && user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
+  const canApprove  = isAdmin || (hasPermission('purchase_request', 'approve') ?? false);
+  const canReject   = isAdmin || (hasPermission('purchase_request', 'reject') ?? false);
 
   const { data: projectsData } = useQuery({
     queryKey: ['projects-for-filter'],

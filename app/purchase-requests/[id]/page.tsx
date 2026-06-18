@@ -41,9 +41,6 @@ export default function PurchaseRequestDetailPage() {
     rejected: t('status', 'rejected'),
   };
 
-  // Permission checks
-  // Only Procurement Manager, Super Admin, and Superuser can approve/reject
-  // Procurement Officer and Site Engineer should NOT be able to approve/reject
   const { user } = useAuth();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const isAdmin = isTenantAdmin || isPlatformAdmin;
@@ -110,12 +107,8 @@ export default function PurchaseRequestDetailPage() {
     isTenantAdmin ||
     user?.role === 'procurement_manager' ||
     isPlatformAdmin;
-  const canApprove = isAdmin || ((hasPermission('purchase_request', 'approve') ?? false) &&
-                     user?.role !== 'procurement_officer' &&
-                     user?.role !== 'site_engineer');
-  const canReject = isAdmin || ((hasPermission('purchase_request', 'reject') ?? false) &&
-                    user?.role !== 'procurement_officer' &&
-                    user?.role !== 'site_engineer');
+  const canApprove = isAdmin || (hasPermission('purchase_request', 'approve') ?? false);
+  const canReject  = isAdmin || (hasPermission('purchase_request', 'reject') ?? false);
 
   const { data: request, isLoading } = useQuery({
     queryKey: ['purchase-requests', id],
@@ -632,8 +625,8 @@ export default function PurchaseRequestDetailPage() {
         {request.status === 'approved' && (
           <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
             {/* Undo Approval - Only for Procurement Manager and Super Admin, and only if no quotation requests or purchase orders exist */}
-            {(canApprove || user?.role === 'super_admin' || user?.is_superuser) && 
-             !request.has_quotation_requests && 
+            {canApprove &&
+             !request.has_quotation_requests &&
              !request.has_purchase_orders && (
               <button
                 onClick={() => undoApprovalMutation.mutate(id)}
@@ -657,9 +650,8 @@ export default function PurchaseRequestDetailPage() {
               </Button>
             )}
 
-            {/* Create Quotation Request / LPO - Only for Procurement Officer and Super Admin (NOT Procurement Manager) */}
             {/* Hide if PR has awarded quotation or purchase orders — unless manager unlocked */}
-            {(user?.role === 'procurement_officer' || user?.role === 'super_admin' || user?.is_superuser) &&
+            {(isAdmin || (hasPermission('quotation_request', 'create') ?? false) || (hasPermission('purchase_order', 'create') ?? false)) &&
              (!request.has_awarded_quotation || request.allow_additional_orders) &&
              (!request.has_purchase_orders || request.allow_additional_orders) && (
               <DropdownButton
@@ -670,9 +662,8 @@ export default function PurchaseRequestDetailPage() {
                     label: t('page', 'newQR'),
                     onClick: () => {
                       const canCreateQR = hasPermission('quotation_request', 'create') ?? false;
-                      // Only Procurement Officer can create Quotation Request
-                      if (user?.role !== 'procurement_officer' && user?.role !== 'super_admin' && !user?.is_superuser) {
-                        toast('Only Procurement Officer can create Quotation Request', 'error');
+                      if (!isAdmin && !(hasPermission('quotation_request', 'create') ?? false)) {
+                        toast('You do not have permission to create a Quotation Request', 'error');
                         return;
                       }
                       // Check if PR has awarded quotation
@@ -696,9 +687,8 @@ export default function PurchaseRequestDetailPage() {
                   {
                     label: t('page', 'newPO'),
                     onClick: async () => {
-                      // Only Procurement Officer can create LPO
-                      if (user?.role !== 'procurement_officer' && user?.role !== 'super_admin' && !user?.is_superuser) {
-                        toast('Only Procurement Officer can create Purchase Order', 'error');
+                      if (!isAdmin && !(hasPermission('purchase_order', 'create') ?? false)) {
+                        toast('You do not have permission to create a Purchase Order', 'error');
                         return;
                       }
                       const guard = canCreatePurchaseOrder(undefined, request.status);

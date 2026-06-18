@@ -14,7 +14,6 @@ import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
 import { INVOICE_STATUS } from '@/lib/utils/status-colors';
 import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
-import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 
@@ -41,7 +40,6 @@ export default function PurchaseInvoiceDetailPage() {
   const router = useRouter();
   const id = Number(params.id);
   const queryClient = useQueryClient();
-  const { user } = useAuth();
   const { hasPermission } = usePermissions();
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [markPaidOpen, setMarkPaidOpen] = useState(false);
@@ -90,10 +88,8 @@ export default function PurchaseInvoiceDetailPage() {
 
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const isAdmin = isTenantAdmin || isPlatformAdmin;
-  const canApprove = isAdmin || ((hasPermission('purchase_invoice', 'approve') ?? false) &&
-    user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
-  const canReject = isAdmin || ((hasPermission('purchase_invoice', 'reject') ?? false) &&
-    user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
+  const canApprove = isAdmin || (hasPermission('purchase_invoice', 'approve') ?? false);
+  const canReject  = isAdmin || (hasPermission('purchase_invoice', 'reject') ?? false);
   const canMarkPaid = isAdmin || (hasPermission('purchase_invoice', 'mark_paid') ?? false);
 
   if (isLoading) {

@@ -11,7 +11,6 @@ import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection
 import { canCreateInvoice } from '@/lib/utils/workflow-guards';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
-import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { Button, PageShell } from '@/components/ui';
@@ -37,7 +36,6 @@ export default function GRNDetailPage() {
   const router = useRouter();
   const id = Number(params.id);
   const queryClient = useQueryClient();
-  const { user } = useAuth();
   const { hasPermission } = usePermissions();
   const t = useT();
   const statusLabels: Record<string, string> = {
@@ -55,12 +53,8 @@ export default function GRNDetailPage() {
   
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const isAdmin = isTenantAdmin || isPlatformAdmin;
-  const canMarkInvoice = isAdmin ||
-    (user?.role === 'procurement_officer' &&
-     (hasPermission('goods_receiving', 'update') ?? false));
-  const canCreateInvoicePerm = isAdmin ||
-    ((hasPermission('purchase_invoice', 'create') ?? false) &&
-     user?.role !== 'site_engineer');
+  const canMarkInvoice = isAdmin || (hasPermission('goods_receiving', 'update') ?? false);
+  const canCreateInvoicePerm = isAdmin || (hasPermission('purchase_invoice', 'create') ?? false);
 
   const { data: grn, isLoading } = useQuery({
     queryKey: ['goods-receiving', id],

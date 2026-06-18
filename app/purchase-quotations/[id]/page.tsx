@@ -12,7 +12,6 @@ import { formatPrice } from '@/lib/utils/format';
 import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection';
 import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
-import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { canAwardQuotation, canCreatePurchaseOrder } from '@/lib/utils/workflow-guards';
@@ -38,8 +37,6 @@ export default function PurchaseQuotationDetailPage() {
     expired: t('status', 'expired'),
   };
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-
   const { data: quotation, isLoading } = useQuery({
     queryKey: ['purchase-quotations', id],
     queryFn: () => purchaseQuotationsApi.getById(id),
@@ -72,19 +69,11 @@ export default function PurchaseQuotationDetailPage() {
   });
 
   const { hasPermission } = usePermissions();
-  
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const isAdmin = isTenantAdmin || isPlatformAdmin;
-  // Procurement Officer cannot award - only Procurement Manager and Admins can award
-  const canAward = isAdmin || ((hasPermission('purchase_quotation', 'award') ?? false) &&
-                   user?.role !== 'procurement_officer' &&
-                   user?.role === 'procurement_manager');
+  const canAward = isAdmin || (hasPermission('purchase_quotation', 'award') ?? false);
   const canReject = isAdmin || (hasPermission('purchase_quotation', 'reject') ?? false);
-  // Only Procurement Officer and Admins can convert awarded quotations to LPO
-  const canConvert = isAdmin ||
-                     (hasPermission('purchase_order', 'convert') ?? false) ||
-                     (hasPermission('purchase_order', 'create') ?? false) ||
-                     (user?.role === 'procurement_officer');
+  const canConvert = isAdmin || (hasPermission('purchase_order', 'create') ?? false);
 
   if (isLoading) {
     return (

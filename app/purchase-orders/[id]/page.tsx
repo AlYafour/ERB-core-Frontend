@@ -14,7 +14,6 @@ import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
 import { PO_STATUS } from '@/lib/utils/status-colors';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
-import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { canCreateGRN, canCreateInvoice } from '@/lib/utils/workflow-guards';
@@ -46,7 +45,6 @@ export default function PurchaseOrderDetailPage() {
   const router = useRouter();
   const id = Number(params.id);
   const queryClient = useQueryClient();
-  const { user } = useAuth();
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [amendmentDialogOpen, setAmendmentDialogOpen] = useState(false);
@@ -135,10 +133,8 @@ export default function PurchaseOrderDetailPage() {
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const isAdmin = isTenantAdmin || isPlatformAdmin;
 
-  const canApprove = isAdmin || ((hasPermission('purchase_order', 'approve') ?? false) &&
-    user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
-  const canReject = isAdmin || ((hasPermission('purchase_order', 'reject') ?? false) &&
-    user?.role !== 'procurement_officer' && user?.role !== 'site_engineer');
+  const canApprove = isAdmin || (hasPermission('purchase_order', 'approve') ?? false);
+  const canReject  = isAdmin || (hasPermission('purchase_order', 'reject') ?? false);
   const canCancel = isAdmin || (hasPermission('purchase_order', 'cancel') ?? false);
   const canUpdate = isAdmin || (hasPermission('purchase_order', 'update') ?? false);
   const canCreateGRNPerm = isAdmin || (hasPermission('goods_receiving', 'create') ?? false);
@@ -197,7 +193,7 @@ export default function PurchaseOrderDetailPage() {
                 {canCancelOrder && (
                   <Button variant="destructive" size="sm" onClick={() => setCancelDialogOpen(true)} disabled={cancelMutation.isPending}>Cancel</Button>
                 )}
-                {order.status === 'approved' && canCreateGRNPerm && (user?.role === 'site_engineer' || user?.role === 'procurement_officer' || user?.is_superuser) && (
+                {order.status === 'approved' && canCreateGRNPerm && (
                   <Button variant="primary" size="sm" onClick={() => {
                     const guard = canCreateGRN(order.status);
                     if (!guard.canProceed) { toast(guard.reason || 'Cannot create GRN', 'error'); return; }

@@ -17,7 +17,6 @@ import { formatBackendError } from '@/lib/utils/validation';
 import { canCreateQuotationRequest } from '@/lib/utils/workflow-guards';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { usePermissions } from '@/lib/hooks/use-permissions';
-import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { useT } from '@/lib/i18n/useT';
 
@@ -38,14 +37,8 @@ function NewQuotationRequestPageContent() {
   const searchParams = useSearchParams();
   const purchaseRequestId = searchParams.get('purchase_request_id');
   const { hasPermission } = usePermissions();
-  const { user } = useAuth();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
 
-  // Only Procurement Officer and Admins can create Quotation Request
-  if (user && user.role !== 'procurement_officer' && !isTenantAdmin && !isPlatformAdmin) {
-    router.push('/quotation-requests');
-    return null;
-  }
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
