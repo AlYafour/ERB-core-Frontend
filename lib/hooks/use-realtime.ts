@@ -36,6 +36,9 @@ export function useRealtimeUpdates() {
       if (message.type !== 'realtime_update' || !message.event) return;
       const ev: RealtimeEvent = message.event;
 
+      // Play sound for every realtime event in the system
+      playNotificationSound('notification');
+
       switch (ev.event_type) {
         case 'purchase_request':
           queryClient.invalidateQueries({ queryKey: ['purchase-requests'] });
@@ -74,7 +77,6 @@ export function useRealtimeUpdates() {
             queryClient.setQueryData(['suppliers', ev.data?.id], ev.data);
           break;
         case 'task':
-          playNotificationSound('task');
           queryClient.invalidateQueries({ queryKey: ['tasks'] });
           queryClient.invalidateQueries({ queryKey: ['task-stats'] });
           if (ev.data?.id) {
