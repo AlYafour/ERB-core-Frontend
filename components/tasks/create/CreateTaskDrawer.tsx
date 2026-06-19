@@ -216,15 +216,15 @@ function SearchableCombobox({ items, value, onChange, placeholder, clearLabel = 
         <div
           style={{
             position: 'absolute', top: 'calc(100% + 5px)', left: 0, right: 0,
-            background: 'var(--surface)', border: '1.5px solid var(--border-subtle)',
-            borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,.13)',
+            background: '#fff', border: '1.5px solid var(--border-subtle)',
+            borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,.15)',
             zIndex: 1200, overflow: 'hidden',
           }}
         >
           {/* Search */}
           <div
             style={{
-              display: 'flex', alignItems: 'center', gap: 7,
+              display: 'flex', alignItems: 'center', gap: 7, background: '#fff',
               padding: '8px 10px', borderBottom: '1px solid var(--border-subtle)',
             }}
           >
@@ -264,7 +264,7 @@ function SearchableCombobox({ items, value, onChange, placeholder, clearLabel = 
               onClick={() => pick(null)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 8,
-                width: '100%', padding: '8px 12px', background: 'none', border: 'none',
+                width: '100%', padding: '8px 12px', background: '#fff', border: 'none',
                 cursor: 'pointer', fontSize: 12, color: 'var(--text-tertiary)',
                 borderBottom: '1px solid var(--border-subtle)', textAlign: 'left',
               }}
@@ -299,8 +299,8 @@ function SearchableCombobox({ items, value, onChange, placeholder, clearLabel = 
                     background: isSelected
                       ? `${BRAND_HEX}10`
                       : isHovered
-                      ? 'var(--surface-subtle)'
-                      : 'none',
+                      ? '#f5f5f4'
+                      : '#fff',
                   }}
                 >
                   <Avatar inits={item.inits} color={item.color} size={30} />
