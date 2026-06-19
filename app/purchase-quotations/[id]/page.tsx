@@ -99,6 +99,7 @@ export default function PurchaseQuotationDetailPage() {
 
         {/* ── Sticky action bar with inline chain ── */}
         <StickyDocBar
+          backHref="/purchase-quotations"
           docTypeLabel="Purchase Quotation"
           docNumber={quotation.quotation_number}
           statusVariant={PQ_STATUS[status] ?? 'info'}

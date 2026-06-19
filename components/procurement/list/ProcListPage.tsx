@@ -152,39 +152,44 @@ export function ProcListPage({
       <PageShell compact>
         <div className="proc-list-page">
 
-          {/* ── Navigation row ── */}
-          <div className="proc-list-nav">
-            <button className="proc-list-nav-back" onClick={() => router.back()}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5M5 12l7-7M5 12l7 7"/>
-              </svg>
-              Back
-            </button>
-            <div className="proc-list-nav-crumb">
-              {breadcrumbs.map((crumb, i) => (
-                <span key={i} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                  {i > 0 && <span className="proc-list-nav-sep">/</span>}
-                  {crumb.href
-                    ? <Link href={crumb.href} className="proc-list-nav-link">{crumb.label}</Link>
-                    : <span className="proc-list-nav-current">{crumb.label}</span>}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Page header card ── */}
+          {/* ── Header card (nav + title merged) ── */}
           <div className="proc-list-header-card">
-            <div className="proc-lhc-left">
-              <div className="proc-lhc-title-row">
-                <h1 className="proc-lhc-title">{title}</h1>
-                {totalCount > 0 && <span className="proc-lhc-count">{totalCount}</span>}
-                {pendingCount != null && pendingCount > 0 && (
-                  <span className="proc-lhc-pending">⚠ {pendingCount} pending</span>
-                )}
+
+            {/* Nav row */}
+            <div className="proc-lhc-nav">
+              <button className="proc-list-nav-back" onClick={() => router.back()}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5M5 12l7-7M5 12l7 7"/>
+                </svg>
+                Back
+              </button>
+              <div className="proc-list-nav-crumb">
+                {breadcrumbs.map((crumb, i) => (
+                  <span key={i} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                    {i > 0 && <span className="proc-list-nav-sep">/</span>}
+                    {crumb.href
+                      ? <Link href={crumb.href} className="proc-list-nav-link">{crumb.label}</Link>
+                      : <span className="proc-list-nav-current">{crumb.label}</span>}
+                  </span>
+                ))}
               </div>
-              <p className="proc-lhc-desc">{description}</p>
             </div>
-            {createAction && <div className="proc-lhc-right">{createAction}</div>}
+
+            {/* Title + actions row */}
+            <div className="proc-lhc-body">
+              <div className="proc-lhc-left">
+                <div className="proc-lhc-title-row">
+                  <h1 className="proc-lhc-title">{title}</h1>
+                  {totalCount > 0 && <span className="proc-lhc-count">{totalCount}</span>}
+                  {pendingCount != null && pendingCount > 0 && (
+                    <span className="proc-lhc-pending">⚠ {pendingCount} pending</span>
+                  )}
+                </div>
+                <p className="proc-lhc-desc">{description}</p>
+              </div>
+              {createAction && <div className="proc-lhc-right">{createAction}</div>}
+            </div>
+
           </div>
 
           {/* ── Main surface ── */}

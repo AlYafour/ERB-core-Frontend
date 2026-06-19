@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
 import { PurchaseOrder, PurchaseOrderItem, PurchaseRequest, Supplier } from '@/types';
 import { fmt, fmtDate, StatusBadge, COMPANY } from '@/components/print/PrintTemplate';
+import { PrintControlsBar } from '@/components/print/PrintControlsBar';
 import Image from 'next/image';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -139,50 +140,11 @@ export default function PrintLPOPage() {
         }
       `}</style>
 
-      {/* ── Control bar (hidden on print) ── */}
-      <div className="print-controls-bar" style={{
-        position:'sticky', top:0, zIndex:100,
-        display:'flex', alignItems:'center', justifyContent:'space-between',
-        padding:'10px 24px', background:'#fff', borderBottom:`1px solid ${BORDER}`,
-        boxShadow:'0 2px 8px rgba(0,0,0,.07)',
-      }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <a href={`/purchase-orders/${id}`} style={{
-            display:'inline-flex', alignItems:'center', gap:5,
-            padding:'5px 11px', borderRadius:6,
-            border:`1px solid ${BORDER}`, background:LIGHT,
-            color:'#374151', fontSize:12, fontWeight:600, textDecoration:'none',
-          }}>← Back</a>
-          <div style={{
-            display:'inline-flex', alignItems:'center', gap:6,
-            padding:'3px 10px 3px 8px', borderRadius:6,
-            background:LIGHT, border:`1px solid ${BORDER}`,
-          }}>
-            <span style={{ fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#f97316' }}>LPO</span>
-            <span style={{ fontSize:13, fontWeight:800, color:NAVY, letterSpacing:'-0.3px' }}>{po.order_number}</span>
-          </div>
-          <StatusBadge status={po.status} />
-        </div>
-        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-          <button onClick={() => window.print()} style={{
-            display:'inline-flex', alignItems:'center', gap:5,
-            padding:'7px 14px', borderRadius:6,
-            border:`1px solid ${BORDER}`, background:LIGHT,
-            color:'#374151', fontSize:12, fontWeight:600, cursor:'pointer',
-          }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-            Print
-          </button>
-          <button onClick={() => window.print()} style={{
-            display:'inline-flex', alignItems:'center', gap:6,
-            padding:'7px 16px', borderRadius:6, background:NAVY, color:'#fff',
-            border:'none', fontSize:12, fontWeight:700, cursor:'pointer', letterSpacing:'.2px',
-          }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download PDF
-          </button>
-        </div>
-      </div>
+      <PrintControlsBar
+        backHref={`/purchase-orders/${id}`}
+        docType="LPO" docTypeColor="#f97316"
+        docNumber={po.order_number} status={po.status}
+      />
 
       {/* ── A4 sheet ── */}
       <div className="print-doc" style={{

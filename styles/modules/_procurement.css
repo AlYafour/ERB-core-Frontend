@@ -76,6 +76,28 @@
   margin-left: auto;
 }
 
+.proc-bar-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-secondary);
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+  white-space: nowrap;
+}
+.proc-bar-back:hover {
+  color: var(--brand);
+  border-color: var(--brand);
+  background: var(--brand-subtle);
+}
+
 /* ══════════════════════════════════════════════════
    DOCUMENT CHAIN PILL BAR  (linked docs banner)
    ══════════════════════════════════════════════════ */
@@ -1131,12 +1153,15 @@
 .proc-list-nav-link:hover { color: #7c2d3e; }
 .proc-list-nav-current { color: #7c2d3e; font-weight: 700; padding: 2px 4px; }
 
-/* ── Header card ── */
+/* ── Header card (contains nav + title) ── */
 .proc-list-header-card {
   background: #fff; border: 1px solid #e8e3dd; border-radius: 13px;
-  padding: 16px 20px; display: flex;
-  align-items: flex-start; justify-content: space-between; gap: 16px;
+  padding: 12px 18px 14px; display: flex; flex-direction: column; gap: 10px;
 }
+/* Nav row inside header */
+.proc-lhc-nav { display: flex; align-items: center; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid #f0ebe5; }
+/* Body row */
+.proc-lhc-body { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .proc-lhc-left { flex: 1; min-width: 0; }
 .proc-lhc-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
 .proc-lhc-title { font-size: 18px; font-weight: 800; color: #1c1917; letter-spacing: -.5px; margin: 0; line-height: 1.2; }

@@ -126,6 +126,7 @@ export default function PurchaseOrderDetailPage() {
 
           {/* ── Sticky action bar with inline chain ── */}
           <StickyDocBar
+            backHref="/purchase-orders"
             docTypeLabel="Purchase Order"
             docNumber={order.order_number}
             statusVariant={PO_STATUS[order.status] ?? 'info'}

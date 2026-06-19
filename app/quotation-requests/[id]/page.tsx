@@ -45,6 +45,7 @@ export default function QuotationRequestDetailPage() {
 
         {/* ── Sticky action bar with inline chain ── */}
         <StickyDocBar
+          backHref="/quotation-requests"
           docTypeLabel="Quotation Request"
           docNumber={`QR-${qr.id}`}
           statusVariant="info"

@@ -85,6 +85,7 @@ export default function PurchaseInvoiceDetailPage() {
 
         {/* ── Sticky action bar with inline chain ── */}
         <StickyDocBar
+          backHref="/purchase-invoices"
           docTypeLabel="Purchase Invoice"
           docNumber={invoice.invoice_number}
           statusVariant={INVOICE_STATUS[invoice.status] ?? 'info'}

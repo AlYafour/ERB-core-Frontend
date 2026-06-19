@@ -229,6 +229,7 @@ export default function PurchaseRequestDetailPage() {
 
         {/* ── Sticky action bar ── */}
         <StickyDocBar
+          backHref="/purchase-requests"
           docTypeLabel="Purchase Request"
           docNumber={request.code}
           statusVariant={PR_STATUS[request.status] ?? 'default'}

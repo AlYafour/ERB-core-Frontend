@@ -70,6 +70,7 @@ export default function GRNDetailPage() {
 
         {/* ── Sticky action bar with inline chain ── */}
         <StickyDocBar
+          backHref="/goods-receiving"
           docTypeLabel="Goods Receiving Note"
           docNumber={grn.grn_number}
           statusVariant={GRN_STATUS[grn.status] ?? 'default'}
