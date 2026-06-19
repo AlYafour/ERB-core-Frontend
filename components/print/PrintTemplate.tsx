@@ -8,7 +8,7 @@ export const COMPANY = {
   address: 'Abu Dhabi, United Arab Emirates',
   phone:   '+971 50 622 2469',
   email:   'info@alyafour.ae',
-  trn:     '100123456700003',
+  trn:     '100393252000003',
   logo:    '/logo.png',
 };
 
