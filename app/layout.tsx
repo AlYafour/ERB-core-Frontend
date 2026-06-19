@@ -16,17 +16,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
-        {/* Apply stored locale/dir before React hydrates to prevent layout flash */}
+        {/* Restore theme + locale before React hydrates to prevent flash */}
         <script dangerouslySetInnerHTML={{ __html: `
           try {
+            var t = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', t);
             var l = localStorage.getItem('locale');
             if (l === 'ar') {
               document.documentElement.setAttribute('dir', 'rtl');
               document.documentElement.setAttribute('lang', 'ar');
             }
-          } catch(e) {}
+          } catch(e) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+          }
         `}} />
       </head>
       <body className={inter.className}>
