@@ -34,6 +34,8 @@ interface Props<T extends BaseEditableItem> {
   /** Resolve unit label from an item — called only when showUnit is true. */
   getUnit?: (item: T) => string;
   formatPrice: (n: number) => string;
+  /** When true all inputs are read-only (quotation items). */
+  readOnly?: boolean;
 }
 
 export function EditableStandardItemsTable<T extends BaseEditableItem>({
@@ -45,6 +47,7 @@ export function EditableStandardItemsTable<T extends BaseEditableItem>({
   showUnit = true,
   getUnit,
   formatPrice,
+  readOnly = false,
 }: Props<T>) {
   const t = useT();
 
@@ -85,50 +88,24 @@ export function EditableStandardItemsTable<T extends BaseEditableItem>({
                 </td>
               )}
               <td>
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={item.quantity}
-                  onChange={(e) => onUpdate(index, 'quantity', parseFloat(e.target.value) || 0)}
-                  className="form-input"
-                  style={{ width: 80 }}
-                />
+                <input type="number" min="0" step="any" className="form-input" style={{ width: 80 }}
+                  value={item.quantity} disabled={readOnly}
+                  onChange={(e) => onUpdate(index, 'quantity', parseFloat(e.target.value) || 0)} />
               </td>
               <td>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={item.unit_price}
-                  onChange={(e) => onUpdate(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                  className="form-input"
-                  style={{ width: 96 }}
-                />
+                <input type="number" min="0" step="0.01" className="form-input" style={{ width: 96 }}
+                  value={item.unit_price} disabled={readOnly}
+                  onChange={(e) => onUpdate(index, 'unit_price', parseFloat(e.target.value) || 0)} />
               </td>
               <td>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  value={item.discount ?? 0}
-                  onChange={(e) => onUpdate(index, 'discount', parseFloat(e.target.value) || 0)}
-                  className="form-input"
-                  style={{ width: 80 }}
-                />
+                <input type="number" min="0" max="100" step="0.01" className="form-input" style={{ width: 80 }}
+                  value={item.discount ?? 0} disabled={readOnly}
+                  onChange={(e) => onUpdate(index, 'discount', parseFloat(e.target.value) || 0)} />
               </td>
               <td>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  value={item.tax_rate ?? 0}
-                  onChange={(e) => onUpdate(index, 'tax_rate', parseFloat(e.target.value) || 0)}
-                  className="form-input"
-                  style={{ width: 80 }}
-                />
+                <input type="number" min="0" max="100" step="0.01" className="form-input" style={{ width: 80 }}
+                  value={item.tax_rate ?? 0} disabled={readOnly}
+                  onChange={(e) => onUpdate(index, 'tax_rate', parseFloat(e.target.value) || 0)} />
               </td>
               <td>
                 <div style={{ fontWeight: 'var(--weight-semibold)' }}>
