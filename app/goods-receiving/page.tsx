@@ -2,31 +2,23 @@
 
 import { useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { goodsReceivingApi, GoodsReceivedNote } from '@/lib/api/goods-receiving';
 import Link from 'next/link';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
-import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
-import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
-import { ProcKPIBar } from '@/components/procurement/shared/ProcKPIBar';
+import { Button, Badge, type Column } from '@/components/ui';
 import { RowActions } from '@/components/ui/RowActions';
-import StatusTabs from '@/components/ui/StatusTabs';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { GRN_STATUS } from '@/lib/utils/status-colors';
 import { GRN_LABEL } from '@/lib/constants/status-labels';
+import { ProcListPage } from '@/components/procurement/list/ProcListPage';
 
 const filterFields: FilterField[] = [
-  { name: 'status', label: 'Status', type: 'select', group: 'Status',
-    options: [
-      { value: 'draft', label: 'Draft' }, { value: 'partial', label: 'Partial' },
-      { value: 'completed', label: 'Completed' }, { value: 'cancelled', label: 'Cancelled' },
-    ]},
   { name: 'receipt_date_after',  label: 'Receipt Date From', type: 'date', group: 'Dates' },
   { name: 'receipt_date_before', label: 'Receipt Date To',   type: 'date', group: 'Dates' },
 ];
@@ -35,17 +27,14 @@ export default function GoodsReceivingPage() {
   const router = useRouter();
   const tableState = useTableState();
   const { page, search, filters } = tableState;
-  const statusValue = (filters.status as string) || '';
-  const handleStatusTab = (v: string) => { tableState.handleFilterChange('status', v); tableState.setPage(1); };
 
-  const queryClient    = useQueryClient();
-  const { user }       = useAuth();
-  const t              = useT();
+  const queryClient       = useQueryClient();
+  const t                 = useT();
   const { hasPermission } = usePermissions();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
-  const isAdmin     = isTenantAdmin || isPlatformAdmin;
-  const canCreate   = isAdmin || (hasPermission('goods_receiving', 'create') ?? false);
-  const canDelete   = isAdmin || (hasPermission('goods_receiving', 'delete') ?? false);
+  const isAdmin   = isTenantAdmin || isPlatformAdmin;
+  const canCreate = isAdmin || (hasPermission('goods_receiving', 'create') ?? false);
+  const canDelete = isAdmin || (hasPermission('goods_receiving', 'delete') ?? false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['grns', page, search, filters],
@@ -54,10 +43,10 @@ export default function GoodsReceivingPage() {
   });
 
   const grnAll = (extra?: object) => goodsReceivingApi.getAll({ page: 1, page_size: 1, ...extra } as any);
-  const { data: kpiTotal }     = useQuery({ queryKey: ['grn-kpi', 'total'],     queryFn: () => grnAll(),                        staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
-  const { data: kpiPartial }   = useQuery({ queryKey: ['grn-kpi', 'partial'],   queryFn: () => grnAll({ status: 'partial' }),    staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
-  const { data: kpiCompleted } = useQuery({ queryKey: ['grn-kpi', 'completed'], queryFn: () => grnAll({ status: 'completed' }),  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
-  const { data: kpiCancelled } = useQuery({ queryKey: ['grn-kpi', 'cancelled'], queryFn: () => grnAll({ status: 'cancelled' }),  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiTotal }     = useQuery({ queryKey: ['grn-kpi', 'total'],     queryFn: () => grnAll(),                       staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiPartial }   = useQuery({ queryKey: ['grn-kpi', 'partial'],   queryFn: () => grnAll({ status: 'partial' }),   staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiCompleted } = useQuery({ queryKey: ['grn-kpi', 'completed'], queryFn: () => grnAll({ status: 'completed' }), staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiCancelled } = useQuery({ queryKey: ['grn-kpi', 'cancelled'], queryFn: () => grnAll({ status: 'cancelled' }), staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => goodsReceivingApi.delete(id),
@@ -73,14 +62,11 @@ export default function GoodsReceivingPage() {
   const totalCount = data?.count ?? 0;
 
   const columns = useMemo((): Column<GoodsReceivedNote>[] => [
-    {
-      key: 'number', header: 'GRN Number',
-      render: g => <span className="font-mono font-semibold" style={{ fontSize: 'var(--text-sm)' }}>{g.grn_number}</span>,
-    },
-    { key: 'po',    header: 'Purchase Order', render: g => <span style={{ color: 'var(--text-secondary)' }}>{typeof g.purchase_order === 'object' && g.purchase_order ? (g.purchase_order as any).order_number : g.purchase_order_id}</span> },
-    { key: 'date',  header: 'Receipt Date',   render: g => <span style={{ color: 'var(--text-secondary)' }}>{new Date(g.receipt_date).toLocaleDateString('en-US')}</span> },
-    { key: 'items', header: 'Total Items',    render: g => g.total_items ?? g.items?.length ?? 0 },
-    { key: 'status', header: t('col', 'status'), render: g => <Badge variant={GRN_STATUS[g.status] ?? 'info'}>{GRN_LABEL[g.status] || g.status}</Badge> },
+    { key: 'number',  header: 'GRN Number',      render: g => <span className="font-mono font-semibold" style={{ fontSize: 'var(--text-sm)' }}>{g.grn_number}</span> },
+    { key: 'po',      header: 'Purchase Order',   render: g => <span style={{ color: 'var(--text-secondary)' }}>{typeof g.purchase_order === 'object' && g.purchase_order ? (g.purchase_order as any).order_number : g.purchase_order_id}</span> },
+    { key: 'date',    header: 'Receipt Date',     render: g => <span style={{ color: 'var(--text-secondary)' }}>{new Date(g.receipt_date).toLocaleDateString('en-US')}</span> },
+    { key: 'items',   header: 'Total Items',      render: g => g.total_items ?? g.items?.length ?? 0 },
+    { key: 'status',  header: t('col', 'status'), render: g => <Badge variant={GRN_STATUS[g.status] ?? 'info'}>{GRN_LABEL[g.status] || g.status}</Badge> },
     {
       key: 'invoice', header: 'Invoice',
       render: g => <Badge variant={g.invoice_delivery_status === 'delivered' ? 'success' : 'warning'}>{g.invoice_delivery_status === 'delivered' ? 'Delivered' : 'Pending'}</Badge>,
@@ -98,49 +84,33 @@ export default function GoodsReceivingPage() {
   ], [t, canDelete, handleDelete]);
 
   return (
-    <MainLayout>
-      <PageShell>
-        <PageHeader
-          breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Purchase Management', href: '#' }, { label: 'Goods Receiving' }]}
-          title="Goods Receiving"
-          description="Record and verify goods receipt against purchase orders."
-          count={totalCount}
-          actions={canCreate ? <Link href="/goods-receiving/new"><Button variant="primary">+ New GRN</Button></Link> : undefined}
-        />
-        <ProcKPIBar items={[
-          { label: 'Total GRNs', value: kpiTotal     ?? '—', variant: 'total',   loading: kpiTotal     == null },
-          { label: 'Partial',    value: kpiPartial   ?? '—', variant: 'warning', loading: kpiPartial   == null },
-          { label: 'Completed',  value: kpiCompleted ?? '—', variant: 'success', loading: kpiCompleted == null },
-          { label: 'Cancelled',  value: kpiCancelled ?? '—', variant: 'neutral', loading: kpiCancelled == null },
-        ]} />
-        <TableShell
-          tableState={tableState}
-          tabs={
-            <StatusTabs
-              options={[
-                { value: 'draft',     label: 'Draft'     },
-                { value: 'partial',   label: 'Partial'   },
-                { value: 'completed', label: 'Completed' },
-                { value: 'cancelled', label: 'Cancelled' },
-              ]}
-              value={statusValue}
-              onChange={handleStatusTab}
-            />
-          }
-          filterFields={filterFields}
-          filterSaveKey="goods-receiving"
-          searchPlaceholder="Search GRN records…"
-          columns={columns}
-          data={grns}
-          isLoading={isLoading}
-          error={error}
-          emptyMessage="No goods receiving notes found."
-          emptyAction={canCreate ? <Link href="/goods-receiving/new"><Button variant="primary">Create GRN</Button></Link> : undefined}
-          onRowClick={g => router.push(`/goods-receiving/${g.id}`)}
-          totalCount={totalCount}
-          paginatedData={data}
-        />
-      </PageShell>
-    </MainLayout>
+    <ProcListPage
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Purchase Management' }, { label: 'Goods Receiving' }]}
+      title="Goods Receiving"
+      description="Record and verify goods receipt against purchase orders."
+      totalCount={totalCount}
+      createAction={canCreate ? <Link href="/goods-receiving/new"><Button variant="primary">+ New GRN</Button></Link> : undefined}
+      statusItems={[
+        { value: '',          label: 'All',       count: kpiTotal },
+        { value: 'draft',     label: 'Draft' },
+        { value: 'partial',   label: 'Partial',   count: kpiPartial },
+        { value: 'completed', label: 'Completed', count: kpiCompleted },
+        { value: 'cancelled', label: 'Cancelled', count: kpiCancelled },
+      ]}
+      searchPlaceholder="Search GRN records…"
+      filterFields={filterFields}
+      advFilterTitle="GRN Filters"
+      advFilterDesc="Filter goods receiving notes by date range."
+      columns={columns}
+      data={grns}
+      isLoading={isLoading}
+      error={error}
+      onRowClick={g => router.push(`/goods-receiving/${g.id}`)}
+      tableState={tableState}
+      paginatedData={data}
+      pageSize={50}
+      emptyTitle="No goods receiving notes found"
+      emptyAction={canCreate ? <Link href="/goods-receiving/new"><Button variant="primary">Create GRN</Button></Link> : undefined}
+    />
   );
 }
