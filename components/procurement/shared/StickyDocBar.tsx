@@ -16,10 +16,11 @@ interface Props {
   docNumber: string;
   statusVariant?: NonNullable<BadgeProps['variant']>;
   statusLabel?: string;
+  chain?: React.ReactNode;
   children?: React.ReactNode;
 }
 
-export function StickyDocBar({ docTypeLabel, docNumber, statusVariant, statusLabel, children }: Props) {
+export function StickyDocBar({ docTypeLabel, docNumber, statusVariant, statusLabel, chain, children }: Props) {
   const barClass = statusVariant ? (BAR_CLASS[statusVariant] ?? 'proc-bar--default') : 'proc-bar--default';
 
   return (
@@ -35,6 +36,8 @@ export function StickyDocBar({ docTypeLabel, docNumber, statusVariant, statusLab
           <Badge variant={statusVariant}>{statusLabel}</Badge>
         </>
       )}
+
+      {chain && <div className="proc-bar-chain">{chain}</div>}
 
       <div className="proc-bar-actions">
         {children}

@@ -864,6 +864,48 @@
   color: var(--brand);
 }
 
+/* ── Inline document chain in sticky bar ── */
+.proc-bar-chain {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 10px;
+  padding: 3px 10px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.proc-bar-chain-step {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+.proc-bar-chain-step:hover { color: var(--brand); }
+.proc-bar-chain-arrow { color: var(--text-tertiary); font-size: 10px; }
+.proc-bar-chain-current { color: var(--brand); font-weight: 700; }
+
+/* ── Detail page two-column split (info 35% / products 65%) ── */
+.proc-detail-split {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.proc-detail-info {
+  flex: 0 0 34%;
+  min-width: 260px;
+}
+.proc-detail-products {
+  flex: 1;
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .proc-detail-split { flex-direction: column; }
+  .proc-detail-info, .proc-detail-products { flex: none; width: 100%; min-width: 0; }
+}
+
 /* ── POFormSummary inside aside: stretch full width ── */
 .proc-form-aside .proc-summary-wrap {
   justify-content: stretch;

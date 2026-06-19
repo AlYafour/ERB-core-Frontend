@@ -75,16 +75,35 @@ export default function PurchaseQuotationDetailPage() {
     ? (() => { const pr = (qrRef as { purchase_request: unknown }).purchase_request; return typeof pr === 'object' ? pr as { id: number; code?: string } : { id: pr as number }; })()
     : null;
 
+  const chainNode = (prRef || qrRef) ? (
+    <>
+      {prRef && (
+        <Link href={`/purchase-requests/${(prRef as { id: number }).id}`} className="proc-bar-chain-step">
+          {(prRef as { code?: string }).code || `PR-${(prRef as { id: number }).id}`}
+        </Link>
+      )}
+      {prRef && <span className="proc-bar-chain-arrow">→</span>}
+      {qrRef && (
+        <Link href={`/quotation-requests/${(qrRef as { id: number }).id}`} className="proc-bar-chain-step">
+          QR-{(qrRef as { id: number }).id}
+        </Link>
+      )}
+      {qrRef && <span className="proc-bar-chain-arrow">→</span>}
+      <span className="proc-bar-chain-current">{quotation.quotation_number}</span>
+    </>
+  ) : null;
+
   return (
     <MainLayout>
-      <PageShell>
+      <PageShell compact>
 
-        {/* ── Sticky action bar ── */}
+        {/* ── Sticky action bar with inline chain ── */}
         <StickyDocBar
           docTypeLabel="Purchase Quotation"
           docNumber={quotation.quotation_number}
           statusVariant={PQ_STATUS[status] ?? 'info'}
           statusLabel={PQ_LABEL[status] || status}
+          chain={chainNode}
         >
           <Button variant="secondary" size="sm" onClick={() => window.open(`/print/pq/${id}`, '_blank')}>Print</Button>
 
@@ -127,98 +146,83 @@ export default function PurchaseQuotationDetailPage() {
           )}
         </StickyDocBar>
 
-        {/* ── Document chain ── */}
-        {(prRef || qrRef) && (
-          <div className="proc-chain">
-            {prRef && (
-              <Link href={`/purchase-requests/${(prRef as { id: number }).id}`} className="proc-chain-pill">
-                <span className="proc-chain-pill-type">Purchase Request</span>
-                <span className="proc-chain-pill-num">{(prRef as { code?: string }).code || `PR-${(prRef as { id: number }).id}`}</span>
-              </Link>
-            )}
-            {prRef && qrRef && <span className="proc-chain-arrow">→</span>}
-            {qrRef && (
-              <Link href={`/quotation-requests/${(qrRef as { id: number }).id}`} className="proc-chain-pill">
-                <span className="proc-chain-pill-type">Quotation Request</span>
-                <span className="proc-chain-pill-num">QR-{(qrRef as { id: number }).id}</span>
-              </Link>
-            )}
-            {qrRef && <span className="proc-chain-arrow">→</span>}
-            <div className="proc-chain-pill" style={{ borderColor: 'var(--brand)', background: 'var(--brand-subtle)' }}>
-              <span className="proc-chain-pill-type" style={{ color: 'var(--brand)' }}>Quotation</span>
-              <span className="proc-chain-pill-num" style={{ color: 'var(--brand)' }}>{quotation.quotation_number}</span>
-            </div>
-          </div>
-        )}
+        {/* ── Two-column: info left / products right ── */}
+        <div className="proc-detail-split">
 
-        {/* ── Quotation info ── */}
-        <div className="card">
-          <div className="proc-section-head">
-            <h3 className="proc-section-title">Quotation Information</h3>
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(quotation.quotation_date)}</span>
-          </div>
-          <div className="proc-info-grid">
-            <ProcField label={t('col', 'supplier')} value={supplierName} />
-            <ProcField label="Quotation Date" value={fmt(quotation.quotation_date)} />
-            <ProcField label="Valid Until" value={quotation.valid_until ? fmt(quotation.valid_until) : <span className="proc-info-value--empty">Not set</span>} />
-            {quotation.awarded_by_name && <ProcField label="Awarded By" value={quotation.awarded_by_name} />}
-            {quotation.awarded_at && <ProcField label="Awarded At" value={fmt(quotation.awarded_at)} />}
-            {(quotation.project_name || quotation.project_code) && (
-              <ProcField label="Project" value={
-                <div>
-                  <div style={{ fontWeight: 'var(--weight-medium)' }}>{quotation.project_name}</div>
-                  {quotation.project_code && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{quotation.project_code}</div>}
+          {/* ── LEFT: Quotation Information ── */}
+          <div className="proc-detail-info">
+            <div className="card" style={{ height: '100%' }}>
+              <div className="proc-section-head">
+                <h3 className="proc-section-title">Quotation Information</h3>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(quotation.quotation_date)}</span>
+              </div>
+              <div className="proc-info-grid">
+                <ProcField label={t('col', 'supplier')} value={supplierName} />
+                <ProcField label="Quotation Date" value={fmt(quotation.quotation_date)} />
+                <ProcField label="Valid Until" value={quotation.valid_until ? fmt(quotation.valid_until) : <span className="proc-info-value--empty">Not set</span>} />
+                {quotation.awarded_by_name && <ProcField label="Awarded By" value={quotation.awarded_by_name} />}
+                {quotation.awarded_at && <ProcField label="Awarded At" value={fmt(quotation.awarded_at)} />}
+                {(quotation.project_name || quotation.project_code) && (
+                  <ProcField label="Project" value={
+                    <div>
+                      <div style={{ fontWeight: 'var(--weight-medium)' }}>{quotation.project_name}</div>
+                      {quotation.project_code && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{quotation.project_code}</div>}
+                    </div>
+                  } />
+                )}
+              </div>
+              {(quotation.payment_terms || quotation.delivery_terms || quotation.notes) && (
+                <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                  {quotation.payment_terms && <ProcField label="Payment Terms" value={quotation.payment_terms} />}
+                  {quotation.delivery_terms && <ProcField label="Delivery Terms" value={quotation.delivery_terms} />}
+                  {quotation.notes && <ProcField label={t('col', 'notes')} value={quotation.notes} />}
                 </div>
-              } />
-            )}
-          </div>
-          {(quotation.payment_terms || quotation.delivery_terms || quotation.notes) && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-4)', marginTop: 'var(--space-5)', paddingTop: 'var(--space-5)', borderTop: '1px solid var(--border-subtle)' }}>
-              {quotation.payment_terms && <ProcField label="Payment Terms" value={quotation.payment_terms} />}
-              {quotation.delivery_terms && <ProcField label="Delivery Terms" value={quotation.delivery_terms} />}
-              {quotation.notes && <ProcField label={t('col', 'notes')} value={quotation.notes} />}
+              )}
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* ── Items + Financial ── */}
-        <div className="card">
-          <div className="proc-section-head">
-            <h3 className="proc-section-title">
-              Products
-              <span className="proc-section-count">{quotation.items.length}</span>
-            </h3>
+          {/* ── RIGHT: Products + Totals ── */}
+          <div className="proc-detail-products">
+            <div className="card">
+              <div className="proc-section-head">
+                <h3 className="proc-section-title">
+                  Products
+                  <span className="proc-section-count">{quotation.items.length}</span>
+                </h3>
+              </div>
+              <ReadOnlyItemsTable
+                items={quotation.items}
+                columns={[
+                  {
+                    header: t('col', 'product'),
+                    cell: (item) => (
+                      <div>
+                        <div className="cell-product-name">{item.product?.name ?? `Product #${item.product_id}`}</div>
+                        {item.product?.code && <div className="cell-product-code">{item.product.code}</div>}
+                      </div>
+                    ),
+                  },
+                  { header: t('col', 'unit'),      align: 'center', cell: (item) => <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 600 }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
+                  { header: t('col', 'quantity'),  align: 'center', cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{item.quantity}</span> },
+                  { header: t('col', 'unitPrice'), align: 'right',  cell: (item) => <span style={{ fontFamily: 'monospace' }}>{formatPrice(Number(item.unit_price))}</span> },
+                  { header: 'Disc %',              align: 'center', cell: (item) => item.discount ? <span style={{ color: 'var(--status-error)', fontWeight: 600 }}>{item.discount}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
+                  { header: 'Tax %',               align: 'center', cell: (item) => (item.tax_rate || item.tax) ? <span style={{ color: 'var(--text-secondary)' }}>{item.tax_rate || item.tax}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
+                  { header: t('col', 'total'),     align: 'right',  cell: (item) => <span className="col-total">{formatPrice(Number(item.total))}</span> },
+                ]}
+              />
+              <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
+                <FinancialSummary
+                  rows={[
+                    { label: 'Subtotal', value: quotation.subtotal },
+                    { label: `Discount (${quotation.discount}%)`, value: quotation.discount, variant: 'discount', prefix: '– ', hidden: !Number(quotation.discount) },
+                    { label: 'Tax',      value: quotation.tax_amount, hidden: !Number(quotation.tax_amount) },
+                  ]}
+                  total={quotation.total}
+                />
+              </div>
+            </div>
           </div>
-          <ReadOnlyItemsTable
-            items={quotation.items}
-            columns={[
-              {
-                header: t('col', 'product'),
-                cell: (item) => (
-                  <div>
-                    <div className="cell-product-name">{item.product?.name ?? `Product #${item.product_id}`}</div>
-                    {item.product?.code && <div className="cell-product-code">{item.product.code}</div>}
-                  </div>
-                ),
-              },
-              { header: t('col', 'unit'),      align: 'center', cell: (item) => <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 600 }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
-              { header: t('col', 'quantity'),  align: 'center', cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{item.quantity}</span> },
-              { header: t('col', 'unitPrice'), align: 'right',  cell: (item) => <span style={{ fontFamily: 'monospace' }}>{formatPrice(Number(item.unit_price))}</span> },
-              { header: 'Disc %',              align: 'center', cell: (item) => item.discount ? <span style={{ color: 'var(--status-error)', fontWeight: 600 }}>{item.discount}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
-              { header: 'Tax %',               align: 'center', cell: (item) => (item.tax_rate || item.tax) ? <span style={{ color: 'var(--text-secondary)' }}>{item.tax_rate || item.tax}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
-              { header: t('col', 'total'),     align: 'right',  cell: (item) => <span className="col-total">{formatPrice(Number(item.total))}</span> },
-            ]}
-          />
-          <div style={{ marginTop: 'var(--space-6)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
-            <FinancialSummary
-              rows={[
-                { label: 'Subtotal', value: quotation.subtotal },
-                { label: `Discount (${quotation.discount}%)`, value: quotation.discount, variant: 'discount', prefix: '– ', hidden: !Number(quotation.discount) },
-                { label: 'Tax',      value: quotation.tax_amount, hidden: !Number(quotation.tax_amount) },
-              ]}
-              total={quotation.total}
-            />
-          </div>
+
         </div>
 
       </PageShell>
