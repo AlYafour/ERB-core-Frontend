@@ -62,6 +62,16 @@ export function useRealtimeUpdates() {
           else
             queryClient.setQueryData(['suppliers', ev.data?.id], ev.data);
           break;
+        case 'task':
+          queryClient.invalidateQueries({ queryKey: ['tasks'] });
+          queryClient.invalidateQueries({ queryKey: ['task-stats'] });
+          if (ev.data?.id) {
+            if (ev.action === 'deleted')
+              queryClient.removeQueries({ queryKey: ['task', ev.data.id] });
+            else
+              queryClient.invalidateQueries({ queryKey: ['task', ev.data.id] });
+          }
+          break;
       }
     });
 

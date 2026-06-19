@@ -2,6 +2,16 @@
 
 import type { TaskDetail } from '@/types';
 import { fmtFileSize } from '../shared/constants';
+import { toast } from '@/lib/hooks/use-toast';
+
+const MAX_MB = 25;
+const ALLOWED_EXTS = new Set([
+  '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.txt',
+  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg',
+  '.zip', '.rar', '.7z',
+  '.mp4', '.mov', '.avi',
+  '.ppt', '.pptx',
+]);
 
 function toDownloadUrl(url: string): string {
   if (url.includes('res.cloudinary.com') && url.includes('/upload/')) {
@@ -37,7 +47,18 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
         style={{ display: 'none' }}
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) { onUpload(file); e.target.value = ''; }
+          e.target.value = '';
+          if (!file) return;
+          if (file.size > MAX_MB * 1024 * 1024) {
+            toast(`File exceeds ${MAX_MB} MB limit`, 'error');
+            return;
+          }
+          const ext = '.' + (file.name.split('.').pop()?.toLowerCase() ?? '');
+          if (!ALLOWED_EXTS.has(ext)) {
+            toast(`File type "${ext}" is not allowed`, 'error');
+            return;
+          }
+          onUpload(file);
         }}
       />
 

@@ -60,8 +60,21 @@ export function useTaskDetail(taskId: number) {
   const toggleSubtask = useMutation({
     mutationFn: ({ id, done }: { id: number; done: boolean }) =>
       done ? subTasksApi.complete(id) : subTasksApi.reopen(id),
-    onSuccess: invalidate,
-    onError: (err: unknown) => toast(getApiError(err, 'Failed to update item'), 'error'),
+    onMutate: async ({ id, done }) => {
+      await qc.cancelQueries({ queryKey: ['task', taskId] });
+      const prev = qc.getQueryData<TaskDetail>(['task', taskId]);
+      qc.setQueryData<TaskDetail>(['task', taskId], (old) =>
+        old
+          ? { ...old, subtasks: old.subtasks.map((s) => s.id === id ? { ...s, is_completed: done } : s) }
+          : old
+      );
+      return { prev };
+    },
+    onError: (err: unknown, _, ctx) => {
+      if (ctx?.prev) qc.setQueryData(['task', taskId], ctx.prev);
+      toast(getApiError(err, 'Failed to update item'), 'error');
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ['task', taskId] }),
   });
 
   const uploadFile = useMutation({
