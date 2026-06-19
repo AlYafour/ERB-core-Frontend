@@ -17,6 +17,7 @@ import { useT } from '@/lib/i18n/useT';
 import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable';
 import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
 import { StickyDocBar } from '@/components/procurement/shared/StickyDocBar';
+import { fmtDate } from '@/lib/utils/format';
 
 export default function GRNDetailPage() {
   const params = useParams();
@@ -52,7 +53,6 @@ export default function GRNDetailPage() {
   if (!grn)      return <DocLoadState type="not-found" message="GRN not found." />;
 
   const purchaseOrder = typeof grn.purchase_order === 'object' ? grn.purchase_order : null;
-  const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
   const chainNode = purchaseOrder ? (
     <>
@@ -98,6 +98,12 @@ export default function GRNDetailPage() {
           )}
         </StickyDocBar>
 
+        {!purchaseOrder && (
+          <div className="proc-status-banner proc-status-banner--warning" style={{ marginBottom: 12 }}>
+            The linked Purchase Order has been deleted. This GRN is read-only and cannot be invoiced.
+          </div>
+        )}
+
         {/* ── Two-column: GRN info left / items right ── */}
         <div className="proc-detail-split">
 
@@ -106,7 +112,7 @@ export default function GRNDetailPage() {
             <div className="card" style={{ marginBottom: 12 }}>
               <div className="proc-section-head">
                 <h3 className="proc-section-title">GRN Information</h3>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(grn.receipt_date)}</span>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmtDate(grn.receipt_date)}</span>
               </div>
               <div className="proc-info-grid">
                 {purchaseOrder && (
@@ -116,7 +122,7 @@ export default function GRNDetailPage() {
                     </Link>
                   } />
                 )}
-                <ProcField label={t('field', 'receiptDate')} value={fmt(grn.receipt_date)} />
+                <ProcField label={t('field', 'receiptDate')} value={fmtDate(grn.receipt_date)} />
                 <ProcField label={t('col', 'createdBy')}     value={grn.received_by_name || '—'} />
                 <ProcField label="Total Items"               value={<span style={{ fontWeight: 700 }}>{grn.total_items || 0}</span>} />
                 <ProcField label="Total Received"            value={<span style={{ fontWeight: 700, color: 'var(--status-success)' }}>{grn.total_received_quantity || 0}</span>} />

@@ -154,12 +154,12 @@ export default function PurchaseOrdersPage() {
       pendingCount={pending.po > 0 ? pending.po : undefined}
       createAction={canCreate ? <Link href="/purchase-orders/new"><Button variant="primary">+ New Purchase Order</Button></Link> : undefined}
       statusItems={[
-        { value: '',          label: 'All',       count: kpiTotal },
+        { value: '',          label: 'All',       count: kpiTotal,     loading: kpiTotal === undefined },
         { value: 'draft',     label: 'Draft' },
-        { value: 'pending',   label: 'Pending',   count: kpiPending },
-        { value: 'approved',  label: 'Approved',  count: kpiApproved },
-        { value: 'completed', label: 'Completed', count: kpiCompleted },
-        { value: 'cancelled', label: 'Cancelled', count: kpiCancelled },
+        { value: 'pending',   label: 'Pending',   count: kpiPending,   loading: kpiPending === undefined },
+        { value: 'approved',  label: 'Approved',  count: kpiApproved,  loading: kpiApproved === undefined },
+        { value: 'completed', label: 'Completed', count: kpiCompleted, loading: kpiCompleted === undefined },
+        { value: 'cancelled', label: 'Cancelled', count: kpiCancelled, loading: kpiCancelled === undefined },
       ]}
       searchPlaceholder="Search purchase orders…"
       extraActions={

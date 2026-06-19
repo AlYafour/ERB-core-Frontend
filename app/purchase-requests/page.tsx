@@ -160,10 +160,10 @@ export default function PurchaseRequestsPage() {
       pendingCount={pending.pr > 0 ? pending.pr : undefined}
       createAction={canCreate ? <Link href="/purchase-requests/new"><Button variant="primary">{t('btn', 'create')} PR</Button></Link> : undefined}
       statusItems={[
-        { value: '',         label: 'All',      count: kpiTotal },
-        { value: 'pending',  label: 'Pending',  count: kpiPending },
-        { value: 'approved', label: 'Approved', count: kpiApproved },
-        { value: 'rejected', label: 'Rejected', count: kpiRejected },
+        { value: '',         label: 'All',      count: kpiTotal,    loading: kpiTotal === undefined },
+        { value: 'pending',  label: 'Pending',  count: kpiPending,  loading: kpiPending === undefined },
+        { value: 'approved', label: 'Approved', count: kpiApproved, loading: kpiApproved === undefined },
+        { value: 'rejected', label: 'Rejected', count: kpiRejected, loading: kpiRejected === undefined },
       ]}
       searchPlaceholder="Search by code, title, requester…"
       filterFields={filterFields}

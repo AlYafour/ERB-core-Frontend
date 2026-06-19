@@ -24,6 +24,7 @@ import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
 import { StickyDocBar } from '@/components/procurement/shared/StickyDocBar';
 import { PR_STATUS } from '@/lib/utils/status-colors';
 import { PR_LABEL } from '@/lib/constants/status-labels';
+import { fmtDate } from '@/lib/utils/format';
 
 export default function PurchaseRequestDetailPage() {
   const params = useParams();
@@ -141,7 +142,6 @@ export default function PurchaseRequestDetailPage() {
 
   const canEditItems = (isAdmin || request.created_by === user?.id) && request.status === 'pending';
 
-  const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
   type PRItem = (typeof request.items)[number];
   const cols: ColumnDef<PRItem>[] = [
@@ -269,27 +269,25 @@ export default function PurchaseRequestDetailPage() {
               label={t('btn', 'create')}
               variant="primary"
               items={[
-                {
+                ...(isAdmin || can('quotation_request', 'create') ? [{
                   label: t('page', 'newQR'),
                   onClick: () => {
-                    if (!isAdmin && !can('quotation_request', 'create')) { toast('No permission to create a Quotation Request', 'error'); return; }
                     if (request.has_awarded_quotation) { toast('PR already has an awarded quotation.', 'error'); return; }
                     if (request.has_purchase_orders) { toast('PR already has purchase orders.', 'error'); return; }
                     const guard = canCreateQuotationRequest(request.status, can('quotation_request', 'create'));
                     if (!guard.canProceed) { toast(guard.reason || 'Cannot create QR', 'error'); return; }
                     router.push(`/quotation-requests/new?purchase_request_id=${id}`);
                   },
-                },
-                {
+                }] : []),
+                ...(isAdmin || can('purchase_order', 'create') ? [{
                   label: t('page', 'newPO'),
                   onClick: async () => {
-                    if (!isAdmin && !can('purchase_order', 'create')) { toast('No permission to create a Purchase Order', 'error'); return; }
                     const guard = canCreatePurchaseOrder(undefined, request.status);
                     if (!guard.canProceed) { toast(guard.reason || 'Cannot create PO', 'error'); return; }
                     if (guard.warning && !await confirm(guard.warning + '\n\nDo you want to continue?')) return;
                     router.push(`/purchase-orders/new?purchase_request_id=${id}`);
                   },
-                },
+                }] : []),
               ]}
             />
           )}
@@ -303,12 +301,12 @@ export default function PurchaseRequestDetailPage() {
             <div className="card" style={{ marginBottom: 12 }}>
               <div className="proc-section-head">
                 <h3 className="proc-section-title">Request Information</h3>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(request.request_date)}</span>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmtDate(request.request_date)}</span>
               </div>
               <div className="proc-info-grid">
                 <ProcField label={t('col', 'title')}       value={request.title} />
-                <ProcField label={t('col', 'requestDate')}  value={fmt(request.request_date)} />
-                <ProcField label={t('col', 'requiredBy')}   value={fmt(request.required_by)} />
+                <ProcField label={t('col', 'requestDate')}  value={fmtDate(request.request_date)} />
+                <ProcField label={t('col', 'requiredBy')}   value={fmtDate(request.required_by)} />
                 <ProcField label={t('col', 'createdBy')}    value={request.created_by_name} />
                 {request.approved_by_name && (
                   <ProcField label={t('section', 'authorization')} value={request.approved_by_name} />

@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
-import { formatPrice } from '@/lib/utils/format';
+import { formatPrice, fmtDate } from '@/lib/utils/format';
 import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
 import { Button, PageShell } from '@/components/ui';
 import { PO_STATUS } from '@/lib/utils/status-colors';
@@ -107,7 +107,7 @@ export default function PurchaseOrderDetailPage() {
 
   const prRef = typeof order.purchase_request === 'object' ? order.purchase_request : order.purchase_request ? { id: order.purchase_request } : null;
   const pqRef = typeof order.purchase_quotation === 'object' ? order.purchase_quotation : order.purchase_quotation ? { id: order.purchase_quotation } : null;
-  const fmt   = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
 
   const chainNode = (prRef || pqRef) ? (
     <>
@@ -222,15 +222,15 @@ export default function PurchaseOrderDetailPage() {
               <div className="card">
                 <div className="proc-section-head">
                   <h3 className="proc-section-title">Order Information</h3>
-                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(order.order_date)}</span>
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmtDate(order.order_date)}</span>
                 </div>
                 <div className="proc-info-grid">
                   <ProcField label="Supplier" value={typeof order.supplier === 'object' ? order.supplier.name : '—'} />
-                  <ProcField label="Order Date" value={fmt(order.order_date)} />
-                  {order.delivery_date && <ProcField label="Delivery Date" value={fmt(order.delivery_date)} />}
+                  <ProcField label="Order Date" value={fmtDate(order.order_date)} />
+                  {order.delivery_date && <ProcField label="Delivery Date" value={fmtDate(order.delivery_date)} />}
                   {order.delivery_method && <ProcField label="Delivery Method" value={order.delivery_method === 'pickup' ? 'Pick Up' : 'Delivery'} />}
                   {order.approved_by_name && <ProcField label="Approved By" value={order.approved_by_name} />}
-                  {order.approved_at && <ProcField label="Approved At" value={fmt(order.approved_at)} />}
+                  {order.approved_at && <ProcField label="Approved At" value={fmtDate(order.approved_at)} />}
                   {(order.project_name || order.project_code) && (
                     <ProcField label="Project" value={
                       <div>

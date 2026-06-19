@@ -91,11 +91,11 @@ export default function GoodsReceivingPage() {
       totalCount={totalCount}
       createAction={canCreate ? <Link href="/goods-receiving/new"><Button variant="primary">+ New GRN</Button></Link> : undefined}
       statusItems={[
-        { value: '',          label: 'All',       count: kpiTotal },
+        { value: '',          label: 'All',       count: kpiTotal,     loading: kpiTotal === undefined },
         { value: 'draft',     label: 'Draft' },
-        { value: 'partial',   label: 'Partial',   count: kpiPartial },
-        { value: 'completed', label: 'Completed', count: kpiCompleted },
-        { value: 'cancelled', label: 'Cancelled', count: kpiCancelled },
+        { value: 'partial',   label: 'Partial',   count: kpiPartial,   loading: kpiPartial === undefined },
+        { value: 'completed', label: 'Completed', count: kpiCompleted, loading: kpiCompleted === undefined },
+        { value: 'cancelled', label: 'Cancelled', count: kpiCancelled, loading: kpiCancelled === undefined },
       ]}
       searchPlaceholder="Search GRN records…"
       filterFields={filterFields}

@@ -104,12 +104,12 @@ export default function PurchaseInvoicesPage() {
       pendingCount={pending.invoice > 0 ? pending.invoice : undefined}
       createAction={canCreate ? <Link href="/purchase-invoices/new"><Button variant="primary">Create Invoice</Button></Link> : undefined}
       statusItems={[
-        { value: '',          label: 'All',       count: kpiTotal },
+        { value: '',          label: 'All',       count: kpiTotal,    loading: kpiTotal === undefined },
         { value: 'draft',     label: 'Draft' },
-        { value: 'pending',   label: 'Pending',   count: kpiPending },
-        { value: 'approved',  label: 'Approved',  count: kpiApproved },
-        { value: 'paid',      label: 'Paid',      count: kpiPaid },
-        { value: 'rejected',  label: 'Rejected',  count: kpiRejected },
+        { value: 'pending',   label: 'Pending',   count: kpiPending,  loading: kpiPending === undefined },
+        { value: 'approved',  label: 'Approved',  count: kpiApproved, loading: kpiApproved === undefined },
+        { value: 'paid',      label: 'Paid',      count: kpiPaid,     loading: kpiPaid === undefined },
+        { value: 'rejected',  label: 'Rejected',  count: kpiRejected, loading: kpiRejected === undefined },
         { value: 'cancelled', label: 'Cancelled' },
       ]}
       searchPlaceholder="Search invoices…"

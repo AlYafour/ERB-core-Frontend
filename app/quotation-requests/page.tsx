@@ -105,7 +105,7 @@ export default function QuotationRequestsPage() {
       description="Manage vendor quotation requests from purchase requests."
       totalCount={totalCount}
       createAction={canCreate ? <Link href="/quotation-requests/new"><Button variant="primary">New Request</Button></Link> : undefined}
-      statusItems={[{ value: '', label: 'All RFQs', count: kpiTotal }]}
+      statusItems={[{ value: '', label: 'All RFQs', count: kpiTotal, loading: kpiTotal === undefined }]}
       searchPlaceholder="Search by code, title…"
       filterFields={filterFields}
       advFilterTitle="Quotation Request Filters"

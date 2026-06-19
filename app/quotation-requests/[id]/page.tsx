@@ -10,6 +10,7 @@ import { Button, PageShell } from '@/components/ui';
 import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable';
 import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
 import { StickyDocBar } from '@/components/procurement/shared/StickyDocBar';
+import { fmtDate } from '@/lib/utils/format';
 
 export default function QuotationRequestDetailPage() {
   const params = useParams();
@@ -27,7 +28,7 @@ export default function QuotationRequestDetailPage() {
   const pr       = typeof qr.purchase_request === 'object' && qr.purchase_request ? qr.purchase_request as { id: number; code?: string } : null;
   const prId     = typeof qr.purchase_request === 'number' ? qr.purchase_request : pr?.id;
 
-  const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
 
   const chainNode = prId ? (
     <>
@@ -65,7 +66,7 @@ export default function QuotationRequestDetailPage() {
             <div className="card">
               <div className="proc-section-head">
                 <h3 className="proc-section-title">QR Information</h3>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(qr.created_at)}</span>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmtDate(qr.created_at)}</span>
               </div>
               <div className="proc-info-grid">
                 {supplier && <ProcField label="Supplier" value={supplier.business_name || supplier.name || '—'} />}
@@ -77,7 +78,7 @@ export default function QuotationRequestDetailPage() {
                   } />
                 )}
                 <ProcField label="Created By" value={qr.created_by_name || '—'} />
-                <ProcField label="Created At" value={fmt(qr.created_at)} />
+                <ProcField label="Created At" value={fmtDate(qr.created_at)} />
                 {qr.notes && <ProcField label="Notes" value={qr.notes} />}
               </div>
             </div>

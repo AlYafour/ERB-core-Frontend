@@ -136,11 +136,11 @@ export default function PurchaseQuotationsPage() {
       totalCount={totalCount}
       createAction={canCreate ? <Link href="/purchase-quotations/new"><Button variant="primary">New Quotation</Button></Link> : undefined}
       statusItems={[
-        { value: '',         label: 'All',      count: kpiTotal },
-        { value: 'pending',  label: 'Pending',  count: kpiPending },
-        { value: 'awarded',  label: 'Awarded',  count: kpiAwarded },
-        { value: 'rejected', label: 'Rejected', count: kpiRejected },
-        { value: 'expired',  label: 'Expired',  count: kpiExpired },
+        { value: '',         label: 'All',      count: kpiTotal,    loading: kpiTotal === undefined },
+        { value: 'pending',  label: 'Pending',  count: kpiPending,  loading: kpiPending === undefined },
+        { value: 'awarded',  label: 'Awarded',  count: kpiAwarded,  loading: kpiAwarded === undefined },
+        { value: 'rejected', label: 'Rejected', count: kpiRejected, loading: kpiRejected === undefined },
+        { value: 'expired',  label: 'Expired',  count: kpiExpired,  loading: kpiExpired === undefined },
       ]}
       searchPlaceholder="Search quotations…"
       filterFields={filterFields}

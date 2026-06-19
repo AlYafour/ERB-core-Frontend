@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseInvoicesApi } from '@/lib/api/purchase-invoices';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
-import { formatPrice } from '@/lib/utils/format';
+import { formatPrice, fmtDate } from '@/lib/utils/format';
 import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
 import { Button, PageShell } from '@/components/ui';
 import { INVOICE_STATUS } from '@/lib/utils/status-colors';
@@ -63,7 +63,7 @@ export default function PurchaseInvoiceDetailPage() {
   if (!invoice)  return <DocLoadState type="not-found" message="Invoice not found." />;
 
   const isDraftOrPending = invoice.status === 'draft' || invoice.status === 'pending';
-  const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
 
   const poRef = typeof invoice.purchase_order === 'object' && invoice.purchase_order
     ? { id: (invoice.purchase_order as { id: number; order_number?: string }).id, order_number: (invoice.purchase_order as { id: number; order_number?: string }).order_number }
@@ -114,15 +114,15 @@ export default function PurchaseInvoiceDetailPage() {
             <div className="card">
               <div className="proc-section-head">
                 <h3 className="proc-section-title">Invoice Information</h3>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(invoice.invoice_date)}</span>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmtDate(invoice.invoice_date)}</span>
               </div>
               <div className="proc-info-grid">
                 <ProcField label="Invoice Number"   value={<span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{invoice.invoice_number}</span>} />
-                <ProcField label="Invoice Date"     value={fmt(invoice.invoice_date)} />
-                {invoice.due_date          && <ProcField label="Due Date"          value={fmt(invoice.due_date)} />}
+                <ProcField label="Invoice Date"     value={fmtDate(invoice.invoice_date)} />
+                {invoice.due_date          && <ProcField label="Due Date"          value={fmtDate(invoice.due_date)} />}
                 {invoice.approved_by_name  && <ProcField label="Approved By"       value={invoice.approved_by_name} />}
-                {invoice.approved_at       && <ProcField label="Approved At"       value={fmt(invoice.approved_at)} />}
-                {invoice.payment_date      && <ProcField label="Payment Date"      value={fmt(invoice.payment_date)} />}
+                {invoice.approved_at       && <ProcField label="Approved At"       value={fmtDate(invoice.approved_at)} />}
+                {invoice.payment_date      && <ProcField label="Payment Date"      value={fmtDate(invoice.payment_date)} />}
                 {invoice.payment_method    && <ProcField label="Payment Method"    value={invoice.payment_method} />}
                 {invoice.payment_reference && <ProcField label="Payment Reference" value={<span style={{ fontFamily: 'monospace' }}>{invoice.payment_reference}</span>} />}
                 {poRef && (
