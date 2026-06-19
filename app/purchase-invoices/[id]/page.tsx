@@ -1,7 +1,7 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseInvoicesApi } from '@/lib/api/purchase-invoices';
 import MainLayout from '@/components/layout/MainLayout';
@@ -15,87 +15,55 @@ import { INVOICE_STATUS } from '@/lib/utils/status-colors';
 import { INVOICE_LABEL } from '@/lib/constants/status-labels';
 import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
-import { usePermissions } from '@/lib/hooks/use-permissions';
-import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
+import { useProcPermissions } from '@/lib/hooks/use-proc-permissions';
 import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable';
-
+import { FinancialSummary } from '@/components/procurement/shared/FinancialSummary';
+import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
 
 export default function PurchaseInvoiceDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const id = Number(params.id);
   const queryClient = useQueryClient();
-  const { hasPermission } = usePermissions();
+  const { can } = useProcPermissions();
+
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [markPaidOpen, setMarkPaidOpen] = useState(false);
+
+  const canApprove  = can('purchase_invoice', 'approve');
+  const canReject   = can('purchase_invoice', 'reject');
+  const canMarkPaid = can('purchase_invoice', 'mark_paid');
 
   const { data: invoice, isLoading } = useQuery({
     queryKey: ['purchase-invoices', id],
     queryFn: () => purchaseInvoicesApi.getById(id),
   });
 
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
+    queryClient.invalidateQueries({ queryKey: ['pending-count'] });
+  };
+
   const approveMutation = useMutation({
     mutationFn: () => purchaseInvoicesApi.approve(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['pending-count'] });
-      toast('Invoice approved successfully!', 'success');
-    },
-    onError: (error: any) => {
-      toast(getApiError(error, 'Failed to approve invoice'), 'error');
-    },
+    onSuccess: () => { invalidate(); toast('Invoice approved!', 'success'); },
+    onError: (err: any) => toast(getApiError(err, 'Failed to approve'), 'error'),
   });
 
   const rejectMutation = useMutation({
     mutationFn: (reason: string) => purchaseInvoicesApi.reject(id, reason),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['pending-count'] });
-      setRejectDialogOpen(false);
-      toast('Invoice rejected', 'info');
-    },
-    onError: (error: any) => {
-      toast(getApiError(error, 'Failed to reject invoice'), 'error');
-    },
+    onSuccess: () => { invalidate(); setRejectDialogOpen(false); toast('Invoice rejected', 'info'); },
+    onError: (err: any) => toast(getApiError(err, 'Failed to reject'), 'error'),
   });
 
   const markPaidMutation = useMutation({
     mutationFn: () => purchaseInvoicesApi.markPaid(id, {}),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['pending-count'] });
-      toast('Invoice marked as paid!', 'success');
-    },
-    onError: (error: any) => {
-      toast(getApiError(error, 'Failed to mark invoice as paid'), 'error');
-    },
+    onSuccess: () => { invalidate(); toast('Invoice marked as paid!', 'success'); },
+    onError: (err: any) => toast(getApiError(err, 'Failed to mark as paid'), 'error'),
   });
 
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
-  const isAdmin = isTenantAdmin || isPlatformAdmin;
-  const canApprove = isAdmin || (hasPermission('purchase_invoice', 'approve') ?? false);
-  const canReject  = isAdmin || (hasPermission('purchase_invoice', 'reject') ?? false);
-  const canMarkPaid = isAdmin || (hasPermission('purchase_invoice', 'mark_paid') ?? false);
+  if (isLoading) return <DocLoadState type="loading" />;
+  if (!invoice)  return <DocLoadState type="not-found" message="Invoice not found." />;
 
-  if (isLoading) {
-    return (
-      <MainLayout>
-        <div className="card empty-state">
-          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Loading...</p>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  if (!invoice) {
-    return (
-      <MainLayout>
-        <div className="card empty-state">
-          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Invoice not found</p>
-        </div>
-      </MainLayout>
-    );
-  }
+  const isDraftOrPending = invoice.status === 'draft' || invoice.status === 'pending';
 
   return (
     <MainLayout>
@@ -109,14 +77,14 @@ export default function PurchaseInvoiceDetailPage() {
               <Link href={`/print/invoice/${invoice.id}`} target="_blank">
                 <Button variant="secondary" size="sm">Print</Button>
               </Link>
-              {canApprove && (invoice.status === 'draft' || invoice.status === 'pending') && (
-                <Button variant="success" size="sm" onClick={() => approveMutation.mutate()} isLoading={approveMutation.isPending}>Approve</Button>
+              {canApprove && isDraftOrPending && (
+                <Button variant="success" size="sm" isLoading={approveMutation.isPending} onClick={() => approveMutation.mutate()}>Approve</Button>
               )}
-              {canReject && (invoice.status === 'draft' || invoice.status === 'pending') && (
-                <Button variant="destructive" size="sm" onClick={() => setRejectDialogOpen(true)} disabled={rejectMutation.isPending}>Reject</Button>
+              {canReject && isDraftOrPending && (
+                <Button variant="destructive" size="sm" disabled={rejectMutation.isPending} onClick={() => setRejectDialogOpen(true)}>Reject</Button>
               )}
               {canMarkPaid && invoice.status === 'approved' && !invoice.is_fully_paid && (
-                <Button variant="success" size="sm" onClick={() => markPaidMutation.mutate()} isLoading={markPaidMutation.isPending}>Mark as Paid</Button>
+                <Button variant="success" size="sm" isLoading={markPaidMutation.isPending} onClick={() => markPaidMutation.mutate()}>Mark as Paid</Button>
               )}
             </div>
           }
@@ -133,42 +101,23 @@ export default function PurchaseInvoiceDetailPage() {
 
         <DetailCard title="Invoice Information">
           <DetailField label="Invoice Number" value={invoice.invoice_number} />
-          <DetailField label="Invoice Date" value={new Date(invoice.invoice_date).toLocaleDateString('en-US')} />
-          {invoice.due_date && (
-            <DetailField label="Due Date" value={new Date(invoice.due_date).toLocaleDateString('en-US')} />
-          )}
-          {invoice.approved_by_name && (
-            <DetailField label="Approved By" value={invoice.approved_by_name} />
-          )}
-          {invoice.approved_at && (
-            <DetailField label="Approved At" value={new Date(invoice.approved_at).toLocaleDateString('en-US')} />
-          )}
-          {invoice.payment_date && (
-            <DetailField label="Payment Date" value={new Date(invoice.payment_date).toLocaleDateString('en-US')} />
-          )}
-          {invoice.payment_method && (
-            <DetailField label="Payment Method" value={invoice.payment_method} />
-          )}
-          {invoice.payment_reference && (
-            <DetailField label="Payment Reference" value={invoice.payment_reference} />
-          )}
-          {invoice.notes && (
-            <DetailField label="Notes" value={invoice.notes} span={3} />
-          )}
+          <DetailField label="Invoice Date"   value={new Date(invoice.invoice_date).toLocaleDateString('en-US')} />
+          {invoice.due_date       && <DetailField label="Due Date"         value={new Date(invoice.due_date).toLocaleDateString('en-US')} />}
+          {invoice.approved_by_name && <DetailField label="Approved By"    value={invoice.approved_by_name} />}
+          {invoice.approved_at    && <DetailField label="Approved At"      value={new Date(invoice.approved_at).toLocaleDateString('en-US')} />}
+          {invoice.payment_date   && <DetailField label="Payment Date"     value={new Date(invoice.payment_date).toLocaleDateString('en-US')} />}
+          {invoice.payment_method && <DetailField label="Payment Method"   value={invoice.payment_method} />}
+          {invoice.payment_reference && <DetailField label="Payment Reference" value={invoice.payment_reference} />}
+          {invoice.notes && <DetailField label="Notes" value={invoice.notes} span={3} />}
           {invoice.rejection_reason && (
             <DetailField
               label="Rejection Reason"
+              span={3}
               value={
-                <div style={{
-                  padding: 'var(--space-3)',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--color-error-light)',
-                  border: '1px solid var(--color-error)',
-                }}>
+                <div style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-error-light)', border: '1px solid var(--color-error)' }}>
                   <p style={{ fontSize: 'var(--text-sm)', color: '#991B1B', margin: 0 }}>{invoice.rejection_reason}</p>
                 </div>
               }
-              span={3}
             />
           )}
         </DetailCard>
@@ -178,59 +127,48 @@ export default function PurchaseInvoiceDetailPage() {
             <ReadOnlyItemsTable
               items={invoice.items}
               columns={[
-                {
-                  header: 'Product',
-                  cell: (item) => item.product?.name || `Product #${item.product_id}`,
-                },
-                { header: 'Unit', cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
-                { header: 'Qty', cell: (item) => item.quantity },
+                { header: 'Product',    cell: (item) => item.product?.name || `Product #${item.product_id}` },
+                { header: 'Unit',       cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
+                { header: 'Qty',        cell: (item) => item.quantity },
                 { header: 'Unit Price', cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{formatPrice(item.unit_price)}</span> },
-                { header: 'Disc %', cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.discount || 0}%</span> },
-                { header: 'Tax %', cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.tax_rate || 0}%</span> },
-                { header: 'Total', cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(item.total ?? 0)}</span> },
+                { header: 'Disc %',     cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.discount || 0}%</span> },
+                { header: 'Tax %',      cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.tax_rate || 0}%</span> },
+                { header: 'Total',      cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(item.total ?? 0)}</span> },
               ]}
             />
           </div>
         </DetailCard>
 
         <DetailCard title="Financial Summary">
-          <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end' }}>
-            <div style={{ width: 256, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              {invoice.subtotal !== undefined && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Subtotal:</span>
-                  <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(invoice.subtotal)}</span>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <FinancialSummary
+              rows={[
+                { label: 'Subtotal',   value: invoice.subtotal,   hidden: invoice.subtotal == null },
+                { label: 'Discount',   value: invoice.discount,   hidden: !Number(invoice.discount), variant: 'discount', prefix: '- ' },
+                { label: 'Tax',        value: invoice.tax_amount,  hidden: !Number(invoice.tax_amount) },
+              ]}
+              total={invoice.total}
+              totalLabel="Total"
+            />
+            {/* Payment rows below the separator */}
+            {(invoice.paid_amount != null || invoice.remaining_amount != null) && (
+              <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
+                <div style={{ width: 272, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {invoice.paid_amount != null && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Paid:</span>
+                      <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--color-success)' }}>{formatPrice(invoice.paid_amount)}</span>
+                    </div>
+                  )}
+                  {invoice.remaining_amount != null && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Remaining:</span>
+                      <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--brand)' }}>{formatPrice(invoice.remaining_amount)}</span>
+                    </div>
+                  )}
                 </div>
-              )}
-              {invoice.discount !== undefined && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Discount:</span>
-                  <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(invoice.discount)}</span>
-                </div>
-              )}
-              {invoice.tax_amount !== undefined && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Tax:</span>
-                  <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(invoice.tax_amount)}</span>
-                </div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-2)', fontSize: 'var(--text-base)' }}>
-                <span style={{ fontWeight: 'var(--weight-bold)' }}>Total:</span>
-                <span style={{ fontWeight: 'var(--weight-bold)' }}>{formatPrice(invoice.total)}</span>
               </div>
-              {invoice.paid_amount !== undefined && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Paid:</span>
-                  <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--color-success)' }}>{formatPrice(invoice.paid_amount)}</span>
-                </div>
-              )}
-              {invoice.remaining_amount !== undefined && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Remaining:</span>
-                  <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--brand)' }}>{formatPrice(invoice.remaining_amount)}</span>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </DetailCard>
 

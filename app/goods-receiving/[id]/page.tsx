@@ -1,43 +1,39 @@
-﻿'use client';
+'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { goodsReceivingApi } from '@/lib/api/goods-receiving';
 import MainLayout from '@/components/layout/MainLayout';
-import PageHeader from '@/components/ui/PageHeader';
 import Link from 'next/link';
-import { formatPrice } from '@/lib/utils/format';
 import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection';
+import DetailCard, { DetailField } from '@/components/ui/DetailCard';
 import { canCreateInvoice } from '@/lib/utils/workflow-guards';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
-import { usePermissions } from '@/lib/hooks/use-permissions';
-import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
-import { Button, Badge, PageShell } from '@/components/ui';
+import { useProcPermissions } from '@/lib/hooks/use-proc-permissions';
+import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
 import { QUALITY_STATUS } from '@/lib/utils/status-colors';
-import Image from 'next/image';
 import { useT } from '@/lib/i18n/useT';
 import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable';
-
+import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
 
 export default function GRNDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = Number(params.id);
   const queryClient = useQueryClient();
-  const { hasPermission } = usePermissions();
   const t = useT();
+  const { isAdmin, can } = useProcPermissions();
+
+  const canMarkInvoice    = can('goods_receiving', 'update');
+  const canCreateInvPerm  = can('purchase_invoice', 'create');
+
   const qualityStatusLabels: Record<string, string> = {
-    good: t('status', 'good'),
-    damaged: t('status', 'damaged'),
+    good:      t('status', 'good'),
+    damaged:   t('status', 'damaged'),
     defective: t('status', 'defective'),
-    missing: t('empty', 'notFound'),
+    missing:   t('empty', 'notFound'),
   };
-  
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
-  const isAdmin = isTenantAdmin || isPlatformAdmin;
-  const canMarkInvoice = isAdmin || (hasPermission('goods_receiving', 'update') ?? false);
-  const canCreateInvoicePerm = isAdmin || (hasPermission('purchase_invoice', 'create') ?? false);
 
   const { data: grn, isLoading } = useQuery({
     queryKey: ['goods-receiving', id],
@@ -47,43 +43,20 @@ export default function GRNDetailPage() {
   const markInvoiceDeliveredMutation = useMutation({
     mutationFn: () => goodsReceivingApi.markInvoiceDelivered(id),
     onSuccess: () => {
-      toast('Invoice marked as delivered to office', 'success');
       queryClient.invalidateQueries({ queryKey: ['goods-receiving', id] });
+      toast('Invoice marked as delivered to office', 'success');
     },
-    onError: (error: any) => {
-      toast(getApiError(error, 'Failed to mark invoice as delivered'), 'error');
-    },
+    onError: (err: any) => toast(getApiError(err, 'Failed to mark invoice as delivered'), 'error'),
   });
 
-  if (isLoading) {
-    return (
-      <MainLayout>
-        <div className="card empty-state">
-          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t('btn', 'loading')}</p>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  if (!grn) {
-    return (
-      <MainLayout>
-        <div className="card empty-state">
-          <p style={{ color: 'var(--text-secondary)', margin: '0 0 var(--space-4) 0' }}>{t('empty', 'notFound')}</p>
-          <Button variant="primary" onClick={() => router.push('/goods-receiving')}>
-            {t('btn', 'back')} {t('page', 'goodsReceiving')}
-          </Button>
-        </div>
-      </MainLayout>
-    );
-  }
+  if (isLoading) return <DocLoadState type="loading" />;
+  if (!grn)      return <DocLoadState type="not-found" message="GRN not found." />;
 
   const purchaseOrder = typeof grn.purchase_order === 'object' ? grn.purchase_order : null;
 
   return (
     <MainLayout>
       <PageShell>
-        {/* Header */}
         <PageHeader
           backHref="/goods-receiving"
           title={`GRN: ${grn.grn_number}`}
@@ -95,7 +68,6 @@ export default function GRNDetailPage() {
           }
         />
 
-        {/* Linked Documents */}
         <LinkedDocumentsSection
           documents={{
             purchaseOrder: purchaseOrder ? { id: purchaseOrder.id, order_number: purchaseOrder.order_number } : null,
@@ -103,329 +75,98 @@ export default function GRNDetailPage() {
           }}
         />
 
-        {/* Details Card - Unified */}
-        <div className="card">
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--space-4)',
-          }}>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--text-sm)',
-                fontWeight: 'var(--weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--space-2)',
-              }}>
-                {t('page', 'purchaseOrders')}
-              </label>
-              <p style={{ 
-                fontSize: 'var(--text-base)',
-                fontWeight: 'var(--weight-semibold)',
-                color: 'var(--text-primary)',
-                margin: 0,
-                marginBottom: 'var(--space-1)',
-              }}>
-                {purchaseOrder?.order_number || 'N/A'}
-              </p>
-              {purchaseOrder && (
-                <Link
-                  href={`/purchase-orders/${purchaseOrder.id}`}
-                  style={{ 
-                    fontSize: 'var(--text-sm)',
-                    color: 'var(--text-primary)',
-                    textDecoration: 'underline',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'var(--brand)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'var(--text-primary)';
-                  }}
-                >
-                  {t('btn', 'view')} {t('page', 'purchaseOrders')}
-                </Link>
-              )}
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--text-sm)',
-                fontWeight: 'var(--weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--space-2)',
-              }}>
-                {t('field', 'receiptDate')}
-              </label>
-              <p style={{ 
-                fontSize: 'var(--text-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {new Date(grn.receipt_date).toLocaleDateString('en-US')}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--text-sm)',
-                fontWeight: 'var(--weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--space-2)',
-              }}>
-                {t('col', 'createdBy')}
-              </label>
-              <p style={{ 
-                fontSize: 'var(--text-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {grn.received_by_name || 'N/A'}
-              </p>
-            </div>
-            {grn.notes && (
+        <DetailCard title="GRN Information">
+          <DetailField
+            label={t('page', 'purchaseOrders')}
+            value={
+              purchaseOrder ? (
+                <div>
+                  <div style={{ fontWeight: 'var(--weight-semibold)' }}>{purchaseOrder.order_number}</div>
+                  <Link href={`/purchase-orders/${purchaseOrder.id}`} style={{ fontSize: 'var(--text-sm)', color: 'var(--text-brand)', textDecoration: 'underline' }}>
+                    {t('btn', 'view')} {t('page', 'purchaseOrders')}
+                  </Link>
+                </div>
+              ) : 'N/A'
+            }
+          />
+          <DetailField label={t('field', 'receiptDate')} value={new Date(grn.receipt_date).toLocaleDateString('en-US')} />
+          <DetailField label={t('col', 'createdBy')} value={grn.received_by_name || 'N/A'} />
+          {grn.notes && <DetailField label={t('col', 'notes')} value={grn.notes} span={3} />}
+        </DetailCard>
+
+        {/* Material Images & Invoice */}
+        {((grn.material_images && grn.material_images.length > 0) || grn.supplier_invoice_file_url || grn.invoice_delivery_status) && (
+          <DetailCard title={t('section', 'receiptInfo')}>
+            {grn.material_images && grn.material_images.length > 0 && (
               <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ 
-                  display: 'block',
-                  fontSize: 'var(--text-sm)',
-                  fontWeight: 'var(--weight-medium)',
-                  color: 'var(--text-secondary)',
-                  marginBottom: 'var(--space-2)',
-                }}>
-                  {t('col', 'notes')}
-                </label>
-                <p style={{ 
-                  fontSize: 'var(--text-base)',
-                  color: 'var(--text-primary)',
-                  margin: 0,
-                }}>
-                  {grn.notes}
-                </p>
+                <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                  {grn.material_images.map((img: any, i: number) => (
+                    <div key={img.id || i} style={{ width: 150, height: 150, borderRadius: 4, overflow: 'hidden', cursor: 'pointer' }} onClick={() => window.open(img.image_url || img.image, '_blank')}>
+                      <img src={img.image_url || img.image} alt={`Material ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Material Images and Invoice Section */}
-        {((grn.material_images && grn.material_images.length > 0) || grn.supplier_invoice_file_url || grn.invoice_delivery_status) ? (
-          <div className="card">
-            <h3 style={{ 
-              fontSize: 'var(--text-lg)',
-              fontWeight: 'var(--weight-semibold)',
-              color: 'var(--text-primary)',
-              margin: 0,
-              marginBottom: 'var(--space-4)',
-            }}>
-              {t('section', 'receiptInfo')}
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-              {/* Material Images */}
-              {grn.material_images && grn.material_images.length > 0 && (
-                <div>
-                  <label style={{ 
-                    display: 'block',
-                    fontSize: 'var(--text-sm)',
-                    fontWeight: 'var(--weight-medium)',
-                    color: 'var(--text-secondary)',
-                    marginBottom: 'var(--space-2)',
-                  }}>
-                    {t('section', 'receiptInfo')}
-                  </label>
-                  <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                    {grn.material_images.map((imageObj: any, index: number) => (
-                      <div key={imageObj.id || index} style={{ position: 'relative', width: '150px', height: '150px' }}>
-                        <img
-                          src={imageObj.image_url || imageObj.image}
-                          alt={`Material ${index + 1}`}
-                          style={{ 
-                            width: '100%', 
-                            height: '100%', 
-                            objectFit: 'cover', 
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                          }}
-                          onClick={() => window.open(imageObj.image_url || imageObj.image, '_blank')}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Supplier Invoice */}
-              {grn.supplier_invoice_file_url && (
-                <div>
-                  <label style={{ 
-                    display: 'block',
-                    fontSize: 'var(--text-sm)',
-                    fontWeight: 'var(--weight-medium)',
-                    color: 'var(--text-secondary)',
-                    marginBottom: 'var(--space-2)',
-                  }}>
-                    {t('col', 'supplier')}
-                  </label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                    {grn.supplier_invoice_file_url.endsWith('.pdf') ? (
-                      <a href={grn.supplier_invoice_file_url} target="_blank" rel="noopener noreferrer">
-                        <Button variant="primary">{t('btn', 'view')} PDF</Button>
-                      </a>
-                    ) : (
-                      <img
-                        src={grn.supplier_invoice_file_url}
-                        alt="Supplier Invoice"
-                        style={{ 
-                          maxWidth: '300px', 
-                          maxHeight: '300px', 
-                          objectFit: 'contain', 
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                        }}
-                        onClick={() => window.open(grn.supplier_invoice_file_url!, '_blank')}
-                      />
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Invoice Delivery Status */}
+            {grn.supplier_invoice_file_url && (
               <div>
-                <label style={{ 
-                  display: 'block',
-                  fontSize: 'var(--text-sm)',
-                  fontWeight: 'var(--weight-medium)',
-                  color: 'var(--text-secondary)',
-                  marginBottom: 'var(--space-2)',
-                }}>
-                  {t('col', 'invoiceDelivery')}
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                  <Badge variant={grn.invoice_delivery_status === 'delivered' ? 'success' : 'warning'}>
-                    {grn.invoice_delivery_status === 'delivered' 
-                      ? t('status', 'delivered')
-                      : t('status', 'notDelivered')}
-                  </Badge>
-                  {grn.invoice_delivery_status === 'not_delivered' && canMarkInvoice && (
-                    <Button
-                      variant="primary"
-                      onClick={() => markInvoiceDeliveredMutation.mutate()}
-                      disabled={markInvoiceDeliveredMutation.isPending}
-                    >
-                      {markInvoiceDeliveredMutation.isPending ? t('btn', 'loading') : t('status', 'delivered')}
-                    </Button>
-                  )}
-                </div>
+                {grn.supplier_invoice_file_url.endsWith('.pdf') ? (
+                  <a href={grn.supplier_invoice_file_url} target="_blank" rel="noopener noreferrer">
+                    <Button variant="primary">{t('btn', 'view')} PDF</Button>
+                  </a>
+                ) : (
+                  <img src={grn.supplier_invoice_file_url} alt="Supplier Invoice" style={{ maxWidth: 300, maxHeight: 300, objectFit: 'contain', borderRadius: 4, cursor: 'pointer' }} onClick={() => window.open(grn.supplier_invoice_file_url!, '_blank')} />
+                )}
               </div>
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+              <Badge variant={grn.invoice_delivery_status === 'delivered' ? 'success' : 'warning'}>
+                {grn.invoice_delivery_status === 'delivered' ? t('status', 'delivered') : t('status', 'notDelivered')}
+              </Badge>
+              {grn.invoice_delivery_status === 'not_delivered' && canMarkInvoice && (
+                <Button variant="primary" isLoading={markInvoiceDeliveredMutation.isPending} onClick={() => markInvoiceDeliveredMutation.mutate()}>
+                  {t('status', 'delivered')}
+                </Button>
+              )}
             </div>
-          </div>
-        ) : null}
+          </DetailCard>
+        )}
 
-        {/* Items Section - Unified */}
-        <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--text-lg)',
-            fontWeight: 'var(--weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--space-4)',
-          }}>
-            {t('section', 'receivedItems')}
-          </h3>
-          <ReadOnlyItemsTable
-            items={grn.items ?? []}
-            emptyMessage={t('empty', 'noResults')}
-            columns={[
-              {
-                header: t('col', 'product'),
-                cell: (item) => (
-                  <>
-                    <div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{item.product?.name || 'N/A'}</div>
-                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item.product?.code || ''}</div>
-                  </>
-                ),
-              },
-              { header: t('col', 'unit'), cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
-              { header: t('col', 'orderedQty'), cell: (item) => <span style={{ color: 'var(--text-primary)' }}>{item.ordered_quantity}</span> },
-              { header: t('col', 'receivedQty'), cell: (item) => <span style={{ color: 'var(--color-success)', fontWeight: 'var(--weight-semibold)' }}>{item.received_quantity}</span> },
-              { header: t('col', 'rejectedQty'), cell: (item) => <span style={{ color: 'var(--color-error)' }}>{item.rejected_quantity}</span> },
-              {
-                header: t('col', 'qualityStatus'),
-                cell: (item) => (
-                  <Badge variant={QUALITY_STATUS[item.quality_status] ?? 'info'}>
-                    {qualityStatusLabels[item.quality_status] || item.quality_status}
-                  </Badge>
-                ),
-              },
-              { header: t('col', 'notes'), cell: (item) => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{item.notes || '-'}</span> },
-            ]}
-          />
-        </div>
-
-        {/* Summary - Unified */}
-        <div className="card">
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--space-4)',
-          }}>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--text-sm)',
-                fontWeight: 'var(--weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--space-2)',
-              }}>
-                {t('col', 'qty')}
-              </label>
-              <p style={{ 
-                fontSize: 'var(--text-2xl)',
-                fontWeight: 'var(--weight-bold)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {grn.total_items || 0}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--text-sm)',
-                fontWeight: 'var(--weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--space-2)',
-              }}>
-                {t('col', 'receivedQty')}
-              </label>
-              <p style={{ 
-                fontSize: 'var(--text-2xl)',
-                fontWeight: 'var(--weight-bold)',
-                color: 'var(--color-success)',
-                margin: 0,
-              }}>
-                {grn.total_received_quantity || 0}
-              </p>
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block',
-                fontSize: 'var(--text-sm)',
-                fontWeight: 'var(--weight-medium)',
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--space-2)',
-              }}>
-                Created At
-              </label>
-              <p style={{ 
-                fontSize: 'var(--text-base)',
-                color: 'var(--text-primary)',
-                margin: 0,
-              }}>
-                {new Date(grn.created_at).toLocaleDateString('en-US')}
-              </p>
-            </div>
+        <DetailCard title={t('section', 'receivedItems')}>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <ReadOnlyItemsTable
+              items={grn.items ?? []}
+              emptyMessage={t('empty', 'noResults')}
+              columns={[
+                {
+                  header: t('col', 'product'),
+                  cell: (item) => (
+                    <>
+                      <div style={{ fontWeight: 'var(--weight-medium)' }}>{item.product?.name || 'N/A'}</div>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item.product?.code}</div>
+                    </>
+                  ),
+                },
+                { header: t('col', 'unit'),        cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
+                { header: t('col', 'orderedQty'),  cell: (item) => item.ordered_quantity },
+                { header: t('col', 'receivedQty'), cell: (item) => <span style={{ color: 'var(--color-success)', fontWeight: 'var(--weight-semibold)' }}>{item.received_quantity}</span> },
+                { header: t('col', 'rejectedQty'), cell: (item) => <span style={{ color: 'var(--color-error)' }}>{item.rejected_quantity}</span> },
+                {
+                  header: t('col', 'qualityStatus'),
+                  cell: (item) => <Badge variant={QUALITY_STATUS[item.quality_status] ?? 'info'}>{qualityStatusLabels[item.quality_status] || item.quality_status}</Badge>,
+                },
+                { header: t('col', 'notes'), cell: (item) => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{item.notes || '—'}</span> },
+              ]}
+            />
           </div>
-        </div>
+        </DetailCard>
+
+        {/* Summary stats */}
+        <DetailCard title="Summary">
+          <DetailField label={t('col', 'qty')} value={<span style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-bold)' }}>{grn.total_items || 0}</span>} />
+          <DetailField label={t('col', 'receivedQty')} value={<span style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-bold)', color: 'var(--color-success)' }}>{grn.total_received_quantity || 0}</span>} />
+          <DetailField label="Created At" value={new Date(grn.created_at).toLocaleDateString('en-US')} />
+        </DetailCard>
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
@@ -434,7 +175,7 @@ export default function GRNDetailPage() {
               <Button variant="primary">View Invoice</Button>
             </Link>
           ) : (
-            purchaseOrder && purchaseOrder.status === 'approved' && canCreateInvoicePerm && (
+            purchaseOrder && purchaseOrder.status === 'approved' && canCreateInvPerm && (
               <Button
                 variant="primary"
                 onClick={async () => {
@@ -453,4 +194,3 @@ export default function GRNDetailPage() {
     </MainLayout>
   );
 }
-

@@ -7,41 +7,24 @@ import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import DetailCard, { DetailField } from '@/components/ui/DetailCard';
 import { Button, PageHeader, PageShell } from '@/components/ui';
-import { useAuth } from '@/lib/hooks/use-auth';
+import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable';
+import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
 
 export default function QuotationRequestDetailPage() {
   const params = useParams();
   const id = Number(params.id);
-  const { user } = useAuth();
 
   const { data: qr, isLoading } = useQuery({
     queryKey: ['quotation-requests', id],
     queryFn: () => quotationRequestsApi.getById(id),
   });
 
-  if (isLoading) {
-    return (
-      <MainLayout>
-        <div className="card empty-state">
-          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Loading...</p>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  if (!qr) {
-    return (
-      <MainLayout>
-        <div className="card empty-state">
-          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Quotation Request not found</p>
-        </div>
-      </MainLayout>
-    );
-  }
+  if (isLoading) return <DocLoadState type="loading" />;
+  if (!qr)       return <DocLoadState type="not-found" message="Quotation Request not found." />;
 
   const supplier = typeof qr.supplier === 'object' ? qr.supplier : null;
-  const pr = typeof qr.purchase_request === 'object' ? qr.purchase_request : null;
-  const prId = typeof qr.purchase_request === 'number' ? qr.purchase_request : pr?.id;
+  const pr       = typeof qr.purchase_request === 'object' ? qr.purchase_request : null;
+  const prId     = typeof qr.purchase_request === 'number' ? qr.purchase_request : pr?.id;
 
   return (
     <MainLayout>
@@ -58,9 +41,7 @@ export default function QuotationRequestDetailPage() {
         />
 
         <DetailCard title="Quotation Request Information">
-          {supplier && (
-            <DetailField label="Supplier" value={supplier.business_name || supplier.name} />
-          )}
+          {supplier && <DetailField label="Supplier" value={supplier.business_name || supplier.name} />}
           {prId && (
             <DetailField
               label="Purchase Request"
@@ -73,33 +54,28 @@ export default function QuotationRequestDetailPage() {
           )}
           <DetailField label="Created By" value={qr.created_by_name} />
           <DetailField label="Created At" value={new Date(qr.created_at).toLocaleDateString('en-US')} />
-          {qr.notes && (
-            <DetailField label="Notes" value={qr.notes} span={3} />
-          )}
+          {qr.notes && <DetailField label="Notes" value={qr.notes} span={3} />}
         </DetailCard>
 
         <DetailCard title="Items">
-          <div style={{ gridColumn: '1 / -1', overflowX: 'auto' }}>
-            <table>
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Quantity</th>
-                  <th>Unit</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {qr.items.map((item, idx) => (
-                  <tr key={(item as any).id ?? idx}>
-                    <td>{(item as any).product?.name || `Product #${(item as any).product_id}`}</td>
-                    <td>{(item as any).quantity}</td>
-                    <td>{(item as any).unit || '—'}</td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{(item as any).notes || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <ReadOnlyItemsTable
+              items={qr.items}
+              columns={[
+                {
+                  header: 'Product',
+                  cell: (item: any) => (
+                    <>
+                      <div style={{ fontWeight: 'var(--weight-medium)' }}>{item.product?.name || `Product #${item.product_id}`}</div>
+                      {item.product?.code && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item.product.code}</div>}
+                    </>
+                  ),
+                },
+                { header: 'Quantity', cell: (item: any) => item.quantity },
+                { header: 'Unit',     cell: (item: any) => <span style={{ color: 'var(--text-secondary)' }}>{item.unit || item.product?.unit || '—'}</span> },
+                { header: 'Notes',    cell: (item: any) => <span style={{ color: 'var(--text-secondary)' }}>{item.notes || '—'}</span> },
+              ]}
+            />
           </div>
         </DetailCard>
       </PageShell>
