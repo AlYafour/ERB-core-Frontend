@@ -13,11 +13,46 @@ const ALLOWED_EXTS = new Set([
   '.ppt', '.pptx',
 ]);
 
-function toDownloadUrl(url: string): string {
-  if (url.includes('res.cloudinary.com') && url.includes('/upload/')) {
-    return url.replace('/upload/', '/upload/fl_attachment/');
+// Extensions Cloudinary can render natively as images — everything else is a document
+const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.ico']);
+
+function _ext(fileName: string) {
+  const parts = fileName.split('.');
+  return parts.length > 1 ? '.' + parts.pop()!.toLowerCase() : '';
+}
+
+/**
+ * Fix Cloudinary URLs for non-image files stored under the wrong resource type.
+ * MediaCloudinaryStorage (the Django default) uploads everything as `image/upload`.
+ * PDFs/DOCs stored that way must have their extension appended so Cloudinary serves
+ * the original file instead of trying to render it as an image.
+ */
+function fixCloudinaryUrl(url: string, fileName: string): string {
+  if (!url.includes('res.cloudinary.com') || !url.includes('/upload/')) return url;
+  const ext = _ext(fileName);
+  if (ext && !IMAGE_EXTS.has(ext) && url.includes('/image/upload/') && !url.endsWith(ext)) {
+    return url + ext;
   }
   return url;
+}
+
+/** View URL — serves the original file inline (PDF opens in browser, images display). */
+function toViewUrl(url: string, fileName: string): string {
+  return fixCloudinaryUrl(url, fileName);
+}
+
+/**
+ * Download URL — forces Content-Disposition: attachment with the correct filename.
+ * Uses fl_attachment:filename so Cloudinary sets the right filename in the header
+ * (the HTML `download` attribute is ignored for cross-origin URLs).
+ */
+function toDownloadUrl(url: string, fileName: string): string {
+  const fixed = fixCloudinaryUrl(url, fileName);
+  if (fixed.includes('res.cloudinary.com') && fixed.includes('/upload/')) {
+    const safe = encodeURIComponent(fileName);
+    return fixed.replace('/upload/', `/upload/fl_attachment:${safe}/`);
+  }
+  return fixed;
 }
 
 function fileIcon(name: string) {
@@ -90,7 +125,7 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
                 {a.file_url && (
                   <>
                     <a
-                      href={a.file_url}
+                      href={toViewUrl(a.file_url, a.file_name)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="attachment-download"
@@ -98,8 +133,7 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
                       View
                     </a>
                     <a
-                      href={toDownloadUrl(a.file_url)}
-                      download={a.file_name}
+                      href={toDownloadUrl(a.file_url, a.file_name)}
                       rel="noopener noreferrer"
                       className="attachment-download"
                     >
