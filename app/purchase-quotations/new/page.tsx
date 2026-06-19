@@ -21,6 +21,7 @@ import { formatPrice } from '@/lib/utils/format';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useT } from '@/lib/i18n/useT';
+import { EditableStandardItemsTable } from '@/components/procurement/EditableStandardItemsTable';
 
 type PurchaseQuotationFormItem = Omit<PurchaseQuotationItem, 'product' | 'total' | 'created_at'> & {
   _product?: Product | null;
@@ -608,137 +609,24 @@ function NewPurchaseQuotationPageContent() {
 
             {items.length > 0 ? (
               <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>{t('col', 'product')}</th>
-                        <th>{t('col', 'unit')}</th>
-                        <th>{t('col', 'quantity')}</th>
-                        <th>{t('col', 'unitPrice')}</th>
-                        <th>Disc %</th>
-                        <th>Tax %</th>
-                        <th>{t('col', 'total')}</th>
-                        <th>{t('col', 'actions')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {items.map((item, index) => {
-                        // Try to get product from stored _product first, then from products list
-                        let product = item._product;
-                        
-                        // If no product in stored _product, try to get from products list
-                        if (!product && products?.results) {
-                          product = products.results.find((p) => p.id === item.product_id);
-                          // Store it if found
-                          if (product) {
-                            item._product = product;
-                          }
-                        }
-                        
-                        // If still no product, try to fetch it from quotationRequest items
-                        if (!product && quotationRequest?.items) {
-                          const requestItem = quotationRequest.items.find((ri: any) => {
-                            const riProductId = ri.product?.id || ri.product_id;
-                            return riProductId === item.product_id;
-                          });
-                          if (requestItem?.product) {
-                            product = requestItem.product;
-                            // Store it for future use
-                            item._product = product;
-                          }
-                        }
-                        
-                        const itemSubtotal = item.quantity * item.unit_price;
-                        const discountAmount = itemSubtotal * ((item.discount ?? 0) / 100);
-                        const afterDiscount = itemSubtotal - discountAmount;
-                        const taxAmount = afterDiscount * ((item.tax_rate ?? 0) / 100);
-                        const itemTotal = afterDiscount + taxAmount;
-
-                        return (
-                          <tr key={index}>
-                            <td>
-                              <div style={{ 
-                                fontWeight: 'var(--weight-medium)',
-                                color: 'var(--text-primary)',
-                              }}>
-                                {product?.name || `Product ID: ${item.product_id}`}
-                              </div>
-                              {product?.code && (
-                                <div style={{
-                                  fontSize: 'var(--text-xs)',
-                                  color: 'var(--text-secondary)',
-                                }}>
-                                  {product.code}
-                                </div>
-                              )}
-                            </td>
-                            <td style={{ color: 'var(--text-secondary)' }}>{product?.unit?.toUpperCase() || '—'}</td>
-                            <td>
-                              <input
-                                type="number"
-                                min="1"
-                                step="any"
-                                value={item.quantity}
-                                onChange={(e) => handleUpdateItem(index, 'quantity', Number(e.target.value))}
-                                className="form-input"
-                                style={{ width: '80px' }}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={item.unit_price}
-                                onChange={(e) => handleUpdateItem(index, 'unit_price', Number(e.target.value))}
-                                className="form-input"
-                                style={{ width: '96px' }}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="0.01"
-                                value={item.discount ?? 0}
-                                onChange={(e) => handleUpdateItem(index, 'discount', Math.min(100, Number(e.target.value)))}
-                                className="form-input"
-                                style={{ width: '80px' }}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="0.01"
-                                value={item.tax_rate ?? 0}
-                                onChange={(e) => handleUpdateItem(index, 'tax_rate', Math.min(100, Number(e.target.value)))}
-                                className="form-input"
-                                style={{ width: '80px' }}
-                              />
-                            </td>
-                            <td>
-                              <div style={{ 
-                                fontWeight: 'var(--weight-semibold)',
-                                color: 'var(--text-primary)',
-                              }}>
-                                {itemTotal.toFixed(2)}
-                              </div>
-                            </td>
-                            <td>
-                              <Button type="button" variant="delete" size="sm" onClick={() => handleRemoveItem(index)}>
-                                {t('btn', 'delete')}
-                              </Button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <EditableStandardItemsTable
+                  items={items}
+                  onUpdate={handleUpdateItem}
+                  onRemove={handleRemoveItem}
+                  productOptions={
+                    products?.results?.map((p) => ({
+                      value: p.id,
+                      label: `${p.name} (${p.code})`,
+                      searchText: `${p.name} ${p.code} ${p.category || ''}`,
+                    })) || []
+                  }
+                  showUnit={true}
+                  getUnit={(item) => {
+                    const product = products?.results?.find((p) => p.id === item.product_id);
+                    return product?.unit?.toUpperCase() || '—';
+                  }}
+                  formatPrice={formatPrice}
+                />
               </div>
             ) : (
               <div className="card empty-state">

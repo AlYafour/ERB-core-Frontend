@@ -17,6 +17,7 @@ import { formatBackendError, validateRequired, validatePositiveNumber, validateD
 import { canCreateInvoice } from '@/lib/utils/workflow-guards';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { useT } from '@/lib/i18n/useT';
+import { EditableStandardItemsTable } from '@/components/procurement/EditableStandardItemsTable';
 
 export default function NewPurchaseInvoicePage() {
   return (
@@ -388,94 +389,25 @@ function NewPurchaseInvoicePageContent() {
             }}>
               {t('section', 'invoiceItems')}
             </h3>
-            <div style={{ overflowX: 'auto' }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>{t('col', 'product')}</th>
-                    <th>{t('col', 'unit')}</th>
-                    <th>{t('col', 'quantity')}</th>
-                    <th>{t('col', 'unitPrice')}</th>
-                    <th>{t('col', 'discountPct')}</th>
-                    <th>{t('col', 'taxPct')}</th>
-                    <th>{t('col', 'total')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item, index) => {
-                    const subtotal = item.quantity * item.unit_price;
-                    const discountAmount = subtotal * ((item.discount || 0) / 100);
-                    const afterDiscount = subtotal - discountAmount;
-                    const taxAmount = afterDiscount * ((item.tax_rate || 0) / 100);
-                    const total = afterDiscount + taxAmount;
-                    
-                    return (
-                      <tr key={index}>
-                        <td>
-                          <div style={{ fontWeight: 'var(--weight-medium)' }}>
-                            {purchaseOrder?.items?.find((poItem) => poItem.id === item.purchase_order_item_id)
-                              ?.product?.name || 'N/A'}
-                          </div>
-                          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                            {purchaseOrder?.items?.find((poItem) => poItem.id === item.purchase_order_item_id)
-                              ?.product?.code || ''}
-                          </div>
-                        </td>
-                        <td style={{ color: 'var(--text-secondary)' }}>
-                          {purchaseOrder?.items?.find((poItem) => poItem.id === item.purchase_order_item_id)
-                            ?.product?.unit?.toUpperCase() || '—'}
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            min="0"
-                            step="any"
-                            value={item.quantity}
-                            onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
-                            className="form-input" style={{ width: 96 }}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={item.unit_price}
-                            onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                            className="form-input" style={{ width: 128 }}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={item.discount || 0}
-                            onChange={(e) => updateItem(index, 'discount', parseFloat(e.target.value) || 0)}
-                            className="form-input" style={{ width: 96 }}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={item.tax_rate || 0}
-                            onChange={(e) => updateItem(index, 'tax_rate', parseFloat(e.target.value) || 0)}
-                            className="form-input" style={{ width: 96 }}
-                          />
-                        </td>
-                        <td>
-                          <div style={{ fontWeight: 'var(--weight-semibold)' }}>
-                            {formatPrice(total)}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <EditableStandardItemsTable
+              items={items}
+              onUpdate={(index, field, value) => updateItem(index, field as keyof PurchaseInvoiceItem, value)}
+              showUnit={true}
+              renderProduct={(item) => {
+                const poItem = purchaseOrder?.items?.find((poi) => poi.id === item.purchase_order_item_id);
+                return (
+                  <>
+                    <div style={{ fontWeight: 'var(--weight-medium)' }}>{poItem?.product?.name || 'N/A'}</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{poItem?.product?.code || ''}</div>
+                  </>
+                );
+              }}
+              getUnit={(item) => {
+                const poItem = purchaseOrder?.items?.find((poi) => poi.id === item.purchase_order_item_id);
+                return poItem?.product?.unit?.toUpperCase() || '—';
+              }}
+              formatPrice={formatPrice}
+            />
           </div>
 
           {/* Form Actions - Unified */}

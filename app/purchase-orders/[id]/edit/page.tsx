@@ -21,6 +21,7 @@ import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { Button, PageHeader, PageShell } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
 import { usePOFormTotals } from '@/lib/hooks/use-po-form-totals';
+import { EditableStandardItemsTable } from '@/components/procurement/EditableStandardItemsTable';
 
 export default function EditPurchaseOrderPage() {
   const params = useParams();
@@ -399,106 +400,23 @@ function EditPurchaseOrderPageContent() {
 
             {/* Items Table */}
             {items.length > 0 && (
-              <div style={{ overflowX: 'auto' }}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>{t('col', 'product')}</th>
-                      <th>{t('col', 'quantity')}</th>
-                      <th>{t('col', 'unitPrice')}</th>
-                      <th>{t('col', 'discountPct')}</th>
-                      <th>{t('col', 'taxPct')}</th>
-                      <th>{t('col', 'total')}</th>
-                      <th>{t('col', 'actions')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((item, index) => {
-                      const product = products?.results?.find((p) => p.id === item.product_id)
-                        ?? order?.items?.find((oi) => (oi.product?.id ?? oi.product_id) === item.product_id)?.product;
-                      const itemSubtotal = item.quantity * item.unit_price;
-                      const discountAmount = itemSubtotal * ((item.discount ?? 0) / 100) || 0;
-                      const afterDiscount = itemSubtotal - discountAmount;
-                      const taxAmount = afterDiscount * ((item.tax_rate ?? 0) / 100) || 0;
-                      const itemTotal = afterDiscount + taxAmount;
-
-                      return (
-                        <tr key={index}>
-                          <td>
-                            <div style={{ fontWeight: 'var(--weight-medium)' }}>{product?.name || 'N/A'}</div>
-                            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{product?.code || ''}</div>
-                          </td>
-                          <td>
-                            <input
-                              type="number"
-                              min="0"
-                              step="any"
-                              value={item.quantity}
-                              onChange={(e) =>
-                                handleUpdateItem(index, 'quantity', parseFloat(e.target.value) || 0)
-                              }
-                              className="form-input" style={{ width: 80 }}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={item.unit_price}
-                              onChange={(e) =>
-                                handleUpdateItem(index, 'unit_price', parseFloat(e.target.value) || 0)
-                              }
-                              className="form-input" style={{ width: 96 }}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="0.01"
-                              value={item.discount ?? 0}
-                              onChange={(e) =>
-                                handleUpdateItem(index, 'discount', parseFloat(e.target.value) || 0)
-                              }
-                              className="form-input" style={{ width: 80 }}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="0.01"
-                              value={item.tax_rate ?? 0}
-                              onChange={(e) =>
-                                handleUpdateItem(index, 'tax_rate', parseFloat(e.target.value) || 0)
-                              }
-                              className="form-input" style={{ width: 80 }}
-                            />
-                          </td>
-                          <td>
-                            <div style={{ fontWeight: 'var(--weight-semibold)' }}>
-                              {formatPrice(itemTotal)}
-                            </div>
-                          </td>
-                          <td>
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleRemoveItem(index)}
-                            >
-                              {t('btn', 'delete')}
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <EditableStandardItemsTable
+                items={items}
+                onUpdate={handleUpdateItem}
+                onRemove={handleRemoveItem}
+                showUnit={false}
+                renderProduct={(item) => {
+                  const product = products?.results?.find((p) => p.id === item.product_id)
+                    ?? order?.items?.find((oi) => (oi.product?.id ?? oi.product_id) === item.product_id)?.product;
+                  return (
+                    <>
+                      <div style={{ fontWeight: 'var(--weight-medium)' }}>{product?.name || 'N/A'}</div>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{product?.code || ''}</div>
+                    </>
+                  );
+                }}
+                formatPrice={formatPrice}
+              />
             )}
           </div>
 
