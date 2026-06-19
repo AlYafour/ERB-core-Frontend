@@ -1,13 +1,13 @@
 'use client';
 
+import { type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseQuotationsApi } from '@/lib/api/purchase-quotations';
 import MainLayout from '@/components/layout/MainLayout';
-import { Button, PageHeader, PageShell } from '@/components/ui';
-import DetailCard, { DetailField } from '@/components/ui/DetailCard';
+import Link from 'next/link';
+import { Button, PageShell } from '@/components/ui';
 import { formatPrice } from '@/lib/utils/format';
-import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection';
 import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { useProcPermissions } from '@/lib/hooks/use-proc-permissions';
@@ -20,9 +20,12 @@ import { StickyDocBar } from '@/components/procurement/shared/StickyDocBar';
 import { PQ_STATUS } from '@/lib/utils/status-colors';
 import { PQ_LABEL } from '@/lib/constants/status-labels';
 
-function resolveSupplierName(supplier: any): string {
+function resolveSupplierName(supplier: unknown): string {
   if (!supplier) return 'N/A';
-  if (typeof supplier === 'object') return supplier.business_name || supplier.name || supplier.contact_person || 'N/A';
+  if (typeof supplier === 'object' && supplier !== null) {
+    const s = supplier as { business_name?: string; name?: string; contact_person?: string };
+    return s.business_name || s.name || s.contact_person || 'N/A';
+  }
   return `Supplier #${supplier}`;
 }
 
@@ -51,13 +54,13 @@ export default function PurchaseQuotationDetailPage() {
   const awardMutation = useMutation({
     mutationFn: () => purchaseQuotationsApi.award(id),
     onSuccess: () => { invalidate(); toast('Quotation awarded!', 'success'); },
-    onError: (err: any) => toast(getApiError(err, 'Failed to award quotation'), 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to award quotation'), 'error'),
   });
 
   const rejectMutation = useMutation({
     mutationFn: () => purchaseQuotationsApi.reject(id),
     onSuccess: () => { invalidate(); toast('Quotation rejected', 'info'); },
-    onError: (err: any) => toast(getApiError(err, 'Failed to reject quotation'), 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to reject quotation'), 'error'),
   });
 
   if (isLoading) return <DocLoadState type="loading" />;
@@ -65,16 +68,16 @@ export default function PurchaseQuotationDetailPage() {
 
   const status       = quotation.status || 'pending';
   const supplierName = resolveSupplierName(quotation.supplier);
+  const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  const qrRef  = quotation.quotation_request && typeof quotation.quotation_request === 'object' ? quotation.quotation_request : quotation.quotation_request ? { id: quotation.quotation_request } : null;
+  const prRef  = qrRef && typeof qrRef === 'object' && (qrRef as { purchase_request?: unknown }).purchase_request
+    ? (() => { const pr = (qrRef as { purchase_request: unknown }).purchase_request; return typeof pr === 'object' ? pr as { id: number; code?: string } : { id: pr as number }; })()
+    : null;
 
   return (
     <MainLayout>
       <PageShell>
-        <PageHeader
-          backHref="/purchase-quotations"
-          title={`Quotation: ${quotation.quotation_number}`}
-          description="View quotation details and pricing"
-          breadcrumbs={[{ label: t('page', 'purchaseQuotations'), href: '/purchase-quotations' }, { label: quotation.quotation_number }]}
-        />
 
         {/* ── Sticky action bar ── */}
         <StickyDocBar
@@ -88,8 +91,8 @@ export default function PurchaseQuotationDetailPage() {
           {status === 'pending' && (canAward || canReject) && (
             <>
               {quotation.has_awarded_quotation && (
-                <span style={{ fontSize: 12, color: 'var(--color-warning)', fontWeight: 500 }}>
-                  PR already has an awarded quotation
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--status-warning)', background: 'var(--status-warning-bg)', border: '1px solid var(--status-warning-border)', borderRadius: 6, padding: '3px 8px' }}>
+                  PR already awarded
                 </span>
               )}
               {canReject && (
@@ -98,109 +101,136 @@ export default function PurchaseQuotationDetailPage() {
                 </Button>
               )}
               {canAward && !quotation.has_awarded_quotation && (
-                <Button
-                  variant="success"
-                  size="sm"
-                  isLoading={awardMutation.isPending}
+                <Button variant="success" size="sm" isLoading={awardMutation.isPending}
                   onClick={() => {
                     const guard = canAwardQuotation(status, quotation.valid_until ?? undefined, canAward);
                     if (!guard.canProceed) { toast(guard.reason || 'Cannot award', 'error'); return; }
                     awardMutation.mutate();
                   }}
                 >
-                  {t('btn', 'approve')}
+                  Award Supplier
                 </Button>
               )}
             </>
           )}
 
           {status === 'awarded' && canConvert && (
-            <Button
-              variant="primary"
-              size="sm"
+            <Button variant="primary" size="sm"
               onClick={() => {
                 const guard = canCreatePurchaseOrder(status);
                 if (!guard.canProceed) { toast(guard.reason || 'Cannot create PO', 'error'); return; }
                 router.push(`/purchase-orders/new?purchase_quotation_id=${id}`);
               }}
             >
-              Convert to LPO
+              Convert → LPO
             </Button>
           )}
         </StickyDocBar>
 
-        <LinkedDocumentsSection
-          documents={{
-            purchaseRequest: quotation.quotation_request && typeof quotation.quotation_request === 'object' && quotation.quotation_request.purchase_request
-              ? (typeof quotation.quotation_request.purchase_request === 'object' ? quotation.quotation_request.purchase_request : { id: quotation.quotation_request.purchase_request })
-              : null,
-            quotationRequest: quotation.quotation_request && typeof quotation.quotation_request === 'object'
-              ? { id: quotation.quotation_request.id }
-              : quotation.quotation_request ? { id: quotation.quotation_request } : null,
-            purchaseQuotation: { id: quotation.id, quotation_number: quotation.quotation_number },
-          }}
-        />
-
-        <DetailCard title="Quotation Information">
-          {(quotation.project_name || quotation.project_code) && (
-            <DetailField
-              label="Project"
-              value={
-                <div>
-                  <div style={{ fontWeight: 'var(--weight-semibold)' }}>{quotation.project_name}</div>
-                  {quotation.project_code && <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{quotation.project_code}</div>}
-                </div>
-              }
-            />
-          )}
-          <DetailField label={t('col', 'supplier')} value={supplierName} />
-          <DetailField label="Quotation Date" value={new Date(quotation.quotation_date).toLocaleDateString('en-US')} />
-          <DetailField label="Valid Until" value={quotation.valid_until ? new Date(quotation.valid_until).toLocaleDateString('en-US') : 'Not set'} />
-          {quotation.awarded_by_name && <DetailField label="Awarded By" value={quotation.awarded_by_name} />}
-          {quotation.awarded_at && <DetailField label="Awarded At" value={new Date(quotation.awarded_at).toLocaleDateString('en-US')} />}
-          {quotation.payment_terms && <DetailField label="Payment Terms" value={quotation.payment_terms} span={3} />}
-          {quotation.delivery_terms && <DetailField label="Delivery Terms" value={quotation.delivery_terms} span={3} />}
-          {quotation.notes && <DetailField label={t('col', 'notes')} value={quotation.notes} span={3} />}
-        </DetailCard>
-
-        <DetailCard title="Products">
-          <div style={{ gridColumn: '1 / -1' }}>
-            <ReadOnlyItemsTable
-              items={quotation.items}
-              columns={[
-                {
-                  header: t('col', 'product'),
-                  cell: (item) => (
-                    <>
-                      <div style={{ fontWeight: 'var(--weight-medium)' }}>{item.product?.name ?? `Product #${item.product_id}`}</div>
-                      {item.product?.code && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item.product.code}</div>}
-                    </>
-                  ),
-                },
-                { header: t('col', 'unit'),      cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
-                { header: t('col', 'quantity'),  cell: (item) => item.quantity },
-                { header: t('col', 'unitPrice'), cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{formatPrice(Number(item.unit_price))}</span> },
-                { header: 'Disc %',              cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.discount || 0}%</span> },
-                { header: 'Tax %',               cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.tax_rate || item.tax || 0}%</span> },
-                { header: t('col', 'total'),     cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(Number(item.total))}</span> },
-              ]}
-            />
+        {/* ── Document chain ── */}
+        {(prRef || qrRef) && (
+          <div className="proc-chain">
+            {prRef && (
+              <Link href={`/purchase-requests/${(prRef as { id: number }).id}`} className="proc-chain-pill">
+                <span className="proc-chain-pill-type">Purchase Request</span>
+                <span className="proc-chain-pill-num">{(prRef as { code?: string }).code || `PR-${(prRef as { id: number }).id}`}</span>
+              </Link>
+            )}
+            {prRef && qrRef && <span className="proc-chain-arrow">→</span>}
+            {qrRef && (
+              <Link href={`/quotation-requests/${(qrRef as { id: number }).id}`} className="proc-chain-pill">
+                <span className="proc-chain-pill-type">Quotation Request</span>
+                <span className="proc-chain-pill-num">QR-{(qrRef as { id: number }).id}</span>
+              </Link>
+            )}
+            {qrRef && <span className="proc-chain-arrow">→</span>}
+            <div className="proc-chain-pill" style={{ borderColor: 'var(--brand)', background: 'var(--brand-subtle)' }}>
+              <span className="proc-chain-pill-type" style={{ color: 'var(--brand)' }}>Quotation</span>
+              <span className="proc-chain-pill-num" style={{ color: 'var(--brand)' }}>{quotation.quotation_number}</span>
+            </div>
           </div>
-        </DetailCard>
+        )}
 
-        <DetailCard title="Financial Summary">
-          <div style={{ gridColumn: '1 / -1' }}>
+        {/* ── Quotation info ── */}
+        <div className="card">
+          <div className="proc-section-head">
+            <h3 className="proc-section-title">Quotation Information</h3>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(quotation.quotation_date)}</span>
+          </div>
+          <div className="proc-info-grid">
+            <ProcField label={t('col', 'supplier')} value={supplierName} />
+            <ProcField label="Quotation Date" value={fmt(quotation.quotation_date)} />
+            <ProcField label="Valid Until" value={quotation.valid_until ? fmt(quotation.valid_until) : <span className="proc-info-value--empty">Not set</span>} />
+            {quotation.awarded_by_name && <ProcField label="Awarded By" value={quotation.awarded_by_name} />}
+            {quotation.awarded_at && <ProcField label="Awarded At" value={fmt(quotation.awarded_at)} />}
+            {(quotation.project_name || quotation.project_code) && (
+              <ProcField label="Project" value={
+                <div>
+                  <div style={{ fontWeight: 'var(--weight-medium)' }}>{quotation.project_name}</div>
+                  {quotation.project_code && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{quotation.project_code}</div>}
+                </div>
+              } />
+            )}
+          </div>
+          {(quotation.payment_terms || quotation.delivery_terms || quotation.notes) && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-4)', marginTop: 'var(--space-5)', paddingTop: 'var(--space-5)', borderTop: '1px solid var(--border-subtle)' }}>
+              {quotation.payment_terms && <ProcField label="Payment Terms" value={quotation.payment_terms} />}
+              {quotation.delivery_terms && <ProcField label="Delivery Terms" value={quotation.delivery_terms} />}
+              {quotation.notes && <ProcField label={t('col', 'notes')} value={quotation.notes} />}
+            </div>
+          )}
+        </div>
+
+        {/* ── Items + Financial ── */}
+        <div className="card">
+          <div className="proc-section-head">
+            <h3 className="proc-section-title">
+              Products
+              <span className="proc-section-count">{quotation.items.length}</span>
+            </h3>
+          </div>
+          <ReadOnlyItemsTable
+            items={quotation.items}
+            columns={[
+              {
+                header: t('col', 'product'),
+                cell: (item) => (
+                  <div>
+                    <div className="cell-product-name">{item.product?.name ?? `Product #${item.product_id}`}</div>
+                    {item.product?.code && <div className="cell-product-code">{item.product.code}</div>}
+                  </div>
+                ),
+              },
+              { header: t('col', 'unit'),      align: 'center', cell: (item) => <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 600 }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
+              { header: t('col', 'quantity'),  align: 'center', cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{item.quantity}</span> },
+              { header: t('col', 'unitPrice'), align: 'right',  cell: (item) => <span style={{ fontFamily: 'monospace' }}>{formatPrice(Number(item.unit_price))}</span> },
+              { header: 'Disc %',              align: 'center', cell: (item) => item.discount ? <span style={{ color: 'var(--status-error)', fontWeight: 600 }}>{item.discount}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
+              { header: 'Tax %',               align: 'center', cell: (item) => (item.tax_rate || item.tax) ? <span style={{ color: 'var(--text-secondary)' }}>{item.tax_rate || item.tax}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
+              { header: t('col', 'total'),     align: 'right',  cell: (item) => <span className="col-total">{formatPrice(Number(item.total))}</span> },
+            ]}
+          />
+          <div style={{ marginTop: 'var(--space-6)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
             <FinancialSummary
               rows={[
                 { label: 'Subtotal', value: quotation.subtotal },
-                { label: 'Discount', value: quotation.discount, variant: 'discount', prefix: '- ', hidden: !Number(quotation.discount) },
+                { label: `Discount (${quotation.discount}%)`, value: quotation.discount, variant: 'discount', prefix: '– ', hidden: !Number(quotation.discount) },
                 { label: 'Tax',      value: quotation.tax_amount, hidden: !Number(quotation.tax_amount) },
               ]}
               total={quotation.total}
             />
           </div>
-        </DetailCard>
+        </div>
+
       </PageShell>
     </MainLayout>
+  );
+}
+
+function ProcField({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="proc-info-field">
+      <span className="proc-info-label">{label}</span>
+      <div className="proc-info-value">{value || <span className="proc-info-value--empty">—</span>}</div>
+    </div>
   );
 }

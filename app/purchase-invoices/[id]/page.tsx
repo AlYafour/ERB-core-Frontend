@@ -1,16 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseInvoicesApi } from '@/lib/api/purchase-invoices';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import { formatPrice } from '@/lib/utils/format';
-import DetailCard, { DetailField } from '@/components/ui/DetailCard';
 import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
-import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection';
-import { Button, PageHeader, PageShell } from '@/components/ui';
+import { Button, PageShell } from '@/components/ui';
 import { INVOICE_STATUS } from '@/lib/utils/status-colors';
 import { INVOICE_LABEL } from '@/lib/constants/status-labels';
 import { toast } from '@/lib/hooks/use-toast';
@@ -46,33 +44,34 @@ export default function PurchaseInvoiceDetailPage() {
   const approveMutation = useMutation({
     mutationFn: () => purchaseInvoicesApi.approve(id),
     onSuccess: () => { invalidate(); toast('Invoice approved!', 'success'); },
-    onError: (err: any) => toast(getApiError(err, 'Failed to approve'), 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to approve'), 'error'),
   });
 
   const rejectMutation = useMutation({
     mutationFn: (reason: string) => purchaseInvoicesApi.reject(id, reason),
     onSuccess: () => { invalidate(); setRejectDialogOpen(false); toast('Invoice rejected', 'info'); },
-    onError: (err: any) => toast(getApiError(err, 'Failed to reject'), 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to reject'), 'error'),
   });
 
   const markPaidMutation = useMutation({
     mutationFn: () => purchaseInvoicesApi.markPaid(id, {}),
     onSuccess: () => { invalidate(); toast('Invoice marked as paid!', 'success'); },
-    onError: (err: any) => toast(getApiError(err, 'Failed to mark as paid'), 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to mark as paid'), 'error'),
   });
 
   if (isLoading) return <DocLoadState type="loading" />;
   if (!invoice)  return <DocLoadState type="not-found" message="Invoice not found." />;
 
   const isDraftOrPending = invoice.status === 'draft' || invoice.status === 'pending';
+  const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  const poRef = typeof invoice.purchase_order === 'object' && invoice.purchase_order
+    ? { id: (invoice.purchase_order as { id: number; order_number?: string }).id, order_number: (invoice.purchase_order as { id: number; order_number?: string }).order_number }
+    : invoice.purchase_order_id ? { id: invoice.purchase_order_id } : null;
 
   return (
     <MainLayout>
       <PageShell>
-        <PageHeader
-          title={`Invoice: ${invoice.invoice_number}`}
-          breadcrumbs={[{ label: 'Purchase Invoices', href: '/purchase-invoices' }, { label: invoice.invoice_number }]}
-        />
 
         {/* ── Sticky action bar ── */}
         <StickyDocBar
@@ -88,94 +87,123 @@ export default function PurchaseInvoiceDetailPage() {
             <Button variant="success" size="sm" isLoading={approveMutation.isPending} onClick={() => approveMutation.mutate()}>Approve</Button>
           )}
           {canReject && isDraftOrPending && (
-            <Button variant="destructive" size="sm" disabled={rejectMutation.isPending} onClick={() => setRejectDialogOpen(true)}>Reject</Button>
+            <Button variant="destructive" size="sm" onClick={() => setRejectDialogOpen(true)}>Reject</Button>
           )}
           {canMarkPaid && invoice.status === 'approved' && !invoice.is_fully_paid && (
             <Button variant="success" size="sm" isLoading={markPaidMutation.isPending} onClick={() => markPaidMutation.mutate()}>Mark as Paid</Button>
           )}
         </StickyDocBar>
 
-        <LinkedDocumentsSection
-          documents={{
-            purchaseOrder: typeof invoice.purchase_order === 'object' && invoice.purchase_order
-              ? { id: (invoice.purchase_order as any).id, order_number: (invoice.purchase_order as any).order_number }
-              : invoice.purchase_order_id ? { id: invoice.purchase_order_id } : null,
-            invoice: { id: invoice.id, invoice_number: invoice.invoice_number },
-          }}
-        />
-
-        <DetailCard title="Invoice Information">
-          <DetailField label="Invoice Number" value={invoice.invoice_number} />
-          <DetailField label="Invoice Date"   value={new Date(invoice.invoice_date).toLocaleDateString('en-US')} />
-          {invoice.due_date       && <DetailField label="Due Date"         value={new Date(invoice.due_date).toLocaleDateString('en-US')} />}
-          {invoice.approved_by_name && <DetailField label="Approved By"    value={invoice.approved_by_name} />}
-          {invoice.approved_at    && <DetailField label="Approved At"      value={new Date(invoice.approved_at).toLocaleDateString('en-US')} />}
-          {invoice.payment_date   && <DetailField label="Payment Date"     value={new Date(invoice.payment_date).toLocaleDateString('en-US')} />}
-          {invoice.payment_method && <DetailField label="Payment Method"   value={invoice.payment_method} />}
-          {invoice.payment_reference && <DetailField label="Payment Reference" value={invoice.payment_reference} />}
-          {invoice.notes && <DetailField label="Notes" value={invoice.notes} span={3} />}
-          {invoice.rejection_reason && (
-            <DetailField
-              label="Rejection Reason"
-              span={3}
-              value={
-                <div style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-error-light)', border: '1px solid var(--color-error)' }}>
-                  <p style={{ fontSize: 'var(--text-sm)', color: '#991B1B', margin: 0 }}>{invoice.rejection_reason}</p>
-                </div>
-              }
-            />
-          )}
-        </DetailCard>
-
-        <DetailCard title="Items">
-          <div style={{ gridColumn: '1 / -1' }}>
-            <ReadOnlyItemsTable
-              items={invoice.items}
-              columns={[
-                { header: 'Product',    cell: (item) => item.product?.name || `Product #${item.product_id}` },
-                { header: 'Unit',       cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
-                { header: 'Qty',        cell: (item) => item.quantity },
-                { header: 'Unit Price', cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{formatPrice(item.unit_price)}</span> },
-                { header: 'Disc %',     cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.discount || 0}%</span> },
-                { header: 'Tax %',      cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.tax_rate || 0}%</span> },
-                { header: 'Total',      cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(item.total ?? 0)}</span> },
-              ]}
-            />
+        {/* ── Document chain ── */}
+        {poRef && (
+          <div className="proc-chain">
+            <Link href={`/purchase-orders/${poRef.id}`} className="proc-chain-pill">
+              <span className="proc-chain-pill-type">Purchase Order</span>
+              <span className="proc-chain-pill-num">{poRef.order_number || `LPO-${poRef.id}`}</span>
+            </Link>
+            <span className="proc-chain-arrow">→</span>
+            <div className="proc-chain-pill" style={{ borderColor: 'var(--brand)', background: 'var(--brand-subtle)' }}>
+              <span className="proc-chain-pill-type" style={{ color: 'var(--brand)' }}>Invoice</span>
+              <span className="proc-chain-pill-num" style={{ color: 'var(--brand)' }}>{invoice.invoice_number}</span>
+            </div>
           </div>
-        </DetailCard>
+        )}
 
-        <DetailCard title="Financial Summary">
-          <div style={{ gridColumn: '1 / -1' }}>
+        {/* ── Invoice info ── */}
+        <div className="card">
+          <div className="proc-section-head">
+            <h3 className="proc-section-title">Invoice Information</h3>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(invoice.invoice_date)}</span>
+          </div>
+          <div className="proc-info-grid">
+            <ProcField label="Invoice Number"   value={<span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{invoice.invoice_number}</span>} />
+            <ProcField label="Invoice Date"     value={fmt(invoice.invoice_date)} />
+            {invoice.due_date          && <ProcField label="Due Date"          value={fmt(invoice.due_date)} />}
+            {invoice.approved_by_name  && <ProcField label="Approved By"       value={invoice.approved_by_name} />}
+            {invoice.approved_at       && <ProcField label="Approved At"       value={fmt(invoice.approved_at)} />}
+            {invoice.payment_date      && <ProcField label="Payment Date"      value={fmt(invoice.payment_date)} />}
+            {invoice.payment_method    && <ProcField label="Payment Method"    value={invoice.payment_method} />}
+            {invoice.payment_reference && <ProcField label="Payment Reference" value={<span style={{ fontFamily: 'monospace' }}>{invoice.payment_reference}</span>} />}
+            {poRef && (
+              <ProcField label="Purchase Order" value={
+                <Link href={`/purchase-orders/${poRef.id}`} style={{ color: 'var(--brand)', fontWeight: 'var(--weight-semibold)', textDecoration: 'none' }}>
+                  {poRef.order_number || `LPO-${poRef.id}`} ↗
+                </Link>
+              } />
+            )}
+          </div>
+          {invoice.notes && (
+            <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
+              <ProcField label="Notes" value={invoice.notes} />
+            </div>
+          )}
+          {invoice.rejection_reason && (
+            <div style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3) var(--space-4)', borderRadius: 8, background: 'var(--status-error-bg)', border: '1px solid var(--status-error-border)' }}>
+              <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--status-error)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Rejection Reason</div>
+              <div style={{ fontSize: 'var(--text-sm)', color: '#991B1B', lineHeight: 1.5 }}>{invoice.rejection_reason}</div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Items + Financial ── */}
+        <div className="card">
+          <div className="proc-section-head">
+            <h3 className="proc-section-title">
+              Invoice Items
+              <span className="proc-section-count">{invoice.items.length}</span>
+            </h3>
+          </div>
+          <ReadOnlyItemsTable
+            items={invoice.items}
+            columns={[
+              {
+                header: 'Product',
+                cell: (item) => (
+                  <div>
+                    <div className="cell-product-name">{item.product?.name || `Product #${item.product_id}`}</div>
+                    {item.product?.code && <div className="cell-product-code">{item.product.code}</div>}
+                  </div>
+                ),
+              },
+              { header: 'Unit',       align: 'center', cell: (item) => <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 600 }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
+              { header: 'Qty',        align: 'center', cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{item.quantity}</span> },
+              { header: 'Unit Price', align: 'right',  cell: (item) => <span style={{ fontFamily: 'monospace' }}>{formatPrice(item.unit_price)}</span> },
+              { header: 'Disc %',     align: 'center', cell: (item) => item.discount ? <span style={{ color: 'var(--status-error)', fontWeight: 600 }}>{item.discount}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
+              { header: 'Tax %',      align: 'center', cell: (item) => item.tax_rate ? <span style={{ color: 'var(--text-secondary)' }}>{item.tax_rate}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
+              { header: 'Total',      align: 'right',  cell: (item) => <span className="col-total">{formatPrice(item.total ?? 0)}</span> },
+            ]}
+          />
+
+          <div style={{ marginTop: 'var(--space-6)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
             <FinancialSummary
               rows={[
-                { label: 'Subtotal',   value: invoice.subtotal,   hidden: invoice.subtotal == null },
-                { label: 'Discount',   value: invoice.discount,   hidden: !Number(invoice.discount), variant: 'discount', prefix: '- ' },
-                { label: 'Tax',        value: invoice.tax_amount,  hidden: !Number(invoice.tax_amount) },
+                { label: 'Subtotal', value: invoice.subtotal, hidden: invoice.subtotal == null },
+                { label: `Discount (${invoice.discount}%)`, value: invoice.discount, hidden: !Number(invoice.discount), variant: 'discount', prefix: '– ' },
+                { label: 'Tax',      value: invoice.tax_amount, hidden: !Number(invoice.tax_amount) },
               ]}
               total={invoice.total}
-              totalLabel="Total"
             />
-            {/* Payment rows below the separator */}
+
             {(invoice.paid_amount != null || invoice.remaining_amount != null) && (
-              <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
-                <div style={{ width: 272, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="proc-financial-grid" style={{ marginTop: 'var(--space-3)' }}>
+                <div className="proc-financial-box">
                   {invoice.paid_amount != null && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Paid:</span>
-                      <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--color-success)' }}>{formatPrice(invoice.paid_amount)}</span>
+                    <div className="proc-financial-row">
+                      <span className="proc-financial-row-label">Paid</span>
+                      <span style={{ fontWeight: 700, color: 'var(--status-success)', fontFamily: 'monospace' }}>{formatPrice(invoice.paid_amount)}</span>
                     </div>
                   )}
                   {invoice.remaining_amount != null && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Remaining:</span>
-                      <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--brand)' }}>{formatPrice(invoice.remaining_amount)}</span>
+                    <div className="proc-financial-row">
+                      <span className="proc-financial-row-label">Remaining</span>
+                      <span style={{ fontWeight: 700, color: 'var(--brand)', fontFamily: 'monospace' }}>{formatPrice(invoice.remaining_amount)}</span>
                     </div>
                   )}
                 </div>
               </div>
             )}
           </div>
-        </DetailCard>
+        </div>
 
         <RejectionReasonDialog
           isOpen={rejectDialogOpen}
@@ -186,5 +214,14 @@ export default function PurchaseInvoiceDetailPage() {
         />
       </PageShell>
     </MainLayout>
+  );
+}
+
+function ProcField({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="proc-info-field">
+      <span className="proc-info-label">{label}</span>
+      <div className="proc-info-value">{value || <span className="proc-info-value--empty">—</span>}</div>
+    </div>
   );
 }
