@@ -35,7 +35,7 @@ function buildActions(task: TaskDetail, onAct: Props['onAct']): ActionButton[] {
   if (s === 'review')
     actions.push({ label: 'Approve', targetStatus: 'approved', fn: () => onAct(() => tasksApi.approve(task.id)) });
   if (['rejected', 'closed', 'approved'].includes(s))
-    actions.push({ label: 'Reopen', targetStatus: 'draft', fn: () => onAct(() => tasksApi.reopen(task.id)) });
+    actions.push({ label: 'Reopen', targetStatus: 'in_progress', fn: () => onAct(() => tasksApi.reopen(task.id)) });
 
   return actions;
 }
@@ -45,7 +45,7 @@ export function WorkflowBar({
   onRejectionChange, onToggleReject, onAct, onReject, onCancelReject,
 }: Props) {
   const actions = buildActions(task, onAct);
-  const canReject = ['review', 'submitted'].includes(task.status);
+  const canReject = task.status === 'review';
 
   if (actions.length === 0 && !canReject) return null;
 
