@@ -29,7 +29,7 @@ export const teamsApi = {
 // ── Tasks ─────────────────────────────────────────────────────────────────────
 
 export interface TaskFilters {
-  scope?: 'mine' | 'created' | 'team' | 'watching';
+  scope?: 'mine' | 'created' | 'team' | 'watching' | 'all';
   status?: string;
   priority?: string;
   task_type?: string;

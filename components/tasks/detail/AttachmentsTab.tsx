@@ -3,6 +3,23 @@
 import type { TaskDetail } from '@/types';
 import { fmtFileSize } from '../shared/constants';
 
+function toDownloadUrl(url: string): string {
+  if (url.includes('res.cloudinary.com') && url.includes('/upload/')) {
+    return url.replace('/upload/', '/upload/fl_attachment/');
+  }
+  return url;
+}
+
+function fileIcon(name: string) {
+  const ext = name.split('.').pop()?.toLowerCase() ?? '';
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) return '🖼';
+  if (['pdf'].includes(ext)) return '📄';
+  if (['doc', 'docx'].includes(ext)) return '📝';
+  if (['xls', 'xlsx'].includes(ext)) return '📊';
+  if (['zip', 'rar', '7z'].includes(ext)) return '📦';
+  return '📎';
+}
+
 interface Props {
   attachments: TaskDetail['attachments'];
   onUpload: (file: File) => void;
@@ -40,6 +57,7 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
         <div className="attachment-list">
           {attachments.map((a) => (
             <div key={a.id} className="attachment-row">
+              <span style={{ fontSize: 18, flexShrink: 0 }}>{fileIcon(a.file_name)}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p className="attachment-name">{a.file_name}</p>
                 <p className="attachment-meta">
@@ -49,14 +67,24 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
               </div>
               <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                 {a.file_url && (
-                  <a
-                    href={a.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="attachment-download"
-                  >
-                    Download
-                  </a>
+                  <>
+                    <a
+                      href={a.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="attachment-download"
+                    >
+                      View
+                    </a>
+                    <a
+                      href={toDownloadUrl(a.file_url)}
+                      download={a.file_name}
+                      rel="noopener noreferrer"
+                      className="attachment-download"
+                    >
+                      ↓
+                    </a>
+                  </>
                 )}
                 <button
                   onClick={() => onDelete(a.id)}

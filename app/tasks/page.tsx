@@ -7,6 +7,7 @@ import { tasksApi, myTasksApi } from '@/lib/api/tasks';
 import { SearchInput } from '@/components/ui';
 
 import { useTasksUIStore } from '@/stores/tasks-ui.store';
+import { usePermissions } from '@/lib/hooks/use-permissions';
 import { TaskBoard } from '@/components/tasks/board/TaskBoard';
 import { TaskListView, type SortField } from '@/components/tasks/list/TaskListView';
 import { TaskDetailDrawer } from '@/components/tasks/detail/TaskDetailDrawer';
@@ -168,15 +169,20 @@ export default function TasksPage() {
     clearFilters,
   } = useTasksUIStore();
 
+  const { isAdmin } = usePermissions();
   const ordering = sortBy ? (sortDir === 'desc' ? `-${sortBy}` : sortBy) : undefined;
   const hasFilters = Boolean(search || statusFilter || priorityFilter || taskTypeFilter);
+  // Admin on "All Tasks" tab → send scope='all' to see every tenant task
+  const effectiveScope = scope
+    ? (scope as 'mine' | 'created' | 'team' | 'watching')
+    : isAdmin ? 'all' : undefined;
 
   // ── Queries ───────────────────────────────────────────────────────────────
   const { data: raw, isLoading } = useQuery({
-    queryKey: ['tasks', scope, statusFilter, priorityFilter, taskTypeFilter, search, ordering, page],
+    queryKey: ['tasks', effectiveScope, statusFilter, priorityFilter, taskTypeFilter, search, ordering, page],
     queryFn: () =>
       tasksApi.getAll({
-        scope: (scope as 'mine' | 'created' | 'team' | 'watching') || undefined,
+        scope: effectiveScope,
         status: statusFilter || undefined,
         priority: priorityFilter || undefined,
         task_type: taskTypeFilter || undefined,
@@ -228,9 +234,9 @@ export default function TasksPage() {
               <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
                 Tasks
               </h1>
-              {totalStat !== undefined && (
+              {(totalCount || tasks.length > 0) && (
                 <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
-                  {totalStat} total tasks
+                  {totalCount !== false && totalCount != null ? totalCount : tasks.length} tasks
                 </p>
               )}
             </div>

@@ -7,6 +7,7 @@ import { tasksApi } from '@/lib/api/tasks';
 interface Props {
   task: TaskDetail;
   busy: boolean;
+  currentUserId?: number;
   showRejectBox: boolean;
   rejectionReason: string;
   onRejectionChange: (v: string) => void;
@@ -22,30 +23,69 @@ interface ActionButton {
   fn: () => void;
 }
 
-function buildActions(task: TaskDetail, onAct: Props['onAct']): ActionButton[] {
+function buildActions(
+  task: TaskDetail,
+  currentUserId: number | undefined,
+  onAct: Props['onAct'],
+): ActionButton[] {
   const s = task.status;
   const actions: ActionButton[] = [];
 
-  if (s === 'assigned')
-    actions.push({ label: 'Accept Task', targetStatus: 'accepted', fn: () => onAct(() => tasksApi.accept(task.id)) });
-  if (['assigned', 'accepted'].includes(s))
-    actions.push({ label: 'Start Working', targetStatus: 'in_progress', fn: () => onAct(() => tasksApi.start(task.id)) });
-  if (['in_progress', 'accepted'].includes(s))
-    actions.push({ label: 'Submit for Review', targetStatus: 'review', fn: () => onAct(() => tasksApi.submit(task.id)) });
-  if (s === 'review')
-    actions.push({ label: 'Approve', targetStatus: 'approved', fn: () => onAct(() => tasksApi.approve(task.id)) });
+  const isAssignee = !!currentUserId && task.assigned_to === currentUserId;
+  const isCreator  = !!currentUserId && task.created_by === currentUserId;
+  // Can act as reviewer: creator, or any user if unassigned (task has no assignee)
+  const canReview  = isCreator || !task.assigned_to;
+
+  // ── Assignee actions ───────────────────────────────────────────────────
+  // "Start Working" replaces the old two-step Accept+Start.
+  // Backend already handles starting directly from 'assigned' status.
+  if (['assigned', 'accepted'].includes(s) && (isAssignee || !task.assigned_to))
+    actions.push({
+      label: 'Start Working',
+      targetStatus: 'in_progress',
+      fn: () => onAct(() => tasksApi.start(task.id)),
+    });
+
+  if (['in_progress', 'accepted'].includes(s) && (isAssignee || !task.assigned_to))
+    actions.push({
+      label: 'Submit for Review',
+      targetStatus: 'review',
+      fn: () => onAct(() => tasksApi.submit(task.id)),
+    });
+
+  // ── Reviewer/creator actions ───────────────────────────────────────────
+  if (s === 'review' && canReview)
+    actions.push({
+      label: 'Approve',
+      targetStatus: 'approved',
+      fn: () => onAct(() => tasksApi.approve(task.id)),
+    });
+
   if (['rejected', 'closed', 'approved'].includes(s))
-    actions.push({ label: 'Reopen', targetStatus: 'in_progress', fn: () => onAct(() => tasksApi.reopen(task.id)) });
+    actions.push({
+      label: 'Reopen',
+      targetStatus: 'in_progress',
+      fn: () => onAct(() => tasksApi.reopen(task.id)),
+    });
+
+  if (s === 'approved' && canReview)
+    actions.push({
+      label: 'Close Task',
+      targetStatus: 'closed',
+      fn: () => onAct(() => tasksApi.close(task.id)),
+    });
 
   return actions;
 }
 
 export function WorkflowBar({
-  task, busy, showRejectBox, rejectionReason,
+  task, busy, currentUserId, showRejectBox, rejectionReason,
   onRejectionChange, onToggleReject, onAct, onReject, onCancelReject,
 }: Props) {
-  const actions = buildActions(task, onAct);
-  const canReject = task.status === 'review';
+  const actions = buildActions(task, currentUserId, onAct);
+  const isCreator  = !!currentUserId && task.created_by === currentUserId;
+  const canReview  = isCreator || !task.assigned_to;
+  const canReject  = task.status === 'review' && canReview;
 
   if (actions.length === 0 && !canReject) return null;
 

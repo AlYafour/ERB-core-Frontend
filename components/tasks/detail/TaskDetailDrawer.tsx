@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import type { TaskStatus } from '@/types';
 import { tasksApi } from '@/lib/api/tasks';
+import { useAuth } from '@/lib/hooks/use-auth';
 import { TYPE_LABEL } from '../shared/constants';
 import { DrawerSkeleton } from '../shared/Skeletons';
 import { useTaskDetail } from './hooks/useTaskDetail';
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function TaskDetailDrawer({ taskId, onClose }: Props) {
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [tab, setTab]                       = useState<Tab>('checklist');
   const [comment, setComment]               = useState('');
@@ -73,6 +75,7 @@ export function TaskDetailDrawer({ taskId, onClose }: Props) {
             <WorkflowBar
               task={task}
               busy={busy}
+              currentUserId={user?.id}
               showRejectBox={showRejectBox}
               rejectionReason={rejectionReason}
               onRejectionChange={setRejectionReason}
