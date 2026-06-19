@@ -7,11 +7,12 @@ import { quotationRequestsApi } from '@/lib/api/quotation-requests';
 import { purchaseRequestsApi } from '@/lib/api/purchase-requests';
 import { suppliersApi } from '@/lib/api/suppliers';
 import MainLayout from '@/components/layout/MainLayout';
+import Link from 'next/link';
 import { QuotationRequestItem } from '@/types';
 import { toast } from '@/lib/hooks/use-toast';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import FormField from '@/components/ui/FormField';
-import { Button, PageHeader, PageShell } from '@/components/ui';
+import { Button, PageShell } from '@/components/ui';
 import { formatBackendError } from '@/lib/utils/validation';
 import { canCreateQuotationRequest } from '@/lib/utils/workflow-guards';
 import RouteGuard from '@/components/auth/RouteGuard';
@@ -204,13 +205,12 @@ function NewQuotationRequestPageContent() {
   return (
     <MainLayout>
       <PageShell>
-        <PageHeader
-          title={t('page', 'newQR')}
-          breadcrumbs={[
-            { label: t('page', 'quotationRequests'), href: '/quotation-requests' },
-            { label: 'New' },
-          ]}
-        />
+
+        {/* ── Compact page top ── */}
+        <div className="form-page-top">
+          <Link href="/quotation-requests" className="form-page-top-back">← {t('page', 'quotationRequests')}</Link>
+          <h1 className="form-page-top-title">{t('page', 'newQR')}</h1>
+        </div>
 
         {purchaseRequest && (
           <DocInfoBanner
@@ -227,11 +227,11 @@ function NewQuotationRequestPageContent() {
         {/* Form Card */}
         <form onSubmit={handleSubmit} className="card">
           {/* Form Fields Grid */}
-          <div style={{ 
+          <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--space-4)',
-            marginBottom: 'var(--space-6)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: 'var(--space-3) var(--space-4)',
+            marginBottom: 'var(--space-4)',
           }}>
             <FormField
               label={t('col', 'supplier')}
@@ -284,7 +284,7 @@ function NewQuotationRequestPageContent() {
 
           {/* Items Section */}
           {purchaseRequest && (
-            <div style={{ marginBottom: 'var(--space-6)' }}>
+            <div style={{ marginBottom: 'var(--space-4)' }}>
               <div className="proc-section-head">
                 <h3 className="proc-section-title">
                   {t('col', 'product')}

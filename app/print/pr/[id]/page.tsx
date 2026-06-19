@@ -63,25 +63,43 @@ export default function PrintPRPage() {
       <div className="print-controls-bar" style={{
         position: 'sticky', top: 0, zIndex: 100,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '8px 32px',
-        background: '#fff', borderBottom: '1px solid #e2e8f0',
-        boxShadow: '0 1px 4px rgba(0,0,0,.06)',
+        flexWrap: 'wrap', rowGap: 6,
+        padding: '8px 20px',
+        background: 'rgba(255,255,255,0.96)',
+        backdropFilter: 'blur(8px)',
+        borderBottom: '1px solid #e2e8f0',
+        boxShadow: '0 1px 6px rgba(0,0,0,.06)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontWeight: 700, fontSize: 14, color: NAVY }}>Purchase Request — {pr.code}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', rowGap: 4 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '3px 10px 3px 8px', borderRadius: 6,
+            background: '#f8fafc', border: '1px solid #e2e8f0',
+          }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#f97316' }}>PR</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: NAVY, letterSpacing: '-0.3px' }}>{pr.code}</span>
+          </div>
           <StatusBadge status={pr.status} />
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <button onClick={() => window.print()} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '6px 16px', borderRadius: 6, border: '1px solid #e2e8f0',
-            background: '#f8fafc', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-          }}>🖨 Print / Save PDF</button>
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '6px 14px', borderRadius: 6,
+            background: NAVY, color: '#fff',
+            border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            letterSpacing: '0.01em',
+          }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            Print / PDF
+          </button>
           <button onClick={() => window.close()} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '6px 14px', borderRadius: 6, border: '1px solid #e5e7eb',
-            background: 'transparent', color: '#9ca3af', fontSize: 12, cursor: 'pointer',
-          }}>✕ Close</button>
+            display: 'inline-flex', alignItems: 'center',
+            padding: '6px 10px', borderRadius: 6,
+            background: 'transparent', color: '#94a3b8',
+            border: '1px solid #e2e8f0', fontSize: 12, cursor: 'pointer',
+          }}>✕</button>
         </div>
       </div>
 

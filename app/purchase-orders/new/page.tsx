@@ -10,7 +10,7 @@ import { suppliersApi } from '@/lib/api/suppliers';
 import { productsApi } from '@/lib/api/products';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
-import { Button, PageHeader, PageShell } from '@/components/ui';
+import { Button, PageShell } from '@/components/ui';
 import type { CostCode, PurchaseOrderItem, Product } from '@/types';
 import { PurchaseOrderFormData, toPurchaseOrderCreateData } from '@/lib/types/form-data';
 import { toast } from '@/lib/hooks/use-toast';
@@ -185,12 +185,10 @@ function NewPOContent() {
   return (
     <MainLayout>
       <PageShell>
-        <PageHeader
-          title={t('page', 'newPO')}
-          description={fromQR ? 'Create a purchase order from awarded quotation' : 'Create a purchase order from purchase request'}
-          backHref="/purchase-orders"
-          breadcrumbs={[{ label: t('page', 'purchaseOrders'), href: '/purchase-orders' }, { label: t('page', 'newPO') }]}
-        />
+        <div className="form-page-top">
+          <Link href="/purchase-orders" className="form-page-top-back">← {t('page', 'purchaseOrders')}</Link>
+          <h1 className="form-page-top-title">{t('page', 'newPO')}</h1>
+        </div>
 
         {/* Context banner */}
         {purchaseQuotation && (

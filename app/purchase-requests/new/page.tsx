@@ -8,7 +8,7 @@ import { productsApi } from '@/lib/api/products';
 import { projectsApi } from '@/lib/api/projects';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
-import { Button, PageShell, PageHeader } from '@/components/ui';
+import { Button, PageShell } from '@/components/ui';
 import { PurchaseRequestItem, Product, Project } from '@/types';
 import { PurchaseRequestFormData, toPurchaseRequestCreateData } from '@/lib/types/form-data';
 import { toast } from '@/lib/hooks/use-toast';
@@ -278,15 +278,12 @@ function NewPurchaseRequestPageContent() {
   return (
     <MainLayout>
       <PageShell>
-        <PageHeader
-          title={t('page', 'newPR')}
-          description="Create a new purchase request with required products"
-          backHref="/purchase-requests"
-          breadcrumbs={[
-            { label: t('page', 'purchaseRequests'), href: '/purchase-requests' },
-            { label: t('page', 'newPR') },
-          ]}
-        />
+
+        {/* ── Compact page top ── */}
+        <div className="form-page-top">
+          <Link href="/purchase-requests" className="form-page-top-back">← {t('page', 'purchaseRequests')}</Link>
+          <h1 className="form-page-top-title">{t('page', 'newPR')}</h1>
+        </div>
 
         <form onSubmit={handleSubmit} style={{
           background: 'var(--card-bg)', border: '1px solid var(--card-border)',
@@ -296,8 +293,8 @@ function NewPurchaseRequestPageContent() {
 
           {/* ── Section 1: Request Info ── */}
           <SectionHeader label="Request Information" />
-          <div style={{ padding: '24px 20px 20px' }}>
-            <div className="form-grid">
+          <div style={{ padding: '14px 20px' }}>
+            <div className="form-grid form-grid--2col">
               <FormField label={t('field', 'project')} required>
                 <SearchableDropdown
                   options={projectsData?.results?.map((project: Project) => ({
@@ -386,7 +383,7 @@ function NewPurchaseRequestPageContent() {
           {/* ── Section 2: Required Products ── */}
           <SectionHeader label={t('section', 'requestedItems')} />
 
-          <div style={{ padding: '20px' }}>
+          <div style={{ padding: '14px 16px' }}>
             {/* Add Item card */}
             <div style={{
               border: '1px solid var(--border-subtle)', borderRadius: 10,
@@ -483,8 +480,8 @@ function NewPurchaseRequestPageContent() {
 
           {/* ── Form Actions ── */}
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            padding: '14px 20px',
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '10px 20px',
             borderTop: '1px solid var(--border-subtle)',
             background: 'var(--surface-subtle)',
           }}>
