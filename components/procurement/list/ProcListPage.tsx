@@ -157,8 +157,8 @@ export function ProcListPage({
 
             {/* Nav row */}
             <div className="proc-lhc-nav">
-              <button className="proc-list-nav-back" onClick={() => router.back()}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <button className="proc-list-nav-back" onClick={() => router.back()} aria-label="Go back">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M19 12H5M5 12l7-7M5 12l7 7"/>
                 </svg>
                 Back
@@ -203,6 +203,8 @@ export function ProcListPage({
                     key={item.value || '__all__'}
                     className={`proc-strip-tab${item.value === statusValue ? ' proc-strip-tab--active' : ''}`}
                     onClick={() => handleStatusChange(item.value)}
+                    aria-pressed={item.value === statusValue}
+                    aria-label={`Show ${item.label} items`}
                   >
                     {item.label}
                     {item.loading
@@ -238,6 +240,8 @@ export function ProcListPage({
                 <button
                   className={`proc-cmd-btn${activeFilterCount > 0 ? ' proc-cmd-btn--active' : ''}`}
                   onClick={() => setAdvOpen(true)}
+                  aria-label="Open advanced filters"
+                  aria-expanded={advOpen}
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
@@ -256,10 +260,10 @@ export function ProcListPage({
                 {activeFilters.map(([key, value]) => (
                   <span key={key} className="proc-chip">
                     {filterLabel(key, value)}
-                    <button className="proc-chip-x" onClick={() => handleRemoveFilter(key)}>×</button>
+                    <button className="proc-chip-x" onClick={() => handleRemoveFilter(key)} aria-label={`Remove ${filterLabel(key, value)} filter`}>×</button>
                   </span>
                 ))}
-                <button className="proc-chips-clear" onClick={handleFilterReset}>Clear all</button>
+                <button className="proc-chips-clear" onClick={handleFilterReset} aria-label="Clear all active filters">Clear all</button>
               </div>
             )}
 

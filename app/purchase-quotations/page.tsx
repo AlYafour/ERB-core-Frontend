@@ -60,14 +60,20 @@ export default function PurchaseQuotationsPage() {
   const { data: kpiRejected } = useQuery({ queryKey: ['pq-kpi', 'rejected'], queryFn: () => pqAll({ status: 'rejected' }), staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
   const { data: kpiExpired }  = useQuery({ queryKey: ['pq-kpi', 'expired'],  queryFn: () => pqAll({ status: 'expired' }),  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
 
+  const invalidatePQ = () => {
+    queryClient.invalidateQueries({ queryKey: ['purchase-quotations'] });
+    queryClient.invalidateQueries({ queryKey: ['pq-kpi'] });
+    queryClient.invalidateQueries({ queryKey: ['pending-count'] });
+  };
+
   const deleteMutation = useMutation({
     mutationFn: purchaseQuotationsApi.delete,
-    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['purchase-quotations'] }); queryClient.invalidateQueries({ queryKey: ['pending-count'] }); toast('Quotation deleted', 'success'); },
+    onSuccess:  () => { invalidatePQ(); toast('Quotation deleted', 'success'); },
     onError:    () => toast('Failed to delete quotation', 'error'),
   });
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: number[]) => { await Promise.all(ids.map(id => purchaseQuotationsApi.delete(id))); },
-    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['purchase-quotations'] }); queryClient.invalidateQueries({ queryKey: ['pending-count'] }); toast(`${selectedItems.size} quotation(s) deleted`, 'success'); tableState.clearSelection(); },
+    onSuccess:  () => { invalidatePQ(); toast(`${selectedItems.size} quotation(s) deleted`, 'success'); tableState.clearSelection(); },
     onError:    () => toast('Failed to delete some quotations', 'error'),
   });
 

@@ -1,4 +1,14 @@
 /**
+ * Format a date string to a readable locale string.
+ * Accepts "YYYY-MM-DD" or full ISO strings. Returns "—" for empty/null.
+ */
+export function fmtDate(d: string | null | undefined): string {
+  if (!d) return '—';
+  const iso = d.includes('T') ? d : `${d}T00:00:00`;
+  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+/**
  * Format number with thousand separators and decimal places
  */
 export function formatNumber(value: number | string | null | undefined, decimals: number = 2): string {

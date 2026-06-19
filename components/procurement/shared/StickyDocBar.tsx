@@ -28,8 +28,8 @@ export function StickyDocBar({ backHref, docTypeLabel, docNumber, statusVariant,
   return (
     <div className={`proc-bar ${barClass}`}>
       {backHref && (
-        <Link href={backHref} className="proc-bar-back">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <Link href={backHref} className="proc-bar-back" aria-label="Go back">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M19 12H5M5 12l7-7M5 12l7 7"/>
           </svg>
           Back

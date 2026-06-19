@@ -19,6 +19,16 @@ import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
 import { StickyDocBar } from '@/components/procurement/shared/StickyDocBar';
 import { PQ_STATUS } from '@/lib/utils/status-colors';
 import { PQ_LABEL } from '@/lib/constants/status-labels';
+import { fmtDate } from '@/lib/utils/format';
+
+type DocRef = { id: number; code?: string; [key: string]: unknown };
+
+function resolveDocRef(val: unknown): DocRef | null {
+  if (!val) return null;
+  if (typeof val === 'number') return { id: val };
+  if (typeof val === 'object' && val !== null && 'id' in val) return val as DocRef;
+  return null;
+}
 
 function resolveSupplierName(supplier: unknown): string {
   if (!supplier) return 'N/A';
@@ -68,24 +78,21 @@ export default function PurchaseQuotationDetailPage() {
 
   const status       = quotation.status || 'pending';
   const supplierName = resolveSupplierName(quotation.supplier);
-  const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  const qrRef  = quotation.quotation_request && typeof quotation.quotation_request === 'object' ? quotation.quotation_request : quotation.quotation_request ? { id: quotation.quotation_request } : null;
-  const prRef  = qrRef && typeof qrRef === 'object' && (qrRef as { purchase_request?: unknown }).purchase_request
-    ? (() => { const pr = (qrRef as { purchase_request: unknown }).purchase_request; return typeof pr === 'object' ? pr as { id: number; code?: string } : { id: pr as number }; })()
-    : null;
+  const qrRef = resolveDocRef(quotation.quotation_request);
+  const prRef = qrRef ? resolveDocRef((qrRef as DocRef).purchase_request) : null;
 
   const chainNode = (prRef || qrRef) ? (
     <>
       {prRef && (
-        <Link href={`/purchase-requests/${(prRef as { id: number }).id}`} className="proc-bar-chain-step">
-          {(prRef as { code?: string }).code || `PR-${(prRef as { id: number }).id}`}
+        <Link href={`/purchase-requests/${prRef.id}`} className="proc-bar-chain-step">
+          {prRef.code || `PR-${prRef.id}`}
         </Link>
       )}
       {prRef && <span className="proc-bar-chain-arrow">→</span>}
       {qrRef && (
-        <Link href={`/quotation-requests/${(qrRef as { id: number }).id}`} className="proc-bar-chain-step">
-          QR-{(qrRef as { id: number }).id}
+        <Link href={`/quotation-requests/${qrRef.id}`} className="proc-bar-chain-step">
+          QR-{qrRef.id}
         </Link>
       )}
       {qrRef && <span className="proc-bar-chain-arrow">→</span>}
@@ -155,14 +162,14 @@ export default function PurchaseQuotationDetailPage() {
             <div className="card" style={{ height: '100%' }}>
               <div className="proc-section-head">
                 <h3 className="proc-section-title">Quotation Information</h3>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(quotation.quotation_date)}</span>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmtDate(quotation.quotation_date)}</span>
               </div>
               <div className="proc-info-grid">
                 <ProcField label={t('col', 'supplier')} value={supplierName} />
-                <ProcField label="Quotation Date" value={fmt(quotation.quotation_date)} />
-                <ProcField label="Valid Until" value={quotation.valid_until ? fmt(quotation.valid_until) : <span className="proc-info-value--empty">Not set</span>} />
+                <ProcField label="Quotation Date" value={fmtDate(quotation.quotation_date)} />
+                <ProcField label="Valid Until" value={quotation.valid_until ? fmtDate(quotation.valid_until) : <span className="proc-info-value--empty">Not set</span>} />
                 {quotation.awarded_by_name && <ProcField label="Awarded By" value={quotation.awarded_by_name} />}
-                {quotation.awarded_at && <ProcField label="Awarded At" value={fmt(quotation.awarded_at)} />}
+                {quotation.awarded_at && <ProcField label="Awarded At" value={fmtDate(quotation.awarded_at)} />}
                 {(quotation.project_name || quotation.project_code) && (
                   <ProcField label="Project" value={
                     <div>

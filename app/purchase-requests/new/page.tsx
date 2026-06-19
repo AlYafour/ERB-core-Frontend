@@ -20,6 +20,7 @@ import { EditablePRItemsTable } from '@/components/procurement/EditablePRItemsTa
 import FormField from '@/components/ui/FormField';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { useT } from '@/lib/i18n/useT';
+import { fmtDate } from '@/lib/utils/format';
 
 export default function NewPurchaseRequestPage() {
   return (
@@ -143,8 +144,8 @@ function NewPurchaseRequestPageContent() {
 
   const handleAddItem = () => {
     if (!selectedProduct) { toast('Please select a product first', 'warning'); return; }
-    if (currentItem.quantity <= 0 || !Number.isInteger(currentItem.quantity)) {
-      toast('Please enter a valid whole number quantity', 'warning'); return;
+    if (currentItem.quantity < 1) {
+      toast('Quantity must be at least 1', 'warning'); return;
     }
     setItems([...items, {
       product_id: selectedProduct.id,
@@ -184,7 +185,6 @@ function NewPurchaseRequestPageContent() {
 
   /* ─── derived for sidebar ─── */
   const selectedProject = projectsData?.results?.find((p: Project) => p.id === formData.project_id);
-  const fmt = (d: string) => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
   return (
     <MainLayout>
@@ -331,7 +331,7 @@ function NewPurchaseRequestPageContent() {
                 <div className="proc-sh-right">
                   <span style={{
                     fontSize: 11, fontWeight: 700, color: 'var(--brand)',
-                    background: 'rgba(124,45,58,0.08)', borderRadius: 5,
+                    background: 'var(--brand-subtle)', borderRadius: 5,
                     padding: '2px 8px',
                   }}>
                     {items.length} item{items.length !== 1 ? 's' : ''}
@@ -367,7 +367,7 @@ function NewPurchaseRequestPageContent() {
                   {selectedProduct && (
                     <span style={{
                       marginLeft: 'auto', fontSize: 10, color: 'var(--text-tertiary)',
-                      background: 'rgba(124,45,58,0.06)', borderRadius: 4,
+                      background: 'var(--brand-subtle)', borderRadius: 4,
                       padding: '2px 7px', fontWeight: 600,
                     }}>
                       Configure & Add →
@@ -390,7 +390,7 @@ function NewPurchaseRequestPageContent() {
                   <div style={{
                     borderTop: '1px dashed var(--border-subtle)',
                     padding: '12px 14px',
-                    background: 'rgba(124,45,58,0.025)',
+                    background: 'var(--brand-subtle)',
                   }}>
                     <div style={{
                       display: 'grid',
@@ -463,7 +463,7 @@ function NewPurchaseRequestPageContent() {
                     <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                       Items Added
                     </span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand)', background: 'rgba(124,45,58,0.08)', borderRadius: 5, padding: '2px 8px' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand)', background: 'var(--brand-subtle)', borderRadius: 5, padding: '2px 8px' }}>
                       {items.length}
                     </span>
                   </div>
@@ -497,35 +497,35 @@ function NewPurchaseRequestPageContent() {
 
             {/* ── Summary panel ── */}
             <div style={{
-              background: '#fff',
-              border: '1px solid #ede8e3',
+              background: 'var(--card-bg)',
+              border: '1px solid var(--border-subtle)',
               borderRadius: 12,
               overflow: 'hidden',
-              boxShadow: '0 1px 6px rgba(28,20,20,0.07)',
+              boxShadow: 'var(--shadow-sm)',
             }}>
               {/* Title row */}
-              <div style={{ padding: '11px 16px 9px', borderBottom: '1px solid #f3ede8' }}>
-                <p style={{ margin: 0, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#b0a399' }}>
+              <div style={{ padding: '11px 16px 9px', borderBottom: '1px solid var(--border-subtle)' }}>
+                <p style={{ margin: 0, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
                   Request Summary
                 </p>
               </div>
 
               {/* Project block */}
-              <div style={{ padding: '11px 16px', borderBottom: '1px solid #f3ede8' }}>
-                <p style={{ margin: '0 0 5px', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#c2b8b0' }}>
+              <div style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
+                <p style={{ margin: '0 0 5px', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-tertiary)' }}>
                   Project
                 </p>
                 {selectedProject ? (
                   <>
-                    <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 700, color: '#1e1714', lineHeight: 1.35 }}>
+                    <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.35 }}>
                       {selectedProject.name}
                     </p>
-                    <p style={{ margin: 0, fontSize: 11, color: '#9a9088', fontWeight: 600 }}>
+                    <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>
                       {selectedProject.code}
                     </p>
                   </>
                 ) : (
-                  <p style={{ margin: 0, fontSize: 12, color: '#c8c0bb', fontStyle: 'italic' }}>
+                  <p style={{ margin: 0, fontSize: 12, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
                     Not selected yet
                   </p>
                 )}
@@ -534,19 +534,19 @@ function NewPurchaseRequestPageContent() {
               {/* Info rows */}
               <div style={{ padding: '4px 16px 8px' }}>
                 {[
-                  { label: 'Request Date', value: fmt(formData.request_date) },
-                  { label: 'Required By',  value: fmt(formData.required_by) },
+                  { label: 'Request Date', value: fmtDate(formData.request_date) },
+                  { label: 'Required By',  value: fmtDate(formData.required_by) },
                   { label: 'Products',     value: items.length > 0 ? `${items.length} item${items.length !== 1 ? 's' : ''}` : '0 items', brand: items.length > 0 },
                 ].map(({ label, value, brand }) => (
                   <div key={label} style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '7px 0', borderBottom: '1px solid #f5f0ec',
+                    padding: '7px 0', borderBottom: '1px solid var(--border-subtle)',
                   }}>
-                    <span style={{ fontSize: 11, color: '#a09590', fontWeight: 500 }}>{label}</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500 }}>{label}</span>
                     <span style={{
                       fontSize: 12, fontWeight: 700,
-                      color: brand ? 'var(--brand)' : value === '—' ? '#cdc5bf' : '#2d2420',
-                      background: brand ? 'rgba(124,45,58,0.07)' : 'transparent',
+                      color: brand ? 'var(--brand)' : value === '—' ? 'var(--text-tertiary)' : 'var(--text-primary)',
+                      background: brand ? 'var(--brand-subtle)' : 'transparent',
                       padding: brand ? '2px 8px' : '0',
                       borderRadius: 5,
                     }}>
@@ -559,15 +559,15 @@ function NewPurchaseRequestPageContent() {
 
             {/* ── Actions panel ── */}
             <div style={{
-              background: '#fff',
-              border: '1px solid #ede8e3',
+              background: 'var(--card-bg)',
+              border: '1px solid var(--border-subtle)',
               borderRadius: 12,
               padding: '13px 14px',
               display: 'flex', flexDirection: 'column', gap: 7,
-              boxShadow: '0 1px 6px rgba(28,20,20,0.07)',
+              boxShadow: 'var(--shadow-sm)',
             }}>
               {items.length === 0 && (
-                <p style={{ fontSize: 11, color: '#b8b0aa', margin: '0 0 3px', textAlign: 'center', fontStyle: 'italic' }}>
+                <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '0 0 3px', textAlign: 'center', fontStyle: 'italic' }}>
                   Add at least one product to submit
                 </p>
               )}

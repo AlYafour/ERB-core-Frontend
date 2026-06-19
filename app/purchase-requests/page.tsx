@@ -22,7 +22,7 @@ import { PR_STATUS } from '@/lib/utils/status-colors';
 import { usePendingCounts } from '@/lib/hooks/use-pending-counts';
 import { ProcListPage } from '@/components/procurement/list/ProcListPage';
 
-const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+import { fmtDate } from '@/lib/utils/format';
 
 export default function PurchaseRequestsPage() {
   const router = useRouter();
@@ -60,24 +60,30 @@ export default function PurchaseRequestsPage() {
   const { data: kpiApproved } = useQuery({ queryKey: ['pr-kpi', 'approved'], queryFn: () => purchaseRequestsApi.getAll({ page: 1, page_size: 1, status: 'approved' }), staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
   const { data: kpiRejected } = useQuery({ queryKey: ['pr-kpi', 'rejected'], queryFn: () => purchaseRequestsApi.getAll({ page: 1, page_size: 1, status: 'rejected' }), staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
 
+  const invalidatePR = () => {
+    queryClient.invalidateQueries({ queryKey: ['purchase-requests'] });
+    queryClient.invalidateQueries({ queryKey: ['pr-kpi'] });
+    queryClient.invalidateQueries({ queryKey: ['pending-count'] });
+  };
+
   const approveMutation = useMutation({
     mutationFn: purchaseRequestsApi.approve,
-    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['purchase-requests'] }); queryClient.invalidateQueries({ queryKey: ['pending-count'] }); toast('Request approved', 'success'); },
+    onSuccess:  () => { invalidatePR(); toast('Request approved', 'success'); },
     onError:    (e: unknown) => toast(getApiError(e, 'Failed to approve request'), 'error'),
   });
   const rejectMutation = useMutation({
     mutationFn: ({ id, reason }: { id: number; reason: string }) => purchaseRequestsApi.reject(id, reason),
-    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['purchase-requests'] }); queryClient.invalidateQueries({ queryKey: ['pending-count'] }); toast('Request rejected', 'info'); },
+    onSuccess:  () => { invalidatePR(); toast('Request rejected', 'info'); },
     onError:    (e: unknown) => toast(getApiError(e, 'Failed to reject request'), 'error'),
   });
   const deleteMutation = useMutation({
     mutationFn: purchaseRequestsApi.delete,
-    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['purchase-requests'] }); queryClient.invalidateQueries({ queryKey: ['pending-count'] }); toast('Request deleted', 'success'); },
+    onSuccess:  () => { invalidatePR(); toast('Request deleted', 'success'); },
     onError:    (e: unknown) => toast(getApiError(e, 'Failed to delete request'), 'error'),
   });
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: number[]) => { await Promise.all(ids.map(id => purchaseRequestsApi.delete(id))); },
-    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['purchase-requests'] }); queryClient.invalidateQueries({ queryKey: ['pending-count'] }); toast(`${selectedItems.size} request(s) deleted`, 'success'); tableState.clearSelection(); },
+    onSuccess:  () => { invalidatePR(); toast(`${selectedItems.size} request(s) deleted`, 'success'); tableState.clearSelection(); },
     onError:    (e: unknown) => toast(getApiError(e, 'Failed to delete some requests'), 'error'),
   });
 
@@ -120,14 +126,14 @@ export default function PurchaseRequestsPage() {
         const hasQR = r.has_quotation_requests;
         const hasPO = r.has_purchase_orders;
         if (!hasQR && !hasPO) return (
-          <span style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'2px 8px', borderRadius:999, fontSize:'var(--text-xs)', fontWeight:600, background:'rgba(217,119,6,.12)', color:'rgb(180,83,9)' }}>
+          <span style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'2px 8px', borderRadius:999, fontSize:'var(--text-xs)', fontWeight:600, background:'var(--status-warning-bg)', color:'var(--status-warning)' }}>
             ⚠ Not Started
           </span>
         );
         return (
           <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
-            {hasQR && <span style={{ padding:'2px 8px', borderRadius:999, fontSize:'var(--text-xs)', fontWeight:600, background:'rgba(59,130,246,.12)', color:'rgb(29,78,216)' }}>QR</span>}
-            {hasPO && <span style={{ padding:'2px 8px', borderRadius:999, fontSize:'var(--text-xs)', fontWeight:600, background:'rgba(34,197,94,.12)', color:'rgb(21,128,61)' }}>LPO</span>}
+            {hasQR && <span style={{ padding:'2px 8px', borderRadius:999, fontSize:'var(--text-xs)', fontWeight:600, background:'var(--task-assigned-bg)', color:'var(--task-assigned)' }}>QR</span>}
+            {hasPO && <span style={{ padding:'2px 8px', borderRadius:999, fontSize:'var(--text-xs)', fontWeight:600, background:'var(--status-success-bg)', color:'var(--status-success)' }}>LPO</span>}
           </div>
         );
       },

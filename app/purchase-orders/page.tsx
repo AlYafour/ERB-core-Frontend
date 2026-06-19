@@ -75,8 +75,13 @@ export default function PurchaseOrdersPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => purchaseOrdersApi.delete(id),
-    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['purchase-orders'] }); queryClient.invalidateQueries({ queryKey: ['pending-count'] }); toast('Purchase Order deleted', 'success'); },
-    onError:    () => toast('Failed to delete purchase order', 'error'),
+    onSuccess:  () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['po-kpi'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-count'] });
+      toast('Purchase Order deleted', 'success');
+    },
+    onError: () => toast('Failed to delete purchase order', 'error'),
   });
 
   const handleDelete = useCallback(async (id: number) => {
@@ -85,10 +90,18 @@ export default function PurchaseOrdersPage() {
 
   const handleBulkDelete = async () => {
     if (!selectedItems.size || !await confirm(`Delete ${selectedItems.size} purchase orders?`)) return;
-    for (const id of selectedItems) await purchaseOrdersApi.delete(id).catch(() => {});
+    const ids = Array.from(selectedItems);
+    const failed: number[] = [];
+    for (const id of ids) {
+      try { await purchaseOrdersApi.delete(id); } catch { failed.push(id); }
+    }
     queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+    queryClient.invalidateQueries({ queryKey: ['po-kpi'] });
     queryClient.invalidateQueries({ queryKey: ['pending-count'] });
-    toast(`Deleted ${selectedItems.size} purchase orders`, 'success');
+    const ok = ids.length - failed.length;
+    if (failed.length === 0)    toast(`Deleted ${ok} purchase order${ok !== 1 ? 's' : ''}`, 'success');
+    else if (ok === 0)          toast(`Failed to delete all ${failed.length} purchase orders`, 'error');
+    else                        toast(`Deleted ${ok}, failed to delete ${failed.length}`, 'warning');
     clearSelection();
   };
 
