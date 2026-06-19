@@ -16,40 +16,30 @@ interface Props {
   totalLabel?: string;
 }
 
-const COLOR: Record<NonNullable<SummaryRow['variant']>, string> = {
-  discount: 'var(--color-error)',
-  success:  'var(--color-success)',
-  brand:    'var(--brand)',
-  bold:     'var(--text-primary)',
+const VALUE_CLASS: Record<NonNullable<SummaryRow['variant']>, string> = {
+  discount: 'proc-summary-row-value proc-summary-row-value--discount',
+  success:  'proc-summary-row-value',
+  brand:    'proc-summary-row-value',
+  bold:     'proc-summary-row-value',
 };
 
 export function FinancialSummary({ rows, total, totalLabel = 'Total' }: Props) {
   const visible = rows.filter((r) => !r.hidden && r.value != null && Number(r.value) !== 0);
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-      <div style={{ width: 272, display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div className="proc-financial-grid">
+      <div className="proc-financial-box">
         {visible.map((row, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>{row.label}:</span>
-            <span style={{
-              fontWeight: 'var(--weight-semibold)',
-              color: row.variant ? COLOR[row.variant] : 'var(--text-primary)',
-            }}>
+          <div key={i} className="proc-financial-row">
+            <span className="proc-financial-row-label">{row.label}</span>
+            <span className={row.variant ? VALUE_CLASS[row.variant] : 'proc-financial-row-value'}>
               {row.prefix}{formatPrice(Number(row.value ?? 0))}
             </span>
           </div>
         ))}
-        <div style={{
-          display: 'flex', justifyContent: 'space-between',
-          borderTop: '1px solid var(--border-subtle)',
-          paddingTop: 8,
-          fontSize: 'var(--text-base)',
-        }}>
-          <span style={{ fontWeight: 'var(--weight-bold)', color: 'var(--text-primary)' }}>{totalLabel}:</span>
-          <span style={{ fontWeight: 'var(--weight-bold)', color: 'var(--text-primary)' }}>
-            {formatPrice(Number(total ?? 0))}
-          </span>
+        <div className="proc-financial-total">
+          <span className="proc-financial-total-label">{totalLabel}</span>
+          <span className="proc-financial-total-value">{formatPrice(Number(total ?? 0))}</span>
         </div>
       </div>
     </div>

@@ -16,10 +16,10 @@ table thead {
 table th {
   padding: var(--space-3) var(--space-4);
   text-align: left;
-  font-weight: var(--weight-semibold);
+  font-weight: 700;
   font-size: var(--text-xs);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   color: var(--table-header-text);
   border-bottom: 1px solid var(--table-border);
   white-space: nowrap;
@@ -37,13 +37,12 @@ table tbody tr:last-child td {
 
 table tbody tr:hover {
   background: var(--table-row-hover);
-  cursor: pointer;
 }
 
 .table-standalone {
   background: var(--card-bg);
   border: 1px solid var(--table-border);
-  border-radius: var(--radius-lg);
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: var(--card-shadow);
+  box-shadow: 0 1px 3px rgba(28, 20, 20, 0.05);
 }

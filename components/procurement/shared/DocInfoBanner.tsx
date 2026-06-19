@@ -1,4 +1,5 @@
 'use client';
+import React from 'react';
 
 interface Field {
   label: string;
@@ -14,20 +15,31 @@ interface Props {
 export function DocInfoBanner({ title, fields, variant = 'info' }: Props) {
   const isWarning = variant === 'warning';
   return (
-    <div className="card" style={{
-      backgroundColor: isWarning ? 'var(--warning-bg, #fffbeb)' : 'var(--info-banner-bg)',
-      borderColor: isWarning ? 'var(--warning-border, #fcd34d)' : 'var(--info-banner-border)',
-      borderWidth: 1,
-      borderStyle: 'solid',
+    <div style={{
+      padding: '10px 16px',
+      borderRadius: 10,
+      border: `1px solid ${isWarning ? 'rgba(217,119,6,0.3)' : 'var(--status-info-border)'}`,
+      background: isWarning ? 'rgba(255,251,235,0.8)' : 'var(--status-info-bg)',
+      display: 'flex',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      gap: '12px 24px',
     }}>
-      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: isWarning ? '#92400e' : 'var(--info-banner-text)', margin: '0 0 var(--space-2)' }}>
-        {title}
-      </p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-2)', fontSize: 'var(--text-sm)' }}>
+      <span style={{
+        fontSize: 10,
+        fontWeight: 700,
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
+        color: isWarning ? '#92400e' : 'var(--brand)',
+        whiteSpace: 'nowrap',
+        flexShrink: 0,
+      }}>{title}</span>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 24px', flex: 1 }}>
         {fields.map((f, i) => (
-          <div key={i}>
-            <span style={{ color: 'var(--info-banner-text)' }}>{f.label}: </span>
-            <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{f.value}</span>
+          <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <span style={{ fontSize: 'var(--text-xs)', color: isWarning ? '#92400e' : 'var(--text-secondary)', flexShrink: 0 }}>{f.label}:</span>
+            <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>{f.value}</span>
           </div>
         ))}
       </div>

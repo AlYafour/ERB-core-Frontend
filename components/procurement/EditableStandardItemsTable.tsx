@@ -21,20 +21,13 @@ interface BaseEditableItem {
 
 interface Props<T extends BaseEditableItem> {
   items: T[];
-  /** Called for every numeric field change: quantity, unit_price, discount, tax_rate (and product_id when productOptions used). */
   onUpdate: (index: number, field: string, value: number) => void;
-  /** When provided, each row gets a remove button. */
   onRemove?: (index: number) => void;
-  /** When provided, product cell renders a SearchableDropdown; otherwise renderProduct is used. */
   productOptions?: ProductOption[];
-  /** Custom product cell renderer — used when productOptions is absent. */
   renderProduct?: (item: T) => React.ReactNode;
-  /** Show Unit column (default true). PO edit omits it. */
   showUnit?: boolean;
-  /** Resolve unit label from an item — called only when showUnit is true. */
   getUnit?: (item: T) => string;
   formatPrice: (n: number) => string;
-  /** When true all inputs are read-only (quotation items). */
   readOnly?: boolean;
 }
 
@@ -51,24 +44,36 @@ export function EditableStandardItemsTable<T extends BaseEditableItem>({
 }: Props<T>) {
   const t = useT();
 
+  if (items.length === 0) {
+    return (
+      <div className="proc-empty-items">
+        <div className="proc-empty-items-icon">📦</div>
+        <p className="proc-empty-items-title">No items added yet</p>
+        <p className="proc-empty-items-desc">Use the panel above to add products</p>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <table>
+    <div className="proc-items-wrap">
+      <table className="proc-items-table">
         <thead>
           <tr>
+            <th style={{ width: 36, textAlign: 'center' }}>#</th>
             <th>{t('col', 'product')}</th>
-            {showUnit && <th>{t('col', 'unit')}</th>}
-            <th>{t('col', 'quantity')}</th>
-            <th>{t('col', 'unitPrice')}</th>
-            <th>{t('col', 'discountPct')}</th>
-            <th>{t('col', 'taxPct')}</th>
-            <th>{t('col', 'total')}</th>
-            {onRemove && <th></th>}
+            {showUnit && <th style={{ width: 80 }}>{t('col', 'unit')}</th>}
+            <th style={{ width: 90 }}>{t('col', 'quantity')}</th>
+            <th style={{ width: 110 }}>{t('col', 'unitPrice')}</th>
+            <th style={{ width: 90 }}>{t('col', 'discountPct')}</th>
+            <th style={{ width: 90 }}>{t('col', 'taxPct')}</th>
+            <th style={{ width: 110, textAlign: 'right' }}>{t('col', 'total')}</th>
+            {onRemove && <th style={{ width: 48 }} />}
           </tr>
         </thead>
         <tbody>
           {items.map((item, index) => (
             <tr key={index}>
+              <td className="row-num">{index + 1}</td>
               <td>
                 {productOptions ? (
                   <SearchableDropdown
@@ -83,12 +88,12 @@ export function EditableStandardItemsTable<T extends BaseEditableItem>({
                 ) : null}
               </td>
               {showUnit && (
-                <td style={{ color: 'var(--text-secondary)' }}>
+                <td style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)' }}>
                   {getUnit ? getUnit(item) : '—'}
                 </td>
               )}
               <td>
-                <input type="number" min="0" step="any" className="form-input" style={{ width: 80 }}
+                <input type="number" min="0" step="any" className="form-input" style={{ width: 76 }}
                   value={item.quantity} disabled={readOnly}
                   onChange={(e) => onUpdate(index, 'quantity', parseFloat(e.target.value) || 0)} />
               </td>
@@ -98,30 +103,24 @@ export function EditableStandardItemsTable<T extends BaseEditableItem>({
                   onChange={(e) => onUpdate(index, 'unit_price', parseFloat(e.target.value) || 0)} />
               </td>
               <td>
-                <input type="number" min="0" max="100" step="0.01" className="form-input" style={{ width: 80 }}
+                <input type="number" min="0" max="100" step="0.01" className="form-input" style={{ width: 72 }}
                   value={item.discount ?? 0} disabled={readOnly}
                   onChange={(e) => onUpdate(index, 'discount', parseFloat(e.target.value) || 0)} />
               </td>
               <td>
-                <input type="number" min="0" max="100" step="0.01" className="form-input" style={{ width: 80 }}
+                <input type="number" min="0" max="100" step="0.01" className="form-input" style={{ width: 72 }}
                   value={item.tax_rate ?? 0} disabled={readOnly}
                   onChange={(e) => onUpdate(index, 'tax_rate', parseFloat(e.target.value) || 0)} />
               </td>
-              <td>
-                <div style={{ fontWeight: 'var(--weight-semibold)' }}>
-                  {formatPrice(rowItemTotal(item))}
-                </div>
+              <td className="cell-total">
+                {formatPrice(rowItemTotal(item))}
               </td>
               {onRemove && (
-                <td>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
+                <td style={{ textAlign: 'center' }}>
+                  <Button type="button" variant="ghost" size="sm"
                     onClick={() => onRemove(index)}
-                  >
-                    {t('btn', 'delete')}
-                  </Button>
+                    style={{ color: 'var(--status-error)', padding: '0 6px' }}
+                  >✕</Button>
                 </td>
               )}
             </tr>

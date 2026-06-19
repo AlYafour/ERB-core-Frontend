@@ -5,9 +5,9 @@
 .card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: var(--radius-lg);
+  border-radius: 10px;
   padding: var(--card-padding);
-  box-shadow: var(--card-shadow);
+  box-shadow: 0 1px 3px rgba(28, 20, 20, 0.05), 0 1px 1px rgba(28, 20, 20, 0.03);
   transition:
     box-shadow var(--transition-base),
     border-color var(--transition-base);

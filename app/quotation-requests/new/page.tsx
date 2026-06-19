@@ -7,12 +7,11 @@ import { quotationRequestsApi } from '@/lib/api/quotation-requests';
 import { purchaseRequestsApi } from '@/lib/api/purchase-requests';
 import { suppliersApi } from '@/lib/api/suppliers';
 import MainLayout from '@/components/layout/MainLayout';
-import Link from 'next/link';
 import { QuotationRequestItem } from '@/types';
 import { toast } from '@/lib/hooks/use-toast';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import FormField from '@/components/ui/FormField';
-import { Button, PageShell } from '@/components/ui';
+import { Button, PageHeader, PageShell } from '@/components/ui';
 import { formatBackendError } from '@/lib/utils/validation';
 import { canCreateQuotationRequest } from '@/lib/utils/workflow-guards';
 import RouteGuard from '@/components/auth/RouteGuard';
@@ -20,6 +19,7 @@ import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { useT } from '@/lib/i18n/useT';
 import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable';
+import { DocInfoBanner } from '@/components/procurement/shared/DocInfoBanner';
 
 export default function NewQuotationRequestPage() {
   return (
@@ -204,85 +204,24 @@ function NewQuotationRequestPageContent() {
   return (
     <MainLayout>
       <PageShell>
-        {/* Header Section */}
-        <div>
-          <Link
-            href="/quotation-requests"
-            style={{
-              fontSize: 'var(--text-sm)',
-              marginBottom: 'var(--space-2)',
-              display: 'inline-block',
-              color: 'var(--text-secondary)',
-              textDecoration: 'none',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--text-primary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--text-secondary)';
-            }}
-          >
-            ← {t('btn', 'back')} {t('page', 'quotationRequests')}
-          </Link>
-          <h1 style={{ 
-            fontSize: 'var(--text-2xl)',
-            fontWeight: 'var(--weight-semibold)',
-            color: 'var(--text-primary)',
-            margin: 0,
-            marginBottom: 'var(--space-1)',
-          }}>
-            {t('page', 'newQR')}
-          </h1>
-          {purchaseRequest && (
-            <p style={{ 
-              fontSize: 'var(--text-sm)',
-              color: 'var(--text-secondary)',
-              margin: 0,
-            }}>
-              For Purchase Request: <span style={{ fontWeight: 'var(--weight-semibold)' }}>{purchaseRequest.code}</span>
-            </p>
-          )}
-        </div>
+        <PageHeader
+          title={t('page', 'newQR')}
+          breadcrumbs={[
+            { label: t('page', 'quotationRequests'), href: '/quotation-requests' },
+            { label: 'New' },
+          ]}
+        />
 
-        {/* Warning Banner */}
-        {purchaseRequest && purchaseRequest.status !== 'approved' && (
-          <div className="card" style={{
-            backgroundColor: 'var(--color-warning-light)',
-            borderColor: 'var(--color-warning)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-2)' }}>
-              <svg
-                style={{
-                  width: 20, height: 20, flexShrink: 0,
-                  color: 'var(--color-warning)',
-                  marginTop: '2px',
-                }}
-                fill="currentColor" 
-                viewBox="0 0 20 20"
-              >
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              <div>
-                <p style={{ 
-                  fontSize: 'var(--text-sm)',
-                  fontWeight: 'var(--weight-semibold)',
-                  color: '#854D0E',
-                  margin: 0,
-                  marginBottom: 'var(--space-1)',
-                }}>
-                  Warning
-                </p>
-                <p style={{ 
-                  fontSize: 'var(--text-sm)',
-                  color: '#854D0E',
-                  margin: 0,
-                }}>
-                  Purchase request status: {purchaseRequest.status === 'pending' ? 'Pending' : purchaseRequest.status}. 
-                  It is recommended to approve the purchase request first before creating a quotation request.
-                </p>
-              </div>
-            </div>
-          </div>
+        {purchaseRequest && (
+          <DocInfoBanner
+            title="Purchase Request"
+            variant={purchaseRequest.status !== 'approved' ? 'warning' : 'info'}
+            fields={[
+              { label: 'Reference', value: purchaseRequest.code },
+              { label: 'Status', value: purchaseRequest.status },
+              { label: 'Items', value: purchaseRequest.items.length },
+            ]}
+          />
         )}
 
         {/* Form Card */}
@@ -346,55 +285,33 @@ function NewQuotationRequestPageContent() {
           {/* Items Section */}
           {purchaseRequest && (
             <div style={{ marginBottom: 'var(--space-6)' }}>
-              <div style={{ 
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 'var(--space-4)',
-              }}>
-                <h3 style={{ 
-                  fontSize: 'var(--text-lg)',
-                  fontWeight: 'var(--weight-semibold)',
-                  color: 'var(--text-primary)',
-                  margin: 0,
-                }}>
+              <div className="proc-section-head">
+                <h3 className="proc-section-title">
                   {t('col', 'product')}
+                  <span className="proc-section-count">{items.length}</span>
                 </h3>
-                {errors.items && (
-                  <span style={{ 
-                    fontSize: 'var(--text-sm)',
-                    color: 'var(--color-error)',
-                  }}>
-                    {errors.items}
-                  </span>
-                )}
+                {errors.items && <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-error)' }}>{errors.items}</span>}
               </div>
-              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <ReadOnlyItemsTable
-                  items={items}
-                  columns={[
-                    {
-                      header: t('col', 'product'),
-                      cell: (item) => {
-                        const product = purchaseRequest.items.find(
-                          (i) => (i.product?.id || i.product_id) === item.product_id
-                        )?.product;
-                        return <div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{product?.name || 'N/A'}</div>;
-                      },
+              <ReadOnlyItemsTable
+                items={items}
+                columns={[
+                  {
+                    header: t('col', 'product'),
+                    cell: (item) => {
+                      const product = purchaseRequest.items.find((i) => (i.product?.id || i.product_id) === item.product_id)?.product;
+                      return <div className="cell-product-name">{product?.name || 'N/A'}</div>;
                     },
-                    {
-                      header: t('col', 'code'),
-                      cell: (item) => {
-                        const product = purchaseRequest.items.find(
-                          (i) => (i.product?.id || i.product_id) === item.product_id
-                        )?.product;
-                        return <span style={{ color: 'var(--text-secondary)' }}>{product?.code || ''}</span>;
-                      },
+                  },
+                  {
+                    header: t('col', 'code'),
+                    cell: (item) => {
+                      const product = purchaseRequest.items.find((i) => (i.product?.id || i.product_id) === item.product_id)?.product;
+                      return <span className="cell-product-code">{product?.code || '—'}</span>;
                     },
-                    { header: t('col', 'quantity'), cell: (item) => <span style={{ color: 'var(--text-primary)' }}>{item.quantity}</span> },
-                  ]}
-                />
-              </div>
+                  },
+                  { header: t('col', 'quantity'), cell: (item) => <span>{item.quantity}</span> },
+                ]}
+              />
             </div>
           )}
 

@@ -20,12 +20,13 @@ export function ReadOnlyItemsTable<T>({
   emptyMessage = 'No items.',
 }: Props<T>) {
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <table>
+    <div className="proc-detail-table-wrap">
+      <table className="proc-detail-table">
         <thead>
           <tr>
+            <th className="col-num">#</th>
             {columns.map((col, i) => (
-              <th key={i} style={col.align ? { textAlign: col.align } : undefined}>
+              <th key={i} className={col.align === 'right' ? 'col-right' : col.align === 'center' ? 'col-num' : undefined}>
                 {col.header}
               </th>
             ))}
@@ -34,22 +35,16 @@ export function ReadOnlyItemsTable<T>({
         <tbody>
           {items.length === 0 ? (
             <tr>
-              <td
-                colSpan={columns.length}
-                style={{
-                  textAlign: 'center',
-                  color: 'var(--text-secondary)',
-                  padding: 'var(--space-4)',
-                }}
-              >
+              <td colSpan={columns.length + 1} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '28px 16px', fontStyle: 'italic', fontSize: 'var(--text-sm)' }}>
                 {emptyMessage}
               </td>
             </tr>
           ) : (
             items.map((item, i) => (
               <tr key={i}>
+                <td className="col-num">{i + 1}</td>
                 {columns.map((col, j) => (
-                  <td key={j} style={col.align ? { textAlign: col.align } : undefined}>
+                  <td key={j} className={col.align === 'right' ? 'col-right' : col.align === 'center' ? 'col-num' : undefined}>
                     {col.cell(item, i)}
                   </td>
                 ))}
