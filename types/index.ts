@@ -948,7 +948,7 @@ export interface PenaltyRule {
 
 export type TaskStatus =
   | 'draft' | 'assigned' | 'accepted' | 'in_progress'
-  | 'submitted' | 'review' | 'approved' | 'rejected' | 'closed';
+  | 'review' | 'approved' | 'rejected' | 'closed';
 
 export type TaskPriority = 'critical' | 'high' | 'medium' | 'low';
 export type TaskType = 'task' | 'request' | 'issue' | 'followup';

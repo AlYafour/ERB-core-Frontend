@@ -9,7 +9,6 @@ export const STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; b
   assigned:    { label: 'Assigned',     ...taskStatus.assigned },
   accepted:    { label: 'Accepted',     ...taskStatus.accepted },
   in_progress: { label: 'In Progress',  ...taskStatus.in_progress },
-  submitted:   { label: 'Submitted',    ...taskStatus.submitted },
   review:      { label: 'Under Review', ...taskStatus.review },
   approved:    { label: 'Approved',     ...taskStatus.approved },
   rejected:    { label: 'Rejected',     ...taskStatus.rejected },
