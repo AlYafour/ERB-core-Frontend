@@ -29,102 +29,103 @@ export default function QuotationRequestDetailPage() {
 
   const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
+  const chainNode = prId ? (
+    <>
+      <Link href={`/purchase-requests/${prId}`} className="proc-bar-chain-step">
+        {pr?.code || `PR-${prId}`}
+      </Link>
+      <span className="proc-bar-chain-arrow">→</span>
+      <span className="proc-bar-chain-current">QR-{qr.id}</span>
+    </>
+  ) : null;
+
   return (
     <MainLayout>
-      <PageShell>
+      <PageShell compact>
 
-        {/* ── Sticky action bar ── */}
+        {/* ── Sticky action bar with inline chain ── */}
         <StickyDocBar
           docTypeLabel="Quotation Request"
           docNumber={`QR-${qr.id}`}
           statusVariant="info"
           statusLabel="Open"
+          chain={chainNode}
         >
           <Link href={`/purchase-quotations/new?quotation_request_id=${qr.id}`}>
             <Button variant="primary" size="sm">+ Quotation</Button>
           </Link>
         </StickyDocBar>
 
-        {/* ── Document chain ── */}
-        {prId && (
-          <div className="proc-chain">
-            <Link href={`/purchase-requests/${prId}`} className="proc-chain-pill">
-              <span className="proc-chain-pill-type">Purchase Request</span>
-              <span className="proc-chain-pill-num">{pr?.code || `PR-${prId}`}</span>
-            </Link>
-            <span className="proc-chain-arrow">→</span>
-            <div className="proc-chain-pill" style={{ borderColor: 'var(--brand)', background: 'var(--brand-subtle)' }}>
-              <span className="proc-chain-pill-type" style={{ color: 'var(--brand)' }}>Quotation Request</span>
-              <span className="proc-chain-pill-num" style={{ color: 'var(--brand)' }}>QR-{qr.id}</span>
+        {/* ── Two-column: QR info left / items right ── */}
+        <div className="proc-detail-split">
+
+          {/* LEFT: QR information */}
+          <div className="proc-detail-info">
+            <div className="card">
+              <div className="proc-section-head">
+                <h3 className="proc-section-title">QR Information</h3>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(qr.created_at)}</span>
+              </div>
+              <div className="proc-info-grid">
+                {supplier && <ProcField label="Supplier" value={supplier.business_name || supplier.name || '—'} />}
+                {prId && (
+                  <ProcField label="Purchase Request" value={
+                    <Link href={`/purchase-requests/${prId}`} style={{ color: 'var(--brand)', fontWeight: 'var(--weight-semibold)', textDecoration: 'none' }}>
+                      {pr?.code || `PR-${prId}`} ↗
+                    </Link>
+                  } />
+                )}
+                <ProcField label="Created By" value={qr.created_by_name || '—'} />
+                <ProcField label="Created At" value={fmt(qr.created_at)} />
+                {qr.notes && <ProcField label="Notes" value={qr.notes} />}
+              </div>
             </div>
           </div>
-        )}
 
-        {/* ── QR info ── */}
-        <div className="card">
-          <div className="proc-section-head">
-            <h3 className="proc-section-title">Quotation Request Information</h3>
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(qr.created_at)}</span>
-          </div>
-          <div className="proc-info-grid">
-            {supplier && <ProcField label="Supplier" value={supplier.business_name || supplier.name || '—'} />}
-            {prId && (
-              <ProcField label="Purchase Request" value={
-                <Link href={`/purchase-requests/${prId}`} style={{ color: 'var(--brand)', fontWeight: 'var(--weight-semibold)', textDecoration: 'none' }}>
-                  {pr?.code || `PR-${prId}`} ↗
-                </Link>
-              } />
-            )}
-            <ProcField label="Created By" value={qr.created_by_name || '—'} />
-            <ProcField label="Created At" value={fmt(qr.created_at)} />
-          </div>
-          {qr.notes && (
-            <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
-              <ProcField label="Notes" value={qr.notes} />
+          {/* RIGHT: Requested items */}
+          <div className="proc-detail-products">
+            <div className="card">
+              <div className="proc-section-head">
+                <h3 className="proc-section-title">
+                  Requested Items
+                  <span className="proc-section-count">{(qr.items ?? []).length}</span>
+                </h3>
+              </div>
+              <ReadOnlyItemsTable
+                items={qr.items ?? []}
+                columns={[
+                  {
+                    header: 'Product',
+                    cell: (item: { product?: { name?: string; code?: string }; product_id?: number }) => (
+                      <div>
+                        <div className="cell-product-name">{item.product?.name || `Product #${item.product_id}`}</div>
+                        {item.product?.code && <div className="cell-product-code">{item.product.code}</div>}
+                      </div>
+                    ),
+                  },
+                  {
+                    header: 'Qty',
+                    align: 'center' as const,
+                    cell: (item: { quantity?: number }) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{item.quantity}</span>,
+                  },
+                  {
+                    header: 'Unit',
+                    align: 'center' as const,
+                    cell: (item: { unit?: string; product?: { unit?: string } }) => (
+                      <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 600 }}>
+                        {(item.unit || item.product?.unit || '—').toUpperCase()}
+                      </span>
+                    ),
+                  },
+                  {
+                    header: 'Notes',
+                    cell: (item: { notes?: string }) => <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item.notes || '—'}</span>,
+                  },
+                ]}
+              />
             </div>
-          )}
-        </div>
-
-        {/* ── Items ── */}
-        <div className="card">
-          <div className="proc-section-head">
-            <h3 className="proc-section-title">
-              Requested Items
-              <span className="proc-section-count">{(qr.items ?? []).length}</span>
-            </h3>
           </div>
-          <ReadOnlyItemsTable
-            items={qr.items ?? []}
-            columns={[
-              {
-                header: 'Product',
-                cell: (item: { product?: { name?: string; code?: string }; product_id?: number }) => (
-                  <div>
-                    <div className="cell-product-name">{item.product?.name || `Product #${item.product_id}`}</div>
-                    {item.product?.code && <div className="cell-product-code">{item.product.code}</div>}
-                  </div>
-                ),
-              },
-              {
-                header: 'Qty',
-                align: 'center' as const,
-                cell: (item: { quantity?: number }) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{item.quantity}</span>,
-              },
-              {
-                header: 'Unit',
-                align: 'center' as const,
-                cell: (item: { unit?: string; product?: { unit?: string } }) => (
-                  <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 600 }}>
-                    {(item.unit || item.product?.unit || '—').toUpperCase()}
-                  </span>
-                ),
-              },
-              {
-                header: 'Notes',
-                cell: (item: { notes?: string }) => <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item.notes || '—'}</span>,
-              },
-            ]}
-          />
+
         </div>
 
       </PageShell>

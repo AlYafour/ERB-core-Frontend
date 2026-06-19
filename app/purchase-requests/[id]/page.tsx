@@ -225,7 +225,7 @@ export default function PurchaseRequestDetailPage() {
 
   return (
     <MainLayout>
-      <PageShell>
+      <PageShell compact>
 
         {/* ── Sticky action bar ── */}
         <StickyDocBar
@@ -294,124 +294,129 @@ export default function PurchaseRequestDetailPage() {
           )}
         </StickyDocBar>
 
-        {/* ── Request info ── */}
-        <div className="card">
-          <div className="proc-section-head">
-            <h3 className="proc-section-title">Request Information</h3>
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(request.request_date)}</span>
-          </div>
-          <div className="proc-info-grid">
-            <ProcField label={t('col', 'title')}      value={request.title} />
-            <ProcField label={t('col', 'requestDate')} value={fmt(request.request_date)} />
-            <ProcField label={t('col', 'requiredBy')}  value={fmt(request.required_by)} />
-            <ProcField label={t('col', 'createdBy')}   value={request.created_by_name} />
-            {request.approved_by_name && (
-              <ProcField label={t('section', 'authorization')} value={request.approved_by_name} />
+        {/* ── Two-column: PR info left / items right ── */}
+        <div className="proc-detail-split">
+
+          {/* LEFT: Request information + tracking + status */}
+          <div className="proc-detail-info">
+            <div className="card" style={{ marginBottom: 12 }}>
+              <div className="proc-section-head">
+                <h3 className="proc-section-title">Request Information</h3>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(request.request_date)}</span>
+              </div>
+              <div className="proc-info-grid">
+                <ProcField label={t('col', 'title')}       value={request.title} />
+                <ProcField label={t('col', 'requestDate')}  value={fmt(request.request_date)} />
+                <ProcField label={t('col', 'requiredBy')}   value={fmt(request.required_by)} />
+                <ProcField label={t('col', 'createdBy')}    value={request.created_by_name} />
+                {request.approved_by_name && (
+                  <ProcField label={t('section', 'authorization')} value={request.approved_by_name} />
+                )}
+                {request.notes && <ProcField label={t('col', 'notes')} value={request.notes} />}
+              </div>
+              {request.rejection_reason && (
+                <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 8, background: 'var(--status-error-bg)', border: '1px solid var(--status-error-border)' }}>
+                  <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--status-error)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{t('confirm', 'rejectReason')}</div>
+                  <div style={{ fontSize: 'var(--text-sm)', color: '#991B1B', lineHeight: 1.5 }}>{request.rejection_reason}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Tracking shortcut */}
+            <div className="card" style={{ background: 'var(--surface-inset)', border: '1px solid var(--border-subtle)', marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                <div>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', marginBottom: 2 }}>
+                    {t('section', 'statusInfo')}
+                  </div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{t('page', 'prSubtitle')}</div>
+                </div>
+                <Link href={`/purchase-requests/${id}/tracking`} className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: 'var(--text-sm)', whiteSpace: 'nowrap' }}>
+                  Tracking →
+                </Link>
+              </div>
+            </div>
+
+            {/* Status banner */}
+            {request.status === 'approved' && (request.has_awarded_quotation || request.has_purchase_orders) && (
+              <div className="proc-status-banner proc-status-banner--neutral">
+                <svg style={{ width: 16, height: 16, flexShrink: 0, color: 'var(--text-secondary)', marginTop: 1 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', marginBottom: 2 }}>
+                    {request.has_purchase_orders ? 'Purchase Order Created' : 'Supplier Awarded'}
+                  </div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    {request.has_purchase_orders
+                      ? 'This PR has an active LPO. Modifications are no longer allowed.'
+                      : 'This PR has an awarded supplier. You can proceed to create a Purchase Order (LPO).'}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
-          {request.notes && (
-            <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
-              <ProcField label={t('col', 'notes')} value={request.notes} />
-            </div>
-          )}
-          {request.rejection_reason && (
-            <div style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3) var(--space-4)', borderRadius: 8, background: 'var(--status-error-bg)', border: '1px solid var(--status-error-border)' }}>
-              <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--status-error)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{t('confirm', 'rejectReason')}</div>
-              <div style={{ fontSize: 'var(--text-sm)', color: '#991B1B', lineHeight: 1.5 }}>{request.rejection_reason}</div>
-            </div>
-          )}
-        </div>
 
-        {/* ── Tracking shortcut ── */}
-        <div className="card" style={{ background: 'var(--surface-inset)', border: '1px solid var(--border-subtle)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>
-                {t('page', 'purchaseRequests')} — {t('section', 'statusInfo')}
+          {/* RIGHT: Items with inline editing */}
+          <div className="proc-detail-products">
+            <div className="card">
+              <div className="proc-section-head">
+                <h3 className="proc-section-title">
+                  {t('section', 'requestedItems')}
+                  <span className="proc-section-count">{request.items.length}</span>
+                </h3>
+                {canEditItems && !addingProduct && (
+                  <Button variant="primary" size="sm" onClick={() => setAddingProduct(true)}>+ {t('btn', 'addProduct')}</Button>
+                )}
               </div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{t('page', 'prSubtitle')}</div>
-            </div>
-            <Link href={`/purchase-requests/${id}/tracking`} className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: 'var(--text-sm)' }}>
-              View Tracking →
-            </Link>
-          </div>
-        </div>
 
-        {/* ── Items ── */}
-        <div className="card">
-          <div className="proc-section-head">
-            <h3 className="proc-section-title">
-              {t('section', 'requestedItems')}
-              <span className="proc-section-count">{request.items.length}</span>
-            </h3>
-            {canEditItems && !addingProduct && (
-              <Button variant="primary" size="sm" onClick={() => setAddingProduct(true)}>+ {t('btn', 'addProduct')}</Button>
-            )}
-          </div>
-
-          {addingProduct && (
-            <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-4)', border: '1px solid var(--border-subtle)', borderRadius: 8, background: 'var(--surface-inset)' }}>
-              <div style={{ marginBottom: 'var(--space-3)' }}>
-                <ProductSelector
-                  selectedProductId={newProduct?.id || null}
-                  onProductSelect={(p) => { setNewProduct(p); if (p) setNewItem((prev) => ({ ...prev, unit: p.unit || '' })); }}
-                  selectedCategory={newProductCategory}
-                  onCategoryChange={setNewProductCategory}
-                />
-              </div>
-              {newProduct && (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                  <div>
-                    <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('col', 'quantity')} *</label>
-                    <input type="number" min="0.001" step="0.001" className="form-input" style={{ width: 90 }} value={newItem.quantity} onChange={(e) => setNewItem({ ...newItem, quantity: Number(e.target.value) || 0 })} />
+              {addingProduct && (
+                <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-4)', border: '1px solid var(--border-subtle)', borderRadius: 8, background: 'var(--surface-inset)' }}>
+                  <div style={{ marginBottom: 'var(--space-3)' }}>
+                    <ProductSelector
+                      selectedProductId={newProduct?.id || null}
+                      onProductSelect={(p) => { setNewProduct(p); if (p) setNewItem((prev) => ({ ...prev, unit: p.unit || '' })); }}
+                      selectedCategory={newProductCategory}
+                      onCategoryChange={setNewProductCategory}
+                    />
                   </div>
-                  <div style={{ width: 130 }}>
-                    <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('col', 'unit')}</label>
-                    <input className="form-input" style={{ width: '100%' }} value={newItem.unit} onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })} placeholder="Unit…" />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 150 }}>
-                    <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('field', 'reason')}</label>
-                    <input className="form-input" style={{ width: '100%' }} value={newItem.reason} onChange={(e) => setNewItem({ ...newItem, reason: e.target.value })} placeholder="Why is this needed?" />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 150 }}>
-                    <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('col', 'notes')}</label>
-                    <input className="form-input" style={{ width: '100%' }} value={newItem.notes} onChange={(e) => setNewItem({ ...newItem, notes: e.target.value })} placeholder="Additional notes" />
+                  {newProduct && (
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                      <div>
+                        <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('col', 'quantity')} *</label>
+                        <input type="number" min="0.001" step="0.001" className="form-input" style={{ width: 90 }} value={newItem.quantity} onChange={(e) => setNewItem({ ...newItem, quantity: Number(e.target.value) || 0 })} />
+                      </div>
+                      <div style={{ width: 130 }}>
+                        <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('col', 'unit')}</label>
+                        <input className="form-input" style={{ width: '100%' }} value={newItem.unit} onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })} placeholder="Unit…" />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 150 }}>
+                        <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('field', 'reason')}</label>
+                        <input className="form-input" style={{ width: '100%' }} value={newItem.reason} onChange={(e) => setNewItem({ ...newItem, reason: e.target.value })} placeholder="Why is this needed?" />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 150 }}>
+                        <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('col', 'notes')}</label>
+                        <input className="form-input" style={{ width: '100%' }} value={newItem.notes} onChange={(e) => setNewItem({ ...newItem, notes: e.target.value })} placeholder="Additional notes" />
+                      </div>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 'var(--space-3)' }}>
+                    <Button variant="primary" disabled={!newProduct || addItemMutation.isPending} isLoading={addItemMutation.isPending}
+                      onClick={() => { if (!newProduct) return; addItemMutation.mutate({ product_id: newProduct.id, quantity: newItem.quantity, unit: newItem.unit, reason: newItem.reason, notes: newItem.notes }); }}>
+                      {t('btn', 'addProduct')}
+                    </Button>
+                    <Button variant="secondary" onClick={() => { setAddingProduct(false); setNewProduct(null); setNewProductCategory(''); setNewItem({ quantity: 1, unit: '', reason: '', notes: '' }); }}>
+                      {t('btn', 'cancel')}
+                    </Button>
                   </div>
                 </div>
               )}
-              <div style={{ display: 'flex', gap: 8, marginTop: 'var(--space-3)' }}>
-                <Button variant="primary" disabled={!newProduct || addItemMutation.isPending} isLoading={addItemMutation.isPending}
-                  onClick={() => { if (!newProduct) return; addItemMutation.mutate({ product_id: newProduct.id, quantity: newItem.quantity, unit: newItem.unit, reason: newItem.reason, notes: newItem.notes }); }}>
-                  {t('btn', 'addProduct')}
-                </Button>
-                <Button variant="secondary" onClick={() => { setAddingProduct(false); setNewProduct(null); setNewProductCategory(''); setNewItem({ quantity: 1, unit: '', reason: '', notes: '' }); }}>
-                  {t('btn', 'cancel')}
-                </Button>
-              </div>
-            </div>
-          )}
 
-          <ReadOnlyItemsTable items={request.items} columns={cols} />
-        </div>
-
-        {/* ── Status banner ── */}
-        {request.status === 'approved' && (request.has_awarded_quotation || request.has_purchase_orders) && (
-          <div className="card" style={{ background: 'var(--surface-inset)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
-            <svg style={{ width: 18, height: 18, flexShrink: 0, color: 'var(--text-secondary)', marginTop: 2 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div>
-              <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>
-                {request.has_purchase_orders ? 'Purchase Order Created' : 'Supplier Awarded'}
-              </div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                {request.has_purchase_orders
-                  ? 'This PR has an active LPO. Modifications are no longer allowed.'
-                  : 'This PR has an awarded supplier. You can proceed to create a Purchase Order (LPO).'}
-              </div>
+              <ReadOnlyItemsTable items={request.items} columns={cols} />
             </div>
           </div>
-        )}
+
+        </div>
 
         <RejectionReasonDialog
           isOpen={rejectDialogOpen}

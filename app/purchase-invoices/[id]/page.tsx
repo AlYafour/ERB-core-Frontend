@@ -69,16 +69,27 @@ export default function PurchaseInvoiceDetailPage() {
     ? { id: (invoice.purchase_order as { id: number; order_number?: string }).id, order_number: (invoice.purchase_order as { id: number; order_number?: string }).order_number }
     : invoice.purchase_order_id ? { id: invoice.purchase_order_id } : null;
 
+  const chainNode = poRef ? (
+    <>
+      <Link href={`/purchase-orders/${poRef.id}`} className="proc-bar-chain-step">
+        {poRef.order_number || `LPO-${poRef.id}`}
+      </Link>
+      <span className="proc-bar-chain-arrow">→</span>
+      <span className="proc-bar-chain-current">{invoice.invoice_number}</span>
+    </>
+  ) : null;
+
   return (
     <MainLayout>
-      <PageShell>
+      <PageShell compact>
 
-        {/* ── Sticky action bar ── */}
+        {/* ── Sticky action bar with inline chain ── */}
         <StickyDocBar
           docTypeLabel="Purchase Invoice"
           docNumber={invoice.invoice_number}
           statusVariant={INVOICE_STATUS[invoice.status] ?? 'info'}
           statusLabel={INVOICE_LABEL[invoice.status] || invoice.status}
+          chain={chainNode}
         >
           <Link href={`/print/invoice/${invoice.id}`} target="_blank">
             <Button variant="secondary" size="sm">Print</Button>
@@ -94,115 +105,103 @@ export default function PurchaseInvoiceDetailPage() {
           )}
         </StickyDocBar>
 
-        {/* ── Document chain ── */}
-        {poRef && (
-          <div className="proc-chain">
-            <Link href={`/purchase-orders/${poRef.id}`} className="proc-chain-pill">
-              <span className="proc-chain-pill-type">Purchase Order</span>
-              <span className="proc-chain-pill-num">{poRef.order_number || `LPO-${poRef.id}`}</span>
-            </Link>
-            <span className="proc-chain-arrow">→</span>
-            <div className="proc-chain-pill" style={{ borderColor: 'var(--brand)', background: 'var(--brand-subtle)' }}>
-              <span className="proc-chain-pill-type" style={{ color: 'var(--brand)' }}>Invoice</span>
-              <span className="proc-chain-pill-num" style={{ color: 'var(--brand)' }}>{invoice.invoice_number}</span>
-            </div>
-          </div>
-        )}
+        {/* ── Two-column: invoice info left / items + financial right ── */}
+        <div className="proc-detail-split">
 
-        {/* ── Invoice info ── */}
-        <div className="card">
-          <div className="proc-section-head">
-            <h3 className="proc-section-title">Invoice Information</h3>
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(invoice.invoice_date)}</span>
-          </div>
-          <div className="proc-info-grid">
-            <ProcField label="Invoice Number"   value={<span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{invoice.invoice_number}</span>} />
-            <ProcField label="Invoice Date"     value={fmt(invoice.invoice_date)} />
-            {invoice.due_date          && <ProcField label="Due Date"          value={fmt(invoice.due_date)} />}
-            {invoice.approved_by_name  && <ProcField label="Approved By"       value={invoice.approved_by_name} />}
-            {invoice.approved_at       && <ProcField label="Approved At"       value={fmt(invoice.approved_at)} />}
-            {invoice.payment_date      && <ProcField label="Payment Date"      value={fmt(invoice.payment_date)} />}
-            {invoice.payment_method    && <ProcField label="Payment Method"    value={invoice.payment_method} />}
-            {invoice.payment_reference && <ProcField label="Payment Reference" value={<span style={{ fontFamily: 'monospace' }}>{invoice.payment_reference}</span>} />}
-            {poRef && (
-              <ProcField label="Purchase Order" value={
-                <Link href={`/purchase-orders/${poRef.id}`} style={{ color: 'var(--brand)', fontWeight: 'var(--weight-semibold)', textDecoration: 'none' }}>
-                  {poRef.order_number || `LPO-${poRef.id}`} ↗
-                </Link>
-              } />
-            )}
-          </div>
-          {invoice.notes && (
-            <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
-              <ProcField label="Notes" value={invoice.notes} />
-            </div>
-          )}
-          {invoice.rejection_reason && (
-            <div style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3) var(--space-4)', borderRadius: 8, background: 'var(--status-error-bg)', border: '1px solid var(--status-error-border)' }}>
-              <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--status-error)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Rejection Reason</div>
-              <div style={{ fontSize: 'var(--text-sm)', color: '#991B1B', lineHeight: 1.5 }}>{invoice.rejection_reason}</div>
-            </div>
-          )}
-        </div>
-
-        {/* ── Items + Financial ── */}
-        <div className="card">
-          <div className="proc-section-head">
-            <h3 className="proc-section-title">
-              Invoice Items
-              <span className="proc-section-count">{invoice.items.length}</span>
-            </h3>
-          </div>
-          <ReadOnlyItemsTable
-            items={invoice.items}
-            columns={[
-              {
-                header: 'Product',
-                cell: (item) => (
-                  <div>
-                    <div className="cell-product-name">{item.product?.name || `Product #${item.product_id}`}</div>
-                    {item.product?.code && <div className="cell-product-code">{item.product.code}</div>}
-                  </div>
-                ),
-              },
-              { header: 'Unit',       align: 'center', cell: (item) => <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 600 }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
-              { header: 'Qty',        align: 'center', cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{item.quantity}</span> },
-              { header: 'Unit Price', align: 'right',  cell: (item) => <span style={{ fontFamily: 'monospace' }}>{formatPrice(item.unit_price)}</span> },
-              { header: 'Disc %',     align: 'center', cell: (item) => item.discount ? <span style={{ color: 'var(--status-error)', fontWeight: 600 }}>{item.discount}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
-              { header: 'Tax %',      align: 'center', cell: (item) => item.tax_rate ? <span style={{ color: 'var(--text-secondary)' }}>{item.tax_rate}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
-              { header: 'Total',      align: 'right',  cell: (item) => <span className="col-total">{formatPrice(item.total ?? 0)}</span> },
-            ]}
-          />
-
-          <div style={{ marginTop: 'var(--space-6)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
-            <FinancialSummary
-              rows={[
-                { label: 'Subtotal', value: invoice.subtotal, hidden: invoice.subtotal == null },
-                { label: `Discount (${invoice.discount}%)`, value: invoice.discount, hidden: !Number(invoice.discount), variant: 'discount', prefix: '– ' },
-                { label: 'Tax',      value: invoice.tax_amount, hidden: !Number(invoice.tax_amount) },
-              ]}
-              total={invoice.total}
-            />
-
-            {(invoice.paid_amount != null || invoice.remaining_amount != null) && (
-              <div className="proc-financial-grid" style={{ marginTop: 'var(--space-3)' }}>
-                <div className="proc-financial-box">
-                  {invoice.paid_amount != null && (
-                    <div className="proc-financial-row">
-                      <span className="proc-financial-row-label">Paid</span>
-                      <span style={{ fontWeight: 700, color: 'var(--status-success)', fontFamily: 'monospace' }}>{formatPrice(invoice.paid_amount)}</span>
-                    </div>
-                  )}
-                  {invoice.remaining_amount != null && (
-                    <div className="proc-financial-row">
-                      <span className="proc-financial-row-label">Remaining</span>
-                      <span style={{ fontWeight: 700, color: 'var(--brand)', fontFamily: 'monospace' }}>{formatPrice(invoice.remaining_amount)}</span>
-                    </div>
-                  )}
-                </div>
+          {/* LEFT: Invoice information */}
+          <div className="proc-detail-info">
+            <div className="card">
+              <div className="proc-section-head">
+                <h3 className="proc-section-title">Invoice Information</h3>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(invoice.invoice_date)}</span>
               </div>
-            )}
+              <div className="proc-info-grid">
+                <ProcField label="Invoice Number"   value={<span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{invoice.invoice_number}</span>} />
+                <ProcField label="Invoice Date"     value={fmt(invoice.invoice_date)} />
+                {invoice.due_date          && <ProcField label="Due Date"          value={fmt(invoice.due_date)} />}
+                {invoice.approved_by_name  && <ProcField label="Approved By"       value={invoice.approved_by_name} />}
+                {invoice.approved_at       && <ProcField label="Approved At"       value={fmt(invoice.approved_at)} />}
+                {invoice.payment_date      && <ProcField label="Payment Date"      value={fmt(invoice.payment_date)} />}
+                {invoice.payment_method    && <ProcField label="Payment Method"    value={invoice.payment_method} />}
+                {invoice.payment_reference && <ProcField label="Payment Reference" value={<span style={{ fontFamily: 'monospace' }}>{invoice.payment_reference}</span>} />}
+                {poRef && (
+                  <ProcField label="Purchase Order" value={
+                    <Link href={`/purchase-orders/${poRef.id}`} style={{ color: 'var(--brand)', fontWeight: 'var(--weight-semibold)', textDecoration: 'none' }}>
+                      {poRef.order_number || `LPO-${poRef.id}`} ↗
+                    </Link>
+                  } />
+                )}
+                {invoice.notes && <ProcField label="Notes" value={invoice.notes} />}
+              </div>
+              {invoice.rejection_reason && (
+                <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 8, background: 'var(--status-error-bg)', border: '1px solid var(--status-error-border)' }}>
+                  <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--status-error)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Rejection Reason</div>
+                  <div style={{ fontSize: 'var(--text-sm)', color: '#991B1B', lineHeight: 1.5 }}>{invoice.rejection_reason}</div>
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* RIGHT: Items + Financial */}
+          <div className="proc-detail-products">
+            <div className="card">
+              <div className="proc-section-head">
+                <h3 className="proc-section-title">
+                  Invoice Items
+                  <span className="proc-section-count">{invoice.items.length}</span>
+                </h3>
+              </div>
+              <ReadOnlyItemsTable
+                items={invoice.items}
+                columns={[
+                  {
+                    header: 'Product',
+                    cell: (item) => (
+                      <div>
+                        <div className="cell-product-name">{item.product?.name || `Product #${item.product_id}`}</div>
+                        {item.product?.code && <div className="cell-product-code">{item.product.code}</div>}
+                      </div>
+                    ),
+                  },
+                  { header: 'Unit',       align: 'center', cell: (item) => <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 600 }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
+                  { header: 'Qty',        align: 'center', cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{item.quantity}</span> },
+                  { header: 'Unit Price', align: 'right',  cell: (item) => <span style={{ fontFamily: 'monospace' }}>{formatPrice(item.unit_price)}</span> },
+                  { header: 'Disc %',     align: 'center', cell: (item) => item.discount ? <span style={{ color: 'var(--status-error)', fontWeight: 600 }}>{item.discount}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
+                  { header: 'Tax %',      align: 'center', cell: (item) => item.tax_rate ? <span style={{ color: 'var(--text-secondary)' }}>{item.tax_rate}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
+                  { header: 'Total',      align: 'right',  cell: (item) => <span className="col-total">{formatPrice(item.total ?? 0)}</span> },
+                ]}
+              />
+              <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
+                <FinancialSummary
+                  rows={[
+                    { label: 'Subtotal', value: invoice.subtotal, hidden: invoice.subtotal == null },
+                    { label: `Discount (${invoice.discount}%)`, value: invoice.discount, hidden: !Number(invoice.discount), variant: 'discount', prefix: '– ' },
+                    { label: 'Tax',      value: invoice.tax_amount, hidden: !Number(invoice.tax_amount) },
+                  ]}
+                  total={invoice.total}
+                />
+                {(invoice.paid_amount != null || invoice.remaining_amount != null) && (
+                  <div className="proc-financial-grid" style={{ marginTop: 'var(--space-3)' }}>
+                    <div className="proc-financial-box">
+                      {invoice.paid_amount != null && (
+                        <div className="proc-financial-row">
+                          <span className="proc-financial-row-label">Paid</span>
+                          <span style={{ fontWeight: 700, color: 'var(--status-success)', fontFamily: 'monospace' }}>{formatPrice(invoice.paid_amount)}</span>
+                        </div>
+                      )}
+                      {invoice.remaining_amount != null && (
+                        <div className="proc-financial-row">
+                          <span className="proc-financial-row-label">Remaining</span>
+                          <span style={{ fontWeight: 700, color: 'var(--brand)', fontFamily: 'monospace' }}>{formatPrice(invoice.remaining_amount)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <RejectionReasonDialog

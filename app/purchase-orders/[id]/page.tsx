@@ -108,17 +108,30 @@ export default function PurchaseOrderDetailPage() {
   const pqRef = typeof order.purchase_quotation === 'object' ? order.purchase_quotation : order.purchase_quotation ? { id: order.purchase_quotation } : null;
   const fmt   = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
+  const [termsOpen, setTermsOpen] = useState(false);
+
+  const chainNode = (prRef || pqRef) ? (
+    <>
+      {prRef && <Link href={`/purchase-requests/${prRef.id}`} className="proc-bar-chain-step">{(prRef as { code?: string }).code || `PR-${prRef.id}`}</Link>}
+      {prRef && <span className="proc-bar-chain-arrow">→</span>}
+      {pqRef && <Link href={`/purchase-quotations/${pqRef.id}`} className="proc-bar-chain-step">{(pqRef as { quotation_number?: string }).quotation_number || `PQ-${pqRef.id}`}</Link>}
+      {pqRef && <span className="proc-bar-chain-arrow">→</span>}
+      <span className="proc-bar-chain-current">{order.order_number}</span>
+    </>
+  ) : null;
+
   return (
     <MainLayout>
       <div className="lpo-print">
-        <PageShell>
+        <PageShell compact>
 
-          {/* ── Sticky action bar ── */}
+          {/* ── Sticky action bar with inline chain ── */}
           <StickyDocBar
             docTypeLabel="Purchase Order"
             docNumber={order.order_number}
             statusVariant={PO_STATUS[order.status] ?? 'info'}
             statusLabel={PO_LABEL[order.status] || order.status}
+            chain={chainNode}
           >
             <Button variant="secondary" size="sm" onClick={() => window.open(`/print/lpo/${id}`, '_blank')}>Print LPO</Button>
             {canEdit && (
@@ -156,36 +169,11 @@ export default function PurchaseOrderDetailPage() {
             )}
           </StickyDocBar>
 
-          {/* ── Document chain ── */}
-          {(prRef || pqRef) && (
-            <div className="proc-chain">
-              {prRef && (
-                <Link href={`/purchase-requests/${prRef.id}`} className="proc-chain-pill">
-                  <span className="proc-chain-pill-type">Purchase Request</span>
-                  <span className="proc-chain-pill-num">{(prRef as { code?: string }).code || `PR-${prRef.id}`}</span>
-                </Link>
-              )}
-              {prRef && pqRef && <span className="proc-chain-arrow">→</span>}
-              {pqRef && (
-                <Link href={`/purchase-quotations/${pqRef.id}`} className="proc-chain-pill">
-                  <span className="proc-chain-pill-type">Quotation</span>
-                  <span className="proc-chain-pill-num">{(pqRef as { quotation_number?: string }).quotation_number || `PQ-${pqRef.id}`}</span>
-                </Link>
-              )}
-              {pqRef && <span className="proc-chain-arrow">→</span>}
-              <div className="proc-chain-pill" style={{ borderColor: 'var(--brand)', background: 'var(--brand-subtle)' }}>
-                <span className="proc-chain-pill-type" style={{ color: 'var(--brand)' }}>Purchase Order</span>
-                <span className="proc-chain-pill-num" style={{ color: 'var(--brand)' }}>{order.order_number}</span>
-              </div>
-            </div>
-          )}
-
           {/* ── Status banners ── */}
           {order.revision_number != null && order.revision_number > 0 && order.parent_po && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderRadius: 10, background: '#eff6ff', border: '1px solid #93c5fd', fontSize: 'var(--text-sm)', color: '#1d4ed8' }}>
+            <div className="proc-status-banner proc-status-banner--info">
               <span>📋</span>
-              <span>
-                Revision <strong>R{order.revision_number}</strong> of{' '}
+              <span>Revision <strong>R{order.revision_number}</strong> of{' '}
                 <Link href={`/purchase-orders/${order.parent_po}`} style={{ fontWeight: 700, textDecoration: 'underline', color: '#1d4ed8' }}>
                   {order.parent_order_number || `PO #${order.parent_po}`}
                 </Link>.
@@ -194,10 +182,9 @@ export default function PurchaseOrderDetailPage() {
           )}
 
           {order.status === 'superseded' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderRadius: 10, background: 'var(--surface-inset)', border: '1px solid var(--border-default)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+            <div className="proc-status-banner proc-status-banner--neutral">
               <span>🔁</span>
-              <span>
-                This LPO has been <strong>superseded</strong> by an amendment.
+              <span>This LPO has been <strong>superseded</strong> by an amendment.
                 {order.latest_approved_amendment?.revision_po_id && (
                   <> → <Link href={`/purchase-orders/${order.latest_approved_amendment.revision_po_id}`} style={{ fontWeight: 700, textDecoration: 'underline', color: 'var(--text-primary)' }}>
                     {order.latest_approved_amendment.revision_po_number}
@@ -208,129 +195,128 @@ export default function PurchaseOrderDetailPage() {
           )}
 
           {order.status === 'amendment_requested' && order.pending_amendment && (
-            <div style={{ padding: '12px 16px', borderRadius: 10, background: 'var(--status-warning-bg)', border: '1px solid var(--status-warning-border)', fontSize: 'var(--text-sm)' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                <div>
-                  <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 4 }}>
-                    ⚠️ Amendment Requested — {order.pending_amendment.requested_by_name || 'team member'}
-                  </div>
-                  <div style={{ color: '#78350f', lineHeight: 1.5 }}><strong>Reason:</strong> {order.pending_amendment.reason}</div>
-                  <div style={{ color: '#a16207', fontSize: 'var(--text-xs)', marginTop: 4 }}>
-                    {new Date(order.pending_amendment.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                  </div>
+            <div className="proc-status-banner proc-status-banner--warning">
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 4 }}>
+                  ⚠️ Amendment Requested — {order.pending_amendment.requested_by_name || 'team member'}
                 </div>
-                {canManageAmend && (
-                  <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                    <Button variant="success" size="sm" isLoading={approveAmendmentMutation.isPending} onClick={() => approveAmendmentMutation.mutate()}>Approve</Button>
-                    <Button variant="destructive" size="sm" onClick={() => setRejectAmendmentOpen(true)}>Reject</Button>
+                <div style={{ color: '#78350f', lineHeight: 1.5 }}><strong>Reason:</strong> {order.pending_amendment.reason}</div>
+                <div style={{ color: '#a16207', fontSize: 'var(--text-xs)', marginTop: 4 }}>
+                  {new Date(order.pending_amendment.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </div>
+              </div>
+              {canManageAmend && (
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                  <Button variant="success" size="sm" isLoading={approveAmendmentMutation.isPending} onClick={() => approveAmendmentMutation.mutate()}>Approve</Button>
+                  <Button variant="destructive" size="sm" onClick={() => setRejectAmendmentOpen(true)}>Reject</Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Two-column: info left / products right ── */}
+          <div className="proc-detail-split">
+
+            {/* LEFT: Order information */}
+            <div className="proc-detail-info">
+              <div className="card">
+                <div className="proc-section-head">
+                  <h3 className="proc-section-title">Order Information</h3>
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(order.order_date)}</span>
+                </div>
+                <div className="proc-info-grid">
+                  <ProcField label="Supplier" value={typeof order.supplier === 'object' ? order.supplier.name : '—'} />
+                  <ProcField label="Order Date" value={fmt(order.order_date)} />
+                  {order.delivery_date && <ProcField label="Delivery Date" value={fmt(order.delivery_date)} />}
+                  {order.delivery_method && <ProcField label="Delivery Method" value={order.delivery_method === 'pickup' ? 'Pick Up' : 'Delivery'} />}
+                  {order.approved_by_name && <ProcField label="Approved By" value={order.approved_by_name} />}
+                  {order.approved_at && <ProcField label="Approved At" value={fmt(order.approved_at)} />}
+                  {(order.project_name || order.project_code) && (
+                    <ProcField label="Project" value={
+                      <div>
+                        <div style={{ fontWeight: 'var(--weight-medium)' }}>{order.project_name}</div>
+                        {order.project_code && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{order.project_code}</div>}
+                      </div>
+                    } />
+                  )}
+                  {prRef && (
+                    <ProcField label="Purchase Request" value={
+                      <Link href={`/purchase-requests/${prRef.id}`} style={{ color: 'var(--brand)', fontWeight: 'var(--weight-semibold)', textDecoration: 'none' }}>
+                        {(prRef as { code?: string }).code || `PR-${prRef.id}`} ↗
+                      </Link>
+                    } />
+                  )}
+                  {order.payment_terms && <ProcField label="Payment Terms" value={order.payment_terms} />}
+                  {order.delivery_terms && <ProcField label="Delivery Terms" value={order.delivery_terms} />}
+                  {order.notes && <ProcField label="Notes" value={order.notes} />}
+                </div>
+                {order.rejection_reason && (
+                  <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 8, background: 'var(--status-error-bg)', border: '1px solid var(--status-error-border)' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--status-error)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>
+                      {order.status === 'cancelled' ? 'Cancellation Reason' : 'Rejection Reason'}
+                    </div>
+                    <div style={{ fontSize: 'var(--text-sm)', color: '#991B1B', lineHeight: 1.5 }}>{order.rejection_reason}</div>
                   </div>
                 )}
               </div>
             </div>
-          )}
 
-          {/* ── Order information ── */}
-          <div className="card">
-            <div className="proc-section-head">
-              <h3 className="proc-section-title">Order Information</h3>
-              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(order.order_date)}</span>
-            </div>
-            <div className="proc-info-grid">
-              <ProcField label="Supplier" value={typeof order.supplier === 'object' ? order.supplier.name : '—'} />
-              <ProcField label="Order Date" value={fmt(order.order_date)} />
-              {order.delivery_date && <ProcField label="Delivery Date" value={fmt(order.delivery_date)} />}
-              {order.delivery_method && <ProcField label="Delivery Method" value={order.delivery_method === 'pickup' ? 'Pick Up' : 'Delivery'} />}
-              {order.approved_by_name && <ProcField label="Approved By" value={order.approved_by_name} />}
-              {order.approved_at && <ProcField label="Approved At" value={fmt(order.approved_at)} />}
-              {(order.project_name || order.project_code) && (
-                <ProcField label="Project" value={
-                  <div>
-                    <div style={{ fontWeight: 'var(--weight-medium)' }}>{order.project_name}</div>
-                    {order.project_code && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{order.project_code}</div>}
-                  </div>
-                } />
-              )}
-              {prRef && (
-                <ProcField label="Purchase Request" value={
-                  <Link href={`/purchase-requests/${prRef.id}`} style={{ color: 'var(--brand)', fontWeight: 'var(--weight-semibold)', textDecoration: 'none' }}>
-                    {(prRef as { code?: string }).code || `PR-${prRef.id}`} ↗
-                  </Link>
-                } />
-              )}
-            </div>
-
-            {/* Text fields: full width */}
-            {(order.payment_terms || order.delivery_terms || order.notes) && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-4)', marginTop: 'var(--space-5)', paddingTop: 'var(--space-5)', borderTop: '1px solid var(--border-subtle)' }}>
-                {order.payment_terms && <ProcField label="Payment Terms" value={order.payment_terms} />}
-                {order.delivery_terms && <ProcField label="Delivery Terms" value={order.delivery_terms} />}
-                {order.notes && <ProcField label="Notes" value={order.notes} />}
-              </div>
-            )}
-
-            {order.rejection_reason && (
-              <div style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3) var(--space-4)', borderRadius: 8, background: 'var(--status-error-bg)', border: '1px solid var(--status-error-border)' }}>
-                <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--status-error)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
-                  {order.status === 'cancelled' ? 'Cancellation Reason' : 'Rejection Reason'}
+            {/* RIGHT: Products + Financial */}
+            <div className="proc-detail-products">
+              <div className="card">
+                <div className="proc-section-head">
+                  <h3 className="proc-section-title">
+                    Products
+                    <span className="proc-section-count">{order.items.length}</span>
+                  </h3>
                 </div>
-                <div style={{ fontSize: 'var(--text-sm)', color: '#991B1B', lineHeight: 1.5 }}>{order.rejection_reason}</div>
+                <ReadOnlyItemsTable
+                  items={order.items}
+                  columns={[
+                    {
+                      header: 'Product',
+                      cell: (item) => (
+                        <div>
+                          <div className="cell-product-name">{item.product?.name || 'N/A'}</div>
+                          <div className="cell-product-code">{item.product?.code}</div>
+                        </div>
+                      ),
+                    },
+                    { header: 'Unit',       align: 'center', cell: (item) => <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 600 }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
+                    { header: 'Qty',        align: 'center', cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{item.quantity}</span> },
+                    { header: 'Unit Price', align: 'right',  cell: (item) => <span style={{ fontFamily: 'monospace' }}>{formatPrice(item.unit_price)}</span> },
+                    { header: 'Disc %',     align: 'center', cell: (item) => item.discount ? <span style={{ color: 'var(--status-error)', fontWeight: 600 }}>{item.discount}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
+                    { header: 'Tax %',      align: 'center', cell: (item) => item.tax_rate ? <span style={{ color: 'var(--text-secondary)' }}>{item.tax_rate}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
+                    { header: 'Total',      align: 'right',  cell: (item) => <span className="col-total">{formatPrice(item.total)}</span> },
+                  ]}
+                />
+                <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
+                  <FinancialSummary
+                    rows={[
+                      { label: 'Subtotal',       value: itemsSubtotal },
+                      { label: 'VAT (items)',     value: itemsVat,             hidden: !itemsVat },
+                      { label: `Discount (${order.discount}%)`, value: globalDiscount, variant: 'discount', prefix: '– ', hidden: !globalDiscount },
+                      { label: 'Transportation', value: transportationCharge, hidden: !transportationCharge },
+                      { label: Number(order.tax_rate) > 0 ? `Additional Tax (${order.tax_rate}%)` : 'Transport VAT', value: taxAmount, hidden: !taxAmount },
+                    ]}
+                    total={order.total}
+                  />
+                </div>
               </div>
-            )}
-          </div>
-
-          {/* ── Products + Financial ── */}
-          <div className="card">
-            <div className="proc-section-head">
-              <h3 className="proc-section-title">
-                Products
-                <span className="proc-section-count">{order.items.length}</span>
-              </h3>
             </div>
 
-            <ReadOnlyItemsTable
-              items={order.items}
-              columns={[
-                {
-                  header: 'Product',
-                  cell: (item) => (
-                    <div>
-                      <div className="cell-product-name">{item.product?.name || 'N/A'}</div>
-                      <div className="cell-product-code">{item.product?.code}</div>
-                    </div>
-                  ),
-                },
-                { header: 'Unit',       align: 'center', cell: (item) => <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 600 }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
-                { header: 'Qty',        align: 'center', cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{item.quantity}</span> },
-                { header: 'Unit Price', align: 'right',  cell: (item) => <span style={{ fontFamily: 'monospace' }}>{formatPrice(item.unit_price)}</span> },
-                { header: 'Disc %',     align: 'center', cell: (item) => item.discount ? <span style={{ color: 'var(--status-error)', fontWeight: 600 }}>{item.discount}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
-                { header: 'Tax %',      align: 'center', cell: (item) => item.tax_rate ? <span style={{ color: 'var(--text-secondary)' }}>{item.tax_rate}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
-                { header: 'Total',      align: 'right',  cell: (item) => <span className="col-total">{formatPrice(item.total)}</span> },
-              ]}
-            />
-
-            <div style={{ marginTop: 'var(--space-6)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
-              <FinancialSummary
-                rows={[
-                  { label: 'Subtotal',       value: itemsSubtotal },
-                  { label: 'VAT (items)',     value: itemsVat,             hidden: !itemsVat },
-                  { label: `Discount (${order.discount}%)`, value: globalDiscount, variant: 'discount', prefix: '– ', hidden: !globalDiscount },
-                  { label: 'Transportation', value: transportationCharge, hidden: !transportationCharge },
-                  { label: Number(order.tax_rate) > 0 ? `Additional Tax (${order.tax_rate}%)` : 'Transport VAT', value: taxAmount, hidden: !taxAmount },
-                ]}
-                total={order.total}
-              />
-            </div>
           </div>
 
-          {/* ── Terms & Conditions ── */}
+          {/* ── Terms & Conditions accordion ── */}
           {order.terms_and_conditions && (
-            <div className="card" style={{ background: 'var(--surface-inset)' }}>
-              <div className="proc-section-head">
-                <h3 className="proc-section-title">Terms & Conditions</h3>
-              </div>
-              <div style={{ fontSize: 'var(--text-sm)', lineHeight: 1.7, fontFamily: 'ui-monospace, monospace', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                {order.terms_and_conditions}
-              </div>
+            <div className="proc-terms-accordion">
+              <button className="proc-terms-toggle" onClick={() => setTermsOpen((o) => !o)} aria-expanded={termsOpen}>
+                <span>Terms &amp; Conditions</span>
+                <svg className={`proc-terms-icon${termsOpen ? ' proc-terms-icon--open' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+              {termsOpen && <div className="proc-terms-body">{order.terms_and_conditions}</div>}
             </div>
           )}
 
