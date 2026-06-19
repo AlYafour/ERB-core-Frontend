@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery } from '@tanstack/react-query';
 import type { TaskListItem } from '@/types';
 import { tasksApi, myTasksApi } from '@/lib/api/tasks';
 import { SearchInput } from '@/components/ui';
+import { isSoundMuted, toggleSoundMuted } from '@/lib/utils/notification-sound';
 
 import { useTasksUIStore } from '@/stores/tasks-ui.store';
 import { usePermissions } from '@/lib/hooks/use-permissions';
@@ -169,6 +171,7 @@ export default function TasksPage() {
     clearFilters,
   } = useTasksUIStore();
 
+  const [soundMuted, setSoundMuted] = useState(() => isSoundMuted());
   const { isAdmin } = usePermissions();
   const ordering = sortBy ? (sortDir === 'desc' ? `-${sortBy}` : sortBy) : undefined;
   const hasFilters = Boolean(search || statusFilter || priorityFilter || taskTypeFilter);
@@ -242,6 +245,32 @@ export default function TasksPage() {
             </div>
 
             <div style={{ flex: 1 }} />
+
+            {/* Sound mute toggle */}
+            <button
+              onClick={() => { const next = toggleSoundMuted(); setSoundMuted(next); }}
+              title={soundMuted ? 'Sound is OFF — click to enable' : 'Sound is ON — click to mute'}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 36, height: 36, borderRadius: 9,
+                border: `1.5px solid ${soundMuted ? '#fca5a5' : 'var(--border-subtle)'}`,
+                background: soundMuted ? '#fef2f2' : 'var(--card-bg)',
+                color: soundMuted ? '#ef4444' : 'var(--text-secondary)',
+                cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
+              }}
+            >
+              {soundMuted ? (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                  <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+                </svg>
+              ) : (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                </svg>
+              )}
+            </button>
 
             {/* My To-Do button */}
             <button
@@ -346,7 +375,7 @@ export default function TasksPage() {
               return (
                 <button
                   key={tab.value}
-                  onClick={() => { setScope(tab.value); setStatusFilter(''); }}
+                  onClick={() => setScope(tab.value)}
                   style={{
                     padding: '9px 16px',
                     border: 'none',

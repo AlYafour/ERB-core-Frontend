@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { getWSManager } from './use-websocket-manager';
+import { playNotificationSound } from '@/lib/utils/notification-sound';
 
 interface RealtimeEvent {
   type: string;
@@ -22,6 +23,16 @@ export function useRealtimeUpdates() {
     manager.connect(user.id);
 
     const unsub = manager.subscribe('realtime', (message) => {
+
+      // ── User-specific notifications (notif_u{id} group) ──────────────────
+      if (message.type === 'new_notification') {
+        playNotificationSound('notification');
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        queryClient.invalidateQueries({ queryKey: ['notifications-count'] });
+        return;
+      }
+
+      // ── Tenant-wide realtime updates (realtime_t{id} group) ──────────────
       if (message.type !== 'realtime_update' || !message.event) return;
       const ev: RealtimeEvent = message.event;
 
@@ -63,6 +74,7 @@ export function useRealtimeUpdates() {
             queryClient.setQueryData(['suppliers', ev.data?.id], ev.data);
           break;
         case 'task':
+          playNotificationSound('task');
           queryClient.invalidateQueries({ queryKey: ['tasks'] });
           queryClient.invalidateQueries({ queryKey: ['task-stats'] });
           if (ev.data?.id) {

@@ -43,7 +43,22 @@ export function TodoPanel({ onClose, onOpenTask }: Props) {
 
   const add = useMutation({
     mutationFn: () => myTasksApi.create({ title: text.trim(), priority }),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ['my-tasks'] });
+      const prev = qc.getQueryData<MyTask[]>(['my-tasks']);
+      const optimistic: MyTask = {
+        id: -Date.now(), owner: 0, title: text.trim(), note: '',
+        is_done: false, priority, due_date: null, order: 0,
+        created_at: new Date().toISOString(), done_at: null,
+      };
+      qc.setQueryData<MyTask[]>(['my-tasks'], (old = []) => [optimistic, ...old]);
+      return { prev };
+    },
+    onError: (_err, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(['my-tasks'], ctx.prev);
+    },
     onSuccess: () => { setText(''); invalidate(); },
+    onSettled: invalidate,
   });
 
   const toggle = useMutation({
@@ -226,7 +241,7 @@ export function TodoPanel({ onClose, onOpenTask }: Props) {
 
       {/* Items */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 16px' }}>
-        {pending.length === 0 && done.length === 0 ? (
+        {pending.length === 0 && done.length === 0 && assignedWithSubs.length === 0 ? (
           <div style={{ textAlign: 'center', paddingTop: 52 }}>
             <div
               style={{
