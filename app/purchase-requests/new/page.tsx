@@ -230,7 +230,7 @@ function NewPurchaseRequestPageContent() {
             </div>
 
             <div className="proc-form-section">
-              <div className="form-grid form-grid--2col">
+              <div className="form-grid">
 
                 <FormField label={t('field', 'project')} required>
                   <SearchableDropdown
@@ -286,11 +286,12 @@ function NewPurchaseRequestPageContent() {
 
                 <div style={{ gridColumn: '1 / -1' }}>
                   <FormField label={t('field', 'notes')}>
-                    <textarea
+                    <input
+                      type="text"
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      rows={2} placeholder="Additional notes..."
-                      className="form-textarea"
+                      placeholder="Additional notes..."
+                      className="form-input"
                     />
                   </FormField>
                 </div>
@@ -494,94 +495,91 @@ function NewPurchaseRequestPageContent() {
           {/* ── Sticky sidebar ── */}
           <div className="proc-form-aside">
 
-            {/* Summary card */}
-            <div className="proc-aside-card">
-              <div className="proc-sh">
-                <span className="proc-sh-label">Request Summary</span>
+            {/* ── Summary panel ── */}
+            <div style={{
+              background: '#fff',
+              border: '1px solid #ede8e3',
+              borderRadius: 12,
+              overflow: 'hidden',
+              boxShadow: '0 1px 6px rgba(28,20,20,0.07)',
+            }}>
+              {/* Title row */}
+              <div style={{ padding: '11px 16px 9px', borderBottom: '1px solid #f3ede8' }}>
+                <p style={{ margin: 0, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#b0a399' }}>
+                  Request Summary
+                </p>
               </div>
-              <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 0 }}>
-                {/* Project */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingBottom: 10, borderBottom: '1px solid var(--border-subtle)', marginBottom: 10 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)' }}>Project</span>
-                  {selectedProject ? (
-                    <>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3 }}>{selectedProject.name}</span>
-                      <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontWeight: 600 }}>{selectedProject.code}</span>
-                    </>
-                  ) : (
-                    <span style={{ fontSize: 12, color: 'var(--text-disabled)', fontStyle: 'italic' }}>Not selected yet</span>
-                  )}
-                </div>
 
-                {/* Date rows */}
-                {[
-                  { label: 'Request Date', value: fmt(formData.request_date) },
-                  { label: 'Required By', value: fmt(formData.required_by) },
-                ].map(({ label, value }) => (
-                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '5px 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontWeight: 600 }}>{label}</span>
-                    <span style={{ fontSize: 12, color: value === '—' ? 'var(--text-disabled)' : 'var(--text-primary)', fontWeight: 600 }}>{value}</span>
-                  </div>
-                ))}
-
-                {/* Items count */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, marginTop: 2 }}>
-                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontWeight: 600 }}>Products</span>
-                  <span style={{
-                    fontSize: 12, fontWeight: 800,
-                    color: items.length > 0 ? 'var(--brand)' : 'var(--text-disabled)',
-                    background: items.length > 0 ? 'rgba(124,45,58,0.08)' : 'transparent',
-                    padding: items.length > 0 ? '2px 8px' : '0',
-                    borderRadius: 5,
-                  }}>
-                    {items.length > 0 ? `${items.length} item${items.length !== 1 ? 's' : ''}` : '0 items'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Auto-code info */}
-            <div className="proc-aside-card">
-              <div style={{ padding: '10px 14px', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                <div style={{
-                  width: 24, height: 24, borderRadius: 6, flexShrink: 0,
-                  background: 'rgba(59,130,246,0.1)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(59,130,246,0.7)" strokeWidth="2.2" strokeLinecap="round">
-                    <circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/>
-                  </svg>
-                </div>
-                <div>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', margin: '0 0 3px' }}>Auto-Generated Code</p>
-                  <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0, lineHeight: 1.5 }}>
-                    Will be assigned after project selection, e.g.{' '}
-                    <strong style={{ color: 'var(--text-primary)' }}>
-                      {formData.project_code || 'PROJ'}-001
-                    </strong>
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="proc-aside-card">
-              <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 7 }}>
-                {items.length === 0 && (
-                  <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '0 0 4px', textAlign: 'center', fontStyle: 'italic' }}>
-                    Add at least one product to submit
+              {/* Project block */}
+              <div style={{ padding: '11px 16px', borderBottom: '1px solid #f3ede8' }}>
+                <p style={{ margin: '0 0 5px', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#c2b8b0' }}>
+                  Project
+                </p>
+                {selectedProject ? (
+                  <>
+                    <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 700, color: '#1e1714', lineHeight: 1.35 }}>
+                      {selectedProject.name}
+                    </p>
+                    <p style={{ margin: 0, fontSize: 11, color: '#9a9088', fontWeight: 600 }}>
+                      {selectedProject.code}
+                    </p>
+                  </>
+                ) : (
+                  <p style={{ margin: 0, fontSize: 12, color: '#c8c0bb', fontStyle: 'italic' }}>
+                    Not selected yet
                   </p>
                 )}
-                <Button type="button" variant="primary"
-                  disabled={mutation.isPending || items.length === 0}
-                  isLoading={mutation.isPending}
-                  onClick={() => formRef.current?.requestSubmit()}>
-                  {mutation.isPending ? 'Submitting…' : `Submit Request${items.length > 0 ? ` (${items.length})` : ''}`}
-                </Button>
-                <Button type="button" variant="secondary" onClick={() => router.push('/purchase-requests')}>
-                  Cancel
-                </Button>
               </div>
+
+              {/* Info rows */}
+              <div style={{ padding: '4px 16px 8px' }}>
+                {[
+                  { label: 'Request Date', value: fmt(formData.request_date) },
+                  { label: 'Required By',  value: fmt(formData.required_by) },
+                  { label: 'Products',     value: items.length > 0 ? `${items.length} item${items.length !== 1 ? 's' : ''}` : '0 items', brand: items.length > 0 },
+                ].map(({ label, value, brand }) => (
+                  <div key={label} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '7px 0', borderBottom: '1px solid #f5f0ec',
+                  }}>
+                    <span style={{ fontSize: 11, color: '#a09590', fontWeight: 500 }}>{label}</span>
+                    <span style={{
+                      fontSize: 12, fontWeight: 700,
+                      color: brand ? 'var(--brand)' : value === '—' ? '#cdc5bf' : '#2d2420',
+                      background: brand ? 'rgba(124,45,58,0.07)' : 'transparent',
+                      padding: brand ? '2px 8px' : '0',
+                      borderRadius: 5,
+                    }}>
+                      {value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── Actions panel ── */}
+            <div style={{
+              background: '#fff',
+              border: '1px solid #ede8e3',
+              borderRadius: 12,
+              padding: '13px 14px',
+              display: 'flex', flexDirection: 'column', gap: 7,
+              boxShadow: '0 1px 6px rgba(28,20,20,0.07)',
+            }}>
+              {items.length === 0 && (
+                <p style={{ fontSize: 11, color: '#b8b0aa', margin: '0 0 3px', textAlign: 'center', fontStyle: 'italic' }}>
+                  Add at least one product to submit
+                </p>
+              )}
+              <Button type="button" variant="primary"
+                disabled={mutation.isPending || items.length === 0}
+                isLoading={mutation.isPending}
+                onClick={() => formRef.current?.requestSubmit()}>
+                {mutation.isPending ? 'Submitting…' : `Submit Request${items.length > 0 ? ` (${items.length})` : ''}`}
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => router.push('/purchase-requests')}>
+                Cancel
+              </Button>
             </div>
 
           </div>
