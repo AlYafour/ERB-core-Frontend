@@ -17,6 +17,7 @@ import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
+import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable';
 
 
 export default function PurchaseInvoiceDetailPage() {
@@ -173,33 +174,22 @@ export default function PurchaseInvoiceDetailPage() {
         </DetailCard>
 
         <DetailCard title="Items">
-          <div style={{ gridColumn: '1 / -1', overflowX: 'auto' }}>
-            <table>
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Unit</th>
-                  <th>Qty</th>
-                  <th>Unit Price</th>
-                  <th>Disc %</th>
-                  <th>Tax %</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoice.items.map((item, idx) => (
-                  <tr key={item.id ?? idx}>
-                    <td>{item.product?.name || `Product #${item.product_id}`}</td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{item.product?.unit?.toUpperCase() || '—'}</td>
-                    <td>{item.quantity}</td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{formatPrice(item.unit_price)}</td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{item.discount || 0}%</td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{item.tax_rate || 0}%</td>
-                    <td style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(item.total ?? 0)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <ReadOnlyItemsTable
+              items={invoice.items}
+              columns={[
+                {
+                  header: 'Product',
+                  cell: (item) => item.product?.name || `Product #${item.product_id}`,
+                },
+                { header: 'Unit', cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
+                { header: 'Qty', cell: (item) => item.quantity },
+                { header: 'Unit Price', cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{formatPrice(item.unit_price)}</span> },
+                { header: 'Disc %', cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.discount || 0}%</span> },
+                { header: 'Tax %', cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.tax_rate || 0}%</span> },
+                { header: 'Total', cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(item.total ?? 0)}</span> },
+              ]}
+            />
           </div>
         </DetailCard>
 

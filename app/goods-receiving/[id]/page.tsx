@@ -17,6 +17,7 @@ import { Button, Badge, PageShell } from '@/components/ui';
 import { QUALITY_STATUS } from '@/lib/utils/status-colors';
 import Image from 'next/image';
 import { useT } from '@/lib/i18n/useT';
+import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable';
 
 
 export default function GRNDetailPage() {
@@ -330,81 +331,34 @@ export default function GRNDetailPage() {
           }}>
             {t('section', 'receivedItems')}
           </h3>
-          <div style={{ overflowX: 'auto' }}>
-            <table>
-              <thead>
-                <tr>
-                  <th>{t('col', 'product')}</th>
-                  <th>{t('col', 'unit')}</th>
-                  <th>{t('col', 'orderedQty')}</th>
-                  <th>{t('col', 'receivedQty')}</th>
-                  <th>{t('col', 'rejectedQty')}</th>
-                  <th>{t('col', 'qualityStatus')}</th>
-                  <th>{t('col', 'notes')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {grn.items && grn.items.length > 0 ? (
-                  grn.items.map((item) => (
-                    <tr key={item.id}>
-                      <td>
-                        <div style={{ 
-                          fontWeight: 'var(--weight-medium)',
-                          color: 'var(--text-primary)',
-                        }}>
-                          {item.product?.name || 'N/A'}
-                        </div>
-                        <div style={{ 
-                          fontSize: 'var(--text-xs)',
-                          color: 'var(--text-secondary)',
-                        }}>
-                          {item.product?.code || ''}
-                        </div>
-                      </td>
-                      <td style={{ color: 'var(--text-secondary)' }}>{item.product?.unit?.toUpperCase() || '—'}</td>
-                      <td>
-                        <div style={{ color: 'var(--text-primary)' }}>{item.ordered_quantity}</div>
-                      </td>
-                      <td>
-                        <div style={{ 
-                          color: 'var(--color-success)',
-                          fontWeight: 'var(--weight-semibold)',
-                        }}>
-                          {item.received_quantity}
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ color: 'var(--color-error)' }}>{item.rejected_quantity}</div>
-                      </td>
-                      <td>
-                        <Badge variant={QUALITY_STATUS[item.quality_status] ?? 'info'}>
-                          {qualityStatusLabels[item.quality_status] || item.quality_status}
-                        </Badge>
-                      </td>
-                      <td>
-                        <div style={{ 
-                          fontSize: 'var(--text-sm)',
-                          color: 'var(--text-secondary)',
-                        }}>
-                          {item.notes || '-'}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} style={{ 
-                      textAlign: 'center',
-                      color: 'var(--text-secondary)',
-                      padding: 'var(--space-4)',
-                    }}>
-                      {t('empty', 'noResults')}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <ReadOnlyItemsTable
+            items={grn.items ?? []}
+            emptyMessage={t('empty', 'noResults')}
+            columns={[
+              {
+                header: t('col', 'product'),
+                cell: (item) => (
+                  <>
+                    <div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{item.product?.name || 'N/A'}</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item.product?.code || ''}</div>
+                  </>
+                ),
+              },
+              { header: t('col', 'unit'), cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
+              { header: t('col', 'orderedQty'), cell: (item) => <span style={{ color: 'var(--text-primary)' }}>{item.ordered_quantity}</span> },
+              { header: t('col', 'receivedQty'), cell: (item) => <span style={{ color: 'var(--color-success)', fontWeight: 'var(--weight-semibold)' }}>{item.received_quantity}</span> },
+              { header: t('col', 'rejectedQty'), cell: (item) => <span style={{ color: 'var(--color-error)' }}>{item.rejected_quantity}</span> },
+              {
+                header: t('col', 'qualityStatus'),
+                cell: (item) => (
+                  <Badge variant={QUALITY_STATUS[item.quality_status] ?? 'info'}>
+                    {qualityStatusLabels[item.quality_status] || item.quality_status}
+                  </Badge>
+                ),
+              },
+              { header: t('col', 'notes'), cell: (item) => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{item.notes || '-'}</span> },
+            ]}
+          />
         </div>
 
         {/* Summary - Unified */}

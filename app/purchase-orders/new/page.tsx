@@ -51,25 +51,7 @@ function NewPurchaseOrderPageContent() {
   }
 
   // Default Terms & Conditions
-  const defaultTermsAndConditions = `Conditions: -
-
-1- The Company reserves the right to return items partially or completely in the following instances: non-compliance with specifications, failure to meet the delivery date, or in the case of defective materials.
-
-2- This purchase order is confidential and intended exclusively for use by the specified supplier and our organization.
-
-3- Please acknowledge the receipt & confirm the delivery dates
-
-4- This LPO must be signed and stamped by the authorized
-
-Terms & Conditions:
-
-1- The Company reserves the right to return items partially or completely in the following instances: non-compliance with specifications, failure to meet the delivery date, or in the case of defective materials.
-
-2- Please note that this purchase order is confidential and intended for exclusive use by the supplier specified above and our organization only.
-
-3- Please acknowledge the receipt & confirm the delivery dates.
-
-4- طلب الشراء هذا يجب أن يكون موقعاً ومختوماً من المفوض بالتوقيع`;
+  const defaultTermsAndConditions = `Conditions: -`;
 
   const [formData, setFormData] = useState<PurchaseOrderFormData>({
     purchase_request_id: purchaseRequestId ? Number(purchaseRequestId) : undefined,

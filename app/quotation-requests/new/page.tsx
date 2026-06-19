@@ -19,6 +19,7 @@ import RouteGuard from '@/components/auth/RouteGuard';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { useT } from '@/lib/i18n/useT';
+import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable';
 
 export default function NewQuotationRequestPage() {
   return (
@@ -369,46 +370,30 @@ function NewQuotationRequestPageContent() {
                 )}
               </div>
               <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>{t('col', 'product')}</th>
-                        <th>{t('col', 'code')}</th>
-                        <th>{t('col', 'quantity')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {items.map((item, index) => {
+                <ReadOnlyItemsTable
+                  items={items}
+                  columns={[
+                    {
+                      header: t('col', 'product'),
+                      cell: (item) => {
                         const product = purchaseRequest.items.find(
                           (i) => (i.product?.id || i.product_id) === item.product_id
                         )?.product;
-                        return (
-                          <tr key={index}>
-                            <td>
-                              <div style={{ 
-                                fontWeight: 'var(--weight-medium)',
-                                color: 'var(--text-primary)',
-                              }}>
-                                {product?.name || 'N/A'}
-                              </div>
-                            </td>
-                            <td>
-                              <div style={{ color: 'var(--text-secondary)' }}>
-                                {product?.code || ''}
-                              </div>
-                            </td>
-                            <td>
-                              <div style={{ color: 'var(--text-primary)' }}>
-                                {item.quantity}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                        return <div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{product?.name || 'N/A'}</div>;
+                      },
+                    },
+                    {
+                      header: t('col', 'code'),
+                      cell: (item) => {
+                        const product = purchaseRequest.items.find(
+                          (i) => (i.product?.id || i.product_id) === item.product_id
+                        )?.product;
+                        return <span style={{ color: 'var(--text-secondary)' }}>{product?.code || ''}</span>;
+                      },
+                    },
+                    { header: t('col', 'quantity'), cell: (item) => <span style={{ color: 'var(--text-primary)' }}>{item.quantity}</span> },
+                  ]}
+                />
               </div>
             </div>
           )}

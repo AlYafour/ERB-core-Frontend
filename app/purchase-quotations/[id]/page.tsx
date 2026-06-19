@@ -16,6 +16,7 @@ import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { canAwardQuotation, canCreatePurchaseOrder } from '@/lib/utils/workflow-guards';
 import { useT } from '@/lib/i18n/useT';
+import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable';
 
 export default function PurchaseQuotationDetailPage() {
   const t = useT();
@@ -318,82 +319,30 @@ export default function PurchaseQuotationDetailPage() {
           }}>
             {t('col', 'product')}
           </h3>
-          <div style={{ overflowX: 'auto' }}>
-            <table>
-              <thead>
-                <tr>
-                  <th>{t('col', 'product')}</th>
-                  <th>{t('col', 'unit')}</th>
-                  <th>{t('col', 'quantity')}</th>
-                  <th>{t('col', 'unitPrice')}</th>
-                  <th>Disc</th>
-                  <th>Tax</th>
-                  <th>{t('col', 'total')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {quotation.items.map((item) => {
-                  const productName =
-                    typeof item.product === 'object' && item.product
-                      ? item.product.name
-                      : `Product #${item.product_id}`;
-                  const productCode =
-                    typeof item.product === 'object' && item.product
-                      ? item.product.code
-                      : '';
+          <ReadOnlyItemsTable
+            items={quotation.items}
+            columns={[
+              {
+                header: t('col', 'product'),
+                cell: (item) => {
+                  const name = typeof item.product === 'object' && item.product ? item.product.name : `Product #${item.product_id}`;
+                  const code = typeof item.product === 'object' && item.product ? item.product.code : '';
                   return (
-                    <tr key={item.id ?? `${item.product_id}-${item.quantity}`}>
-                      <td>
-                        <div
-                          style={{
-                            fontWeight: 'var(--weight-medium)',
-                            color: 'var(--text-primary)',
-                          }}
-                        >
-                          {productName}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 'var(--text-xs)',
-                            color: 'var(--text-secondary)',
-                          }}
-                        >
-                          {productCode}
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ color: 'var(--text-secondary)' }}>
-                          {(typeof item.product === 'object' && item.product ? item.product.unit : null)?.toUpperCase() || '—'}
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ color: 'var(--text-primary)' }}>{item.quantity}</div>
-                      </td>
-                      <td>
-                        <div style={{ color: 'var(--text-secondary)' }}>{formatPrice(Number(item.unit_price))}</div>
-                      </td>
-                      <td>
-                        <div style={{ color: 'var(--text-secondary)' }}>{item.discount || 0}%</div>
-                      </td>
-                      <td>
-                        <div style={{ color: 'var(--text-secondary)' }}>{item.tax_rate || item.tax || 0}%</div>
-                      </td>
-                      <td>
-                        <div
-                          style={{
-                            fontWeight: 'var(--weight-semibold)',
-                            color: 'var(--text-primary)',
-                          }}
-                        >
-                          {formatPrice(Number(item.total))}
-                        </div>
-                      </td>
-                    </tr>
+                    <>
+                      <div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{name}</div>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{code}</div>
+                    </>
                   );
-                })}
-              </tbody>
-            </table>
-          </div>
+                },
+              },
+              { header: t('col', 'unit'), cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{(typeof item.product === 'object' && item.product ? item.product.unit : null)?.toUpperCase() || '—'}</span> },
+              { header: t('col', 'quantity'), cell: (item) => <span style={{ color: 'var(--text-primary)' }}>{item.quantity}</span> },
+              { header: t('col', 'unitPrice'), cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{formatPrice(Number(item.unit_price))}</span> },
+              { header: 'Disc', cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.discount || 0}%</span> },
+              { header: 'Tax', cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{(item as any).tax_rate || (item as any).tax || 0}%</span> },
+              { header: t('col', 'total'), cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>{formatPrice(Number(item.total))}</span> },
+            ]}
+          />
         </div>
 
         {/* Summary - Unified */}

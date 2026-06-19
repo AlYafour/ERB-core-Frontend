@@ -20,6 +20,7 @@ import { productsApi } from '@/lib/api/products';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import ProductSelector from '@/components/features/ProductSelector';
 import { Product } from '@/types';
+import { ReadOnlyItemsTable, ColumnDef } from '@/components/procurement/ReadOnlyItemsTable';
 
 export default function PurchaseRequestDetailPage() {
   const params = useParams();
@@ -433,130 +434,112 @@ export default function PurchaseRequestDetailPage() {
             </div>
           )}
 
-          <div style={{ overflowX: 'auto' }}>
-            <table>
-              <thead>
-                <tr>
-                  <th>{t('col', 'product')}</th>
-                  <th>{t('col', 'quantity')}</th>
-                  <th>{t('col', 'unit')}</th>
-                  <th>{t('col', 'projectSite')}</th>
-                  <th>{t('col', 'purpose')}</th>
-                  <th>{t('col', 'notes')}</th>
-                  {(isAdmin || request.created_by === user?.id) && request.status === 'pending' && <th></th>}
-                </tr>
-              </thead>
-              <tbody>
-                {request.items.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      {editingItemId === item.id ? (
-                        <div style={{ minWidth: '220px' }}>
-                          <SearchableDropdown
-                            options={
-                              products?.results?.map((p) => ({
-                                value: p.id,
-                                label: `${p.name} (${p.code})`,
-                                searchText: `${p.name} ${p.code}`,
-                              })) || []
-                            }
-                            value={editingForm.productId}
-                            onChange={(val) => setEditingForm(f => ({ ...f, productId: val ? Number(val) : 0 }))}
-                            placeholder="Select product..."
-                            searchPlaceholder="Search products..."
-                          />
-                        </div>
-                      ) : (
-                        <>
-                          <div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>
-                            {item.product?.name || 'N/A'}
-                          </div>
-                          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                            {item.product?.code || ''}
-                          </div>
-                        </>
-                      )}
-                    </td>
-                    <td>
-                      {editingItemId === item.id ? (
-                        <input type="number" min="0.001" step="0.001" className="form-input" style={{ width: 90 }}
-                          value={editingForm.quantity}
-                          onChange={(e) => setEditingForm(f => ({ ...f, quantity: Number(e.target.value) || 0 }))}
-                        />
-                      ) : (
-                        <div style={{ color: 'var(--text-primary)' }}>{item.quantity}</div>
-                      )}
-                    </td>
-                    <td>
-                      {editingItemId === item.id ? (
-                        <input className="form-input" style={{ width: 100 }}
-                          value={editingForm.unit}
-                          onChange={(e) => setEditingForm(f => ({ ...f, unit: e.target.value }))}
-                          placeholder="Unit"
-                        />
-                      ) : (
-                        <div style={{ color: 'var(--text-secondary)' }}>{item.unit || item.product?.unit || '-'}</div>
-                      )}
-                    </td>
-                    <td>
-                      <div style={{ color: 'var(--text-secondary)' }}>{item.project_site || '-'}</div>
-                    </td>
-                    <td>
-                      {editingItemId === item.id ? (
-                        <input className="form-input" style={{ minWidth: 120 }}
-                          value={editingForm.reason}
-                          onChange={(e) => setEditingForm(f => ({ ...f, reason: e.target.value }))}
-                          placeholder="Purpose..."
-                        />
-                      ) : (
-                        <div style={{ color: 'var(--text-secondary)', maxWidth: '256px' }}>{item.reason || '-'}</div>
-                      )}
-                    </td>
-                    <td>
-                      {editingItemId === item.id ? (
-                        <input className="form-input" style={{ minWidth: 120 }}
-                          value={editingForm.notes}
-                          onChange={(e) => setEditingForm(f => ({ ...f, notes: e.target.value }))}
-                          placeholder="Notes..."
-                        />
-                      ) : (
-                        <div style={{ color: 'var(--text-secondary)', maxWidth: '256px' }}>{item.notes || '-'}</div>
-                      )}
-                    </td>
-                    {(isAdmin || request.created_by === user?.id) && request.status === 'pending' && (
-                      <td>
-                        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                          {isAdmin && (editingItemId === item.id ? (
-                            <>
-                              <button className="btn btn-primary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
-                                disabled={!editingForm.productId || updateItemMutation.isPending}
-                                onClick={() => updateItemMutation.mutate({ itemId: item.id!, data: { product_id: editingForm.productId, quantity: editingForm.quantity, unit: editingForm.unit, reason: editingForm.reason, notes: editingForm.notes } })}>
-                                {updateItemMutation.isPending ? '...' : 'Save'}
-                              </button>
-                              <button className="btn btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
-                                onClick={() => setEditingItemId(null)}>
-                                Cancel
-                              </button>
-                            </>
-                          ) : (
-                            <button className="btn btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
-                              onClick={() => { setEditingItemId(item.id!); setEditingForm({ productId: item.product?.id || 0, quantity: item.quantity, unit: item.unit || item.product?.unit || '', reason: (item as any).reason || '', notes: item.notes || '' }); }}>
-                              Edit
-                            </button>
-                          ))}
-                          <Button variant="delete" size="sm"
-                            disabled={deleteItemMutation.isPending}
-                            onClick={() => deleteItemMutation.mutate(item.id!)}>
-                            {t('btn', 'delete')}
-                          </Button>
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {(() => {
+            type PRItem = (typeof request.items)[number];
+            const canEditItems = (isAdmin || request.created_by === user?.id) && request.status === 'pending';
+            const cols: ColumnDef<PRItem>[] = [
+              {
+                header: t('col', 'product'),
+                cell: (item) => editingItemId === item.id ? (
+                  <div style={{ minWidth: '220px' }}>
+                    <SearchableDropdown
+                      options={products?.results?.map((p) => ({ value: p.id, label: `${p.name} (${p.code})`, searchText: `${p.name} ${p.code}` })) || []}
+                      value={editingForm.productId}
+                      onChange={(val) => setEditingForm(f => ({ ...f, productId: val ? Number(val) : 0 }))}
+                      placeholder="Select product..."
+                      searchPlaceholder="Search products..."
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{item.product?.name || 'N/A'}</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item.product?.code || ''}</div>
+                  </>
+                ),
+              },
+              {
+                header: t('col', 'quantity'),
+                cell: (item) => editingItemId === item.id ? (
+                  <input type="number" min="0.001" step="0.001" className="form-input" style={{ width: 90 }}
+                    value={editingForm.quantity}
+                    onChange={(e) => setEditingForm(f => ({ ...f, quantity: Number(e.target.value) || 0 }))}
+                  />
+                ) : (
+                  <div style={{ color: 'var(--text-primary)' }}>{item.quantity}</div>
+                ),
+              },
+              {
+                header: t('col', 'unit'),
+                cell: (item) => editingItemId === item.id ? (
+                  <input className="form-input" style={{ width: 100 }}
+                    value={editingForm.unit}
+                    onChange={(e) => setEditingForm(f => ({ ...f, unit: e.target.value }))}
+                    placeholder="Unit"
+                  />
+                ) : (
+                  <div style={{ color: 'var(--text-secondary)' }}>{item.unit || item.product?.unit || '-'}</div>
+                ),
+              },
+              { header: t('col', 'projectSite'), cell: (item) => <div style={{ color: 'var(--text-secondary)' }}>{item.project_site || '-'}</div> },
+              {
+                header: t('col', 'purpose'),
+                cell: (item) => editingItemId === item.id ? (
+                  <input className="form-input" style={{ minWidth: 120 }}
+                    value={editingForm.reason}
+                    onChange={(e) => setEditingForm(f => ({ ...f, reason: e.target.value }))}
+                    placeholder="Purpose..."
+                  />
+                ) : (
+                  <div style={{ color: 'var(--text-secondary)', maxWidth: '256px' }}>{item.reason || '-'}</div>
+                ),
+              },
+              {
+                header: t('col', 'notes'),
+                cell: (item) => editingItemId === item.id ? (
+                  <input className="form-input" style={{ minWidth: 120 }}
+                    value={editingForm.notes}
+                    onChange={(e) => setEditingForm(f => ({ ...f, notes: e.target.value }))}
+                    placeholder="Notes..."
+                  />
+                ) : (
+                  <div style={{ color: 'var(--text-secondary)', maxWidth: '256px' }}>{item.notes || '-'}</div>
+                ),
+              },
+            ];
+            if (canEditItems) {
+              cols.push({
+                header: '',
+                cell: (item) => (
+                  <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                    {isAdmin && (editingItemId === item.id ? (
+                      <>
+                        <button className="btn btn-primary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
+                          disabled={!editingForm.productId || updateItemMutation.isPending}
+                          onClick={() => updateItemMutation.mutate({ itemId: item.id!, data: { product_id: editingForm.productId, quantity: editingForm.quantity, unit: editingForm.unit, reason: editingForm.reason, notes: editingForm.notes } })}>
+                          {updateItemMutation.isPending ? '...' : 'Save'}
+                        </button>
+                        <button className="btn btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
+                          onClick={() => setEditingItemId(null)}>
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <button className="btn btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
+                        onClick={() => { setEditingItemId(item.id!); setEditingForm({ productId: item.product?.id || 0, quantity: item.quantity, unit: item.unit || item.product?.unit || '', reason: (item as any).reason || '', notes: item.notes || '' }); }}>
+                        Edit
+                      </button>
+                    ))}
+                    <Button variant="delete" size="sm"
+                      disabled={deleteItemMutation.isPending}
+                      onClick={() => deleteItemMutation.mutate(item.id!)}>
+                      {t('btn', 'delete')}
+                    </Button>
+                  </div>
+                ),
+              });
+            }
+            return <ReadOnlyItemsTable items={request.items} columns={cols} />;
+          })()}
         </div>
 
         {/* Actions - Unified */}
