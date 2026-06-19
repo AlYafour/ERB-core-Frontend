@@ -28,10 +28,11 @@ export default function PurchaseOrderDetailPage() {
   const queryClient = useQueryClient();
   const { isAdmin, can } = useProcPermissions();
 
-  const [rejectDialogOpen,   setRejectDialogOpen]   = useState(false);
-  const [cancelDialogOpen,   setCancelDialogOpen]   = useState(false);
+  const [rejectDialogOpen,    setRejectDialogOpen]    = useState(false);
+  const [cancelDialogOpen,    setCancelDialogOpen]    = useState(false);
   const [amendmentDialogOpen, setAmendmentDialogOpen] = useState(false);
   const [rejectAmendmentOpen, setRejectAmendmentOpen] = useState(false);
+  const [termsOpen,           setTermsOpen]           = useState(false);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['purchase-orders', id],
@@ -107,8 +108,6 @@ export default function PurchaseOrderDetailPage() {
   const prRef = typeof order.purchase_request === 'object' ? order.purchase_request : order.purchase_request ? { id: order.purchase_request } : null;
   const pqRef = typeof order.purchase_quotation === 'object' ? order.purchase_quotation : order.purchase_quotation ? { id: order.purchase_quotation } : null;
   const fmt   = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-
-  const [termsOpen, setTermsOpen] = useState(false);
 
   const chainNode = (prRef || pqRef) ? (
     <>
