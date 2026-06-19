@@ -22,6 +22,9 @@ import ProductSelector from '@/components/features/ProductSelector';
 import { Product } from '@/types';
 import { ReadOnlyItemsTable, ColumnDef } from '@/components/procurement/ReadOnlyItemsTable';
 import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
+import { StickyDocBar } from '@/components/procurement/shared/StickyDocBar';
+import { PR_STATUS } from '@/lib/utils/status-colors';
+import { PR_LABEL } from '@/lib/constants/status-labels';
 
 export default function PurchaseRequestDetailPage() {
   const params = useParams();
@@ -224,19 +227,77 @@ export default function PurchaseRequestDetailPage() {
           backHref="/purchase-requests"
           title={`${t('page', 'purchaseRequests')}: ${request.code}`}
           breadcrumbs={[{ label: t('page', 'purchaseRequests'), href: '/purchase-requests' }, { label: request.code }]}
-          actions={
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              {request.allow_additional_orders && (
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#d97706', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 6, padding: '4px 10px' }}>
-                  🔓 Additional Order Unlocked
-                </span>
-              )}
-              <Button variant="secondary" onClick={() => window.open(`/print/pr/${id}`, '_blank')}>
-                🖨 {t('btn', 'printPR')}
-              </Button>
-            </div>
-          }
         />
+
+        {/* ── Sticky action bar ── */}
+        <StickyDocBar
+          docTypeLabel="Purchase Request"
+          docNumber={request.code}
+          statusVariant={PR_STATUS[request.status] ?? 'default'}
+          statusLabel={PR_LABEL[request.status] || request.status}
+        >
+          {request.allow_additional_orders && (
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#d97706', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 6, padding: '3px 8px' }}>
+              🔓 Additional Order Unlocked
+            </span>
+          )}
+          <Button variant="secondary" size="sm" onClick={() => window.open(`/print/pr/${id}`, '_blank')}>Print</Button>
+
+          {/* Pending actions */}
+          {request.status === 'pending' && canApprove && (
+            <Button variant="success" size="sm" isLoading={approveMutation.isPending} onClick={() => approveMutation.mutate()}>
+              {t('btn', 'approve')}
+            </Button>
+          )}
+          {request.status === 'pending' && canReject && (
+            <Button variant="destructive" size="sm" disabled={rejectMutation.isPending} onClick={() => setRejectDialogOpen(true)}>
+              {t('btn', 'reject')}
+            </Button>
+          )}
+
+          {/* Approved actions */}
+          {request.status === 'approved' && canApprove && !request.has_quotation_requests && !request.has_purchase_orders && (
+            <Button variant="secondary" size="sm" isLoading={undoApprovalMutation.isPending} onClick={() => undoApprovalMutation.mutate()}>
+              {t('btn', 'update')}
+            </Button>
+          )}
+          {request.status === 'approved' && canManageAdditionalOrders && (request.has_purchase_orders || request.has_awarded_quotation) && !request.allow_additional_orders && (
+            <Button variant="secondary" size="sm" isLoading={allowAdditionalOrderMutation.isPending} onClick={() => allowAdditionalOrderMutation.mutate()}>
+              🔓 Allow Additional Order
+            </Button>
+          )}
+          {request.status === 'approved' && (isAdmin || can('quotation_request', 'create') || can('purchase_order', 'create')) &&
+           (!request.has_awarded_quotation || request.allow_additional_orders) &&
+           (!request.has_purchase_orders || request.allow_additional_orders) && (
+            <DropdownButton
+              label={t('btn', 'create')}
+              variant="primary"
+              items={[
+                {
+                  label: t('page', 'newQR'),
+                  onClick: () => {
+                    if (!isAdmin && !can('quotation_request', 'create')) { toast('No permission to create a Quotation Request', 'error'); return; }
+                    if (request.has_awarded_quotation) { toast('PR already has an awarded quotation.', 'error'); return; }
+                    if (request.has_purchase_orders) { toast('PR already has purchase orders.', 'error'); return; }
+                    const guard = canCreateQuotationRequest(request.status, can('quotation_request', 'create'));
+                    if (!guard.canProceed) { toast(guard.reason || 'Cannot create QR', 'error'); return; }
+                    router.push(`/quotation-requests/new?purchase_request_id=${id}`);
+                  },
+                },
+                {
+                  label: t('page', 'newPO'),
+                  onClick: async () => {
+                    if (!isAdmin && !can('purchase_order', 'create')) { toast('No permission to create a Purchase Order', 'error'); return; }
+                    const guard = canCreatePurchaseOrder(undefined, request.status);
+                    if (!guard.canProceed) { toast(guard.reason || 'Cannot create PO', 'error'); return; }
+                    if (guard.warning && !await confirm(guard.warning + '\n\nDo you want to continue?')) return;
+                    router.push(`/purchase-orders/new?purchase_request_id=${id}`);
+                  },
+                },
+              ]}
+            />
+          )}
+        </StickyDocBar>
 
         {/* Details */}
         <DetailCard title={t('col', 'title')}>
@@ -336,83 +397,22 @@ export default function PurchaseRequestDetailPage() {
           <ReadOnlyItemsTable items={request.items} columns={cols} />
         </div>
 
-        {/* Actions — Pending */}
-        {request.status === 'pending' && (canApprove || canReject) && (
-          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-            {canApprove && (
-              <Button variant="success" isLoading={approveMutation.isPending} onClick={() => approveMutation.mutate()}>
-                {t('btn', 'approve')}
-              </Button>
-            )}
-            {canReject && (
-              <Button variant="destructive" disabled={rejectMutation.isPending} onClick={() => setRejectDialogOpen(true)}>
-                {t('btn', 'reject')}
-              </Button>
-            )}
-          </div>
-        )}
-
-        {/* Actions — Approved */}
-        {request.status === 'approved' && (
-          <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'center' }}>
-            {canApprove && !request.has_quotation_requests && !request.has_purchase_orders && (
-              <Button variant="secondary" isLoading={undoApprovalMutation.isPending} onClick={() => undoApprovalMutation.mutate()}>
-                {t('btn', 'update')}
-              </Button>
-            )}
-            {canManageAdditionalOrders && (request.has_purchase_orders || request.has_awarded_quotation) && !request.allow_additional_orders && (
-              <Button variant="secondary" isLoading={allowAdditionalOrderMutation.isPending} onClick={() => allowAdditionalOrderMutation.mutate()}>
-                🔓 Allow Additional Order
-              </Button>
-            )}
-            {(isAdmin || can('quotation_request', 'create') || can('purchase_order', 'create')) &&
-             (!request.has_awarded_quotation || request.allow_additional_orders) &&
-             (!request.has_purchase_orders || request.allow_additional_orders) && (
-              <DropdownButton
-                label={t('btn', 'create')}
-                variant="primary"
-                items={[
-                  {
-                    label: t('page', 'newQR'),
-                    onClick: () => {
-                      if (!isAdmin && !can('quotation_request', 'create')) { toast('No permission to create a Quotation Request', 'error'); return; }
-                      if (request.has_awarded_quotation) { toast('PR already has an awarded quotation.', 'error'); return; }
-                      if (request.has_purchase_orders) { toast('PR already has purchase orders.', 'error'); return; }
-                      const guard = canCreateQuotationRequest(request.status, can('quotation_request', 'create'));
-                      if (!guard.canProceed) { toast(guard.reason || 'Cannot create QR', 'error'); return; }
-                      router.push(`/quotation-requests/new?purchase_request_id=${id}`);
-                    },
-                  },
-                  {
-                    label: t('page', 'newPO'),
-                    onClick: async () => {
-                      if (!isAdmin && !can('purchase_order', 'create')) { toast('No permission to create a Purchase Order', 'error'); return; }
-                      const guard = canCreatePurchaseOrder(undefined, request.status);
-                      if (!guard.canProceed) { toast(guard.reason || 'Cannot create PO', 'error'); return; }
-                      if (guard.warning && !await confirm(guard.warning + '\n\nDo you want to continue?')) return;
-                      router.push(`/purchase-orders/new?purchase_request_id=${id}`);
-                    },
-                  },
-                ]}
-              />
-            )}
-            {(request.has_awarded_quotation || request.has_purchase_orders) && (
-              <div className="card" style={{ backgroundColor: 'var(--surface-inset)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
-                <svg style={{ width: 20, height: 20, flexShrink: 0, color: 'var(--text-secondary)', marginTop: 2 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div>
-                  <p style={{ margin: 0, fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>
-                    {request.has_purchase_orders ? 'Purchase Order Created' : 'Supplier Awarded'}
-                  </p>
-                  <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    {request.has_purchase_orders
-                      ? 'This PR has an active LPO. Modifications are no longer allowed.'
-                      : 'This PR has an awarded supplier. You can proceed to create a Purchase Order (LPO).'}
-                  </p>
-                </div>
-              </div>
-            )}
+        {/* Status info banner */}
+        {request.status === 'approved' && (request.has_awarded_quotation || request.has_purchase_orders) && (
+          <div className="card" style={{ backgroundColor: 'var(--surface-inset)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
+            <svg style={{ width: 20, height: 20, flexShrink: 0, color: 'var(--text-secondary)', marginTop: 2 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <p style={{ margin: 0, fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>
+                {request.has_purchase_orders ? 'Purchase Order Created' : 'Supplier Awarded'}
+              </p>
+              <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                {request.has_purchase_orders
+                  ? 'This PR has an active LPO. Modifications are no longer allowed.'
+                  : 'This PR has an awarded supplier. You can proceed to create a Purchase Order (LPO).'}
+              </p>
+            </div>
           </div>
         )}
 

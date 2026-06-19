@@ -9,6 +9,7 @@ import DetailCard, { DetailField } from '@/components/ui/DetailCard';
 import { Button, PageHeader, PageShell } from '@/components/ui';
 import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable';
 import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
+import { StickyDocBar } from '@/components/procurement/shared/StickyDocBar';
 
 export default function QuotationRequestDetailPage() {
   const params = useParams();
@@ -33,12 +34,14 @@ export default function QuotationRequestDetailPage() {
           title={`Quotation Request #${qr.id}`}
           description={new Date(qr.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
           breadcrumbs={[{ label: 'Quotation Requests', href: '/quotation-requests' }, { label: `#${qr.id}` }]}
-          actions={
-            <Link href={`/purchase-quotations/new?quotation_request_id=${qr.id}`}>
-              <Button variant="primary">Create Quotation</Button>
-            </Link>
-          }
         />
+
+        {/* ── Sticky action bar ── */}
+        <StickyDocBar docTypeLabel="Quotation Request" docNumber={`#${qr.id}`}>
+          <Link href={`/purchase-quotations/new?quotation_request_id=${qr.id}`}>
+            <Button variant="primary" size="sm">Create Quotation</Button>
+          </Link>
+        </StickyDocBar>
 
         <DetailCard title="Quotation Request Information">
           {supplier && <DetailField label="Supplier" value={supplier.business_name || supplier.name} />}

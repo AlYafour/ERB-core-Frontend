@@ -10,7 +10,7 @@ import { formatPrice } from '@/lib/utils/format';
 import DetailCard, { DetailField } from '@/components/ui/DetailCard';
 import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
 import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection';
-import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
+import { Button, PageHeader, PageShell } from '@/components/ui';
 import { INVOICE_STATUS } from '@/lib/utils/status-colors';
 import { INVOICE_LABEL } from '@/lib/constants/status-labels';
 import { toast } from '@/lib/hooks/use-toast';
@@ -19,6 +19,7 @@ import { useProcPermissions } from '@/lib/hooks/use-proc-permissions';
 import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable';
 import { FinancialSummary } from '@/components/procurement/shared/FinancialSummary';
 import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
+import { StickyDocBar } from '@/components/procurement/shared/StickyDocBar';
 
 export default function PurchaseInvoiceDetailPage() {
   const params = useParams();
@@ -71,24 +72,28 @@ export default function PurchaseInvoiceDetailPage() {
         <PageHeader
           title={`Invoice: ${invoice.invoice_number}`}
           breadcrumbs={[{ label: 'Purchase Invoices', href: '/purchase-invoices' }, { label: invoice.invoice_number }]}
-          actions={
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Badge variant={INVOICE_STATUS[invoice.status] ?? 'info'}>{INVOICE_LABEL[invoice.status] || invoice.status}</Badge>
-              <Link href={`/print/invoice/${invoice.id}`} target="_blank">
-                <Button variant="secondary" size="sm">Print</Button>
-              </Link>
-              {canApprove && isDraftOrPending && (
-                <Button variant="success" size="sm" isLoading={approveMutation.isPending} onClick={() => approveMutation.mutate()}>Approve</Button>
-              )}
-              {canReject && isDraftOrPending && (
-                <Button variant="destructive" size="sm" disabled={rejectMutation.isPending} onClick={() => setRejectDialogOpen(true)}>Reject</Button>
-              )}
-              {canMarkPaid && invoice.status === 'approved' && !invoice.is_fully_paid && (
-                <Button variant="success" size="sm" isLoading={markPaidMutation.isPending} onClick={() => markPaidMutation.mutate()}>Mark as Paid</Button>
-              )}
-            </div>
-          }
         />
+
+        {/* ── Sticky action bar ── */}
+        <StickyDocBar
+          docTypeLabel="Purchase Invoice"
+          docNumber={invoice.invoice_number}
+          statusVariant={INVOICE_STATUS[invoice.status] ?? 'info'}
+          statusLabel={INVOICE_LABEL[invoice.status] || invoice.status}
+        >
+          <Link href={`/print/invoice/${invoice.id}`} target="_blank">
+            <Button variant="secondary" size="sm">Print</Button>
+          </Link>
+          {canApprove && isDraftOrPending && (
+            <Button variant="success" size="sm" isLoading={approveMutation.isPending} onClick={() => approveMutation.mutate()}>Approve</Button>
+          )}
+          {canReject && isDraftOrPending && (
+            <Button variant="destructive" size="sm" disabled={rejectMutation.isPending} onClick={() => setRejectDialogOpen(true)}>Reject</Button>
+          )}
+          {canMarkPaid && invoice.status === 'approved' && !invoice.is_fully_paid && (
+            <Button variant="success" size="sm" isLoading={markPaidMutation.isPending} onClick={() => markPaidMutation.mutate()}>Mark as Paid</Button>
+          )}
+        </StickyDocBar>
 
         <LinkedDocumentsSection
           documents={{

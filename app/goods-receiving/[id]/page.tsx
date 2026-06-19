@@ -12,10 +12,12 @@ import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { useProcPermissions } from '@/lib/hooks/use-proc-permissions';
 import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
-import { QUALITY_STATUS } from '@/lib/utils/status-colors';
+import { QUALITY_STATUS, GRN_STATUS } from '@/lib/utils/status-colors';
+import { GRN_LABEL } from '@/lib/constants/status-labels';
 import { useT } from '@/lib/i18n/useT';
 import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable';
 import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
+import { StickyDocBar } from '@/components/procurement/shared/StickyDocBar';
 
 export default function GRNDetailPage() {
   const params = useParams();
@@ -61,12 +63,37 @@ export default function GRNDetailPage() {
           backHref="/goods-receiving"
           title={`GRN: ${grn.grn_number}`}
           breadcrumbs={[{ label: t('page', 'goodsReceiving'), href: '/goods-receiving' }, { label: grn.grn_number }]}
-          actions={
-            <Button variant="secondary" onClick={() => window.open(`/print/grn/${id}`, '_blank')}>
-              🖨 {t('btn', 'printGRN')}
-            </Button>
-          }
         />
+
+        {/* ── Sticky action bar ── */}
+        <StickyDocBar
+          docTypeLabel="Goods Receiving Note"
+          docNumber={grn.grn_number}
+          statusVariant={GRN_STATUS[grn.status] ?? 'default'}
+          statusLabel={GRN_LABEL[grn.status] || grn.status}
+        >
+          <Button variant="secondary" size="sm" onClick={() => window.open(`/print/grn/${id}`, '_blank')}>Print GRN</Button>
+          {grn.invoices && grn.invoices.length > 0 ? (
+            <Link href={`/purchase-invoices/${grn.invoices[0].id}`}>
+              <Button variant="primary" size="sm">View Invoice</Button>
+            </Link>
+          ) : (
+            purchaseOrder && purchaseOrder.status === 'approved' && canCreateInvPerm && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={async () => {
+                  const guard = canCreateInvoice(purchaseOrder.status);
+                  if (!guard.canProceed) { toast(guard.reason || 'Cannot create invoice', 'error'); return; }
+                  if (guard.warning && !await confirm(guard.warning + '\n\nDo you want to continue?')) return;
+                  router.push(`/purchase-invoices/new?purchase_order_id=${purchaseOrder.id}&grn_id=${id}`);
+                }}
+              >
+                Create Invoice
+              </Button>
+            )
+          )}
+        </StickyDocBar>
 
         <LinkedDocumentsSection
           documents={{
@@ -168,28 +195,6 @@ export default function GRNDetailPage() {
           <DetailField label="Created At" value={new Date(grn.created_at).toLocaleDateString('en-US')} />
         </DetailCard>
 
-        {/* Actions */}
-        <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-          {grn.invoices && grn.invoices.length > 0 ? (
-            <Link href={`/purchase-invoices/${grn.invoices[0].id}`}>
-              <Button variant="primary">View Invoice</Button>
-            </Link>
-          ) : (
-            purchaseOrder && purchaseOrder.status === 'approved' && canCreateInvPerm && (
-              <Button
-                variant="primary"
-                onClick={async () => {
-                  const guard = canCreateInvoice(purchaseOrder.status);
-                  if (!guard.canProceed) { toast(guard.reason || 'Cannot create invoice', 'error'); return; }
-                  if (guard.warning && !await confirm(guard.warning + '\n\nDo you want to continue?')) return;
-                  router.push(`/purchase-invoices/new?purchase_order_id=${purchaseOrder.id}&grn_id=${id}`);
-                }}
-              >
-                Create Invoice
-              </Button>
-            )
-          )}
-        </div>
       </PageShell>
     </MainLayout>
   );

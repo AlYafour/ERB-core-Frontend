@@ -10,7 +10,7 @@ import { formatPrice } from '@/lib/utils/format';
 import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
 import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection';
 import DetailCard, { DetailField } from '@/components/ui/DetailCard';
-import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
+import { Button, PageHeader, PageShell } from '@/components/ui';
 import { PO_STATUS } from '@/lib/utils/status-colors';
 import { PO_LABEL } from '@/lib/constants/status-labels';
 import { poItemBreakdown } from '@/lib/utils/po-item-totals';
@@ -21,6 +21,7 @@ import { canCreateGRN, canCreateInvoice } from '@/lib/utils/workflow-guards';
 import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable';
 import { FinancialSummary } from '@/components/procurement/shared/FinancialSummary';
 import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
+import { StickyDocBar } from '@/components/procurement/shared/StickyDocBar';
 
 export default function PurchaseOrderDetailPage() {
   const params = useParams();
@@ -112,46 +113,50 @@ export default function PurchaseOrderDetailPage() {
           <PageHeader
             title={`Purchase Order: ${order.order_number}`}
             breadcrumbs={[{ label: 'Purchase Orders', href: '/purchase-orders' }, { label: order.order_number }]}
-            actions={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <Badge variant={PO_STATUS[order.status] ?? 'info'}>{PO_LABEL[order.status] || order.status}</Badge>
-                <Button variant="secondary" size="sm" onClick={() => window.open(`/print/lpo/${id}`, '_blank')}>Print LPO</Button>
-                {canEdit && (
-                  <Link href={`/purchase-orders/${id}/edit`}><Button variant="edit" size="sm">Edit</Button></Link>
-                )}
-                {canApprove && isDraftOrPending && (
-                  <Button variant="success" size="sm" isLoading={approveMutation.isPending} onClick={() => approveMutation.mutate()}>Approve</Button>
-                )}
-                {canReject && isDraftOrPending && (
-                  <Button variant="destructive" size="sm" disabled={rejectMutation.isPending} onClick={() => setRejectDialogOpen(true)}>Reject</Button>
-                )}
-                {canCancelOrder && (
-                  <Button variant="destructive" size="sm" disabled={cancelMutation.isPending} onClick={() => setCancelDialogOpen(true)}>Cancel</Button>
-                )}
-                {order.status === 'approved' && canCreateGRNPerm && (
-                  <Button variant="primary" size="sm" onClick={() => {
-                    const guard = canCreateGRN(order.status);
-                    if (!guard.canProceed) { toast(guard.reason || 'Cannot create GRN', 'error'); return; }
-                    router.push(`/goods-receiving/new?purchase_order_id=${id}`);
-                  }}>Create GRN</Button>
-                )}
-                {order.status === 'approved' && canCreateInvPerm && order.has_grn && (
-                  <Button variant="primary" size="sm" onClick={async () => {
-                    const guard = canCreateInvoice(order.status);
-                    if (!guard.canProceed) { toast(guard.reason || 'Cannot create invoice', 'error'); return; }
-                    if (guard.warning && !await confirm(guard.warning + '\n\nDo you want to continue?')) return;
-                    router.push(`/purchase-invoices/new?purchase_order_id=${id}`);
-                  }}>Create Invoice</Button>
-                )}
-                {order.status === 'approved' && canCreateInvPerm && !order.has_grn && (
-                  <Button variant="secondary" size="sm" disabled>Create Invoice (GRN Required)</Button>
-                )}
-                {canRequestAmend && (
-                  <Button variant="secondary" size="sm" onClick={() => setAmendmentDialogOpen(true)}>Request Amendment</Button>
-                )}
-              </div>
-            }
           />
+
+          {/* ── Sticky action bar ── */}
+          <StickyDocBar
+            docTypeLabel="Purchase Order"
+            docNumber={order.order_number}
+            statusVariant={PO_STATUS[order.status] ?? 'info'}
+            statusLabel={PO_LABEL[order.status] || order.status}
+          >
+            <Button variant="secondary" size="sm" onClick={() => window.open(`/print/lpo/${id}`, '_blank')}>Print LPO</Button>
+            {canEdit && (
+              <Link href={`/purchase-orders/${id}/edit`}><Button variant="edit" size="sm">Edit</Button></Link>
+            )}
+            {canApprove && isDraftOrPending && (
+              <Button variant="success" size="sm" isLoading={approveMutation.isPending} onClick={() => approveMutation.mutate()}>Approve</Button>
+            )}
+            {canReject && isDraftOrPending && (
+              <Button variant="destructive" size="sm" disabled={rejectMutation.isPending} onClick={() => setRejectDialogOpen(true)}>Reject</Button>
+            )}
+            {canCancelOrder && (
+              <Button variant="destructive" size="sm" disabled={cancelMutation.isPending} onClick={() => setCancelDialogOpen(true)}>Cancel</Button>
+            )}
+            {order.status === 'approved' && canCreateGRNPerm && (
+              <Button variant="primary" size="sm" onClick={() => {
+                const guard = canCreateGRN(order.status);
+                if (!guard.canProceed) { toast(guard.reason || 'Cannot create GRN', 'error'); return; }
+                router.push(`/goods-receiving/new?purchase_order_id=${id}`);
+              }}>Create GRN</Button>
+            )}
+            {order.status === 'approved' && canCreateInvPerm && order.has_grn && (
+              <Button variant="primary" size="sm" onClick={async () => {
+                const guard = canCreateInvoice(order.status);
+                if (!guard.canProceed) { toast(guard.reason || 'Cannot create invoice', 'error'); return; }
+                if (guard.warning && !await confirm(guard.warning + '\n\nDo you want to continue?')) return;
+                router.push(`/purchase-invoices/new?purchase_order_id=${id}`);
+              }}>Create Invoice</Button>
+            )}
+            {order.status === 'approved' && canCreateInvPerm && !order.has_grn && (
+              <Button variant="secondary" size="sm" disabled>Create Invoice (GRN Required)</Button>
+            )}
+            {canRequestAmend && (
+              <Button variant="secondary" size="sm" onClick={() => setAmendmentDialogOpen(true)}>Request Amendment</Button>
+            )}
+          </StickyDocBar>
 
           <LinkedDocumentsSection
             documents={{

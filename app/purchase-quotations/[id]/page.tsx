@@ -4,9 +4,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseQuotationsApi } from '@/lib/api/purchase-quotations';
 import MainLayout from '@/components/layout/MainLayout';
-import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
+import { Button, PageHeader, PageShell } from '@/components/ui';
 import DetailCard, { DetailField } from '@/components/ui/DetailCard';
-import Link from 'next/link';
 import { formatPrice } from '@/lib/utils/format';
 import LinkedDocumentsSection from '@/components/features/LinkedDocumentsSection';
 import { toast } from '@/lib/hooks/use-toast';
@@ -17,14 +16,13 @@ import { useT } from '@/lib/i18n/useT';
 import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable';
 import { FinancialSummary } from '@/components/procurement/shared/FinancialSummary';
 import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
+import { StickyDocBar } from '@/components/procurement/shared/StickyDocBar';
 import { PQ_STATUS } from '@/lib/utils/status-colors';
 import { PQ_LABEL } from '@/lib/constants/status-labels';
 
 function resolveSupplierName(supplier: any): string {
   if (!supplier) return 'N/A';
-  if (typeof supplier === 'object') {
-    return supplier.business_name || supplier.name || supplier.contact_person || 'N/A';
-  }
+  if (typeof supplier === 'object') return supplier.business_name || supplier.name || supplier.contact_person || 'N/A';
   return `Supplier #${supplier}`;
 }
 
@@ -34,7 +32,7 @@ export default function PurchaseQuotationDetailPage() {
   const router = useRouter();
   const id = Number(params.id);
   const queryClient = useQueryClient();
-  const { isAdmin, can } = useProcPermissions();
+  const { can } = useProcPermissions();
 
   const canAward   = can('purchase_quotation', 'award');
   const canReject  = can('purchase_quotation', 'reject');
@@ -63,9 +61,9 @@ export default function PurchaseQuotationDetailPage() {
   });
 
   if (isLoading) return <DocLoadState type="loading" />;
-  if (!quotation)  return <DocLoadState type="not-found" message="Quotation not found." />;
+  if (!quotation) return <DocLoadState type="not-found" message="Quotation not found." />;
 
-  const status = quotation.status || 'pending';
+  const status       = quotation.status || 'pending';
   const supplierName = resolveSupplierName(quotation.supplier);
 
   return (
@@ -76,12 +74,60 @@ export default function PurchaseQuotationDetailPage() {
           title={`Quotation: ${quotation.quotation_number}`}
           description="View quotation details and pricing"
           breadcrumbs={[{ label: t('page', 'purchaseQuotations'), href: '/purchase-quotations' }, { label: quotation.quotation_number }]}
-          actions={
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Badge variant={PQ_STATUS[status] ?? 'info'}>{PQ_LABEL[status] || status}</Badge>
-            </div>
-          }
         />
+
+        {/* ── Sticky action bar ── */}
+        <StickyDocBar
+          docTypeLabel="Purchase Quotation"
+          docNumber={quotation.quotation_number}
+          statusVariant={PQ_STATUS[status] ?? 'info'}
+          statusLabel={PQ_LABEL[status] || status}
+        >
+          <Button variant="secondary" size="sm" onClick={() => window.open(`/print/pq/${id}`, '_blank')}>Print</Button>
+
+          {status === 'pending' && (canAward || canReject) && (
+            <>
+              {quotation.has_awarded_quotation && (
+                <span style={{ fontSize: 12, color: 'var(--color-warning)', fontWeight: 500 }}>
+                  PR already has an awarded quotation
+                </span>
+              )}
+              {canReject && (
+                <Button variant="destructive" size="sm" isLoading={rejectMutation.isPending} onClick={() => rejectMutation.mutate()}>
+                  {t('btn', 'reject')}
+                </Button>
+              )}
+              {canAward && !quotation.has_awarded_quotation && (
+                <Button
+                  variant="success"
+                  size="sm"
+                  isLoading={awardMutation.isPending}
+                  onClick={() => {
+                    const guard = canAwardQuotation(status, quotation.valid_until ?? undefined, canAward);
+                    if (!guard.canProceed) { toast(guard.reason || 'Cannot award', 'error'); return; }
+                    awardMutation.mutate();
+                  }}
+                >
+                  {t('btn', 'approve')}
+                </Button>
+              )}
+            </>
+          )}
+
+          {status === 'awarded' && canConvert && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                const guard = canCreatePurchaseOrder(status);
+                if (!guard.canProceed) { toast(guard.reason || 'Cannot create PO', 'error'); return; }
+                router.push(`/purchase-orders/new?purchase_quotation_id=${id}`);
+              }}
+            >
+              Convert to LPO
+            </Button>
+          )}
+        </StickyDocBar>
 
         <LinkedDocumentsSection
           documents={{
@@ -110,47 +156,33 @@ export default function PurchaseQuotationDetailPage() {
           <DetailField label={t('col', 'supplier')} value={supplierName} />
           <DetailField label="Quotation Date" value={new Date(quotation.quotation_date).toLocaleDateString('en-US')} />
           <DetailField label="Valid Until" value={quotation.valid_until ? new Date(quotation.valid_until).toLocaleDateString('en-US') : 'Not set'} />
-          {quotation.awarded_by_name && (
-            <DetailField label="Awarded By" value={quotation.awarded_by_name} />
-          )}
-          {quotation.awarded_at && (
-            <DetailField label="Awarded At" value={new Date(quotation.awarded_at).toLocaleDateString('en-US')} />
-          )}
-          {quotation.payment_terms && (
-            <DetailField label="Payment Terms" value={quotation.payment_terms} span={3} />
-          )}
-          {quotation.delivery_terms && (
-            <DetailField label="Delivery Terms" value={quotation.delivery_terms} span={3} />
-          )}
-          {quotation.notes && (
-            <DetailField label={t('col', 'notes')} value={quotation.notes} span={3} />
-          )}
+          {quotation.awarded_by_name && <DetailField label="Awarded By" value={quotation.awarded_by_name} />}
+          {quotation.awarded_at && <DetailField label="Awarded At" value={new Date(quotation.awarded_at).toLocaleDateString('en-US')} />}
+          {quotation.payment_terms && <DetailField label="Payment Terms" value={quotation.payment_terms} span={3} />}
+          {quotation.delivery_terms && <DetailField label="Delivery Terms" value={quotation.delivery_terms} span={3} />}
+          {quotation.notes && <DetailField label={t('col', 'notes')} value={quotation.notes} span={3} />}
         </DetailCard>
 
-        <DetailCard title={t('col', 'product')}>
+        <DetailCard title="Products">
           <div style={{ gridColumn: '1 / -1' }}>
             <ReadOnlyItemsTable
               items={quotation.items}
               columns={[
                 {
                   header: t('col', 'product'),
-                  cell: (item) => {
-                    const name = typeof item.product === 'object' && item.product ? item.product.name : `Product #${item.product_id}`;
-                    const code = typeof item.product === 'object' && item.product ? item.product.code : '';
-                    return (
-                      <>
-                        <div style={{ fontWeight: 'var(--weight-medium)' }}>{name}</div>
-                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{code}</div>
-                      </>
-                    );
-                  },
+                  cell: (item) => (
+                    <>
+                      <div style={{ fontWeight: 'var(--weight-medium)' }}>{item.product?.name ?? `Product #${item.product_id}`}</div>
+                      {item.product?.code && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item.product.code}</div>}
+                    </>
+                  ),
                 },
-                { header: t('col', 'unit'), cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{(typeof item.product === 'object' && item.product ? item.product.unit : null)?.toUpperCase() || '—'}</span> },
-                { header: t('col', 'quantity'), cell: (item) => item.quantity },
+                { header: t('col', 'unit'),      cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
+                { header: t('col', 'quantity'),  cell: (item) => item.quantity },
                 { header: t('col', 'unitPrice'), cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{formatPrice(Number(item.unit_price))}</span> },
-                { header: 'Disc %', cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.discount || 0}%</span> },
-                { header: 'Tax %', cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{(item as any).tax_rate || (item as any).tax || 0}%</span> },
-                { header: t('col', 'total'), cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(Number(item.total))}</span> },
+                { header: 'Disc %',              cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.discount || 0}%</span> },
+                { header: 'Tax %',               cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.tax_rate || item.tax || 0}%</span> },
+                { header: t('col', 'total'),     cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(Number(item.total))}</span> },
               ]}
             />
           </div>
@@ -162,55 +194,12 @@ export default function PurchaseQuotationDetailPage() {
               rows={[
                 { label: 'Subtotal', value: quotation.subtotal },
                 { label: 'Discount', value: quotation.discount, variant: 'discount', prefix: '- ', hidden: !Number(quotation.discount) },
-                { label: 'Tax', value: quotation.tax_amount, hidden: !Number(quotation.tax_amount) },
+                { label: 'Tax',      value: quotation.tax_amount, hidden: !Number(quotation.tax_amount) },
               ]}
               total={quotation.total}
             />
           </div>
         </DetailCard>
-
-        {/* Actions */}
-        <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', flexWrap: 'wrap' }}>
-          {status === 'pending' && (canAward || canReject) && (
-            <>
-              {canAward && !quotation.has_awarded_quotation && (
-                <Button
-                  variant="success"
-                  isLoading={awardMutation.isPending}
-                  onClick={() => {
-                    const guard = canAwardQuotation(status, quotation.valid_until ?? undefined, canAward);
-                    if (!guard.canProceed) { toast(guard.reason || 'Cannot award', 'error'); return; }
-                    awardMutation.mutate();
-                  }}
-                >
-                  {t('btn', 'approve')}
-                </Button>
-              )}
-              {quotation.has_awarded_quotation && (
-                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-warning)', margin: 0 }}>
-                  This PR already has an awarded quotation.
-                </p>
-              )}
-              {canReject && (
-                <Button variant="destructive" isLoading={rejectMutation.isPending} onClick={() => rejectMutation.mutate()}>
-                  {t('btn', 'reject')}
-                </Button>
-              )}
-            </>
-          )}
-          {status === 'awarded' && canConvert && (
-            <Button
-              variant="primary"
-              onClick={() => {
-                const guard = canCreatePurchaseOrder(status);
-                if (!guard.canProceed) { toast(guard.reason || 'Cannot create PO', 'error'); return; }
-                router.push(`/purchase-orders/new?purchase_quotation_id=${id}`);
-              }}
-            >
-              Convert to Purchase Order (LPO)
-            </Button>
-          )}
-        </div>
       </PageShell>
     </MainLayout>
   );
