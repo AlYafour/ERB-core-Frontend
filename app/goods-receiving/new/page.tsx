@@ -10,9 +10,8 @@ import { Button, PageHeader, PageShell } from '@/components/ui';
 import MainLayout from '@/components/layout/MainLayout';
 import { formatPrice } from '@/lib/utils/format';
 import { toast } from '@/lib/hooks/use-toast';
-import SearchableDropdown from '@/components/ui/SearchableDropdown';
-import FormField from '@/components/ui/FormField';
 import { formatBackendError, validateRequired, validatePositiveNumber } from '@/lib/utils/validation';
+import { EditableGRNItemsTable } from '@/components/procurement/EditableGRNItemsTable';
 import { canCreateGRN } from '@/lib/utils/workflow-guards';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { useT } from '@/lib/i18n/useT';
@@ -492,91 +491,23 @@ function NewGRNPageContent() {
             }}>
               Received Items
             </h3>
-            <div style={{ overflowX: 'auto' }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Unit</th>
-                    <th>Ordered Qty</th>
-                    <th>Received Qty</th>
-                    <th>Rejected Qty</th>
-                    <th>Quality Status</th>
-                    <th>Notes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item, index) => (
-                    <tr key={index}>
-                      <td>
-                        <div style={{ fontWeight: 'var(--weight-medium)' }}>
-                          {purchaseOrder?.items?.find((poItem) => poItem.id === item.purchase_order_item_id)
-                            ?.product?.name || 'N/A'}
-                        </div>
-                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                          {purchaseOrder?.items?.find((poItem) => poItem.id === item.purchase_order_item_id)
-                            ?.product?.code || ''}
-                        </div>
-                      </td>
-                      <td style={{ color: 'var(--text-secondary)' }}>
-                        {purchaseOrder?.items?.find((poItem) => poItem.id === item.purchase_order_item_id)
-                          ?.product?.unit?.toUpperCase() || '—'}
-                      </td>
-                      <td>{item.ordered_quantity}</td>
-                      <td>
-                        <input
-                          type="number"
-                          min="0"
-                          max={item.ordered_quantity}
-                          step="any"
-                          value={item.received_quantity}
-                          onChange={(e) =>
-                            updateItem(index, 'received_quantity', parseFloat(e.target.value) || 0)
-                          }
-                          className="form-input" style={{ width: 96 }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          min="0"
-                          max={item.ordered_quantity - item.received_quantity}
-                          step="any"
-                          value={item.rejected_quantity}
-                          onChange={(e) =>
-                            updateItem(index, 'rejected_quantity', parseFloat(e.target.value) || 0)
-                          }
-                          className="form-input" style={{ width: 96 }}
-                        />
-                      </td>
-                      <td>
-                        <select
-                          value={item.quality_status}
-                          onChange={(e) =>
-                            updateItem(index, 'quality_status', e.target.value as GRNItem['quality_status'])
-                          }
-                          className="form-select"
-                        >
-                          <option value="good">Good</option>
-                          <option value="damaged">Damaged</option>
-                          <option value="defective">Defective</option>
-                          <option value="missing">Missing</option>
-                        </select>
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          value={item.notes || ''}
-                          onChange={(e) => updateItem(index, 'notes', e.target.value)}
-                          className="form-input"
-                          placeholder="Notes..."
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <EditableGRNItemsTable
+              items={items}
+              onUpdate={(index, field, value) => updateItem(index, field as keyof GRNItem, value)}
+              renderProduct={(item) => {
+                const poItem = purchaseOrder?.items?.find((poi) => poi.id === item.purchase_order_item_id);
+                return (
+                  <>
+                    <div style={{ fontWeight: 'var(--weight-medium)' }}>{poItem?.product?.name || 'N/A'}</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{poItem?.product?.code || ''}</div>
+                  </>
+                );
+              }}
+              getUnit={(item) => {
+                const poItem = purchaseOrder?.items?.find((poi) => poi.id === item.purchase_order_item_id);
+                return poItem?.product?.unit?.toUpperCase() || '—';
+              }}
+            />
           </div>
 
           {/* Form Actions - Unified */}
