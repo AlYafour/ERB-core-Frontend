@@ -16,24 +16,17 @@
   align-items: center;
   gap: 16px;
   padding: 0 20px;
-  min-height: 58px;
+  min-height: 54px;
   flex-wrap: wrap;
 
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: saturate(180%) blur(14px);
-  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  background: var(--card-bg);
 
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid var(--border-subtle);
   border-left: 4px solid var(--border-default);
-  box-shadow: 0 2px 12px rgba(28, 20, 20, 0.07), 0 1px 3px rgba(28, 20, 20, 0.05);
+  box-shadow: 0 1px 4px rgba(28, 20, 20, 0.08);
 
-  margin-bottom: var(--space-5);
-  animation: slideUp 0.2s var(--ease-spring);
-}
-
-[data-theme="dark"] .proc-bar {
-  background: rgba(17, 17, 19, 0.96);
+  margin-bottom: 12px;
 }
 
 .proc-bar--success { border-left-color: var(--status-success); }
@@ -91,13 +84,13 @@
   display: flex;
   align-items: center;
   gap: 0;
-  padding: 12px 18px;
+  padding: 8px 14px;
   background: var(--surface-inset);
   border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  margin-bottom: var(--space-4);
+  border-radius: 8px;
+  margin-bottom: 8px;
   flex-wrap: wrap;
-  row-gap: 8px;
+  row-gap: 6px;
 }
 
 .proc-chain-pill {
@@ -687,23 +680,16 @@
   align-items: center;
   gap: 10px;
   padding: 0 20px;
-  min-height: 54px;
+  min-height: 50px;
 
-  background: rgba(255, 255, 255, 0.97);
-  backdrop-filter: saturate(180%) blur(14px);
-  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  background: var(--card-bg);
 
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid var(--border-subtle);
   border-left: 4px solid var(--brand);
-  box-shadow: 0 2px 12px rgba(28, 20, 20, 0.07), 0 1px 3px rgba(28, 20, 20, 0.05);
+  box-shadow: 0 1px 4px rgba(28, 20, 20, 0.08);
 
-  margin-bottom: var(--space-4);
-  animation: slideUp 0.2s var(--ease-spring);
-}
-
-[data-theme="dark"] .proc-form-bar {
-  background: rgba(17, 17, 19, 0.97);
+  margin-bottom: 12px;
 }
 
 .proc-form-bar-back {
@@ -766,4 +752,133 @@
   align-items: center;
   margin-left: auto;
   flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════════
+   FORM SPLIT LAYOUT  —  main form + sticky aside
+   ══════════════════════════════════════════════════ */
+
+.proc-form-split {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.proc-form-main {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  box-shadow: 0 1px 4px rgba(28,20,20,0.06);
+}
+
+.proc-form-aside {
+  width: 290px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: sticky;
+  top: 62px;
+}
+
+.proc-aside-card {
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  box-shadow: 0 1px 4px rgba(28,20,20,0.06);
+  overflow: hidden;
+}
+
+/* section head inside a form card (no outer margin) */
+.proc-form-main .proc-sh {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--brand);
+  background: var(--surface-subtle);
+}
+
+.proc-sh-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.proc-sh-right {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.proc-form-section {
+  padding: 12px 16px;
+}
+
+/* ── Financial aside summary ── */
+.proc-aside-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.proc-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 0;
+  font-size: var(--text-sm);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.proc-summary-row:last-child {
+  border-bottom: none;
+  padding-top: 8px;
+}
+
+.proc-summary-label {
+  color: var(--text-secondary);
+}
+
+.proc-summary-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.proc-summary-total .proc-summary-label {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}
+
+.proc-summary-total .proc-summary-value {
+  font-size: var(--text-base);
+  font-weight: 800;
+  color: var(--brand);
+}
+
+/* ── POFormSummary inside aside: stretch full width ── */
+.proc-form-aside .proc-summary-wrap {
+  justify-content: stretch;
+  margin-bottom: 0;
+}
+.proc-form-aside .proc-summary-panel {
+  width: 100%;
+}
+
+@media (max-width: 860px) {
+  .proc-form-split {
+    flex-direction: column-reverse;
+  }
+  .proc-form-aside {
+    width: 100%;
+    position: static;
+  }
 }

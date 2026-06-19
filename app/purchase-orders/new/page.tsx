@@ -185,7 +185,7 @@ function NewPOContent() {
 
   return (
     <MainLayout>
-      <PageShell>
+      <PageShell compact>
         {/* ── Sticky form bar ── */}
         <div className="proc-form-bar">
           <Link href="/purchase-orders" className="proc-form-bar-back">← {t('page', 'purchaseOrders')}</Link>
@@ -203,174 +203,181 @@ function NewPOContent() {
           </div>
         </div>
 
-        {/* Context banner */}
-        {purchaseQuotation && (
-          <DocInfoBanner title="Quotation Information (Awarded)" fields={[
-            { label: 'Quotation No.', value: purchaseQuotation.quotation_number },
-            { label: 'Supplier', value: typeof purchaseQuotation.supplier === 'object' ? purchaseQuotation.supplier.name : 'N/A' },
-            { label: 'Total', value: formatPrice(Number(purchaseQuotation.total || 0)) },
-          ]} />
-        )}
-        {purchaseRequest && !purchaseQuotation && (
-          <DocInfoBanner title="Purchase Request Information" fields={[
-            { label: 'Code', value: purchaseRequest.code },
-            { label: 'Title', value: purchaseRequest.title },
-            ...(purchaseRequest.project_code ? [{ label: 'Project', value: purchaseRequest.project_code }] : []),
-          ]} />
-        )}
+        {/* ── Split layout ── */}
+        <div className="proc-form-split">
 
-        <form ref={formRef} onSubmit={handleSubmit}>
-          {/* Header info */}
-          <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-4)' }}>
-              <div>
-                <SearchableDropdown
-                  label={t('col', 'supplier')} required
-                  options={(suppliers || []).map((s) => ({ value: s.id, label: s.name, searchText: `${s.name} ${s.business_name || ''} ${s.contact_person || ''}` }))}
-                  value={formData.supplier_id}
-                  onChange={(val) => {
-                    if (fromQR && purchaseQuotation?.status === 'awarded') { toast('Supplier is fixed for awarded quotations', 'error'); return; }
-                    setForm({ supplier_id: val ? Number(val) : 0 });
-                  }}
-                  placeholder={t('misc', 'selectSupplier')}
-                  searchPlaceholder={t('misc', 'searchSuppliers')}
-                  disabled={fromQR && purchaseQuotation?.status === 'awarded'}
-                />
-                {errors.supplier_id && <p style={{ color: 'var(--color-error)', fontSize: 'var(--text-xs)', margin: 'var(--space-1) 0 0' }}>{errors.supplier_id}</p>}
-              </div>
+          {/* ── LEFT: main form ── */}
+          <form ref={formRef} onSubmit={handleSubmit} className="proc-form-main">
 
-              <div>
-                <label className="form-label">{t('col', 'orderDate')} <span style={{ color: 'var(--color-error)' }}>*</span></label>
-                <input type="date" required className="form-input" value={formData.order_date}
-                  onChange={(e) => setForm({ order_date: e.target.value })} />
-              </div>
-
-              <FormField label={t('field', 'deliveryDate')} error={errors.delivery_date} fieldName="delivery_date">
-                <input type="date" name="delivery_date" className="form-input" value={formData.delivery_date}
-                  onChange={(e) => setForm({ delivery_date: e.target.value })} />
-              </FormField>
-
-              <FormField label={t('col', 'deliveryMethod')} fieldName="delivery_method">
-                <select className="form-select" value={formData.delivery_method}
-                  onChange={(e) => setForm({ delivery_method: e.target.value as 'pickup' | 'delivery' | '' })}>
-                  <option value="">-- Select --</option>
-                  <option value="pickup">Pick Up</option>
-                  <option value="delivery">Delivery</option>
-                </select>
-              </FormField>
+            {/* Order Details */}
+            <div className="proc-sh">
+              <span className="proc-sh-label">Order Details</span>
             </div>
-
-            <div style={{ marginTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-4)' }}>
-              <label className="form-label">Cost Code <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(optional)</span></label>
-              <CostCodePicker value={costCode} onChange={setCostCode} />
-              {costCode && (
-                <div style={{ marginTop: 6, padding: '6px 10px', background: 'var(--muted)', borderRadius: 6, fontSize: 13 }}>
-                  <span style={{ fontWeight: 600, color: '#f97316' }}>{costCode.excel_code}</span>
-                  <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>{costCode.description}</span>
+            <div className="proc-form-section">
+              <div className="form-grid form-grid--2col">
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <SearchableDropdown
+                    label={t('col', 'supplier')} required
+                    options={(suppliers || []).map((s) => ({ value: s.id, label: s.name, searchText: `${s.name} ${s.business_name || ''} ${s.contact_person || ''}` }))}
+                    value={formData.supplier_id}
+                    onChange={(val) => {
+                      if (fromQR && purchaseQuotation?.status === 'awarded') { toast('Supplier is fixed for awarded quotations', 'error'); return; }
+                      setForm({ supplier_id: val ? Number(val) : 0 });
+                    }}
+                    placeholder={t('misc', 'selectSupplier')}
+                    searchPlaceholder={t('misc', 'searchSuppliers')}
+                    disabled={fromQR && purchaseQuotation?.status === 'awarded'}
+                  />
+                  {errors.supplier_id && <p style={{ color: 'var(--color-error)', fontSize: 'var(--text-xs)', margin: '4px 0 0' }}>{errors.supplier_id}</p>}
                 </div>
-              )}
-            </div>
-          </div>
 
-          {/* Items */}
-          <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
-              <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', margin: 0 }}>{t('section', 'orderItems')}</h3>
-              {!fromQR && items.length > 0 && (
-                <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                  <button type="button" className="btn btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
-                    onClick={() => setItems((p) => p.map((i) => ({ ...i, tax_rate: 5 })))}>Apply 5% VAT to All</button>
-                  {items.some((i) => (i.tax_rate ?? 0) > 0) && (
-                    <button type="button" className="btn btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
-                      onClick={() => setItems((p) => p.map((i) => ({ ...i, tax_rate: 0 })))}>Clear VAT</button>
+                <div>
+                  <label className="form-label">{t('col', 'orderDate')} <span style={{ color: 'var(--color-error)' }}>*</span></label>
+                  <input type="date" required className="form-input" value={formData.order_date}
+                    onChange={(e) => setForm({ order_date: e.target.value })} />
+                </div>
+
+                <FormField label={t('field', 'deliveryDate')} error={errors.delivery_date} fieldName="delivery_date">
+                  <input type="date" name="delivery_date" className="form-input" value={formData.delivery_date}
+                    onChange={(e) => setForm({ delivery_date: e.target.value })} />
+                </FormField>
+
+                <FormField label={t('col', 'deliveryMethod')} fieldName="delivery_method">
+                  <select className="form-select" value={formData.delivery_method}
+                    onChange={(e) => setForm({ delivery_method: e.target.value as 'pickup' | 'delivery' | '' })}>
+                    <option value="">-- Select --</option>
+                    <option value="pickup">Pick Up</option>
+                    <option value="delivery">Delivery</option>
+                  </select>
+                </FormField>
+
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label className="form-label">Cost Code <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(optional)</span></label>
+                  <CostCodePicker value={costCode} onChange={setCostCode} />
+                  {costCode && (
+                    <div style={{ marginTop: 5, padding: '5px 10px', background: 'var(--muted)', borderRadius: 6, fontSize: 13 }}>
+                      <span style={{ fontWeight: 600, color: '#f97316' }}>{costCode.excel_code}</span>
+                      <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>{costCode.description}</span>
+                    </div>
                   )}
                 </div>
+              </div>
+            </div>
+
+            {/* Items */}
+            <div className="proc-sh">
+              <span className="proc-sh-label">{t('section', 'orderItems')}</span>
+              <div className="proc-sh-right">
+                {!fromQR && items.length > 0 && (
+                  <>
+                    <button type="button" className="btn btn-secondary" style={{ fontSize: 11, padding: '3px 8px' }}
+                      onClick={() => setItems((p) => p.map((i) => ({ ...i, tax_rate: 5 })))}>Apply 5% VAT</button>
+                    {items.some((i) => (i.tax_rate ?? 0) > 0) && (
+                      <button type="button" className="btn btn-secondary" style={{ fontSize: 11, padding: '3px 8px' }}
+                        onClick={() => setItems((p) => p.map((i) => ({ ...i, tax_rate: 0 })))}>Clear VAT</button>
+                    )}
+                  </>
+                )}
+                {errors.items && <span style={{ fontSize: 11, color: 'var(--color-error)' }}>{errors.items}</span>}
+              </div>
+            </div>
+            <div style={{ padding: '10px 12px' }}>
+              {!fromQR && !purchaseRequest && (
+                <div style={{ marginBottom: 12 }}>
+                  <AddItemPanel value={newItem} onChange={setNewItem} onAdd={handleAddItem} productOptions={productOptions} showTaxRate />
+                </div>
+              )}
+              {items.length > 0 ? (
+                <EditableStandardItemsTable
+                  items={items}
+                  onUpdate={(idx, field, val) => setItems((p) => p.map((it, i) => i === idx ? { ...it, [field]: val } : it))}
+                  onRemove={fromQR ? undefined : (idx) => setItems((p) => p.filter((_, i) => i !== idx))}
+                  readOnly={fromQR}
+                  showUnit
+                  getUnit={(item) => (item as FormItem)._product?.unit?.toUpperCase() || '—'}
+                  renderProduct={(item) => {
+                    const fItem = item as FormItem;
+                    const prod = fItem._product || products?.results?.find((p) => p.id === item.product_id);
+                    return (
+                      <>
+                        <div style={{ fontWeight: 'var(--weight-medium)' }}>{prod?.name || `Product #${item.product_id}`}</div>
+                        {prod?.code && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{prod.code}</div>}
+                      </>
+                    );
+                  }}
+                  formatPrice={formatPrice}
+                />
+              ) : (
+                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)', background: 'var(--surface-subtle)', borderRadius: 8 }}>
+                  {fromQR ? 'No products in the awarded quotation.' : 'No products yet.'}
+                </div>
               )}
             </div>
 
-            {!fromQR && !purchaseRequest && (
-              <AddItemPanel value={newItem} onChange={setNewItem} onAdd={handleAddItem} productOptions={productOptions} showTaxRate />
-            )}
-
-            {errors.items && <p style={{ color: 'var(--color-error)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-3)' }}>{errors.items}</p>}
-
-            {items.length > 0 ? (
-              <EditableStandardItemsTable
-                items={items}
-                onUpdate={(idx, field, val) => setItems((p) => p.map((it, i) => i === idx ? { ...it, [field]: val } : it))}
-                onRemove={fromQR ? undefined : (idx) => setItems((p) => p.filter((_, i) => i !== idx))}
-                readOnly={fromQR}
-                showUnit
-                getUnit={(item) => (item as FormItem)._product?.unit?.toUpperCase() || '—'}
-                renderProduct={(item) => {
-                  const fItem = item as FormItem;
-                  const prod = fItem._product || products?.results?.find((p) => p.id === item.product_id);
-                  return (
-                    <>
-                      <div style={{ fontWeight: 'var(--weight-medium)' }}>{prod?.name || `Product #${item.product_id}`}</div>
-                      {prod?.code && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{prod.code}</div>}
-                    </>
-                  );
-                }}
-                formatPrice={formatPrice}
-              />
-            ) : (
-              <div style={{ textAlign: 'center', padding: 'var(--space-8)', color: 'var(--text-secondary)', background: 'var(--surface-subtle)', borderRadius: 'var(--radius-md)' }}>
-                {fromQR ? 'No products in the awarded quotation.' : 'No products yet.'}
-              </div>
-            )}
-          </div>
-
-          {/* Terms */}
-          <div className="card" style={{ marginBottom: 'var(--space-4)', background: 'var(--surface-inset)' }}>
-            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--weight-semibold)', margin: '0 0 var(--space-4)' }}>{t('section', 'termsConditions')}</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-4)' }}>
-              <div>
-                <label className="form-label">{t('field', 'paymentTerms')}</label>
-                <textarea className="form-textarea" rows={3} placeholder="Payment terms…"
-                  value={formData.payment_terms} onChange={(e) => setForm({ payment_terms: e.target.value })} />
-              </div>
-              <div>
-                <label className="form-label">{t('field', 'deliveryTerms')}</label>
-                <textarea className="form-textarea" rows={3} placeholder="Delivery terms…"
-                  value={formData.delivery_terms} onChange={(e) => setForm({ delivery_terms: e.target.value })} />
-              </div>
-              <div>
-                <label className="form-label">{t('col', 'notes')}</label>
-                <textarea className="form-textarea" rows={3} placeholder="Additional notes…"
-                  value={formData.notes} onChange={(e) => setForm({ notes: e.target.value })} />
-              </div>
-              <div>
-                <label className="form-label">Standard Terms & Conditions</label>
-                <textarea className="form-textarea" rows={3} placeholder="Terms & Conditions…" style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)' }}
-                  value={formData.terms_and_conditions} onChange={(e) => setForm({ terms_and_conditions: e.target.value })} />
+            {/* Terms */}
+            <div className="proc-sh">
+              <span className="proc-sh-label">{t('section', 'termsConditions')}</span>
+            </div>
+            <div className="proc-form-section">
+              <div className="form-grid form-grid--2col">
+                <div>
+                  <label className="form-label">{t('field', 'paymentTerms')}</label>
+                  <textarea className="form-textarea" rows={2} placeholder="Payment terms…"
+                    value={formData.payment_terms} onChange={(e) => setForm({ payment_terms: e.target.value })} />
+                </div>
+                <div>
+                  <label className="form-label">{t('field', 'deliveryTerms')}</label>
+                  <textarea className="form-textarea" rows={2} placeholder="Delivery terms…"
+                    value={formData.delivery_terms} onChange={(e) => setForm({ delivery_terms: e.target.value })} />
+                </div>
+                <div>
+                  <label className="form-label">{t('col', 'notes')}</label>
+                  <textarea className="form-textarea" rows={2} placeholder="Additional notes…"
+                    value={formData.notes} onChange={(e) => setForm({ notes: e.target.value })} />
+                </div>
+                <div>
+                  <label className="form-label">Standard Terms & Conditions</label>
+                  <textarea className="form-textarea" rows={2} placeholder="Terms & Conditions…"
+                    value={formData.terms_and_conditions} onChange={(e) => setForm({ terms_and_conditions: e.target.value })} />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Financial summary */}
-          <POFormSummary
-            totals={totals}
-            discount={formData.discount}
-            taxRate={formData.tax_rate}
-            transportationCharge={formData.transportation_charge}
-            transportVatIncluded={formData.transport_vat_included}
-            lockDiscount={fromQR}
-            onDiscountChange={fromQR ? undefined : (v) => setForm({ discount: v })}
-            onTaxRateChange={(v) => setForm({ tax_rate: v })}
-            onTransportChange={(v) => setForm({ transportation_charge: v })}
-            onTransportVatChange={(v) => setForm({ transport_vat_included: v })}
-          />
+          </form>
 
-          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-            <Button type="submit" variant="primary" isLoading={mutation.isPending} disabled={mutation.isPending}>
-              {mutation.isPending ? t('btn', 'creating') : t('btn', 'createPO')}
-            </Button>
-            <Link href={purchaseRequestId ? `/purchase-requests/${purchaseRequestId}` : '/purchase-requests'}>
-              <Button variant="secondary">{t('btn', 'cancel')}</Button>
-            </Link>
+          {/* ── RIGHT: sticky aside ── */}
+          <div className="proc-form-aside">
+
+            {purchaseQuotation && (
+              <DocInfoBanner title="Quotation (Awarded)" fields={[
+                { label: 'Quotation No.', value: purchaseQuotation.quotation_number },
+                { label: 'Supplier', value: typeof purchaseQuotation.supplier === 'object' ? purchaseQuotation.supplier.name : 'N/A' },
+                { label: 'Total', value: formatPrice(Number(purchaseQuotation.total || 0)) },
+              ]} />
+            )}
+            {purchaseRequest && !purchaseQuotation && (
+              <DocInfoBanner title="Purchase Request" fields={[
+                { label: 'Code', value: purchaseRequest.code },
+                { label: 'Title', value: purchaseRequest.title },
+                ...(purchaseRequest.project_code ? [{ label: 'Project', value: purchaseRequest.project_code }] : []),
+              ]} />
+            )}
+
+            <POFormSummary
+              totals={totals}
+              discount={formData.discount}
+              taxRate={formData.tax_rate}
+              transportationCharge={formData.transportation_charge}
+              transportVatIncluded={formData.transport_vat_included}
+              lockDiscount={fromQR}
+              onDiscountChange={fromQR ? undefined : (v) => setForm({ discount: v })}
+              onTaxRateChange={(v) => setForm({ tax_rate: v })}
+              onTransportChange={(v) => setForm({ transportation_charge: v })}
+              onTransportVatChange={(v) => setForm({ transport_vat_included: v })}
+            />
+
           </div>
-        </form>
+        </div>
       </PageShell>
     </MainLayout>
   );

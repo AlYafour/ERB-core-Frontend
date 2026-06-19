@@ -323,24 +323,9 @@ function NewPurchaseQuotationPageContent() {
     setItems(items.map((item) => ({ ...item, tax_rate: rate })));
   };
 
-  const SectionHeader = ({ label, right }: { label: string; right?: React.ReactNode }) => (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '10px 20px',
-      borderBottom: '1px solid var(--border-subtle)',
-      borderLeft: '3px solid var(--brand)',
-      background: 'var(--surface-subtle)',
-    }}>
-      <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
-        {label}
-      </span>
-      {right && <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>{right}</div>}
-    </div>
-  );
-
   return (
     <MainLayout>
-      <PageShell>
+      <PageShell compact>
 
         {/* ── Sticky form bar ── */}
         <div className="proc-form-bar">
@@ -359,24 +344,11 @@ function NewPurchaseQuotationPageContent() {
           </div>
         </div>
 
-        {/* ── Source QR info banner ── */}
-        {quotationRequest && (
-          <DocInfoBanner
-            title="Quotation Request"
-            variant="info"
-            fields={[
-              { label: 'Request #', value: `#${quotationRequest.id}` },
-              { label: 'Supplier', value: typeof quotationRequest.supplier === 'object' ? (quotationRequest.supplier.name || quotationRequest.supplier.business_name || '—') : '—' },
-              { label: 'Items', value: quotationRequest.items ? `${quotationRequest.items.length} items pre-loaded` : '—' },
-            ]}
-          />
-        )}
-
         {/* ── Validation errors ── */}
         {Object.keys(errors).length > 0 && (
-          <div style={{ backgroundColor: 'var(--color-error-light)', border: '1px solid var(--color-error)', borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)' }}>
-            <p style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--color-error)', margin: '0 0 var(--space-2) 0', fontSize: 'var(--text-sm)' }}>Please fix the following errors:</p>
-            <ul style={{ margin: 0, paddingInlineStart: '1.25rem', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ backgroundColor: 'var(--color-error-light)', border: '1px solid var(--color-error)', borderRadius: 8, padding: '10px 14px' }}>
+            <p style={{ fontWeight: 600, color: 'var(--color-error)', margin: '0 0 6px 0', fontSize: 'var(--text-sm)' }}>Please fix the following errors:</p>
+            <ul style={{ margin: 0, paddingInlineStart: '1.25rem', display: 'flex', flexDirection: 'column', gap: 3 }}>
               {Object.entries(errors).map(([key, msg]) => msg ? (
                 <li key={key} style={{ fontSize: 'var(--text-sm)', color: 'var(--color-error)' }}>{msg}</li>
               ) : null)}
@@ -384,142 +356,155 @@ function NewPurchaseQuotationPageContent() {
           </div>
         )}
 
-        {/* ── Form ── */}
-        <form ref={formRef} onSubmit={handleSubmit} style={{
-          background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-          borderRadius: 'var(--radius-lg)', boxShadow: 'var(--card-shadow)', overflow: 'hidden',
-        }}>
+        {/* ── Split layout: form left, summary right ── */}
+        <div className="proc-form-split">
 
-          {/* Section 1: Quotation Details */}
-          <SectionHeader label="Quotation Details" />
-          <div style={{ padding: '14px 20px' }}>
-            <div className="form-grid form-grid--2col">
-              <FormField label={t('col', 'supplier')} required error={errors.supplier_id} fieldName="supplier_id">
-                <SearchableDropdown
-                  options={[
-                    { value: 0, label: 'Select Supplier' },
-                    ...(suppliers?.results.filter((s) => s.is_active).map((supplier) => ({
-                      value: supplier.id, label: supplier.business_name || supplier.name,
-                      searchText: `${supplier.business_name || ''} ${supplier.name || ''} ${supplier.contact_person || ''}`,
-                    })) || []),
-                  ]}
-                  value={formData.supplier_id}
-                  onChange={(val) => { setFormData({ ...formData, supplier_id: Number(val) }); if (errors.supplier_id) setErrors({ ...errors, supplier_id: '' }); }}
-                  placeholder="Select Supplier"
-                  allowClear
-                />
-              </FormField>
+          {/* ── LEFT: main form ── */}
+          <form ref={formRef} onSubmit={handleSubmit} className="proc-form-main">
 
-              <FormField label="Quotation Date" required error={errors.quotation_date} fieldName="quotation_date">
-                <input type="date" name="quotation_date" value={formData.quotation_date}
-                  onChange={(e) => { setFormData({ ...formData, quotation_date: e.target.value }); if (errors.quotation_date) setErrors({ ...errors, quotation_date: '' }); }}
-                  className="form-input" />
-              </FormField>
-
-              <FormField label="Valid Until" error={errors.valid_until} fieldName="valid_until">
-                <input type="date" name="valid_until" value={formData.valid_until}
-                  onChange={(e) => { setFormData({ ...formData, valid_until: e.target.value }); if (errors.valid_until) setErrors({ ...errors, valid_until: '' }); }}
-                  className="form-input" />
-              </FormField>
-
-              <FormField label="Discount (%)" error={errors.discount} fieldName="discount">
-                <input type="number" name="discount" step="0.01" min="0" value={formData.discount}
-                  onChange={(e) => { setFormData({ ...formData, discount: Number(e.target.value) }); if (errors.discount) setErrors({ ...errors, discount: '' }); }}
-                  className="form-input" />
-              </FormField>
+            {/* Section 1: Quotation Details */}
+            <div className="proc-sh">
+              <span className="proc-sh-label">Quotation Details</span>
             </div>
-          </div>
+            <div className="proc-form-section">
+              <div className="form-grid form-grid--2col">
+                <FormField label={t('col', 'supplier')} required error={errors.supplier_id} fieldName="supplier_id">
+                  <SearchableDropdown
+                    options={[
+                      { value: 0, label: 'Select Supplier' },
+                      ...(suppliers?.results.filter((s) => s.is_active).map((supplier) => ({
+                        value: supplier.id, label: supplier.business_name || supplier.name,
+                        searchText: `${supplier.business_name || ''} ${supplier.name || ''} ${supplier.contact_person || ''}`,
+                      })) || []),
+                    ]}
+                    value={formData.supplier_id}
+                    onChange={(val) => { setFormData({ ...formData, supplier_id: Number(val) }); if (errors.supplier_id) setErrors({ ...errors, supplier_id: '' }); }}
+                    placeholder="Select Supplier"
+                    allowClear
+                  />
+                </FormField>
 
-          {/* Section 2: Terms */}
-          <SectionHeader label="Terms & Conditions" />
-          <div style={{ padding: '14px 20px' }}>
-            <div className="form-grid form-grid--2col">
-              <div style={{ gridColumn: '1 / -1' }}>
+                <FormField label="Quotation Date" required error={errors.quotation_date} fieldName="quotation_date">
+                  <input type="date" name="quotation_date" value={formData.quotation_date}
+                    onChange={(e) => { setFormData({ ...formData, quotation_date: e.target.value }); if (errors.quotation_date) setErrors({ ...errors, quotation_date: '' }); }}
+                    className="form-input" />
+                </FormField>
+
+                <FormField label="Valid Until" error={errors.valid_until} fieldName="valid_until">
+                  <input type="date" name="valid_until" value={formData.valid_until}
+                    onChange={(e) => { setFormData({ ...formData, valid_until: e.target.value }); if (errors.valid_until) setErrors({ ...errors, valid_until: '' }); }}
+                    className="form-input" />
+                </FormField>
+
+                <FormField label="Discount (%)" error={errors.discount} fieldName="discount">
+                  <input type="number" name="discount" step="0.01" min="0" value={formData.discount}
+                    onChange={(e) => { setFormData({ ...formData, discount: Number(e.target.value) }); if (errors.discount) setErrors({ ...errors, discount: '' }); }}
+                    className="form-input" />
+                </FormField>
+
+                <FormField label="Delivery Method">
+                  <select value={formData.delivery_method}
+                    onChange={(e) => setFormData({ ...formData, delivery_method: e.target.value as 'pickup' | 'delivery' | '' })}
+                    className="form-select">
+                    <option value="">— Select —</option>
+                    <option value="pickup">Pick Up</option>
+                    <option value="delivery">Delivery</option>
+                  </select>
+                </FormField>
+
                 <FormField label="Payment Terms">
-                  <textarea value={formData.payment_terms} onChange={(e) => setFormData({ ...formData, payment_terms: e.target.value })} rows={3} className="form-textarea" />
+                  <textarea value={formData.payment_terms} onChange={(e) => setFormData({ ...formData, payment_terms: e.target.value })} rows={2} className="form-textarea" />
                 </FormField>
-              </div>
-              <FormField label="Delivery Method">
-                <select value={formData.delivery_method}
-                  onChange={(e) => setFormData({ ...formData, delivery_method: e.target.value as 'pickup' | 'delivery' | '' })}
-                  className="form-select">
-                  <option value="">— Select —</option>
-                  <option value="pickup">Pick Up</option>
-                  <option value="delivery">Delivery</option>
-                </select>
-              </FormField>
-              <FormField label="Delivery Terms">
-                <textarea value={formData.delivery_terms} onChange={(e) => setFormData({ ...formData, delivery_terms: e.target.value })} rows={3} className="form-textarea" />
-              </FormField>
-              <div style={{ gridColumn: '1 / -1' }}>
+
+                <FormField label="Delivery Terms">
+                  <textarea value={formData.delivery_terms} onChange={(e) => setFormData({ ...formData, delivery_terms: e.target.value })} rows={2} className="form-textarea" />
+                </FormField>
+
                 <FormField label="Notes">
-                  <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={3} className="form-textarea" />
+                  <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={2} className="form-textarea" />
                 </FormField>
               </div>
             </div>
-          </div>
 
-          {/* Section 3: Products */}
-          <SectionHeader
-            label={`Products${items.length > 0 ? ` · ${items.length}` : ''}`}
-            right={
-              <>
-                {errors.items && <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-error)' }}>{errors.items}</span>}
+            {/* Section 2: Products */}
+            <div className="proc-sh">
+              <span className="proc-sh-label">{`Products${items.length > 0 ? ` · ${items.length}` : ''}`}</span>
+              <div className="proc-sh-right">
+                {errors.items && <span style={{ fontSize: 11, color: 'var(--color-error)' }}>{errors.items}</span>}
                 {items.length > 0 && <Button type="button" variant="secondary" size="sm" onClick={() => applyVatToAll(5)}>Apply 5% VAT</Button>}
                 {items.length > 0 && items.some((i) => (i.tax_rate ?? 0) > 0) && <Button type="button" variant="secondary" size="sm" onClick={() => applyVatToAll(0)}>Clear VAT</Button>}
-              </>
-            }
-          />
-          <div style={{ padding: '14px 16px' }}>
-            {items.length > 0 ? (
-              <EditableStandardItemsTable
-                items={items}
-                onUpdate={handleUpdateItem}
-                onRemove={handleRemoveItem}
-                productOptions={products?.results?.map((p) => ({ value: p.id, label: `${p.name} (${p.code})`, searchText: `${p.name} ${p.code} ${p.category || ''}` })) || []}
-                showUnit={true}
-                getUnit={(item) => { const product = products?.results?.find((p) => p.id === item.product_id); return product?.unit?.toUpperCase() || '—'; }}
-                formatPrice={formatPrice}
-              />
-            ) : (
-              <div style={{ padding: '28px 16px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
-                <p style={{ margin: 0, fontSize: 'var(--text-sm)' }}>
-                  {quotationRequestId ? 'No products found in the Quotation Request.' : 'No products loaded. Please create a Quotation Request with products first.'}
-                </p>
               </div>
-            )}
-          </div>
+            </div>
+            <div style={{ padding: '10px 12px' }}>
+              {items.length > 0 ? (
+                <EditableStandardItemsTable
+                  items={items}
+                  onUpdate={handleUpdateItem}
+                  onRemove={handleRemoveItem}
+                  productOptions={products?.results?.map((p) => ({ value: p.id, label: `${p.name} (${p.code})`, searchText: `${p.name} ${p.code} ${p.category || ''}` })) || []}
+                  showUnit={true}
+                  getUnit={(item) => { const product = products?.results?.find((p) => p.id === item.product_id); return product?.unit?.toUpperCase() || '—'; }}
+                  formatPrice={formatPrice}
+                />
+              ) : (
+                <div style={{ padding: '20px 12px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                  <p style={{ margin: 0, fontSize: 'var(--text-sm)' }}>
+                    {quotationRequestId ? 'No products found in the Quotation Request.' : 'Please create a Quotation Request with products first.'}
+                  </p>
+                </div>
+              )}
+            </div>
 
-          {/* Section 4: Summary */}
-          <SectionHeader label="Summary" />
-          <div style={{ padding: '14px 20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <div style={{ width: 280, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
-                  <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatPrice(calculateSubtotal())}</span>
+          </form>
+
+          {/* ── RIGHT: sticky aside ── */}
+          <div className="proc-form-aside">
+
+            {/* Source QR info */}
+            {quotationRequest && (
+              <DocInfoBanner
+                title="Quotation Request"
+                variant="info"
+                fields={[
+                  { label: 'Request #', value: `#${quotationRequest.id}` },
+                  { label: 'Supplier', value: typeof quotationRequest.supplier === 'object' ? (quotationRequest.supplier.name || quotationRequest.supplier.business_name || '—') : '—' },
+                  { label: 'Items', value: quotationRequest.items ? `${quotationRequest.items.length} pre-loaded` : '—' },
+                ]}
+              />
+            )}
+
+            {/* Live financial summary */}
+            <div className="proc-aside-card">
+              <div className="proc-sh" style={{ borderRadius: 0 }}>
+                <span className="proc-sh-label">Summary</span>
+              </div>
+              <div style={{ padding: '10px 14px' }} className="proc-aside-summary">
+                <div className="proc-summary-row">
+                  <span className="proc-summary-label">Subtotal</span>
+                  <span className="proc-summary-value">{formatPrice(calculateSubtotal())}</span>
                 </div>
                 {formData.discount > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Discount ({formData.discount}%)</span>
-                    <span style={{ fontWeight: 600, color: 'var(--color-error)', fontVariantNumeric: 'tabular-nums' }}>− {formatPrice(calculateSubtotal() * (formData.discount / 100))}</span>
+                  <div className="proc-summary-row">
+                    <span className="proc-summary-label">Discount ({formData.discount}%)</span>
+                    <span className="proc-summary-value" style={{ color: 'var(--color-error)' }}>− {formatPrice(calculateSubtotal() * (formData.discount / 100))}</span>
                   </div>
                 )}
                 {calculateTax() > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>VAT</span>
-                    <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatPrice(calculateTax())}</span>
+                  <div className="proc-summary-row">
+                    <span className="proc-summary-label">VAT</span>
+                    <span className="proc-summary-value">{formatPrice(calculateTax())}</span>
                   </div>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid var(--border-default)', paddingTop: 10, marginTop: 2 }}>
-                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{t('col', 'total')}</span>
-                  <span style={{ fontWeight: 800, fontSize: 'var(--text-base)', color: 'var(--brand)', fontVariantNumeric: 'tabular-nums' }}>{formatPrice(calculateTotal())}</span>
+                <div className="proc-summary-row proc-summary-total">
+                  <span className="proc-summary-label">{t('col', 'total')}</span>
+                  <span className="proc-summary-value">{formatPrice(calculateTotal())}</span>
                 </div>
               </div>
             </div>
-          </div>
 
-        </form>
+          </div>
+        </div>
+
       </PageShell>
     </MainLayout>
   );

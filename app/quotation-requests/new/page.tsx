@@ -205,7 +205,7 @@ function NewQuotationRequestPageContent() {
 
   return (
     <MainLayout>
-      <PageShell>
+      <PageShell compact>
 
         {/* ── Sticky form bar ── */}
         <div className="proc-form-bar">
@@ -224,110 +224,98 @@ function NewQuotationRequestPageContent() {
           </div>
         </div>
 
-        {purchaseRequest && (
-          <DocInfoBanner
-            title="Purchase Request"
-            variant={purchaseRequest.status !== 'approved' ? 'warning' : 'info'}
-            fields={[
-              { label: 'Reference', value: purchaseRequest.code },
-              { label: 'Status', value: purchaseRequest.status },
-              { label: 'Items', value: purchaseRequest.items.length },
-            ]}
-          />
-        )}
+        {/* ── Split layout ── */}
+        <div className="proc-form-split">
 
-        {/* Form Card */}
-        <form ref={formRef} onSubmit={handleSubmit} className="card">
-          {/* Form Fields Grid */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: 'var(--space-3) var(--space-4)',
-            marginBottom: 'var(--space-4)',
-          }}>
-            <FormField
-              label={t('col', 'supplier')}
-              required
-              error={errors.supplier_id}
-              fieldName="supplier_id"
-            >
-              <SearchableDropdown
-                options={[
-                  { value: 0, label: 'Select Supplier' },
-                  ...(allSuppliers?.map((supplier) => ({
-                      value: supplier.id,
-                      label: supplier.business_name || supplier.name,
-                      searchText: `${supplier.business_name || ''} ${supplier.name || ''} ${supplier.contact_person || ''} ${supplier.supplier_number || ''}`.trim(),
-                    })) || []),
-                ]}
-                value={formData.supplier_id}
-                onChange={(val) => {
-                  setFormData({ ...formData, supplier_id: Number(val) });
-                  if (errors.supplier_id) {
-                    setErrors({ ...errors, supplier_id: '' });
-                  }
-                }}
-                placeholder="Select Supplier"
-                allowClear
-              />
-            </FormField>
+          {/* ── LEFT: form ── */}
+          <form ref={formRef} onSubmit={handleSubmit} className="proc-form-main">
 
-            <div style={{ gridColumn: 'span 2' }}>
-              <FormField
-                label={t('col', 'notes')}
-                error={errors.notes}
-                fieldName="notes"
-              >
-                <textarea
-                  name="notes"
-                  value={formData.notes}
-                  onChange={(e) => {
-                    setFormData({ ...formData, notes: e.target.value });
-                    if (errors.notes) {
-                      setErrors({ ...errors, notes: '' });
-                    }
-                  }}
-                  rows={3}
-                  className="form-textarea"
-                />
-              </FormField>
+            {/* Details section */}
+            <div className="proc-sh">
+              <span className="proc-sh-label">Quotation Request Details</span>
             </div>
+            <div className="proc-form-section">
+              <div className="form-grid form-grid--2col">
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <FormField label={t('col', 'supplier')} required error={errors.supplier_id} fieldName="supplier_id">
+                    <SearchableDropdown
+                      options={[
+                        { value: 0, label: 'Select Supplier' },
+                        ...(allSuppliers?.map((supplier) => ({
+                          value: supplier.id,
+                          label: supplier.business_name || supplier.name,
+                          searchText: `${supplier.business_name || ''} ${supplier.name || ''} ${supplier.contact_person || ''} ${supplier.supplier_number || ''}`.trim(),
+                        })) || []),
+                      ]}
+                      value={formData.supplier_id}
+                      onChange={(val) => { setFormData({ ...formData, supplier_id: Number(val) }); if (errors.supplier_id) setErrors({ ...errors, supplier_id: '' }); }}
+                      placeholder="Select Supplier"
+                      allowClear
+                    />
+                  </FormField>
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <FormField label={t('col', 'notes')} error={errors.notes} fieldName="notes">
+                    <textarea name="notes" value={formData.notes}
+                      onChange={(e) => { setFormData({ ...formData, notes: e.target.value }); if (errors.notes) setErrors({ ...errors, notes: '' }); }}
+                      rows={2} className="form-textarea" />
+                  </FormField>
+                </div>
+              </div>
+            </div>
+
+            {/* Products section */}
+            {purchaseRequest && (
+              <>
+                <div className="proc-sh">
+                  <span className="proc-sh-label">{t('col', 'product')} · {items.length}</span>
+                  <div className="proc-sh-right">
+                    {errors.items && <span style={{ fontSize: 11, color: 'var(--color-error)' }}>{errors.items}</span>}
+                  </div>
+                </div>
+                <div style={{ padding: '10px 12px' }}>
+                  <ReadOnlyItemsTable
+                    items={items}
+                    columns={[
+                      {
+                        header: t('col', 'product'),
+                        cell: (item) => {
+                          const product = purchaseRequest.items.find((i) => (i.product?.id || i.product_id) === item.product_id)?.product;
+                          return <div className="cell-product-name">{product?.name || 'N/A'}</div>;
+                        },
+                      },
+                      {
+                        header: t('col', 'code'),
+                        cell: (item) => {
+                          const product = purchaseRequest.items.find((i) => (i.product?.id || i.product_id) === item.product_id)?.product;
+                          return <span className="cell-product-code">{product?.code || '—'}</span>;
+                        },
+                      },
+                      { header: t('col', 'quantity'), cell: (item) => <span>{item.quantity}</span> },
+                    ]}
+                  />
+                </div>
+              </>
+            )}
+
+          </form>
+
+          {/* ── RIGHT: aside ── */}
+          <div className="proc-form-aside">
+            {purchaseRequest && (
+              <DocInfoBanner
+                title="Purchase Request"
+                variant={purchaseRequest.status !== 'approved' ? 'warning' : 'info'}
+                fields={[
+                  { label: 'Reference', value: purchaseRequest.code },
+                  { label: 'Status', value: purchaseRequest.status },
+                  { label: 'Items', value: purchaseRequest.items.length },
+                ]}
+              />
+            )}
           </div>
 
-          {/* Items Section */}
-          {purchaseRequest && (
-            <div style={{ marginBottom: 'var(--space-4)' }}>
-              <div className="proc-section-head">
-                <h3 className="proc-section-title">
-                  {t('col', 'product')}
-                  <span className="proc-section-count">{items.length}</span>
-                </h3>
-                {errors.items && <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-error)' }}>{errors.items}</span>}
-              </div>
-              <ReadOnlyItemsTable
-                items={items}
-                columns={[
-                  {
-                    header: t('col', 'product'),
-                    cell: (item) => {
-                      const product = purchaseRequest.items.find((i) => (i.product?.id || i.product_id) === item.product_id)?.product;
-                      return <div className="cell-product-name">{product?.name || 'N/A'}</div>;
-                    },
-                  },
-                  {
-                    header: t('col', 'code'),
-                    cell: (item) => {
-                      const product = purchaseRequest.items.find((i) => (i.product?.id || i.product_id) === item.product_id)?.product;
-                      return <span className="cell-product-code">{product?.code || '—'}</span>;
-                    },
-                  },
-                  { header: t('col', 'quantity'), cell: (item) => <span>{item.quantity}</span> },
-                ]}
-              />
-            </div>
-          )}
-
-        </form>
+        </div>
       </PageShell>
     </MainLayout>
   );

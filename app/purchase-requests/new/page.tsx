@@ -279,7 +279,7 @@ function NewPurchaseRequestPageContent() {
 
   return (
     <MainLayout>
-      <PageShell>
+      <PageShell compact>
 
         {/* ── Sticky form bar ── */}
         <div className="proc-form-bar">
