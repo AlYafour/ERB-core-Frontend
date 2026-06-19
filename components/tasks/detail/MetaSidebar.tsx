@@ -6,37 +6,37 @@ import { UserRow } from './_shared';
 
 interface Props {
   task: TaskDetail;
-  onStatusChange: (s: TaskStatus) => void;
+  onStatusChange?: (s: TaskStatus) => void;
   onPriorityChange: (p: TaskDetail['priority']) => void;
   changingMeta: boolean;
 }
 
-export function MetaSidebar({ task, onStatusChange, onPriorityChange, changingMeta }: Props) {
+export function MetaSidebar({ task, onPriorityChange, changingMeta }: Props) {
   const od = isOverdue(task);
   const statusCfg = STATUS_CONFIG[task.status];
 
   return (
     <aside className="task-meta-sidebar">
 
-      {/* Status */}
+      {/* Status — read-only badge; changes via workflow action buttons only */}
       <div>
         <p className="meta-label">Status</p>
-        <select
-          value={task.status}
-          onChange={(e) => onStatusChange(e.target.value as TaskStatus)}
-          disabled={changingMeta}
-          style={{
-            width: '100%', padding: '7px 10px', borderRadius: 8,
-            border: `1.5px solid ${statusCfg.border}`,
-            background: statusCfg.bg, color: statusCfg.color,
-            fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            outline: 'none', fontFamily: 'inherit',
-          }}
-        >
-          {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-            <option key={k} value={k}>{v.label}</option>
-          ))}
-        </select>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+          border: `1.5px solid ${statusCfg.border}`,
+          background: statusCfg.bg, color: statusCfg.color,
+          userSelect: 'none',
+        }}>
+          <span style={{
+            width: 7, height: 7, borderRadius: '50%',
+            background: statusCfg.color, flexShrink: 0,
+          }} />
+          {statusCfg.label}
+        </span>
+        <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: '4px 0 0', fontStyle: 'italic' }}>
+          Changes automatically via actions below
+        </p>
       </div>
 
       {/* Priority */}

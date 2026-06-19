@@ -37,71 +37,75 @@ function StatCard({
     <button
       onClick={onClick}
       style={{
-        flex: '1 1 130px',
-        minWidth: 0,
-        padding: '13px 16px',
-        borderRadius: 12,
+        flex: '1 1 140px', minWidth: 0,
+        padding: '14px 18px 12px',
+        borderRadius: 14,
         border: `1.5px solid ${active ? color : border}`,
         background: active ? bg : 'var(--card-bg)',
         cursor: onClick ? 'pointer' : 'default',
         textAlign: 'left',
-        transition: 'all 0.15s',
-        boxShadow: active ? `0 0 0 3px ${color}18` : 'var(--shadow-xs)',
+        transition: 'all 0.18s',
+        boxShadow: active ? `0 0 0 3px ${color}18, 0 2px 8px ${color}14` : 'var(--shadow-xs)',
+        position: 'relative', overflow: 'hidden',
       }}
       onMouseEnter={(e) => {
         if (onClick) {
           e.currentTarget.style.borderColor = color;
-          e.currentTarget.style.boxShadow = `0 2px 12px ${color}20`;
+          e.currentTarget.style.transform = 'translateY(-1px)';
+          e.currentTarget.style.boxShadow = `0 4px 16px ${color}22`;
         }
       }}
       onMouseLeave={(e) => {
         if (onClick) {
+          e.currentTarget.style.transform = 'translateY(0)';
           e.currentTarget.style.borderColor = active ? color : border;
           e.currentTarget.style.boxShadow = active ? `0 0 0 3px ${color}18` : 'var(--shadow-xs)';
         }
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <span style={{
-          width: 32,
-          height: 32,
-          borderRadius: 8,
-          background: bg,
-          border: `1px solid ${border}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          {icon}
-        </span>
+      {/* Accent stripe */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, bottom: 0, width: 3,
+        background: color, opacity: active ? 0.9 : 0.35, borderRadius: '14px 0 0 14px',
+      }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <div>
-          <p style={{ fontSize: 20, fontWeight: 700, color: active ? color : 'var(--text-primary)', lineHeight: 1.2 }}>
+          <p style={{ fontSize: 26, fontWeight: 800, color: active ? color : 'var(--text-primary)', lineHeight: 1, letterSpacing: '-0.03em', margin: 0 }}>
             {value ?? '—'}
           </p>
-          <p style={{ fontSize: 11, color: active ? color : 'var(--text-tertiary)', fontWeight: 500, marginTop: 2 }}>
+          <p style={{ fontSize: 11, color: active ? color : 'var(--text-tertiary)', fontWeight: 600, marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {label}
           </p>
         </div>
+        <span style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: active ? color + '22' : bg,
+          border: `1px solid ${active ? color + '40' : border}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          {icon}
+        </span>
       </div>
     </button>
   );
 }
 
-// ─── Filter pill ───────────────────────────────────────────────────────────────
+// ─── Filter select style ───────────────────────────────────────────────────────
 
 const SEL: React.CSSProperties = {
-  padding: '6px 10px',
-  borderRadius: 8,
-  border: '1px solid var(--border-subtle)',
-  fontSize: 12,
+  padding: '7px 28px 7px 10px',
+  borderRadius: 9,
+  border: '1.5px solid var(--border-subtle)',
+  fontSize: 12, fontWeight: 500,
   background: 'var(--card-bg)',
   color: 'var(--text-secondary)',
-  cursor: 'pointer',
-  outline: 'none',
-  fontFamily: 'inherit',
-  flexShrink: 0,
-  transition: 'border-color 0.15s',
+  cursor: 'pointer', outline: 'none',
+  fontFamily: 'inherit', flexShrink: 0,
+  appearance: 'none',
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right 8px center',
+  transition: 'border-color 0.15s, box-shadow 0.15s',
 };
 
 // ─── View toggle ───────────────────────────────────────────────────────────────
@@ -369,29 +373,36 @@ export default function TasksPage() {
           </div>
 
           {/* Scope tabs */}
-          <div style={{ display: 'flex', gap: 0, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
             {SCOPE_TABS.map((tab) => {
               const active = scope === tab.value && !statusFilter;
+              const tabIcon: Record<string, React.ReactNode> = {
+                '':         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>,
+                mine:       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+                created:    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+                team:       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,
+                watching:   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+              };
               return (
                 <button
                   key={tab.value}
                   onClick={() => setScope(tab.value)}
                   style={{
-                    padding: '9px 16px',
-                    border: 'none',
-                    background: 'transparent',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '6px 14px',
+                    borderRadius: 99,
+                    border: `1.5px solid ${active ? BRAND : 'transparent'}`,
+                    background: active ? `${BRAND_HEX}12` : 'transparent',
                     cursor: 'pointer',
-                    fontSize: 13,
-                    fontWeight: active ? 700 : 500,
+                    fontSize: 12, fontWeight: active ? 700 : 500,
                     color: active ? BRAND : 'var(--text-secondary)',
-                    borderBottom: active ? `2px solid ${BRAND}` : '2px solid transparent',
-                    marginBottom: -1,
-                    transition: 'color 0.12s',
-                    whiteSpace: 'nowrap',
+                    transition: 'all 0.15s', whiteSpace: 'nowrap',
+                    marginBottom: 8,
                   }}
-                  onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = 'var(--text-primary)'; }}
-                  onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                  onMouseEnter={(e) => { if (!active) { e.currentTarget.style.background = 'var(--surface-subtle)'; e.currentTarget.style.color = 'var(--text-primary)'; } }}
+                  onMouseLeave={(e) => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
                 >
+                  {tabIcon[tab.value]}
                   {tab.label}
                 </button>
               );
