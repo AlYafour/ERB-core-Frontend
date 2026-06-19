@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,8 +8,7 @@ import { purchaseRequestsApi } from '@/lib/api/purchase-requests';
 import MainLayout from '@/components/layout/MainLayout';
 import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
 import DropdownButton from '@/components/ui/DropdownButton';
-import { Button, PageHeader, PageShell } from '@/components/ui';
-import DetailCard, { DetailField } from '@/components/ui/DetailCard';
+import { Button, PageShell } from '@/components/ui';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { canCreateQuotationRequest, canCreatePurchaseOrder } from '@/lib/utils/workflow-guards';
@@ -72,7 +71,7 @@ export default function PurchaseRequestDetailPage() {
       invalidate();
       queryClient.invalidateQueries({ queryKey: ['pending-count'] });
     },
-    onError: (err: any) => toast(getApiError(err, 'Failed to approve'), 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to approve'), 'error'),
   });
 
   const rejectMutation = useMutation({
@@ -82,7 +81,7 @@ export default function PurchaseRequestDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['pending-count'] });
       setRejectDialogOpen(false);
     },
-    onError: (err: any) => toast(getApiError(err, 'Failed to reject request'), 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to reject request'), 'error'),
   });
 
   const undoApprovalMutation = useMutation({
@@ -91,7 +90,7 @@ export default function PurchaseRequestDetailPage() {
       invalidate();
       queryClient.invalidateQueries({ queryKey: ['pending-count'] });
     },
-    onError: (err: any) => toast(getApiError(err, 'Failed to undo approval'), 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to undo approval'), 'error'),
   });
 
   const allowAdditionalOrderMutation = useMutation({
@@ -142,6 +141,8 @@ export default function PurchaseRequestDetailPage() {
 
   const canEditItems = (isAdmin || request.created_by === user?.id) && request.status === 'pending';
 
+  const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
   type PRItem = (typeof request.items)[number];
   const cols: ColumnDef<PRItem>[] = [
     {
@@ -157,36 +158,38 @@ export default function PurchaseRequestDetailPage() {
           />
         </div>
       ) : (
-        <>
-          <div style={{ fontWeight: 'var(--weight-medium)' }}>{item.product?.name || 'N/A'}</div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item.product?.code}</div>
-        </>
+        <div>
+          <div className="cell-product-name">{item.product?.name || 'N/A'}</div>
+          {item.product?.code && <div className="cell-product-code">{item.product.code}</div>}
+        </div>
       ),
     },
     {
       header: t('col', 'quantity'),
+      align: 'center',
       cell: (item) => editingItemId === item.id
         ? <input type="number" min="0.001" step="0.001" className="form-input" style={{ width: 90 }} value={editingForm.quantity} onChange={(e) => setEditingForm(f => ({ ...f, quantity: Number(e.target.value) || 0 }))} />
-        : <span>{item.quantity}</span>,
+        : <span style={{ fontWeight: 'var(--weight-semibold)' }}>{item.quantity}</span>,
     },
     {
       header: t('col', 'unit'),
+      align: 'center',
       cell: (item) => editingItemId === item.id
         ? <input className="form-input" style={{ width: 100 }} value={editingForm.unit} onChange={(e) => setEditingForm(f => ({ ...f, unit: e.target.value }))} placeholder="Unit" />
-        : <span style={{ color: 'var(--text-secondary)' }}>{item.unit || item.product?.unit || '—'}</span>,
+        : <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 600 }}>{(item.unit || item.product?.unit || '—').toUpperCase()}</span>,
     },
-    { header: t('col', 'projectSite'), cell: (item) => <span style={{ color: 'var(--text-secondary)' }}>{item.project_site || '—'}</span> },
+    { header: t('col', 'projectSite'), cell: (item) => <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)' }}>{item.project_site || '—'}</span> },
     {
       header: t('col', 'purpose'),
       cell: (item) => editingItemId === item.id
         ? <input className="form-input" style={{ minWidth: 120 }} value={editingForm.reason} onChange={(e) => setEditingForm(f => ({ ...f, reason: e.target.value }))} placeholder="Purpose…" />
-        : <span style={{ color: 'var(--text-secondary)', maxWidth: 256, display: 'block' }}>{(item as any).reason || '—'}</span>,
+        : <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', maxWidth: 256, display: 'block' }}>{(item as { reason?: string }).reason || '—'}</span>,
     },
     {
       header: t('col', 'notes'),
       cell: (item) => editingItemId === item.id
         ? <input className="form-input" style={{ minWidth: 120 }} value={editingForm.notes} onChange={(e) => setEditingForm(f => ({ ...f, notes: e.target.value }))} placeholder="Notes…" />
-        : <span style={{ color: 'var(--text-secondary)', maxWidth: 256, display: 'block' }}>{item.notes || '—'}</span>,
+        : <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', maxWidth: 256, display: 'block' }}>{item.notes || '—'}</span>,
     },
   ];
 
@@ -208,7 +211,7 @@ export default function PurchaseRequestDetailPage() {
             </>
           ) : (
             <button className="btn btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
-              onClick={() => { setEditingItemId(item.id!); setEditingForm({ productId: item.product?.id || 0, quantity: item.quantity, unit: item.unit || item.product?.unit || '', reason: (item as any).reason || '', notes: item.notes || '' }); }}>
+              onClick={() => { setEditingItemId(item.id!); setEditingForm({ productId: item.product?.id || 0, quantity: item.quantity, unit: item.unit || item.product?.unit || '', reason: (item as { reason?: string }).reason || '', notes: item.notes || '' }); }}>
               Edit
             </button>
           ))}
@@ -223,11 +226,6 @@ export default function PurchaseRequestDetailPage() {
   return (
     <MainLayout>
       <PageShell>
-        <PageHeader
-          backHref="/purchase-requests"
-          title={`${t('page', 'purchaseRequests')}: ${request.code}`}
-          breadcrumbs={[{ label: t('page', 'purchaseRequests'), href: '/purchase-requests' }, { label: request.code }]}
-        />
 
         {/* ── Sticky action bar ── */}
         <StickyDocBar
@@ -237,13 +235,12 @@ export default function PurchaseRequestDetailPage() {
           statusLabel={PR_LABEL[request.status] || request.status}
         >
           {request.allow_additional_orders && (
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#d97706', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 6, padding: '3px 8px' }}>
-              🔓 Additional Order Unlocked
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--status-warning)', background: 'var(--status-warning-bg)', border: '1px solid var(--status-warning-border)', borderRadius: 6, padding: '3px 8px' }}>
+              Additional Order Unlocked
             </span>
           )}
           <Button variant="secondary" size="sm" onClick={() => window.open(`/print/pr/${id}`, '_blank')}>Print</Button>
 
-          {/* Pending actions */}
           {request.status === 'pending' && canApprove && (
             <Button variant="success" size="sm" isLoading={approveMutation.isPending} onClick={() => approveMutation.mutate()}>
               {t('btn', 'approve')}
@@ -254,8 +251,6 @@ export default function PurchaseRequestDetailPage() {
               {t('btn', 'reject')}
             </Button>
           )}
-
-          {/* Approved actions */}
           {request.status === 'approved' && canApprove && !request.has_quotation_requests && !request.has_purchase_orders && (
             <Button variant="secondary" size="sm" isLoading={undoApprovalMutation.isPending} onClick={() => undoApprovalMutation.mutate()}>
               {t('btn', 'update')}
@@ -263,7 +258,7 @@ export default function PurchaseRequestDetailPage() {
           )}
           {request.status === 'approved' && canManageAdditionalOrders && (request.has_purchase_orders || request.has_awarded_quotation) && !request.allow_additional_orders && (
             <Button variant="secondary" size="sm" isLoading={allowAdditionalOrderMutation.isPending} onClick={() => allowAdditionalOrderMutation.mutate()}>
-              🔓 Allow Additional Order
+              Allow Additional Order
             </Button>
           )}
           {request.status === 'approved' && (isAdmin || can('quotation_request', 'create') || can('purchase_order', 'create')) &&
@@ -299,61 +294,63 @@ export default function PurchaseRequestDetailPage() {
           )}
         </StickyDocBar>
 
-        {/* Details */}
-        <DetailCard title={t('col', 'title')}>
-          <DetailField label={t('col', 'title')} value={request.title} />
-          <DetailField label={t('col', 'requestDate')} value={new Date(request.request_date).toLocaleDateString('en-US')} />
-          <DetailField label={t('col', 'requiredBy')} value={new Date(request.required_by).toLocaleDateString('en-US')} />
-          <DetailField label={t('col', 'createdBy')} value={request.created_by_name} />
-          {request.approved_by_name && (
-            <DetailField label={t('section', 'authorization')} value={request.approved_by_name} />
-          )}
+        {/* ── Request info ── */}
+        <div className="card">
+          <div className="proc-section-head">
+            <h3 className="proc-section-title">Request Information</h3>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmt(request.request_date)}</span>
+          </div>
+          <div className="proc-info-grid">
+            <ProcField label={t('col', 'title')}      value={request.title} />
+            <ProcField label={t('col', 'requestDate')} value={fmt(request.request_date)} />
+            <ProcField label={t('col', 'requiredBy')}  value={fmt(request.required_by)} />
+            <ProcField label={t('col', 'createdBy')}   value={request.created_by_name} />
+            {request.approved_by_name && (
+              <ProcField label={t('section', 'authorization')} value={request.approved_by_name} />
+            )}
+          </div>
           {request.notes && (
-            <DetailField label={t('col', 'notes')} value={request.notes} span={3} />
+            <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
+              <ProcField label={t('col', 'notes')} value={request.notes} />
+            </div>
           )}
           {request.rejection_reason && (
-            <DetailField
-              label={t('confirm', 'rejectReason')}
-              span={3}
-              value={
-                <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--color-error-light)', border: '1px solid var(--color-error)', borderRadius: 'var(--radius-md)' }}>
-                  <p style={{ fontSize: 'var(--text-sm)', color: '#991B1B', margin: 0 }}>{request.rejection_reason}</p>
-                </div>
-              }
-            />
+            <div style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3) var(--space-4)', borderRadius: 8, background: 'var(--status-error-bg)', border: '1px solid var(--status-error-border)' }}>
+              <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--status-error)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{t('confirm', 'rejectReason')}</div>
+              <div style={{ fontSize: 'var(--text-sm)', color: '#991B1B', lineHeight: 1.5 }}>{request.rejection_reason}</div>
+            </div>
           )}
-        </DetailCard>
+        </div>
 
-        {/* Tracking link */}
-        <div className="card" style={{ backgroundColor: 'var(--surface-inset)' }}>
+        {/* ── Tracking shortcut ── */}
+        <div className="card" style={{ background: 'var(--surface-inset)', border: '1px solid var(--border-subtle)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', margin: 0, marginBottom: 'var(--space-1)' }}>
+              <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>
                 {t('page', 'purchaseRequests')} — {t('section', 'statusInfo')}
-              </h3>
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
-                {t('page', 'prSubtitle')}
-              </p>
+              </div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{t('page', 'prSubtitle')}</div>
             </div>
-            <Link href={`/purchase-requests/${id}/tracking`} className="btn btn-primary" style={{ textDecoration: 'none' }}>
-              {t('page', 'purchaseRequests')} →
+            <Link href={`/purchase-requests/${id}/tracking`} className="btn btn-secondary" style={{ textDecoration: 'none', fontSize: 'var(--text-sm)' }}>
+              View Tracking →
             </Link>
           </div>
         </div>
 
-        {/* Items */}
+        {/* ── Items ── */}
         <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
-            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', margin: 0 }}>
+          <div className="proc-section-head">
+            <h3 className="proc-section-title">
               {t('section', 'requestedItems')}
+              <span className="proc-section-count">{request.items.length}</span>
             </h3>
             {canEditItems && !addingProduct && (
-              <Button variant="primary" onClick={() => setAddingProduct(true)}>+ {t('btn', 'addProduct')}</Button>
+              <Button variant="primary" size="sm" onClick={() => setAddingProduct(true)}>+ {t('btn', 'addProduct')}</Button>
             )}
           </div>
 
           {addingProduct && (
-            <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-4)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--surface-inset)' }}>
+            <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-4)', border: '1px solid var(--border-subtle)', borderRadius: 8, background: 'var(--surface-inset)' }}>
               <div style={{ marginBottom: 'var(--space-3)' }}>
                 <ProductSelector
                   selectedProductId={newProduct?.id || null}
@@ -397,21 +394,21 @@ export default function PurchaseRequestDetailPage() {
           <ReadOnlyItemsTable items={request.items} columns={cols} />
         </div>
 
-        {/* Status info banner */}
+        {/* ── Status banner ── */}
         {request.status === 'approved' && (request.has_awarded_quotation || request.has_purchase_orders) && (
-          <div className="card" style={{ backgroundColor: 'var(--surface-inset)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
-            <svg style={{ width: 20, height: 20, flexShrink: 0, color: 'var(--text-secondary)', marginTop: 2 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="card" style={{ background: 'var(--surface-inset)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
+            <svg style={{ width: 18, height: 18, flexShrink: 0, color: 'var(--text-secondary)', marginTop: 2 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <p style={{ margin: 0, fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>
+              <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>
                 {request.has_purchase_orders ? 'Purchase Order Created' : 'Supplier Awarded'}
-              </p>
-              <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              </div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                 {request.has_purchase_orders
                   ? 'This PR has an active LPO. Modifications are no longer allowed.'
                   : 'This PR has an awarded supplier. You can proceed to create a Purchase Order (LPO).'}
-              </p>
+              </div>
             </div>
           </div>
         )}
@@ -423,7 +420,17 @@ export default function PurchaseRequestDetailPage() {
           title={`${t('btn', 'reject')} ${t('page', 'purchaseRequests')}`}
           message={t('confirm', 'rejectReason')}
         />
+
       </PageShell>
     </MainLayout>
+  );
+}
+
+function ProcField({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="proc-info-field">
+      <span className="proc-info-label">{label}</span>
+      <div className="proc-info-value">{value || <span className="proc-info-value--empty">—</span>}</div>
+    </div>
   );
 }
