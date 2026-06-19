@@ -14,6 +14,7 @@ import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { Button, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { ProcKPIBar } from '@/components/procurement/shared/ProcKPIBar';
 import { RowActions } from '@/components/ui/RowActions';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
@@ -45,6 +46,8 @@ export default function QuotationRequestsPage() {
     queryFn:  () => quotationRequestsApi.getAll({ page, search, ...filters }),
     staleTime: 2 * 60 * 1000,
   });
+
+  const { data: kpiTotal } = useQuery({ queryKey: ['qr-kpi', 'total'], queryFn: () => quotationRequestsApi.getAll({ page: 1, page_size: 1 }), staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
 
   const deleteMutation = useMutation({
     mutationFn: quotationRequestsApi.delete,
@@ -121,6 +124,9 @@ export default function QuotationRequestsPage() {
           count={totalCount}
           actions={canCreate ? <Link href="/quotation-requests/new"><Button variant="primary">New Request</Button></Link> : undefined}
         />
+        <ProcKPIBar items={[
+          { label: 'Total RFQs', value: kpiTotal ?? '—', variant: 'total', loading: kpiTotal == null },
+        ]} />
         <TableShell
           tableState={tableState}
           filterFields={filterFields}

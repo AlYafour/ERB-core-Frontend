@@ -72,7 +72,7 @@ export default function PrintInvoicePage() {
   const remaining  = Number(invoice.remaining_amount ?? (total - paidAmount));
 
   return (
-    <div className="print-page-bg" style={{ minHeight: '100vh', background: '#e8ecf0', fontFamily: "'Inter','Cairo','Segoe UI',sans-serif", fontSize: '12px' }}>
+    <div className="print-page-bg" style={{ minHeight: '100vh', background: '#f1f5f9', fontFamily: "'Inter','Cairo','Segoe UI',sans-serif", fontSize: '12px' }}>
 
       <style>{`
         @page { size: A4; margin: 0; }
@@ -95,25 +95,44 @@ export default function PrintInvoicePage() {
       <div className="print-controls-bar" style={{
         position: 'sticky', top: 0, zIndex: 100,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '8px 32px',
+        padding: '10px 24px',
         background: '#fff', borderBottom: `1px solid ${BORDER}`,
-        boxShadow: '0 1px 4px rgba(0,0,0,.06)',
+        boxShadow: '0 2px 8px rgba(0,0,0,.07)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontWeight: 700, fontSize: 14, color: NAVY }}>Invoice — {invoice.invoice_number}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <a href={`/purchase-invoices/${id}`} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '5px 11px', borderRadius: 6,
+            border: `1px solid ${BORDER}`, background: LIGHT,
+            color: '#374151', fontSize: 12, fontWeight: 600, textDecoration: 'none',
+          }}>← Back</a>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '3px 10px 3px 8px', borderRadius: 6,
+            background: LIGHT, border: `1px solid ${BORDER}`,
+          }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#8b5cf6' }}>INV</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: NAVY, letterSpacing: '-0.3px' }}>{invoice.invoice_number}</span>
+          </div>
           <StatusBadge status={invoice.status} />
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button onClick={() => window.print()} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '7px 14px', borderRadius: 6, border: `1px solid ${BORDER}`,
+            background: LIGHT, color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+          }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Print
+          </button>
           <button onClick={() => window.print()} style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '6px 16px', borderRadius: 6, border: `1px solid ${BORDER}`,
-            background: LIGHT, color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-          }}>🖨 Print / Save PDF</button>
-          <button onClick={() => window.close()} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '6px 14px', borderRadius: 6, border: '1px solid #e5e7eb',
-            background: 'transparent', color: '#9ca3af', fontSize: 12, cursor: 'pointer',
-          }}>✕ Close</button>
+            padding: '7px 16px', borderRadius: 6, background: NAVY, color: '#fff',
+            border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer', letterSpacing: '.2px',
+          }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download PDF
+          </button>
         </div>
       </div>
 

@@ -16,6 +16,7 @@ import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
 import { Button, Badge, PageHeader, PageShell, TableShell, type RowAction, type Column } from '@/components/ui';
+import { ProcKPIBar } from '@/components/procurement/shared/ProcKPIBar';
 import { RowActions } from '@/components/ui/RowActions';
 import StatusTabs from '@/components/ui/StatusTabs';
 import { useT } from '@/lib/i18n/useT';
@@ -58,6 +59,11 @@ export default function PurchaseRequestsPage() {
     queryFn:  () => purchaseRequestsApi.getAll({ page, search, ...filters }),
     staleTime: 2 * 60 * 1000,
   });
+
+  const { data: kpiTotal }    = useQuery({ queryKey: ['pr-kpi', 'total'],    queryFn: () => purchaseRequestsApi.getAll({ page: 1, page_size: 1 }),                  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiPending }  = useQuery({ queryKey: ['pr-kpi', 'pending'],  queryFn: () => purchaseRequestsApi.getAll({ page: 1, page_size: 1, status: 'pending' }),  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiApproved } = useQuery({ queryKey: ['pr-kpi', 'approved'], queryFn: () => purchaseRequestsApi.getAll({ page: 1, page_size: 1, status: 'approved' }), staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiRejected } = useQuery({ queryKey: ['pr-kpi', 'rejected'], queryFn: () => purchaseRequestsApi.getAll({ page: 1, page_size: 1, status: 'rejected' }), staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
 
   const approveMutation = useMutation({
     mutationFn: purchaseRequestsApi.approve,
@@ -198,6 +204,12 @@ export default function PurchaseRequestsPage() {
               : undefined
           }
         />
+        <ProcKPIBar items={[
+          { label: 'Total Requests', value: kpiTotal    ?? '—', variant: 'total',   loading: kpiTotal    == null },
+          { label: 'Pending',        value: kpiPending  ?? '—', variant: 'warning', loading: kpiPending  == null },
+          { label: 'Approved',       value: kpiApproved ?? '—', variant: 'success', loading: kpiApproved == null },
+          { label: 'Rejected',       value: kpiRejected ?? '—', variant: 'error',   loading: kpiRejected == null },
+        ]} />
         <TableShell
           tableState={tableState}
           tabs={

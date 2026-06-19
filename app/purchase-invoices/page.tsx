@@ -14,6 +14,7 @@ import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { ProcKPIBar } from '@/components/procurement/shared/ProcKPIBar';
 import { RowActions } from '@/components/ui/RowActions';
 import StatusTabs from '@/components/ui/StatusTabs';
 import { usePendingCounts } from '@/lib/hooks/use-pending-counts';
@@ -58,6 +59,13 @@ export default function PurchaseInvoicesPage() {
     queryFn:  () => purchaseInvoicesApi.getAll({ page, search, ...filters }),
     staleTime: 2 * 60 * 1000,
   });
+
+  const invAll = (extra?: object) => purchaseInvoicesApi.getAll({ page: 1, page_size: 1, ...extra } as any);
+  const { data: kpiTotal }    = useQuery({ queryKey: ['inv-kpi', 'total'],    queryFn: () => invAll(),                       staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiPending }  = useQuery({ queryKey: ['inv-kpi', 'pending'],  queryFn: () => invAll({ status: 'pending' }),   staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiApproved } = useQuery({ queryKey: ['inv-kpi', 'approved'], queryFn: () => invAll({ status: 'approved' }),  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiPaid }     = useQuery({ queryKey: ['inv-kpi', 'paid'],     queryFn: () => invAll({ status: 'paid' }),      staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiRejected } = useQuery({ queryKey: ['inv-kpi', 'rejected'], queryFn: () => invAll({ status: 'rejected' }),  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
 
   const deleteMutation = useMutation({
     mutationFn: purchaseInvoicesApi.delete,
@@ -124,6 +132,13 @@ export default function PurchaseInvoicesPage() {
           metrics={pending.invoice > 0 ? [{ label: 'pending approval', value: pending.invoice, variant: 'warning' }] : undefined}
           actions={canCreate ? <Link href="/purchase-invoices/new"><Button variant="primary">Create Invoice</Button></Link> : undefined}
         />
+        <ProcKPIBar items={[
+          { label: 'Total Invoices', value: kpiTotal    ?? '—', variant: 'total',   loading: kpiTotal    == null },
+          { label: 'Pending',        value: kpiPending  ?? '—', variant: 'warning', loading: kpiPending  == null },
+          { label: 'Approved',       value: kpiApproved ?? '—', variant: 'info',    loading: kpiApproved == null },
+          { label: 'Paid',           value: kpiPaid     ?? '—', variant: 'success', loading: kpiPaid     == null },
+          { label: 'Rejected',       value: kpiRejected ?? '—', variant: 'error',   loading: kpiRejected == null },
+        ]} />
         <TableShell
           tableState={tableState}
           tabs={

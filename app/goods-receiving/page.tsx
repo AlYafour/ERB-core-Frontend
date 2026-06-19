@@ -13,6 +13,7 @@ import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { ProcKPIBar } from '@/components/procurement/shared/ProcKPIBar';
 import { RowActions } from '@/components/ui/RowActions';
 import StatusTabs from '@/components/ui/StatusTabs';
 import { useT } from '@/lib/i18n/useT';
@@ -51,6 +52,12 @@ export default function GoodsReceivingPage() {
     queryFn:  () => goodsReceivingApi.getAll({ page, search, ...filters }),
     staleTime: 2 * 60 * 1000,
   });
+
+  const grnAll = (extra?: object) => goodsReceivingApi.getAll({ page: 1, page_size: 1, ...extra } as any);
+  const { data: kpiTotal }     = useQuery({ queryKey: ['grn-kpi', 'total'],     queryFn: () => grnAll(),                        staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiPartial }   = useQuery({ queryKey: ['grn-kpi', 'partial'],   queryFn: () => grnAll({ status: 'partial' }),    staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiCompleted } = useQuery({ queryKey: ['grn-kpi', 'completed'], queryFn: () => grnAll({ status: 'completed' }),  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiCancelled } = useQuery({ queryKey: ['grn-kpi', 'cancelled'], queryFn: () => grnAll({ status: 'cancelled' }),  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => goodsReceivingApi.delete(id),
@@ -100,6 +107,12 @@ export default function GoodsReceivingPage() {
           count={totalCount}
           actions={canCreate ? <Link href="/goods-receiving/new"><Button variant="primary">+ New GRN</Button></Link> : undefined}
         />
+        <ProcKPIBar items={[
+          { label: 'Total GRNs', value: kpiTotal     ?? '—', variant: 'total',   loading: kpiTotal     == null },
+          { label: 'Partial',    value: kpiPartial   ?? '—', variant: 'warning', loading: kpiPartial   == null },
+          { label: 'Completed',  value: kpiCompleted ?? '—', variant: 'success', loading: kpiCompleted == null },
+          { label: 'Cancelled',  value: kpiCancelled ?? '—', variant: 'neutral', loading: kpiCancelled == null },
+        ]} />
         <TableShell
           tableState={tableState}
           tabs={

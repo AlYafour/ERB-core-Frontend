@@ -9,13 +9,13 @@ import { PurchaseQuotation } from '@/types';
 import Link from 'next/link';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
-import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
 import StatusTabs from '@/components/ui/StatusTabs';
 import { Button, Badge, PageHeader, SearchInput, PageShell, WorkspaceSurface } from '@/components/ui';
+import { ProcKPIBar } from '@/components/procurement/shared/ProcKPIBar';
 import { RowActions } from '@/components/ui/RowActions';
 import { formatPrice } from '@/lib/utils/format';
 import { useT } from '@/lib/i18n/useT';
@@ -52,13 +52,11 @@ export default function PurchaseQuotationsPage() {
   const handleStatusTab = (v: string) => { handleFilterChange('status', v); setPage(1); };
 
   const queryClient    = useQueryClient();
-  const { user }       = useAuth();
   const t              = useT();
   const { hasPermission } = usePermissions();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const isAdmin     = isTenantAdmin || isPlatformAdmin;
   const canCreate   = isAdmin || (hasPermission('purchase_quotation', 'create') ?? false);
-  const canView     = isAdmin || (hasPermission('purchase_quotation', 'view') ?? false);
   const canDelete   = isAdmin || (hasPermission('purchase_quotation', 'delete') ?? false);
 
   const { data, isLoading, error } = useQuery({
@@ -66,6 +64,13 @@ export default function PurchaseQuotationsPage() {
     queryFn:  () => purchaseQuotationsApi.getAll({ page, search, ...filters }),
     staleTime: 2 * 60 * 1000,
   });
+
+  const pqAll = (extra?: object) => purchaseQuotationsApi.getAll({ page: 1, page_size: 1, ...extra } as any);
+  const { data: kpiTotal }    = useQuery({ queryKey: ['pq-kpi', 'total'],    queryFn: () => pqAll(),                      staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiPending }  = useQuery({ queryKey: ['pq-kpi', 'pending'],  queryFn: () => pqAll({ status: 'pending' }),  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiAwarded }  = useQuery({ queryKey: ['pq-kpi', 'awarded'],  queryFn: () => pqAll({ status: 'awarded' }),  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiRejected } = useQuery({ queryKey: ['pq-kpi', 'rejected'], queryFn: () => pqAll({ status: 'rejected' }), staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiExpired }  = useQuery({ queryKey: ['pq-kpi', 'expired'],  queryFn: () => pqAll({ status: 'expired' }),  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
 
   const deleteMutation = useMutation({
     mutationFn: purchaseQuotationsApi.delete,
@@ -151,6 +156,13 @@ export default function PurchaseQuotationsPage() {
           }
         />
 
+        <ProcKPIBar items={[
+          { label: 'Total',         value: kpiTotal    ?? '—', variant: 'total',   loading: kpiTotal    == null },
+          { label: 'Pending',       value: kpiPending  ?? '—', variant: 'warning', loading: kpiPending  == null },
+          { label: 'Awarded',       value: kpiAwarded  ?? '—', variant: 'success', loading: kpiAwarded  == null },
+          { label: 'Rejected',      value: kpiRejected ?? '—', variant: 'error',   loading: kpiRejected == null },
+          { label: 'Expired',       value: kpiExpired  ?? '—', variant: 'neutral', loading: kpiExpired  == null },
+        ]} />
         <WorkspaceSurface
           tabs={
             <StatusTabs

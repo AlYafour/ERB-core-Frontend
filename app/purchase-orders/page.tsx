@@ -15,6 +15,7 @@ import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { ProcKPIBar } from '@/components/procurement/shared/ProcKPIBar';
 import { RowActions } from '@/components/ui/RowActions';
 import StatusTabs from '@/components/ui/StatusTabs';
 import { usePendingCounts } from '@/lib/hooks/use-pending-counts';
@@ -76,6 +77,13 @@ export default function PurchaseOrdersPage() {
     }),
     staleTime: 2 * 60 * 1000,
   });
+
+  const poAll = (extra?: object) => purchaseOrdersApi.getAll({ page: 1, page_size: 1, ...extra } as any);
+  const { data: kpiTotal }     = useQuery({ queryKey: ['po-kpi', 'total'],     queryFn: () => poAll(),                       staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiPending }   = useQuery({ queryKey: ['po-kpi', 'pending'],   queryFn: () => poAll({ status: 'pending' }),   staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiApproved }  = useQuery({ queryKey: ['po-kpi', 'approved'],  queryFn: () => poAll({ status: 'approved' }),  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiCompleted } = useQuery({ queryKey: ['po-kpi', 'completed'], queryFn: () => poAll({ status: 'completed' }), staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiCancelled } = useQuery({ queryKey: ['po-kpi', 'cancelled'], queryFn: () => poAll({ status: 'cancelled' }), staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => purchaseOrdersApi.delete(id),
@@ -196,6 +204,13 @@ export default function PurchaseOrdersPage() {
               : undefined
           }
         />
+        <ProcKPIBar items={[
+          { label: 'Total Orders', value: kpiTotal     ?? '—', variant: 'total',   loading: kpiTotal     == null },
+          { label: 'Pending',      value: kpiPending   ?? '—', variant: 'warning', loading: kpiPending   == null },
+          { label: 'Approved',     value: kpiApproved  ?? '—', variant: 'success', loading: kpiApproved  == null },
+          { label: 'Completed',    value: kpiCompleted ?? '—', variant: 'info',    loading: kpiCompleted == null },
+          { label: 'Cancelled',    value: kpiCancelled ?? '—', variant: 'neutral', loading: kpiCancelled == null },
+        ]} />
         <TableShell
           tableState={tableState}
           tabs={
