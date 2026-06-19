@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
@@ -47,6 +47,7 @@ function NewPOContent() {
   const purchaseRequestId   = searchParams.get('purchase_request_id');
   const purchaseQuotationId = searchParams.get('purchase_quotation_id');
   const missingSource = !purchaseRequestId && !purchaseQuotationId;
+  const formRef = useRef<HTMLFormElement>(null);
 
   // ── All hooks must run unconditionally ──────────────────────────────────
   const [formData, setFormData] = useState<PurchaseOrderFormData>({
@@ -185,9 +186,21 @@ function NewPOContent() {
   return (
     <MainLayout>
       <PageShell>
-        <div className="form-page-top">
-          <Link href="/purchase-orders" className="form-page-top-back">← {t('page', 'purchaseOrders')}</Link>
-          <h1 className="form-page-top-title">{t('page', 'newPO')}</h1>
+        {/* ── Sticky form bar ── */}
+        <div className="proc-form-bar">
+          <Link href="/purchase-orders" className="proc-form-bar-back">← {t('page', 'purchaseOrders')}</Link>
+          <span className="proc-form-bar-sep" />
+          <span className="proc-form-bar-badge">LPO</span>
+          <h1 className="proc-form-bar-title">{t('page', 'newPO')}</h1>
+          <div className="proc-form-bar-actions">
+            <Button type="button" variant="primary" isLoading={mutation.isPending} disabled={mutation.isPending}
+              onClick={() => formRef.current?.requestSubmit()}>
+              {mutation.isPending ? t('btn', 'creating') : t('btn', 'createPO')}
+            </Button>
+            <Link href={purchaseRequestId ? `/purchase-requests/${purchaseRequestId}` : '/purchase-requests'}>
+              <Button type="button" variant="secondary">{t('btn', 'cancel')}</Button>
+            </Link>
+          </div>
         </div>
 
         {/* Context banner */}
@@ -206,7 +219,7 @@ function NewPOContent() {
           ]} />
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit}>
           {/* Header info */}
           <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-4)' }}>

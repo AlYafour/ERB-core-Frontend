@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { quotationRequestsApi } from '@/lib/api/quotation-requests';
@@ -40,6 +40,7 @@ function NewQuotationRequestPageContent() {
   const purchaseRequestId = searchParams.get('purchase_request_id');
   const { hasPermission } = usePermissions();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const formRef = useRef<HTMLFormElement>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -206,10 +207,21 @@ function NewQuotationRequestPageContent() {
     <MainLayout>
       <PageShell>
 
-        {/* ── Compact page top ── */}
-        <div className="form-page-top">
-          <Link href="/quotation-requests" className="form-page-top-back">← {t('page', 'quotationRequests')}</Link>
-          <h1 className="form-page-top-title">{t('page', 'newQR')}</h1>
+        {/* ── Sticky form bar ── */}
+        <div className="proc-form-bar">
+          <Link href="/quotation-requests" className="proc-form-bar-back">← {t('page', 'quotationRequests')}</Link>
+          <span className="proc-form-bar-sep" />
+          <span className="proc-form-bar-badge">QR</span>
+          <h1 className="proc-form-bar-title">{t('page', 'newQR')}</h1>
+          <div className="proc-form-bar-actions">
+            <Button type="button" variant="primary" disabled={mutation.isPending}
+              onClick={() => formRef.current?.requestSubmit()}>
+              {mutation.isPending ? t('btn', 'loading') : t('page', 'newQR')}
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => router.push('/quotation-requests')}>
+              {t('btn', 'cancel')}
+            </Button>
+          </div>
         </div>
 
         {purchaseRequest && (
@@ -225,7 +237,7 @@ function NewQuotationRequestPageContent() {
         )}
 
         {/* Form Card */}
-        <form onSubmit={handleSubmit} className="card">
+        <form ref={formRef} onSubmit={handleSubmit} className="card">
           {/* Form Fields Grid */}
           <div style={{
             display: 'grid',
@@ -315,15 +327,6 @@ function NewQuotationRequestPageContent() {
             </div>
           )}
 
-          {/* Form Actions */}
-          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-            <Button type="submit" variant="primary" disabled={mutation.isPending}>
-              {mutation.isPending ? t('btn', 'loading') : t('page', 'newQR')}
-            </Button>
-            <Button variant="secondary" onClick={() => router.push('/quotation-requests')}>
-              {t('btn', 'cancel')}
-            </Button>
-          </div>
         </form>
       </PageShell>
     </MainLayout>

@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { purchaseRequestsApi } from '@/lib/api/purchase-requests';
@@ -36,6 +36,7 @@ export default function NewPurchaseRequestPage() {
 function NewPurchaseRequestPageContent() {
   const t = useT();
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const [formData, setFormData] = useState<PurchaseRequestFormData>({
     project_id: undefined,
     project_code: '',
@@ -261,8 +262,9 @@ function NewPurchaseRequestPageContent() {
   const SectionHeader = ({ label, children }: { label: string; children?: React.ReactNode }) => (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '11px 20px',
+      padding: '10px 20px',
       borderBottom: '1px solid var(--border-subtle)',
+      borderLeft: '3px solid var(--brand)',
       background: 'var(--surface-subtle)',
     }}>
       <span style={{
@@ -279,13 +281,24 @@ function NewPurchaseRequestPageContent() {
     <MainLayout>
       <PageShell>
 
-        {/* ── Compact page top ── */}
-        <div className="form-page-top">
-          <Link href="/purchase-requests" className="form-page-top-back">← {t('page', 'purchaseRequests')}</Link>
-          <h1 className="form-page-top-title">{t('page', 'newPR')}</h1>
+        {/* ── Sticky form bar ── */}
+        <div className="proc-form-bar">
+          <Link href="/purchase-requests" className="proc-form-bar-back">← {t('page', 'purchaseRequests')}</Link>
+          <span className="proc-form-bar-sep" />
+          <span className="proc-form-bar-badge">PR</span>
+          <h1 className="proc-form-bar-title">{t('page', 'newPR')}</h1>
+          <div className="proc-form-bar-actions">
+            <Button type="button" variant="primary" disabled={mutation.isPending} isLoading={mutation.isPending}
+              onClick={() => formRef.current?.requestSubmit()}>
+              {t('btn', 'save')}
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => router.push('/purchase-requests')}>
+              {t('btn', 'cancel')}
+            </Button>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} style={{
+        <form ref={formRef} onSubmit={handleSubmit} style={{
           background: 'var(--card-bg)', border: '1px solid var(--card-border)',
           borderRadius: 'var(--radius-lg)', boxShadow: 'var(--card-shadow)',
           overflow: 'hidden',
