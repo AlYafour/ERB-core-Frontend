@@ -7,6 +7,7 @@ interface Props {
   isOpen:        boolean;
   onClose:       () => void;
   employee:      HREmployee | null;
+  label?:        string;
   groups:        EmployeeGroup[];
   currentId:     number | null;
   onAssign:      (groupId: number) => void;
@@ -14,8 +15,9 @@ interface Props {
   isLoading:     boolean;
 }
 
-export function AssignGroupModal({ isOpen, onClose, employee, groups, currentId, onAssign, onClear, isLoading }: Props) {
+export function AssignGroupModal({ isOpen, onClose, employee, label, groups, currentId, onAssign, onClear, isLoading }: Props) {
   const active = groups.filter(g => g.is_active);
+  const subtitle = employee?.full_name ?? label;
 
   return (
     <BaseModal
@@ -24,8 +26,8 @@ export function AssignGroupModal({ isOpen, onClose, employee, groups, currentId,
       title="Assign Employee Group"
       size="sm"
     >
-      {employee && (
-        <p className="emp-modal-sub">{employee.full_name}</p>
+      {subtitle && (
+        <p className="emp-modal-sub">{subtitle}</p>
       )}
 
       <div className="emp-grp-grid">

@@ -11,6 +11,7 @@ interface Props {
   isOpen:        boolean;
   onClose:       () => void;
   employee:      HREmployee | null;
+  label?:        string;
   candidates:    HREmployee[];
   currentMgrId:  number | null;
   onAssign:      (managerId: number) => void;
@@ -18,11 +19,12 @@ interface Props {
   isLoading:     boolean;
 }
 
-export function AssignManagerModal({ isOpen, onClose, employee, candidates, currentMgrId, onAssign, onClear, isLoading }: Props) {
+export function AssignManagerModal({ isOpen, onClose, employee, label, candidates, currentMgrId, onAssign, onClear, isLoading }: Props) {
   const [search, setSearch] = useState('');
+  const subtitle = employee?.full_name ?? label;
 
   const filtered = candidates.filter(c => {
-    if (c.id === employee?.id) return false;
+    if (employee && c.id === employee.id) return false;
     const q = search.toLowerCase();
     return !q || c.full_name.toLowerCase().includes(q) || c.employee_id.toLowerCase().includes(q);
   });
@@ -34,8 +36,8 @@ export function AssignManagerModal({ isOpen, onClose, employee, candidates, curr
       title="Assign Direct Manager"
       size="md"
     >
-      {employee && (
-        <p className="emp-modal-sub">{employee.full_name}</p>
+      {subtitle && (
+        <p className="emp-modal-sub">{subtitle}</p>
       )}
 
       <div style={{ marginBottom: 'var(--space-3)' }}>
