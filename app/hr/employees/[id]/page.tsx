@@ -265,13 +265,6 @@ export default function EmployeeDetailPage() {
   const isAdmin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(currentUser?.role ?? '');
 
   const [activeTab,     setActiveTab]     = useState('Profile');
-
-  // Auto-switch to Home tab when viewing own profile
-  useEffect(() => {
-    if (emp?.user?.id && currentUser?.id === emp.user.id) {
-      setActiveTab(t => t === 'Profile' ? 'Home' : t);
-    }
-  }, [emp?.user?.id, currentUser?.id]);
   const [editSection,   setEditSection]   = useState<'personal' | 'professional' | 'contact' | 'legal' | 'salary' | 'account' | null>(null);
   const [form,          setForm]          = useState<Record<string, any>>({});
   const [avatarFile,    setAvatarFile]    = useState<File | null>(null);
@@ -292,6 +285,13 @@ export default function EmployeeDetailPage() {
     enabled:  !!id,
     staleTime: 60_000,
   });
+
+  // Switch to Home when viewing own profile (emp.user?.id defined after queries — placed here to avoid TDZ)
+  useEffect(() => {
+    if (emp?.user?.id && currentUser?.id === emp.user.id) {
+      setActiveTab(t => t === 'Profile' ? 'Home' : t);
+    }
+  }, [emp?.user?.id, currentUser?.id]);
 
   // ── Mutations ──────────────────────────────────────────────────────────────
   const updateMutation = useMutation({
