@@ -210,14 +210,7 @@ export default function DataTable<T>({
             {columns.map(col => (
               <th
                 key={col.key}
-                style={{
-                  ...(col.width ? { width: col.width } : undefined),
-                  ...(col.key === 'actions' ? {
-                    position: 'sticky', right: 0,
-                    background: 'var(--table-head-bg, var(--surface-subtle))',
-                    zIndex: 2,
-                  } : undefined),
-                }}
+                style={col.width ? { width: col.width } : undefined}
                 className={col.className}
               >
                 {col.header}
@@ -247,11 +240,6 @@ export default function DataTable<T>({
                   <td
                     key={col.key}
                     className={col.className}
-                    style={col.key === 'actions' ? {
-                      position: 'sticky', right: 0,
-                      background: 'var(--card-bg)',
-                      zIndex: 1,
-                    } : undefined}
                     onClick={col.key === 'actions' ? e => e.stopPropagation() : undefined}
                   >
                     {col.render(item, idx)}
