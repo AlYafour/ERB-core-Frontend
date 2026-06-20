@@ -11,7 +11,9 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
+import { useRouter } from 'next/navigation';
 import { Button, Badge, type Column } from '@/components/ui';
+import { RowActions } from '@/components/ui/RowActions';
 import { AppListPage } from '@/components/app/AppListPage';
 import { exportToExcel, fetchAllPages } from '@/lib/utils/export-excel';
 import BilingualName from '@/components/domain/BilingualName';
@@ -33,6 +35,7 @@ const filterFields: FilterField[] = [
 ];
 
 export default function SuppliersPage() {
+  const router     = useRouter();
   const tableState = useTableState();
   const { page, search, filters, selectedItems, clearSelection } = tableState;
 
@@ -132,20 +135,17 @@ export default function SuppliersPage() {
       render: s => <Badge variant={s.is_active ? 'success' : 'error'}>{s.is_active ? t('status', 'active') : t('status', 'inactive')}</Badge>,
     },
     {
-      key: 'actions', header: t('col', 'actions'),
+      key: 'actions', header: '',
       render: s => (
-        <div className="flex items-center gap-2">
-          <Link href={`/suppliers/view/${s.id}`}><Button variant="view" size="sm">{t('btn', 'view')}</Button></Link>
-          {canEdit && <Link href={`/suppliers/${s.id}`}><Button variant="edit" size="sm">{t('btn', 'edit')}</Button></Link>}
-          {canDelete && (
-            <Button variant="delete" size="sm" onClick={() => handleDelete(s.id)} disabled={deleteMutation.isPending}>
-              {t('btn', 'delete')}
-            </Button>
-          )}
-        </div>
+        <RowActions actions={[
+          { label: 'View',   href: `/suppliers/view/${s.id}` },
+          { label: 'Edit',   href: `/suppliers/${s.id}`, hidden: !canEdit },
+          { separator: true, hidden: !canDelete },
+          { label: 'Delete', onClick: () => handleDelete(s.id), variant: 'danger', hidden: !canDelete },
+        ]} />
       ),
     },
-  ], [t, canEdit, canDelete, handleDelete, deleteMutation.isPending]);
+  ], [t, canEdit, canDelete, handleDelete]);
 
   return (
     <AppListPage
@@ -167,6 +167,7 @@ export default function SuppliersPage() {
       }
       filterFields={filterFields}
       searchPlaceholder={t('misc', 'searchSuppliers')}
+      onRowClick={s => router.push(`/suppliers/view/${s.id}`)}
       columns={columns}
       data={suppliers}
       isLoading={isLoading}

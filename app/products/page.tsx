@@ -2,6 +2,7 @@
 
 import { fetchAllPages } from '@/lib/utils/export-excel';
 import { useMemo, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsApi } from '@/lib/api/products';
 import { Product } from '@/types';
@@ -13,6 +14,7 @@ import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { Button, Badge, type Column } from '@/components/ui';
+import { RowActions } from '@/components/ui/RowActions';
 import { AppListPage } from '@/components/app/AppListPage';
 import { formatPrice } from '@/lib/utils/format';
 import BilingualName from '@/components/domain/BilingualName';
@@ -41,6 +43,7 @@ const filterFields: FilterField[] = [
 ];
 
 export default function ProductsPage() {
+  const router     = useRouter();
   const tableState = useTableState();
   const { page, search, filters, selectedItems, clearSelection } = tableState;
 
@@ -134,18 +137,13 @@ export default function ProductsPage() {
       render: p => <Badge variant={PRODUCT_STATUS[p.status ?? ''] ?? 'info'}>{p.status || '—'}</Badge>,
     },
     {
-      key: 'actions', header: t('col', 'actions'),
+      key: 'actions', header: '',
       render: p => (
-        <div className="flex gap-2">
-          <Link href={`/products/view/${p.id}`}>
-            <Button variant="view" size="sm">{t('btn', 'view')}</Button>
-          </Link>
-          {canDelete && (
-            <Button variant="delete" size="sm" onClick={() => handleDelete(p.id)}>
-              {t('btn', 'delete')}
-            </Button>
-          )}
-        </div>
+        <RowActions actions={[
+          { label: 'View',   href: `/products/view/${p.id}` },
+          { separator: true, hidden: !canDelete },
+          { label: 'Delete', onClick: () => handleDelete(p.id), variant: 'danger', hidden: !canDelete },
+        ]} />
       ),
     },
   ], [t, canDelete, handleDelete]);
@@ -174,6 +172,7 @@ export default function ProductsPage() {
       }
       filterFields={filterFields}
       searchPlaceholder="Search products..."
+      onRowClick={p => router.push(`/products/view/${p.id}`)}
       columns={columns}
       data={products}
       isLoading={isLoading}

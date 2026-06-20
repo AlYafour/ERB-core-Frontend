@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { Button, Badge, type Column } from '@/components/ui';
+import { RowActions } from '@/components/ui/RowActions';
 import { AppListPage } from '@/components/app/AppListPage';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
@@ -117,20 +118,12 @@ export default function HRPayrollPage() {
     },
     { key: 'status', header: t('col', 'status'), render: r => <Badge variant={PAYROLL_STATUS[r.status] ?? 'default'}>{STATUS_LABEL[r.status] || r.status}</Badge> },
     {
-      key: 'actions', header: t('col', 'actions'),
-      render: r => isAdmin ? (
-        <div className="flex items-center gap-2">
-          {r.status === 'processed' && (
-            <Button variant="success" size="sm" onClick={() => handleMarkPaid(r.id, r.employee_name, r.month_name || MONTH_NAMES[r.month])} isLoading={markPaidMutation.isPending}>
-              Mark Paid
-            </Button>
-          )}
-          {r.status === 'paid' && r.paid_at && (
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{new Date(r.paid_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-          )}
-          {r.status === 'draft' && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Not processed</span>}
-        </div>
-      ) : null,
+      key: 'actions', header: '',
+      render: r => (
+        <RowActions actions={[
+          { label: 'Mark Paid', onClick: () => handleMarkPaid(r.id, r.employee_name, r.month_name || MONTH_NAMES[r.month]), hidden: !isAdmin || r.status !== 'processed' },
+        ]} />
+      ),
     },
   ];
 

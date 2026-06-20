@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { useState, useRef, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectsApi } from '@/lib/api/projects';
 import { Project } from '@/types';
@@ -11,6 +12,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { Button, Badge, type Column } from '@/components/ui';
+import { RowActions } from '@/components/ui/RowActions';
 import { AppListPage } from '@/components/app/AppListPage';
 import { exportToExcel, fetchAllPages } from '@/lib/utils/export-excel';
 import BilingualName from '@/components/domain/BilingualName';
@@ -20,6 +22,7 @@ import { PROJECT_STATUS } from '@/lib/utils/status-colors';
 import { PROJECT_LABEL } from '@/lib/constants/status-labels';
 
 export default function ProjectsPage() {
+  const router     = useRouter();
   const tableState = useTableState();
   const { page, search, selectedItems, clearSelection } = tableState;
 
@@ -120,25 +123,26 @@ export default function ProjectsPage() {
     {
       key: 'name', header: 'Name',
       render: p => (
-        <Link href={`/projects/view/${p.id}`} className="font-medium" style={{ color: 'var(--text-brand)' }}>
+        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
           <BilingualName nameEn={p.name} nameAr={p.name_ar} />
-        </Link>
+        </span>
       ),
     },
     { key: 'location', header: 'Location', render: p => <span style={{ color: 'var(--text-secondary)' }}>{p.location || '—'}</span> },
     { key: 'status',   header: 'Status',   render: p => <Badge variant={PROJECT_STATUS[p.project_status] ?? 'info'}>{PROJECT_LABEL[p.project_status] || p.project_status}</Badge> },
     { key: 'active',   header: 'Active',   render: p => <Badge variant={p.is_active ? 'success' : 'error'}>{p.is_active ? 'Yes' : 'No'}</Badge> },
     {
-      key: 'actions', header: t('col', 'actions'),
+      key: 'actions', header: '',
       render: p => (
-        <div className="flex gap-2">
-          <Link href={`/projects/view/${p.id}`}><Button variant="view" size="sm">View</Button></Link>
-          {canEdit && <Link href={`/projects/${p.id}`}><Button variant="edit" size="sm">Edit</Button></Link>}
-          {canDelete && <Button variant="delete" size="sm" onClick={() => handleDelete(p.id)} isLoading={deleteMutation.isPending}>{t('btn', 'delete')}</Button>}
-        </div>
+        <RowActions actions={[
+          { label: 'View',   href: `/projects/view/${p.id}` },
+          { label: 'Edit',   href: `/projects/${p.id}`, hidden: !canEdit },
+          { separator: true, hidden: !canDelete },
+          { label: 'Delete', onClick: () => handleDelete(p.id), variant: 'danger', hidden: !canDelete },
+        ]} />
       ),
     },
-  ], [t, canEdit, canDelete, handleDelete, deleteMutation.isPending]);
+  ], [t, canEdit, canDelete, handleDelete]);
 
   return (
     <AppListPage
@@ -163,6 +167,7 @@ export default function ProjectsPage() {
         </div>
       }
       searchPlaceholder="Search projects..."
+      onRowClick={p => router.push(`/projects/view/${p.id}`)}
       columns={columns}
       data={projects}
       isLoading={isLoading}

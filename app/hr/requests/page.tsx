@@ -11,7 +11,8 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
-import { Button, Badge, type Column } from '@/components/ui';
+import { Badge, type Column } from '@/components/ui';
+import { RowActions } from '@/components/ui/RowActions';
 import { AppListPage } from '@/components/app/AppListPage';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
@@ -97,19 +98,13 @@ export default function HRRequestsPage() {
     { key: 'reason', header: 'Reason',     render: r => <span className="block max-w-[200px] truncate" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }} title={r.reason}>{r.reason || '—'}</span> },
     { key: 'created', header: 'Created',   render: r => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{fmtDate(r.created_at)}</span> },
     {
-      key: 'actions', header: t('col', 'actions'),
-      render: r => isAdmin ? (
-        <div className="flex items-center gap-2">
-          {r.status === 'pending' ? (
-            <>
-              <Button variant="success" size="sm" onClick={() => handleApprove(r.id)} isLoading={approveMutation.isPending}>{t('btn', 'approve')}</Button>
-              <Button variant="delete"  size="sm" onClick={() => handleReject(r.id)}  isLoading={rejectMutation.isPending}>{t('btn', 'reject')}</Button>
-            </>
-          ) : (
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{r.approver_name ? `By: ${r.approver_name}` : '—'}</span>
-          )}
-        </div>
-      ) : null,
+      key: 'actions', header: '',
+      render: r => (
+        <RowActions actions={[
+          { label: 'Approve', onClick: () => handleApprove(r.id), hidden: !isAdmin || r.status !== 'pending' },
+          { label: 'Reject',  onClick: () => handleReject(r.id),  hidden: !isAdmin || r.status !== 'pending', variant: 'danger' },
+        ]} />
+      ),
     },
   ];
 

@@ -9,6 +9,7 @@ import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
 import { Button, Badge, type Column } from '@/components/ui';
+import { RowActions } from '@/components/ui/RowActions';
 import { AppListPage } from '@/components/app/AppListPage';
 import { BaseModal } from '@/components/ui/base/BaseModal';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
@@ -408,34 +409,16 @@ export default function HRLoansPage() {
       ),
     },
     {
-      key: 'actions', header: 'Actions',
+      key: 'actions', header: '',
       render: r => (
-        <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', alignItems: 'center' }}>
-          <Button variant="ghost" size="sm" onClick={() => setDetailLoan(r)}>
-            Details
-          </Button>
-          {isAdmin && r.status === 'active' && (
-            <Button variant="ghost" size="sm"
-              onClick={() => pauseMutation.mutate(r.id)}
-              isLoading={pauseMutation.isPending && pauseMutation.variables === r.id}>
-              Pause
-            </Button>
-          )}
-          {isAdmin && r.status === 'paused' && (
-            <Button variant="primary" size="sm"
-              onClick={() => resumeMutation.mutate(r.id)}
-              isLoading={resumeMutation.isPending && resumeMutation.variables === r.id}>
-              Resume
-            </Button>
-          )}
-          {isAdmin && (r.status === 'active' || r.status === 'paused') && (
-            <Button variant="destructive" size="sm"
-              onClick={() => handleCancel(r)}
-              isLoading={cancelMutation.isPending && cancelMutation.variables === r.id}>
-              Cancel
-            </Button>
-          )}
-        </div>
+        <RowActions actions={[
+          { label: 'View Details', onClick: () => setDetailLoan(r) },
+          { separator: true, hidden: !isAdmin },
+          { label: 'Pause',   onClick: () => pauseMutation.mutate(r.id),  hidden: !isAdmin || r.status !== 'active' },
+          { label: 'Resume',  onClick: () => resumeMutation.mutate(r.id), hidden: !isAdmin || r.status !== 'paused' },
+          { separator: true, hidden: !isAdmin || (r.status !== 'active' && r.status !== 'paused') },
+          { label: 'Cancel',  onClick: () => handleCancel(r), variant: 'danger', hidden: !isAdmin || (r.status !== 'active' && r.status !== 'paused') },
+        ]} />
       ),
     },
   ];
@@ -452,6 +435,7 @@ export default function HRLoansPage() {
         </Button>
       ) : undefined}
       filterFields={filterFields}
+      onRowClick={r => setDetailLoan(r)}
       searchPlaceholder="Search by employee name or ID…"
       columns={columns}
       data={records}
