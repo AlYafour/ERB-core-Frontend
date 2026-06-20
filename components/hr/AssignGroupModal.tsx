@@ -41,8 +41,10 @@ export function AssignGroupModal({ isOpen, onClose, employee, label, groups, cur
               className={`emp-grp-card${selected ? ' emp-grp-card--selected' : ''}`}
             >
               <span className="emp-grp-code">{g.code}</span>
-              <span className="emp-grp-name">{g.name}</span>
-              {g.name_ar && <span className="emp-grp-name-ar">{g.name_ar}</span>}
+              <span className="emp-grp-body">
+                <span className="emp-grp-name">{g.name}</span>
+                {g.name_ar && <span className="emp-grp-name-ar">{g.name_ar}</span>}
+              </span>
               {selected && <span className="emp-grp-check">✓</span>}
             </button>
           );
