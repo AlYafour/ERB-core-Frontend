@@ -409,6 +409,7 @@ export default function EmployeeGroupsPage() {
 
   const [modalGroup, setModalGroup] = useState<EmployeeGroup | null | 'new'>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
 
   const { data: raw, isLoading } = useQuery({
     queryKey: ['hr-employee-groups'],
@@ -428,9 +429,17 @@ export default function EmployeeGroupsPage() {
     staleTime: 120_000,
   });
 
-  const groups: EmployeeGroup[] = raw?.results ?? [];
-  const shifts: HRShift[]       = shiftsRaw?.results ?? [];
-  const employees: HREmployee[] = employeesRaw?.results ?? [];
+  const allGroups: EmployeeGroup[] = raw?.results ?? [];
+  const shifts: HRShift[]          = shiftsRaw?.results ?? [];
+  const employees: HREmployee[]    = employeesRaw?.results ?? [];
+
+  const groups = search
+    ? allGroups.filter(g =>
+        g.name.toLowerCase().includes(search.toLowerCase()) ||
+        g.code.toLowerCase().includes(search.toLowerCase()) ||
+        (g.name_ar && g.name_ar.includes(search))
+      )
+    : allGroups;
 
   const shiftById = new Map(shifts.map(s => [s.id, s]));
 
@@ -490,7 +499,7 @@ export default function EmployeeGroupsPage() {
               Employee Groups
               {!isLoading && (
                 <span style={{ marginLeft: 'var(--space-2)', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-normal)', color: 'var(--text-secondary)' }}>
-                  {groups.length} {groups.length === 1 ? 'group' : 'groups'}
+                  {groups.length}{search ? ` / ${allGroups.length}` : ''} {allGroups.length === 1 ? 'group' : 'groups'}
                 </span>
               )}
             </h1>
@@ -498,8 +507,21 @@ export default function EmployeeGroupsPage() {
               Workforce categories that carry a default shift, approval policy, and reporting line.
             </p>
           </div>
-          <button
-            onClick={() => setModalGroup('new')}
+          <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', flexShrink: 0 }}>
+            <input
+              type="search"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search groups…"
+              style={{
+                padding: '7px 12px', borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-default)', background: 'var(--input-bg)',
+                fontSize: 'var(--text-sm)', color: 'var(--text-primary)',
+                outline: 'none', width: 200,
+              }}
+            />
+            <button
+              onClick={() => setModalGroup('new')}
             style={{
               padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-md)',
               background: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)',
@@ -509,6 +531,7 @@ export default function EmployeeGroupsPage() {
           >
             + Create Group
           </button>
+          </div>
         </div>
 
         {/* Table */}
