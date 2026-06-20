@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi } from '@/lib/api/hr';
 import { usersApi } from '@/lib/api/users';
+import HomeTab       from '@/components/users/HomeTab';
 import AttendanceTab from '@/components/users/AttendanceTab';
 import RequestsTab  from '@/components/users/RequestsTab';
 import DocumentsTab from '@/components/users/DocumentsTab';
@@ -56,7 +57,7 @@ const ROLES = [
 ];
 
 const TABS = [
-  'Profile', 'Roles', 'Attendance', 'Requests', 'Documents',
+  'Home', 'Profile', 'Account', 'Roles', 'Attendance', 'Requests', 'Documents',
   'Bank Accounts', 'Family Info', 'Competencies',
   'Insurance', 'Air Ticket', 'Timeoff Setup', 'Assets', 'Projects', 'Contracts',
 ];
@@ -264,6 +265,13 @@ export default function EmployeeDetailPage() {
   const isAdmin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(currentUser?.role ?? '');
 
   const [activeTab,     setActiveTab]     = useState('Profile');
+
+  // Auto-switch to Home tab when viewing own profile
+  useEffect(() => {
+    if (emp?.user?.id && currentUser?.id === emp.user.id) {
+      setActiveTab(t => t === 'Profile' ? 'Home' : t);
+    }
+  }, [emp?.user?.id, currentUser?.id]);
   const [editSection,   setEditSection]   = useState<'personal' | 'professional' | 'contact' | 'legal' | 'salary' | 'account' | null>(null);
   const [form,          setForm]          = useState<Record<string, any>>({});
   const [avatarFile,    setAvatarFile]    = useState<File | null>(null);
@@ -421,7 +429,7 @@ export default function EmployeeDetailPage() {
     </MainLayout>
   );
 
-  const avatarSrc    = avatarPreview || emp.avatar || null;
+  const avatarSrc    = avatarPreview || emp.user?.avatar || emp.avatar || null;
   const avatarLetter = (emp.full_name || emp.user?.username || '?')[0].toUpperCase();
 
   const drawerTitle =
@@ -448,6 +456,50 @@ export default function EmployeeDetailPage() {
           ]}
         />
 
+        {/* ── Identity Card (always visible above tabs) ── */}
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-5)', marginBottom: 'var(--space-2)' }}>
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            {avatarSrc ? (
+              <img src={avatarSrc} alt={emp.full_name} className="av" style={{ width: 72, height: 72 }} />
+            ) : (
+              <div className="av-initials" style={{ width: 72, height: 72, fontSize: '1.75rem' }}>{avatarLetter}</div>
+            )}
+            <span style={{
+              position: 'absolute', bottom: 2, right: 2, width: 14, height: 14,
+              borderRadius: '50%', border: '2.5px solid var(--surface-card)',
+              background: emp.is_active ? 'var(--status-success)' : 'var(--status-error)',
+            }} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-1)' }}>
+              <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', margin: 0, color: 'var(--text-primary)' }}>{emp.full_name}</h2>
+              <Badge variant={emp.is_active ? 'success' : 'error'}>{emp.is_active ? 'Active' : 'Inactive'}</Badge>
+              <Badge variant="default">{empTypeLabel[emp.employment_type] || emp.employment_type}</Badge>
+            </div>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: '0 0 var(--space-1)' }}>
+              {[emp.position_title, emp.department_name].filter(Boolean).join(' · ') || '—'}
+            </p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: 0, display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
+              <span style={{ fontFamily: 'ui-monospace, monospace' }}>{emp.employee_id}</span>
+              {emp.join_date && <span>Hired {fmtDate(emp.join_date)} · {calcPeriod(emp.join_date)}</span>}
+              {emp.user?.email && <span>{emp.user.email}</span>}
+            </p>
+          </div>
+          {isAdmin && (
+            <div style={{ display: 'flex', gap: 'var(--space-2)', flexShrink: 0 }}>
+              <Button variant="secondary" size="sm" onClick={() => openEdit('account')}>Edit Account</Button>
+              <Button
+                variant={emp.is_active ? 'delete' : 'primary'}
+                size="sm"
+                isLoading={updateMutation.isPending}
+                onClick={() => updateMutation.mutate({ is_active: !emp.is_active })}
+              >
+                {emp.is_active ? 'Deactivate' : 'Activate'}
+              </Button>
+            </div>
+          )}
+        </div>
+
         {/* ── Tab bar ── */}
         <div className="tab-row" style={{ marginBottom: 'var(--space-5)' }}>
           {TABS.map(tab => (
@@ -468,10 +520,44 @@ export default function EmployeeDetailPage() {
             user: emp.user, emp, depts: depts?.results ?? [], positions: positions?.results ?? [],
             locations: [], isSelf, isAdmin, userId: emp.user?.id ?? 0,
           };
+
+          if (activeTab === 'Home')       return <HomeTab       {...tabProps} />;
           if (activeTab === 'Roles')      return <RolesTab empUserId={emp.user?.id} isAdmin={isAdmin} />;
           if (activeTab === 'Attendance') return <AttendanceTab {...tabProps} />;
-          if (activeTab === 'Requests')   return <RequestsTab  {...tabProps} />;
-          if (activeTab === 'Documents')  return <DocumentsTab {...tabProps} />;
+          if (activeTab === 'Requests')   return <RequestsTab   {...tabProps} />;
+          if (activeTab === 'Documents')  return <DocumentsTab  {...tabProps} />;
+
+          if (activeTab === 'Account') return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+              <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-5)' }}>
+                {avatarSrc ? (
+                  <img src={avatarSrc} alt={emp.full_name} className="av" style={{ width: 72, height: 72 }} />
+                ) : (
+                  <div className="av-initials" style={{ width: 72, height: 72, fontSize: '1.5rem' }}>{avatarLetter}</div>
+                )}
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-base)', margin: 0 }}>{emp.full_name}</p>
+                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: '2px 0 var(--space-3)' }}>{emp.user?.email || '—'}</p>
+                  {isAdmin && (
+                    <Button variant="secondary" size="sm" onClick={() => openEdit('account')}>
+                      Edit Account & Access
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div className="card">
+                <SectionHead title="Account Details" />
+                <div className="info-grid">
+                  <InfoRow label="Username"    value={emp.user?.username} />
+                  <InfoRow label="Work Email"  value={emp.user?.email} />
+                  <InfoRow label="Phone"       value={emp.user?.phone} />
+                  <InfoRow label="System Role" value={emp.user?.role?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} />
+                  <InfoRow label="Status"      value={emp.is_active ? 'Active' : 'Inactive'} />
+                </div>
+              </div>
+            </div>
+          );
+
           if (activeTab !== 'Profile') return (
             <div className="card empty-state">
               <svg className="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -482,88 +568,21 @@ export default function EmployeeDetailPage() {
               <p className="empty-state-desc">This section is under development</p>
             </div>
           );
+
+          // ── Profile Tab ────────────────────────────────────────────────
           return (
-          <div style={{ display: 'flex', gap: 'var(--space-6)', alignItems: 'flex-start' }}>
-
-            {/* ══ LEFT SIDEBAR ══════════════════════════════════════════════ */}
-            <div style={{ width: 296, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-
-              {/* User identity card */}
-              <div className="card">
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
-                  {avatarSrc ? (
-                    <img src={avatarSrc} alt={emp.full_name} className="av" style={{ width: 80, height: 80 }} />
-                  ) : (
-                    <div className="av-initials" style={{ width: 80, height: 80, fontSize: '1.75rem' }}>
-                      {avatarLetter}
-                    </div>
-                  )}
-                  <div>
-                    <p style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', fontSize: 'var(--text-sm)', lineHeight: 1.35 }}>
-                      {emp.full_name}
-                    </p>
-                    {emp.position_title && (
-                      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 'var(--space-1)' }}>
-                        {emp.position_title}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
-                  {([
-                    ['Emp. No.',  emp.employee_id,         true ],
-                    ['Username', emp.user?.username,       false],
-                    ['Email',    emp.user?.email,          false],
-                    ['Role',     emp.user?.role?.replace(/_/g, ' '), false],
-                  ] as [string, string | undefined, boolean][]).map(([label, value, mono]) => (
-                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-2)' }}>
-                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', flexShrink: 0 }}>{label}</span>
-                      <span style={{
-                        fontSize: 'var(--text-xs)',
-                        fontWeight: 'var(--weight-medium)',
-                        color: 'var(--text-primary)',
-                        fontFamily: mono ? 'ui-monospace, monospace' : 'inherit',
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        maxWidth: 160, textAlign: 'right',
-                      }}>{value || '—'}</span>
-                    </div>
-                  ))}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>Status</span>
-                    <Badge variant={emp.is_active ? 'success' : 'error'}>{emp.is_active ? 'Active' : 'Inactive'}</Badge>
-                  </div>
-                </div>
-
-                {isAdmin && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                    <Button variant="secondary" size="sm" style={{ width: '100%' }} onClick={() => openEdit('account')}>
-                      Edit Account & Access
-                    </Button>
-                    <Button
-                      variant={emp.is_active ? 'delete' : 'primary'}
-                      size="sm"
-                      style={{ width: '100%' }}
-                      onClick={() => updateMutation.mutate({ is_active: !emp.is_active })}
-                    >
-                      {emp.is_active ? 'Deactivate Account' : 'Activate Account'}
-                    </Button>
-                  </div>
-                )}
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
 
               {/* Personal Info */}
               <div className="card">
                 <SectionHead title="Personal Info" onEdit={() => openEdit('personal')} isAdmin={isAdmin} />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
-                  <InfoRow label="Gender"         value={emp.gender ? emp.gender.charAt(0).toUpperCase() + emp.gender.slice(1) : undefined} />
-                  <InfoRow label="Nationality"    value={emp.nationality} />
-                  <InfoRow label="Birth Date"     value={fmtDate(emp.date_of_birth)} />
-                  <InfoRow label="Age"            value={calcAge(emp.date_of_birth)} />
-                  <InfoRow label="Marital Status" value={emp.marital_status ? emp.marital_status.charAt(0).toUpperCase() + emp.marital_status.slice(1) : undefined} />
-                  <InfoRow label="National ID"    value={emp.national_id} />
-                </div>
-                <div className="info-section" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                <div className="info-grid">
+                  <InfoRow label="Gender"          value={emp.gender ? emp.gender.charAt(0).toUpperCase() + emp.gender.slice(1) : undefined} />
+                  <InfoRow label="Nationality"     value={emp.nationality} />
+                  <InfoRow label="Birth Date"      value={fmtDate(emp.date_of_birth)} />
+                  <InfoRow label="Age"             value={calcAge(emp.date_of_birth)} />
+                  <InfoRow label="Marital Status"  value={emp.marital_status ? emp.marital_status.charAt(0).toUpperCase() + emp.marital_status.slice(1) : undefined} />
+                  <InfoRow label="National ID"     value={emp.national_id} />
                   <InfoRow label="Home Country"    value={emp.home_country} />
                   <InfoRow label="Religion"        value={emp.religion} />
                   <InfoRow label="Passport No."    value={emp.passport_number} />
@@ -575,78 +594,42 @@ export default function EmployeeDetailPage() {
               {/* Contact Info */}
               <div className="card">
                 <SectionHead title="Contact Info" onEdit={() => openEdit('contact')} isAdmin={isAdmin} />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', fontSize: 'var(--text-sm)' }}>
-                  {emp.personal_email && (
-                    <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                      <span style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}>✉</span>
-                      <span style={{ color: 'var(--text-primary)', wordBreak: 'break-all' }}>{emp.personal_email}</span>
-                    </div>
-                  )}
-                  {(emp.mobile_number || emp.user?.phone) && (
-                    <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                      <span style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}>📱</span>
-                      <div>
-                        {emp.mobile_number && <p style={{ color: 'var(--text-primary)', fontWeight: 'var(--weight-medium)' }}>{emp.mobile_number}</p>}
-                        {emp.user?.phone && <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>{emp.user.phone}</p>}
-                      </div>
-                    </div>
-                  )}
-                  {emp.extension_number && (
-                    <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                      <span style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}>☎</span>
-                      <span style={{ color: 'var(--text-primary)' }}>Ext. {emp.extension_number}</span>
-                    </div>
-                  )}
-                  {emp.address && (
-                    <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                      <span style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}>📍</span>
-                      <span style={{ color: 'var(--text-primary)' }}>{emp.address}</span>
-                    </div>
-                  )}
-                  {!emp.personal_email && !emp.mobile_number && !emp.user?.phone && !emp.extension_number && !emp.address && (
-                    <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>No contact info on file</p>
-                  )}
+                <div className="info-grid">
+                  <InfoRow label="Mobile"         value={emp.mobile_number} />
+                  <InfoRow label="Extension"      value={emp.extension_number} />
+                  <InfoRow label="Personal Email" value={emp.personal_email} />
+                  <InfoRow label="Address"        value={emp.address} />
+                </div>
+              </div>
+
+              {/* Professional Info */}
+              <div className="card">
+                <SectionHead title="Professional Info" onEdit={() => openEdit('professional')} isAdmin={isAdmin} />
+                <div className="info-grid">
+                  <InfoRow label="Job Title"           value={emp.position_title} />
+                  <InfoRow label="Department"          value={emp.department_name} />
+                  <InfoRow label="Work Location"       value={emp.work_location} />
+                  <InfoRow label="Work Type"           value={empTypeLabel[emp.employment_type] || emp.employment_type} />
+                  <InfoRow label="Direct Manager"      value={emp.manager_detail?.full_name} />
+                  <InfoRow label="Hiring Date"         value={fmtDate(emp.join_date)} />
+                  <InfoRow label="Employment Period"   value={calcPeriod(emp.join_date)} />
+                  <InfoRow label="End of Probation"    value={fmtDate(emp.probation_end_date)} />
+                  <InfoRow label="End Date"            value={fmtDate(emp.end_date)} />
+                  <InfoRow label="Salary Display Name" value={emp.salary_display_name} />
                 </div>
               </div>
 
               {/* UAE Legal */}
               <div className="card">
                 <SectionHead title="UAE Legal" onEdit={() => openEdit('legal')} isAdmin={isAdmin} />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                <div className="info-grid">
                   <InfoRow label="Resident ID"       value={emp.resident_id} />
+                  <InfoRow label="UAE Citizen"       value={emp.is_citizen ? 'Yes' : 'No'} />
                   <InfoRow label="Labor Card"        value={emp.labor_card} />
                   <InfoRow label="Labor Card Expiry" value={fmtDate(emp.labor_card_expiry)} />
                   <InfoRow label="MOL Number"        value={emp.mol_number} />
                   <InfoRow label="Sponsor Name"      value={emp.sponsor_name} />
                   <InfoRow label="Sponsor ID"        value={emp.sponsor_id} />
-                  <InfoRow label="UAE Citizen"       value={emp.is_citizen ? 'Yes' : 'No'} />
-                </div>
-              </div>
-            </div>
-
-            {/* ══ MAIN CONTENT ══════════════════════════════════════════════ */}
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-
-              {/* Professional Info */}
-              <div className="card">
-                <SectionHead title="Professional Info" onEdit={() => openEdit('professional')} isAdmin={isAdmin} />
-                <div className="info-grid">
-                  <InfoRow label="Job Title"            value={emp.position_title} />
-                  <InfoRow label="Work Location"        value={emp.work_location} />
-                  <InfoRow label="Hiring Date"          value={fmtDate(emp.join_date)} />
-                  <InfoRow label="Work Type"            value={empTypeLabel[emp.employment_type] || emp.employment_type} />
-                  <InfoRow label="Department"           value={emp.department_name} />
-                  <InfoRow label="End of Probation"     value={fmtDate(emp.probation_end_date)} />
-                  <InfoRow label="Direct Manager"       value={emp.manager_detail?.full_name} />
-                  <InfoRow label="Employment Period"    value={calcPeriod(emp.join_date)} />
-                  <InfoRow label="End Date"             value={fmtDate(emp.end_date)} />
-                  <InfoRow label="Salary Display Name"  value={emp.salary_display_name} />
-                  {emp.user?.role && (
-                    <InfoRow
-                      label="System Role"
-                      value={emp.user.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                    />
-                  )}
                 </div>
               </div>
 
@@ -655,18 +638,12 @@ export default function EmployeeDetailPage() {
                 <SectionHead title="Salary Package" onEdit={() => openEdit('salary')} isAdmin={isAdmin} />
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-3)' }}>
                   {([
-                    ['Basic Salary',  emp.basic_salary],
-                    ['Housing',       emp.housing_allowance],
-                    ['Transport',     emp.transport_allowance],
-                    ['Other',         emp.other_allowances],
+                    ['Basic Salary', emp.basic_salary],
+                    ['Housing',      emp.housing_allowance],
+                    ['Transport',    emp.transport_allowance],
+                    ['Other',        emp.other_allowances],
                   ] as [string, string | undefined][]).map(([label, val]) => (
-                    <div key={label} style={{
-                      background: 'var(--surface-subtle)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-lg)',
-                      padding: 'var(--space-3)',
-                      textAlign: 'center',
-                    }}>
+                    <div key={label} style={{ background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-3)', textAlign: 'center' }}>
                       <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 'var(--space-1)' }}>{label}</p>
                       <p style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', color: 'var(--text-primary)', lineHeight: 1 }}>
                         {Number(val).toLocaleString('en-US', { minimumFractionDigits: 0 })}
@@ -676,9 +653,7 @@ export default function EmployeeDetailPage() {
                   ))}
                 </div>
                 <div className="info-section" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
-                    Total Package
-                  </span>
+                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>Total Package</span>
                   <span style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', color: 'var(--text-brand)' }}>
                     {Number(emp.total_salary).toLocaleString('en-US', { minimumFractionDigits: 2 })} AED
                   </span>
@@ -691,26 +666,10 @@ export default function EmployeeDetailPage() {
                   <SectionHead title="Attendance Summary" />
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-3)' }}>
                     {(['present', 'absent', 'late', 'on_leave'] as const).map(s => {
-                      const color: Record<string, string> = {
-                        present:  'var(--status-success)',
-                        absent:   'var(--status-error)',
-                        late:     'var(--status-warning)',
-                        on_leave: 'var(--status-info)',
-                      };
-                      const bg: Record<string, string> = {
-                        present:  'var(--status-success-bg)',
-                        absent:   'var(--status-error-bg)',
-                        late:     'var(--status-warning-bg)',
-                        on_leave: 'var(--status-info-bg)',
-                      };
+                      const color: Record<string, string> = { present: 'var(--status-success)', absent: 'var(--status-error)', late: 'var(--status-warning)', on_leave: 'var(--status-info)' };
+                      const bg:    Record<string, string> = { present: 'var(--status-success-bg)', absent: 'var(--status-error-bg)', late: 'var(--status-warning-bg)', on_leave: 'var(--status-info-bg)' };
                       return (
-                        <div key={s} style={{
-                          borderRadius: 'var(--radius-lg)',
-                          padding: 'var(--space-4)',
-                          textAlign: 'center',
-                          background: bg[s],
-                          border: `1px solid ${color[s]}33`,
-                        }}>
+                        <div key={s} style={{ borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)', textAlign: 'center', background: bg[s], border: `1px solid ${color[s]}33` }}>
                           <p style={{ fontSize: 'var(--text-3xl)', fontWeight: 'var(--weight-bold)', lineHeight: 1, marginBottom: 'var(--space-1)', color: color[s] }}>
                             {summary.summary?.[s] || 0}
                           </p>
@@ -735,8 +694,8 @@ export default function EmployeeDetailPage() {
                   </div>
                 </div>
               )}
+
             </div>
-          </div>
           );
         })()}
       </PageShell>
