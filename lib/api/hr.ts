@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRTenantRole, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment } from '@/types';
 
 export interface WhosOffEntry {
   employee_name: string;
@@ -127,6 +127,26 @@ export const hrDepartmentsApi = {
   },
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/hr/employees/departments/${id}/`);
+  },
+};
+
+// ── Tenant Roles ───────────────────────────────────────────────────────────────
+
+export const hrRolesApi = {
+  getAll: async (params?: { page?: number; search?: string; is_active?: boolean }): Promise<PaginatedResponse<HRTenantRole>> => {
+    const response = await apiClient.get('/hr/employees/roles/', { params: { page_size: 100, ...params } });
+    return response.data;
+  },
+  create: async (data: Partial<HRTenantRole>): Promise<HRTenantRole> => {
+    const response = await apiClient.post('/hr/employees/roles/', data);
+    return response.data;
+  },
+  update: async (id: number, data: Partial<HRTenantRole>): Promise<HRTenantRole> => {
+    const response = await apiClient.patch(`/hr/employees/roles/${id}/`, data);
+    return response.data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/employees/roles/${id}/`);
   },
 };
 

@@ -6,6 +6,16 @@ import { PageShell, PageHeader } from '@/components/ui';
 
 const SETTINGS_SECTIONS = [
   {
+    href:        '/hr/roles',
+    title:       'Roles',
+    description: 'Define custom roles for your organisation — each role maps to a permission set that controls system access.',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    ),
+  },
+  {
     href:        '/hr/settings/locations',
     title:       'Office Locations',
     description: 'Define office geofences for GPS check-in. Set address, coordinates, and radius for each location.',

@@ -551,6 +551,20 @@ export interface HRPosition {
   updated_at: string;
 }
 
+export interface HRTenantRole {
+  id: number;
+  name: string;
+  name_ar: string;
+  description: string;
+  permission_set: number | null;
+  permission_set_name: string | null;
+  level: number;
+  is_active: boolean;
+  employee_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface EmployeeGroup {
   id: number;
   name: string;
