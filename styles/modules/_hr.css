@@ -1,0 +1,228 @@
+/* ================================================================
+   HR MODULE — Employee List
+   ================================================================ */
+
+/* ── Toggle (Active / All) ───────────────────────────────────── */
+.emp-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--surface-inset);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.emp-toggle-btn {
+  padding: 5px 14px;
+  border-radius: calc(var(--radius-md) - 2px);
+  border: none;
+  cursor: pointer;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  background: transparent;
+  color: var(--text-secondary);
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.emp-toggle-btn--active {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-xs);
+}
+
+/* ── Employee table ──────────────────────────────────────────── */
+.emp-cols {
+  display: grid;
+  grid-template-columns: 1.5fr 88px 128px 148px 76px 140px 1fr;
+  gap: var(--space-3);
+}
+.emp-thead {
+  padding: var(--space-3) var(--space-5);
+  background: var(--surface-inset);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.emp-thead-cell {
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.emp-row {
+  padding: var(--space-3) var(--space-5);
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background 0.1s;
+}
+.emp-row:hover { background: var(--surface-inset); }
+.emp-name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: none;
+  display: block;
+}
+.emp-name:hover { color: var(--brand); }
+.emp-sub {
+  font-size: var(--text-xs);
+  color: var(--status-warning);
+  margin-top: 1px;
+}
+.emp-meta {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0;
+}
+.emp-mono {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0;
+}
+
+/* ── Group badge ─────────────────────────────────────────────── */
+.emp-group-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.emp-group-badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 99px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  background: rgba(109, 40, 217, 0.1);
+  color: #6d28d9;
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.12s;
+}
+.emp-group-badge:hover { background: rgba(109, 40, 217, 0.18); }
+[data-theme="dark"] .emp-group-badge {
+  background: rgba(167, 139, 250, 0.15);
+  color: #a78bfa;
+}
+[data-theme="dark"] .emp-group-badge:hover { background: rgba(167, 139, 250, 0.25); }
+
+/* ── Manager cell ────────────────────────────────────────────── */
+.emp-manager-btn {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-primary);
+  padding: 0;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+}
+.emp-manager-btn:hover { color: var(--brand); }
+
+/* ── Shared cell actions ─────────────────────────────────────── */
+.emp-assign-btn {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  background: none;
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  padding: 3px 10px;
+  transition: border-color 0.12s, color 0.12s;
+}
+.emp-assign-btn:hover { border-color: var(--brand); color: var(--brand); }
+.emp-clear-btn {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.12s;
+}
+.emp-clear-btn:hover { color: var(--status-error); }
+.emp-saving { font-size: var(--text-xs); color: var(--text-tertiary); }
+
+/* ── Inline picker panel ─────────────────────────────────────── */
+.emp-picker {
+  padding: var(--space-3) var(--space-5) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-inset);
+}
+.emp-picker-title {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 var(--space-2);
+}
+.emp-picker-list {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  max-height: 240px;
+  overflow-y: auto;
+}
+.emp-picker-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2-5) var(--space-4);
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.1s;
+}
+.emp-picker-item:last-child { border-bottom: none; }
+.emp-picker-item:hover:not(:disabled) { background: var(--surface-inset); }
+.emp-picker-item--selected { background: var(--brand-subtle); cursor: default; }
+.emp-picker-item--selected:hover { background: var(--brand-subtle); }
+.emp-picker-cancel {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-top: var(--space-2);
+  padding: 0;
+}
+.emp-picker-cancel:hover { color: var(--text-primary); }
+.emp-no-login-tag {
+  font-size: var(--text-xs);
+  color: var(--status-warning);
+  background: var(--status-warning-bg);
+  padding: 2px 8px;
+  border-radius: 99px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.emp-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.emp-dot--green  { background: var(--status-success); }
+.emp-dot--amber  { background: var(--status-warning); }
