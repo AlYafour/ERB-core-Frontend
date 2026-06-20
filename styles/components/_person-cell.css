@@ -1,0 +1,54 @@
+/* ================================================================
+   PersonCell — unified person/avatar display used across all pages
+   ================================================================ */
+
+.person-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5);
+  min-width: 0;
+}
+
+/* ── Avatar ──────────────────────────────────────────────────── */
+.person-cell-av {
+  border-radius: 50%;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.person-cell-av--initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.02em;
+  font-family: system-ui, -apple-system, sans-serif;
+  user-select: none;
+}
+
+/* ── Text stack ──────────────────────────────────────────────── */
+.person-cell-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.person-cell-name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.person-cell-sub {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.3;
+  margin-top: 1px;
+}

@@ -1,7 +1,6 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
-import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { hrRequestsApi } from '@/lib/api/hr';
 import { HRRequest } from '@/types';
@@ -12,7 +11,8 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
-import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { Button, Badge, type Column } from '@/components/ui';
+import { AppListPage } from '@/components/app/AppListPage';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { HR_REQUEST_STATUS } from '@/lib/utils/status-colors';
@@ -114,36 +114,29 @@ export default function HRRequestsPage() {
   ];
 
   return (
-    <MainLayout>
-      <PageShell>
-        <PageHeader
-          title={t('page', 'hrRequests')}
-          count={totalCount}
-          breadcrumbs={[{ label: 'HR' }, { label: 'Requests' }]}
-        />
-        <TableShell
-          tableState={tableState}
-          filterFields={filterFields}
-          filterSaveKey="hr-requests"
-          searchPlaceholder="Search requests..."
-          columns={columns}
-          data={requests}
-          isLoading={isLoading}
-          error={error}
-          emptyMessage={t('empty', 'noHRRequests')}
-          totalCount={totalCount}
-          pageSize={50}
-          paginatedData={data}
-        />
-
-        <RejectionReasonDialog
-          isOpen={rejectDialogOpen}
-          onClose={() => { setRejectDialogOpen(false); setRejectingId(null); }}
-          onConfirm={(reason) => { if (rejectingId) rejectMutation.mutate({ id: rejectingId, reason }); }}
-          title="Reject HR Request"
-          message="Please provide a reason for rejecting this request. This reason will be visible to the employee."
-        />
-      </PageShell>
-    </MainLayout>
+    <AppListPage
+      title={t('page', 'hrRequests')}
+      description="Review and manage employee HR requests."
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Requests' }]}
+      totalCount={totalCount}
+      filterFields={filterFields}
+      searchPlaceholder="Search requests..."
+      columns={columns}
+      data={requests}
+      isLoading={isLoading}
+      error={error}
+      emptyTitle={t('empty', 'noHRRequests')}
+      tableState={tableState}
+      paginatedData={data}
+      pageSize={50}
+    >
+      <RejectionReasonDialog
+        isOpen={rejectDialogOpen}
+        onClose={() => { setRejectDialogOpen(false); setRejectingId(null); }}
+        onConfirm={(reason) => { if (rejectingId) rejectMutation.mutate({ id: rejectingId, reason }); }}
+        title="Reject HR Request"
+        message="Please provide a reason for rejecting this request. This reason will be visible to the employee."
+      />
+    </AppListPage>
   );
 }

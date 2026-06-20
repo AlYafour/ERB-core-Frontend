@@ -1,15 +1,15 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import MainLayout from '@/components/layout/MainLayout';
 import { hrLeaveEncashmentsApi, hrLeavePoliciesApi, hrEmployeesApi, hrRequestsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
-import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { Button, Badge, type Column } from '@/components/ui';
+import { AppListPage } from '@/components/app/AppListPage';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { BaseModal } from '@/components/ui/base/BaseModal';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
@@ -466,23 +466,18 @@ export default function LeaveEncashmentsPage() {
   const INPUT_SM: React.CSSProperties = { ...INPUT, width: 'auto', minWidth: 140, padding: '5px 10px' };
 
   return (
-    <MainLayout>
-      <PageShell>
-        <PageHeader
-          title="Leave Encashments"
-          description="Create and approve leave encashment requests — converts leave days to salary."
-          breadcrumbs={[{ label: 'HR' }, { label: 'Leave Encashments' }]}
-          actions={
-            isAdmin ? (
-              <Button variant="primary" size="sm" onClick={() => setShowNew(true)}>
-                + New Encashment
-              </Button>
-            ) : undefined
-          }
-        />
-
-        {/* Filters */}
-        <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
+    <AppListPage
+      title="Leave Encashments"
+      description="Create and approve leave encashment requests — converts leave days to salary."
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Leave Encashments' }]}
+      totalCount={data?.count ?? 0}
+      createAction={isAdmin ? (
+        <Button variant="primary" size="sm" onClick={() => setShowNew(true)}>
+          + New Encashment
+        </Button>
+      ) : undefined}
+      extraActions={
+        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
           <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={INPUT_SM}>
             <option value="">All statuses</option>
             <option value="pending">Pending</option>
@@ -496,22 +491,18 @@ export default function LeaveEncashmentsPage() {
             <option value="sick_leave">Sick Leave</option>
           </select>
         </div>
-
-        <TableShell
-          tableState={tableState}
-          columns={columns}
-          data={encashments}
-          isLoading={isLoading}
-          emptyMessage="No encashment requests found."
-          totalCount={data?.count ?? 0}
-        />
-
-        <NewEncashmentModal
-          isOpen={showNew}
-          onClose={() => setShowNew(false)}
-          onSuccess={() => queryClient.invalidateQueries({ queryKey: ['leave-encashments'] })}
-        />
-      </PageShell>
-    </MainLayout>
+      }
+      columns={columns}
+      data={encashments}
+      isLoading={isLoading}
+      emptyTitle="No encashment requests found."
+      tableState={tableState}
+    >
+      <NewEncashmentModal
+        isOpen={showNew}
+        onClose={() => setShowNew(false)}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['leave-encashments'] })}
+      />
+    </AppListPage>
   );
 }

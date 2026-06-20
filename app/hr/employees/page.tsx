@@ -1,11 +1,11 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { Button, Badge, PageShell, SearchInput } from '@/components/ui';
+import { Button, Badge, PageShell, SearchInput, PersonCell } from '@/components/ui';
 import { hrEmployeesApi, hrEmployeeGroupsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
@@ -204,10 +204,13 @@ export default function EmployeesPage() {
 
                       {/* Name */}
                       <div style={{ minWidth: 0 }}>
-                        <Link href={emp.user?.id ? `/users/${emp.user.id}` : '#'} className="emp-name">
-                          {emp.full_name}
-                        </Link>
-                        {!emp.user?.id && <span className="emp-sub">No login</span>}
+                        <a href={emp.user?.id ? `/users/${emp.user.id}` : undefined} style={{ textDecoration: 'none' }}>
+                          <PersonCell
+                            name={emp.full_name}
+                            secondary={!emp.user?.id ? 'No login' : undefined}
+                            avatarUrl={emp.user?.avatar ?? null}
+                          />
+                        </a>
                       </div>
 
                       <p className="emp-mono">{emp.employee_id}</p>

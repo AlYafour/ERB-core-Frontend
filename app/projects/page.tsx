@@ -1,7 +1,6 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef, useMemo, useCallback } from 'react';
-import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectsApi } from '@/lib/api/projects';
 import { Project } from '@/types';
@@ -11,7 +10,8 @@ import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
-import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { Button, Badge, type Column } from '@/components/ui';
+import { AppListPage } from '@/components/app/AppListPage';
 import { exportToExcel, fetchAllPages } from '@/lib/utils/export-excel';
 import BilingualName from '@/components/domain/BilingualName';
 import { useT } from '@/lib/i18n/useT';
@@ -141,50 +141,45 @@ export default function ProjectsPage() {
   ], [t, canEdit, canDelete, handleDelete, deleteMutation.isPending]);
 
   return (
-    <MainLayout>
-      <PageShell>
-        <PageHeader
-          title="Projects"
-          count={totalCount}
-          breadcrumbs={[{ label: 'Projects' }]}
-          actions={
-            <div className="flex items-center gap-2">
-              <Button variant="secondary" onClick={handleExport} isLoading={isExporting}>
-                {isExporting ? t('btn', 'exporting') : `⬇ ${t('btn', 'export')}`}
+    <AppListPage
+      title="Projects"
+      description="Manage and track all company projects."
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Projects' }]}
+      totalCount={totalCount}
+      createAction={
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={handleExport} isLoading={isExporting}>
+            {isExporting ? t('btn', 'exporting') : `⬇ ${t('btn', 'export')}`}
+          </Button>
+          {isAdmin && (
+            <>
+              <input ref={importFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
+              <Button variant="secondary" onClick={() => importFileRef.current?.click()} isLoading={isImporting}>
+                {isImporting ? t('btn', 'importing') : `⬆ ${t('btn', 'import')}`}
               </Button>
-              {isAdmin && (
-                <>
-                  <input ref={importFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
-                  <Button variant="secondary" onClick={() => importFileRef.current?.click()} isLoading={isImporting}>
-                    {isImporting ? t('btn', 'importing') : `⬆ ${t('btn', 'import')}`}
-                  </Button>
-                </>
-              )}
-              {canCreate && <Link href="/projects/new"><Button variant="primary">+ New Project</Button></Link>}
-            </div>
-          }
-        />
-        <TableShell
-          tableState={tableState}
-          searchPlaceholder="Search projects..."
-          toolbarActions={
-            canDelete && selectedItems.size > 0 ? (
-              <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
-                {t('btn', 'delete')} {selectedItems.size}
-              </Button>
-            ) : undefined
-          }
-          columns={columns}
-          data={projects}
-          isLoading={isLoading}
-          error={error}
-          emptyMessage="No projects found."
-          emptyAction={canCreate ? <Link href="/projects/new"><Button variant="primary">Create Project</Button></Link> : undefined}
-          selectable={isAdmin}
-          totalCount={totalCount}
-          paginatedData={data}
-        />
-      </PageShell>
-    </MainLayout>
+            </>
+          )}
+          {canCreate && <Link href="/projects/new"><Button variant="primary">+ New Project</Button></Link>}
+        </div>
+      }
+      searchPlaceholder="Search projects..."
+      columns={columns}
+      data={projects}
+      isLoading={isLoading}
+      error={error}
+      emptyTitle="No projects found."
+      emptyAction={canCreate ? <Link href="/projects/new"><Button variant="primary">Create Project</Button></Link> : undefined}
+      selectable={isAdmin}
+      tableState={tableState}
+      paginatedData={data}
+      pageSize={50}
+      bulkActions={
+        canDelete && selectedItems.size > 0 ? (
+          <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
+            {t('btn', 'delete')} {selectedItems.size}
+          </Button>
+        ) : undefined
+      }
+    />
   );
 }

@@ -30,6 +30,7 @@
 @import "../styles/components/_avatar.css";
 @import "../styles/components/_skeleton.css";
 @import "../styles/components/_utilities.css";
+@import "../styles/components/_person-cell.css";
 
 /* ── Patterns ──────────────────────────────────────────────────── */
 @import "../styles/patterns/_info-fields.css";

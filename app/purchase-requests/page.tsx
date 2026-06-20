@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -14,7 +14,7 @@ import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
-import { Button, Badge, type Column } from '@/components/ui';
+import { Button, Badge, PersonCell, type Column } from '@/components/ui';
 import { RowActions } from '@/components/ui/RowActions';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
@@ -116,7 +116,7 @@ export default function PurchaseRequestsPage() {
         : <span style={{ color: 'var(--text-secondary)' }}>—</span>,
     },
     { key: 'title',     header: t('col', 'title'),       render: r => <span className="block max-w-[240px] truncate" title={r.title}>{r.title}</span> },
-    { key: 'requester', header: t('col', 'requester'),   render: r => <span style={{ color: 'var(--text-primary)' }}>{r.created_by_name || '—'}</span> },
+    { key: 'requester', header: t('col', 'requester'),   render: r => <PersonCell name={r.created_by_name || '—'} avatarUrl={null} /> },
     { key: 'req_date',  header: t('col', 'requestDate'), render: r => <span style={{ color: 'var(--text-secondary)' }}>{fmtDate(r.request_date)}</span> },
     { key: 'req_by',    header: t('col', 'requiredBy'),  render: r => <span style={{ color: 'var(--text-secondary)' }}>{fmtDate(r.required_by)}</span> },
     { key: 'status',    header: t('col', 'status'),      render: r => <Badge variant={PR_STATUS[r.status] ?? 'info'}>{t('status', r.status as any) || r.status}</Badge> },

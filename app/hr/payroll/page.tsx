@@ -1,8 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { hrPayrollApi } from '@/lib/api/hr';
 import { HRPayroll } from '@/types';
@@ -11,7 +10,8 @@ import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
-import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { Button, Badge, type Column } from '@/components/ui';
+import { AppListPage } from '@/components/app/AppListPage';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { PAYROLL_STATUS } from '@/lib/utils/status-colors';
@@ -135,38 +135,32 @@ export default function HRPayrollPage() {
   ];
 
   return (
-    <MainLayout>
-      <PageShell>
-        <PageHeader
-          title={t('page', 'hrPayroll')}
-          count={totalCount}
-          breadcrumbs={[{ label: 'HR' }, { label: 'Payroll' }]}
-          actions={isAdmin ? (
-            <Button variant="primary" size="sm" onClick={() => setShowGenerate(true)}>
-              + Generate Payroll
-            </Button>
-          ) : undefined}
-        />
-        <GeneratePayrollModal
-          isOpen={showGenerate}
-          onClose={() => setShowGenerate(false)}
-          onSuccess={() => queryClient.invalidateQueries({ queryKey: ['hr-payroll'] })}
-        />
-        <TableShell
-          tableState={tableState}
-          filterFields={filterFields}
-          filterSaveKey="hr-payroll"
-          searchPlaceholder="Search by employee name or ID..."
-          columns={columns}
-          data={records}
-          isLoading={isLoading}
-          error={error}
-          emptyMessage={t('empty', 'noPayroll')}
-          totalCount={totalCount}
-          pageSize={50}
-          paginatedData={data}
-        />
-      </PageShell>
-    </MainLayout>
+    <AppListPage
+      title={t('page', 'hrPayroll')}
+      description="Generate and manage employee payroll records."
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Payroll' }]}
+      totalCount={totalCount}
+      createAction={isAdmin ? (
+        <Button variant="primary" size="sm" onClick={() => setShowGenerate(true)}>
+          + Generate Payroll
+        </Button>
+      ) : undefined}
+      filterFields={filterFields}
+      searchPlaceholder="Search by employee name or ID..."
+      columns={columns}
+      data={records}
+      isLoading={isLoading}
+      error={error}
+      emptyTitle={t('empty', 'noPayroll')}
+      tableState={tableState}
+      paginatedData={data}
+      pageSize={50}
+    >
+      <GeneratePayrollModal
+        isOpen={showGenerate}
+        onClose={() => setShowGenerate(false)}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['hr-payroll'] })}
+      />
+    </AppListPage>
   );
 }

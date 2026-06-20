@@ -1,12 +1,12 @@
-'use client';
+﻿'use client';
 
 import { useMemo } from 'react';
-import MainLayout from '@/components/layout/MainLayout';
 import { useQuery } from '@tanstack/react-query';
 import { hrAttendanceApi } from '@/lib/api/hr';
 import { HRAttendance } from '@/types';
 import { type FilterField } from '@/components/ui/FilterPanel';
-import { Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { Badge, type Column } from '@/components/ui';
+import { AppListPage } from '@/components/app/AppListPage';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { ATTENDANCE_STATUS } from '@/lib/utils/status-colors';
@@ -73,28 +73,21 @@ export default function HRAttendancePage() {
   ], [t]);
 
   return (
-    <MainLayout>
-      <PageShell>
-        <PageHeader
-          title={t('page', 'hrAttendance')}
-          count={totalCount}
-          breadcrumbs={[{ label: 'HR' }, { label: 'Attendance' }]}
-        />
-        <TableShell
-          tableState={tableState}
-          filterFields={filterFields}
-          filterSaveKey="hr-attendance"
-          searchPlaceholder="Search by employee name or ID..."
-          columns={columns}
-          data={records}
-          isLoading={isLoading}
-          error={error}
-          emptyMessage={t('empty', 'noAttendance')}
-          totalCount={totalCount}
-          pageSize={50}
-          paginatedData={data}
-        />
-      </PageShell>
-    </MainLayout>
+    <AppListPage
+      title={t('page', 'hrAttendance')}
+      description="Track employee attendance records."
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Attendance' }]}
+      totalCount={totalCount}
+      filterFields={filterFields}
+      searchPlaceholder="Search by employee name or ID..."
+      columns={columns}
+      data={records}
+      isLoading={isLoading}
+      error={error}
+      emptyTitle={t('empty', 'noAttendance')}
+      tableState={tableState}
+      paginatedData={data}
+      pageSize={50}
+    />
   );
 }

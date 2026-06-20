@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -13,7 +13,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
-import { Button, Badge, type Column } from '@/components/ui';
+import { Button, Badge, PersonCell, type Column } from '@/components/ui';
 import { RowActions } from '@/components/ui/RowActions';
 import { usePendingCounts } from '@/lib/hooks/use-pending-counts';
 import { formatPrice } from '@/lib/utils/format';
@@ -122,7 +122,7 @@ export default function PurchaseOrdersPage() {
         return <Link href={`/purchase-requests/${prId}`} className="font-mono" style={{ color: 'var(--text-brand)', fontWeight: 600, fontSize: 'var(--text-sm)' }} onClick={e => e.stopPropagation()}>{prCode}</Link>;
       },
     },
-    { key: 'requested_by', header: 'Requested By', render: o => <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{o.pr_created_by_name || '—'}</span> },
+    { key: 'requested_by', header: 'Requested By', render: o => <PersonCell name={o.pr_created_by_name || '—'} avatarUrl={null} /> },
     {
       key: 'project', header: t('col', 'project'),
       render: o => o.project_name

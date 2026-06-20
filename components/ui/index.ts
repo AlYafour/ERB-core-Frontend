@@ -89,6 +89,8 @@ export { default as TableShell }   from './TableShell';
 export { default as DropdownButton } from './DropdownButton';
 export { RowActions }               from './RowActions';
 export type { RowAction }           from './RowActions';
+export { PersonCell, getInitials, getAvatarColor } from './PersonCell';
+export type { PersonCellProps }     from './PersonCell';
 
 // Forms
 export { default as FormSection }  from './FormSection';

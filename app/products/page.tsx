@@ -1,8 +1,7 @@
-'use client';
+﻿'use client';
 
 import { fetchAllPages } from '@/lib/utils/export-excel';
 import { useMemo, useCallback, useRef } from 'react';
-import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsApi } from '@/lib/api/products';
 import { Product } from '@/types';
@@ -13,7 +12,8 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
-import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { Button, Badge, type Column } from '@/components/ui';
+import { AppListPage } from '@/components/app/AppListPage';
 import { formatPrice } from '@/lib/utils/format';
 import BilingualName from '@/components/domain/BilingualName';
 import { useT } from '@/lib/i18n/useT';
@@ -148,55 +148,50 @@ export default function ProductsPage() {
   ], [t, canDelete, handleDelete]);
 
   return (
-    <MainLayout>
-      <PageShell>
-        <PageHeader
-          title="Products"
-          count={totalCount}
-          breadcrumbs={[{ label: 'Products' }]}
-          actions={
-            <div className="flex gap-2">
-              {isAdmin && (
-                <>
-                  <input ref={importFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
-                  <Button variant="secondary" onClick={handleExport}>Export Excel</Button>
-                  <Button variant="secondary" onClick={() => importFileRef.current?.click()}>Import Excel</Button>
-                </>
-              )}
-              {canCreate && (
-                <Link href="/products/new">
-                  <Button variant="primary">+ {t('btn', 'addProduct') || 'New Product'}</Button>
-                </Link>
-              )}
-            </div>
-          }
-        />
-        <TableShell
-          tableState={tableState}
-          filterFields={filterFields}
-          searchPlaceholder="Search products..."
-          toolbarActions={
-            canDelete && selectedItems.size > 0 ? (
-              <>
-                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-                  {selectedItems.size} selected
-                </span>
-                <Button variant="destructive" onClick={handleBulkDelete}>Delete Selected</Button>
-                <Button variant="secondary" onClick={clearSelection}>Clear</Button>
-              </>
-            ) : undefined
-          }
-          columns={columns}
-          data={products}
-          isLoading={isLoading}
-          error={error}
-          emptyMessage="No products found."
-          emptyAction={canCreate ? <Link href="/products/new"><Button variant="primary">Create Product</Button></Link> : undefined}
-          selectable={canDelete}
-          totalCount={totalCount}
-          paginatedData={data}
-        />
-      </PageShell>
-    </MainLayout>
+    <AppListPage
+      title="Products"
+      description="Manage your product and materials catalog."
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Products' }]}
+      totalCount={totalCount}
+      createAction={
+        <div className="flex gap-2">
+          {isAdmin && (
+            <>
+              <input ref={importFileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
+              <Button variant="secondary" onClick={handleExport}>Export Excel</Button>
+              <Button variant="secondary" onClick={() => importFileRef.current?.click()}>Import Excel</Button>
+            </>
+          )}
+          {canCreate && (
+            <Link href="/products/new">
+              <Button variant="primary">+ {t('btn', 'addProduct') || 'New Product'}</Button>
+            </Link>
+          )}
+        </div>
+      }
+      filterFields={filterFields}
+      searchPlaceholder="Search products..."
+      columns={columns}
+      data={products}
+      isLoading={isLoading}
+      error={error}
+      emptyTitle="No products found."
+      emptyAction={canCreate ? <Link href="/products/new"><Button variant="primary">Create Product</Button></Link> : undefined}
+      selectable={canDelete}
+      tableState={tableState}
+      paginatedData={data}
+      pageSize={50}
+      bulkActions={
+        canDelete && selectedItems.size > 0 ? (
+          <>
+            <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+              {selectedItems.size} selected
+            </span>
+            <Button variant="destructive" onClick={handleBulkDelete}>Delete Selected</Button>
+            <Button variant="secondary" onClick={clearSelection}>Clear</Button>
+          </>
+        ) : undefined
+      }
+    />
   );
 }

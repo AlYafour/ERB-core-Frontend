@@ -1,15 +1,15 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import MainLayout from '@/components/layout/MainLayout';
 import { hrLoansApi, hrEmployeesApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
-import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { Button, Badge, type Column } from '@/components/ui';
+import { AppListPage } from '@/components/app/AppListPage';
 import { BaseModal } from '@/components/ui/base/BaseModal';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { type FilterField } from '@/components/ui/FilterPanel';
@@ -441,44 +441,35 @@ export default function HRLoansPage() {
   ];
 
   return (
-    <MainLayout>
-      <PageShell>
-        <PageHeader
-          title="Loans & Advances"
-          count={totalCount}
-          breadcrumbs={[{ label: 'HR' }, { label: 'Loans & Advances' }]}
-          actions={isAdmin ? (
-            <Button variant="primary" size="sm" onClick={() => setShowNew(true)}>
-              + New Loan
-            </Button>
-          ) : undefined}
-        />
-
-        <NewLoanModal
-          isOpen={showNew}
-          onClose={() => setShowNew(false)}
-          onSuccess={() => queryClient.invalidateQueries({ queryKey: ['hr-loans'] })}
-        />
-
-        {detailLoan && (
-          <LoanDetailModal loan={detailLoan} onClose={() => setDetailLoan(null)} />
-        )}
-
-        <TableShell
-          tableState={tableState}
-          filterFields={filterFields}
-          filterSaveKey="hr-loans"
-          searchPlaceholder="Search by employee name or ID…"
-          columns={columns}
-          data={records}
-          isLoading={isLoading}
-          error={error}
-          emptyMessage="No loans found."
-          totalCount={totalCount}
-          pageSize={50}
-          paginatedData={data}
-        />
-      </PageShell>
-    </MainLayout>
+    <AppListPage
+      title="Loans & Advances"
+      description="Manage employee loans and salary advances."
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Loans & Advances' }]}
+      totalCount={totalCount}
+      createAction={isAdmin ? (
+        <Button variant="primary" size="sm" onClick={() => setShowNew(true)}>
+          + New Loan
+        </Button>
+      ) : undefined}
+      filterFields={filterFields}
+      searchPlaceholder="Search by employee name or ID…"
+      columns={columns}
+      data={records}
+      isLoading={isLoading}
+      error={error}
+      emptyTitle="No loans found."
+      tableState={tableState}
+      paginatedData={data}
+      pageSize={50}
+    >
+      <NewLoanModal
+        isOpen={showNew}
+        onClose={() => setShowNew(false)}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['hr-loans'] })}
+      />
+      {detailLoan && (
+        <LoanDetailModal loan={detailLoan} onClose={() => setDetailLoan(null)} />
+      )}
+    </AppListPage>
   );
 }
