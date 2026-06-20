@@ -23,6 +23,7 @@ import { usePendingCounts } from '@/lib/hooks/use-pending-counts';
 import { ProcListPage } from '@/components/procurement/list/ProcListPage';
 
 import { fmtDate } from '@/lib/utils/format';
+import { PrPipelinePopover } from '@/components/procurement/PrPipelinePopover';
 
 export default function PurchaseRequestsPage() {
   const router = useRouter();
@@ -122,19 +123,22 @@ export default function PurchaseRequestsPage() {
     {
       key: 'procurement', header: 'Procurement',
       render: r => {
-        if (r.status !== 'approved') return <span style={{ color: 'var(--text-muted)' }}>—</span>;
         const hasQR = r.has_quotation_requests;
         const hasPO = r.has_purchase_orders;
-        if (!hasQR && !hasPO) return (
-          <span style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'2px 8px', borderRadius:999, fontSize:'var(--text-xs)', fontWeight:600, background:'var(--status-warning-bg)', color:'var(--status-warning)' }}>
-            ⚠ Not Started
-          </span>
-        );
+
+        const badge = r.status !== 'approved'
+          ? <span style={{ color: 'var(--text-muted)' }}>—</span>
+          : !hasQR && !hasPO
+            ? <span style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'2px 8px', borderRadius:999, fontSize:'var(--text-xs)', fontWeight:600, background:'var(--status-warning-bg)', color:'var(--status-warning)' }}>⚠ Not Started</span>
+            : (
+              <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+                {hasQR && <span style={{ padding:'2px 8px', borderRadius:999, fontSize:'var(--text-xs)', fontWeight:600, background:'var(--task-assigned-bg)', color:'var(--task-assigned)' }}>QR</span>}
+                {hasPO && <span style={{ padding:'2px 8px', borderRadius:999, fontSize:'var(--text-xs)', fontWeight:600, background:'var(--status-success-bg)', color:'var(--status-success)' }}>LPO</span>}
+              </div>
+            );
+
         return (
-          <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
-            {hasQR && <span style={{ padding:'2px 8px', borderRadius:999, fontSize:'var(--text-xs)', fontWeight:600, background:'var(--task-assigned-bg)', color:'var(--task-assigned)' }}>QR</span>}
-            {hasPO && <span style={{ padding:'2px 8px', borderRadius:999, fontSize:'var(--text-xs)', fontWeight:600, background:'var(--status-success-bg)', color:'var(--status-success)' }}>LPO</span>}
-          </div>
+          <PrPipelinePopover request={r}>{badge}</PrPipelinePopover>
         );
       },
     },

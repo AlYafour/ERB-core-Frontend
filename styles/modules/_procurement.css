@@ -1284,6 +1284,83 @@
 /* ── Table area ── */
 .proc-list-table-wrap { overflow-x: auto; }
 
+/* ── PR Pipeline Popover ─────────────────────────────────────────── */
+.pr-pipe-pop {
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 12px 14px 10px;
+  width: 268px;
+  pointer-events: auto;
+  animation: pipe-in 0.12s ease;
+}
+@keyframes pipe-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pr-pipe-steps {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.pr-pipe-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.pr-pipe-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.pr-pipe-dot--done     { background: var(--status-success); color: #fff; }
+.pr-pipe-dot--active   { background: var(--brand-subtle); border: 2px solid var(--brand); }
+.pr-pipe-dot--pending  { background: var(--surface-inset); border: 2px solid var(--border-subtle); }
+.pr-pipe-dot--rejected { background: var(--status-error); color: #fff; }
+.pr-pipe-line {
+  flex: 1;
+  height: 2px;
+  margin-top: 10px;
+  background: var(--border-subtle);
+  min-width: 16px;
+}
+.pr-pipe-line--done { background: var(--status-success); }
+.pr-pipe-step-lbl {
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.pr-pipe-stage {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: 9px;
+}
+.pr-pipe-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+.pr-pipe-progress { font-size: 11px; color: var(--text-tertiary); }
+.pr-pipe-link {
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  color: var(--brand);
+  text-decoration: none;
+}
+.pr-pipe-link:hover { text-decoration: underline; }
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .proc-list-header-card { flex-direction: column; gap: 12px; }
