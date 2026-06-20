@@ -340,6 +340,7 @@ export function AppListPage({
                 hasPrev={!!paginatedData?.previous}
                 hasNext={!!paginatedData?.next}
                 onPageChange={setPage}
+                surface
               />
             </div>
           </div>

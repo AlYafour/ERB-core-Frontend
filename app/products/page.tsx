@@ -117,7 +117,10 @@ export default function ProductsPage() {
     {
       key: 'name', header: 'Product',
       render: p => (
-        <Link href={`/products/view/${p.id}`} className="font-medium" style={{ color: 'var(--text-brand)' }}>
+        <Link href={`/products/view/${p.id}`} className="font-medium" style={{ color: 'var(--text-primary)', textDecoration: 'none' }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-brand)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+        >
           <BilingualName nameEn={p.name} nameAr={p.name_ar} />
         </Link>
       ),

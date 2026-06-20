@@ -302,6 +302,7 @@ export function ProcListPage({
                 hasPrev={!!paginatedData?.previous}
                 hasNext={!!paginatedData?.next}
                 onPageChange={setPage}
+                surface
               />
             </div>
           </div>
