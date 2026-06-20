@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
@@ -19,8 +19,8 @@ type GroupRec   = { id: number; code: string; name: string } | null;
 type ManagerRec = { id: number; name: string } | null;
 type ActiveModal = { type: 'group' | 'manager'; emp: HREmployee } | null;
 
-const COLS  = '1.5fr 88px 140px 160px 76px 160px 1fr';
-const HEADS = ['Employee', 'ID', 'Department', 'Position', 'Status', 'Group', 'Direct Manager'];
+const COLS  = '1.5fr 80px 130px 150px 76px 56px 150px 1fr';
+const HEADS = ['Employee', 'ID', 'Department', 'Position', 'Status', 'Mgr', 'Group', 'Direct Manager'];
 
 // ── Page ──────────────────────────────────────────────────────
 export default function EmployeesPage() {
@@ -33,9 +33,11 @@ export default function EmployeesPage() {
   const [search,       setSearch]       = useState('');
   const [deptFilter,   setDeptFilter]   = useState('');
   const [showInactive, setShowInactive] = useState(false);
-  const [activeModal,  setActiveModal]  = useState<ActiveModal>(null);
-  const [grpOverrides, setGrpOverrides] = useState<Record<number, GroupRec>>({});
-  const [mgrOverrides, setMgrOverrides] = useState<Record<number, ManagerRec>>({});
+  const [activeModal,      setActiveModal]      = useState<ActiveModal>(null);
+  const [grpOverrides,     setGrpOverrides]     = useState<Record<number, GroupRec>>({});
+  const [mgrOverrides,     setMgrOverrides]     = useState<Record<number, ManagerRec>>({});
+  const [mgrFlagOverrides, setMgrFlagOverrides] = useState<Record<number, boolean>>({});
+  const qc = useQueryClient();
 
   useEffect(() => { if (me && !admin) router.replace('/'); }, [me, admin, router]);
 
@@ -62,7 +64,10 @@ export default function EmployeesPage() {
     return !q || e.full_name.toLowerCase().includes(q) || e.employee_id.toLowerCase().includes(q);
   });
 
-  const noLoginCount = employees.filter(e => !e.user?.id).length;
+  const noLoginCount      = employees.filter(e => !e.user?.id).length;
+  const resolveIsManager  = (emp: HREmployee) =>
+    emp.id in mgrFlagOverrides ? mgrFlagOverrides[emp.id] : emp.is_manager;
+  const managerCandidates = employees.filter(e => resolveIsManager(e) && e.is_active);
 
   // ── Mutations ────────────────────────────────────────────────
   const grpMutation = useMutation({
@@ -87,6 +92,16 @@ export default function EmployeesPage() {
       toast(vars.managerId !== null ? 'Manager assigned' : 'Manager removed', 'success');
     },
     onError: () => toast('Failed to update manager', 'error'),
+  });
+
+  const mgrFlagMutation = useMutation({
+    mutationFn: ({ empId, value }: { empId: number; value: boolean }) =>
+      hrEmployeesApi.update(empId, { is_manager: value } as Partial<HREmployee>),
+    onSuccess: (_, vars) => {
+      setMgrFlagOverrides(p => ({ ...p, [vars.empId]: vars.value }));
+      toast(vars.value ? 'Marked as manager' : 'Manager flag removed', 'success');
+    },
+    onError: () => toast('Failed to update', 'error'),
   });
 
   const resolveGroup = (emp: HREmployee): GroupRec => {
@@ -182,6 +197,8 @@ export default function EmployeesPage() {
                   const grp     = resolveGroup(emp);
                   const mgrName = resolveMgrName(emp);
 
+                  const isManager = resolveIsManager(emp);
+
                   return (
                     <div key={emp.id} className="emp-cols emp-row" style={{ gridTemplateColumns: COLS }}>
 
@@ -201,6 +218,18 @@ export default function EmployeesPage() {
                       <Badge variant={emp.is_active ? 'success' : 'default'}>
                         {emp.is_active ? 'Active' : 'Inactive'}
                       </Badge>
+
+                      {/* Manager flag */}
+                      <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <button
+                          className={`emp-mgr-flag${isManager ? ' emp-mgr-flag--on' : ''}`}
+                          onClick={() => mgrFlagMutation.mutate({ empId: emp.id, value: !isManager })}
+                          disabled={mgrFlagMutation.isPending && mgrFlagMutation.variables?.empId === emp.id}
+                          title={isManager ? 'Remove manager designation' : 'Mark as manager'}
+                        >
+                          {isManager ? 'Mgr' : '—'}
+                        </button>
+                      </div>
 
                       {/* Group */}
                       <div>
@@ -267,7 +296,7 @@ export default function EmployeesPage() {
         isOpen={activeModal?.type === 'manager'}
         onClose={() => setActiveModal(null)}
         employee={activeEmp}
-        candidates={employees}
+        candidates={managerCandidates}
         currentMgrId={activeEmp ? resolveMgrId(activeEmp) : null}
         onAssign={id => activeEmp && mgrMutation.mutate({ empId: activeEmp.id, managerId: id })}
         onClear={() => activeEmp && mgrMutation.mutate({ empId: activeEmp.id, managerId: null })}

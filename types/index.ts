@@ -604,6 +604,7 @@ export interface HREmployee {
   probation_end_date?: string | null;
   end_date: string | null;
   is_active: boolean;
+  is_manager: boolean;
   work_location?: string;
   location: number | null;
   location_name: string | null;

@@ -386,23 +386,36 @@ export function CreateTaskDrawer({ onClose }: Props) {
     queryKey: ['teams'],
     queryFn: () => teamsApi.getAll(),
   });
-  const teamsAll = teamsRaw ?? [];
+  const teamsAll = (teamsRaw ?? []) as import('@/types').Team[];
 
-  // Map to ComboItem shape
-  const userItems: ComboItem[] = (usersRaw as {
-    id: number; username: string; first_name?: string; last_name?: string; role?: string;
-  }[]).map((u) => {
+  // When a team is selected, scope assignees to its members only
+  const selectedTeam = assignTeam ? teamsAll.find(t => t.id === assignTeam) : null;
+  const assigneePool = selectedTeam
+    ? selectedTeam.members.map(m => m.user_detail)
+    : (usersRaw as { id: number; username: string; first_name?: string; last_name?: string; role?: string }[]);
+
+  const toComboItem = (u: { id: number; username: string; first_name?: string; last_name?: string; full_name?: string; role?: string }): ComboItem => {
     const first = u.first_name ?? '';
     const last  = u.last_name  ?? '';
-    const label = first && last ? `${first} ${last}` : u.username;
+    const label = u.full_name || (first && last ? `${first} ${last}` : u.username);
     return {
-      id: u.id,
+      id:       u.id,
       label,
       sublabel: u.role ? `@${u.username} · ${u.role}` : `@${u.username}`,
       inits:    getInitials(first, last, u.username),
       color:    getAvatarColor(label),
     };
-  });
+  };
+
+  // If selected team changed, clear assignTo if not in new team's members
+  const validAssigneeIds = selectedTeam
+    ? new Set(selectedTeam.members.map(m => m.user_detail.id))
+    : null;
+  const effectiveAssignTo = validAssigneeIds && assignTo !== null && !validAssigneeIds.has(assignTo)
+    ? null
+    : assignTo;
+
+  const userItems: ComboItem[] = assigneePool.map(toComboItem);
 
   const teamItems: ComboItem[] = (teamsAll as {
     id: number; name: string; member_count?: number;
@@ -425,7 +438,7 @@ export function CreateTaskDrawer({ onClose }: Props) {
         priority,
         requires_approval: requiresApproval,
         due_date:          dueDate || undefined,
-        assigned_to:       assignTo   ?? undefined,
+        assigned_to:       effectiveAssignTo ?? undefined,
         assigned_team:     assignTeam ?? undefined,
       } as unknown as Partial<TaskDetail>),
     onSuccess: () => {
@@ -562,9 +575,9 @@ export function CreateTaskDrawer({ onClose }: Props) {
             <SectionHead label="Assignment" />
 
             <FieldRow
-              label="Assign to person"
+              label={selectedTeam ? `Assign to person (${userItems.length} team members)` : 'Assign to person'}
               aside={
-                meId && assignTo !== meId ? (
+                meId && effectiveAssignTo !== meId ? (
                   <button
                     type="button"
                     onClick={() => setAssignTo(meId)}
@@ -581,9 +594,9 @@ export function CreateTaskDrawer({ onClose }: Props) {
             >
               <SearchableCombobox
                 items={userItems}
-                value={assignTo}
+                value={effectiveAssignTo}
                 onChange={setAssignTo}
-                placeholder="Search and select a person…"
+                placeholder={selectedTeam ? `Search ${userItems.length} team members…` : 'Search and select a person…'}
                 clearLabel="— Unassigned —"
               />
             </FieldRow>

@@ -42,9 +42,17 @@ export function AssignManagerModal({ isOpen, onClose, employee, candidates, curr
         <SearchInput value={search} onChange={setSearch} placeholder="Search by name or ID…" width="100%" />
       </div>
 
+      {candidates.length === 0 && (
+        <div className="emp-mgr-no-managers">
+          <p>No employees are designated as managers yet.</p>
+          <p>Use the <strong>Mgr</strong> toggle in the employees table to mark who can be assigned as a direct manager.</p>
+        </div>
+      )}
+
+      {candidates.length > 0 && (
       <div className="emp-mgr-list">
         {filtered.length === 0 ? (
-          <p className="emp-mgr-empty">No employees found.</p>
+          <p className="emp-mgr-empty">No managers match your search.</p>
         ) : filtered.map(c => {
           const selected = currentMgrId === c.id;
           const routes   = canRoute(c);
@@ -68,6 +76,7 @@ export function AssignManagerModal({ isOpen, onClose, employee, candidates, curr
           );
         })}
       </div>
+      )}
 
       {currentMgrId !== null && (
         <button
