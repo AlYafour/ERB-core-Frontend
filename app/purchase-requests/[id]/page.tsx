@@ -46,6 +46,11 @@ export default function PurchaseRequestDetailPage() {
   const [newProductCategory, setNewProductCategory] = useState('');
   const [newItem, setNewItem] = useState({ quantity: 1, unit: '', reason: '', notes: '' });
 
+  const [addingCharge, setAddingCharge] = useState(false);
+  const [newCharge, setNewCharge] = useState<{ description: string; charge_type: 'lump_sum' | 'per_unit'; rate: string; quantity: string }>({
+    description: '', charge_type: 'lump_sum', rate: '', quantity: '1',
+  });
+
   const canApprove = can('purchase_request', 'approve');
   const canReject  = can('purchase_request', 'reject');
   const canManageAdditionalOrders = isAdmin || user?.role === 'procurement_manager';
@@ -136,6 +141,27 @@ export default function PurchaseRequestDetailPage() {
       toast('Product removed', 'info');
     },
     onError: () => toast('Failed to remove product', 'error'),
+  });
+
+  const addChargeMutation = useMutation({
+    mutationFn: (data: { description: string; charge_type: 'lump_sum' | 'per_unit'; rate: number; quantity: number }) =>
+      purchaseRequestsApi.addCharge({ purchase_request_id: id, ...data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-requests', id] });
+      setAddingCharge(false);
+      setNewCharge({ description: '', charge_type: 'lump_sum', rate: '', quantity: '1' });
+      toast('Charge added', 'success');
+    },
+    onError: () => toast('Failed to add charge', 'error'),
+  });
+
+  const deleteChargeMutation = useMutation({
+    mutationFn: (chargeId: number) => purchaseRequestsApi.deleteCharge(chargeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-requests', id] });
+      toast('Charge removed', 'info');
+    },
+    onError: () => toast('Failed to remove charge', 'error'),
   });
 
   if (isLoading) return <DocLoadState type="loading" />;
@@ -414,6 +440,132 @@ export default function PurchaseRequestDetailPage() {
 
               <ReadOnlyItemsTable items={request.items} columns={cols} />
             </div>
+
+            {/* ── Additional Charges card ── */}
+            {((request.charges && request.charges.length > 0) || canEditItems) && (
+              <div className="card" style={{ marginTop: 12 }}>
+                <div className="proc-section-head">
+                  <h3 className="proc-section-title">
+                    Additional Charges
+                    {request.charges && request.charges.length > 0 && (
+                      <span className="proc-section-count">{request.charges.length}</span>
+                    )}
+                  </h3>
+                  {canEditItems && !addingCharge && (
+                    <Button variant="primary" size="sm" onClick={() => setAddingCharge(true)}>+ Add Charge</Button>
+                  )}
+                </div>
+
+                {/* Add charge form */}
+                {addingCharge && (
+                  <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-4)', border: '1px solid var(--border-subtle)', borderRadius: 8, background: 'var(--surface-inset)' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 120px 100px', gap: 8, alignItems: 'flex-end' }}>
+                      <div>
+                        <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3, fontWeight: 600 }}>
+                          Description <span style={{ color: '#ef4444' }}>*</span>
+                        </label>
+                        <input className="form-input" placeholder="e.g. Pump Charge, Transportation"
+                          value={newCharge.description}
+                          onChange={(e) => setNewCharge({ ...newCharge, description: e.target.value })} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3, fontWeight: 600 }}>Type</label>
+                        <select className="form-input" value={newCharge.charge_type}
+                          onChange={(e) => setNewCharge({ ...newCharge, charge_type: e.target.value as 'lump_sum' | 'per_unit', quantity: '1' })}>
+                          <option value="lump_sum">Lump Sum</option>
+                          <option value="per_unit">Per Unit × Qty</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3, fontWeight: 600 }}>
+                          Rate (AED) <span style={{ color: '#ef4444' }}>*</span>
+                        </label>
+                        <input type="number" min="0" step="0.01" className="form-input" placeholder="0.00"
+                          value={newCharge.rate}
+                          onChange={(e) => setNewCharge({ ...newCharge, rate: e.target.value })} />
+                      </div>
+                      {newCharge.charge_type === 'per_unit' && (
+                        <div>
+                          <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3, fontWeight: 600 }}>Quantity</label>
+                          <input type="number" min="0.0001" step="0.0001" className="form-input" placeholder="1"
+                            value={newCharge.quantity}
+                            onChange={(e) => setNewCharge({ ...newCharge, quantity: e.target.value })} />
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                      <Button variant="primary" size="sm"
+                        disabled={addChargeMutation.isPending} isLoading={addChargeMutation.isPending}
+                        onClick={() => {
+                          if (!newCharge.description.trim()) { toast('Please enter a description', 'warning'); return; }
+                          const rate = parseFloat(newCharge.rate) || 0;
+                          if (rate <= 0) { toast('Rate must be greater than 0', 'warning'); return; }
+                          addChargeMutation.mutate({ description: newCharge.description.trim(), charge_type: newCharge.charge_type, rate, quantity: parseFloat(newCharge.quantity) || 1 });
+                        }}>
+                        Add Charge
+                      </Button>
+                      <Button variant="secondary" size="sm"
+                        onClick={() => { setAddingCharge(false); setNewCharge({ description: '', charge_type: 'lump_sum', rate: '', quantity: '1' }); }}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Charges table */}
+                {request.charges && request.charges.length > 0 ? (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ background: 'var(--surface-subtle)' }}>
+                        {['Description', 'Type', 'Rate', 'Qty', 'Total', ...(canEditItems ? [''] : [])].map((h) => (
+                          <th key={h} style={{ padding: '7px 12px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid var(--border-subtle)' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {request.charges.map((c) => (
+                        <tr key={c.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                          <td style={{ padding: '9px 12px', fontWeight: 600 }}>{c.description}</td>
+                          <td style={{ padding: '9px 12px' }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: c.charge_type === 'lump_sum' ? 'var(--text-secondary)' : 'var(--brand)', background: 'var(--surface-subtle)', borderRadius: 4, padding: '2px 6px' }}>
+                              {c.charge_type === 'lump_sum' ? 'Lump Sum' : 'Per Unit'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '9px 12px', color: 'var(--text-secondary)' }}>AED {Number(c.rate).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                          <td style={{ padding: '9px 12px', color: 'var(--text-secondary)' }}>{c.charge_type === 'per_unit' ? c.quantity : '—'}</td>
+                          <td style={{ padding: '9px 12px', fontWeight: 700, color: 'var(--text-primary)' }}>AED {Number(c.total).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                          {canEditItems && (
+                            <td style={{ padding: '9px 12px' }}>
+                              <button type="button"
+                                disabled={deleteChargeMutation.isPending}
+                                onClick={() => deleteChargeMutation.mutate(c.id)}
+                                style={{ fontSize: 10, fontWeight: 600, color: '#ef4444', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>
+                                Remove
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ background: 'var(--surface-subtle)' }}>
+                        <td colSpan={4} style={{ padding: '8px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Charges</td>
+                        <td style={{ padding: '8px 12px', fontWeight: 800, color: 'var(--brand)', fontSize: 13 }}>
+                          AED {request.charges.reduce((s, c) => s + Number(c.total), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </td>
+                        {canEditItems && <td />}
+                      </tr>
+                    </tfoot>
+                  </table>
+                ) : (
+                  !addingCharge && (
+                    <p style={{ margin: '12px 0', fontSize: 12, color: 'var(--text-tertiary)', textAlign: 'center', fontStyle: 'italic' }}>
+                      No additional charges — click &ldquo;+ Add Charge&rdquo; to add one.
+                    </p>
+                  )
+                )}
+              </div>
+            )}
           </div>
 
         </div>

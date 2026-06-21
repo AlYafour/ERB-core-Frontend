@@ -8,7 +8,7 @@ import { projectsApi } from '@/lib/api/projects';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import { Button, PageShell } from '@/components/ui';
-import { PurchaseRequestItem, Product, Project } from '@/types';
+import { PurchaseRequestCharge, Product, Project } from '@/types';
 import { PurchaseRequestFormData, toPurchaseRequestCreateData } from '@/lib/types/form-data';
 import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
@@ -56,6 +56,12 @@ function NewPurchaseRequestPageContent() {
     reason: string;
     notes: string;
   }>>([]);
+
+  const [charges, setCharges] = useState<Array<Omit<PurchaseRequestCharge, 'id' | 'purchase_request_id'>>>([]);
+  const [currentCharge, setCurrentCharge] = useState<{ description: string; charge_type: 'lump_sum' | 'per_unit'; rate: string; quantity: string }>({
+    description: '', charge_type: 'lump_sum', rate: '', quantity: '1',
+  });
+  const [addingCharge, setAddingCharge] = useState(false);
 
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -155,7 +161,11 @@ function NewPurchaseRequestPageContent() {
       unit: item.unit, project_site: item.project_site || '',
       reason: item.reason, notes: item.notes,
     }));
-    mutation.mutate(toPurchaseRequestCreateData(formData, itemsToSubmit));
+    const chargesToSubmit = charges.map((c) => ({
+      description: c.description, charge_type: c.charge_type,
+      rate: c.rate, quantity: c.quantity,
+    }));
+    mutation.mutate({ ...toPurchaseRequestCreateData(formData, itemsToSubmit), charges: chargesToSubmit });
   };
 
   /* ─── derived for sidebar ─── */
@@ -462,6 +472,135 @@ function NewPurchaseRequestPageContent() {
               )}
 
             </div>
+
+            {/* Section 3: Additional Charges */}
+            <div className="proc-sh" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+              <span className="proc-sh-label">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display:'inline', marginRight: 5, verticalAlign: 'middle' }}>
+                  <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                </svg>
+                Additional Charges
+              </span>
+              {charges.length > 0 && (
+                <div className="proc-sh-right">
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand)', background: 'var(--brand-subtle)', borderRadius: 5, padding: '2px 8px' }}>
+                    {charges.length} charge{charges.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="proc-form-section">
+              {/* Add charge card */}
+              <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 10, overflow: 'hidden', marginBottom: charges.length > 0 ? 14 : 0, background: 'var(--card-bg)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', background: 'var(--surface-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--brand)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>+</div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Add Charge</span>
+                  {!addingCharge && (
+                    <button type="button" onClick={() => setAddingCharge(true)} style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, color: 'var(--brand)', background: 'var(--brand-subtle)', border: 'none', borderRadius: 5, padding: '3px 10px', cursor: 'pointer' }}>
+                      + Add
+                    </button>
+                  )}
+                </div>
+
+                {addingCharge && (
+                  <div style={{ padding: '12px 14px', background: 'var(--brand-subtle)', borderTop: '1px dashed var(--border-subtle)' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 120px 100px', gap: 10, alignItems: 'flex-end' }}>
+                      <div>
+                        <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          Description <span style={{ color: '#ef4444' }}>*</span>
+                        </label>
+                        <input className="form-input" placeholder="e.g. Pump Charge, Delivery Fee"
+                          value={currentCharge.description}
+                          onChange={(e) => setCurrentCharge({ ...currentCharge, description: e.target.value })} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Type</label>
+                        <select className="form-input" value={currentCharge.charge_type}
+                          onChange={(e) => setCurrentCharge({ ...currentCharge, charge_type: e.target.value as 'lump_sum' | 'per_unit', quantity: '1' })}>
+                          <option value="lump_sum">Lump Sum</option>
+                          <option value="per_unit">Per Unit × Qty</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          Rate (AED) <span style={{ color: '#ef4444' }}>*</span>
+                        </label>
+                        <input type="number" min="0" step="0.01" className="form-input" placeholder="0.00"
+                          value={currentCharge.rate}
+                          onChange={(e) => setCurrentCharge({ ...currentCharge, rate: e.target.value })} />
+                      </div>
+                      {currentCharge.charge_type === 'per_unit' && (
+                        <div>
+                          <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Quantity</label>
+                          <input type="number" min="0.0001" step="0.0001" className="form-input" placeholder="1"
+                            value={currentCharge.quantity}
+                            onChange={(e) => setCurrentCharge({ ...currentCharge, quantity: e.target.value })} />
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                      <Button type="button" variant="primary" onClick={() => {
+                        if (!currentCharge.description.trim()) { toast('Please enter a charge description', 'warning'); return; }
+                        const rate = parseFloat(currentCharge.rate) || 0;
+                        if (rate <= 0) { toast('Rate must be greater than 0', 'warning'); return; }
+                        const qty = parseFloat(currentCharge.quantity) || 1;
+                        const total = currentCharge.charge_type === 'lump_sum' ? rate : rate * qty;
+                        setCharges([...charges, { description: currentCharge.description.trim(), charge_type: currentCharge.charge_type, rate, quantity: qty, total }]);
+                        setCurrentCharge({ description: '', charge_type: 'lump_sum', rate: '', quantity: '1' });
+                        setAddingCharge(false);
+                        toast('Charge added', 'success');
+                      }}>Add Charge</Button>
+                      <Button type="button" variant="secondary" onClick={() => { setAddingCharge(false); setCurrentCharge({ description: '', charge_type: 'lump_sum', rate: '', quantity: '1' }); }}>Cancel</Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Charges table */}
+              {charges.length > 0 && (
+                <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 10, overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', background: 'var(--surface-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Charges Added</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand)' }}>
+                      Total: AED {charges.reduce((s, c) => s + (c.total ?? (c.charge_type === 'lump_sum' ? c.rate : c.rate * c.quantity)), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ background: 'var(--surface-subtle)' }}>
+                        {['Description', 'Type', 'Rate', 'Qty', 'Total', ''].map((h) => (
+                          <th key={h} style={{ padding: '6px 12px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid var(--border-subtle)' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {charges.map((c, i) => {
+                        const total = c.charge_type === 'lump_sum' ? c.rate : c.rate * c.quantity;
+                        return (
+                          <tr key={i} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                            <td style={{ padding: '8px 12px', fontWeight: 600 }}>{c.description}</td>
+                            <td style={{ padding: '8px 12px' }}>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: c.charge_type === 'lump_sum' ? 'var(--text-secondary)' : 'var(--brand)', background: 'var(--surface-subtle)', borderRadius: 4, padding: '2px 6px' }}>
+                                {c.charge_type === 'lump_sum' ? 'Lump Sum' : 'Per Unit'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>AED {c.rate.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                            <td style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>{c.charge_type === 'per_unit' ? c.quantity : '—'}</td>
+                            <td style={{ padding: '8px 12px', fontWeight: 700, color: 'var(--text-primary)' }}>AED {total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                            <td style={{ padding: '8px 12px' }}>
+                              <button type="button" onClick={() => setCharges(charges.filter((_, j) => j !== i))} style={{ fontSize: 10, fontWeight: 600, color: '#ef4444', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>
+                                Remove
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </form>
 
           {/* ── Sticky sidebar ── */}
@@ -509,6 +648,7 @@ function NewPurchaseRequestPageContent() {
                   { label: 'Request Date', value: fmtDate(formData.request_date) },
                   { label: 'Required By',  value: fmtDate(formData.required_by) },
                   { label: 'Products',     value: items.length > 0 ? `${items.length} item${items.length !== 1 ? 's' : ''}` : '0 items', brand: items.length > 0 },
+                  { label: 'Charges',      value: charges.length > 0 ? `${charges.length} charge${charges.length !== 1 ? 's' : ''}` : '—', brand: charges.length > 0 },
                 ].map(({ label, value, brand }) => (
                   <div key={label} style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',

@@ -230,6 +230,16 @@ export interface PurchaseRequestItem {
   created_at?: string;
 }
 
+export interface PurchaseRequestCharge {
+  id: number;
+  purchase_request_id?: number;
+  description: string;
+  charge_type: 'lump_sum' | 'per_unit';
+  rate: number;
+  quantity: number;
+  total: number;
+}
+
 export interface PurchaseRequest {
   id: number;
   code: string;
@@ -249,6 +259,7 @@ export interface PurchaseRequest {
   approved_by_name?: string | null;
   approved_at?: string | null;
   items: PurchaseRequestItem[];
+  charges: PurchaseRequestCharge[];
   total_items?: number;
   has_quotation_requests?: boolean;
   has_purchase_orders?: boolean;

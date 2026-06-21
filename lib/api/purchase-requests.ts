@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { PurchaseRequest, PurchaseRequestItem, PaginatedResponse } from '@/types';
+import { PurchaseRequest, PurchaseRequestItem, PurchaseRequestCharge, PaginatedResponse } from '@/types';
 
 export const purchaseRequestsApi = {
   getAll: async (params?: {
@@ -41,6 +41,7 @@ export const purchaseRequestsApi = {
     required_by: string;
     notes?: string;
     items: Omit<PurchaseRequestItem, 'product' | 'created_at'>[];
+    charges?: Omit<PurchaseRequestCharge, 'id' | 'purchase_request_id' | 'total'>[];
   }): Promise<PurchaseRequest> => {
     const response = await apiClient.post('/purchase-requests/', data);
     return response.data;
@@ -79,6 +80,20 @@ export const purchaseRequestsApi = {
 
   deleteItem: async (itemId: number): Promise<void> => {
     await apiClient.delete(`/purchase-requests/items/${itemId}/`);
+  },
+
+  addCharge: async (data: { purchase_request_id: number; description: string; charge_type: 'lump_sum' | 'per_unit'; rate: number; quantity?: number }): Promise<PurchaseRequestCharge> => {
+    const response = await apiClient.post('/purchase-requests/charges/', data);
+    return response.data;
+  },
+
+  updateCharge: async (chargeId: number, data: Partial<PurchaseRequestCharge>): Promise<PurchaseRequestCharge> => {
+    const response = await apiClient.patch(`/purchase-requests/charges/${chargeId}/`, data);
+    return response.data;
+  },
+
+  deleteCharge: async (chargeId: number): Promise<void> => {
+    await apiClient.delete(`/purchase-requests/charges/${chargeId}/`);
   },
 
   undoApproval: async (id: number): Promise<PurchaseRequest> => {
