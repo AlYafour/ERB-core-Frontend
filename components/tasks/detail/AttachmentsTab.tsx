@@ -25,6 +25,12 @@ async function openFile(attachmentId: number, fileName: string, asDownload = fal
       a.click();
     } else if (newWin) {
       newWin.location.href = blobUrl;
+    } else {
+      // Popup was blocked — fall back to direct download
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName;
+      a.click();
     }
     setTimeout(() => URL.revokeObjectURL(blobUrl), 30_000);
   } catch {

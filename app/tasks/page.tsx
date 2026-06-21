@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { TaskListItem } from '@/types';
 import { tasksApi, myTasksApi } from '@/lib/api/tasks';
@@ -35,6 +35,16 @@ export default function TasksPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [isCreateOpen, setIsCreateOpen]     = useState(false);
   const [isTodoOpen, setIsTodoOpen]         = useState(false);
+
+  // Auto-open task from direct link: /tasks/14 redirects to /tasks?open=14
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const openId = params.get('open');
+    if (openId && !isNaN(Number(openId))) {
+      setSelectedTaskId(Number(openId));
+      window.history.replaceState({}, '', '/tasks');
+    }
+  }, []);
 
   const { data: myCount = 0 } = useQuery<number>({
     queryKey: ['my-tasks-count'],
