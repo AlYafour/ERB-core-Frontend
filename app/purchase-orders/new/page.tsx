@@ -38,6 +38,7 @@ export default function NewPurchaseOrderPage() {
 }
 
 type FormItem = Omit<PurchaseOrderItem, 'product' | 'total' | 'created_at'> & { _product?: Product | null };
+type FormCharge = { pr_charge_id?: number | null; description: string; charge_type: 'lump_sum' | 'per_unit'; rate: string; quantity: string };
 
 const BLANK_ITEM: AddItemState = { product_id: 0, quantity: 0, unit_price: 0, discount: 0, tax_rate: 0, notes: '' };
 
@@ -65,6 +66,7 @@ function NewPOContent() {
     status: 'pending',
   });
   const [items, setItems]       = useState<FormItem[]>([]);
+  const [charges, setCharges]   = useState<FormCharge[]>([]);
   const [newItem, setNewItem]   = useState<AddItemState>(BLANK_ITEM);
   const [costCode, setCostCode] = useState<CostCode | null>(null);
   const [errors, setErrors]     = useState<Record<string, string>>({});
@@ -114,6 +116,15 @@ function NewPOContent() {
           unit_price: 0, discount: 0, tax_rate: 0,
           notes: item.notes || '',
           _product: item.product || null,
+        })));
+      }
+      if (purchaseRequest.charges?.length) {
+        setCharges(purchaseRequest.charges.map((c) => ({
+          pr_charge_id: c.id,
+          description: c.description,
+          charge_type: c.charge_type,
+          rate: '',
+          quantity: c.charge_type === 'per_unit' ? String(c.quantity || 1) : '1',
         })));
       }
     }
@@ -188,7 +199,16 @@ function NewPOContent() {
     const guard = fromQR ? canCreatePurchaseOrder(purchaseQuotation!.status) : canCreatePurchaseOrder(undefined, purchaseRequest?.status);
     if (!guard.canProceed) { toast(guard.reason || 'Cannot create PO', 'error'); return; }
     if (Object.keys(errs).length > 0) { setErrors(errs); toast('Please correct the errors', 'error'); return; }
-    mutation.mutate({ ...toPurchaseOrderCreateData(formData, items), cost_code_id: costCode?.id ?? null });
+    const chargesToSubmit = charges
+      .filter((c) => c.description.trim())
+      .map((c) => ({
+        pr_charge_id: c.pr_charge_id ?? null,
+        description: c.description,
+        charge_type: c.charge_type,
+        rate: parseFloat(c.rate) || 0,
+        quantity: parseFloat(c.quantity) || 1,
+      }));
+    mutation.mutate({ ...toPurchaseOrderCreateData(formData, items), cost_code_id: costCode?.id ?? null, charges: chargesToSubmit });
   };
 
   return (
@@ -321,6 +341,95 @@ function NewPOContent() {
                 </div>
               )}
             </div>
+
+            {/* Additional Charges — pre-filled from PR */}
+            {charges.length > 0 && (
+              <>
+                <div className="proc-sh" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                  <span className="proc-sh-label">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display:'inline', marginRight: 5, verticalAlign: 'middle' }}>
+                      <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                    </svg>
+                    Additional Charges
+                  </span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand)', background: 'var(--brand-subtle)', borderRadius: 5, padding: '2px 8px' }}>
+                    {charges.length} from PR
+                  </span>
+                </div>
+                <div className="proc-form-section">
+                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '0 0 12px', padding: '8px 12px', background: 'var(--surface-subtle)', borderRadius: 6, borderLeft: '3px solid var(--brand)' }}>
+                    These charges were flagged in the Purchase Request. Enter the rate for each.
+                  </p>
+                  <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 10, overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ background: 'var(--surface-subtle)' }}>
+                          {['Description', 'Type', 'Rate (AED)', 'Qty', 'Total'].map((h) => (
+                            <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid var(--border-subtle)' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {charges.map((c, i) => {
+                          const rate = parseFloat(c.rate) || 0;
+                          const qty  = parseFloat(c.quantity) || 1;
+                          const total = c.charge_type === 'lump_sum' ? rate : rate * qty;
+                          return (
+                            <tr key={i} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                              <td style={{ padding: '8px 12px', fontWeight: 600 }}>{c.description}</td>
+                              <td style={{ padding: '8px 12px' }}>
+                                <span style={{ fontSize: 10, fontWeight: 700, color: c.charge_type === 'lump_sum' ? 'var(--text-secondary)' : 'var(--brand)', background: 'var(--surface-subtle)', borderRadius: 4, padding: '2px 6px' }}>
+                                  {c.charge_type === 'lump_sum' ? 'Lump Sum' : 'Per Unit'}
+                                </span>
+                              </td>
+                              <td style={{ padding: '6px 12px', width: 130 }}>
+                                <input type="number" min="0" step="0.01" className="form-input" placeholder="0.00"
+                                  value={c.rate}
+                                  onChange={(e) => {
+                                    const updated = [...charges];
+                                    updated[i] = { ...updated[i], rate: e.target.value };
+                                    setCharges(updated);
+                                  }} />
+                              </td>
+                              <td style={{ padding: '6px 12px', width: 90 }}>
+                                {c.charge_type === 'per_unit' ? (
+                                  <input type="number" min="0.0001" step="0.0001" className="form-input"
+                                    value={c.quantity}
+                                    onChange={(e) => {
+                                      const updated = [...charges];
+                                      updated[i] = { ...updated[i], quantity: e.target.value };
+                                      setCharges(updated);
+                                    }} />
+                                ) : (
+                                  <span style={{ color: 'var(--text-tertiary)', paddingLeft: 4 }}>—</span>
+                                )}
+                              </td>
+                              <td style={{ padding: '8px 12px', fontWeight: 700, color: total > 0 ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+                                {total > 0 ? `AED ${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '—'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      {charges.some((c) => parseFloat(c.rate) > 0) && (
+                        <tfoot>
+                          <tr style={{ background: 'var(--surface-subtle)' }}>
+                            <td colSpan={4} style={{ padding: '8px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Charges</td>
+                            <td style={{ padding: '8px 12px', fontWeight: 800, color: 'var(--brand)', fontSize: 13 }}>
+                              AED {charges.reduce((s, c) => {
+                                const rate = parseFloat(c.rate) || 0;
+                                const qty  = parseFloat(c.quantity) || 1;
+                                return s + (c.charge_type === 'lump_sum' ? rate : rate * qty);
+                              }, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      )}
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Terms */}
             <div className="proc-sh">

@@ -240,6 +240,17 @@ export interface PurchaseRequestCharge {
   total: number;
 }
 
+export interface PurchaseOrderCharge {
+  id: number;
+  purchase_order_id?: number;
+  pr_charge_id?: number | null;
+  description: string;
+  charge_type: 'lump_sum' | 'per_unit';
+  rate: number;
+  quantity: number;
+  total: number;
+}
+
 export interface PurchaseRequest {
   id: number;
   code: string;
@@ -418,6 +429,7 @@ export interface PurchaseOrder {
   created_at: string;
   updated_at: string;
   items: PurchaseOrderItem[];
+  charges?: PurchaseOrderCharge[];
 }
 
 // Goods Receiving Types

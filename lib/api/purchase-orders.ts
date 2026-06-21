@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { PurchaseOrder, PurchaseOrderItem, POAmendmentRequest, PaginatedResponse } from '@/types';
+import { PurchaseOrder, PurchaseOrderItem, PurchaseOrderCharge, POAmendmentRequest, PaginatedResponse } from '@/types';
 
 export const purchaseOrdersApi = {
   getAll: async (params?: {
@@ -58,6 +58,7 @@ export const purchaseOrdersApi = {
     discount?: number;
     status?: string;
     items: Omit<PurchaseOrderItem, 'product' | 'total' | 'created_at'>[];
+    charges?: { pr_charge_id?: number | null; description: string; charge_type: 'lump_sum' | 'per_unit'; rate: number; quantity?: number }[];
   }): Promise<PurchaseOrder> => {
     const response = await apiClient.post('/purchase-orders/', data);
     return response.data;
@@ -100,6 +101,20 @@ export const purchaseOrdersApi = {
   rejectAmendment: async (id: number, manager_notes: string): Promise<PurchaseOrder> => {
     const response = await apiClient.post(`/purchase-orders/${id}/reject-amendment/`, { manager_notes });
     return response.data;
+  },
+
+  addCharge: async (data: { purchase_order_id: number; pr_charge_id?: number | null; description: string; charge_type: 'lump_sum' | 'per_unit'; rate: number; quantity?: number }): Promise<PurchaseOrderCharge> => {
+    const response = await apiClient.post('/purchase-orders/charges/', data);
+    return response.data;
+  },
+
+  updateCharge: async (chargeId: number, data: Partial<PurchaseOrderCharge>): Promise<PurchaseOrderCharge> => {
+    const response = await apiClient.patch(`/purchase-orders/charges/${chargeId}/`, data);
+    return response.data;
+  },
+
+  deleteCharge: async (chargeId: number): Promise<void> => {
+    await apiClient.delete(`/purchase-orders/charges/${chargeId}/`);
   },
 };
 
