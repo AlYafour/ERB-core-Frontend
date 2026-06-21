@@ -30,8 +30,10 @@ export function POFormSummary({
   onTransportVatChange,
   chargesCount = 0,
 }: Props) {
-  const discountAmt    = (totals.subtotal + totals.itemVat) * ((discount || 0) / 100);
-  const vatPct         = Math.round(totals.effectiveVatRate * 100);
+  const combinedSubtotal = totals.subtotal + totals.chargesTotal;
+  const combinedVat      = totals.itemVat + totals.transportVat + totals.chargesVat + totals.additionalTax;
+  const discountAmt      = totals.subtotal * ((discount || 0) / 100);
+  const vatPct           = Math.round(totals.effectiveVatRate * 100) || (taxRate ?? 0);
 
   return (
     <div className="proc-summary-wrap">
@@ -78,32 +80,15 @@ export function POFormSummary({
         <div className="proc-summary-card">
           <div className="proc-summary-card-head">Order Summary</div>
           <div className="proc-summary-rows">
-            <SRow label="Subtotal" value={formatPrice(totals.subtotal)} />
-            {totals.itemVat > 0 && <SRow label="VAT (items)" value={formatPrice(totals.itemVat)} />}
+            <SRow label="Subtotal" value={formatPrice(combinedSubtotal)} />
             {(discount || 0) > 0 && (
               <SRow label={`Discount (${discount}%)`} value={`– ${formatPrice(discountAmt)}`} accent />
             )}
             {transportationCharge > 0 && (
               <SRow label="Transportation" value={formatPrice(transportationCharge)} />
             )}
-            {totals.chargesTotal > 0 && (
-              <SRow
-                label={`Charges${chargesCount > 0 ? ` (${chargesCount})` : ''}`}
-                value={formatPrice(totals.chargesTotal)}
-              />
-            )}
-
-            {/* Priority-2: separate lines for transport VAT and service VAT */}
-            {totals.transportVat > 0 && (
-              <SRow label={`VAT on transport (${vatPct}%)`} value={formatPrice(totals.transportVat)} />
-            )}
-            {totals.chargesVat > 0 && (
-              <SRow label={`Service VAT (${vatPct}%)`} value={formatPrice(totals.chargesVat)} />
-            )}
-
-            {/* Priority-1: single combined additional-tax line */}
-            {totals.additionalTax > 0 && (
-              <SRow label={`Additional Tax (${taxRate}%)`} value={formatPrice(totals.additionalTax)} />
+            {combinedVat > 0 && (
+              <SRow label={vatPct > 0 ? `VAT (${vatPct}%)` : 'VAT'} value={formatPrice(combinedVat)} />
             )}
           </div>
           <div className="proc-summary-total-row">

@@ -90,13 +90,21 @@ export default function PrintLPOPage() {
   const discount   = Number(po.discount  ?? 0);
   const hasDiscount = discount > 0;
 
-  const { itemsSubtotal: subtotal, itemsVat: itemTaxAmount } = poItemBreakdown(po.items);
-  const transportCharge = Number(po.transportation_charge) || 0;
-  const chargesVat      = Number(po.charges_vat) || 0;
-  const taxAmount       = Number(po.tax_amount) || 0;
-  const hasExplicitTax  = Number(po.tax_rate) > 0;
-  const transportVat    = hasExplicitTax ? 0 : Math.max(0, taxAmount - chargesVat);
-  const charges         = po.charges ?? [];
+  const { itemsSubtotal: itemsOnly, itemsVat: itemTaxAmount } = poItemBreakdown(po.items);
+  const transportCharge  = Number(po.transportation_charge) || 0;
+  const chargesVat       = Number(po.charges_vat) || 0;
+  const taxAmount        = Number(po.tax_amount) || 0;
+  const hasExplicitTax   = Number(po.tax_rate) > 0;
+  const transportVat     = hasExplicitTax ? 0 : Math.max(0, taxAmount - chargesVat);
+  const charges          = po.charges ?? [];
+  const chargesSum       = charges.reduce((s, c) => s + Number(c.total), 0);
+  const subtotal         = itemsOnly + chargesSum;
+  const combinedVat      = itemTaxAmount + transportVat + chargesVat + (hasExplicitTax ? taxAmount : 0);
+  const vatPct           = hasExplicitTax
+    ? Number(po.tax_rate)
+    : itemTaxAmount > 0 && itemsOnly > 0
+      ? Math.round((itemTaxAmount / itemsOnly) * 100)
+      : 0;
 
   const signatories = [
     { label: 'Prepared By', name: po.pr_created_by_name        || '',        stamp: resolveStamp(po.pr_created_by_name) },
@@ -481,14 +489,6 @@ export default function PrintLPOPage() {
                   <span style={{ fontWeight:600, color:'#dc2626' }}>− AED {fmt(discount)}</span>
                 </div>
               )}
-              {itemTaxAmount > 0 && (
-                <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 12px',
-                  fontSize:'8pt', background: hasDiscount ? '#fafafa' : '#fff',
-                  borderBottom:`1px solid #f1f5f9` }}>
-                  <span style={{ color:GREY }}>VAT</span>
-                  <span style={{ fontWeight:600 }}>AED {fmt(itemTaxAmount)}</span>
-                </div>
-              )}
               {transportCharge > 0 && (
                 <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 12px',
                   fontSize:'8pt', background:'#fafafa', borderBottom:`1px solid #f1f5f9` }}>
@@ -496,32 +496,11 @@ export default function PrintLPOPage() {
                   <span style={{ fontWeight:600 }}>AED {fmt(transportCharge)}</span>
                 </div>
               )}
-              {charges.length > 0 && (
+              {combinedVat > 0 && (
                 <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 12px',
                   fontSize:'8pt', background:'#fff', borderBottom:`1px solid #f1f5f9` }}>
-                  <span style={{ color:GREY }}>Charges ({charges.length})</span>
-                  <span style={{ fontWeight:600 }}>AED {fmt(charges.reduce((s, c) => s + Number(c.total), 0))}</span>
-                </div>
-              )}
-              {transportVat > 0 && !hasExplicitTax && (
-                <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 12px',
-                  fontSize:'8pt', background:'#fafafa', borderBottom:`1px solid #f1f5f9` }}>
-                  <span style={{ color:GREY }}>VAT on transport</span>
-                  <span style={{ fontWeight:600 }}>AED {fmt(transportVat)}</span>
-                </div>
-              )}
-              {chargesVat > 0 && !hasExplicitTax && (
-                <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 12px',
-                  fontSize:'8pt', background:'#fff', borderBottom:`1px solid #f1f5f9` }}>
-                  <span style={{ color:GREY }}>Service VAT</span>
-                  <span style={{ fontWeight:600 }}>AED {fmt(chargesVat)}</span>
-                </div>
-              )}
-              {hasExplicitTax && taxAmount > 0 && (
-                <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 12px',
-                  fontSize:'8pt', background:'#fafafa', borderBottom:`1px solid #f1f5f9` }}>
-                  <span style={{ color:GREY }}>Additional Tax ({po.tax_rate}%)</span>
-                  <span style={{ fontWeight:600 }}>AED {fmt(taxAmount)}</span>
+                  <span style={{ color:GREY }}>{vatPct > 0 ? `VAT (${vatPct}%)` : 'VAT'}</span>
+                  <span style={{ fontWeight:600 }}>AED {fmt(combinedVat)}</span>
                 </div>
               )}
               <div style={{ display:'flex', justifyContent:'space-between',
