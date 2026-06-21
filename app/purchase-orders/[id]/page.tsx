@@ -16,7 +16,7 @@ import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { useProcPermissions } from '@/lib/hooks/use-proc-permissions';
 import { canCreateGRN, canCreateInvoice } from '@/lib/utils/workflow-guards';
-import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable';
+import { POLineItemsTable } from '@/components/procurement/shared/POLineItemsTable';
 import { FinancialSummary } from '@/components/procurement/shared/FinancialSummary';
 import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
 import { StickyDocBar } from '@/components/procurement/shared/StickyDocBar';
@@ -106,7 +106,16 @@ export default function PurchaseOrderDetailPage() {
   const transportationCharge = Number(order.transportation_charge) || 0;
   const taxAmount            = Number(order.tax_amount) || 0;
   const chargesVat           = Number(order.charges_vat) || 0;
-  const transportVat         = Number(order.tax_rate) > 0 ? 0 : Math.max(0, taxAmount - chargesVat);
+  const hasExplicitTax       = Number(order.tax_rate) > 0;
+  const transportVat         = hasExplicitTax ? 0 : Math.max(0, taxAmount - chargesVat);
+  const chargesSum           = (order.charges ?? []).reduce((s, c) => s + Number(c.total), 0);
+  const combinedSubtotal     = itemsSubtotal + chargesSum;
+  const combinedVat          = itemsVat + transportVat + chargesVat + (hasExplicitTax ? taxAmount : 0);
+  const vatPct               = hasExplicitTax
+    ? Number(order.tax_rate)
+    : itemsVat > 0 && itemsSubtotal > 0
+      ? Math.round((itemsVat / itemsSubtotal) * 100)
+      : 0;
 
   const prRef = typeof order.purchase_request === 'object' ? order.purchase_request : order.purchase_request ? { id: order.purchase_request } : null;
   const pqRef = typeof order.purchase_quotation === 'object' ? order.purchase_quotation : order.purchase_quotation ? { id: order.purchase_quotation } : null;
@@ -270,39 +279,21 @@ export default function PurchaseOrderDetailPage() {
                 <div className="proc-section-head">
                   <h3 className="proc-section-title">
                     Products
-                    <span className="proc-section-count">{order.items.length}</span>
+                    <span className="proc-section-count">{order.items.length + (order.charges?.length ?? 0)}</span>
                   </h3>
                 </div>
-                <ReadOnlyItemsTable
+                <POLineItemsTable
                   items={order.items}
-                  columns={[
-                    {
-                      header: 'Product',
-                      cell: (item) => (
-                        <div>
-                          <div className="cell-product-name">{item.product?.name || 'N/A'}</div>
-                          <div className="cell-product-code">{item.product?.code}</div>
-                        </div>
-                      ),
-                    },
-                    { header: 'Unit',       align: 'center', cell: (item) => <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 600 }}>{item.product?.unit?.toUpperCase() || '—'}</span> },
-                    { header: 'Qty',        align: 'center', cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{item.quantity}</span> },
-                    { header: 'Unit Price', align: 'right',  cell: (item) => <span style={{ fontFamily: 'monospace' }}>{formatPrice(item.unit_price)}</span> },
-                    { header: 'Disc %',     align: 'center', cell: (item) => item.discount ? <span style={{ color: 'var(--status-error)', fontWeight: 600 }}>{item.discount}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
-                    { header: 'Tax %',      align: 'center', cell: (item) => item.tax_rate ? <span style={{ color: 'var(--text-secondary)' }}>{item.tax_rate}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
-                    { header: 'Total',      align: 'right',  cell: (item) => <span className="col-total">{formatPrice(item.total)}</span> },
-                  ]}
+                  charges={order.charges}
+                  chargesVat={chargesVat}
                 />
                 <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
                   <FinancialSummary
                     rows={[
-                      { label: 'Subtotal',       value: itemsSubtotal },
-                      { label: 'VAT (items)',     value: itemsVat,             hidden: !itemsVat },
+                      { label: 'Subtotal',       value: combinedSubtotal },
                       { label: `Discount (${order.discount}%)`, value: globalDiscount, variant: 'discount', prefix: '– ', hidden: !globalDiscount },
                       { label: 'Transportation', value: transportationCharge, hidden: !transportationCharge },
-                      { label: `VAT on transport`, value: transportVat, hidden: !transportVat || Number(order.tax_rate) > 0 },
-                      { label: `Service VAT`, value: chargesVat, hidden: !chargesVat || Number(order.tax_rate) > 0 },
-                      { label: `Additional Tax (${order.tax_rate}%)`, value: taxAmount, hidden: !taxAmount || !Number(order.tax_rate) },
+                      { label: vatPct > 0 ? `VAT (${vatPct}%)` : 'VAT', value: combinedVat, hidden: !combinedVat },
                     ]}
                     total={order.total}
                   />

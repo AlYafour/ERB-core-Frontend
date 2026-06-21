@@ -4,13 +4,14 @@ import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
-import { PurchaseOrder, PurchaseOrderItem, PurchaseRequest, Supplier } from '@/types';
+import { PurchaseOrder, PurchaseRequest, Supplier } from '@/types';
 import { fmt, fmtDate, StatusBadge, COMPANY } from '@/components/print/PrintTemplate';
 import { PrintControlsBar } from '@/components/print/PrintControlsBar';
 import Image from 'next/image';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { poItemBreakdown } from '@/lib/utils/po-item-totals';
+import { buildLineRows } from '@/components/procurement/shared/POLineItemsTable';
 import { USER_STAMPS, resolveStamp } from '@/lib/utils/stamps';
 
 function toWords(n: number): string {
@@ -311,149 +312,62 @@ export default function PrintLPOPage() {
           </div>
 
           {/* ════════════════════════════════════════
-              ITEMS TABLE
+              UNIFIED LINE ITEMS TABLE (items + charges)
               ════════════════════════════════════════ */}
-          <div style={{ fontSize:'8pt', fontWeight:700, letterSpacing:'.8px',
-            textTransform:'uppercase', color:STEEL, borderBottom:`1.5px solid ${NAVY}`,
-            paddingBottom:2, marginBottom:4 }}>Order Items</div>
-
-          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'8.5pt', marginBottom:4 }}>
-            <thead>
-              <tr style={{ background:NAVY, color:'#fff' }}>
-                <th style={{ padding:'6px 8px', textAlign:'left', fontSize:'6.5pt', fontWeight:700,
-                  letterSpacing:'.5px', textTransform:'uppercase', width:24 }}>#</th>
-                <th style={{ padding:'6px 8px', textAlign:'left', fontSize:'6.5pt', fontWeight:700,
-                  letterSpacing:'.5px', textTransform:'uppercase' }}>Description</th>
-                <th style={{ padding:'6px 8px', textAlign:'center', fontSize:'6.5pt', fontWeight:700,
-                  letterSpacing:'.5px', textTransform:'uppercase', width:42 }}>Unit</th>
-                <th style={{ padding:'6px 8px', textAlign:'right', fontSize:'6.5pt', fontWeight:700,
-                  letterSpacing:'.5px', textTransform:'uppercase', width:50 }}>Qty</th>
-                <th style={{ padding:'6px 8px', textAlign:'right', fontSize:'6.5pt', fontWeight:700,
-                  letterSpacing:'.5px', textTransform:'uppercase', width:75 }}>Unit Price</th>
-                {hasDiscount && (
-                  <th style={{ padding:'6px 8px', textAlign:'right', fontSize:'6.5pt', fontWeight:700,
-                    letterSpacing:'.5px', textTransform:'uppercase', width:50 }}>Disc%</th>
-                )}
-                <th style={{ padding:'6px 8px', textAlign:'right', fontSize:'6.5pt', fontWeight:700,
-                  letterSpacing:'.5px', textTransform:'uppercase', width:80 }}>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {po.items.map((item: PurchaseOrderItem, idx: number) => (
-                <tr key={item.id ?? idx} style={{
-                  borderBottom:`1px solid #f1f5f9`,
-                  background: idx%2===0 ? '#fff' : '#fafafa',
-                }}>
-                  <td style={{ padding:'5px 8px', textAlign:'center', color:'#94a3b8' }}>{idx+1}</td>
-                  <td style={{ padding:'5px 8px' }}>
-                    <div style={{ fontWeight:600, color:NAVY, lineHeight:1.3 }}>
-                      {item.product?.name ?? `Item #${item.product_id}`}
-                    </div>
-                    {item.product?.code && (
-                      <div style={{ fontSize:'7pt', color:'#94a3b8', marginTop:1 }}>{item.product.code}</div>
-                    )}
-                    {item.notes && (
-                      <div style={{ fontSize:'7.5pt', color:'#777', marginTop:1 }}>{item.notes}</div>
-                    )}
-                  </td>
-                  <td style={{ padding:'5px 8px', textAlign:'center' }}>{item.product?.unit?.toUpperCase() || '—'}</td>
-                  <td style={{ padding:'5px 8px', textAlign:'right' }}>{fmt(item.quantity, 2)}</td>
-                  <td style={{ padding:'5px 8px', textAlign:'right' }}>AED {fmt(item.unit_price)}</td>
-                  {hasDiscount && (
-                    <td style={{ padding:'5px 8px', textAlign:'right' }}>{fmt(item.discount ?? 0, 1)}%</td>
-                  )}
-                  <td style={{ padding:'5px 8px', textAlign:'right', fontWeight:600 }}>AED {fmt(item.total)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* ════════════════════════════════════════
-              ADDITIONAL CHARGES TABLE (if any)
-              ════════════════════════════════════════ */}
-          {charges.length > 0 && (
-            <>
-              <div style={{ fontSize:'8pt', fontWeight:700, letterSpacing:'.8px',
-                textTransform:'uppercase', color:STEEL, borderBottom:`1.5px solid ${NAVY}`,
-                paddingBottom:2, marginBottom:4, marginTop:6 }}>Additional Charges</div>
-
+          {(() => {
+            const rows = buildLineRows(po.items, charges, chargesVat);
+            const pTH: React.CSSProperties = { padding:'6px 8px', fontSize:'6.5pt', fontWeight:700, letterSpacing:'.5px', textTransform:'uppercase' as const, color:'#fff' };
+            const pTD: React.CSSProperties = { padding:'5px 8px', borderBottom:'1px solid #f1f5f9' };
+            const totalExcl = rows.reduce((s, r) => s + r.exclVat,   0);
+            const totalVat  = rows.reduce((s, r) => s + r.vat,       0);
+            const totalIncl = rows.reduce((s, r) => s + r.totalIncl, 0);
+            return (
               <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'8.5pt', marginBottom:4 }}>
                 <thead>
-                  <tr style={{ background:NAVY, color:'#fff' }}>
-                    <th style={{ padding:'5px 8px', textAlign:'left', fontSize:'6.5pt', fontWeight:700, letterSpacing:'.5px', textTransform:'uppercase' }}>Description</th>
-                    <th style={{ padding:'5px 8px', textAlign:'left', fontSize:'6.5pt', fontWeight:700, letterSpacing:'.5px', textTransform:'uppercase', width:70 }}>Type</th>
-                    <th style={{ padding:'5px 8px', textAlign:'right', fontSize:'6.5pt', fontWeight:700, letterSpacing:'.5px', textTransform:'uppercase', width:75 }}>Rate (AED)</th>
-                    <th style={{ padding:'5px 8px', textAlign:'right', fontSize:'6.5pt', fontWeight:700, letterSpacing:'.5px', textTransform:'uppercase', width:50 }}>Qty</th>
-                    <th style={{ padding:'5px 8px', textAlign:'right', fontSize:'6.5pt', fontWeight:700, letterSpacing:'.5px', textTransform:'uppercase', width:60 }}>VAT%</th>
-                    <th style={{ padding:'5px 8px', textAlign:'right', fontSize:'6.5pt', fontWeight:700, letterSpacing:'.5px', textTransform:'uppercase', width:80 }}>Amount</th>
+                  <tr style={{ background:NAVY }}>
+                    <th style={{ ...pTH, textAlign:'left', width:22 }}>#</th>
+                    <th style={{ ...pTH, textAlign:'left' }}>Description</th>
+                    <th style={{ ...pTH, textAlign:'center', width:40 }}>Unit</th>
+                    <th style={{ ...pTH, textAlign:'right', width:48 }}>Qty</th>
+                    <th style={{ ...pTH, textAlign:'right', width:70 }}>Unit Price</th>
+                    <th style={{ ...pTH, textAlign:'right', width:80 }}>Excl. VAT</th>
+                    <th style={{ ...pTH, textAlign:'right', width:72 }}>VAT</th>
+                    <th style={{ ...pTH, textAlign:'right', width:90 }}>Total incl. VAT</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(() => {
-                    const totalChargesBase = charges.reduce((s, c) => s + Number(c.total), 0) || 1;
-                    const effectivePct = hasExplicitTax
-                      ? Number(po.tax_rate)
-                      : chargesVat > 0
-                        ? Math.round(chargesVat / totalChargesBase * 100)
-                        : 0;
-                    return charges.map((ch, idx) => {
-                      const chargeTotal  = Number(ch.total) || 0;
-                      const chargeVatAmt = chargesVat > 0
-                        ? (chargeTotal / totalChargesBase) * chargesVat
-                        : 0;
-                      return (
-                        <tr key={ch.id ?? idx} style={{
-                          borderBottom:`1px solid #f1f5f9`,
-                          background: idx%2===0 ? '#fff' : '#fafafa',
-                        }}>
-                          <td style={{ padding:'5px 8px', fontWeight:600, color:NAVY }}>{ch.description}</td>
-                          <td style={{ padding:'5px 8px' }}>
-                            <span style={{
-                              fontSize:'6.5pt', fontWeight:700, padding:'1px 5px', borderRadius:3,
-                              background: ch.charge_type === 'lump_sum' ? '#f1f5f9' : '#eff6ff',
-                              color: ch.charge_type === 'lump_sum' ? GREY : '#1d4ed8',
-                              border:`1px solid ${ch.charge_type === 'lump_sum' ? BORDER : '#bfdbfe'}`,
-                            }}>
-                              {ch.charge_type === 'lump_sum' ? 'Lump Sum' : 'Per Unit'}
-                            </span>
-                          </td>
-                          <td style={{ padding:'5px 8px', textAlign:'right' }}>AED {fmt(Number(ch.rate))}</td>
-                          <td style={{ padding:'5px 8px', textAlign:'right' }}>
-                            {ch.charge_type === 'per_unit' ? fmt(Number(ch.quantity), 2) : '—'}
-                          </td>
-                          <td style={{ padding:'5px 8px', textAlign:'right', color:GREY }}>
-                            {chargeVatAmt > 0 ? (
-                              <span>
-                                {effectivePct}%
-                                <span style={{ display:'block', fontSize:'6pt', color:'#94a3b8' }}>
-                                  +AED {fmt(chargeVatAmt)}
-                                </span>
-                              </span>
-                            ) : '—'}
-                          </td>
-                          <td style={{ padding:'5px 8px', textAlign:'right', fontWeight:600 }}>AED {fmt(chargeTotal)}</td>
-                        </tr>
-                      );
-                    });
-                  })()}
-                </tbody>
-                <tfoot>
-                  <tr style={{ borderTop:`1.5px solid ${BORDER}`, background:'#f8fafc' }}>
-                    <td colSpan={5} style={{ padding:'5px 8px', fontSize:'7.5pt', fontWeight:700, color:STEEL, textTransform:'uppercase', letterSpacing:'.3px' }}>Total Charges</td>
-                    <td style={{ padding:'5px 8px', textAlign:'right', fontWeight:800, color:NAVY }}>
-                      AED {fmt(charges.reduce((s, c) => s + Number(c.total), 0))}
-                    </td>
-                  </tr>
-                  {chargesVat > 0 && (
-                    <tr style={{ background:'#fefce8', borderTop:`1px solid #fef08a` }}>
-                      <td colSpan={5} style={{ padding:'4px 8px', fontSize:'7.5pt', fontWeight:600, color:'#92400e' }}>Service VAT</td>
-                      <td style={{ padding:'4px 8px', textAlign:'right', fontWeight:700, color:'#92400e' }}>AED {fmt(chargesVat)}</td>
+                  {rows.map((row, idx) => (
+                    <tr key={row.num} style={{ background: idx%2===0 ? '#fff' : '#fafafa' }}>
+                      <td style={{ ...pTD, textAlign:'center', color:'#94a3b8' }}>{row.num}</td>
+                      <td style={pTD}>
+                        <div style={{ fontWeight:600, color:NAVY, lineHeight:1.3 }}>{row.description}</div>
+                        {row.code  && <div style={{ fontSize:'7pt',   color:'#94a3b8', marginTop:1 }}>{row.code}</div>}
+                        {row.notes && <div style={{ fontSize:'7.5pt', color:'#777',    marginTop:1 }}>{row.notes}</div>}
+                      </td>
+                      <td style={{ ...pTD, textAlign:'center' }}>{row.unit?.toUpperCase() || '—'}</td>
+                      <td style={{ ...pTD, textAlign:'right' }}>{fmt(row.qty, 2)}</td>
+                      <td style={{ ...pTD, textAlign:'right' }}>AED {fmt(row.unitPrice)}</td>
+                      <td style={{ ...pTD, textAlign:'right', color:GREY }}>AED {fmt(row.exclVat)}</td>
+                      <td style={{ ...pTD, textAlign:'right', color: row.vat > 0 ? '#92400e' : '#94a3b8' }}>
+                        {row.vat > 0 ? `AED ${fmt(row.vat)}` : '—'}
+                      </td>
+                      <td style={{ ...pTD, textAlign:'right', fontWeight:600, color:NAVY }}>AED {fmt(row.totalIncl)}</td>
                     </tr>
-                  )}
-                </tfoot>
+                  ))}
+                </tbody>
+                {rows.length > 1 && (
+                  <tfoot>
+                    <tr style={{ borderTop:`1.5px solid ${BORDER}`, background:'#f8fafc' }}>
+                      <td colSpan={5} style={{ padding:'5px 8px', fontSize:'7pt', fontWeight:700, color:STEEL, textTransform:'uppercase', letterSpacing:'.3px', textAlign:'right' }}>Totals</td>
+                      <td style={{ padding:'5px 8px', textAlign:'right', fontWeight:700, color:GREY }}>AED {fmt(totalExcl)}</td>
+                      <td style={{ padding:'5px 8px', textAlign:'right', fontWeight:700, color:'#92400e' }}>{totalVat > 0 ? `AED ${fmt(totalVat)}` : '—'}</td>
+                      <td style={{ padding:'5px 8px', textAlign:'right', fontWeight:800, color:NAVY }}>AED {fmt(totalIncl)}</td>
+                    </tr>
+                  </tfoot>
+                )}
               </table>
-            </>
-          )}
+            );
+          })()}
 
           {/* Spacer — pushes totals/terms/auth to page bottom */}
           <div style={{ flex:1 }} />

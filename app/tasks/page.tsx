@@ -1,558 +1,277 @@
 'use client';
 
-import MainLayout from '@/components/layout/MainLayout';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useMemo, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { TaskListItem } from '@/types';
 import { tasksApi, myTasksApi } from '@/lib/api/tasks';
-import { SearchInput } from '@/components/ui';
-
-import { useTasksUIStore } from '@/stores/tasks-ui.store';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
-import { TaskBoard } from '@/components/tasks/board/TaskBoard';
-import { TaskListView, type SortField } from '@/components/tasks/list/TaskListView';
+import { useTableState } from '@/lib/hooks/use-table-state';
+import { toast, confirm } from '@/lib/hooks/use-toast';
+import { Button, type Column } from '@/components/ui';
+import { RowActions } from '@/components/ui/RowActions';
+import { ProcListPage } from '@/components/procurement/list/ProcListPage';
+import { type FilterField } from '@/components/ui/FilterPanel';
 import { TaskDetailDrawer } from '@/components/tasks/detail/TaskDetailDrawer';
 import { CreateTaskDrawer } from '@/components/tasks/create/CreateTaskDrawer';
 import { TodoPanel } from '@/components/tasks/todo/TodoPanel';
-import { KanbanSkeleton, ListSkeleton } from '@/components/tasks/shared/Skeletons';
-import { BRAND, BRAND_HEX, SCOPE_TABS, STATUS_CONFIG } from '@/components/tasks/shared/constants';
-
-// ─── Stat card ─────────────────────────────────────────────────────────────────
-
-function StatCard({
-  label, value, icon, color, bg, border,
-  onClick, active,
-}: {
-  label: string;
-  value: number | undefined;
-  icon: React.ReactNode;
-  color: string;
-  bg: string;
-  border: string;
-  onClick?: () => void;
-  active?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        flex: '1 1 140px', minWidth: 0,
-        padding: '14px 18px 12px',
-        borderRadius: 14,
-        border: `1.5px solid ${active ? color : border}`,
-        background: active ? bg : 'var(--card-bg)',
-        cursor: onClick ? 'pointer' : 'default',
-        textAlign: 'left',
-        transition: 'all 0.18s',
-        boxShadow: active ? `0 0 0 3px ${color}18, 0 2px 8px ${color}14` : 'var(--shadow-xs)',
-        position: 'relative', overflow: 'hidden',
-      }}
-      onMouseEnter={(e) => {
-        if (onClick) {
-          e.currentTarget.style.borderColor = color;
-          e.currentTarget.style.transform = 'translateY(-1px)';
-          e.currentTarget.style.boxShadow = `0 4px 16px ${color}22`;
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (onClick) {
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.borderColor = active ? color : border;
-          e.currentTarget.style.boxShadow = active ? `0 0 0 3px ${color}18` : 'var(--shadow-xs)';
-        }
-      }}
-    >
-      {/* Accent stripe */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, bottom: 0, width: 3,
-        background: color, opacity: active ? 0.9 : 0.35, borderRadius: '14px 0 0 14px',
-      }} />
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-        <div>
-          <p style={{ fontSize: 26, fontWeight: 800, color: active ? color : 'var(--text-primary)', lineHeight: 1, letterSpacing: '-0.03em', margin: 0 }}>
-            {value ?? '—'}
-          </p>
-          <p style={{ fontSize: 11, color: active ? color : 'var(--text-tertiary)', fontWeight: 600, marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            {label}
-          </p>
-        </div>
-        <span style={{
-          width: 36, height: 36, borderRadius: 10,
-          background: active ? color + '22' : bg,
-          border: `1px solid ${active ? color + '40' : border}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        }}>
-          {icon}
-        </span>
-      </div>
-    </button>
-  );
-}
-
-// ─── Filter select style ───────────────────────────────────────────────────────
-
-const SEL: React.CSSProperties = {
-  padding: '7px 28px 7px 10px',
-  borderRadius: 9,
-  border: '1.5px solid var(--border-subtle)',
-  fontSize: 12, fontWeight: 500,
-  background: 'var(--card-bg)',
-  color: 'var(--text-secondary)',
-  cursor: 'pointer', outline: 'none',
-  fontFamily: 'inherit', flexShrink: 0,
-  appearance: 'none',
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-  backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'right 8px center',
-  transition: 'border-color 0.15s, box-shadow 0.15s',
-};
-
-// ─── View toggle ───────────────────────────────────────────────────────────────
-
-function ViewToggle({ view, setView }: { view: 'kanban' | 'list'; setView: (v: 'kanban' | 'list') => void }) {
-  return (
-    <div style={{ display: 'flex', background: 'var(--surface-subtle)', borderRadius: 9, padding: 2, flexShrink: 0 }}>
-      {(['kanban', 'list'] as const).map((v) => (
-        <button
-          key={v}
-          onClick={() => setView(v)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 5,
-            padding: '5px 12px',
-            borderRadius: 7,
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: 12,
-            fontWeight: 600,
-            background: view === v ? 'var(--card-bg)' : 'transparent',
-            color: view === v ? 'var(--text-primary)' : 'var(--text-tertiary)',
-            boxShadow: view === v ? 'var(--shadow-sm)' : 'none',
-            transition: 'all 0.15s',
-          }}
-        >
-          {v === 'kanban' ? (
-            <>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="15" rx="1"/>
-              </svg>
-              Board
-            </>
-          ) : (
-            <>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-                <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-              </svg>
-              List
-            </>
-          )}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
+import { TaskAvatar } from '@/components/tasks/shared/TaskAvatar';
+import { StatusBadge } from '@/components/tasks/shared/StatusBadge';
+import { TYPE_LABEL, PRIORITY_CONFIG, fmtDate, isOverdue } from '@/components/tasks/shared/constants';
 
 const PAGE_SIZE = 50;
 
 export default function TasksPage() {
-  const {
-    view, setView,
-    scope, setScope,
-    statusFilter, setStatusFilter,
-    priorityFilter, setPriorityFilter,
-    taskTypeFilter, setTaskTypeFilter,
-    search, setSearch,
-    sortBy, sortDir, setSort,
-    page, setPage,
-    selectedTaskId, openTask, closeTask,
-    isCreateOpen, openCreate, closeCreate,
-    isTodoOpen, toggleTodo, closeTodo,
-    clearFilters,
-  } = useTasksUIStore();
+  const tableState = useTableState();
+  const { page, search, filters, selectedItems, clearSelection } = tableState;
 
+  const { user } = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const { isAdmin } = usePermissions();
-  const ordering = sortBy ? (sortDir === 'desc' ? `-${sortBy}` : sortBy) : undefined;
-  const hasFilters = Boolean(search || statusFilter || priorityFilter || taskTypeFilter);
-  // Admin on "All Tasks" tab → send scope='all' to see every tenant task
-  const effectiveScope = scope
-    ? (scope as 'mine' | 'created' | 'team' | 'watching')
-    : isAdmin ? 'all' : undefined;
+  const isPrivileged = isTenantAdmin || isPlatformAdmin;
+  const qc = useQueryClient();
 
-  // ── Queries ───────────────────────────────────────────────────────────────
-  const { data: raw, isLoading } = useQuery({
-    queryKey: ['tasks', effectiveScope, statusFilter, priorityFilter, taskTypeFilter, search, ordering, page],
-    queryFn: () =>
-      tasksApi.getAll({
-        scope: effectiveScope,
-        status: statusFilter || undefined,
-        priority: priorityFilter || undefined,
-        task_type: taskTypeFilter || undefined,
-        search: search || undefined,
-        ordering,
-        page,
-        page_size: PAGE_SIZE,
-      }),
+  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+  const [isCreateOpen, setIsCreateOpen]     = useState(false);
+  const [isTodoOpen, setIsTodoOpen]         = useState(false);
+
+  const { data: myCount = 0 } = useQuery<number>({
+    queryKey: ['my-tasks-count'],
+    queryFn:  () => myTasksApi.getAll().then(r => r.filter(t => !t.is_done).length),
+  });
+
+  const effectiveScope = (filters.scope as string) || (isAdmin ? 'all' : undefined);
+
+  const { data: raw, isLoading, error } = useQuery({
+    queryKey: ['tasks', page, search, filters],
+    queryFn:  () => tasksApi.getAll({
+      scope:     effectiveScope as any,
+      status:    (filters.status    as string) || undefined,
+      priority:  (filters.priority  as string) || undefined,
+      task_type: (filters.task_type as string) || undefined,
+      search:    search || undefined,
+      page,
+      page_size: PAGE_SIZE,
+    }),
   });
 
   const { data: stats } = useQuery({
     queryKey: ['task-stats'],
-    queryFn: () => tasksApi.stats(),
+    queryFn:  () => tasksApi.stats(),
   });
 
-  const { data: myCount = 0 } = useQuery<number>({
-    queryKey: ['my-tasks-count'],
-    queryFn: () => myTasksApi.getAll().then((r) => r.filter((t) => !t.is_done).length),
+  const tasks: TaskListItem[] = Array.isArray(raw) ? raw : (raw as any)?.results ?? [];
+  const totalCount = Array.isArray(raw) ? tasks.length : ((raw as any)?.count ?? 0);
+  const byStatus   = (stats as any)?.by_status ?? {};
+  const totalStat  = Object.values(byStatus).reduce((a: number, b) => a + (b as number), 0) || undefined;
+
+  /* ── Delete ──────────────────────────────────────────────────────────── */
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => tasksApi.deleteTask(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tasks'] });
+      qc.invalidateQueries({ queryKey: ['task-stats'] });
+      toast('Task deleted', 'success');
+    },
+    onError: () => toast('Failed to delete task', 'error'),
   });
 
-  const tasks: TaskListItem[] = Array.isArray(raw)
-    ? raw
-    : (raw as { results?: TaskListItem[] })?.results ?? [];
+  const handleDelete = useCallback(async (id: number) => {
+    if (await confirm('Delete this task? This cannot be undone.')) deleteMutation.mutate(id);
+  }, [deleteMutation]);
 
-  const totalCount = !Array.isArray(raw) && (raw as { count?: number })?.count;
-  const totalPages = totalCount ? Math.ceil(totalCount / PAGE_SIZE) : 1;
+  const handleBulkDelete = async () => {
+    if (!selectedItems.size) return;
+    if (!await confirm(`Delete ${selectedItems.size} task${selectedItems.size > 1 ? 's' : ''}? This cannot be undone.`)) return;
+    for (const id of Array.from(selectedItems)) {
+      try { await tasksApi.deleteTask(id); } catch {}
+    }
+    qc.invalidateQueries({ queryKey: ['tasks'] });
+    qc.invalidateQueries({ queryKey: ['task-stats'] });
+    clearSelection();
+    toast('Tasks deleted', 'success');
+  };
 
-  const overdueCount = stats?.overdue ?? 0;
-  const reviewCount = stats?.pending_review ?? 0;
-  const completedCount = stats?.completed_this_month ?? 0;
-  const totalStat = stats?.by_status
-    ? Object.values(stats.by_status).reduce((a, b) => a + b, 0)
-    : undefined;
+  /* ── Filter fields ────────────────────────────────────────────────────── */
+
+  const filterFields: FilterField[] = [
+    {
+      name: 'scope', label: 'Scope', type: 'select', group: 'View',
+      options: [
+        { value: 'mine',     label: 'Assigned to Me' },
+        { value: 'created',  label: 'Created by Me' },
+        { value: 'team',     label: 'My Team' },
+        { value: 'watching', label: 'Watching' },
+      ],
+    },
+    {
+      name: 'priority', label: 'Priority', type: 'select', group: 'Task Info',
+      options: [
+        { value: 'critical', label: 'Critical' },
+        { value: 'high',     label: 'High' },
+        { value: 'medium',   label: 'Medium' },
+        { value: 'low',      label: 'Low' },
+      ],
+    },
+    {
+      name: 'task_type', label: 'Type', type: 'select', group: 'Task Info',
+      options: [
+        { value: 'task',     label: 'Task' },
+        { value: 'request',  label: 'Request' },
+        { value: 'issue',    label: 'Issue' },
+        { value: 'followup', label: 'Follow-up' },
+      ],
+    },
+  ];
+
+  /* ── Columns ─────────────────────────────────────────────────────────── */
+
+  const columns = useMemo((): Column<TaskListItem>[] => [
+    {
+      key: 'title', header: 'Task',
+      render: t => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <span style={{
+            width: 3, height: 32, borderRadius: 99,
+            background: PRIORITY_CONFIG[t.priority].color, flexShrink: 0,
+          }} />
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4, margin: 0 }}>
+              {t.title}
+            </p>
+            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 1, margin: 0 }}>
+              {TYPE_LABEL[t.task_type]}
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'status', header: 'Status',
+      render: t => <StatusBadge status={t.status} />,
+    },
+    {
+      key: 'priority', header: 'Priority',
+      render: t => {
+        const cfg = PRIORITY_CONFIG[t.priority];
+        return (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: cfg.color, background: cfg.bg, padding: '3px 8px', borderRadius: 6, whiteSpace: 'nowrap' }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.color, flexShrink: 0 }} />
+            {cfg.label}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'assignee', header: 'Assignee',
+      render: t => t.assigned_to_detail ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <TaskAvatar name={t.assigned_to_detail.full_name} url={t.assigned_to_detail.avatar_url} size={24} />
+          <span style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {t.assigned_to_detail.full_name}
+          </span>
+        </div>
+      ) : <span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Unassigned</span>,
+    },
+    {
+      key: 'due_date', header: 'Due Date',
+      render: t => {
+        const od = isOverdue(t);
+        return t.due_date ? (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: od ? 600 : 400, color: od ? '#EF4444' : 'var(--text-secondary)', background: od ? '#FEF2F2' : 'transparent', padding: od ? '3px 7px' : '0', borderRadius: od ? 6 : 0, whiteSpace: 'nowrap' }}>
+            {od && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
+            {fmtDate(t.due_date)}
+          </span>
+        ) : <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>—</span>;
+      },
+    },
+    {
+      key: 'progress', header: 'Progress',
+      render: t => {
+        const pct = t.subtasks_total > 0 ? Math.round((t.subtasks_done / t.subtasks_total) * 100) : null;
+        return pct !== null ? (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{t.subtasks_done}/{t.subtasks_total}</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: pct === 100 ? '#16A34A' : 'var(--text-tertiary)' }}>{pct}%</span>
+            </div>
+            <div style={{ height: 4, background: 'var(--surface-inset)', borderRadius: 99, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#16A34A' : 'var(--brand)', borderRadius: 99 }} />
+            </div>
+          </div>
+        ) : <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>—</span>;
+      },
+    },
+    {
+      key: 'actions', header: '',
+      render: t => {
+        const canDel = isPrivileged || t.created_by === (user as any)?.id;
+        if (!canDel) return null;
+        return (
+          <RowActions actions={[
+            { label: 'Delete', onClick: () => handleDelete(t.id), variant: 'danger' },
+          ]} />
+        );
+      },
+    },
+  ], [isPrivileged, user, handleDelete]);
+
+  /* ── Render ───────────────────────────────────────────────────────────── */
 
   return (
-    <MainLayout>
-      <div style={{ marginRight: isTodoOpen ? 340 : 0, transition: 'margin-right 0.22s ease', display: 'flex', flexDirection: 'column', height: '100%' }}>
-
-        {/* ── Page header ──────────────────────────────────────── */}
-        <div style={{
-          padding: '20px 28px 0',
-          background: 'var(--card-bg)',
-          borderBottom: '1px solid var(--border-subtle)',
-          flexShrink: 0,
-        }}>
-          {/* Title row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-            <div>
-              <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
-                Tasks
-              </h1>
-              {(totalCount || tasks.length > 0) && (
-                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
-                  {totalCount !== false && totalCount != null ? totalCount : tasks.length} tasks
-                </p>
-              )}
-            </div>
-
-            <div style={{ flex: 1 }} />
-
-            {/* My To-Do button */}
-            <button
-              onClick={toggleTodo}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 7,
-                padding: '8px 14px',
-                borderRadius: 9,
-                border: `1.5px solid ${isTodoOpen ? BRAND : 'var(--border-subtle)'}`,
-                background: isTodoOpen ? `${BRAND_HEX}10` : 'var(--card-bg)',
-                color: isTodoOpen ? BRAND : 'var(--text-secondary)',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-              </svg>
-              My To-Do
-              {(myCount as number) > 0 && (
-                <span style={{
-                  background: BRAND, color: '#fff', borderRadius: 99,
-                  padding: '0 6px', fontSize: 11, fontWeight: 700, lineHeight: '18px',
-                  minWidth: 18, textAlign: 'center',
-                }}>
-                  {myCount}
-                </span>
-              )}
-            </button>
-
-            {/* New Task button */}
-            <button
-              onClick={openCreate}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 7,
-                padding: '9px 18px',
-                borderRadius: 9,
-                border: 'none',
-                background: BRAND,
-                color: '#fff',
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: `0 4px 14px ${BRAND_HEX}35`,
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none'; }}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              New Task
-            </button>
-          </div>
-
-          {/* Stats bar */}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-            <StatCard
-              label="All Tasks" value={totalStat}
-              color="var(--brand)" bg={`${BRAND_HEX}10`} border={`${BRAND_HEX}25`}
-              icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={BRAND} strokeWidth="2" strokeLinecap="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>}
-              onClick={() => { setScope(''); setStatusFilter(''); clearFilters(); }}
-              active={!scope && !statusFilter && !hasFilters}
-            />
-            <StatCard
-              label="My Tasks" value={stats?.my_tasks}
-              color="#3B82F6" bg="#EFF6FF" border="#BFDBFE"
-              icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
-              onClick={() => setScope('mine')}
-              active={scope === 'mine'}
-            />
-            <StatCard
-              label="In Review" value={reviewCount}
-              color="#F97316" bg="#FFF7ED" border="#FED7AA"
-              icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
-              onClick={() => setStatusFilter(statusFilter === 'review' ? '' : 'review')}
-              active={statusFilter === 'review'}
-            />
-            <StatCard
-              label="Overdue" value={overdueCount}
-              color="#EF4444" bg="#FEF2F2" border="#FECACA"
-              icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
-            />
-            <StatCard
-              label="Done This Month" value={completedCount}
-              color="#16A34A" bg="#DCFCE7" border="#86EFAC"
-              icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
-            />
-          </div>
-
-          {/* Scope tabs */}
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
-            {SCOPE_TABS.map((tab) => {
-              const active = scope === tab.value && !statusFilter;
-              const tabIcon: Record<string, React.ReactNode> = {
-                '':         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>,
-                mine:       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-                created:    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
-                team:       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,
-                watching:   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
-              };
-              return (
-                <button
-                  key={tab.value}
-                  onClick={() => setScope(tab.value)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '6px 14px',
-                    borderRadius: 99,
-                    border: `1.5px solid ${active ? BRAND : 'transparent'}`,
-                    background: active ? `${BRAND_HEX}12` : 'transparent',
-                    cursor: 'pointer',
-                    fontSize: 12, fontWeight: active ? 700 : 500,
-                    color: active ? BRAND : 'var(--text-secondary)',
-                    transition: 'all 0.15s', whiteSpace: 'nowrap',
-                    marginBottom: 8,
-                  }}
-                  onMouseEnter={(e) => { if (!active) { e.currentTarget.style.background = 'var(--surface-subtle)'; e.currentTarget.style.color = 'var(--text-primary)'; } }}
-                  onMouseLeave={(e) => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
-                >
-                  {tabIcon[tab.value]}
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── Toolbar ───────────────────────────────────────────── */}
-        <div style={{
-          padding: '10px 28px',
-          display: 'flex',
-          gap: 8,
-          alignItems: 'center',
-          flexShrink: 0,
-          background: 'var(--card-bg)',
-          borderBottom: '1px solid var(--border-subtle)',
-          flexWrap: 'wrap',
-        }}>
-          <SearchInput value={search} onChange={setSearch} placeholder="Search tasks…" width={220} />
-
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flex: 1 }}>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={SEL}>
-              <option value="">All statuses</option>
-              {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-                <option key={k} value={k}>{v.label}</option>
-              ))}
-            </select>
-
-            <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} style={SEL}>
-              <option value="">All priorities</option>
-              <option value="critical">Critical</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-
-            <select value={taskTypeFilter} onChange={(e) => setTaskTypeFilter(e.target.value)} style={SEL}>
-              <option value="">All types</option>
-              <option value="task">Task</option>
-              <option value="request">Request</option>
-              <option value="issue">Issue</option>
-              <option value="followup">Follow-up</option>
-            </select>
-
-            {hasFilters && (
-              <button
-                onClick={clearFilters}
-                style={{
-                  ...SEL,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  color: '#EF4444',
-                  border: '1px solid #FECACA',
-                  background: '#FEF2F2',
-                  fontWeight: 600,
-                }}
-              >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-                Clear
-              </button>
-            )}
-          </div>
-
-          <ViewToggle view={view} setView={setView} />
-        </div>
-
-        {/* ── Main content ──────────────────────────────────────── */}
-        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          {isLoading ? (
-            <div style={{ padding: '20px 28px' }}>
-              {view === 'kanban' ? <KanbanSkeleton /> : <ListSkeleton />}
-            </div>
-          ) : tasks.length === 0 ? (
-            <div style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 40,
-              textAlign: 'center',
-            }}>
-              <div style={{
-                width: 72,
-                height: 72,
-                borderRadius: '50%',
-                background: 'var(--surface-subtle)',
-                border: '1px solid var(--border-subtle)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 18,
-              }}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--border-default)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-                  <rect x="9" y="3" width="6" height="4" rx="1"/>
-                </svg>
-              </div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
-                {hasFilters ? 'No matching tasks' : 'No tasks yet'}
-              </h3>
-              <p style={{ fontSize: 13, color: 'var(--text-tertiary)', maxWidth: 340, lineHeight: 1.6, marginBottom: 20 }}>
-                {hasFilters
-                  ? 'Try adjusting your filters or clearing the search query.'
-                  : 'Create your first task to start managing your team\'s work.'}
-              </p>
-              {hasFilters ? (
-                <button
-                  onClick={clearFilters}
-                  style={{
-                    padding: '9px 22px', borderRadius: 9,
-                    border: '1.5px solid var(--border-default)',
-                    background: 'transparent', color: 'var(--text-secondary)',
-                    fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                  }}
-                >
-                  Clear Filters
-                </button>
-              ) : (
-                <button
-                  onClick={openCreate}
-                  style={{
-                    padding: '10px 24px', borderRadius: 9, border: 'none',
-                    background: BRAND, color: '#fff',
-                    fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                    boxShadow: `0 4px 14px ${BRAND_HEX}35`,
-                  }}
-                >
-                  + Create First Task
-                </button>
-              )}
-            </div>
-          ) : view === 'kanban' ? (
-            <div style={{ flex: 1, overflowX: 'auto', overflowY: 'auto', padding: '20px 20px 28px' }}>
-              <TaskBoard tasks={tasks} onCardClick={openTask} />
-            </div>
-          ) : (
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-              <TaskListView
-                tasks={tasks}
-                onRowClick={openTask}
-                sortBy={sortBy as SortField | undefined}
-                sortDir={sortDir}
-                onSort={(field) => setSort(field)}
-              />
-              {totalPages > 1 && (
-                <div style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  gap: 8, padding: '16px 20px', borderTop: '1px solid var(--border-subtle)',
-                }}>
-                  <button
-                    onClick={() => setPage(page - 1)} disabled={page <= 1}
-                    style={{ ...SEL, opacity: page <= 1 ? 0.4 : 1, cursor: page <= 1 ? 'not-allowed' : 'pointer' }}
-                  >
-                    ← Prev
-                  </button>
-                  <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                    Page {page} of {totalPages}
-                  </span>
-                  <button
-                    onClick={() => setPage(page + 1)} disabled={page >= totalPages}
-                    style={{ ...SEL, opacity: page >= totalPages ? 0.4 : 1, cursor: page >= totalPages ? 'not-allowed' : 'pointer' }}
-                  >
-                    Next →
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── Side panels ──────────────────────────────────────────── */}
-      {isTodoOpen && <TodoPanel onClose={closeTodo} onOpenTask={openTask} />}
-      {selectedTaskId !== null && <TaskDetailDrawer taskId={selectedTaskId} onClose={closeTask} />}
-      {isCreateOpen && <CreateTaskDrawer onClose={closeCreate} />}
-    </MainLayout>
+    <ProcListPage
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Tasks' }]}
+      title="Tasks"
+      description="Track and manage team tasks."
+      totalCount={totalCount}
+      createAction={
+        <Button variant="primary" onClick={() => setIsCreateOpen(true)}>+ New Task</Button>
+      }
+      statusItems={[
+        { value: '',            label: 'All',          count: totalStat },
+        { value: 'assigned',    label: 'Assigned',     count: byStatus.assigned },
+        { value: 'in_progress', label: 'In Progress',  count: byStatus.in_progress },
+        { value: 'review',      label: 'Under Review', count: byStatus.review },
+        { value: 'accepted',    label: 'Accepted',     count: byStatus.accepted },
+        { value: 'approved',    label: 'Approved',     count: byStatus.approved },
+        { value: 'closed',      label: 'Closed',       count: byStatus.closed },
+      ]}
+      searchPlaceholder="Search tasks…"
+      extraActions={
+        <button
+          className={`proc-cmd-btn${isTodoOpen ? ' proc-cmd-btn--active' : ''}`}
+          onClick={() => setIsTodoOpen(v => !v)}
+        >
+          My To-Do{Number(myCount) > 0 ? ` (${myCount})` : ''}
+        </button>
+      }
+      filterFields={filterFields}
+      advFilterTitle="Task Filters"
+      advFilterDesc="Filter by scope, priority, or task type."
+      columns={columns}
+      data={tasks}
+      isLoading={isLoading}
+      error={error}
+      onRowClick={t => setSelectedTaskId(t.id)}
+      selectable={isPrivileged}
+      tableState={tableState}
+      paginatedData={raw as any}
+      pageSize={PAGE_SIZE}
+      emptyTitle="No tasks found"
+      emptyAction={<Button variant="primary" onClick={() => setIsCreateOpen(true)}>Create First Task</Button>}
+      bulkActions={
+        isPrivileged && selectedItems.size > 0 ? (
+          <Button variant="destructive" onClick={handleBulkDelete}>
+            Delete {selectedItems.size}
+          </Button>
+        ) : undefined
+      }
+    >
+      {isTodoOpen      && <TodoPanel onClose={() => setIsTodoOpen(false)} onOpenTask={setSelectedTaskId} />}
+      {selectedTaskId !== null && <TaskDetailDrawer taskId={selectedTaskId} onClose={() => setSelectedTaskId(null)} />}
+      {isCreateOpen    && <CreateTaskDrawer onClose={() => setIsCreateOpen(false)} />}
+    </ProcListPage>
   );
 }
