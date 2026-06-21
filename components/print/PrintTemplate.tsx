@@ -1,8 +1,9 @@
 'use client';
 
 import Image from 'next/image';
+import { useTenantInfo } from '@/lib/hooks/use-tenant';
 
-/* ─── Company constants ─────────────────────────────────────────── */
+/* ─── Company constants (static fallback) ──────────────────────── */
 export const COMPANY = {
   name:    'AL YAFOUR GEN. CONT. & TRANSPORT LLC.',
   address: 'Abu Dhabi, United Arab Emirates',
@@ -71,6 +72,9 @@ interface PrintTemplateProps {
 }
 
 export default function PrintTemplate({ docType, docNumber, date, status, children, footer }: PrintTemplateProps) {
+  const { data: tenantData } = useTenantInfo();
+  const logoSrc = (tenantData as any)?.branding?.logo_url || COMPANY.logo;
+
   return (
     <div style={{ padding: '6mm 10mm 5mm', fontFamily: "'Inter','Cairo','Segoe UI',sans-serif", fontSize: '10pt', color: NAVY, lineHeight: 1.45, flex: 1, display: 'flex', flexDirection: 'column' }}>
 
@@ -80,7 +84,7 @@ export default function PrintTemplate({ docType, docNumber, date, status, childr
           <tr>
             <td style={{ width: 80, verticalAlign: 'middle' }}>
               <Image
-                src={COMPANY.logo}
+                src={logoSrc}
                 alt="Logo"
                 width={72}
                 height={72}

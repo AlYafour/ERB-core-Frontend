@@ -9,7 +9,7 @@ import { useT } from '@/lib/i18n/useT';
 import CollapsibleMenu from './CollapsibleMenu';
 import { usePendingCounts } from '@/lib/hooks/use-pending-counts';
 import { useTasksBadge } from '@/lib/hooks/use-tasks-badge';
-import { useTenantInfo, useTenantBranding } from '@/lib/hooks/use-tenant';
+import { useTenantInfo } from '@/lib/hooks/use-tenant';
 import {
   DashboardIcon, FileTextIcon, BuildingIcon, PackageIcon,
   BriefcaseIcon, DollarIcon, UsersIcon, ShoppingCartIcon, AlertIcon,
@@ -198,7 +198,6 @@ export default function Sidebar() {
   const pending = usePendingCounts();
   const tasksBadge = useTasksBadge();
   const { data: tenantData } = useTenantInfo();
-  const { data: brandingData } = useTenantBranding();
 
   const isAdmin = !!(user?.role === 'admin' || user?.is_superuser || isPlatformAdmin);
 
@@ -208,7 +207,7 @@ export default function Sidebar() {
   const showModule = (key: string) => !hasModules || enabledModules.includes(key);
 
   const tenantName = tenantData?.name ?? '';
-  const logoUrl    = brandingData?.logo_url || undefined;
+  const logoUrl    = (tenantData as any)?.branding?.logo_url || undefined;
 
   const purchaseItems = [
     { name: t('nav', 'prList'),         href: '/purchase-requests',   icon: <FileTextIcon className="w-4 h-4" />,      badge: pending.pr        },

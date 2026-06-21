@@ -14,14 +14,3 @@ export function useTenantInfo() {
   });
 }
 
-export function useTenantBranding() {
-  const { isAuthenticated, tenantId } = useAuthStore();
-  return useQuery({
-    queryKey: ['tenant', 'branding'],
-    queryFn: tenantApi.myBranding,
-    enabled: isAuthenticated && !!tenantId,
-    staleTime: 10 * 60 * 1000,
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
-}
