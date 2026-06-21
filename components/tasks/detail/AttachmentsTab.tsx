@@ -35,15 +35,17 @@ function fixedUrl(url: string, fileName: string): string {
 }
 
 /**
- * Universal open/download via blob.
- * - Cloudinary URLs: fetched without auth (public CDN).
- * - Django media URLs: fetched with Bearer token.
- * Avoids fl_attachment (unsupported on raw/upload resources) and cross-origin 401.
+ * Open or download a file.
+ * - Cloudinary URLs: open directly via window.open (public CDN, no CORS fetch needed).
+ * - Django media URLs: fetch with Bearer token → blob URL to bypass 401.
  */
-async function openWithAuth(url: string, fileName: string, asDownload = false) {
+async function openFile(url: string, fileName: string, asDownload = false) {
+  if (url.includes('res.cloudinary.com')) {
+    window.open(url, '_blank');
+    return;
+  }
   try {
-    const isCloud = url.includes('res.cloudinary.com');
-    const token   = isCloud ? null : localStorage.getItem('access_token');
+    const token = localStorage.getItem('access_token');
     const res = await fetch(url, token ? { headers: { Authorization: `Bearer ${token}` } } : {});
     if (!res.ok) throw new Error(`${res.status}`);
     const blob = await res.blob();
@@ -58,7 +60,7 @@ async function openWithAuth(url: string, fileName: string, asDownload = false) {
       window.open(blobUrl, '_blank');
     }
   } catch {
-    toast('Could not open file. Please try downloading instead.', 'error');
+    toast('Could not open file.', 'error');
   }
 }
 
@@ -129,14 +131,14 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
                     <button
                       type="button"
                       className="attachment-download"
-                      onClick={() => openWithAuth(fixedUrl(a.file_url!, a.file_name), a.file_name)}
+                      onClick={() => openFile(fixedUrl(a.file_url!, a.file_name), a.file_name)}
                     >
                       View
                     </button>
                     <button
                       type="button"
                       className="attachment-download"
-                      onClick={() => openWithAuth(fixedUrl(a.file_url!, a.file_name), a.file_name, true)}
+                      onClick={() => openFile(fixedUrl(a.file_url!, a.file_name), a.file_name, true)}
                     >
                       ↓
                     </button>
