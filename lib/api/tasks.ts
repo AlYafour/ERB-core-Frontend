@@ -62,6 +62,8 @@ export const tasksApi = {
   stats: () => apiClient.get<TaskStats>('/tasks/tasks/stats/').then(r => r.data),
 
   // Status transitions
+  accept: (id: number) =>
+    apiClient.post<TaskDetail>(`/tasks/tasks/${id}/accept/`).then(r => r.data),
   start: (id: number) =>
     apiClient.post<TaskDetail>(`/tasks/tasks/${id}/start/`).then(r => r.data),
   submit: (id: number, note?: string) =>

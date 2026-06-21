@@ -5,7 +5,7 @@ import { fmtFileSize } from '../shared/constants';
 import { toast } from '@/lib/hooks/use-toast';
 import { taskAttachmentsApi } from '@/lib/api/tasks';
 
-const MAX_MB = 50;
+const MAX_MB = 25;
 
 /**
  * Fetch the file through the backend proxy (which sets correct Content-Type)
