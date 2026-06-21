@@ -69,7 +69,10 @@ export default function TasksPage() {
   /* ── Delete ──────────────────────────────────────────────────────────── */
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => tasksApi.deleteTask(id),
+    mutationFn: async (id: number) => {
+      try { await tasksApi.deleteTask(id); }
+      catch (e: any) { if (e?.response?.status !== 404) throw e; }
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['tasks'] });
       qc.invalidateQueries({ queryKey: ['task-stats'] });

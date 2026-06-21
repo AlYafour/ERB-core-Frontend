@@ -318,9 +318,6 @@ export default function PrintLPOPage() {
             const rows = buildLineRows(po.items, charges, chargesVat);
             const pTH: React.CSSProperties = { padding:'6px 8px', fontSize:'6.5pt', fontWeight:700, letterSpacing:'.5px', textTransform:'uppercase' as const, color:'#fff' };
             const pTD: React.CSSProperties = { padding:'5px 8px', borderBottom:'1px solid #f1f5f9' };
-            const totalExcl = rows.reduce((s, r) => s + r.exclVat,   0);
-            const totalVat  = rows.reduce((s, r) => s + r.vat,       0);
-            const totalIncl = rows.reduce((s, r) => s + r.totalIncl, 0);
             return (
               <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'8.5pt', marginBottom:4 }}>
                 <thead>
@@ -355,16 +352,6 @@ export default function PrintLPOPage() {
                     </tr>
                   ))}
                 </tbody>
-                {rows.length > 1 && (
-                  <tfoot>
-                    <tr style={{ borderTop:`1.5px solid ${BORDER}`, background:'#f8fafc' }}>
-                      <td colSpan={5} style={{ padding:'5px 8px', fontSize:'7pt', fontWeight:700, color:STEEL, textTransform:'uppercase', letterSpacing:'.3px', textAlign:'right' }}>Totals</td>
-                      <td style={{ padding:'5px 8px', textAlign:'right', fontWeight:700, color:GREY }}>AED {fmt(totalExcl)}</td>
-                      <td style={{ padding:'5px 8px', textAlign:'right', fontWeight:700, color:'#92400e' }}>{totalVat > 0 ? `AED ${fmt(totalVat)}` : '—'}</td>
-                      <td style={{ padding:'5px 8px', textAlign:'right', fontWeight:800, color:NAVY }}>AED {fmt(totalIncl)}</td>
-                    </tr>
-                  </tfoot>
-                )}
               </table>
             );
           })()}
