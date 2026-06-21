@@ -29,36 +29,21 @@ function fixCloudinaryUrl(url: string, fileName: string): string {
   return url;
 }
 
-/** View URL — serves the original file inline (PDF opens in browser, images display). */
-function toViewUrl(url: string, fileName: string): string {
+/** Returns the clean Cloudinary URL (fixes image/upload → appends extension for non-images). */
+function fixedUrl(url: string, fileName: string): string {
   return fixCloudinaryUrl(url, fileName);
 }
 
 /**
- * Download URL — forces Content-Disposition: attachment with the correct filename.
- * Uses fl_attachment:filename so Cloudinary sets the right filename in the header
- * (the HTML `download` attribute is ignored for cross-origin URLs).
- */
-function toDownloadUrl(url: string, fileName: string): string {
-  const fixed = fixCloudinaryUrl(url, fileName);
-  if (fixed.includes('res.cloudinary.com') && fixed.includes('/upload/')) {
-    const safe = encodeURIComponent(fileName);
-    return fixed.replace('/upload/', `/upload/fl_attachment:${safe}/`);
-  }
-  return fixed;
-}
-
-function isCloudinary(url: string) {
-  return url.includes('res.cloudinary.com');
-}
-
-/**
- * For non-Cloudinary URLs (Django media): fetch with auth token → blob URL.
- * Avoids the 401 that occurs when the browser opens a protected URL directly.
+ * Universal open/download via blob.
+ * - Cloudinary URLs: fetched without auth (public CDN).
+ * - Django media URLs: fetched with Bearer token.
+ * Avoids fl_attachment (unsupported on raw/upload resources) and cross-origin 401.
  */
 async function openWithAuth(url: string, fileName: string, asDownload = false) {
   try {
-    const token = localStorage.getItem('access_token');
+    const isCloud = url.includes('res.cloudinary.com');
+    const token   = isCloud ? null : localStorage.getItem('access_token');
     const res = await fetch(url, token ? { headers: { Authorization: `Bearer ${token}` } } : {});
     if (!res.ok) throw new Error(`${res.status}`);
     const blob = await res.blob();
@@ -141,41 +126,20 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
               <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                 {a.file_url && (
                   <>
-                    {isCloudinary(a.file_url) ? (
-                      <a
-                        href={toViewUrl(a.file_url, a.file_name)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="attachment-download"
-                      >
-                        View
-                      </a>
-                    ) : (
-                      <button
-                        type="button"
-                        className="attachment-download"
-                        onClick={() => openWithAuth(a.file_url!, a.file_name)}
-                      >
-                        View
-                      </button>
-                    )}
-                    {isCloudinary(a.file_url) ? (
-                      <a
-                        href={toDownloadUrl(a.file_url, a.file_name)}
-                        rel="noopener noreferrer"
-                        className="attachment-download"
-                      >
-                        ↓
-                      </a>
-                    ) : (
-                      <button
-                        type="button"
-                        className="attachment-download"
-                        onClick={() => openWithAuth(a.file_url!, a.file_name, true)}
-                      >
-                        ↓
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className="attachment-download"
+                      onClick={() => openWithAuth(fixedUrl(a.file_url!, a.file_name), a.file_name)}
+                    >
+                      View
+                    </button>
+                    <button
+                      type="button"
+                      className="attachment-download"
+                      onClick={() => openWithAuth(fixedUrl(a.file_url!, a.file_name), a.file_name, true)}
+                    >
+                      ↓
+                    </button>
                   </>
                 )}
                 <button
