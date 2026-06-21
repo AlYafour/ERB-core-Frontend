@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TaskType, TaskPriority, TaskDetail } from '@/types';
-import { tasksApi, teamsApi } from '@/lib/api/tasks';
+import { tasksApi, teamsApi, taskAttachmentsApi } from '@/lib/api/tasks';
 import { usersApi } from '@/lib/api/users';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { BRAND, BRAND_HEX, PRIORITY_CONFIG, TYPE_LABEL } from '../shared/constants';
@@ -376,6 +376,8 @@ export function CreateTaskDrawer({ onClose }: Props) {
   const [assignTeam,       setAssignTeam]       = useState<number | null>(null);
   const [dueDate,          setDueDate]          = useState('');
   const [requiresApproval, setRequiresApproval] = useState(true);
+  const [files,            setFiles]            = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: usersRaw = [] } = useQuery({
     queryKey: ['users-mini'],
@@ -430,8 +432,8 @@ export function CreateTaskDrawer({ onClose }: Props) {
   }));
 
   const create = useMutation({
-    mutationFn: () =>
-      tasksApi.create({
+    mutationFn: async () => {
+      const task = await tasksApi.create({
         title:             title.trim(),
         description:       description.trim() || undefined,
         task_type:         taskType,
@@ -440,7 +442,12 @@ export function CreateTaskDrawer({ onClose }: Props) {
         due_date:          dueDate || undefined,
         assigned_to:       effectiveAssignTo ?? undefined,
         assigned_team:     assignTeam ?? undefined,
-      } as unknown as Partial<TaskDetail>),
+      } as unknown as Partial<TaskDetail>);
+      if (files.length > 0) {
+        await Promise.all(files.map((f) => taskAttachmentsApi.upload(task.id, f)));
+      }
+      return task;
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['tasks'] });
       qc.invalidateQueries({ queryKey: ['task-stats'] });
@@ -648,6 +655,82 @@ export function CreateTaskDrawer({ onClose }: Props) {
                 </p>
               </div>
             </label>
+          </div>
+
+          {/* ── Attachments ──────────────────────────────────── */}
+          <div className="form-section">
+            <SectionHead label="Attachments" />
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const picked = Array.from(e.target.files ?? []);
+                setFiles((prev) => {
+                  const existing = new Set(prev.map((f) => f.name + f.size));
+                  return [...prev, ...picked.filter((f) => !existing.has(f.name + f.size))];
+                });
+                e.target.value = '';
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                width: '100%', padding: '9px 12px',
+                border: '1.5px dashed var(--border-default)',
+                borderRadius: 8, background: 'var(--surface-subtle)',
+                color: 'var(--text-secondary)', fontSize: 13,
+                cursor: 'pointer', transition: 'border-color .15s, color .15s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = BRAND; e.currentTarget.style.color = BRAND; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-default)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+              </svg>
+              Attach files
+            </button>
+            {files.length > 0 && (
+              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {files.map((f, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '6px 10px', borderRadius: 6,
+                      background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)',
+                    }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}>
+                      <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/>
+                    </svg>
+                    <span style={{ flex: 1, fontSize: 12, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {f.name}
+                    </span>
+                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0 }}>
+                      {f.size < 1024 * 1024
+                        ? `${(f.size / 1024).toFixed(0)} KB`
+                        : `${(f.size / (1024 * 1024)).toFixed(1)} MB`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                      style={{
+                        flexShrink: 0, padding: '2px 5px', lineHeight: 1, fontSize: 15,
+                        color: 'var(--text-tertiary)', background: 'none',
+                        border: 'none', cursor: 'pointer', borderRadius: 4,
+                      }}
+                      aria-label="Remove file"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
         </div>
