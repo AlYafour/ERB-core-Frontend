@@ -141,7 +141,7 @@ function NewPOContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [products?.results]);
 
-  const totals = usePOFormTotals(formData, items);
+  const totals = usePOFormTotals(formData, items, charges);
   const setForm = (patch: Partial<PurchaseOrderFormData>) => setFormData((p) => ({ ...p, ...patch }));
   const productOptions = (products?.results || []).map((p) => ({ value: p.id, label: `${p.name} (${p.code})`, searchText: `${p.name} ${p.code}` }));
 
@@ -491,6 +491,7 @@ function NewPOContent() {
               onTaxRateChange={(v) => setForm({ tax_rate: v })}
               onTransportChange={(v) => setForm({ transportation_charge: v })}
               onTransportVatChange={(v) => setForm({ transport_vat_included: v })}
+              chargesCount={charges.length}
             />
 
           </div>

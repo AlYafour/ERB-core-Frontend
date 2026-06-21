@@ -14,6 +14,7 @@ interface Props {
   onTaxRateChange?: (v: number) => void;
   onTransportChange?: (v: number) => void;
   onTransportVatChange?: (checked: boolean) => void;
+  chargesCount?: number;
 }
 
 export function POFormSummary({
@@ -27,6 +28,7 @@ export function POFormSummary({
   onTaxRateChange,
   onTransportChange,
   onTransportVatChange,
+  chargesCount = 0,
 }: Props) {
   const discountAmt = (totals.subtotal + totals.itemVat) * ((discount || 0) / 100);
 
@@ -81,6 +83,9 @@ export function POFormSummary({
               <SRow label={`Discount (${discount}%)`} value={`– ${formatPrice(discountAmt)}`} accent />
             )}
             {transportationCharge > 0 && <SRow label="Transportation" value={formatPrice(transportationCharge)} />}
+            {totals.chargesTotal > 0 && (
+              <SRow label={`Charges${chargesCount > 0 ? ` (${chargesCount})` : ''}`} value={formatPrice(totals.chargesTotal)} />
+            )}
             {totals.taxAmount > 0 && (taxRate || 0) === 0 && (
               <SRow label={`VAT on transport (${Math.round(totals.effectiveVatRate * 100)}%)`} value={formatPrice(totals.taxAmount)} />
             )}

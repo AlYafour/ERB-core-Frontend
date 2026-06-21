@@ -14,11 +14,18 @@ export interface POFormData {
   transport_vat_included?: boolean;
 }
 
+export interface POFormCharge {
+  charge_type: 'lump_sum' | 'per_unit';
+  rate: string | number;
+  quantity: string | number;
+}
+
 export interface POFormTotals {
   subtotal: number;
   itemVat: number;
   taxAmount: number;
   effectiveVatRate: number;
+  chargesTotal: number;
   total: number;
 }
 
@@ -41,7 +48,7 @@ export interface POFormTotals {
  * form inputs which show discount as 0-100%). The backend stores it as a flat
  * AED amount — these should be aligned in a future cleanup.
  */
-export function usePOFormTotals(formData: POFormData, items: POFormItem[]): POFormTotals {
+export function usePOFormTotals(formData: POFormData, items: POFormItem[], charges: POFormCharge[] = []): POFormTotals {
   return useMemo(() => {
     // Step 1 — item-level breakdown (item.discount is a percentage 0-100)
     let subtotal = 0;
@@ -52,6 +59,14 @@ export function usePOFormTotals(formData: POFormData, items: POFormItem[]): POFo
         (1 - (Number(item.discount) || 0) / 100);
       subtotal += afterDiscount;
       itemVat += afterDiscount * ((Number(item.tax_rate) || 0) / 100);
+    }
+
+    // Charges total — mirrors backend PurchaseOrderCharge.total property
+    let chargesTotal = 0;
+    for (const c of charges) {
+      const rate = Number(c.rate) || 0;
+      const qty = Number(c.quantity) || 1;
+      chargesTotal += c.charge_type === 'lump_sum' ? rate : rate * qty;
     }
 
     // Step 2 — mirror backend calculate_total()
@@ -82,7 +97,8 @@ export function usePOFormTotals(formData: POFormData, items: POFormItem[]): POFo
       itemVat,
       taxAmount,
       effectiveVatRate,
-      total: afterDiscount + transport + taxAmount,
+      chargesTotal,
+      total: afterDiscount + transport + taxAmount + chargesTotal,
     };
   }, [
     formData.discount,
@@ -90,5 +106,6 @@ export function usePOFormTotals(formData: POFormData, items: POFormItem[]): POFo
     formData.transportation_charge,
     formData.transport_vat_included,
     items,
+    charges,
   ]);
 }
