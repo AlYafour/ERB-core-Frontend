@@ -279,9 +279,9 @@ export default function PurchaseRequestDetailPage() {
               {t('btn', 'reject')}
             </Button>
           )}
-          {request.status === 'approved' && canApprove && !request.has_quotation_requests && !request.has_purchase_orders && (
+          {request.status === 'approved' && (isAdmin || canApprove) && !request.has_quotation_requests && !request.has_purchase_orders && (
             <Button variant="secondary" size="sm" isLoading={undoApprovalMutation.isPending} onClick={() => undoApprovalMutation.mutate()}>
-              {t('btn', 'update')}
+              Undo Approval
             </Button>
           )}
           {request.status === 'approved' && canManageAdditionalOrders && (request.has_purchase_orders || request.has_awarded_quotation) && !request.allow_additional_orders && (
