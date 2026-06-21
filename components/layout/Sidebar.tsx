@@ -238,7 +238,7 @@ export default function Sidebar() {
   const isCustomerActive  = pathname.startsWith('/customers');
   const isSubActive       = pathname.startsWith('/subcontractors');
 
-  const showOperations = showModule('tasks') || showModule('crm') || showModule('subcontractors');
+  const showOperations = true || showModule('crm') || showModule('subcontractors'); // tasks always visible
   const collapsibleProps = { user, collapsed: sidebarCollapsed };
 
   function navLink(href: string, label: string, icon: React.ReactNode) {
@@ -390,18 +390,16 @@ export default function Sidebar() {
               <>
                 <SectionDivider collapsed={sidebarCollapsed} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  {showModule('tasks') && (
-                    <CollapsibleMenu
-                      title={t('nav', 'tasksModule')}
-                      icon={<TasksIcon className="w-4 h-4" />}
-                      items={[
-                        { name: t('nav', 'tasksList'),  href: '/tasks',       badge: tasksBadge.total || undefined },
-                        { name: t('nav', 'tasksTeams'), href: '/tasks/teams' },
-                      ]}
-                      defaultOpen={isTasksActive}
-                      {...collapsibleProps}
-                    />
-                  )}
+                  <CollapsibleMenu
+                    title={t('nav', 'tasksModule')}
+                    icon={<TasksIcon className="w-4 h-4" />}
+                    items={[
+                      { name: t('nav', 'tasksList'),  href: '/tasks',       badge: tasksBadge.total || undefined },
+                      { name: t('nav', 'tasksTeams'), href: '/tasks/teams' },
+                    ]}
+                    defaultOpen={isTasksActive}
+                    {...collapsibleProps}
+                  />
                   {showModule('crm') && (
                     <CollapsibleMenu
                       title={t('nav', 'customers')}
