@@ -3,62 +3,27 @@
 import type { TaskDetail } from '@/types';
 import { fmtFileSize } from '../shared/constants';
 import { toast } from '@/lib/hooks/use-toast';
+import { taskAttachmentsApi } from '@/lib/api/tasks';
 
 const MAX_MB = 50;
 
-// Extensions Cloudinary can render natively as images — everything else is a document
-const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.ico']);
-
-function _ext(fileName: string) {
-  const parts = fileName.split('.');
-  return parts.length > 1 ? '.' + parts.pop()!.toLowerCase() : '';
-}
-
 /**
- * Fix Cloudinary URLs for non-image files stored under the wrong resource type.
- * MediaCloudinaryStorage (the Django default) uploads everything as `image/upload`.
- * PDFs/DOCs stored that way must have their extension appended so Cloudinary serves
- * the original file instead of trying to render it as an image.
+ * Fetch the file through the backend proxy (which sets correct Content-Type)
+ * and open or download it via a blob URL.
  */
-function fixCloudinaryUrl(url: string, fileName: string): string {
-  if (!url.includes('res.cloudinary.com') || !url.includes('/upload/')) return url;
-  const ext = _ext(fileName);
-  if (ext && !IMAGE_EXTS.has(ext) && url.includes('/image/upload/') && !url.endsWith(ext)) {
-    return url + ext;
-  }
-  return url;
-}
-
-/** Returns the clean Cloudinary URL (fixes image/upload → appends extension for non-images). */
-function fixedUrl(url: string, fileName: string): string {
-  return fixCloudinaryUrl(url, fileName);
-}
-
-/**
- * Open or download a file.
- * - Cloudinary URLs: open directly via window.open (public CDN, no CORS fetch needed).
- * - Django media URLs: fetch with Bearer token → blob URL to bypass 401.
- */
-async function openFile(url: string, fileName: string, asDownload = false) {
-  if (url.includes('res.cloudinary.com')) {
-    window.open(url, '_blank');
-    return;
-  }
+async function openFile(attachmentId: number, fileName: string, asDownload = false) {
   try {
-    const token = localStorage.getItem('access_token');
-    const res = await fetch(url, token ? { headers: { Authorization: `Bearer ${token}` } } : {});
-    if (!res.ok) throw new Error(`${res.status}`);
-    const blob = await res.blob();
+    const blob = await taskAttachmentsApi.download(attachmentId);
     const blobUrl = URL.createObjectURL(blob);
     if (asDownload) {
       const a = document.createElement('a');
       a.href = blobUrl;
       a.download = fileName;
       a.click();
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000);
     } else {
       window.open(blobUrl, '_blank');
     }
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 30_000);
   } catch {
     toast('Could not open file.', 'error');
   }
@@ -131,14 +96,14 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
                     <button
                       type="button"
                       className="attachment-download"
-                      onClick={() => openFile(fixedUrl(a.file_url!, a.file_name), a.file_name)}
+                      onClick={() => openFile(a.id, a.file_name)}
                     >
                       View
                     </button>
                     <button
                       type="button"
                       className="attachment-download"
-                      onClick={() => openFile(fixedUrl(a.file_url!, a.file_name), a.file_name, true)}
+                      onClick={() => openFile(a.id, a.file_name, true)}
                     >
                       ↓
                     </button>

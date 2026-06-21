@@ -107,6 +107,8 @@ export const taskAttachmentsApi = {
     return apiClient.post<TaskAttachmentItem>('/tasks/attachments/', form).then(r => r.data);
   },
   delete: (id: number) => apiClient.delete(`/tasks/attachments/${id}/`),
+  download: (id: number) =>
+    apiClient.get(`/tasks/attachments/${id}/download/`, { responseType: 'blob' }).then(r => r.data as Blob),
 };
 
 // ── My Tasks (personal to-do) ─────────────────────────────────────────────────
