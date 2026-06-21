@@ -70,7 +70,7 @@ export default function LoginPage() {
             </div>
           </div>
           <h1 style={{ fontSize: '1.875rem', fontWeight: 700, margin: '0 0 var(--space-2) 0', color: 'var(--text-primary)' }}>
-            AL YAFOUR
+            ERB
           </h1>
           <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
             Operations & Procurement System
@@ -126,7 +126,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <div style={{ textAlign: 'center', marginTop: 'var(--space-8)', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-          © 2025 Al Yafour – All Rights Reserved.
+          © 2025 ERB – All Rights Reserved.
         </div>
       </div>
     </div>

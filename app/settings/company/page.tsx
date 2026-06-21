@@ -192,18 +192,18 @@ export default function CompanySettingsPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <Field label="Company Legal Name" name="company_legal_name" value={val('company_legal_name')}
                   onChange={v => setForm(f => ({ ...f, company_legal_name: v }))}
-                  placeholder="AL YAFOUR GEN. CONT. & TRANSPORT LLC." />
+                  placeholder="Your Company Legal Name" />
                 <Field label="Address" name="company_address" value={val('company_address')}
                   onChange={v => setForm(f => ({ ...f, company_address: v }))}
                   placeholder="Abu Dhabi, United Arab Emirates" />
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                   <Field label="Phone" name="company_phone" value={val('company_phone')}
-                    onChange={v => setForm(f => ({ ...f, company_phone: v }))} placeholder="+971 50 622 2469" />
+                    onChange={v => setForm(f => ({ ...f, company_phone: v }))} placeholder="+971 XX XXX XXXX" />
                   <Field label="Email" name="company_email" value={val('company_email')}
                     onChange={v => setForm(f => ({ ...f, company_email: v }))} type="email" placeholder="info@company.ae" />
                 </div>
                 <Field label="Tax Registration Number (TRN)" name="company_trn" value={val('company_trn')}
-                  onChange={v => setForm(f => ({ ...f, company_trn: v }))} placeholder="100393252000003" />
+                  onChange={v => setForm(f => ({ ...f, company_trn: v }))} placeholder="1XXXXXXXXXXXXX" />
               </div>
 
               {isDirty && (

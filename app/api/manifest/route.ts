@@ -2,21 +2,16 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   const manifest = {
-    name: 'AL YAFOUR Procurement System',
-    short_name: 'AL YAFOUR',
-    description: 'AL YAFOUR CONSTRUCTION - Complete Procurement Management System',
+    name: 'ERB — Enterprise Resource Base',
+    short_name: 'ERB',
+    description: 'Enterprise Resource Base — Procurement, Operations & HR Management',
     start_url: '/',
     display: 'standalone',
     background_color: '#FAFAFA',
-    theme_color: '#F97316',
+    theme_color: '#c0392b',
     orientation: 'portrait-primary',
     icons: [
-      { src: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { src: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { src: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
-      { src: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
-      { src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
-      { src: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
+      { src: '/xerb-logo.svg', sizes: 'any', type: 'image/svg+xml' },
     ],
   };
 

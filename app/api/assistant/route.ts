@@ -31,8 +31,9 @@ interface AnthropicResponse {
 }
 
 // ── System prompt ──────────────────────────────────────────────────────────────
-function buildSystem(page: string): string {
-  return `You are ARIA — the intelligent AI assistant embedded inside the ERB enterprise management system for AL YAFOUR Contracting Company (UAE construction & contracting).
+function buildSystem(page: string, companyName?: string): string {
+  const company = companyName || 'the company';
+  return `You are ARIA — the intelligent AI assistant embedded inside the ERB enterprise management system for ${company}.
 
 You have REAL-TIME access to the company's live data through tools. Always use tools when the user asks about specific records, counts, or data — never guess or make up numbers.
 
@@ -326,9 +327,10 @@ async function runLoop(
   authToken: string,
   currentPage: string,
   send: (e: SSEEvent) => void,
+  companyName?: string,
 ): Promise<void> {
   const history: Message[] = [...messages];
-  const system = buildSystem(currentPage);
+  const system = buildSystem(currentPage, companyName);
 
   for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
     const response = await callAnthropic(history, system);
@@ -388,10 +390,11 @@ export async function POST(req: NextRequest) {
     return new Response(JSON.stringify({ error: 'ANTHROPIC_API_KEY not set' }), { status: 500 });
   }
 
-  const { messages, authToken, currentPage } = await req.json() as {
+  const { messages, authToken, currentPage, companyName } = await req.json() as {
     messages: Message[];
     authToken: string;
     currentPage: string;
+    companyName?: string;
   };
 
   if (!authToken) {
@@ -407,7 +410,7 @@ export async function POST(req: NextRequest) {
       };
 
       try {
-        await runLoop(messages, authToken, currentPage || '/', send);
+        await runLoop(messages, authToken, currentPage || '/', send, companyName);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Unknown error';
         send({ t: 'error', msg });

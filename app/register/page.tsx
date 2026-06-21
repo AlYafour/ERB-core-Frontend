@@ -74,7 +74,7 @@ export default function RegisterPage() {
               <div className="auth-logo-glow" style={{ position: 'absolute', inset: 0, borderRadius: 'var(--radius-2xl)' }} />
             </div>
           </div>
-          <h1 style={{ fontSize: '1.875rem', fontWeight: 700, marginBottom: 'var(--space-2)', color: 'var(--text-primary)', margin: '0 0 var(--space-2) 0' }}>AL YAFOUR</h1>
+          <h1 style={{ fontSize: '1.875rem', fontWeight: 700, marginBottom: 'var(--space-2)', color: 'var(--text-primary)', margin: '0 0 var(--space-2) 0' }}>ERB</h1>
           <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>Create New Account</p>
         </div>
 
@@ -142,7 +142,7 @@ export default function RegisterPage() {
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 'var(--space-8)', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-          © 2025 Al Yafour – All Rights Reserved.
+          © 2025 ERB – All Rights Reserved.
         </div>
       </div>
     </div>

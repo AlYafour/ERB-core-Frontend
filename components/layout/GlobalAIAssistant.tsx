@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
+import { useTenantInfo } from '@/lib/hooks/use-tenant';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface ChatMessage {
@@ -73,6 +74,8 @@ export default function GlobalAIAssistant() {
   const pathname = usePathname();
   const router   = useRouter();
   const { accessToken } = useAuthStore();
+  const { data: tenantData } = useTenantInfo();
+  const companyName = tenantData?.branding?.company_legal_name || tenantData?.name || undefined;
 
   // Load history
   useEffect(() => {
@@ -142,7 +145,7 @@ export default function GlobalAIAssistant() {
       const res = await fetch('/api/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: apiMessages, authToken: `Bearer ${accessToken}`, currentPage: pathname }),
+        body: JSON.stringify({ messages: apiMessages, authToken: `Bearer ${accessToken}`, currentPage: pathname, companyName }),
         signal: abortRef.current.signal,
       });
 
@@ -280,7 +283,7 @@ export default function GlobalAIAssistant() {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 13.5, lineHeight: 1.2 }}>ARIA</div>
-              <div style={{ fontSize: 10.5, opacity: 0.68, marginTop: 1 }}>Al Yafour Intelligent Assistant</div>
+              <div style={{ fontSize: 10.5, opacity: 0.68, marginTop: 1 }}>ERB Intelligent Assistant</div>
             </div>
             {/* Online dot */}
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 0 2px rgba(74,222,128,0.3)', flexShrink: 0 }} />
