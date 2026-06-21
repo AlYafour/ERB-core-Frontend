@@ -13,7 +13,8 @@ import { useTenantInfo } from '@/lib/hooks/use-tenant';
 import {
   DashboardIcon, FileTextIcon, BuildingIcon, PackageIcon,
   BriefcaseIcon, DollarIcon, UsersIcon, ShoppingCartIcon, AlertIcon,
-  TasksIcon,
+  TasksIcon, UserIcon, ClockIcon, CalendarIcon, CurrencyIcon,
+  MapPinIcon, SettingsIcon, ShieldCheckIcon,
 } from '@/components/icons';
 
 const T = '140ms cubic-bezier(0.16, 1, 0.3, 1)';
@@ -364,20 +365,20 @@ export default function Sidebar() {
                     title={t('nav', 'hrModule')}
                     icon={<UsersIcon className="w-4 h-4" />}
                     items={[
-                      { name: 'Employees',                 href: '/hr/employees',         adminOnly: true },
-                      { name: 'Employee Groups',           href: '/hr/groups',            adminOnly: true },
-                      { name: 'Work Shifts',               href: '/hr/shifts',            adminOnly: true },
-                      { name: t('nav', 'hrDepartments'),  href: '/hr/departments'                        },
-                      { name: t('nav', 'hrAttendance'),   href: '/hr/attendance',  adminOnly: true       },
-                      { name: 'Employee Locations',        href: '/hr/employee-locations', adminOnly: true },
-                      { name: t('nav', 'hrRequests'),     href: '/hr/requests'                           },
-                      { name: t('nav', 'hrPayroll'),      href: '/hr/payroll',     adminOnly: true       },
-                      { name: 'Loans & Advances',          href: '/hr/loans',              adminOnly: true },
-                      { name: 'Leave Policies',            href: '/hr/leave-policies',     adminOnly: true },
-                      { name: 'Leave Encashments',         href: '/hr/leave-encashments',  adminOnly: true },
-                      { name: 'HR Settings',               href: '/hr/settings',           adminOnly: true },
-                      { name: 'Approval Chains',           href: '/hr/approvals/chains',   adminOnly: true },
-                      { name: 'Penalty Rules',             href: '/hr/penalties',           adminOnly: true },
+                      { name: 'Employees',                href: '/hr/employees',         adminOnly: true, icon: <UserIcon className="w-4 h-4" /> },
+                      { name: 'Employee Groups',          href: '/hr/groups',            adminOnly: true, icon: <UsersIcon className="w-4 h-4" /> },
+                      { name: 'Work Shifts',              href: '/hr/shifts',            adminOnly: true, icon: <ClockIcon className="w-4 h-4" /> },
+                      { name: t('nav', 'hrDepartments'),  href: '/hr/departments',                        icon: <BuildingIcon className="w-4 h-4" /> },
+                      { name: t('nav', 'hrAttendance'),   href: '/hr/attendance',        adminOnly: true, icon: <CalendarIcon className="w-4 h-4" /> },
+                      { name: 'Employee Locations',       href: '/hr/employee-locations', adminOnly: true, icon: <MapPinIcon className="w-4 h-4" /> },
+                      { name: t('nav', 'hrRequests'),     href: '/hr/requests',                           icon: <FileTextIcon className="w-4 h-4" /> },
+                      { name: t('nav', 'hrPayroll'),      href: '/hr/payroll',           adminOnly: true, icon: <DollarIcon className="w-4 h-4" /> },
+                      { name: 'Loans & Advances',         href: '/hr/loans',             adminOnly: true, icon: <CurrencyIcon className="w-4 h-4" /> },
+                      { name: 'Leave Policies',           href: '/hr/leave-policies',    adminOnly: true, icon: <CalendarIcon className="w-4 h-4" /> },
+                      { name: 'Leave Encashments',        href: '/hr/leave-encashments', adminOnly: true, icon: <DollarIcon className="w-4 h-4" /> },
+                      { name: 'HR Settings',              href: '/hr/settings',          adminOnly: true, icon: <SettingsIcon className="w-4 h-4" /> },
+                      { name: 'Approval Chains',          href: '/hr/approvals/chains',  adminOnly: true, icon: <ShieldCheckIcon className="w-4 h-4" /> },
+                      { name: 'Penalty Rules',            href: '/hr/penalties',          adminOnly: true, icon: <AlertIcon className="w-4 h-4" /> },
                     ]}
                     defaultOpen={isHRActive}
                     {...collapsibleProps}
@@ -395,8 +396,8 @@ export default function Sidebar() {
                     title={t('nav', 'tasksModule')}
                     icon={<TasksIcon className="w-4 h-4" />}
                     items={[
-                      { name: t('nav', 'tasksList'),  href: '/tasks',       badge: tasksBadge.total || undefined },
-                      { name: t('nav', 'tasksTeams'), href: '/tasks/teams' },
+                      { name: t('nav', 'tasksList'),  href: '/tasks',       badge: tasksBadge.total || undefined, icon: <TasksIcon className="w-4 h-4" /> },
+                      { name: t('nav', 'tasksTeams'), href: '/tasks/teams', icon: <UsersIcon className="w-4 h-4" /> },
                     ]}
                     defaultOpen={isTasksActive}
                     {...collapsibleProps}
@@ -486,75 +487,54 @@ export default function Sidebar() {
               justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
               gap: sidebarCollapsed ? 0 : 8, flexShrink: 0,
             }}>
-              <div
-                title={sidebarCollapsed ? displayName : undefined}
-                style={{
-                  width: 28, height: 28, borderRadius: '50%',
-                  background: 'var(--brand-muted)', border: '1px solid var(--border-subtle)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0, overflow: 'hidden',
-                  fontSize: 10, fontWeight: 700, color: 'var(--wine-600)',
-                }}
-              >
-                {(user as any).avatar_url ? (
-                  <img src={(user as any).avatar_url} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (initials || '?')}
-              </div>
               {!sidebarCollapsed && (
-                <>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {displayName}
-                    </div>
-                    {roleLabel && (
-                      <div style={{ fontSize: 10, color: 'var(--sidebar-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'capitalize' }}>
-                        {roleLabel}
-                        {isPlatformAdmin && (
-                          <span style={{ color: 'var(--status-warning)', marginLeft: 4, fontWeight: 600 }}>· Admin</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={logout}
-                    title="Sign Out"
-                    style={{
-                      flexShrink: 0, width: 28, height: 28, borderRadius: 7,
-                      border: 'none', background: 'transparent', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'var(--text-tertiary)', transition: 'background 120ms, color 120ms',
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--status-error-bg)'; e.currentTarget.style.color = 'var(--status-error)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-tertiary)'; }}
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                      <polyline points="16 17 21 12 16 7" />
-                      <line x1="21" y1="12" x2="9" y2="12" />
-                    </svg>
-                  </button>
-                </>
-              )}
-              {sidebarCollapsed && (
-                <button
-                  onClick={logout}
-                  title="Sign Out"
+                <div
                   style={{
-                    width: 28, height: 28, borderRadius: 7,
-                    border: 'none', background: 'transparent', cursor: 'pointer',
+                    width: 28, height: 28, borderRadius: '50%',
+                    background: 'var(--brand-muted)', border: '1px solid var(--border-subtle)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'var(--text-tertiary)', transition: 'background 120ms, color 120ms',
+                    flexShrink: 0, overflow: 'hidden',
+                    fontSize: 10, fontWeight: 700, color: 'var(--wine-600)',
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--status-error-bg)'; e.currentTarget.style.color = 'var(--status-error)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-tertiary)'; }}
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                    <polyline points="16 17 21 12 16 7" />
-                    <line x1="21" y1="12" x2="9" y2="12" />
-                  </svg>
-                </button>
+                  {(user as any).avatar_url ? (
+                    <img src={(user as any).avatar_url} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (initials || '?')}
+                </div>
               )}
+              {!sidebarCollapsed && (
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {displayName}
+                  </div>
+                  {roleLabel && (
+                    <div style={{ fontSize: 10, color: 'var(--sidebar-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'capitalize' }}>
+                      {roleLabel}
+                      {isPlatformAdmin && (
+                        <span style={{ color: 'var(--status-warning)', marginLeft: 4, fontWeight: 600 }}>· Admin</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+              <button
+                onClick={logout}
+                title="Sign Out"
+                style={{
+                  flexShrink: 0, width: 28, height: 28, borderRadius: 7,
+                  border: 'none', background: 'transparent', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--text-tertiary)', transition: 'background 120ms, color 120ms',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--status-error-bg)'; e.currentTarget.style.color = 'var(--status-error)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-tertiary)'; }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+              </button>
             </div>
           )}
 
