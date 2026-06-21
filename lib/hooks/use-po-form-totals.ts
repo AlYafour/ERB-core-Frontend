@@ -83,13 +83,14 @@ export function usePOFormTotals(formData: POFormData, items: POFormItem[], charg
     let effectiveVatRate = 0;
 
     if (taxRate > 0) {
-      // Priority 1: explicit order-level tax rate
-      const taxableBase = transportVatIncluded ? afterDiscount + transport : afterDiscount;
+      // Priority 1: explicit order-level tax rate — charges always taxable
+      const taxableBase = afterDiscount + chargesTotal + (transportVatIncluded ? transport : 0);
       taxAmount = taxableBase * (taxRate / 100);
-    } else if (transportVatIncluded && transport > 0 && subtotal > 0 && itemVat > 0) {
-      // Priority 2: transport VAT derived from item effective VAT rate
+    } else if ((transportVatIncluded && transport > 0 || chargesTotal > 0) && subtotal > 0 && itemVat > 0) {
+      // Priority 2: derive effective VAT from items; apply to transport + charges
       effectiveVatRate = itemVat / subtotal;
-      taxAmount = transport * effectiveVatRate;
+      const taxableAddons = chargesTotal + (transportVatIncluded ? transport : 0);
+      taxAmount = taxableAddons * effectiveVatRate;
     }
 
     return {
