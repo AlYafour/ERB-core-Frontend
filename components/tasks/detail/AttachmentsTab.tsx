@@ -12,6 +12,9 @@ const MAX_MB = 50;
  * and open or download it via a blob URL.
  */
 async function openFile(attachmentId: number, fileName: string, asDownload = false) {
+  // Open blank window BEFORE the async call — popup blockers only allow window.open
+  // from synchronous (direct click) context, not from inside an awaited promise.
+  const newWin = asDownload ? null : window.open('', '_blank');
   try {
     const blob = await taskAttachmentsApi.download(attachmentId);
     const blobUrl = URL.createObjectURL(blob);
@@ -20,11 +23,12 @@ async function openFile(attachmentId: number, fileName: string, asDownload = fal
       a.href = blobUrl;
       a.download = fileName;
       a.click();
-    } else {
-      window.open(blobUrl, '_blank');
+    } else if (newWin) {
+      newWin.location.href = blobUrl;
     }
     setTimeout(() => URL.revokeObjectURL(blobUrl), 30_000);
   } catch {
+    if (newWin) newWin.close();
     toast('Could not open file.', 'error');
   }
 }

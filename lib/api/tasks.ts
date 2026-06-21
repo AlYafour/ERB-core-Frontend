@@ -58,6 +58,7 @@ export const tasksApi = {
     apiClient.post<TaskDetail>('/tasks/tasks/', data).then(r => r.data),
   update: (id: number, data: Partial<TaskDetail>) =>
     apiClient.patch<TaskDetail>(`/tasks/tasks/${id}/`, data).then(r => r.data),
+  deleteTask: (id: number) => apiClient.delete(`/tasks/tasks/${id}/`),
   stats: () => apiClient.get<TaskStats>('/tasks/tasks/stats/').then(r => r.data),
 
   // Status transitions

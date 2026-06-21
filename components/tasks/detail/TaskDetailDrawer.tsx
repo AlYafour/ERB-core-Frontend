@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { TaskStatus } from '@/types';
 import { tasksApi } from '@/lib/api/tasks';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import { TYPE_LABEL } from '../shared/constants';
 import { DrawerSkeleton } from '../shared/Skeletons';
 import { useTaskDetail } from './hooks/useTaskDetail';
@@ -24,6 +27,8 @@ interface Props {
 
 export function TaskDetailDrawer({ taskId, onClose }: Props) {
   const { user } = useAuth();
+  const { isTenantAdmin } = useMyPermissions();
+  const qc = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [tab, setTab]                       = useState<Tab>('checklist');
   const [comment, setComment]               = useState('');
@@ -41,6 +46,20 @@ export function TaskDetailDrawer({ taskId, onClose }: Props) {
     uploadFile, removeAttachment,
     busy, changingMeta, sendingComment, savingEdit, uploadingFile,
   } = useTaskDetail(taskId);
+
+  const isCreator = task ? task.created_by?.id === (user as { id?: number } | null)?.id : false;
+  const canManage = isCreator || isTenantAdmin;
+
+  const deleteTask = useMutation({
+    mutationFn: () => tasksApi.deleteTask(taskId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tasks'] });
+      qc.invalidateQueries({ queryKey: ['task-stats'] });
+      onClose();
+      toast('Task deleted', 'success');
+    },
+    onError: () => toast('Failed to delete task', 'error'),
+  });
 
   return (
     <div
@@ -68,7 +87,32 @@ export function TaskDetailDrawer({ taskId, onClose }: Props) {
                   {task.title}
                 </h2>
               </div>
-              <CloseButton onClick={onClose} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                {canManage && (
+                  <button
+                    type="button"
+                    disabled={deleteTask.isPending}
+                    onClick={async () => {
+                      const ok = await confirm('Delete this task? This cannot be undone.');
+                      if (ok) deleteTask.mutate();
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 5,
+                      padding: '5px 10px', borderRadius: 6, border: '1px solid #fecaca',
+                      background: '#fff', color: '#dc2626', fontSize: 12, fontWeight: 600,
+                      cursor: 'pointer', transition: 'background .12s',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                    </svg>
+                    {deleteTask.isPending ? 'Deleting…' : 'Delete'}
+                  </button>
+                )}
+                <CloseButton onClick={onClose} />
+              </div>
             </div>
 
             {/* Workflow */}
