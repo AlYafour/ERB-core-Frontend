@@ -3,24 +3,30 @@
    Dynamic values (status/priority colors) remain as inline styles.
    ================================================================ */
 
-/* ── Full-screen task view ─────────────────────────────────────── */
+/* ── Right-panel task drawer ───────────────────────────────────── */
+@keyframes slideInRight {
+  from { transform: translateX(32px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
 .task-drawer-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: var(--card-bg);
+  background: rgba(0, 0, 0, 0.42);
   display: flex;
-  flex-direction: column;
+  justify-content: flex-end;
   animation: fadeIn 0.15s ease;
 }
 
-/* top nav bar */
 .task-drawer-panel {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
+  width: min(960px, 90vw);
+  height: 100%;
   background: var(--card-bg);
+  box-shadow: -2px 0 40px rgba(0, 0, 0, 0.18);
+  animation: slideInRight 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* kept for CreateTaskDrawer compatibility */
@@ -43,7 +49,7 @@
 .task-drawer-body {
   flex: 1;
   overflow-y: auto;
-  padding: 32px 40px;
+  padding: 24px 28px;
 }
 
 .task-drawer-footer {
@@ -79,7 +85,7 @@
 
 /* Meta sidebar */
 .task-meta-sidebar {
-  width: 360px;
+  width: 290px;
   flex-shrink: 0;
   border-left: 1px solid var(--border-subtle);
   overflow-y: auto;

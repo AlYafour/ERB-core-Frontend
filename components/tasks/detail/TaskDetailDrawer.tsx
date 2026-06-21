@@ -68,8 +68,8 @@ export function TaskDetailDrawer({ taskId, onClose }: Props) {
   };
 
   return (
-    <div className="task-drawer-overlay" onKeyDown={handleKeyDown} tabIndex={-1}>
-      <div className="task-drawer-panel">
+    <div className="task-drawer-overlay" onKeyDown={handleKeyDown} tabIndex={-1} onClick={onClose}>
+      <div className="task-drawer-panel" onClick={e => e.stopPropagation()}>
 
         {/* ══ TOP NAV BAR ══════════════════════════════════════════════ */}
         <div className="task-drawer-header">
