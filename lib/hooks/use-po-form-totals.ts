@@ -23,7 +23,12 @@ export interface POFormCharge {
 export interface POFormTotals {
   subtotal: number;
   itemVat: number;
-  taxAmount: number;
+  /** VAT on transportation only (Priority-2 derived rate). 0 when explicit tax_rate set. */
+  transportVat: number;
+  /** VAT on additional charges (Priority-2 derived rate). 0 when explicit tax_rate set. */
+  chargesVat: number;
+  /** Combined additional tax (Priority-1 explicit rate only). 0 when using derived rate. */
+  additionalTax: number;
   effectiveVatRate: number;
   chargesTotal: number;
   total: number;
@@ -32,25 +37,26 @@ export interface POFormTotals {
 /**
  * Live-compute PO totals for edit/new forms.
  *
- * Mirrors backend PurchaseOrder.calculate_total() exactly:
+ * Priority 1 (tax_rate > 0 — explicit order-level tax):
+ *   taxable_base = after_discount + charges + transport_if_included
+ *   additionalTax = taxable_base × tax_rate%
+ *   transportVat = chargesVat = 0  (no split — shown as one line)
  *
- *   Priority 1 (tax_rate > 0):
- *     taxable_base = (after_discount + transport) if transport_vat_included else after_discount
- *     tax_amount   = taxable_base × tax_rate%
+ * Priority 2 (tax_rate == 0, derived from item VAT):
+ *   effective_rate = item_vat / item_pretax
+ *   transportVat   = transport_if_included × effective_rate
+ *   chargesVat     = charges_total × effective_rate
+ *   additionalTax  = 0
  *
- *   Priority 2 (tax_rate == 0, transport_vat_included, transport > 0):
- *     effective_rate = item_vat / item_pretax
- *     tax_amount     = transport × effective_rate
- *
- *   total = after_discount + transport + tax_amount
- *
- * order.discount is treated as a percentage of subtotalWithVat (consistent with
- * form inputs which show discount as 0-100%). The backend stores it as a flat
- * AED amount — these should be aligned in a future cleanup.
+ * total = after_discount + transport + transportVat + chargesVat + additionalTax + charges
  */
-export function usePOFormTotals(formData: POFormData, items: POFormItem[], charges: POFormCharge[] = []): POFormTotals {
+export function usePOFormTotals(
+  formData: POFormData,
+  items: POFormItem[],
+  charges: POFormCharge[] = [],
+): POFormTotals {
   return useMemo(() => {
-    // Step 1 — item-level breakdown (item.discount is a percentage 0-100)
+    // ── Item breakdown ──────────────────────────────────────────────────────
     let subtotal = 0;
     let itemVat = 0;
     for (const item of items) {
@@ -61,45 +67,49 @@ export function usePOFormTotals(formData: POFormData, items: POFormItem[], charg
       itemVat += afterDiscount * ((Number(item.tax_rate) || 0) / 100);
     }
 
-    // Charges total — mirrors backend PurchaseOrderCharge.total property
+    // ── Charges total ───────────────────────────────────────────────────────
     let chargesTotal = 0;
     for (const c of charges) {
       const rate = Number(c.rate) || 0;
-      const qty = Number(c.quantity) || 1;
+      const qty  = Number(c.quantity) || 1;
       chargesTotal += c.charge_type === 'lump_sum' ? rate : rate * qty;
     }
 
-    // Step 2 — mirror backend calculate_total()
-    // Backend self.subtotal = SUM(item.total) = pre-VAT + item VAT
-    const subtotalWithVat = subtotal + itemVat;
-    const discountPct = Number(formData.discount) || 0;
-    const discountAmount = subtotalWithVat * (discountPct / 100);
-    const afterDiscount = subtotalWithVat - discountAmount;
-    const transport = Number(formData.transportation_charge) || 0;
-    const taxRate = Number(formData.tax_rate) || 0;
-    const transportVatIncluded = formData.transport_vat_included ?? true;
+    // ── Discount ────────────────────────────────────────────────────────────
+    const subtotalWithVat  = subtotal + itemVat;
+    const discountPct      = Number(formData.discount) || 0;
+    const afterDiscount    = subtotalWithVat * (1 - discountPct / 100);
+    const transport        = Number(formData.transportation_charge) || 0;
+    const taxRate          = Number(formData.tax_rate) || 0;
+    const transportVatOn   = formData.transport_vat_included ?? true;
 
-    let taxAmount = 0;
+    let transportVat   = 0;
+    let chargesVat     = 0;
+    let additionalTax  = 0;
     let effectiveVatRate = 0;
 
     if (taxRate > 0) {
-      // Priority 1: explicit order-level tax rate — charges always taxable
-      const taxableBase = afterDiscount + chargesTotal + (transportVatIncluded ? transport : 0);
-      taxAmount = taxableBase * (taxRate / 100);
-    } else if ((transportVatIncluded && transport > 0 || chargesTotal > 0) && subtotal > 0 && itemVat > 0) {
-      // Priority 2: derive effective VAT from items; apply to transport + charges
+      // Priority 1 — one combined additional-tax line
+      const taxableBase = afterDiscount + chargesTotal + (transportVatOn ? transport : 0);
+      additionalTax = taxableBase * (taxRate / 100);
+    } else if ((chargesTotal > 0 || (transportVatOn && transport > 0)) && subtotal > 0 && itemVat > 0) {
+      // Priority 2 — split by recipient
       effectiveVatRate = itemVat / subtotal;
-      const taxableAddons = chargesTotal + (transportVatIncluded ? transport : 0);
-      taxAmount = taxableAddons * effectiveVatRate;
+      transportVat  = transportVatOn ? transport * effectiveVatRate : 0;
+      chargesVat    = chargesTotal   * effectiveVatRate;
     }
+
+    const total = afterDiscount + transport + transportVat + chargesVat + additionalTax + chargesTotal;
 
     return {
       subtotal,
       itemVat,
-      taxAmount,
+      transportVat,
+      chargesVat,
+      additionalTax,
       effectiveVatRate,
       chargesTotal,
-      total: afterDiscount + transport + taxAmount + chargesTotal,
+      total,
     };
   }, [
     formData.discount,

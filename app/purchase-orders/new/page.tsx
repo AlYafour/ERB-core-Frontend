@@ -364,7 +364,7 @@ function NewPOContent() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                       <thead>
                         <tr style={{ background: 'var(--surface-subtle)' }}>
-                          {['Description', 'Type', 'Rate (AED)', 'Qty', 'Total'].map((h) => (
+                          {['Description', 'Type', 'Rate (AED)', 'Qty', 'VAT %', 'Total'].map((h) => (
                             <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid var(--border-subtle)' }}>{h}</th>
                           ))}
                         </tr>
@@ -373,7 +373,11 @@ function NewPOContent() {
                         {charges.map((c, i) => {
                           const rate = parseFloat(c.rate) || 0;
                           const qty  = parseFloat(c.quantity) || 1;
-                          const total = c.charge_type === 'lump_sum' ? rate : rate * qty;
+                          const chargeTotal = c.charge_type === 'lump_sum' ? rate : rate * qty;
+                          const vatPct = formData.tax_rate > 0
+                            ? formData.tax_rate
+                            : Math.round(totals.effectiveVatRate * 100);
+                          const chargeVat = vatPct > 0 ? chargeTotal * vatPct / 100 : 0;
                           return (
                             <tr key={i} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                               <td style={{ padding: '8px 12px', fontWeight: 600 }}>{c.description}</td>
@@ -404,8 +408,20 @@ function NewPOContent() {
                                   <span style={{ color: 'var(--text-tertiary)', paddingLeft: 4 }}>—</span>
                                 )}
                               </td>
-                              <td style={{ padding: '8px 12px', fontWeight: 700, color: total > 0 ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
-                                {total > 0 ? `AED ${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '—'}
+                              <td style={{ padding: '8px 12px', fontSize: 11, color: vatPct > 0 ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>
+                                {vatPct > 0 ? (
+                                  <span>
+                                    {vatPct}%
+                                    {chargeVat > 0 && (
+                                      <span style={{ display: 'block', fontSize: 10, color: 'var(--text-tertiary)' }}>
+                                        +{chargeVat.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                      </span>
+                                    )}
+                                  </span>
+                                ) : '—'}
+                              </td>
+                              <td style={{ padding: '8px 12px', fontWeight: 700, color: chargeTotal > 0 ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+                                {chargeTotal > 0 ? `AED ${chargeTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '—'}
                               </td>
                             </tr>
                           );
@@ -413,16 +429,22 @@ function NewPOContent() {
                       </tbody>
                       {charges.some((c) => parseFloat(c.rate) > 0) && (
                         <tfoot>
-                          <tr style={{ background: 'var(--surface-subtle)' }}>
-                            <td colSpan={4} style={{ padding: '8px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Charges</td>
+                          <tr style={{ background: 'var(--surface-subtle)', borderTop: '1px solid var(--border-subtle)' }}>
+                            <td colSpan={5} style={{ padding: '8px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Charges</td>
                             <td style={{ padding: '8px 12px', fontWeight: 800, color: 'var(--brand)', fontSize: 13 }}>
-                              AED {charges.reduce((s, c) => {
-                                const rate = parseFloat(c.rate) || 0;
-                                const qty  = parseFloat(c.quantity) || 1;
-                                return s + (c.charge_type === 'lump_sum' ? rate : rate * qty);
-                              }, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                              AED {totals.chargesTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                             </td>
                           </tr>
+                          {totals.chargesVat > 0 && (
+                            <tr style={{ background: '#fefce8', borderTop: '1px solid var(--border-subtle)' }}>
+                              <td colSpan={5} style={{ padding: '6px 12px', fontSize: 11, fontWeight: 600, color: '#92400e' }}>
+                                Service VAT ({Math.round(totals.effectiveVatRate * 100)}%)
+                              </td>
+                              <td style={{ padding: '6px 12px', fontWeight: 700, color: '#92400e', fontSize: 12 }}>
+                                AED {totals.chargesVat.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                              </td>
+                            </tr>
+                          )}
                         </tfoot>
                       )}
                     </table>

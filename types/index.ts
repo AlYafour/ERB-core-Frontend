@@ -430,6 +430,7 @@ export interface PurchaseOrder {
   updated_at: string;
   items: PurchaseOrderItem[];
   charges?: PurchaseOrderCharge[];
+  charges_vat?: number;
 }
 
 // Goods Receiving Types

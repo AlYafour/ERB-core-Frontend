@@ -102,9 +102,11 @@ export default function PurchaseOrderDetailPage() {
   const canManageAmend     = canApprove && order.status === 'amendment_requested';
 
   const { itemsSubtotal, itemsVat } = poItemBreakdown(order.items);
-  const globalDiscount      = Number(order.discount) || 0;
+  const globalDiscount       = Number(order.discount) || 0;
   const transportationCharge = Number(order.transportation_charge) || 0;
   const taxAmount            = Number(order.tax_amount) || 0;
+  const chargesVat           = Number(order.charges_vat) || 0;
+  const transportVat         = Number(order.tax_rate) > 0 ? 0 : Math.max(0, taxAmount - chargesVat);
 
   const prRef = typeof order.purchase_request === 'object' ? order.purchase_request : order.purchase_request ? { id: order.purchase_request } : null;
   const pqRef = typeof order.purchase_quotation === 'object' ? order.purchase_quotation : order.purchase_quotation ? { id: order.purchase_quotation } : null;
@@ -298,7 +300,9 @@ export default function PurchaseOrderDetailPage() {
                       { label: 'VAT (items)',     value: itemsVat,             hidden: !itemsVat },
                       { label: `Discount (${order.discount}%)`, value: globalDiscount, variant: 'discount', prefix: '– ', hidden: !globalDiscount },
                       { label: 'Transportation', value: transportationCharge, hidden: !transportationCharge },
-                      { label: Number(order.tax_rate) > 0 ? `Additional Tax (${order.tax_rate}%)` : 'Transport VAT', value: taxAmount, hidden: !taxAmount },
+                      { label: `VAT on transport`, value: transportVat, hidden: !transportVat || Number(order.tax_rate) > 0 },
+                      { label: `Service VAT`, value: chargesVat, hidden: !chargesVat || Number(order.tax_rate) > 0 },
+                      { label: `Additional Tax (${order.tax_rate}%)`, value: taxAmount, hidden: !taxAmount || !Number(order.tax_rate) },
                     ]}
                     total={order.total}
                   />
