@@ -108,7 +108,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (user && !isTenantAdmin && !isPlatformAdmin) {
-      router.push('/purchase-requests');
+      router.push('/tasks');
     }
   }, [user, isTenantAdmin, isPlatformAdmin, router]);
 

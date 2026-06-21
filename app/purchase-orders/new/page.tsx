@@ -356,14 +356,8 @@ function NewPOContent() {
                     </svg>
                     Additional Charges
                   </span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand)', background: 'var(--brand-subtle)', borderRadius: 5, padding: '2px 8px' }}>
-                    {charges.length} from PR
-                  </span>
                 </div>
                 <div className="proc-form-section">
-                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '0 0 12px', padding: '8px 12px', background: 'var(--surface-subtle)', borderRadius: 6, borderLeft: '3px solid var(--brand)' }}>
-                    These charges were flagged in the Purchase Request. Enter the rate for each.
-                  </p>
                   <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 10, overflow: 'hidden' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                       <thead>
@@ -413,16 +407,14 @@ function NewPOContent() {
                                 )}
                               </td>
                               <td style={{ padding: '8px 12px', fontSize: 11, color: vatPct > 0 ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>
-                                {vatPct > 0 ? (
-                                  <span>
-                                    {vatPct}%
-                                    {chargeVat > 0 && (
-                                      <span style={{ display: 'block', fontSize: 10, color: 'var(--text-tertiary)' }}>
-                                        +{chargeVat.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                      </span>
-                                    )}
-                                  </span>
-                                ) : '—'}
+                                <span>
+                                  {vatPct > 0 ? `${vatPct}%` : '0%'}
+                                  {chargeVat > 0 && (
+                                    <span style={{ display: 'block', fontSize: 10, color: 'var(--text-tertiary)' }}>
+                                      +{chargeVat.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                    </span>
+                                  )}
+                                </span>
                               </td>
                               <td style={{ padding: '8px 12px', fontWeight: 700, color: chargeTotal > 0 ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
                                 {chargeTotal > 0 ? `AED ${chargeTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '—'}
