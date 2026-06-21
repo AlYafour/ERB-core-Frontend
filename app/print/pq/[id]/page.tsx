@@ -7,9 +7,10 @@ import { purchaseQuotationsApi } from '@/lib/api/purchase-quotations';
 import { PurchaseQuotation, PurchaseQuotationItem, Supplier } from '@/types';
 import PrintTemplate, {
   StatusBadge,
-  COMPANY, fmt, fmtDate,
+  fmt, fmtDate,
 } from '@/components/print/PrintTemplate';
 import { PrintControlsBar } from '@/components/print/PrintControlsBar';
+import { useTenantInfo } from '@/lib/hooks/use-tenant';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 // stamps are now per-user via stamp_url on the User model
@@ -30,6 +31,17 @@ export default function PrintPQPage() {
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const isAdmin = isTenantAdmin || isPlatformAdmin;
   const canView = isAdmin || (hasPermission('purchase_quotation', 'view') ?? false);
+
+  const { data: tenantData } = useTenantInfo();
+  const b = tenantData?.branding;
+  const co = {
+    name:    b?.company_legal_name || '',
+    address: b?.company_address    || '',
+    phone:   b?.company_phone      || '',
+    email:   b?.company_email      || '',
+    trn:     b?.company_trn        || '',
+    logo:    b?.logo_url           || '/xerb-logo.svg',
+  };
 
   const { data: pq, isLoading, isError } = useQuery<PurchaseQuotation>({
     queryKey: ['purchase-quotation', id],
@@ -112,18 +124,18 @@ export default function PrintPQPage() {
 
             {/* Logo */}
             <div style={{ flexShrink: 0, paddingTop: 2, display: 'flex', alignItems: 'flex-start' }}>
-              <Image src={COMPANY.logo} alt="Logo" width={64} height={64}
+              <Image src={co.logo} alt="Logo" width={64} height={64}
                 style={{ objectFit: 'contain', display: 'block' }} priority unoptimized />
             </div>
 
             {/* Company info */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: '12.5pt', fontWeight: 800, color: NAVY,
-                letterSpacing: '-.3px', lineHeight: 1.2 }}>{COMPANY.name}</div>
+                letterSpacing: '-.3px', lineHeight: 1.2 }}>{co.name}</div>
               <div style={{ fontSize: '7.5pt', color: GREY, marginTop: 2, lineHeight: 1.6 }}>
-                {COMPANY.address} &nbsp;·&nbsp; {COMPANY.phone} &nbsp;·&nbsp; {COMPANY.email}
+                {co.address} &nbsp;·&nbsp; {co.phone} &nbsp;·&nbsp; {co.email}
               </div>
-              <div style={{ fontSize: '7.5pt', color: GREY }}>TRN: {COMPANY.trn}</div>
+              <div style={{ fontSize: '7.5pt', color: GREY }}>TRN: {co.trn}</div>
 
               {/* Project chip */}
               {pq.project_name && (
@@ -415,7 +427,7 @@ export default function PrintPQPage() {
               marginTop: 10, paddingTop: 7, borderTop: `1px solid ${BORDER}`,
               fontSize: '6.5pt', color: '#94a3b8', gap: 12 }}>
               <span>This document is computer-generated and valid without a handwritten signature unless otherwise stated.</span>
-              <span style={{ whiteSpace: 'nowrap' }}>{COMPANY.name} &nbsp;·&nbsp; {COMPANY.address}</span>
+              <span style={{ whiteSpace: 'nowrap' }}>{co.name} &nbsp;·&nbsp; {co.address}</span>
             </div>
           </div>
 
