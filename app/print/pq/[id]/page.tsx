@@ -52,7 +52,7 @@ export default function PrintPQPage() {
 
   useEffect(() => {
     if (pq?.quotation_number) document.title = `PQ-${pq.quotation_number}`;
-    return () => { document.title = 'ERB Procurement'; };
+    return () => { document.title = 'XERB'; };
   }, [pq?.quotation_number]);
 
   if (!hasToken || isLoading || permsLoading) return <PrintLoader />;

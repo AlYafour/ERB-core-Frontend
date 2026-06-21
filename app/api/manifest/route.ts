@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   const manifest = {
-    name: 'ERB — Enterprise Resource Base',
-    short_name: 'ERB',
-    description: 'Enterprise Resource Base — Procurement, Operations & HR Management',
+    name: 'XERB — Enterprise Resource Base',
+    short_name: 'XERB',
+    description: 'XERB — Procurement, Operations & HR Management',
     start_url: '/',
     display: 'standalone',
     background_color: '#FAFAFA',

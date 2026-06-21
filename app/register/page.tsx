@@ -70,11 +70,11 @@ export default function RegisterPage() {
         <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--space-4)' }}>
             <div className="auth-logo-box" style={{ width: 80, height: 80, borderRadius: 'var(--radius-2xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-              <Image src="/xerb-logo.svg" alt="ERB Logo" width={64} height={64} style={{ objectFit: 'contain' }} priority />
+              <Image src="/xerb-logo.svg" alt="XERB Logo" width={64} height={64} style={{ objectFit: 'contain' }} priority />
               <div className="auth-logo-glow" style={{ position: 'absolute', inset: 0, borderRadius: 'var(--radius-2xl)' }} />
             </div>
           </div>
-          <h1 style={{ fontSize: '1.875rem', fontWeight: 700, marginBottom: 'var(--space-2)', color: 'var(--text-primary)', margin: '0 0 var(--space-2) 0' }}>ERB</h1>
+          <h1 style={{ fontSize: '1.875rem', fontWeight: 700, marginBottom: 'var(--space-2)', color: 'var(--text-primary)', margin: '0 0 var(--space-2) 0' }}>XERB</h1>
           <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>Create New Account</p>
         </div>
 
@@ -142,7 +142,7 @@ export default function RegisterPage() {
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 'var(--space-8)', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-          © 2025 ERB – All Rights Reserved.
+          © 2025 XERB – All Rights Reserved.
         </div>
       </div>
     </div>

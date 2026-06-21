@@ -6,8 +6,13 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'ERB Purchase System',
-  description: 'Enterprise Resource and Budget Purchase Management System',
+  title: 'XERB',
+  description: 'Enterprise Resource Base — Procurement, Operations & HR Management',
+  icons: {
+    icon: '/xerb-logo.svg',
+    shortcut: '/xerb-logo.svg',
+    apple: '/xerb-logo.svg',
+  },
 };
 
 export default function RootLayout({

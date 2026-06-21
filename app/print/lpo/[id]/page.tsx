@@ -83,7 +83,7 @@ export default function PrintLPOPage() {
 
   useEffect(() => {
     if (po?.order_number) document.title = `LPO-${po.order_number}`;
-    return () => { document.title = 'ERB Procurement'; };
+    return () => { document.title = 'XERB'; };
   }, [po?.order_number]);
 
   if (!hasToken || isLoading || permsLoading) return (

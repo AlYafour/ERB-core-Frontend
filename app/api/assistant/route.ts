@@ -33,7 +33,7 @@ interface AnthropicResponse {
 // ── System prompt ──────────────────────────────────────────────────────────────
 function buildSystem(page: string, companyName?: string): string {
   const company = companyName || 'the company';
-  return `You are ARIA — the intelligent AI assistant embedded inside the ERB enterprise management system for ${company}.
+  return `You are ARIA — the intelligent AI assistant embedded inside the XERB enterprise management system for ${company}.
 
 You have REAL-TIME access to the company's live data through tools. Always use tools when the user asks about specific records, counts, or data — never guess or make up numbers.
 
