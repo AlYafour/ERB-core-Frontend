@@ -13,6 +13,7 @@ import { Button, type Column } from '@/components/ui';
 import { RowActions } from '@/components/ui/RowActions';
 import { ProcListPage } from '@/components/procurement/list/ProcListPage';
 import { type FilterField } from '@/components/ui/FilterPanel';
+import Link from 'next/link';
 import { TaskDetailDrawer } from '@/components/tasks/detail/TaskDetailDrawer';
 import { CreateTaskDrawer } from '@/components/tasks/create/CreateTaskDrawer';
 import { TodoPanel } from '@/components/tasks/todo/TodoPanel';
@@ -105,6 +106,17 @@ export default function TasksPage() {
     qc.invalidateQueries({ queryKey: ['task-stats'] });
     clearSelection();
     toast('Tasks deleted', 'success');
+  };
+
+  const handleBulkStatus = async (newStatus: string) => {
+    if (!selectedItems.size) return;
+    for (const id of Array.from(selectedItems)) {
+      try { await tasksApi.update(id, { status: newStatus as any }); } catch {}
+    }
+    qc.invalidateQueries({ queryKey: ['tasks'] });
+    qc.invalidateQueries({ queryKey: ['task-stats'] });
+    clearSelection();
+    toast(`${selectedItems.size} task${selectedItems.size > 1 ? 's' : ''} updated`, 'success');
   };
 
   /* ── Filter fields ────────────────────────────────────────────────────── */
@@ -253,12 +265,23 @@ export default function TasksPage() {
       ]}
       searchPlaceholder="Search tasks…"
       extraActions={
-        <button
-          className={`proc-cmd-btn${isTodoOpen ? ' proc-cmd-btn--active' : ''}`}
-          onClick={() => setIsTodoOpen(v => !v)}
-        >
-          My To-Do{Number(myCount) > 0 ? ` (${myCount})` : ''}
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button
+            className={`proc-cmd-btn${isTodoOpen ? ' proc-cmd-btn--active' : ''}`}
+            onClick={() => setIsTodoOpen(v => !v)}
+          >
+            My To-Do{Number(myCount) > 0 ? ` (${myCount})` : ''}
+          </button>
+          <Link href="/tasks/calendar" style={{ fontSize: 12, padding: '6px 12px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--card-bg)', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 500 }}>
+            Calendar
+          </Link>
+          <Link href="/tasks/reports" style={{ fontSize: 12, padding: '6px 12px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--card-bg)', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 500 }}>
+            Reports
+          </Link>
+          <Link href="/tasks/templates" style={{ fontSize: 12, padding: '6px 12px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--card-bg)', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 500 }}>
+            Templates
+          </Link>
+        </div>
       }
       filterFields={filterFields}
       advFilterTitle="Task Filters"
@@ -276,9 +299,22 @@ export default function TasksPage() {
       emptyAction={<Button variant="primary" onClick={() => setIsCreateOpen(true)}>Create First Task</Button>}
       bulkActions={
         isPrivileged && selectedItems.size > 0 ? (
-          <Button variant="destructive" onClick={handleBulkDelete}>
-            Delete {selectedItems.size}
-          </Button>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <select
+              defaultValue=""
+              onChange={e => { if (e.target.value) { handleBulkStatus(e.target.value); e.target.value = ''; } }}
+              style={{ fontSize: 12, padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--card-bg)', color: 'var(--text-primary)', cursor: 'pointer' }}
+            >
+              <option value="" disabled>Set status…</option>
+              <option value="assigned">Assigned</option>
+              <option value="in_progress">In Progress</option>
+              <option value="review">Under Review</option>
+              <option value="closed">Closed</option>
+            </select>
+            <Button variant="destructive" onClick={handleBulkDelete}>
+              Delete {selectedItems.size}
+            </Button>
+          </div>
         ) : undefined
       }
     >

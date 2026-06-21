@@ -2,6 +2,7 @@ import apiClient from './client';
 import type {
   Team, TeamMember, TaskListItem, TaskDetail, SubTask,
   TaskComment, TaskAttachmentItem, TaskStats, MyTask,
+  TimeEntry, TaskDependency, TaskTemplate,
 } from '@/types';
 
 // ── Teams ─────────────────────────────────────────────────────────────────────
@@ -112,6 +113,37 @@ export const taskAttachmentsApi = {
   delete: (id: number) => apiClient.delete(`/tasks/attachments/${id}/`),
   download: (id: number) =>
     apiClient.get(`/tasks/attachments/${id}/download/`, { responseType: 'blob' }).then(r => r.data as Blob),
+};
+
+// ── Time Entries ──────────────────────────────────────────────────────────────
+
+export const timeEntriesApi = {
+  list: (taskId: number) =>
+    apiClient.get<TimeEntry[]>('/tasks/time-entries/', { params: { task: taskId } }).then(r => r.data),
+  create: (data: { task: number; hours: number; description?: string; date: string }) =>
+    apiClient.post<TimeEntry>('/tasks/time-entries/', data).then(r => r.data),
+  delete: (id: number) => apiClient.delete(`/tasks/time-entries/${id}/`),
+};
+
+// ── Task Dependencies ─────────────────────────────────────────────────────────
+
+export const taskDepsApi = {
+  list: (taskId: number) =>
+    apiClient.get<TaskDependency[]>('/tasks/dependencies/', { params: { task: taskId } }).then(r => r.data),
+  create: (taskId: number, dependsOnId: number) =>
+    apiClient.post<TaskDependency>('/tasks/dependencies/', { task: taskId, depends_on: dependsOnId }).then(r => r.data),
+  delete: (id: number) => apiClient.delete(`/tasks/dependencies/${id}/`),
+};
+
+// ── Task Templates ────────────────────────────────────────────────────────────
+
+export const taskTemplatesApi = {
+  list: () => apiClient.get<TaskTemplate[]>('/tasks/templates/').then(r => r.data),
+  create: (data: Partial<TaskTemplate>) =>
+    apiClient.post<TaskTemplate>('/tasks/templates/', data).then(r => r.data),
+  update: (id: number, data: Partial<TaskTemplate>) =>
+    apiClient.patch<TaskTemplate>(`/tasks/templates/${id}/`, data).then(r => r.data),
+  delete: (id: number) => apiClient.delete(`/tasks/templates/${id}/`),
 };
 
 // ── My Tasks (personal to-do) ─────────────────────────────────────────────────

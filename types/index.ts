@@ -1145,3 +1145,34 @@ export interface TaskStats {
   by_status: Record<TaskStatus, number>;
   by_priority: Record<TaskPriority, number>;
 }
+
+export interface TimeEntry {
+  id: number;
+  task: number;
+  logged_by: number;
+  logged_by_detail: { id: number; full_name: string; avatar_url: string | null };
+  hours: string;
+  description: string;
+  date: string;
+  created_at: string;
+}
+
+export interface TaskDependency {
+  id: number;
+  task: number;
+  depends_on: number;
+  depends_on_detail: { id: number; title: string; status: TaskStatus; priority: TaskPriority; task_type: TaskType };
+}
+
+export interface TaskTemplate {
+  id: number;
+  name: string;
+  description: string;
+  task_type: TaskType;
+  priority: TaskPriority;
+  requires_approval: boolean;
+  subtask_titles: string[];
+  created_by: number | null;
+  created_by_detail?: { id: number; full_name: string; avatar_url: string | null };
+  created_at: string;
+}

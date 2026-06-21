@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { TaskDetail } from '@/types';
 import { fmtFileSize } from '../shared/constants';
 import { toast } from '@/lib/hooks/use-toast';
@@ -7,13 +8,7 @@ import { taskAttachmentsApi } from '@/lib/api/tasks';
 
 const MAX_MB = 25;
 
-/**
- * Fetch the file through the backend proxy (which sets correct Content-Type)
- * and open or download it via a blob URL.
- */
 async function openFile(attachmentId: number, fileName: string, asDownload = false) {
-  // Open blank window BEFORE the async call — popup blockers only allow window.open
-  // from synchronous (direct click) context, not from inside an awaited promise.
   const newWin = asDownload ? null : window.open('', '_blank');
   try {
     const blob = await taskAttachmentsApi.download(attachmentId);
@@ -26,7 +21,6 @@ async function openFile(attachmentId: number, fileName: string, asDownload = fal
     } else if (newWin) {
       newWin.location.href = blobUrl;
     } else {
-      // Popup was blocked — fall back to direct download
       const a = document.createElement('a');
       a.href = blobUrl;
       a.download = fileName;
@@ -39,6 +33,14 @@ async function openFile(attachmentId: number, fileName: string, asDownload = fal
   }
 }
 
+function isImage(name: string) {
+  return /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(name);
+}
+
+function isPdf(name: string) {
+  return /\.pdf$/i.test(name);
+}
+
 function fileIcon(name: string) {
   const ext = name.split('.').pop()?.toLowerCase() ?? '';
   if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) return '🖼';
@@ -47,6 +49,63 @@ function fileIcon(name: string) {
   if (['xls', 'xlsx'].includes(ext)) return '📊';
   if (['zip', 'rar', '7z'].includes(ext)) return '📦';
   return '📎';
+}
+
+interface PreviewItem {
+  id: number;
+  name: string;
+  url: string;
+  type: 'image' | 'pdf' | 'other';
+}
+
+function FilePreviewModal({ item, onClose }: { item: PreviewItem; onClose: () => void }) {
+  return (
+    <div
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 2000,
+        background: 'rgba(0,0,0,0.82)', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', padding: 20,
+      }}
+    >
+      <div style={{ width: '100%', maxWidth: 900, maxHeight: '90vh', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#fff', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {item.name}
+          </p>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <button
+              onClick={() => openFile(item.id, item.name, true)}
+              style={{ padding: '6px 12px', borderRadius: 6, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: 12, cursor: 'pointer' }}
+            >
+              ↓ Download
+            </button>
+            <button
+              onClick={onClose}
+              style={{ padding: '6px 12px', borderRadius: 6, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+        <div style={{ flex: 1, minHeight: 0, borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
+          {item.type === 'image' ? (
+            <img src={item.url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain', maxHeight: '80vh' }} />
+          ) : item.type === 'pdf' ? (
+            <iframe src={item.url} style={{ width: '100%', height: '80vh', border: 'none' }} title={item.name} />
+          ) : (
+            <div style={{ height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+              <span style={{ fontSize: 48 }}>📎</span>
+              <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Preview not available for this file type.</p>
+              <button onClick={() => openFile(item.id, item.name, true)} className="task-btn task-btn--primary">
+                Download File
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 interface Props {
@@ -58,6 +117,23 @@ interface Props {
 }
 
 export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fileInputRef }: Props) {
+  const [preview, setPreview] = useState<PreviewItem | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState<number | null>(null);
+
+  async function handlePreview(attachmentId: number, fileName: string) {
+    setLoadingPreview(attachmentId);
+    try {
+      const blob = await taskAttachmentsApi.download(attachmentId);
+      const url = URL.createObjectURL(blob);
+      const type = isImage(fileName) ? 'image' : isPdf(fileName) ? 'pdf' : 'other';
+      setPreview({ id: attachmentId, name: fileName, url, type });
+    } catch {
+      toast('Could not load preview.', 'error');
+    } finally {
+      setLoadingPreview(null);
+    }
+  }
+
   return (
     <div>
       <input
@@ -106,9 +182,17 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
                     <button
                       type="button"
                       className="attachment-download"
+                      onClick={() => handlePreview(a.id, a.file_name)}
+                      disabled={loadingPreview === a.id}
+                    >
+                      {loadingPreview === a.id ? '…' : 'Preview'}
+                    </button>
+                    <button
+                      type="button"
+                      className="attachment-download"
                       onClick={() => openFile(a.id, a.file_name)}
                     >
-                      View
+                      ↗
                     </button>
                     <button
                       type="button"
@@ -130,6 +214,16 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
             </div>
           ))}
         </div>
+      )}
+
+      {preview && (
+        <FilePreviewModal
+          item={preview}
+          onClose={() => {
+            URL.revokeObjectURL(preview.url);
+            setPreview(null);
+          }}
+        />
       )}
     </div>
   );

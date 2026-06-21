@@ -1,18 +1,20 @@
 'use client';
 
-export type Tab = 'checklist' | 'comments' | 'activity' | 'attachments';
+export type Tab = 'checklist' | 'comments' | 'activity' | 'attachments' | 'time' | 'dependencies';
 
 interface Props {
   tab: Tab;
   setTab: (t: Tab) => void;
-  counts: Record<Tab, number>;
+  counts: Partial<Record<Tab, number>>;
 }
 
 const TABS: [Tab, string][] = [
-  ['checklist',   'Checklist'],
-  ['comments',    'Comments'],
-  ['activity',    'Activity'],
-  ['attachments', 'Files'],
+  ['checklist',    'Checklist'],
+  ['comments',     'Comments'],
+  ['attachments',  'Files'],
+  ['time',         'Time'],
+  ['dependencies', 'Blocks'],
+  ['activity',     'Activity'],
 ];
 
 export function TabBar({ tab, setTab, counts }: Props) {
@@ -29,7 +31,7 @@ export function TabBar({ tab, setTab, counts }: Props) {
             {...(active ? { 'data-active': '' } : {})}
           >
             {label}
-            {count > 0 && (
+            {count != null && count > 0 && (
               <span style={{ marginLeft: 4, opacity: 0.65 }}>({count})</span>
             )}
           </button>

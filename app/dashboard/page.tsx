@@ -148,6 +148,23 @@ function DashboardContent() {
   const projectAnalytics = data?.projectAnalytics;
   const hrStats         = data?.hrStats;
 
+  const { data: taskStats } = useQuery({
+    queryKey: ['task-stats-dashboard'],
+    queryFn: () => import('@/lib/api/tasks').then(m => m.tasksApi.stats()),
+    enabled: isAuthenticated,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: myTasksRaw } = useQuery({
+    queryKey: ['my-tasks-dashboard'],
+    queryFn: () => import('@/lib/api/tasks').then(m =>
+      m.tasksApi.getAll({ scope: 'mine', page_size: 5, status: 'in_progress' } as any)
+    ),
+    enabled: isAuthenticated,
+    staleTime: 2 * 60 * 1000,
+  });
+  const myTaskList = Array.isArray(myTasksRaw) ? myTasksRaw : (myTasksRaw as any)?.results ?? [];
+
   useEffect(() => {
     if (!isAuthenticated) {
       logout();
@@ -404,6 +421,48 @@ function DashboardContent() {
                       </Link>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {/* My Tasks Widget */}
+            {taskStats && (
+              <div className="card">
+                <SectionHeader title="My Tasks" viewAllLabel="View All →" href="/tasks?scope=mine" />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
+                  {[
+                    { label: 'Assigned', value: taskStats.my_tasks, color: '#6366F1' },
+                    { label: 'Overdue', value: taskStats.overdue, color: '#EF4444' },
+                    { label: 'Review', value: taskStats.pending_review, color: '#F59E0B' },
+                  ].map(m => (
+                    <div key={m.label} style={{ background: 'var(--surface-subtle)', borderRadius: 8, padding: '10px 12px' }}>
+                      <p style={{ fontSize: 22, fontWeight: 800, color: m.color, margin: 0, lineHeight: 1 }}>{m.value}</p>
+                      <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: '4px 0 0', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em' }}>{m.label}</p>
+                    </div>
+                  ))}
+                </div>
+                {myTaskList.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {myTaskList.slice(0, 4).map((t: any) => {
+                      const overdue = t.due_date && !['approved','closed'].includes(t.status) && new Date(t.due_date) < new Date();
+                      return (
+                        <Link key={t.id} href={`/tasks/${t.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', textDecoration: 'none' }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-inset)'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-subtle)'; }}
+                        >
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: overdue ? '#EF4444' : '#22C55E', flexShrink: 0 }} />
+                          <span style={{ fontSize: 12, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                            {t.title}
+                          </span>
+                          {overdue && <span style={{ fontSize: 10, color: '#EF4444', fontWeight: 600, flexShrink: 0 }}>Overdue</span>}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+                <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+                  <Link href="/tasks/reports" style={{ fontSize: 11, color: 'var(--text-tertiary)', textDecoration: 'none' }}>Reports →</Link>
+                  <Link href="/tasks/calendar" style={{ fontSize: 11, color: 'var(--text-tertiary)', textDecoration: 'none' }}>Calendar →</Link>
                 </div>
               </div>
             )}

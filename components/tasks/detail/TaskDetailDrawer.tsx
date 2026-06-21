@@ -19,6 +19,8 @@ import { ChecklistTab } from './ChecklistTab';
 import { CommentsTab } from './CommentsTab';
 import { ActivityTab } from './ActivityTab';
 import { AttachmentsTab } from './AttachmentsTab';
+import { TimeTab } from './TimeTab';
+import { DependenciesTab } from './DependenciesTab';
 
 interface Props {
   taskId: number;
@@ -198,6 +200,7 @@ export function TaskDetailDrawer({ taskId, onClose }: Props) {
                     }}
                     onEditCancel={() => { setEditingCommentId(null); setEditCommentText(''); }}
                     savingEdit={savingEdit}
+                    currentUserId={(user as any)?.id}
                   />
                 )}
                 {tab === 'activity' && <ActivityTab activities={task.activities} />}
@@ -210,6 +213,8 @@ export function TaskDetailDrawer({ taskId, onClose }: Props) {
                     fileInputRef={fileInputRef}
                   />
                 )}
+                {tab === 'time' && <TimeTab taskId={task.id} />}
+                {tab === 'dependencies' && <DependenciesTab taskId={task.id} />}
               </div>
 
               {/* Sidebar */}
