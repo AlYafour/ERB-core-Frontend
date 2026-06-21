@@ -242,23 +242,8 @@ function NewPOContent() {
               <span className="proc-sh-label">Order Details</span>
             </div>
             <div className="proc-form-section">
-              <div className="form-grid form-grid--2col">
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <SearchableDropdown
-                    label={t('col', 'supplier')} required
-                    options={(suppliers || []).map((s) => ({ value: s.id, label: s.name, searchText: `${s.name} ${s.business_name || ''} ${s.contact_person || ''}` }))}
-                    value={formData.supplier_id}
-                    onChange={(val) => {
-                      if (fromQR && purchaseQuotation?.status === 'awarded') { toast('Supplier is fixed for awarded quotations', 'error'); return; }
-                      setForm({ supplier_id: val ? Number(val) : 0 });
-                    }}
-                    placeholder={t('misc', 'selectSupplier')}
-                    searchPlaceholder={t('misc', 'searchSuppliers')}
-                    disabled={fromQR && purchaseQuotation?.status === 'awarded'}
-                  />
-                  {errors.supplier_id && <p style={{ color: 'var(--color-error)', fontSize: 'var(--text-xs)', margin: '4px 0 0' }}>{errors.supplier_id}</p>}
-                </div>
-
+              {/* Row 1: Order Date · Delivery Date · Delivery Method */}
+              <div className="form-grid form-grid--3col" style={{ marginBottom: 12 }}>
                 <div>
                   <label className="form-label">{t('col', 'orderDate')} <span style={{ color: 'var(--color-error)' }}>*</span></label>
                   <input type="date" required className="form-input" value={formData.order_date}
@@ -278,8 +263,27 @@ function NewPOContent() {
                     <option value="delivery">Delivery</option>
                   </select>
                 </FormField>
+              </div>
 
-                <div style={{ gridColumn: '1 / -1' }}>
+              {/* Row 2: Supplier · Cost Code */}
+              <div className="form-grid form-grid--2col">
+                <div>
+                  <SearchableDropdown
+                    label={t('col', 'supplier')} required
+                    options={(suppliers || []).map((s) => ({ value: s.id, label: s.name, searchText: `${s.name} ${s.business_name || ''} ${s.contact_person || ''}` }))}
+                    value={formData.supplier_id}
+                    onChange={(val) => {
+                      if (fromQR && purchaseQuotation?.status === 'awarded') { toast('Supplier is fixed for awarded quotations', 'error'); return; }
+                      setForm({ supplier_id: val ? Number(val) : 0 });
+                    }}
+                    placeholder={t('misc', 'selectSupplier')}
+                    searchPlaceholder={t('misc', 'searchSuppliers')}
+                    disabled={fromQR && purchaseQuotation?.status === 'awarded'}
+                  />
+                  {errors.supplier_id && <p style={{ color: 'var(--color-error)', fontSize: 'var(--text-xs)', margin: '4px 0 0' }}>{errors.supplier_id}</p>}
+                </div>
+
+                <div>
                   <label className="form-label">Cost Code <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(optional)</span></label>
                   <CostCodePicker value={costCode} onChange={setCostCode} />
                   {costCode && (
