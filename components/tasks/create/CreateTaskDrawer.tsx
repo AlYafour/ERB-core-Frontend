@@ -376,6 +376,7 @@ export function CreateTaskDrawer({ onClose }: Props) {
   const [assignTeam,       setAssignTeam]       = useState<number | null>(null);
   const [dueDate,          setDueDate]          = useState('');
   const [requiresApproval, setRequiresApproval] = useState(true);
+  const [watchers,         setWatchers]         = useState<number[]>([]);
   const [files,            setFiles]            = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -442,6 +443,7 @@ export function CreateTaskDrawer({ onClose }: Props) {
         due_date:          dueDate || undefined,
         assigned_to:       effectiveAssignTo ?? undefined,
         assigned_team:     assignTeam ?? undefined,
+        watchers:          watchers.length > 0 ? watchers : undefined,
       } as unknown as Partial<TaskDetail>);
       if (files.length > 0) {
         await Promise.all(files.map((f) => taskAttachmentsApi.upload(task.id, f)));
@@ -616,6 +618,54 @@ export function CreateTaskDrawer({ onClose }: Props) {
                 placeholder="Search and select a team…"
                 clearLabel="— No team —"
               />
+            </FieldRow>
+
+            {/* CC / Watchers */}
+            <FieldRow label="CC (Watchers)">
+              <SearchableCombobox
+                items={userItems.filter((u) => !watchers.includes(u.id) && u.id !== effectiveAssignTo)}
+                value={null}
+                onChange={(id) => {
+                  if (id !== null && !watchers.includes(id)) setWatchers((p) => [...p, id]);
+                }}
+                placeholder="Add person to CC…"
+                clearLabel="— None —"
+              />
+              {watchers.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                  {watchers.map((wid) => {
+                    const u = userItems.find((x) => x.id === wid);
+                    if (!u) return null;
+                    return (
+                      <span
+                        key={wid}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
+                          padding: '3px 8px 3px 5px',
+                          background: `${BRAND_HEX}12`,
+                          border: `1.5px solid ${BRAND_HEX}30`,
+                          borderRadius: 20, fontSize: 12, color: 'var(--text-primary)',
+                        }}
+                      >
+                        <Avatar inits={u.inits} color={u.color} size={18} />
+                        {u.label}
+                        <button
+                          type="button"
+                          onClick={() => setWatchers((p) => p.filter((x) => x !== wid))}
+                          style={{
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            padding: 0, lineHeight: 1, fontSize: 14,
+                            color: 'var(--text-tertiary)', marginLeft: 2,
+                          }}
+                          aria-label={`Remove ${u.label}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </FieldRow>
           </div>
 
