@@ -37,6 +37,7 @@ export interface User {
   job_title?: string;
   avatar?: string;
   avatar_url?: string;
+  stamp_url?: string | null;
   is_staff: boolean;
   is_active: boolean;
   is_superuser?: boolean;

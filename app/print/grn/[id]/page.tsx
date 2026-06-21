@@ -13,7 +13,7 @@ import PrintTemplate, {
   fmt, fmtDate,
 } from '@/components/print/PrintTemplate';
 import { PrintControlsBar } from '@/components/print/PrintControlsBar';
-import { resolveStamp } from '@/lib/utils/stamps';
+// stamps are now per-user via stamp_url on the User model
 
 const NAVY   = '#1a1a2e';
 const GREY   = '#64748b';
@@ -231,7 +231,7 @@ export default function PrintGRNPage() {
               paddingBottom:3, marginBottom:8 }}>Acknowledgement</div>
             <div style={{ display:'flex', border:`1px solid ${BORDER}`, borderRadius:8, overflow:'hidden' }}>
               {[
-                { label: 'Received By',   name: grn.received_by_name ?? '', stamp: resolveStamp(grn.received_by_name) },
+                { label: 'Received By',   name: grn.received_by_name ?? '', stamp: (grn as any).received_by_stamp_url || null },
                 { label: 'Inspected By',  name: '',                          stamp: null },
                 { label: 'Store Keeper',  name: '',                          stamp: null },
                 { label: 'Supplier Rep.', name: '',                          stamp: null },

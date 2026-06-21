@@ -229,6 +229,7 @@ export default function Sidebar() {
       { name: 'Pending Approvals',     href: '/users/pending'        },
       { name: t('nav', 'permissions'), href: '/settings/permissions' },
       { name: 'Roles',                 href: '/settings/roles'       },
+      { name: 'Company & Branding',    href: '/settings/company'     },
     ]},
   ];
 

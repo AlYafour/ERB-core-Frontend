@@ -12,7 +12,7 @@ import PrintTemplate, {
 import { PrintControlsBar } from '@/components/print/PrintControlsBar';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
-import { resolveStamp } from '@/lib/utils/stamps';
+// stamps are now per-user via stamp_url on the User model
 import Image from 'next/image';
 
 const NAVY   = '#1B2A4A';
@@ -56,10 +56,10 @@ export default function PrintPQPage() {
   const hasDiscount = discount > 0;
 
   const signatories = [
-    { label: 'Prepared By', name: pq.created_by_name   || '', stamp: resolveStamp(pq.created_by_name) },
-    { label: 'Checked By',  name: 'Noura',                    stamp: resolveStamp('noura') ?? '/stamps/noura-stamp.svg' },
-    { label: 'Approved By', name: pq.awarded_by_name   || 'Saif', stamp: resolveStamp(pq.awarded_by_name) ?? '/stamps/saif-stamp.svg' },
-    { label: 'Supplier',    name: supplier?.name ?? '',        stamp: null },
+    { label: 'Prepared By', name: pq.created_by_name  || '', stamp: (pq as any).created_by_stamp_url  || null },
+    { label: 'Checked By',  name: (pq as any).checked_by_name  || '', stamp: (pq as any).checked_by_stamp_url  || null },
+    { label: 'Approved By', name: pq.awarded_by_name  || '', stamp: (pq as any).awarded_by_stamp_url  || null },
+    { label: 'Supplier',    name: supplier?.name ?? '',       stamp: null },
   ];
 
   return (

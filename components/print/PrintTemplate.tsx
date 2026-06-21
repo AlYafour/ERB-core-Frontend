@@ -3,15 +3,18 @@
 import Image from 'next/image';
 import { useTenantInfo } from '@/lib/hooks/use-tenant';
 
-/* ─── Company constants (static fallback) ──────────────────────── */
-export const COMPANY = {
-  name:    'AL YAFOUR GEN. CONT. & TRANSPORT LLC.',
-  address: 'Abu Dhabi, United Arab Emirates',
-  phone:   '+971 50 622 2469',
-  email:   'info@alyafour.ae',
-  trn:     '100393252000003',
+/* ─── Static fallback (used only when branding not yet loaded) ──── */
+const FALLBACK = {
+  name:    '',
+  address: '',
+  phone:   '',
+  email:   '',
+  trn:     '',
   logo:    '/logo.png',
 };
+
+/** @deprecated Use useTenantInfo().data.branding instead */
+export const COMPANY = FALLBACK;
 
 const NAVY   = '#1a1a2e';
 const ORANGE = '#f97316';
@@ -73,7 +76,15 @@ interface PrintTemplateProps {
 
 export default function PrintTemplate({ docType, docNumber, date, status, children, footer }: PrintTemplateProps) {
   const { data: tenantData } = useTenantInfo();
-  const logoSrc = (tenantData as any)?.branding?.logo_url || COMPANY.logo;
+  const b = tenantData?.branding;
+  const co = {
+    name:    b?.company_legal_name || FALLBACK.name,
+    address: b?.company_address    || FALLBACK.address,
+    phone:   b?.company_phone      || FALLBACK.phone,
+    email:   b?.company_email      || FALLBACK.email,
+    trn:     b?.company_trn        || FALLBACK.trn,
+    logo:    b?.logo_url           || FALLBACK.logo,
+  };
 
   return (
     <div style={{ padding: '6mm 10mm 5mm', fontFamily: "'Inter','Cairo','Segoe UI',sans-serif", fontSize: '10pt', color: NAVY, lineHeight: 1.45, flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -84,7 +95,7 @@ export default function PrintTemplate({ docType, docNumber, date, status, childr
           <tr>
             <td style={{ width: 80, verticalAlign: 'middle' }}>
               <Image
-                src={logoSrc}
+                src={co.logo}
                 alt="Logo"
                 width={72}
                 height={72}
@@ -94,10 +105,10 @@ export default function PrintTemplate({ docType, docNumber, date, status, childr
               />
             </td>
             <td style={{ verticalAlign: 'middle', paddingLeft: 14 }}>
-              <div style={{ fontSize: '13pt', fontWeight: 800, color: NAVY, letterSpacing: '-.3px', lineHeight: 1.2 }}>{COMPANY.name}</div>
-              <div style={{ fontSize: '8pt', color: GREY, marginTop: 2 }}>{COMPANY.address}</div>
-              <div style={{ fontSize: '8pt', color: GREY, marginTop: 1 }}>{COMPANY.phone} &nbsp;·&nbsp; {COMPANY.email}</div>
-              <div style={{ fontSize: '8pt', color: GREY, marginTop: 1 }}>TRN: {COMPANY.trn}</div>
+              {co.name    && <div style={{ fontSize: '13pt', fontWeight: 800, color: NAVY, letterSpacing: '-.3px', lineHeight: 1.2 }}>{co.name}</div>}
+              {co.address && <div style={{ fontSize: '8pt', color: GREY, marginTop: 2 }}>{co.address}</div>}
+              {(co.phone || co.email) && <div style={{ fontSize: '8pt', color: GREY, marginTop: 1 }}>{[co.phone, co.email].filter(Boolean).join(' · ')}</div>}
+              {co.trn     && <div style={{ fontSize: '8pt', color: GREY, marginTop: 1 }}>TRN: {co.trn}</div>}
             </td>
             <td style={{ verticalAlign: 'top', textAlign: 'right', width: 190 }}>
               <div style={{
@@ -313,10 +324,14 @@ export function SignatureRow({ signatories }: { signatories: { label: string; na
 
 /* ─── Default footer ────────────────────────────────────────────── */
 function DefaultFooter() {
+  const { data: tenantData } = useTenantInfo();
+  const b = tenantData?.branding;
+  const name    = b?.company_legal_name || '';
+  const address = b?.company_address    || '';
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, paddingTop: 10, borderTop: `1px solid ${BORDER}`, fontSize: '7pt', color: '#94a3b8', gap: 16 }}>
       <span>This document is computer-generated and valid without a handwritten signature unless otherwise stated.</span>
-      <span>{COMPANY.name} &nbsp;·&nbsp; {COMPANY.address}</span>
+      <span>{[name, address].filter(Boolean).join(' · ')}</span>
     </div>
   );
 }

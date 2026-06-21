@@ -44,8 +44,21 @@ export const tenantApi = {
     return r.data;
   },
 
-  myBranding: async (): Promise<{ logo_url: string; login_bg_url: string; primary_color: string; company_legal_name: string }> => {
+  myBranding: async (): Promise<import('@/types/saas').TenantBrandingData> => {
     const r = await apiClient.get('/tenants/me/branding/');
+    return r.data;
+  },
+
+  updateBranding: async (data: Partial<import('@/types/saas').TenantBrandingData>): Promise<import('@/types/saas').TenantBrandingData> => {
+    const r = await apiClient.patch('/tenants/me/branding/', data);
+    return r.data;
+  },
+
+  uploadTenantAsset: async (file: File, type: 'logo' | 'login_bg'): Promise<{ url: string }> => {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('type', type);
+    const r = await apiClient.post('/tenants/me/upload-branding-asset/', fd);
     return r.data;
   },
 

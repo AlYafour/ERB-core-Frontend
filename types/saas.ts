@@ -19,6 +19,7 @@ export interface TenantInfo {
   updated_at: string;
   modules?: TenantModuleInfo[];
   active_user_count?: number;
+  branding?: TenantBrandingData;
 }
 
 export interface TenantModuleInfo {

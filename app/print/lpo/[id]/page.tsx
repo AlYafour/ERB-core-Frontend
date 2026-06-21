@@ -12,7 +12,7 @@ import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { poItemBreakdown } from '@/lib/utils/po-item-totals';
 import { buildLineRows } from '@/components/procurement/shared/POLineItemsTable';
-import { USER_STAMPS, resolveStamp } from '@/lib/utils/stamps';
+// stamps are now per-user via stamp_url on the User model
 
 function toWords(n: number): string {
   if (!n || isNaN(n) || n <= 0) return 'Zero Dirhams Only';
@@ -108,10 +108,10 @@ export default function PrintLPOPage() {
       : 0;
 
   const signatories = [
-    { label: 'Prepared By', name: po.pr_created_by_name        || '',        stamp: resolveStamp(po.pr_created_by_name) },
-    { label: 'Checked By',  name: po.quotation_created_by_name || 'Noura',   stamp: resolveStamp(po.quotation_created_by_name) ?? '/stamps/noura-stamp.svg' },
-    { label: 'Approved By', name: po.approved_by_name          || 'Saif',    stamp: resolveStamp(po.approved_by_name)          ?? '/stamps/saif-stamp.svg'  },
-    { label: 'Supplier',    name: supplier?.name ?? '',                       stamp: null },
+    { label: 'Prepared By', name: po.pr_created_by_name        || '', stamp: (po as any).pr_created_by_stamp_url        || null },
+    { label: 'Checked By',  name: po.quotation_created_by_name || '', stamp: (po as any).quotation_created_by_stamp_url || null },
+    { label: 'Approved By', name: po.approved_by_name          || '', stamp: (po as any).approved_by_stamp_url          || null },
+    { label: 'Supplier',    name: supplier?.name               ?? '', stamp: null },
   ];
 
   return (

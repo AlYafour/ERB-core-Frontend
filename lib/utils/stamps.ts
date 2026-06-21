@@ -1,15 +1,12 @@
-export const USER_STAMPS: Record<string, string> = {
-  abdel: '/stamps/abdo-stamp.svg',
-  sayed: '/stamps/sayed-stamp.svg',
-  noura: '/stamps/noura-stamp.svg',
-  saif:  '/stamps/saif-stamp.svg',
-};
+import type { User } from '@/types';
 
-export function resolveStamp(u: string | null | undefined): string | null {
-  if (!u) return null;
-  const k = u.toLowerCase();
-  for (const name of Object.keys(USER_STAMPS)) {
-    if (k.includes(name)) return USER_STAMPS[name];
-  }
-  return null;
+/**
+ * Returns the stamp URL for a user object fetched from the API.
+ * The stamp_url field is uploaded per-user via /api/auth/me/ PATCH with a `stamp` file.
+ */
+export function resolveStamp(user: User | null | undefined): string | null {
+  return user?.stamp_url || null;
 }
+
+/** @deprecated Use resolveStamp(userObject) — no longer a static map */
+export const USER_STAMPS: Record<string, string> = {};
