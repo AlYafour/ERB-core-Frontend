@@ -121,6 +121,8 @@ export default function PrintLPOPage() {
 
       <style>{`
         @page { size: A4; margin: 0; }
+        .print-doc table thead th { color: #fff !important; background: #1B2A4A !important; }
+        .print-doc table thead    { background: #1B2A4A !important; }
         @media print {
           html, body { width: 210mm; height: 297mm; }
           .print-page-bg { background: white !important; padding: 0 !important; margin: 0 !important; }
@@ -316,7 +318,7 @@ export default function PrintLPOPage() {
               ════════════════════════════════════════ */}
           {(() => {
             const rows = buildLineRows(po.items, charges, chargesVat);
-            const pTH: React.CSSProperties = { padding:'6px 8px', fontSize:'7.5pt', fontWeight:700, letterSpacing:'.5px', textTransform:'uppercase' as const, color:'#fff', background:NAVY };
+            const pTH: React.CSSProperties = { padding:'6px 8px', fontSize:'7.5pt', fontWeight:700, letterSpacing:'.5px', textTransform:'uppercase' as const };
             const pTD: React.CSSProperties = { padding:'5px 8px', borderBottom:'1px solid #f1f5f9' };
             return (
               <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'8.5pt', marginBottom:4 }}>
