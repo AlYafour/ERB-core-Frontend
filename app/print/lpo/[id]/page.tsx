@@ -316,12 +316,12 @@ export default function PrintLPOPage() {
               ════════════════════════════════════════ */}
           {(() => {
             const rows = buildLineRows(po.items, charges, chargesVat);
-            const pTH: React.CSSProperties = { padding:'6px 8px', fontSize:'6.5pt', fontWeight:700, letterSpacing:'.5px', textTransform:'uppercase' as const, color:'#fff' };
+            const pTH: React.CSSProperties = { padding:'6px 8px', fontSize:'7.5pt', fontWeight:700, letterSpacing:'.5px', textTransform:'uppercase' as const, color:'#fff', background:NAVY };
             const pTD: React.CSSProperties = { padding:'5px 8px', borderBottom:'1px solid #f1f5f9' };
             return (
               <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'8.5pt', marginBottom:4 }}>
-                <thead>
-                  <tr style={{ background:NAVY }}>
+                <thead style={{ background:NAVY }}>
+                  <tr>
                     <th style={{ ...pTH, textAlign:'left', width:22 }}>#</th>
                     <th style={{ ...pTH, textAlign:'left' }}>Description</th>
                     <th style={{ ...pTH, textAlign:'center', width:40 }}>Unit</th>
