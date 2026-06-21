@@ -44,6 +44,11 @@ export const tenantApi = {
     return r.data;
   },
 
+  myBranding: async (): Promise<{ logo_url: string; login_bg_url: string; primary_color: string; company_legal_name: string }> => {
+    const r = await apiClient.get('/tenants/me/branding/');
+    return r.data;
+  },
+
   myModules: async (): Promise<TenantModuleInfo[]> => {
     const r = await apiClient.get('/tenants/me/modules/');
     return r.data;
