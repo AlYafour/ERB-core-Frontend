@@ -67,22 +67,22 @@ export function EditablePRItemsTable<T extends BasePRItem>({
                 />
               </td>
               <td>
-                <textarea
+                <input
+                  type="text"
                   value={item.reason || ''}
                   onChange={(e) => onUpdate(index, 'reason', e.target.value)}
                   placeholder="Purpose"
-                  rows={2}
-                  className="form-textarea"
+                  className="form-input"
                   style={{ width: 150 }}
                 />
               </td>
               <td>
-                <textarea
+                <input
+                  type="text"
                   value={item.notes || ''}
                   onChange={(e) => onUpdate(index, 'notes', e.target.value)}
                   placeholder="Notes"
-                  rows={2}
-                  className="form-textarea"
+                  className="form-input"
                   style={{ width: 150 }}
                 />
               </td>
