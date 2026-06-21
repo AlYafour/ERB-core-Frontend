@@ -269,8 +269,11 @@ export default function EmployeeDetailPage() {
   const [form,          setForm]          = useState<Record<string, any>>({});
   const [avatarFile,    setAvatarFile]    = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [stampFile,     setStampFile]     = useState<File | null>(null);
+  const [stampPreview,  setStampPreview]  = useState<string | null>(null);
   const [changePassword, setChangePassword] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef  = useRef<HTMLInputElement>(null);
+  const stampInputRef = useRef<HTMLInputElement>(null);
 
   // ── Queries ────────────────────────────────────────────────────────────────
   const { data: emp, isLoading, error } = useQuery<HREmployee>({
@@ -307,13 +310,19 @@ export default function EmployeeDetailPage() {
 
   const userUpdateMutation = useMutation({
     mutationFn: (data: any) =>
-      usersApi.update(emp!.user!.id, { ...data, ...(avatarFile ? { avatar: avatarFile } : {}) }),
+      usersApi.update(emp!.user!.id, {
+        ...data,
+        ...(avatarFile ? { avatar: avatarFile } : {}),
+        ...(stampFile  ? { stamp:  stampFile  } : {}),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hr-employee', id] });
       toast('Account updated', 'success');
       setEditSection(null);
       setAvatarFile(null);
       setAvatarPreview(null);
+      setStampFile(null);
+      setStampPreview(null);
       setChangePassword(false);
     },
     onError: () => toast('Failed to update account', 'error'),
@@ -330,6 +339,8 @@ export default function EmployeeDetailPage() {
     if (!emp) return;
     setAvatarFile(null);
     setAvatarPreview(null);
+    setStampFile(null);
+    setStampPreview(null);
     setChangePassword(false);
     setForm({
       salary_display_name:  emp.salary_display_name || '',
@@ -744,6 +755,44 @@ export default function EmployeeDetailPage() {
                   </button>
                   <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 'var(--space-1)' }}>
                     JPG, PNG — max 5 MB
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className={fld}>
+              <label className={lbl}>Signature Stamp</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+                <div style={{
+                  width: 80, height: 80, border: '1px dashed var(--border-default)',
+                  borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'var(--bg-subtle)', overflow: 'hidden', flexShrink: 0,
+                }}>
+                  {stampPreview || emp.user?.stamp_url ? (
+                    <img src={stampPreview || emp.user?.stamp_url || ''} alt="Stamp"
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  ) : (
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', textAlign: 'center', padding: 4 }}>No stamp</span>
+                  )}
+                </div>
+                <div>
+                  <input ref={stampInputRef} type="file" accept="image/png,image/jpeg,image/webp" style={{ display: 'none' }}
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 5 * 1024 * 1024) { toast('Max 5MB', 'error'); return; }
+                      setStampFile(file);
+                      const reader = new FileReader();
+                      reader.onloadend = () => setStampPreview(reader.result as string);
+                      reader.readAsDataURL(file);
+                    }} />
+                  <button type="button" className="btn btn-secondary"
+                    style={{ fontSize: 'var(--text-xs)', padding: '4px 12px' }}
+                    onClick={() => stampInputRef.current?.click()}>
+                    {stampPreview || emp.user?.stamp_url ? 'Change Stamp' : 'Upload Stamp'}
+                  </button>
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 'var(--space-1)' }}>
+                    PNG recommended (transparent background) — max 5 MB
                   </p>
                 </div>
               </div>

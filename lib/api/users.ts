@@ -64,17 +64,17 @@ export const usersApi = {
     }
   },
 
-  update: async (id: number, data: Partial<User> & { password?: string; avatar?: File }): Promise<User> => {
-    // Check if avatar is a File object (for upload)
+  update: async (id: number, data: Partial<User> & { password?: string; avatar?: File; stamp?: File }): Promise<User> => {
+    // Check if avatar or stamp is a File object (for upload)
     const formData = new FormData();
     let hasFile = false;
-    
+
     Object.keys(data).forEach((key) => {
       const value = (data as any)[key];
-      if (key === 'avatar' && value instanceof File) {
-        formData.append('avatar', value);
+      if ((key === 'avatar' || key === 'stamp') && value instanceof File) {
+        formData.append(key, value);
         hasFile = true;
-      } else if (key !== 'avatar' && value !== undefined && value !== null && value !== '') {
+      } else if (key !== 'avatar' && key !== 'stamp' && value !== undefined && value !== null && value !== '') {
         if (typeof value === 'boolean') {
           formData.append(key, value ? 'true' : 'false');
         } else {
