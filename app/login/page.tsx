@@ -59,8 +59,8 @@ export default function LoginPage() {
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--space-4)' }}>
             <div className="auth-logo-box" style={{ width: 80, height: 80, borderRadius: 'var(--radius-2xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
               <Image
-                src="/logo.png"
-                alt="AL YAFOUR Logo"
+                src="/xerb-logo.svg"
+                alt="ERB Logo"
                 width={64}
                 height={64}
                 style={{ objectFit: 'contain' }}

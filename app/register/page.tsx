@@ -70,7 +70,7 @@ export default function RegisterPage() {
         <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--space-4)' }}>
             <div className="auth-logo-box" style={{ width: 80, height: 80, borderRadius: 'var(--radius-2xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-              <Image src="/logo.png" alt="AL YAFOUR Logo" width={64} height={64} style={{ objectFit: 'contain' }} priority />
+              <Image src="/xerb-logo.svg" alt="ERB Logo" width={64} height={64} style={{ objectFit: 'contain' }} priority />
               <div className="auth-logo-glow" style={{ position: 'absolute', inset: 0, borderRadius: 'var(--radius-2xl)' }} />
             </div>
           </div>

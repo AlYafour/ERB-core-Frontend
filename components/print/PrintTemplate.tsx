@@ -10,7 +10,7 @@ const FALLBACK = {
   phone:   '',
   email:   '',
   trn:     '',
-  logo:    '/logo.png',
+  logo:    '/xerb-logo.svg',
 };
 
 /** @deprecated Use useTenantInfo().data.branding instead */
