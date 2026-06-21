@@ -4,14 +4,7 @@ import type { TaskDetail } from '@/types';
 import { fmtFileSize } from '../shared/constants';
 import { toast } from '@/lib/hooks/use-toast';
 
-const MAX_MB = 25;
-const ALLOWED_EXTS = new Set([
-  '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.txt',
-  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg',
-  '.zip', '.rar', '.7z',
-  '.mp4', '.mov', '.avi',
-  '.ppt', '.pptx',
-]);
+const MAX_MB = 50;
 
 // Extensions Cloudinary can render natively as images — everything else is a document
 const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.ico']);
@@ -55,6 +48,35 @@ function toDownloadUrl(url: string, fileName: string): string {
   return fixed;
 }
 
+function isCloudinary(url: string) {
+  return url.includes('res.cloudinary.com');
+}
+
+/**
+ * For non-Cloudinary URLs (Django media): fetch with auth token → blob URL.
+ * Avoids the 401 that occurs when the browser opens a protected URL directly.
+ */
+async function openWithAuth(url: string, fileName: string, asDownload = false) {
+  try {
+    const token = localStorage.getItem('access_token');
+    const res = await fetch(url, token ? { headers: { Authorization: `Bearer ${token}` } } : {});
+    if (!res.ok) throw new Error(`${res.status}`);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    if (asDownload) {
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000);
+    } else {
+      window.open(blobUrl, '_blank');
+    }
+  } catch {
+    toast('Could not open file. Please try downloading instead.', 'error');
+  }
+}
+
 function fileIcon(name: string) {
   const ext = name.split('.').pop()?.toLowerCase() ?? '';
   if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) return '🖼';
@@ -88,11 +110,6 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
             toast(`File exceeds ${MAX_MB} MB limit`, 'error');
             return;
           }
-          const ext = '.' + (file.name.split('.').pop()?.toLowerCase() ?? '');
-          if (!ALLOWED_EXTS.has(ext)) {
-            toast(`File type "${ext}" is not allowed`, 'error');
-            return;
-          }
           onUpload(file);
         }}
       />
@@ -124,21 +141,41 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
               <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                 {a.file_url && (
                   <>
-                    <a
-                      href={toViewUrl(a.file_url, a.file_name)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="attachment-download"
-                    >
-                      View
-                    </a>
-                    <a
-                      href={toDownloadUrl(a.file_url, a.file_name)}
-                      rel="noopener noreferrer"
-                      className="attachment-download"
-                    >
-                      ↓
-                    </a>
+                    {isCloudinary(a.file_url) ? (
+                      <a
+                        href={toViewUrl(a.file_url, a.file_name)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="attachment-download"
+                      >
+                        View
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        className="attachment-download"
+                        onClick={() => openWithAuth(a.file_url!, a.file_name)}
+                      >
+                        View
+                      </button>
+                    )}
+                    {isCloudinary(a.file_url) ? (
+                      <a
+                        href={toDownloadUrl(a.file_url, a.file_name)}
+                        rel="noopener noreferrer"
+                        className="attachment-download"
+                      >
+                        ↓
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        className="attachment-download"
+                        onClick={() => openWithAuth(a.file_url!, a.file_name, true)}
+                      >
+                        ↓
+                      </button>
+                    )}
                   </>
                 )}
                 <button
