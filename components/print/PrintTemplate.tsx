@@ -330,7 +330,6 @@ function DefaultFooter() {
   const address = b?.company_address    || '';
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, paddingTop: 10, borderTop: `1px solid ${BORDER}`, fontSize: '7pt', color: '#94a3b8', gap: 16 }}>
-      <span>This document is computer-generated and valid without a handwritten signature unless otherwise stated.</span>
       <span>{[name, address].filter(Boolean).join(' · ')}</span>
     </div>
   );
