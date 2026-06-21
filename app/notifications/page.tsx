@@ -58,6 +58,14 @@ const getNotificationLink = (notification: Notification): string | null => {
       return `/products/view/${id}`;
     case 'supplier':
       return `/suppliers/view/${id}`;
+    case 'purchase_order':
+      return `/purchase-orders/${id}`;
+    case 'task':
+      return `/tasks/${id}`;
+    case 'hr_request':
+      return `/hr/requests/${id}`;
+    case 'hr_payroll':
+      return `/hr/payroll/${id}`;
     case 'user':
       return `/users/${id}`;
     default:

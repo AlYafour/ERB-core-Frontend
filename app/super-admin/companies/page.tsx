@@ -593,7 +593,7 @@ function BrandingUpload({ preview, uploading, accept, placeholder, onChange, onC
   onChange: (f: File) => void; onClear: () => void; aspectRatio?: 'square' | 'wide';
 }) {
   const ref = useRef<HTMLInputElement>(null);
-  const height = aspectRatio === 'wide' ? 80 : 80;
+  const height = 80;
 
   if (preview) {
     return (

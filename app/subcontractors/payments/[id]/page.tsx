@@ -1,6 +1,6 @@
 'use client';
 
-import { use } from 'react';
+import { use, useState } from 'react';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -41,13 +41,18 @@ function AmountRow({ label, value, highlight }: { label: string; value: string |
 export default function PaymentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const queryClient = useQueryClient();
+  const [refInput, setRefInput] = useState('');
+  const [showRefDialog, setShowRefDialog] = useState(false);
 
   const { data: payment, isLoading, error } = useQuery({
     queryKey: ['subcon-payment', id],
     queryFn: () => subcontractorsApi.payments.getOne(Number(id)),
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['subcon-payment', id] });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['subcon-payment', id] });
+    queryClient.invalidateQueries({ queryKey: ['subcon-payments'] });
+  };
 
   const approveMutation = useMutation({
     mutationFn: () => subcontractorsApi.payments.approve(Number(id)),
@@ -56,10 +61,7 @@ export default function PaymentDetailPage({ params }: { params: Promise<{ id: st
   });
 
   const markPaidMutation = useMutation({
-    mutationFn: () => {
-      const ref = prompt('Reference / Cheque number (optional):') ?? '';
-      return subcontractorsApi.payments.markPaid(Number(id), { reference_number: ref });
-    },
+    mutationFn: (ref: string) => subcontractorsApi.payments.markPaid(Number(id), { reference_number: ref }),
     onSuccess: () => { invalidate(); toast('Payment marked as paid', 'success'); },
     onError: () => toast('Failed to mark as paid', 'error'),
   });
@@ -91,7 +93,7 @@ export default function PaymentDetailPage({ params }: { params: Promise<{ id: st
                 </Button>
               )}
               {payment.status === 'approved' && (
-                <Button variant="primary" size="sm" onClick={() => markPaidMutation.mutate()} disabled={markPaidMutation.isPending}>
+                <Button variant="primary" size="sm" onClick={() => { setRefInput(''); setShowRefDialog(true); }} disabled={markPaidMutation.isPending}>
                   Mark Paid
                 </Button>
               )}
@@ -159,6 +161,49 @@ export default function PaymentDetailPage({ params }: { params: Promise<{ id: st
             {payment.notes && <InfoRow label="Notes" value={payment.notes} />}
           </div>
         </div>
+        {/* Reference number dialog for Mark Paid */}
+        {showRefDialog && (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,0.45)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <div className="card" style={{ width: 400, padding: 'var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+              <div style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>
+                Mark as Paid
+              </div>
+              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                Enter a reference or cheque number (optional).
+              </div>
+              <input
+                type="text"
+                className="input"
+                placeholder="Reference / Cheque number"
+                value={refInput}
+                onChange={e => setRefInput(e.target.value)}
+                autoFocus
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { setShowRefDialog(false); markPaidMutation.mutate(refInput); }
+                  if (e.key === 'Escape') setShowRefDialog(false);
+                }}
+                style={{ width: '100%' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
+                <Button variant="secondary" size="sm" onClick={() => setShowRefDialog(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  disabled={markPaidMutation.isPending}
+                  onClick={() => { setShowRefDialog(false); markPaidMutation.mutate(refInput); }}
+                >
+                  Confirm
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </PageShell>
     </MainLayout>
   );

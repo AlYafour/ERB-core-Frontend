@@ -3,33 +3,26 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { hrPayrollApi } from '@/lib/api/hr';
+import { hrPayrollApi, hrEmployeesApi } from '@/lib/api/hr';
 import { HRPayroll } from '@/types';
-import { toast } from '@/lib/hooks/use-toast';
-import { confirm } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { Button, Badge, type Column } from '@/components/ui';
+import { BaseModal } from '@/components/ui/base/BaseModal';
+import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { RowActions } from '@/components/ui/RowActions';
 import { AppListPage } from '@/components/app/AppListPage';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { PAYROLL_STATUS } from '@/lib/utils/status-colors';
 import { GeneratePayrollModal } from '@/components/hr/GeneratePayrollModal';
+import { MONTH_NAMES, formatCurrency } from '@/lib/utils/hr';
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Draft', processed: 'Processed', paid: 'Paid',
 };
-
-const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'];
-
-function formatCurrency(value: string | number): string {
-  const num = typeof value === 'string' ? parseFloat(value) : value;
-  if (isNaN(num)) return '—';
-  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
 
 const currentYear = new Date().getFullYear();
 const yearOptions = Array.from({ length: 5 }, (_, i) => ({ value: String(currentYear - i), label: String(currentYear - i) }));
@@ -52,7 +45,56 @@ export default function HRPayrollPage() {
   const router      = useRouter();
   const t           = useT();
   const isAdmin     = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
-  const [showGenerate, setShowGenerate] = useState(false);
+  const [showGenerate,   setShowGenerate]   = useState(false);
+  const [showAutoCalc,   setShowAutoCalc]   = useState(false);
+  const [showWpsExport,  setShowWpsExport]  = useState(false);
+  const [acEmployee,     setAcEmployee]     = useState<number | null>(null);
+  const [acMonth,        setAcMonth]        = useState(new Date().getMonth() + 1);
+  const [acYear,         setAcYear]         = useState(new Date().getFullYear());
+  const [wpsMonth,       setWpsMonth]       = useState(new Date().getMonth() + 1);
+  const [wpsYear,        setWpsYear]        = useState(new Date().getFullYear());
+  const [wpsLoading,     setWpsLoading]     = useState(false);
+
+  const { data: empData } = useQuery({
+    queryKey: ['hr-employees-payroll-picker'],
+    queryFn:  () => hrEmployeesApi.getAll(),
+    enabled:  showAutoCalc,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const autoCalcMutation = useMutation({
+    mutationFn: () => hrPayrollApi.autoCalculate({ employee_id: acEmployee!, month: acMonth, year: acYear }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hr-payroll'] });
+      toast('Payroll auto-calculated from attendance', 'success');
+      setShowAutoCalc(false);
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.detail ?? 'Auto-calculate failed';
+      toast(String(msg), 'error');
+    },
+  });
+
+  const handleWpsExport = async () => {
+    setWpsLoading(true);
+    try {
+      const blob = await hrPayrollApi.wpsExport(wpsMonth, wpsYear);
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `WPS_${wpsYear}_${String(wpsMonth).padStart(2, '0')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setShowWpsExport(false);
+      toast('WPS file downloaded', 'success');
+    } catch {
+      toast('Export failed — ensure payrolls are processed for this period', 'error');
+    } finally {
+      setWpsLoading(false);
+    }
+  };
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['hr-payroll', page, search, filters],
@@ -134,9 +176,17 @@ export default function HRPayrollPage() {
       breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Payroll' }]}
       totalCount={totalCount}
       createAction={isAdmin ? (
-        <Button variant="primary" size="sm" onClick={() => setShowGenerate(true)}>
-          + Generate Payroll
-        </Button>
+        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+          <Button variant="secondary" size="sm" onClick={() => setShowWpsExport(true)}>
+            WPS Export
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => setShowAutoCalc(true)}>
+            Auto Calculate
+          </Button>
+          <Button variant="primary" size="sm" onClick={() => setShowGenerate(true)}>
+            + Generate Payroll
+          </Button>
+        </div>
       ) : undefined}
       filterFields={filterFields}
       searchPlaceholder="Search by employee name or ID..."
@@ -154,6 +204,95 @@ export default function HRPayrollPage() {
         onClose={() => setShowGenerate(false)}
         onSuccess={() => queryClient.invalidateQueries({ queryKey: ['hr-payroll'] })}
       />
+
+      {/* Auto Calculate Modal */}
+      <BaseModal
+        isOpen={showAutoCalc}
+        onClose={() => setShowAutoCalc(false)}
+        title="Auto Calculate Payroll"
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowAutoCalc(false)}>Cancel</Button>
+            <Button
+              variant="primary"
+              onClick={() => autoCalcMutation.mutate()}
+              isLoading={autoCalcMutation.isPending}
+              disabled={!acEmployee}
+            >
+              Calculate
+            </Button>
+          </>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+            Reads attendance records and computes absent days, overtime, penalties, and loan deductions automatically.
+          </p>
+          <div>
+            <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>
+              Employee <span style={{ color: 'var(--color-error)' }}>*</span>
+            </label>
+            <SearchableDropdown
+              options={(empData?.results ?? []).map(e => ({ value: e.id, label: `${e.full_name} (${e.employee_id})`, searchText: `${e.full_name} ${e.employee_id}` }))}
+              value={acEmployee}
+              onChange={v => setAcEmployee(v as number | null)}
+              placeholder="Select employee…"
+              allowClear
+            />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Month</label>
+              <select value={acMonth} onChange={e => setAcMonth(Number(e.target.value))} style={{ width: '100%', padding: '7px 10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>
+                {MONTH_NAMES.slice(1).map((n, i) => <option key={i+1} value={i+1}>{n}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Year</label>
+              <select value={acYear} onChange={e => setAcYear(Number(e.target.value))} style={{ width: '100%', padding: '7px 10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>
+                {Array.from({ length: 5 }, (_, i) => currentYear - i).map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+      </BaseModal>
+
+      {/* WPS Export Modal */}
+      <BaseModal
+        isOpen={showWpsExport}
+        onClose={() => setShowWpsExport(false)}
+        title="WPS Salary Export"
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowWpsExport(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleWpsExport} isLoading={wpsLoading}>
+              Download CSV
+            </Button>
+          </>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+            Exports processed/paid payrolls as a UAE MOHRE-compatible WPS file. Only includes employees with a primary bank account.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Month</label>
+              <select value={wpsMonth} onChange={e => setWpsMonth(Number(e.target.value))} style={{ width: '100%', padding: '7px 10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>
+                {MONTH_NAMES.slice(1).map((n, i) => <option key={i+1} value={i+1}>{n}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Year</label>
+              <select value={wpsYear} onChange={e => setWpsYear(Number(e.target.value))} style={{ width: '100%', padding: '7px 10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>
+                {Array.from({ length: 5 }, (_, i) => currentYear - i).map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+      </BaseModal>
     </AppListPage>
   );
 }

@@ -8,7 +8,6 @@ import { Project } from '@/types';
 import Link from 'next/link';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
-import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { Button, Badge, type Column } from '@/components/ui';
@@ -31,7 +30,6 @@ export default function ProjectsPage() {
   const importFileRef = useRef<HTMLInputElement>(null);
 
   const queryClient = useQueryClient();
-  const { user }    = useAuth();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const t           = useT();
   const { hasPermission } = usePermissions();

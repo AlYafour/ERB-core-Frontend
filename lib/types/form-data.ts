@@ -11,18 +11,6 @@ import {
 } from '@/types';
 import { GRNItem } from '@/lib/api/goods-receiving';
 
-export type CleanOptional<T> = {
-  [K in keyof T]: T[K] extends string
-    ? T[K] extends ''
-      ? undefined
-      : T[K]
-    : T[K] extends null
-    ? undefined
-    : T[K] extends (infer U)[]
-    ? U[]
-    : T[K];
-};
-
 export interface ProductFormData {
   name: string;
   name_ar: string;
@@ -79,16 +67,6 @@ export function toPurchaseRequestCreateData(form: PurchaseRequestFormData, items
       notes: item.notes,
     })),
   };
-}
-
-export interface PurchaseRequestItemFormData {
-  product_id: number | undefined;
-  product?: Product;
-  quantity: number;
-  unit: string;
-  project_site: string;
-  reason: string;
-  notes: string;
 }
 
 export interface PurchaseOrderFormData {
@@ -197,16 +175,6 @@ export function toPurchaseQuotationCreateData(form: PurchaseQuotationFormData, i
     notes: form.notes,
     items: allItems,
   };
-}
-
-export interface PurchaseQuotationItemFormData {
-  product_id: number | undefined;
-  product?: Product;
-  quantity: number;
-  unit_price: number;
-  discount: number;
-  tax_rate: number;
-  notes: string;
 }
 
 export interface PurchaseInvoiceFormData {

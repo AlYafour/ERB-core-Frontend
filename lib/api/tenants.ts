@@ -1,7 +1,7 @@
 import apiClient from './client';
 import type {
   TenantInfo, TenantModuleInfo, PlanInfo,
-  AuditLogEntry, PlatformStats, ValidateCompanyCodeResponse, TenantBrandingData,
+  AuditLogEntry, PlatformStats, ValidateCompanyCodeResponse,
 } from '@/types/saas';
 import type { PaginatedResponse } from '@/types';
 
@@ -49,24 +49,6 @@ export const tenantApi = {
     return r.data;
   },
 
-  myBranding: async (): Promise<TenantBrandingData> => {
-    const r = await apiClient.get('/tenants/me/branding/');
-    return r.data;
-  },
-
-  updateMyBranding: async (data: Partial<TenantBrandingData>): Promise<TenantBrandingData> => {
-    const r = await apiClient.patch('/tenants/me/branding/', data);
-    return r.data;
-  },
-
-  myBrandingUpload: async (file: File, type: 'logo' | 'login_bg'): Promise<{ url: string; type: string }> => {
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('type', type);
-    const r = await apiClient.post('/tenants/me/upload-branding-asset/', fd);
-    return r.data;
-  },
-
   // ── Super-admin: Tenants ─────────────────────────────────────────
   listTenants: async (params?: { page?: number; search?: string; page_size?: number }): Promise<PaginatedResponse<TenantInfo>> => {
     const r = await apiClient.get('/super/tenants/', { params });
@@ -104,16 +86,6 @@ export const tenantApi = {
     return r.data;
   },
 
-  getBranding: async (id: string): Promise<TenantBrandingData> => {
-    const r = await apiClient.get(`/super/tenants/${id}/branding/`);
-    return r.data;
-  },
-
-  updateBranding: async (id: string, data: Partial<TenantBrandingData>): Promise<TenantBrandingData> => {
-    const r = await apiClient.patch(`/super/tenants/${id}/branding/`, data);
-    return r.data;
-  },
-
   setStatus: async (id: string, status: string): Promise<TenantInfo> => {
     const r = await apiClient.post(`/super/tenants/${id}/set-status/`, { status });
     return r.data;
@@ -129,11 +101,6 @@ export const tenantApi = {
     updates: Record<string, boolean>,
   ): Promise<TenantInfo> => {
     const r = await apiClient.post(`/super/tenants/${id}/update-modules/`, { updates });
-    return r.data;
-  },
-
-  changePlan: async (id: string, planId: number): Promise<TenantInfo> => {
-    const r = await apiClient.post(`/super/tenants/${id}/change-plan/`, { plan_id: planId });
     return r.data;
   },
 

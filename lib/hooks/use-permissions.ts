@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { permissionsApi } from '@/lib/api/permissions';
 import { useAuthStore } from '@/lib/store/auth-store';
 
@@ -45,13 +45,3 @@ export function usePermissions() {
   };
 }
 
-export function useHasPermission(category: string, action: string): boolean {
-  const { hasPermission } = usePermissions();
-  return hasPermission(category, action);
-}
-
-/** Call this after any permission change to force a fresh fetch. */
-export function useInvalidatePermissions() {
-  const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: PERMISSIONS_QUERY_KEY });
-}

@@ -29,6 +29,8 @@ interface Props<T extends BaseEditableItem> {
   getUnit?: (item: T) => string;
   formatPrice: (n: number) => string;
   readOnly?: boolean;
+  onProductSearch?: (query: string) => void;
+  isProductsLoading?: boolean;
 }
 
 export function EditableStandardItemsTable<T extends BaseEditableItem>({
@@ -41,6 +43,8 @@ export function EditableStandardItemsTable<T extends BaseEditableItem>({
   getUnit,
   formatPrice,
   readOnly = false,
+  onProductSearch,
+  isProductsLoading,
 }: Props<T>) {
   const t = useT();
 
@@ -82,6 +86,8 @@ export function EditableStandardItemsTable<T extends BaseEditableItem>({
                     onChange={(val) => onUpdate(index, 'product_id', val ? Number(val) : 0)}
                     placeholder="Select product..."
                     searchPlaceholder="Search products..."
+                    onSearch={onProductSearch}
+                    isLoading={isProductsLoading}
                   />
                 ) : renderProduct ? (
                   renderProduct(item)

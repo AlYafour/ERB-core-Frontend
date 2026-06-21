@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -22,6 +22,7 @@ import { Product } from '@/types';
 import { ReadOnlyItemsTable, ColumnDef } from '@/components/procurement/ReadOnlyItemsTable';
 import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
 import { StickyDocBar } from '@/components/procurement/shared/StickyDocBar';
+import { ProcField } from '@/components/procurement/shared/ProcField';
 import { PR_STATUS } from '@/lib/utils/status-colors';
 import { PR_LABEL } from '@/lib/constants/status-labels';
 import { fmtDate } from '@/lib/utils/format';
@@ -430,11 +431,3 @@ export default function PurchaseRequestDetailPage() {
   );
 }
 
-function ProcField({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="proc-info-field">
-      <span className="proc-info-label">{label}</span>
-      <div className="proc-info-value">{value || <span className="proc-info-value--empty">—</span>}</div>
-    </div>
-  );
-}

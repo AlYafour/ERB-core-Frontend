@@ -1,7 +1,7 @@
 import apiClient from './client';
 import type {
   Team, TeamMember, TaskListItem, TaskDetail, SubTask,
-  TaskComment, TaskAttachmentItem, TaskActivity, TaskStats, MyTask,
+  TaskComment, TaskAttachmentItem, TaskStats, MyTask,
 } from '@/types';
 
 // ── Teams ─────────────────────────────────────────────────────────────────────
@@ -58,12 +58,9 @@ export const tasksApi = {
     apiClient.post<TaskDetail>('/tasks/tasks/', data).then(r => r.data),
   update: (id: number, data: Partial<TaskDetail>) =>
     apiClient.patch<TaskDetail>(`/tasks/tasks/${id}/`, data).then(r => r.data),
-  delete: (id: number) => apiClient.delete(`/tasks/tasks/${id}/`),
   stats: () => apiClient.get<TaskStats>('/tasks/tasks/stats/').then(r => r.data),
 
   // Status transitions
-  accept: (id: number) =>
-    apiClient.post<TaskDetail>(`/tasks/tasks/${id}/accept/`).then(r => r.data),
   start: (id: number) =>
     apiClient.post<TaskDetail>(`/tasks/tasks/${id}/start/`).then(r => r.data),
   submit: (id: number, note?: string) =>
@@ -76,10 +73,6 @@ export const tasksApi = {
     apiClient.post<TaskDetail>(`/tasks/tasks/${id}/reopen/`).then(r => r.data),
   close: (id: number) =>
     apiClient.post<TaskDetail>(`/tasks/tasks/${id}/close/`).then(r => r.data),
-  watch: (id: number) =>
-    apiClient.post(`/tasks/tasks/${id}/watch/`).then(r => r.data),
-  unwatch: (id: number) =>
-    apiClient.post(`/tasks/tasks/${id}/unwatch/`).then(r => r.data),
 };
 
 // ── SubTasks ──────────────────────────────────────────────────────────────────
@@ -87,9 +80,6 @@ export const tasksApi = {
 export const subTasksApi = {
   create: (data: { task: number; title: string; order?: number }) =>
     apiClient.post<SubTask>('/tasks/subtasks/', data).then(r => r.data),
-  update: (id: number, data: Partial<SubTask>) =>
-    apiClient.patch<SubTask>(`/tasks/subtasks/${id}/`, data).then(r => r.data),
-  delete: (id: number) => apiClient.delete(`/tasks/subtasks/${id}/`),
   complete: (id: number) =>
     apiClient.post<SubTask>(`/tasks/subtasks/${id}/complete/`).then(r => r.data),
   reopen: (id: number) =>
@@ -99,8 +89,6 @@ export const subTasksApi = {
 // ── Comments ──────────────────────────────────────────────────────────────────
 
 export const taskCommentsApi = {
-  getByTask: (taskId: number) =>
-    apiClient.get<TaskComment[]>('/tasks/comments/', { params: { task: taskId } }).then(r => r.data),
   create: (data: { task: number; content: string }) =>
     apiClient.post<TaskComment>('/tasks/comments/', data).then(r => r.data),
   update: (id: number, content: string) =>
@@ -121,13 +109,6 @@ export const taskAttachmentsApi = {
   delete: (id: number) => apiClient.delete(`/tasks/attachments/${id}/`),
 };
 
-// ── Activities ────────────────────────────────────────────────────────────────
-
-export const taskActivitiesApi = {
-  getByTask: (taskId: number) =>
-    apiClient.get<TaskActivity[]>('/tasks/activities/', { params: { task: taskId } }).then(r => r.data),
-};
-
 // ── My Tasks (personal to-do) ─────────────────────────────────────────────────
 
 export const myTasksApi = {
@@ -138,8 +119,6 @@ export const myTasksApi = {
     }),
   create: (data: { title: string; note?: string; priority?: string; due_date?: string }) =>
     apiClient.post<MyTask>('/tasks/my-tasks/', data).then(r => r.data),
-  update: (id: number, data: Partial<MyTask>) =>
-    apiClient.patch<MyTask>(`/tasks/my-tasks/${id}/`, data).then(r => r.data),
   delete: (id: number) => apiClient.delete(`/tasks/my-tasks/${id}/`),
   toggle: (id: number) =>
     apiClient.post<MyTask>(`/tasks/my-tasks/${id}/toggle/`).then(r => r.data),

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseInvoicesApi } from '@/lib/api/purchase-invoices';
@@ -18,6 +18,7 @@ import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable'
 import { FinancialSummary } from '@/components/procurement/shared/FinancialSummary';
 import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
 import { StickyDocBar } from '@/components/procurement/shared/StickyDocBar';
+import { ProcField } from '@/components/procurement/shared/ProcField';
 
 export default function PurchaseInvoiceDetailPage() {
   const params = useParams();
@@ -26,6 +27,9 @@ export default function PurchaseInvoiceDetailPage() {
   const { can } = useProcPermissions();
 
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [showPayDialog, setShowPayDialog] = useState(false);
+  const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [paymentReference, setPaymentReference] = useState('');
 
   const canApprove  = can('purchase_invoice', 'approve');
   const canReject   = can('purchase_invoice', 'reject');
@@ -54,8 +58,9 @@ export default function PurchaseInvoiceDetailPage() {
   });
 
   const markPaidMutation = useMutation({
-    mutationFn: () => purchaseInvoicesApi.markPaid(id, {}),
-    onSuccess: () => { invalidate(); toast('Invoice marked as paid!', 'success'); },
+    mutationFn: (payload: { payment_date: string; payment_reference: string }) =>
+      purchaseInvoicesApi.markPaid(id, payload),
+    onSuccess: () => { invalidate(); setShowPayDialog(false); toast('Invoice marked as paid!', 'success'); },
     onError: (err: unknown) => toast(getApiError(err, 'Failed to mark as paid'), 'error'),
   });
 
@@ -102,7 +107,7 @@ export default function PurchaseInvoiceDetailPage() {
             <Button variant="destructive" size="sm" onClick={() => setRejectDialogOpen(true)}>Reject</Button>
           )}
           {canMarkPaid && invoice.status === 'approved' && !invoice.is_fully_paid && (
-            <Button variant="success" size="sm" isLoading={markPaidMutation.isPending} onClick={() => markPaidMutation.mutate()}>Mark as Paid</Button>
+            <Button variant="success" size="sm" onClick={() => setShowPayDialog(true)}>Mark as Paid</Button>
           )}
         </StickyDocBar>
 
@@ -205,6 +210,46 @@ export default function PurchaseInvoiceDetailPage() {
 
         </div>
 
+        {showPayDialog && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+            <div style={{ background: 'var(--surface)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', padding: '24px', width: '100%', maxWidth: 420 }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: 'var(--text-base)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>Record Payment</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Payment Date</label>
+                  <input
+                    type="date"
+                    value={paymentDate}
+                    onChange={e => setPaymentDate(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 'var(--text-sm)', background: 'var(--surface)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Payment Reference</label>
+                  <input
+                    type="text"
+                    value={paymentReference}
+                    onChange={e => setPaymentReference(e.target.value)}
+                    placeholder="Payment reference / cheque number"
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 'var(--text-sm)', background: 'var(--surface)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
+                <Button variant="secondary" size="sm" onClick={() => setShowPayDialog(false)}>Cancel</Button>
+                <Button
+                  variant="success"
+                  size="sm"
+                  isLoading={markPaidMutation.isPending}
+                  onClick={() => markPaidMutation.mutate({ payment_date: paymentDate, payment_reference: paymentReference })}
+                >
+                  Confirm Payment
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <RejectionReasonDialog
           isOpen={rejectDialogOpen}
           onClose={() => setRejectDialogOpen(false)}
@@ -217,11 +262,3 @@ export default function PurchaseInvoiceDetailPage() {
   );
 }
 
-function ProcField({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="proc-info-field">
-      <span className="proc-info-label">{label}</span>
-      <div className="proc-info-value">{value || <span className="proc-info-value--empty">—</span>}</div>
-    </div>
-  );
-}

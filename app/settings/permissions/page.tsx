@@ -5,7 +5,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { permissionsApi, Permission, PermissionSet, UserPermission } from '@/lib/api/permissions';
 import { usersApi } from '@/lib/api/users';
-import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { PERMISSIONS_QUERY_KEY } from '@/lib/hooks/use-permissions';
 import { toast } from '@/lib/hooks/use-toast';
@@ -16,7 +15,6 @@ import { useT } from '@/lib/i18n/useT';
 type ActiveTab = 'sets' | 'users';
 
 export default function PermissionsPage() {
-  const { user: currentUser } = useAuth();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const isAdmin = isTenantAdmin || isPlatformAdmin;
   const queryClient = useQueryClient();

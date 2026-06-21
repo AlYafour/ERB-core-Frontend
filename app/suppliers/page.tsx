@@ -7,7 +7,6 @@ import { Supplier } from '@/types';
 import Link from 'next/link';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
-import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
@@ -41,7 +40,6 @@ export default function SuppliersPage() {
 
   const importFileRef = useRef<HTMLInputElement>(null);
   const queryClient   = useQueryClient();
-  const { user }      = useAuth();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const { hasPermission } = usePermissions();
   const t             = useT();

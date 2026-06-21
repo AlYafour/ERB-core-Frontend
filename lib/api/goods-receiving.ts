@@ -95,36 +95,8 @@ export const goodsReceivingApi = {
     return response.data;
   },
 
-  update: async (id: number, data: Partial<{
-    receipt_date: string;
-    status: 'draft' | 'partial' | 'completed' | 'cancelled';
-    notes: string;
-    invoice_delivery_status: 'not_delivered' | 'delivered';
-  }>): Promise<GoodsReceivedNote> => {
-    const response = await apiClient.patch(`/goods-receiving/${id}/`, data);
-    return response.data;
-  },
-
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/goods-receiving/${id}/`);
-  },
-
-  addImages: async (id: number, images: File[]): Promise<GoodsReceivedNote> => {
-    const formData = new FormData();
-    images.forEach((img) => formData.append('material_images', img));
-    const response = await apiClient.post(`/goods-receiving/${id}/add_images/`, formData);
-    return response.data;
-  },
-
-  deleteImage: async (grnId: number, imageId: number): Promise<void> => {
-    await apiClient.delete(`/goods-receiving/${grnId}/delete_image/${imageId}/`);
-  },
-
-  uploadSupplierInvoice: async (id: number, file: File): Promise<GoodsReceivedNote> => {
-    const formData = new FormData();
-    formData.append('supplier_invoice_file', file);
-    const response = await apiClient.post(`/goods-receiving/${id}/upload_supplier_invoice/`, formData);
-    return response.data;
   },
 
   markInvoiceDelivered: async (id: number): Promise<GoodsReceivedNote> => {

@@ -17,7 +17,6 @@ import { formatBackendError } from '@/lib/utils/validation';
 import { canCreateQuotationRequest } from '@/lib/utils/workflow-guards';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { usePermissions } from '@/lib/hooks/use-permissions';
-import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { useT } from '@/lib/i18n/useT';
 import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable';
 import { DocInfoBanner } from '@/components/procurement/shared/DocInfoBanner';
@@ -39,7 +38,6 @@ function NewQuotationRequestPageContent() {
   const searchParams = useSearchParams();
   const purchaseRequestId = searchParams.get('purchase_request_id');
   const { hasPermission } = usePermissions();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const formRef = useRef<HTMLFormElement>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});

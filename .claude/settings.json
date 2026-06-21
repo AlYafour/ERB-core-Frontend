@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm show *)",
+      "Bash(python3 -c \"import sys,json; v=json.load\\(sys.stdin\\); print\\([x for x in v if x.startswith\\('16'\\)][-5:]\\)\")",
+      "Bash(git commit -m ' *)",
+      "Bash(python manage.py dumpdata --natural-foreign --natural-primary --indent 2 --exclude contenttypes --exclude auth.permission --exclude admin.logentry --exclude token_blacklist.blacklistedtoken --exclude token_blacklist.outstandingtoken)",
+      "Read(//tmp/**)"
+    ]
+  }
+}

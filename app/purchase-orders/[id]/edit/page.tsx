@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useDebounce } from '@/lib/hooks/use-debounce';
 import { useRouter, useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
@@ -48,9 +49,16 @@ function EditPOContent() {
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const isAdmin = isTenantAdmin || isPlatformAdmin;
 
+  const [productSearch, setProductSearch] = useState('');
+  const debouncedProductSearch = useDebounce(productSearch, 300);
+
   const { data: order, isLoading } = useQuery({ queryKey: ['purchase-orders', id], queryFn: () => purchaseOrdersApi.getById(id) });
   const { data: suppliers }        = useQuery({ queryKey: ['suppliers-all-active'], queryFn: () => suppliersApi.getAllActive() });
-  const { data: products }         = useQuery({ queryKey: ['products-all'], queryFn: () => productsApi.getAll({ page: 1, page_size: 1000 }) });
+  const { data: products, isFetching: productsLoading } = useQuery({
+    queryKey: ['products', 'search', debouncedProductSearch],
+    queryFn: () => productsApi.getAll({ search: debouncedProductSearch, page_size: 30 }),
+    staleTime: 60_000,
+  });
 
   const [formData, setFormData] = useState<PurchaseOrderUpdateFormData>({
     supplier_id: 0, order_date: new Date().toISOString().split('T')[0],
@@ -216,7 +224,7 @@ function EditPOContent() {
           <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
             <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', margin: '0 0 var(--space-4)' }}>{t('section', 'orderItems')}</h3>
 
-            <AddItemPanel value={newItem} onChange={setNewItem} onAdd={handleAddItem} productOptions={productOptions} showTaxRate />
+            <AddItemPanel value={newItem} onChange={setNewItem} onAdd={handleAddItem} productOptions={productOptions} showTaxRate onProductSearch={setProductSearch} isProductsLoading={productsLoading} />
 
             {items.length > 0 && (
               <EditableStandardItemsTable

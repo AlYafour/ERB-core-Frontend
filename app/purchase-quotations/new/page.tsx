@@ -7,7 +7,6 @@ import { purchaseQuotationsApi } from '@/lib/api/purchase-quotations';
 import { quotationRequestsApi } from '@/lib/api/quotation-requests';
 import { purchaseRequestsApi } from '@/lib/api/purchase-requests';
 import { suppliersApi } from '@/lib/api/suppliers';
-import { productsApi } from '@/lib/api/products';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import { Product, PurchaseQuotationItem } from '@/types';
@@ -87,12 +86,6 @@ function NewPurchaseQuotationPageContent() {
     queryFn: () => suppliersApi.getAll({ page: 1 }),
   });
 
-  const { data: products } = useQuery({
-    queryKey: ['products'],
-    queryFn: () => productsApi.getAll({ page: 1, page_size: 1000 }),
-    staleTime: 10 * 60 * 1000,
-  });
-
   useEffect(() => {
     if (quotationRequest) {
       // Get supplier ID (handle both object and number)
@@ -138,29 +131,6 @@ function NewPurchaseQuotationPageContent() {
       }
     }
   }, [quotationRequest]);
-
-  // Update products in items when products list is loaded
-  useEffect(() => {
-    if (products?.results && items.length > 0) {
-      const updatedItems = items.map((item) => {
-        // If item doesn't have _product, try to find it in products list
-        if (!item._product) {
-          const product = products.results.find((p) => p.id === item.product_id);
-          if (product) {
-            return { ...item, _product: product };
-          }
-        }
-        return item;
-      });
-      // Only update if there are changes
-      const hasChanges = updatedItems.some((item, index) => 
-        item._product !== items[index]._product
-      );
-      if (hasChanges) {
-        setItems(updatedItems);
-      }
-    }
-  }, [products?.results]);
 
   const mutation = useMutation({
     mutationFn: purchaseQuotationsApi.create,
@@ -441,9 +411,14 @@ function NewPurchaseQuotationPageContent() {
                   items={items}
                   onUpdate={handleUpdateItem}
                   onRemove={handleRemoveItem}
-                  productOptions={products?.results?.map((p) => ({ value: p.id, label: `${p.name} (${p.code})`, searchText: `${p.name} ${p.code} ${p.category || ''}` })) || []}
+                  renderProduct={(item) => (
+                    <>
+                      <div style={{ fontWeight: 'var(--weight-medium)' }}>{item._product?.name || `Product #${item.product_id}`}</div>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item._product?.code || ''}</div>
+                    </>
+                  )}
                   showUnit={true}
-                  getUnit={(item) => { const product = products?.results?.find((p) => p.id === item.product_id); return product?.unit?.toUpperCase() || '—'; }}
+                  getUnit={(item) => item._product?.unit?.toUpperCase() || '—'}
                   formatPrice={formatPrice}
                 />
               ) : (

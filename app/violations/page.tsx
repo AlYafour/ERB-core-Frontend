@@ -7,7 +7,6 @@ import { violationsApi } from '@/lib/api/violations';
 import { projectsApi } from '@/lib/api/projects';
 import { MunicipalViolation } from '@/types';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { useT } from '@/lib/i18n/useT';
 import { PageHeader, PageShell, WorkspaceSurface } from '@/components/ui';
 
 const FRONTEND_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://purchase-self.vercel.app';
@@ -260,8 +259,6 @@ function ViolationDetailPanel({
 export default function ViolationsPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const t = useT();
-
   const [page, setPage]                 = useState(1);
   const [search, setSearch]             = useState('');
   const [statusFilter, setStatusFilter] = useState('');

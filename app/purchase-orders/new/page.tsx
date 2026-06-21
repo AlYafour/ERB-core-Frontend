@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useDebounce } from '@/lib/hooks/use-debounce';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
@@ -50,6 +51,9 @@ function NewPOContent() {
   const formRef = useRef<HTMLFormElement>(null);
 
   // ── All hooks must run unconditionally ──────────────────────────────────
+  const [productSearch, setProductSearch] = useState('');
+  const debouncedProductSearch = useDebounce(productSearch, 300);
+
   const [formData, setFormData] = useState<PurchaseOrderFormData>({
     purchase_request_id:   purchaseRequestId  ? Number(purchaseRequestId)  : undefined,
     purchase_quotation_id: purchaseQuotationId ? Number(purchaseQuotationId) : undefined,
@@ -68,7 +72,11 @@ function NewPOContent() {
   const { data: purchaseRequest }   = useQuery({ queryKey: ['purchase-requests', purchaseRequestId], queryFn: () => purchaseRequestsApi.getById(Number(purchaseRequestId!)), enabled: !!purchaseRequestId });
   const { data: purchaseQuotation } = useQuery({ queryKey: ['purchase-quotations', purchaseQuotationId], queryFn: () => purchaseQuotationsApi.getById(Number(purchaseQuotationId!)), enabled: !!purchaseQuotationId });
   const { data: suppliers }         = useQuery({ queryKey: ['suppliers', 'all-active'], queryFn: () => suppliersApi.getAllActive() });
-  const { data: products }          = useQuery({ queryKey: ['products'], queryFn: () => productsApi.getAll({ page: 1, page_size: 1000 }), staleTime: 10 * 60 * 1000 });
+  const { data: products, isFetching: productsLoading } = useQuery({
+    queryKey: ['products', 'search', debouncedProductSearch],
+    queryFn: () => productsApi.getAll({ search: debouncedProductSearch, page_size: 30 }),
+    staleTime: 60_000,
+  });
 
   // Redirect if no source document
   useEffect(() => { if (missingSource) router.push('/purchase-requests'); }, [missingSource, router]);
@@ -284,7 +292,7 @@ function NewPOContent() {
             <div style={{ padding: '10px 12px' }}>
               {!fromQR && !purchaseRequest && (
                 <div style={{ marginBottom: 12 }}>
-                  <AddItemPanel value={newItem} onChange={setNewItem} onAdd={handleAddItem} productOptions={productOptions} showTaxRate />
+                  <AddItemPanel value={newItem} onChange={setNewItem} onAdd={handleAddItem} productOptions={productOptions} showTaxRate onProductSearch={setProductSearch} isProductsLoading={productsLoading} />
                 </div>
               )}
               {items.length > 0 ? (

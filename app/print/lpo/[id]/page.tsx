@@ -11,6 +11,7 @@ import Image from 'next/image';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { poItemBreakdown } from '@/lib/utils/po-item-totals';
+import { USER_STAMPS, resolveStamp } from '@/lib/utils/stamps';
 
 function toWords(n: number): string {
   if (!n || isNaN(n) || n <= 0) return 'Zero Dirhams Only';
@@ -92,21 +93,6 @@ export default function PrintLPOPage() {
   const { itemsSubtotal: subtotal, itemsVat: itemTaxAmount } = poItemBreakdown(po.items);
   const transportCharge = Number(po.transportation_charge) || 0;
   const transportVat    = Number(po.tax_amount) || 0;
-
-  const USER_STAMPS: Record<string, string> = {
-    abdel: '/stamps/abdo-stamp.svg',
-    sayed: '/stamps/sayed-stamp.svg',
-    noura: '/stamps/noura-stamp.svg',
-    saif:  '/stamps/saif-stamp.svg',
-  };
-  function resolveStamp(u: string | null | undefined): string | null {
-    if (!u) return null;
-    const k = u.toLowerCase();
-    for (const name of Object.keys(USER_STAMPS)) {
-      if (k.includes(name)) return USER_STAMPS[name];
-    }
-    return null;
-  }
 
   const signatories = [
     { label: 'Prepared By', name: po.pr_created_by_name        || '',        stamp: resolveStamp(po.pr_created_by_name) },

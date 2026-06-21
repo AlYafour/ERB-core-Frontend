@@ -6,7 +6,7 @@ import { hrRequestsApi, hrEmployeesApi } from '@/lib/api/hr';
 import { tasksApi } from '@/lib/api/tasks';
 import { useTenantInfo } from '@/lib/hooks/use-tenant';
 import ClockingCard from '@/components/users/ClockingCard';
-import type { UserTabProps } from './OverviewTab';
+import type { UserTabProps } from './types';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const CURRENT_YEAR = new Date().getFullYear();

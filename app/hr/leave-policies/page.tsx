@@ -14,11 +14,9 @@ import { useTableState } from '@/lib/hooks/use-table-state';
 import { BaseModal } from '@/components/ui/base/BaseModal';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import type { LeavePolicy, EmployeeGroup } from '@/types';
+import { MONTH_NAMES } from '@/lib/utils/hr';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-
-const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'];
 
 const NOW_MONTH = new Date().getMonth() + 1;
 const NOW_YEAR  = new Date().getFullYear();

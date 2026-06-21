@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import axios from 'axios';
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'https://erp-backend-production-fc5b.up.railway.app/api';
+import apiClient from '@/lib/api/client';
 
 type ViolationInfo = {
   id: number;
@@ -34,7 +32,7 @@ export default function ResolvePage() {
 
   useEffect(() => {
     if (!token) return;
-    axios.get(`${API}/violations/resolve/${token}/`)
+    apiClient.get(`/violations/resolve/${token}/`)
       .then(r => setViolation(r.data))
       .catch(() => setError('الرابط غير صالح أو منتهي الصلاحية'))
       .finally(() => setLoading(false));
@@ -43,7 +41,7 @@ export default function ResolvePage() {
   const handleAction = async (action: 'received' | 'resolved') => {
     setSubmitting(true);
     try {
-      await axios.post(`${API}/violations/resolve/${token}/`, { action });
+      await apiClient.post(`/violations/resolve/${token}/`, { action });
       setDone(action);
       if (violation) setViolation({ ...violation, status: action === 'resolved' ? 'resolved' : 'notified' });
     } catch {

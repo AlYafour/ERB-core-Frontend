@@ -288,7 +288,6 @@ export interface PurchaseQuotationItem {
   quantity: number;
   unit_price: number;
   discount?: number;
-  tax?: number;
   tax_rate?: number;
   total: number;
   notes?: string;
@@ -317,13 +316,13 @@ export interface PurchaseQuotation {
   delivery_method?: 'pickup' | 'delivery';
   delivery_terms?: string;
   notes?: string;
-  attachments?: string[];
   created_by: number;
   created_by_name: string;
   awarded_by?: number;
   awarded_by_name?: string;
   awarded_at?: string;
   created_at: string;
+  updated_at: string;
   items: PurchaseQuotationItem[];
   project_name?: string | null;
   project_code?: string | null;

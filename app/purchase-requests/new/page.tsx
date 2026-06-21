@@ -4,7 +4,6 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { purchaseRequestsApi } from '@/lib/api/purchase-requests';
-import { productsApi } from '@/lib/api/products';
 import { projectsApi } from '@/lib/api/projects';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
@@ -15,8 +14,9 @@ import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import ProductSelector from '@/components/features/ProductSelector';
 import QuantityInput from '@/components/ui/QuantityInput';
-import SearchableDropdown, { DropdownOption } from '@/components/ui/SearchableDropdown';
+import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { EditablePRItemsTable } from '@/components/procurement/EditablePRItemsTable';
+import { UNIT_OPTIONS } from '@/lib/constants/unit-options';
 import FormField from '@/components/ui/FormField';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { useT } from '@/lib/i18n/useT';
@@ -72,12 +72,6 @@ function NewPurchaseRequestPageContent() {
     queryFn: () => projectsApi.getAll({ page: 1, page_size: 1000, is_active: true }),
   });
 
-  const { data: productsData } = useQuery({
-    queryKey: ['products-for-table'],
-    queryFn: () => productsApi.getAll({ page: 1, page_size: 1000 }),
-    staleTime: 10 * 60 * 1000,
-  });
-
   const handleProjectChange = (projectId: number | null | undefined) => {
     if (projectId) {
       const selectedProject = projectsData?.results?.find((p: Project) => p.id === projectId);
@@ -112,26 +106,7 @@ function NewPurchaseRequestPageContent() {
     },
   });
 
-  const unitOptions: DropdownOption[] = [
-    { value: 'piece', label: 'Piece' }, { value: 'pcs', label: 'Number / Pieces' },
-    { value: 'kg', label: 'Kilogram' }, { value: 'kl', label: 'Kilo' },
-    { value: 'meter', label: 'Meter' }, { value: 'lm', label: 'Linear Meter' },
-    { value: 'liter', label: 'Liter' }, { value: 'box', label: 'Box' },
-    { value: 'pack', label: 'Pack' }, { value: 'pkt', label: 'Packet' },
-    { value: 'bag', label: 'Bag' }, { value: 'roll', label: 'Roll' },
-    { value: 'ctn', label: 'Carton' }, { value: 'ton', label: 'Ton' },
-    { value: 'trip', label: 'Trip' }, { value: 'sqm', label: 'Square Meter' },
-    { value: 'cbm', label: 'Cubic Metre (cbm / m3)' }, { value: 'pump', label: 'Pump' },
-    { value: 'sheet', label: 'Sheet' }, { value: 'brd', label: 'Board' },
-    { value: 'drm', label: 'Drum' }, { value: 'doz', label: 'Dozen' },
-    { value: 'ls', label: 'Lump Sum' }, { value: 'set', label: 'Set' },
-    { value: 'ream', label: 'Ream' }, { value: 'bundle', label: 'Bundle' },
-    { value: 'nos', label: 'Nos / Number' }, { value: 'mtr', label: 'Metre' },
-    { value: 'qty', label: 'Quantity' }, { value: 'pair', label: 'Pair' },
-    { value: 'can', label: 'Can' }, { value: 'gal', label: 'Gallon' },
-    { value: 'day', label: 'Day' }, { value: 'hour', label: 'Hour' },
-    { value: 'month', label: 'Month' },
-  ];
+  const unitOptions = UNIT_OPTIONS;
 
   const handleProductSelect = (product: Product | null) => {
     setSelectedProduct(product);
@@ -471,19 +446,16 @@ function NewPurchaseRequestPageContent() {
                     items={items}
                     onUpdate={handleUpdateItem}
                     onRemove={handleRemoveItem}
-                    renderProduct={(item) => {
-                      const product = item.product || productsData?.results?.find((p) => p.id === item.product_id);
-                      return (
-                        <>
-                          <div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>
-                            {product?.name || 'Unknown Product'}
-                          </div>
-                          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>
-                            {product?.code || 'N/A'}{product?.category ? ` · ${product.category}` : ''}
-                          </div>
-                        </>
-                      );
-                    }}
+                    renderProduct={(item) => (
+                      <>
+                        <div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>
+                          {item.product?.name || 'Unknown Product'}
+                        </div>
+                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>
+                          {item.product?.code || 'N/A'}{item.product?.category ? ` · ${item.product.category}` : ''}
+                        </div>
+                      </>
+                    )}
                     unitOptions={unitOptions}
                   />
                 </div>

@@ -6,8 +6,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { hrRequestsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
-import { toast } from '@/lib/hooks/use-toast';
-import { confirm } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import { Button, Badge, Loader, PageHeader, PageShell } from '@/components/ui';
 import { useState } from 'react';
 

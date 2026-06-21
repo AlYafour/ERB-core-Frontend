@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
@@ -20,6 +20,7 @@ import { ReadOnlyItemsTable } from '@/components/procurement/ReadOnlyItemsTable'
 import { FinancialSummary } from '@/components/procurement/shared/FinancialSummary';
 import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
 import { StickyDocBar } from '@/components/procurement/shared/StickyDocBar';
+import { ProcField } from '@/components/procurement/shared/ProcField';
 
 export default function PurchaseOrderDetailPage() {
   const params = useParams();
@@ -225,7 +226,7 @@ export default function PurchaseOrderDetailPage() {
                   <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{fmtDate(order.order_date)}</span>
                 </div>
                 <div className="proc-info-grid">
-                  <ProcField label="Supplier" value={typeof order.supplier === 'object' ? order.supplier.name : '—'} />
+                  <ProcField label="Supplier" value={typeof order.supplier === 'object' ? ((order.supplier as any)?.business_name || (order.supplier as any)?.name || '—') : '—'} />
                   <ProcField label="Order Date" value={fmtDate(order.order_date)} />
                   {order.delivery_date && <ProcField label="Delivery Date" value={fmtDate(order.delivery_date)} />}
                   {order.delivery_method && <ProcField label="Delivery Method" value={order.delivery_method === 'pickup' ? 'Pick Up' : 'Delivery'} />}
@@ -330,11 +331,3 @@ export default function PurchaseOrderDetailPage() {
   );
 }
 
-function ProcField({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="proc-info-field">
-      <span className="proc-info-label">{label}</span>
-      <div className="proc-info-value">{value || <span className="proc-info-value--empty">—</span>}</div>
-    </div>
-  );
-}

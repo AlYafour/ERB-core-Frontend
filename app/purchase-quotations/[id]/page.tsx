@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { ProcField } from '@/components/procurement/shared/ProcField';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseQuotationsApi } from '@/lib/api/purchase-quotations';
@@ -238,11 +238,3 @@ export default function PurchaseQuotationDetailPage() {
   );
 }
 
-function ProcField({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="proc-info-field">
-      <span className="proc-info-label">{label}</span>
-      <div className="proc-info-value">{value || <span className="proc-info-value--empty">—</span>}</div>
-    </div>
-  );
-}

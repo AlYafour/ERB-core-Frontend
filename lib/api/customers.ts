@@ -62,18 +62,8 @@ export const customersApi = {
     return res.data;
   },
 
-  update: async (id: number, data: FormData): Promise<Customer> => {
-    const res = await apiClient.patch(`${BASE}${id}/`, data);
-    return res.data;
-  },
-
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`${BASE}${id}/`);
-  },
-
-  getDashboardStats: async () => {
-    const res = await apiClient.get(`${BASE}dashboard-stats/`);
-    return res.data;
   },
 
   getSharedOptions: async (): Promise<Partial<SharedOptions>> => {

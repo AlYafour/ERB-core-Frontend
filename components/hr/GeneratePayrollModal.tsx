@@ -8,11 +8,7 @@ import { Button } from '@/components/ui';
 import { hrEmployeesApi, hrPayrollApi, hrPenaltyApplicationsApi, hrLoansApi, hrLeaveEncashmentsApi, type PenaltyApplicationPreview } from '@/lib/api/hr';
 import { toast } from '@/lib/hooks/use-toast';
 import type { HREmployee, EmployeeLoan, LeaveEncashment } from '@/types';
-
-const MONTH_NAMES = [
-  '', 'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
+import { MONTH_NAMES } from '@/lib/utils/hr';
 
 const NOW_MONTH = new Date().getMonth() + 1;
 const NOW_YEAR  = new Date().getFullYear();

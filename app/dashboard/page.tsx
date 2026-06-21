@@ -5,21 +5,13 @@ import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api/dashboard';
-import {
-  FileTextIcon,
-  BuildingIcon,
-  PackageIcon,
-  DollarIcon,
-  ShoppingCartIcon,
-  BriefcaseIcon,
-} from '@/components/icons';
 import Link from 'next/link';
 import { Badge, PageShell, PageHeader } from '@/components/ui';
 import { formatPrice } from '@/lib/utils/format';
 import dynamic from 'next/dynamic';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { useT } from '@/lib/i18n/useT';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 
 /* ─── Lazy-load chart components — recharts only downloaded when dashboard renders ─ */
@@ -154,6 +146,7 @@ function DashboardContent() {
   const userActivity    = data?.userActivity;
   const cycleMetrics    = data?.cycleMetrics;
   const projectAnalytics = data?.projectAnalytics;
+  const hrStats         = data?.hrStats;
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -176,6 +169,8 @@ function DashboardContent() {
     purchase_order:   t('dash', 'purchaseOrder'),
     grn:              t('dash', 'grn'),
     invoice:          t('dash', 'invoice'),
+    hr_request:       'HR Request',
+    task:             'Task',
   };
 
   return (
@@ -215,6 +210,24 @@ function DashboardContent() {
               { label: t('dash', 'invPending'), value: stats.invoices.pending, color: C.amber,  href: '/purchase-invoices?status=pending' },
               { label: t('dash', 'suppliers'),  value: stats.suppliers.total,  color: C.indigo, href: '/suppliers' },
               { label: t('dash', 'products'),   value: stats.products.total,   color: C.purple, href: '/products' },
+            ]} />
+          </div>
+        )}
+
+        {/* ── HR + Tasks KPI row ─────────────────────────────────── */}
+        {hrStats && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
+            <MetricGroup title="HR — People" href="/hr/employees" metrics={[
+              { label: 'Total Employees', value: hrStats.employees,    color: C.indigo, href: '/hr/employees' },
+              { label: 'Present Today',   value: hrStats.presentToday, color: C.green,  href: '/hr/attendance' },
+              { label: 'Absent Today',    value: hrStats.absentToday,  color: C.red,    href: '/hr/attendance' },
+            ]} />
+            <MetricGroup title="HR — Requests & Payroll" href="/hr/requests" metrics={[
+              { label: 'Pending Requests', value: hrStats.pendingRequests, color: C.amber,  href: '/hr/requests?status=pending' },
+              { label: 'Draft Payrolls',   value: hrStats.draftPayrolls,   color: C.purple, href: '/hr/payroll?status=draft' },
+            ]} />
+            <MetricGroup title="Tasks" href="/tasks" metrics={[
+              { label: 'Open Tasks', value: hrStats.openTasks, color: C.teal, href: '/tasks' },
             ]} />
           </div>
         )}
@@ -387,6 +400,39 @@ function DashboardContent() {
                           <span>Approved: {u.approvedRequests}</span>
                           <span>PO: {u.createdPO}</span>
                           <span>Invoices: {u.createdInvoices}</span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* HR & Tasks Recent Activity */}
+            {hrStats && hrStats.recentActivity.length > 0 && (
+              <div className="card">
+                <SectionHeader title="HR & Tasks Activity" viewAllLabel="View All →" href="/hr/requests" />
+                <div>
+                  {hrStats.recentActivity.slice(0, 6).map((a, i) => {
+                    const dotColor = a.action === 'approved' ? C.green : a.action === 'rejected' ? C.red : a.type === 'task' ? C.teal : C.purple;
+                    return (
+                      <Link
+                        key={`${a.type}-${a.id}`}
+                        href={a.link}
+                        style={{ display: 'block', textDecoration: 'none', padding: '9px 0', borderBottom: i < 5 ? '1px solid var(--border-subtle)' : 'none' }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+                          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
+                            {a.type === 'task' ? 'Task' : 'HR Request'}
+                          </span>
+                          <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 'auto' }}>
+                            {new Date(a.timestamp).toLocaleDateString('en-GB')}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 12 }}>
+                          <span style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{a.title}</span>
+                          <span style={{ fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0 }}>{a.user}</span>
                         </div>
                       </Link>
                     );

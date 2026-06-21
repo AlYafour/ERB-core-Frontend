@@ -6,19 +6,16 @@ import { useRouter } from 'next/navigation';
 import { hrLeaveEncashmentsApi, hrLeavePoliciesApi, hrEmployeesApi, hrRequestsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
-import { toast } from '@/lib/hooks/use-toast';
-import { confirm } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import { Button, Badge, type Column } from '@/components/ui';
 import { AppListPage } from '@/components/app/AppListPage';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { BaseModal } from '@/components/ui/base/BaseModal';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import type { LeaveEncashment, HREmployee, LeavePolicy } from '@/types';
+import { MONTH_NAMES } from '@/lib/utils/hr';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-
-const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'];
 
 const NOW_MONTH = new Date().getMonth() + 1;
 const NOW_YEAR  = new Date().getFullYear();

@@ -5,19 +5,9 @@
 
 const STORAGE_KEY = 'erb_sound_muted';
 
-export function isSoundMuted(): boolean {
+function isSoundMuted(): boolean {
   if (typeof window === 'undefined') return false;
   return localStorage.getItem(STORAGE_KEY) === 'true';
-}
-
-export function setSoundMuted(muted: boolean): void {
-  localStorage.setItem(STORAGE_KEY, String(muted));
-}
-
-export function toggleSoundMuted(): boolean {
-  const next = !isSoundMuted();
-  setSoundMuted(next);
-  return next; // returns new isMuted value
 }
 
 type SoundVariant = 'notification' | 'task' | 'alert';

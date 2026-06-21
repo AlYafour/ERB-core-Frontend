@@ -177,7 +177,6 @@ export default function EmployeesPage() {
   const resetFilters = () => { setDeptFilter(''); setPosFilter(''); setGroupFilter(''); setStatusFilter('active'); setMgrFilter(''); };
 
   const activeEmp = activeModal?.emp ?? null;
-  const anyBulkPending = false; // computed below after mutations
 
   // ── Single mutations ───────────────────────────────────────
   const grpMutation = useMutation({

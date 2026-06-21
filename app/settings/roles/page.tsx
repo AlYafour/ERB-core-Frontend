@@ -6,7 +6,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { rolesApi, Role } from '@/lib/api/roles';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
-import { Button, Checkbox, Loader, PageShell, PageHeader, TextField, Drawer } from '@/components/ui';
+import { Button, Checkbox, Loader, PageShell, PageHeader, Drawer } from '@/components/ui';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

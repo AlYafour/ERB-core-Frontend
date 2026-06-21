@@ -6,8 +6,7 @@ import { useRouter } from 'next/navigation';
 import { hrLoansApi, hrEmployeesApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
-import { toast } from '@/lib/hooks/use-toast';
-import { confirm } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import { Button, Badge, type Column } from '@/components/ui';
 import { RowActions } from '@/components/ui/RowActions';
 import { AppListPage } from '@/components/app/AppListPage';
@@ -16,6 +15,7 @@ import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import type { EmployeeLoan, HREmployee } from '@/types';
+import { MONTH_NAMES } from '@/lib/utils/hr';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -25,9 +25,6 @@ const LOAN_STATUS_VARIANT: Record<string, 'success' | 'info' | 'default' | 'warn
   paused:    'warning',
   cancelled: 'error',
 };
-
-const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'];
 
 const NOW_MONTH = new Date().getMonth() + 1;
 const NOW_YEAR  = new Date().getFullYear();

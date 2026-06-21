@@ -227,6 +227,7 @@ export default function Sidebar() {
     ] : []),
     { name: t('nav', 'settings'), href: '/settings/permissions', icon: UsersIcon, adminOnly: true, subItems: [
       { name: t('nav', 'users'),       href: '/users'                },
+      { name: 'Pending Approvals',     href: '/users/pending'        },
       { name: t('nav', 'permissions'), href: '/settings/permissions' },
       { name: 'Roles',                 href: '/settings/roles'       },
     ]},

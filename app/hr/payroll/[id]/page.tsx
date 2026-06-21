@@ -7,8 +7,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { hrPayrollApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
-import { toast } from '@/lib/hooks/use-toast';
-import { confirm } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import { Button, Badge, Loader, PageHeader, PageShell } from '@/components/ui';
 
 const STATUS_VARIANT: Record<string, string> = {
@@ -57,6 +56,16 @@ export default function PayrollDetailPage() {
           actions={
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
               <Badge variant={(STATUS_VARIANT[payroll.status] as any) || 'default'}>{payroll.status.toUpperCase()}</Badge>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  const url = hrPayrollApi.salaryCertificateUrl(payroll.id);
+                  window.open(url, '_blank', 'noopener,noreferrer');
+                }}
+              >
+                Salary Certificate
+              </Button>
               {isAdmin && payroll.status === 'processed' && (
                 <Button variant="primary" size="sm" onClick={handleMarkPaid} isLoading={markPaidMutation.isPending}>
                   Mark as Paid

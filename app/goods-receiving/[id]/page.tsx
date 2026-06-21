@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { ProcField } from '@/components/procurement/shared/ProcField';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { goodsReceivingApi } from '@/lib/api/goods-receiving';
@@ -79,9 +79,17 @@ export default function GRNDetailPage() {
         >
           <Button variant="secondary" size="sm" onClick={() => window.open(`/print/grn/${id}`, '_blank')}>Print GRN</Button>
           {grn.invoices && grn.invoices.length > 0 ? (
-            <Link href={`/purchase-invoices/${grn.invoices[0].id}`}>
-              <Button variant="primary" size="sm">View Invoice</Button>
-            </Link>
+            grn.invoices.length === 1 ? (
+              <Link href={`/purchase-invoices/${grn.invoices[0].id}`}>
+                <Button variant="primary" size="sm">View Invoice</Button>
+              </Link>
+            ) : (
+              grn.invoices.map((inv: { id: number; invoice_number?: string }) => (
+                <Link key={inv.id} href={`/purchase-invoices/${inv.id}`}>
+                  <Button variant="secondary" size="sm">{inv.invoice_number || `Invoice #${inv.id}`}</Button>
+                </Link>
+              ))
+            )
           ) : (
             purchaseOrder && purchaseOrder.status === 'approved' && canCreateInvPerm && (
               <Button variant="primary" size="sm"
@@ -215,11 +223,3 @@ export default function GRNDetailPage() {
   );
 }
 
-function ProcField({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="proc-info-field">
-      <span className="proc-info-label">{label}</span>
-      <div className="proc-info-value">{value || <span className="proc-info-value--empty">—</span>}</div>
-    </div>
-  );
-}

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { hrRequestsApi, hrApprovalsApi } from '@/lib/api/hr';
 import { toast } from '@/lib/hooks/use-toast';
-import type { UserTabProps } from './OverviewTab';
+import type { UserTabProps } from './types';
 import type { HRRequest } from '@/types';
 
 // ── Constants ──────────────────────────────────────────────────────────────────

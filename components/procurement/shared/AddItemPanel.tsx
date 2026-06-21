@@ -19,9 +19,11 @@ interface Props {
   onAdd: () => void;
   productOptions: { value: number; label: string; searchText?: string }[];
   showTaxRate?: boolean;
+  onProductSearch?: (query: string) => void;
+  isProductsLoading?: boolean;
 }
 
-export function AddItemPanel({ value, onChange, onAdd, productOptions, showTaxRate = false }: Props) {
+export function AddItemPanel({ value, onChange, onAdd, productOptions, showTaxRate = false, onProductSearch, isProductsLoading }: Props) {
   const t = useT();
   const canAdd = !!value.product_id && value.quantity > 0 && value.unit_price > 0;
 
@@ -44,7 +46,9 @@ export function AddItemPanel({ value, onChange, onAdd, productOptions, showTaxRa
           value={value.product_id}
           onChange={(v) => set({ product_id: v ? Number(v) : 0 })}
           placeholder={t('col', 'product')}
-          searchPlaceholder="Search products…"
+          searchPlaceholder="Type to search products…"
+          onSearch={onProductSearch}
+          isLoading={isProductsLoading}
         />
       </div>
 

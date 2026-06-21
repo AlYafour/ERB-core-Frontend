@@ -22,6 +22,9 @@ interface SearchableDropdownProps {
   className?: string;
   allowClear?: boolean;
   filterFunction?: (option: DropdownOption, query: string) => boolean;
+  /** When provided, disables internal filtering and calls this on every keystroke (use for server-side search). */
+  onSearch?: (query: string) => void;
+  isLoading?: boolean;
 }
 
 interface MenuPosition {
@@ -47,6 +50,8 @@ export default function SearchableDropdown({
   className = '',
   allowClear = false,
   filterFunction,
+  onSearch,
+  isLoading = false,
 }: SearchableDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,6 +70,8 @@ export default function SearchableDropdown({
   }, [options, value]);
 
   const filteredOptions = useMemo(() => {
+    // When server-side search is active, options are already filtered by caller
+    if (onSearch) return options;
     if (!searchQuery.trim()) return options;
     const query = searchQuery.toLowerCase().trim();
     if (filterFunction) return options.filter((opt) => filterFunction(opt, query));
@@ -74,7 +81,7 @@ export default function SearchableDropdown({
       const valueMatch = String(opt.value).toLowerCase().includes(query);
       return labelMatch || searchTextMatch || valueMatch;
     });
-  }, [options, searchQuery, filterFunction]);
+  }, [options, searchQuery, filterFunction, onSearch]);
 
   const computePosition = useCallback(() => {
     if (!triggerRef.current) return;
@@ -174,7 +181,11 @@ export default function SearchableDropdown({
       }}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      {filteredOptions.length === 0 ? (
+      {isLoading ? (
+        <div style={{ padding: '10px 16px', fontSize: 'var(--font-sm)', color: 'var(--text-tertiary)', textAlign: 'center' }}>
+          Searching…
+        </div>
+      ) : filteredOptions.length === 0 ? (
         <div
           style={{
             padding: '10px 16px',
@@ -227,7 +238,10 @@ export default function SearchableDropdown({
             ref={inputRef}
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              onSearch?.(e.target.value);
+            }}
             placeholder={searchPlaceholder}
             className="w-full bg-transparent outline-none border-none p-0"
             style={{ color: 'var(--text-primary)', cursor: 'text' }}

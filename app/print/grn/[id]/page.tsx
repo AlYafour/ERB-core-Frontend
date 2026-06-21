@@ -13,25 +13,11 @@ import PrintTemplate, {
   fmt, fmtDate,
 } from '@/components/print/PrintTemplate';
 import { PrintControlsBar } from '@/components/print/PrintControlsBar';
+import { resolveStamp } from '@/lib/utils/stamps';
 
 const NAVY   = '#1a1a2e';
 const GREY   = '#64748b';
 const BORDER = '#cbd5e1';
-
-const USER_STAMPS: Record<string, string> = {
-  abdel: '/stamps/abdo-stamp.svg',
-  sayed: '/stamps/sayed-stamp.svg',
-  noura: '/stamps/noura-stamp.svg',
-  saif:  '/stamps/saif-stamp.svg',
-};
-function resolveStamp(u: string | null | undefined): string | null {
-  if (!u) return null;
-  const k = u.toLowerCase();
-  for (const name of Object.keys(USER_STAMPS)) {
-    if (k.includes(name)) return USER_STAMPS[name];
-  }
-  return null;
-}
 
 const QUALITY_LABEL: Record<string, string> = {
   good:      'Good',

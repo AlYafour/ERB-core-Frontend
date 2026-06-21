@@ -35,10 +35,11 @@ function NewPurchaseInvoicePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const purchaseOrderId = searchParams.get('purchase_order_id');
+  const grnIdFromUrl = searchParams.get('grn_id');
 
   const [formData, setFormData] = useState<PurchaseInvoiceFormData>({
     purchase_order_id: purchaseOrderId ? Number(purchaseOrderId) : 0,
-    grn_id: undefined,
+    grn_id: grnIdFromUrl ? Number(grnIdFromUrl) : undefined,
     invoice_date: new Date().toISOString().split('T')[0],
     due_date: '',
     status: 'draft',

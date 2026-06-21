@@ -55,11 +55,6 @@ export const purchaseQuotationsApi = {
     return response.data;
   },
 
-  update: async (id: number, data: Partial<PurchaseQuotation>): Promise<PurchaseQuotation> => {
-    const response = await apiClient.patch(`/purchase-quotations/${id}/`, data);
-    return response.data;
-  },
-
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/purchase-quotations/${id}/`);
   },

@@ -26,14 +26,6 @@ export function toast(message: string, type: ToastType = 'info') {
   setTimeout(() => { toasts = toasts.filter((t) => t.id !== id); notify(); }, 5000);
 }
 
-export function toastWithUndo(message: string, onUndo: () => void, durationMs = 5000) {
-  const id = `toast-${++toastId}`;
-  const action = { label: 'Undo', onClick: () => { onUndo(); removeToast(id); } };
-  toasts = [...toasts, { id, message, type: 'success' as ToastType, action }];
-  notify();
-  setTimeout(() => { toasts = toasts.filter((t) => t.id !== id); notify(); }, durationMs);
-}
-
 export function removeToast(id: string) {
   toasts = toasts.filter((t) => t.id !== id);
   notify();

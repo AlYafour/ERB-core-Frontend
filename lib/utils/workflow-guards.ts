@@ -17,13 +17,6 @@ export interface WorkflowGuardResult {
 }
 
 /**
- * Enhanced workflow guard that checks both status AND permission
- */
-export interface WorkflowGuardWithPermission {
-  (status: string, hasPermission: boolean, ...args: any[]): WorkflowGuardResult;
-}
-
-/**
  * Check if Purchase Request can be converted to Quotation Request
  * Now checks both status AND permission
  */

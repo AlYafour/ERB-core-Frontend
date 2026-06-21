@@ -25,13 +25,6 @@ export const INVOICE_LABEL: Record<string, string> = {
   cancelled: 'Cancelled',
 };
 
-export const PQ_LABEL: Record<string, string> = {
-  pending:  'Pending',
-  awarded:  'Awarded',
-  rejected: 'Rejected',
-  expired:  'Expired',
-};
-
 export const GRN_LABEL: Record<string, string> = {
   draft:     'Draft',
   partial:   'Partial',
@@ -51,4 +44,12 @@ export const QUALITY_LABEL: Record<string, string> = {
   damaged:   'Damaged',
   defective: 'Defective',
   missing:   'Missing',
+};
+
+export const PQ_LABEL: Record<string, string> = {
+  draft:    'Draft',
+  pending:  'Pending',
+  awarded:  'Awarded',
+  rejected: 'Rejected',
+  expired:  'Expired',
 };

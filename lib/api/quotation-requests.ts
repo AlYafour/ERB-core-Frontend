@@ -37,11 +37,6 @@ export const quotationRequestsApi = {
     return response.data;
   },
 
-  update: async (id: number, data: Partial<QuotationRequest>): Promise<QuotationRequest> => {
-    const response = await apiClient.patch(`/quotation-requests/${id}/`, data);
-    return response.data;
-  },
-
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/quotation-requests/${id}/`);
   },

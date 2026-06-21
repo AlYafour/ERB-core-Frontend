@@ -50,21 +50,6 @@ export interface UserPermissionSummary {
 
 export const permissionsApi = {
   // Permissions
-  getAllPermissions: async (params?: {
-    page?: number;
-    search?: string;
-    category?: string;
-    action?: string;
-  }): Promise<PaginatedResponse<Permission>> => {
-    const response = await apiClient.get('/permissions/', { params });
-    return response.data;
-  },
-
-  getPermissionById: async (id: number): Promise<Permission> => {
-    const response = await apiClient.get(`/permissions/${id}/`);
-    return response.data;
-  },
-
   getPermissionsByCategory: async (): Promise<Record<string, Permission[]>> => {
     const response = await apiClient.get('/permissions/by_category/');
     return response.data;

@@ -17,6 +17,30 @@ export interface UpcomingBirthday {
   birthday_date: string;
 }
 
+export interface EmployeeMinimal {
+  id: number;
+  employee_id: string;
+  full_name: string;
+  user_id: number;
+}
+
+export interface EmployeeDocument {
+  id: number;
+  employee: number;
+  title: string;
+  document_type: string;
+  file: string | null;
+  file_url: string | null;
+  expiry_date: string | null;
+  notes: string;
+  is_expired: boolean;
+  expires_soon: boolean;
+  created_by: number | null;
+  created_by_name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // ── Location Types ─────────────────────────────────────────────────────────────
 
 export const hrLocationTypesApi = {
@@ -104,8 +128,25 @@ export const hrEmployeesApi = {
     const response = await apiClient.patch(`/hr/employees/${empId}/emergency-contact/`, data);
     return response.data;
   },
+  getDocuments: async (empId: number): Promise<EmployeeDocument[]> => {
+    const response = await apiClient.get(`/hr/employees/${empId}/documents/`);
+    return response.data;
+  },
+  uploadDocument: async (empId: number, data: FormData): Promise<EmployeeDocument> => {
+    const response = await apiClient.post(`/hr/employees/${empId}/documents/`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+  deleteDocument: async (empId: number, docId: number): Promise<void> => {
+    await apiClient.delete(`/hr/employees/${empId}/documents/${docId}/`);
+  },
   getUpcomingBirthdays: async (days = 30): Promise<UpcomingBirthday[]> => {
     const response = await apiClient.get('/hr/employees/upcoming-birthdays/', { params: { days } });
+    return response.data;
+  },
+  getMinimal: async (search?: string): Promise<EmployeeMinimal[]> => {
+    const response = await apiClient.get('/hr/employees/minimal/', { params: search ? { search } : undefined });
     return response.data;
   },
 };
@@ -329,6 +370,21 @@ export const hrPayrollApi = {
   getSummary: async (month: number, year: number) => {
     const response = await apiClient.get('/hr/payroll/summary/', { params: { month, year } });
     return response.data;
+  },
+  autoCalculate: async (data: { employee_id: number; month: number; year: number; working_days?: number }): Promise<HRPayroll> => {
+    const response = await apiClient.post('/hr/payroll/auto-calculate/', data);
+    return response.data;
+  },
+  wpsExport: async (month: number, year: number): Promise<Blob> => {
+    const response = await apiClient.get('/hr/payroll/wps-export/', {
+      params: { month, year },
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+  salaryCertificateUrl: (id: number): string => {
+    const base = (apiClient.defaults.baseURL ?? '').replace(/\/$/, '');
+    return `${base}/hr/payroll/${id}/salary-certificate/`;
   },
 };
 

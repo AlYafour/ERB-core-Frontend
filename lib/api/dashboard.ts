@@ -49,12 +49,32 @@ export interface ChartData {
 
 export interface RecentActivity {
   id: number;
-  type: 'purchase_request' | 'quotation' | 'purchase_order' | 'grn' | 'invoice';
-  action: 'created' | 'approved' | 'rejected' | 'paid';
+  type: 'purchase_request' | 'quotation' | 'purchase_order' | 'grn' | 'invoice' | 'hr_request' | 'task';
+  action: string;
   title: string;
   user: string;
   timestamp: string;
   link: string;
+}
+
+export interface HRActivityItem {
+  id: number;
+  type: 'hr_request' | 'task';
+  action: string;
+  title: string;
+  user: string;
+  timestamp: string;
+  link: string;
+}
+
+export interface HRStats {
+  employees: number;
+  presentToday: number;
+  absentToday: number;
+  pendingRequests: number;
+  draftPayrolls: number;
+  openTasks: number;
+  recentActivity: HRActivityItem[];
 }
 
 export interface DashboardCombined {
@@ -64,23 +84,10 @@ export interface DashboardCombined {
   userActivity: UserActivity[];
   projectAnalytics: ProjectAnalytics[];
   cycleMetrics: ProcurementCycleMetrics;
+  hrStats: HRStats;
 }
 
 export const dashboardApi = {
   getCombined: (): Promise<DashboardCombined> =>
     apiClient.get('/dashboard/combined/').then(r => r.data),
-
-  // Legacy individual endpoints (kept for fallback/direct use)
-  getStats: (): Promise<DashboardStats> =>
-    apiClient.get('/dashboard/stats/').then(r => r.data),
-  getProjectAnalytics: (): Promise<ProjectAnalytics[]> =>
-    apiClient.get('/dashboard/project-analytics/').then(r => r.data),
-  getRecentActivity: (): Promise<RecentActivity[]> =>
-    apiClient.get('/dashboard/recent-activity/').then(r => r.data),
-  getUserActivity: (): Promise<UserActivity[]> =>
-    apiClient.get('/dashboard/user-activity/').then(r => r.data),
-  getProcurementCycleMetrics: (): Promise<ProcurementCycleMetrics> =>
-    apiClient.get('/dashboard/cycle-metrics/').then(r => r.data),
-  getChartData: (): Promise<ChartData> =>
-    apiClient.get('/dashboard/chart-data/').then(r => r.data),
 };
