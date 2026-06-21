@@ -3,41 +3,47 @@
    Dynamic values (status/priority colors) remain as inline styles.
    ================================================================ */
 
-/* Drawer shell */
+/* ── Full-screen task view ─────────────────────────────────────── */
 .task-drawer-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  justify-content: flex-end;
-}
-
-.task-drawer-panel {
-  width: 100%;
   background: var(--card-bg);
   display: flex;
   flex-direction: column;
-  box-shadow: -6px 0 48px rgba(0, 0, 0, 0.18);
-  animation: slideInRight 0.2s var(--ease-spring);
+  animation: fadeIn 0.15s ease;
 }
 
+/* top nav bar */
+.task-drawer-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: var(--card-bg);
+}
+
+/* kept for CreateTaskDrawer compatibility */
 .task-drawer-panel--sm { max-width: 500px; }
 .task-drawer-panel--lg { max-width: 780px; }
 
+/* nav bar at the top */
 .task-drawer-header {
-  padding: 16px 20px 14px;
+  padding: 0 20px;
+  height: 52px;
   border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-subtle);
 }
 
+/* two-column body area */
 .task-drawer-body {
   flex: 1;
   overflow-y: auto;
-  padding: 20px 22px;
+  padding: 32px 40px;
 }
 
 .task-drawer-footer {
@@ -49,13 +55,13 @@
   background: var(--surface-subtle);
 }
 
-/* Close button */
+/* Close / icon buttons in nav bar */
 .task-close-btn {
   width: 32px;
   height: 32px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
-  background: var(--surface-subtle);
+  background: transparent;
   cursor: pointer;
   font-size: 18px;
   color: var(--text-secondary);
@@ -73,16 +79,18 @@
 
 /* Meta sidebar */
 .task-meta-sidebar {
-  width: 240px;
+  width: 360px;
   flex-shrink: 0;
   border-left: 1px solid var(--border-subtle);
-  padding: 20px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
   overflow-y: auto;
   background: var(--surface-subtle);
 }
+
+.task-meta-section {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.task-meta-section:last-child { border-bottom: none; }
 
 /* Meta label */
 .meta-label {
@@ -91,7 +99,7 @@
   color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   margin-top: 0;
 }
 
