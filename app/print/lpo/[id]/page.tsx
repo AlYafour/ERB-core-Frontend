@@ -121,7 +121,7 @@ export default function PrintLPOPage() {
 
   const signatories = [
     { label: 'Prepared By', name: po.pr_created_by_name        || '', stamp: (po as any).pr_created_by_stamp_url        || null },
-    { label: 'Checked By',  name: po.quotation_created_by_name || '', stamp: (po as any).quotation_created_by_stamp_url || null },
+    { label: 'Checked By',  name: po.quotation_created_by_name || po.created_by_name || '', stamp: (po as any).quotation_created_by_stamp_url || (po as any).created_by_stamp_url || null },
     { label: 'Approved By', name: po.approved_by_name          || '', stamp: (po as any).approved_by_stamp_url          || null },
     { label: 'Supplier',    name: supplier?.name               ?? '', stamp: null },
   ];
