@@ -776,7 +776,7 @@ export default function EmployeeDetailPage() {
                   )}
                 </div>
                 <div>
-                  <input ref={stampInputRef} type="file" accept="image/png,image/jpeg,image/webp" style={{ display: 'none' }}
+                  <input ref={stampInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" style={{ display: 'none' }}
                     onChange={e => {
                       const file = e.target.files?.[0];
                       if (!file) return;
@@ -792,7 +792,7 @@ export default function EmployeeDetailPage() {
                     {stampPreview || emp.user?.stamp_url ? 'Change Stamp' : 'Upload Stamp'}
                   </button>
                   <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 'var(--space-1)' }}>
-                    PNG recommended (transparent background) — max 5 MB
+                    SVG, PNG (transparent background) — max 5 MB
                   </p>
                 </div>
               </div>
