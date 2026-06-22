@@ -31,10 +31,12 @@ export default function UserProfilePage() {
   }, [emp, router]);
 
   useEffect(() => {
-    if (!isLoading && !emp && !isSelf) {
+    // Guard: wait for auth to resolve before deciding — avoids race condition
+    // where user=null (Zustand not yet hydrated) makes isSelf=false incorrectly
+    if (user && !isLoading && !emp && !isSelf) {
       router.replace(isAdmin ? '/hr/employees' : '/tasks');
     }
-  }, [isLoading, emp, isSelf, isAdmin, router]);
+  }, [user, isLoading, emp, isSelf, isAdmin, router]);
 
   if (isLoading || emp) {
     return <MainLayout><div className="card empty-state"><Loader /></div></MainLayout>;
