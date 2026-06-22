@@ -446,10 +446,11 @@ export default function PrintLPOPage() {
             </div>
           )}
 
-          {po.terms_and_conditions && (() => {
-            // Split on numbered markers: "1-", "2-", "1.", "2." etc.
-            // Also strip leading label like "Conditions: -" or "Terms & Conditions:"
-            const cleaned = po.terms_and_conditions
+          {(b?.default_terms || po.terms_and_conditions) && (() => {
+            // Prefer company-level default_terms; fall back to per-PO field
+            const raw = b?.default_terms || po.terms_and_conditions || '';
+            // Strip leading label like "Conditions: -" or "Terms & Conditions:"
+            const cleaned = raw
               .replace(/^(terms\s*[&and]*\s*conditions\s*:?\s*-?\s*)/i, '')
               .replace(/^(conditions\s*:?\s*-?\s*)/i, '');
             const items = cleaned

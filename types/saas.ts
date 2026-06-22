@@ -82,6 +82,7 @@ export interface TenantBrandingData {
   company_phone: string;
   company_email: string;
   company_trn: string;
+  default_terms?: string;
   updated_at?: string;
 }
 

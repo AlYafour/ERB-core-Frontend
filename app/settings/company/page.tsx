@@ -221,6 +221,40 @@ export default function CompanySettingsPage() {
               )}
             </Section>
 
+            {/* ── Default Terms & Conditions ── */}
+            <Section title="Default Terms & Conditions">
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 14px' }}>
+                These terms appear automatically on all printed documents (LPO, PQ, GRN). Write each condition on a new line or number them manually.
+              </p>
+              <textarea
+                value={val('default_terms')}
+                onChange={e => setForm(f => ({ ...f, default_terms: e.target.value }))}
+                placeholder={`1- The Company reserves the right to return items partially or completely in the following instances: non-compliance with specifications, failure to meet the delivery date, or in the case of defective materials.\n2- This purchase order is confidential and intended exclusively for use by the specified supplier and our organization.\n3- Please acknowledge the receipt & confirm the delivery dates.\n4- This LPO must be signed and stamped by the authorized signatory.`}
+                rows={8}
+                style={{
+                  width: '100%', padding: '10px 12px', fontSize: 13,
+                  borderRadius: 8, border: '1px solid var(--border-subtle)',
+                  background: 'var(--input-bg)', color: 'var(--text-primary)',
+                  boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.6,
+                  fontFamily: 'inherit',
+                }}
+              />
+              <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 6 }}>
+                Tip: start each condition with a number e.g. "1- " for auto-formatting in print.
+              </p>
+              {isDirty && (
+                <div style={{ marginTop: 14, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                  <button onClick={() => setForm({})} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--card-bg)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 13 }}>
+                    Discard
+                  </button>
+                  <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}
+                    style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: 'var(--brand)', color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, opacity: saveMutation.isPending ? 0.7 : 1 }}>
+                    {saveMutation.isPending ? 'Saving…' : 'Save Changes'}
+                  </button>
+                </div>
+              )}
+            </Section>
+
             {/* ── My Stamp ── */}
             <Section title="My Signature Stamp">
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 16px' }}>
