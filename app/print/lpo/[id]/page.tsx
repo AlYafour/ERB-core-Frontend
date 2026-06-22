@@ -446,11 +446,47 @@ export default function PrintLPOPage() {
             </div>
           )}
 
-          {po.terms_and_conditions && (
-            <div style={{ fontSize:'8pt', color:'#555', lineHeight:1.6, marginBottom:6 }}>
-              {po.terms_and_conditions}
-            </div>
-          )}
+          {po.terms_and_conditions && (() => {
+            // Split on numbered markers: "1-", "2-", "1.", "2." etc.
+            // Also strip leading label like "Conditions: -" or "Terms & Conditions:"
+            const cleaned = po.terms_and_conditions
+              .replace(/^(terms\s*[&and]*\s*conditions\s*:?\s*-?\s*)/i, '')
+              .replace(/^(conditions\s*:?\s*-?\s*)/i, '');
+            const items = cleaned
+              .split(/(?=\d{1,2}[-\.]\s)/)
+              .map(s => s.replace(/^\d{1,2}[-\.]\s*/, '').trim())
+              .filter(Boolean);
+            return (
+              <div style={{ marginBottom:8, border:`1px solid ${BORDER}`, borderRadius:4, overflow:'hidden' }}>
+                <div style={{
+                  background: NAVY, color:'#fff',
+                  fontSize:'7pt', fontWeight:700, letterSpacing:'0.07em',
+                  textTransform:'uppercase', padding:'4px 10px',
+                }}>
+                  Terms &amp; Conditions
+                </div>
+                <div style={{ padding:'4px 0' }}>
+                  {items.map((item, i) => (
+                    <div key={i} style={{
+                      display:'flex', alignItems:'flex-start', gap:8,
+                      padding:'4px 10px',
+                      borderBottom: i < items.length - 1 ? `1px solid ${BORDER}` : 'none',
+                      background: i % 2 === 0 ? '#fff' : LIGHT,
+                    }}>
+                      <span style={{
+                        flexShrink:0, width:16, height:16,
+                        background: NAVY, color:'#fff',
+                        borderRadius:'50%', fontSize:'6.5pt', fontWeight:700,
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        marginTop:1,
+                      }}>{i + 1}</span>
+                      <span style={{ fontSize:'7.5pt', color: STEEL, lineHeight:1.55 }}>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {po.notes && (
             <div style={{
