@@ -331,11 +331,6 @@ export default function RolesPage() {
                       </Button>
                     )}
                   </div>
-                  {selectedRole.is_system && (
-                    <p style={{ margin: 'var(--space-3) 0 0', fontSize: '0.8125rem', color: 'var(--text-tertiary)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-2)' }}>
-                      System roles are read-only. You can assign them to users but cannot modify their permissions.
-                    </p>
-                  )}
                 </div>
 
                 {/* Right tabs */}
