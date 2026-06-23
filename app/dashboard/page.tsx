@@ -8,7 +8,8 @@ import Link from 'next/link';
 import { Badge, PageShell, PageHeader } from '@/components/ui';
 import { formatPrice } from '@/lib/utils/format';
 import dynamic from 'next/dynamic';
-import RouteGuard from '@/components/auth/RouteGuard';
+import { useEffect } from 'react';
+import AuthLoadingScreen from '@/components/auth/AuthLoadingScreen';
 import { useT } from '@/lib/i18n/useT';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import MyWorkspace from '@/components/dashboard/MyWorkspace';
@@ -101,33 +102,25 @@ function CardSkeleton({ height = 120 }: { height?: number }) {
 
 /* ─── Page guards / redirect ────────────────────────────────────── */
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
 
-  // Wait for auth to hydrate — never show RouteGuard while user is null
-  // (prevents race condition that redirects non-admins to /purchase-requests)
-  if (!user) return null;
+  // Wait for auth to fully resolve — prevents blank screen and false redirects
+  if (authLoading || !user) return <AuthLoadingScreen />;
 
   // Non-admins see their personalized workspace
   if (!isTenantAdmin && !isPlatformAdmin) {
     return <MyWorkspace />;
   }
 
-  // Admins get the full analytics dashboard
-  return (
-    <RouteGuard
-      requiredPermission={{ category: 'purchase_request', action: 'view' }}
-      redirectTo="/purchase-requests"
-    >
-      <DashboardContent />
-    </RouteGuard>
-  );
+  // Admins: render dashboard directly — no RouteGuard needed here
+  // (isTenantAdmin || isPlatformAdmin confirmed above; admins bypass all permission checks)
+  return <DashboardContent />;
 }
 
 /* ─── Main content ───────────────────────────────────────────────── */
 function DashboardContent() {
   const { isAuthenticated, logout } = useAuth();
-  const router = useRouter();
   const t = useT();
 
   /* Single combined query — replaces 6 individual requests */

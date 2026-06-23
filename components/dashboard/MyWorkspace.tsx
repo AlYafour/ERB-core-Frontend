@@ -74,7 +74,7 @@ function EmptyRow({ message }: { message: string }) {
 
 /* ── My Tasks widget ─────────────────────────────────────────────── */
 function MyTasksWidget() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['workspace-my-tasks'],
     queryFn: () => tasksApi.getAll({ scope: 'mine', page_size: 6 }),
     staleTime: 60_000,
@@ -86,8 +86,12 @@ function MyTasksWidget() {
   return (
     <WorkCard>
       <WsHeader title="My Tasks" href="/tasks" count={total} />
-      {isLoading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}><Loader /></div> : items.length === 0 ? (
-        <EmptyRow message="No pending tasks assigned to you." />
+      {isLoading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}><Loader /></div>
+      ) : isError ? (
+        <EmptyRow message="Could not load tasks. Refresh to try again." />
+      ) : items.length === 0 ? (
+        <EmptyRow message="No tasks assigned to you." />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {items.slice(0, 6).map((t: any) => (
@@ -108,13 +112,13 @@ function MyTasksWidget() {
 
 /* ── My Procurement Actions widget ──────────────────────────────── */
 function MyProcurementWidget({ userId }: { userId: number }) {
-  const { data: prData, isLoading: prLoading } = useQuery({
+  const { data: prData, isLoading: prLoading, isError: prError } = useQuery({
     queryKey: ['workspace-my-prs', userId],
     queryFn: () => purchaseRequestsApi.getAll({ status: 'approved', created_by: userId, page_size: 4 }),
     staleTime: 60_000,
   });
 
-  const { data: poData, isLoading: poLoading } = useQuery({
+  const { data: poData, isLoading: poLoading, isError: poError } = useQuery({
     queryKey: ['workspace-my-pos'],
     queryFn: () => purchaseOrdersApi.getAll({ status: 'pending', page_size: 4 }),
     staleTime: 60_000,
@@ -131,6 +135,8 @@ function MyProcurementWidget({ userId }: { userId: number }) {
       <WsHeader title="Procurement Actions" href="/purchase-requests" count={total} />
       {(prLoading || poLoading) ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}><Loader /></div>
+      ) : (prError || poError) ? (
+        <EmptyRow message="Could not load procurement data. Refresh to try again." />
       ) : total === 0 ? (
         <EmptyRow message="No pending procurement actions." />
       ) : (
@@ -165,7 +171,7 @@ function MyProcurementWidget({ userId }: { userId: number }) {
 
 /* ── My HR Requests widget ───────────────────────────────────────── */
 function MyHRWidget() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['workspace-my-hr-requests'],
     queryFn: () => hrRequestsApi.getAll({ status: 'pending', page_size: 5 }),
     staleTime: 60_000,
@@ -177,7 +183,11 @@ function MyHRWidget() {
   return (
     <WorkCard>
       <WsHeader title="HR Requests" href="/hr/requests" count={total} />
-      {isLoading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}><Loader /></div> : items.length === 0 ? (
+      {isLoading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}><Loader /></div>
+      ) : isError ? (
+        <EmptyRow message="Could not load HR requests. Refresh to try again." />
+      ) : items.length === 0 ? (
         <EmptyRow message="No pending HR requests." />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

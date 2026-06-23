@@ -85,7 +85,7 @@ export default function EmployeesPage() {
   const [activeOverrides,  setActiveOverrides]  = useState<Record<number, boolean>>({});
   const [deletedIds,       setDeletedIds]       = useState<Set<number>>(new Set());
 
-  useEffect(() => { if (me && !admin) router.replace('/tasks'); }, [me, admin, router]);
+  useEffect(() => { if (me && !admin) router.replace('/dashboard'); }, [me, admin, router]);
 
   // ── Data ───────────────────────────────────────────────────
   const { data: raw, isLoading } = useQuery({

@@ -36,7 +36,7 @@ export function useMyPermissions() {
   const isTenantAdmin = user?.role === 'admin' || !!user?.is_superuser;
   const isPlatformAdmin = storeIsPlatformAdmin || !!user?.is_superuser;
 
-  const { data } = useQuery<MyPermissionsData>({
+  const { data, isLoading } = useQuery<MyPermissionsData>({
     queryKey: MY_AUTH_PERMISSIONS_QUERY_KEY,
     queryFn: async () => {
       const res = await apiClient.get('/auth/my-permissions/');
@@ -64,5 +64,5 @@ export function useMyPermissions() {
     return data?.modules.includes(mod) ?? false;
   }
 
-  return { isTenantAdmin, isPlatformAdmin, displayRole, hasPermission, hasModule, data };
+  return { isTenantAdmin, isPlatformAdmin, displayRole, hasPermission, hasModule, data, isLoading };
 }
