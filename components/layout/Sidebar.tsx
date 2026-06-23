@@ -224,13 +224,13 @@ export default function Sidebar() {
   ];
 
   const otherItems = [
-    ...(isAdmin || hasPermission('supplier', 'view') ? [
+    ...(isAdmin || hasPermission('procurement.supplier.view') ? [
       { name: t('nav', 'suppliers'),     href: '/suppliers',  icon: BuildingIcon, subItems: [{ name: t('nav', 'supplierList'), href: '/suppliers' }] },
     ] : []),
-    ...(isAdmin || hasPermission('product', 'view') ? [
+    ...(isAdmin || hasPermission('inventory.product.view') ? [
       { name: t('nav', 'itemsProducts'), href: '/products',   icon: PackageIcon,  subItems: [{ name: t('nav', 'itemsList'),    href: '/products'  }] },
     ] : []),
-    ...(showModule('projects') && (isAdmin || hasPermission('project', 'view')) ? [
+    ...(showModule('projects') && (isAdmin || hasPermission('projects.project.view')) ? [
       { name: t('nav', 'projects'),      href: '/projects',   icon: BuildingIcon, subItems: [{ name: t('nav', 'projectsList'), href: '/projects'  }] },
     ] : []),
     { name: t('nav', 'settings'), href: '/settings/roles', icon: UsersIcon, adminOnly: true, subItems: [
@@ -350,7 +350,7 @@ export default function Sidebar() {
             </div>
 
             {/* Procurement */}
-            {showModule('procurement') && (isAdmin || hasPermission('purchase_request', 'view')) && (
+            {showModule('procurement') && (isAdmin || hasPermission('procurement.purchase_request.view')) && (
               <>
                 <SectionDivider collapsed={sidebarCollapsed} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -411,7 +411,7 @@ export default function Sidebar() {
                     defaultOpen={isTasksActive}
                     {...collapsibleProps}
                   />
-                  {showModule('crm') && (isAdmin || hasPermission('customer', 'view')) && (
+                  {showModule('crm') && (isAdmin || hasPermission('customer.view')) && (
                     <CollapsibleMenu
                       title={t('nav', 'customers')}
                       icon={<UsersIcon className="w-4 h-4" />}
@@ -423,7 +423,7 @@ export default function Sidebar() {
                       {...collapsibleProps}
                     />
                   )}
-                  {showModule('subcontractors') && (isAdmin || hasPermission('subcontractor', 'view')) && (
+                  {showModule('subcontractors') && (isAdmin || hasPermission('subcontractors.subcontractor.view')) && (
                     <CollapsibleMenu
                       title={t('nav', 'subcontractors')}
                       icon={<BuildingIcon className="w-4 h-4" />}
