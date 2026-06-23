@@ -76,7 +76,7 @@ function EmptyRow({ message }: { message: string }) {
 function MyTasksWidget() {
   const { data, isLoading } = useQuery({
     queryKey: ['workspace-my-tasks'],
-    queryFn: () => tasksApi.getAll({ scope: 'mine', status: 'pending', page_size: 6 }),
+    queryFn: () => tasksApi.getAll({ scope: 'mine', page_size: 6 }),
     staleTime: 60_000,
   });
 

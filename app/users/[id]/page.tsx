@@ -27,22 +27,29 @@ export default function UserProfilePage() {
   const emp = empData?.results?.[0] ?? null;
 
   useEffect(() => {
-    if (emp) router.replace(`/hr/employees/${emp.id}`);
-  }, [emp, router]);
+    // Only redirect admins to the full HR employee page — not the employee themselves
+    // (non-admin employees may get 403 from the HR API)
+    if (emp && isAdmin && !isSelf) router.replace(`/hr/employees/${emp.id}`);
+  }, [emp, isAdmin, isSelf, router]);
 
   useEffect(() => {
-    // Guard: wait for auth to resolve before deciding — avoids race condition
-    // where user=null (Zustand not yet hydrated) makes isSelf=false incorrectly
+    // Redirect away only if: auth resolved + not own profile + no HR record
     if (user && !isLoading && !emp && !isSelf) {
       router.replace(isAdmin ? '/hr/employees' : '/dashboard');
     }
   }, [user, isLoading, emp, isSelf, isAdmin, router]);
 
-  if (isLoading || emp) {
+  // Loader while fetching HR record
+  if (isLoading) {
     return <MainLayout><div className="card empty-state"><Loader /></div></MainLayout>;
   }
 
-  // No HR record but viewing own profile → show basic account card
+  // Admin viewing someone else with HR record → redirect handled in useEffect, show loader
+  if (emp && isAdmin && !isSelf) {
+    return <MainLayout><div className="card empty-state"><Loader /></div></MainLayout>;
+  }
+
+  // Own profile → show profile card (with or without HR record)
   if (isSelf && user) {
     const displayName = user.first_name
       ? `${user.first_name} ${user.last_name || ''}`.trim()
@@ -52,13 +59,13 @@ export default function UserProfilePage() {
 
     return (
       <MainLayout>
-        <div style={{ maxWidth: 560, margin: '48px auto', padding: '0 16px' }}>
+        <div style={{ maxWidth: 600, margin: '48px auto', padding: '0 16px' }}>
           <div className="card" style={{ padding: '36px 32px', textAlign: 'center' }}>
             <div style={{
-              width: 80, height: 80, borderRadius: '50%', margin: '0 auto 18px',
+              width: 88, height: 88, borderRadius: '50%', margin: '0 auto 18px',
               background: 'var(--brand-muted)', border: '2px solid var(--border-subtle)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 28, fontWeight: 700, color: 'var(--brand)', overflow: 'hidden',
+              fontSize: 30, fontWeight: 700, color: 'var(--brand)', overflow: 'hidden',
             }}>
               {(user as any).avatar_url
                 ? <img src={(user as any).avatar_url} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -66,14 +73,22 @@ export default function UserProfilePage() {
             </div>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 5px' }}>{displayName}</h1>
             {roleLabel && <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: '0 0 4px', textTransform: 'capitalize' }}>{roleLabel}</p>}
-            {(user as any).email && <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 24px' }}>{(user as any).email}</p>}
-            <div style={{
-              padding: '14px 18px', borderRadius: 10,
-              background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)',
-              fontSize: 13, color: 'var(--text-secondary)',
-            }}>
-              No HR profile has been linked to your account yet. Please contact your HR administrator.
-            </div>
+            {(user as any).email && <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 20px' }}>{(user as any).email}</p>}
+
+            {emp && (
+              <div style={{ textAlign: 'left', borderTop: '1px solid var(--border-subtle)', paddingTop: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px' }}>
+                {emp.department_name && <div><div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 3 }}>Department</div><div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{emp.department_name}</div></div>}
+                {emp.position_title  && <div><div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 3 }}>Position</div><div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{emp.position_title}</div></div>}
+                {emp.employee_id     && <div><div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 3 }}>Employee ID</div><div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{emp.employee_id}</div></div>}
+                {emp.join_date       && <div><div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 3 }}>Joined</div><div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{new Date(emp.join_date).toLocaleDateString('en-GB')}</div></div>}
+              </div>
+            )}
+
+            {!emp && (
+              <div style={{ padding: '14px 18px', borderRadius: 10, background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', fontSize: 13, color: 'var(--text-secondary)' }}>
+                No HR profile has been linked to your account yet. Please contact your HR administrator.
+              </div>
+            )}
           </div>
         </div>
       </MainLayout>

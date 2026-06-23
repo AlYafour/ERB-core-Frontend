@@ -104,11 +104,16 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
 
-  // Non-admins see their personalized workspace instead of the analytics dashboard
-  if (user && !isTenantAdmin && !isPlatformAdmin) {
+  // Wait for auth to hydrate — never show RouteGuard while user is null
+  // (prevents race condition that redirects non-admins to /purchase-requests)
+  if (!user) return null;
+
+  // Non-admins see their personalized workspace
+  if (!isTenantAdmin && !isPlatformAdmin) {
     return <MyWorkspace />;
   }
 
+  // Admins get the full analytics dashboard
   return (
     <RouteGuard
       requiredPermission={{ category: 'purchase_request', action: 'view' }}
