@@ -11,6 +11,7 @@ import { usePendingCounts } from '@/lib/hooks/use-pending-counts';
 import { useTasksBadge } from '@/lib/hooks/use-tasks-badge';
 import { useTenantInfo } from '@/lib/hooks/use-tenant';
 import { useMyEmployeeRecord } from '@/lib/hooks/use-my-employee-record';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import {
   DashboardIcon, FileTextIcon, BuildingIcon, PackageIcon,
   BriefcaseIcon, DollarIcon, UsersIcon, ShoppingCartIcon, AlertIcon,
@@ -211,6 +212,7 @@ export default function Sidebar() {
   const tenantName = tenantData?.name ?? '';
   const logoUrl    = (tenantData as any)?.branding?.logo_url || undefined;
   const { emp: myEmp } = useMyEmployeeRecord();
+  const { hasPermission } = useMyPermissions();
 
   const purchaseItems = [
     { name: t('nav', 'prList'),         href: '/purchase-requests',   icon: <FileTextIcon className="w-4 h-4" />,      badge: pending.pr        },
@@ -222,10 +224,14 @@ export default function Sidebar() {
   ];
 
   const otherItems = [
-    { name: t('nav', 'suppliers'),     href: '/suppliers',            icon: BuildingIcon, subItems: [{ name: t('nav', 'supplierList'), href: '/suppliers' }] },
-    { name: t('nav', 'itemsProducts'), href: '/products',             icon: PackageIcon,  subItems: [{ name: t('nav', 'itemsList'),    href: '/products'  }] },
-    ...(showModule('projects') ? [
-      { name: t('nav', 'projects'),    href: '/projects',             icon: BuildingIcon, subItems: [{ name: t('nav', 'projectsList'), href: '/projects'  }] },
+    ...(isAdmin || hasPermission('supplier', 'view') ? [
+      { name: t('nav', 'suppliers'),     href: '/suppliers',  icon: BuildingIcon, subItems: [{ name: t('nav', 'supplierList'), href: '/suppliers' }] },
+    ] : []),
+    ...(isAdmin || hasPermission('product', 'view') ? [
+      { name: t('nav', 'itemsProducts'), href: '/products',   icon: PackageIcon,  subItems: [{ name: t('nav', 'itemsList'),    href: '/products'  }] },
+    ] : []),
+    ...(showModule('projects') && (isAdmin || hasPermission('project', 'view')) ? [
+      { name: t('nav', 'projects'),      href: '/projects',   icon: BuildingIcon, subItems: [{ name: t('nav', 'projectsList'), href: '/projects'  }] },
     ] : []),
     { name: t('nav', 'settings'), href: '/settings/roles', icon: UsersIcon, adminOnly: true, subItems: [
       { name: 'Roles & Permissions',   href: '/settings/roles'       },
@@ -344,7 +350,7 @@ export default function Sidebar() {
             </div>
 
             {/* Procurement */}
-            {showModule('procurement') && (
+            {showModule('procurement') && (isAdmin || hasPermission('purchase_request', 'view')) && (
               <>
                 <SectionDivider collapsed={sidebarCollapsed} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -405,7 +411,7 @@ export default function Sidebar() {
                     defaultOpen={isTasksActive}
                     {...collapsibleProps}
                   />
-                  {showModule('crm') && (
+                  {showModule('crm') && (isAdmin || hasPermission('customer', 'view')) && (
                     <CollapsibleMenu
                       title={t('nav', 'customers')}
                       icon={<UsersIcon className="w-4 h-4" />}
@@ -417,7 +423,7 @@ export default function Sidebar() {
                       {...collapsibleProps}
                     />
                   )}
-                  {showModule('subcontractors') && (
+                  {showModule('subcontractors') && (isAdmin || hasPermission('subcontractor', 'view')) && (
                     <CollapsibleMenu
                       title={t('nav', 'subcontractors')}
                       icon={<BuildingIcon className="w-4 h-4" />}
