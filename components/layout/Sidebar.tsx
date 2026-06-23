@@ -360,7 +360,7 @@ export default function Sidebar() {
                 navLink('/violations', t('nav', 'violations'), <AlertIcon className="w-4 h-4" />)
               }
               {user?.id && navLink(
-                myEmp?.id ? `/hr/employees/${myEmp.id}` : `/hr/employees`,
+                myEmp?.id ? `/hr/employees/${myEmp.id}` : `/users/${user.id}`,
                 t('nav', 'myProfile'),
                 <UsersIcon className="w-4 h-4" />
               )}

@@ -261,8 +261,8 @@ export default function EmployeeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
-  const { hasPermission } = useMyPermissions();
-  const isAdmin = hasPermission('hr.hr_employee.view');
+  const { hasPermission, isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin = isTenantAdmin || isPlatformAdmin || hasPermission('hr.hr_employee.view');
 
   const [activeTab,     setActiveTab]     = useState('Profile');
   const [editSection,   setEditSection]   = useState<'personal' | 'professional' | 'contact' | 'legal' | 'salary' | 'account' | null>(null);
@@ -280,6 +280,8 @@ export default function EmployeeDetailPage() {
     queryKey: ['hr-employee', id],
     queryFn:  () => hrEmployeesApi.getById(Number(id)),
   });
+
+  const isSelf = !!emp && currentUser?.id === emp.user?.id;
   const { data: depts }     = useQuery({ queryKey: ['hr-departments-all'], queryFn: () => hrDepartmentsApi.getAll({ page: 1 }), staleTime: 300_000 });
   const { data: positions } = useQuery({ queryKey: ['hr-positions-all'],   queryFn: () => hrPositionsApi.getAll({ page: 1 }), staleTime: 300_000 });
   const { data: summary }   = useQuery({
@@ -459,10 +461,12 @@ export default function EmployeeDetailPage() {
         <PageHeader
           title={emp.full_name}
           description={`${emp.employee_id} · ${empTypeLabel[emp.employment_type] || emp.employment_type}`}
-          backHref="/hr/employees"
-          breadcrumbs={[
+          backHref={isAdmin ? '/hr/employees' : '/dashboard'}
+          breadcrumbs={isAdmin ? [
             { label: 'HR' },
             { label: 'Employees', href: '/hr/employees' },
+            { label: emp.full_name },
+          ] : [
             { label: emp.full_name },
           ]}
         />
@@ -526,7 +530,6 @@ export default function EmployeeDetailPage() {
 
         {/* ── Tab content ── */}
         {(() => {
-          const isSelf = currentUser?.id === emp.user?.id;
           const tabProps = {
             user: emp.user, emp, depts: depts?.results ?? [], positions: positions?.results ?? [],
             locations: [], isSelf, isAdmin, userId: emp.user?.id ?? 0,
