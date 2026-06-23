@@ -742,8 +742,8 @@ export default function EmployeeDetailPage() {
             <div className={fld}>
               <label className={lbl}>Profile Picture</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-                {avatarPreview || emp.avatar ? (
-                  <img src={avatarPreview || emp.avatar || ''} alt="" className="av" style={{ width: 56, height: 56 }} />
+                {avatarSrc ? (
+                  <img src={avatarSrc} alt="" className="av" style={{ width: 56, height: 56 }} />
                 ) : (
                   <div className="av-initials" style={{ width: 56, height: 56, fontSize: '1.25rem' }}>{avatarLetter}</div>
                 )}
@@ -761,7 +761,7 @@ export default function EmployeeDetailPage() {
                   <button type="button" className="btn btn-secondary"
                     style={{ fontSize: 'var(--text-xs)', padding: '4px 12px' }}
                     onClick={() => fileInputRef.current?.click()}>
-                    {avatarPreview || emp.avatar ? 'Change Photo' : 'Upload Photo'}
+                    {avatarSrc ? 'Change Photo' : 'Upload Photo'}
                   </button>
                   <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 'var(--space-1)' }}>
                     JPG, PNG — max 5 MB
