@@ -49,18 +49,6 @@ const empTypeLabel: Record<string, string> = {
   full_time: 'Full Time', part_time: 'Part Time', contract: 'Contract', intern: 'Intern',
 };
 
-const ROLES = [
-  { value: 'employee',            label: 'Employee' },
-  { value: 'site_engineer',       label: 'Site Engineer' },
-  { value: 'site_manager',        label: 'Site Manager' },
-  { value: 'supervisor',          label: 'Supervisor' },
-  { value: 'procurement_officer', label: 'Procurement Officer' },
-  { value: 'procurement_manager', label: 'Procurement Manager' },
-  { value: 'hr_secretary',        label: 'HR Secretary' },
-  { value: 'hr_manager',          label: 'HR Manager' },
-  { value: 'company_director',    label: 'Company Director' },
-  { value: 'admin',               label: 'Admin' },
-];
 
 const TABS = [
   'Home', 'Profile', 'Account', 'Roles', 'Attendance', 'Requests', 'Documents',
@@ -389,7 +377,7 @@ export default function EmployeeDetailPage() {
       username:             emp.user?.username || '',
       email:                emp.user?.email || '',
       phone:                emp.user?.phone || '',
-      role:                 emp.user?.role || '',
+      is_company_admin:     emp.user?.role === 'admin',
       first_name:           (emp.full_name || '').split(' ')[0] || '',
       last_name:            (emp.full_name || '').split(' ').slice(-1)[0] || '',
       password:             '',
@@ -407,8 +395,8 @@ export default function EmployeeDetailPage() {
       const accountData: any = {
         username: form.username, email: form.email, phone: form.phone,
         first_name: form.first_name, last_name: form.last_name,
+        role: form.is_company_admin ? 'admin' : 'employee',
       };
-      if (form.role) accountData.role = form.role;
       if (changePassword && form.password) accountData.password = form.password;
       userUpdateMutation.mutate(accountData);
     } else {
@@ -572,7 +560,7 @@ export default function EmployeeDetailPage() {
                   <InfoRow label="Username"    value={emp.user?.username} />
                   <InfoRow label="Work Email"  value={emp.user?.email} />
                   <InfoRow label="Phone"       value={emp.user?.phone} />
-                  <InfoRow label="System Role" value={emp.user?.role?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} />
+                  <InfoRow label="Company Admin" value={emp.user?.role === 'admin' ? 'Yes — Full Access' : 'No'} />
                   <InfoRow label="Status"      value={emp.is_active ? 'Active' : 'Inactive'} />
                 </div>
               </div>
@@ -814,12 +802,18 @@ export default function EmployeeDetailPage() {
               <div className={fld}><label className={lbl}>Username</label><input className={inp} value={form.username} onChange={f('username')} /></div>
               <div className={fld}><label className={lbl}>Email</label><input className={inp} type="email" value={form.email} onChange={f('email')} /></div>
               <div className={fld}><label className={lbl}>Phone</label><input className={inp} type="tel" value={form.phone} onChange={f('phone')} /></div>
-              <div className={fld}>
-                <label className={lbl}>System Role</label>
-                <select className={sel} value={form.role} onChange={f('role')}>
-                  <option value="">— Select Role —</option>
-                  {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                </select>
+              <div className={fld} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                <label className={lbl}>Company Admin</label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer', height: 38 }}>
+                  <input
+                    type="checkbox"
+                    checked={!!form.is_company_admin}
+                    onChange={e => setForm(p => ({ ...p, is_company_admin: e.target.checked }))}
+                  />
+                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                    Full access to all modules
+                  </span>
+                </label>
               </div>
             </div>
 
