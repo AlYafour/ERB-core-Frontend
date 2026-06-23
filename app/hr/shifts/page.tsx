@@ -308,8 +308,8 @@ function ShiftModal({
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function ShiftsPage() {
   const { user: me } = useAuth();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
-  const admin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(me?.role ?? '');
+  const { hasPermission } = useMyPermissions();
+  const admin = hasPermission('hr.hr_employee.view');
   const queryClient = useQueryClient();
 
   const [modalShift, setModalShift] = useState<HRShift | null | 'new'>(null);

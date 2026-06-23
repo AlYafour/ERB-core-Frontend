@@ -26,8 +26,8 @@ export default function HRRequestDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
-  const isAdmin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
+  const { hasPermission } = useMyPermissions();
+  const isAdmin = hasPermission('hr.hr_request.view');
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectInput, setShowRejectInput] = useState(false);
 

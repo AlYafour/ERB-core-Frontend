@@ -261,8 +261,8 @@ export default function EmployeeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
-  const isAdmin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(currentUser?.role ?? '');
+  const { hasPermission } = useMyPermissions();
+  const isAdmin = hasPermission('hr.hr_employee.view');
 
   const [activeTab,     setActiveTab]     = useState('Profile');
   const [editSection,   setEditSection]   = useState<'personal' | 'professional' | 'contact' | 'legal' | 'salary' | 'account' | null>(null);

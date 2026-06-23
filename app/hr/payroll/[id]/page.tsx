@@ -21,8 +21,8 @@ export default function PayrollDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
-  const isAdmin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
+  const { hasPermission } = useMyPermissions();
+  const isAdmin = hasPermission('hr.hr_payroll.view');
   const [penaltyExpanded,     setPenaltyExpanded]     = useState(false);
   const [loanExpanded,        setLoanExpanded]         = useState(false);
   const [encashmentExpanded,  setEncashmentExpanded]   = useState(false);

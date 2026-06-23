@@ -14,8 +14,8 @@ import { Button, Loader, PageHeader, SearchInput, Drawer, PageShell } from '@/co
 export default function DepartmentsPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
-  const isAdmin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
+  const { hasPermission } = useMyPermissions();
+  const isAdmin = hasPermission('hr.hr_employee.view');
 
   const [search, setSearch]           = useState('');
   const [drawerOpen, setDrawerOpen]   = useState(false);

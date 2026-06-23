@@ -51,12 +51,11 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
 // ── Page ───────────────────────────────────────────────────────
 export default function EmployeesPage() {
   const { user: me } = useAuth();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const { hasPermission } = useMyPermissions();
   const router = useRouter();
   const qc = useQueryClient();
 
-  const admin = isTenantAdmin || isPlatformAdmin ||
-    ['hr_manager', 'hr_secretary', 'company_director'].includes(me?.role ?? '');
+  const admin = hasPermission('hr.hr_employee.view');
 
   // ── Filter state ───────────────────────────────────────────
   const [search,       setSearch]       = useState('');

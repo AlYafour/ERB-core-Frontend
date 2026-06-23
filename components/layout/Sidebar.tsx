@@ -223,6 +223,23 @@ export default function Sidebar() {
     { name: t('nav', 'invoiceList'),    href: '/purchase-invoices',   icon: <DollarIcon className="w-4 h-4" />,       badge: pending.invoice   },
   ];
 
+  const hrItems = [
+    { name: 'Employees',               href: '/hr/employees',          perm: 'hr.hr_employee.view',   icon: <UserIcon className="w-4 h-4" /> },
+    { name: 'Employee Groups',         href: '/hr/groups',             perm: 'hr.hr_employee.view',   icon: <UsersIcon className="w-4 h-4" /> },
+    { name: 'Work Shifts',             href: '/hr/shifts',             perm: 'hr.hr_employee.view',   icon: <ClockIcon className="w-4 h-4" /> },
+    { name: t('nav', 'hrDepartments'), href: '/hr/departments',        perm: 'hr.hr_employee.view',   icon: <BuildingIcon className="w-4 h-4" /> },
+    { name: t('nav', 'hrAttendance'),  href: '/hr/attendance',         perm: 'hr.hr_attendance.view', icon: <CalendarIcon className="w-4 h-4" /> },
+    { name: 'Employee Locations',      href: '/hr/employee-locations', perm: 'hr.hr_attendance.view', icon: <MapPinIcon className="w-4 h-4" /> },
+    { name: t('nav', 'hrRequests'),    href: '/hr/requests',           perm: 'hr.hr_request.view',    icon: <FileTextIcon className="w-4 h-4" /> },
+    { name: t('nav', 'hrPayroll'),     href: '/hr/payroll',            perm: 'hr.hr_payroll.view',    icon: <DollarIcon className="w-4 h-4" /> },
+    { name: 'Loans & Advances',        href: '/hr/loans',              perm: 'hr.hr_loan.view',       icon: <CurrencyIcon className="w-4 h-4" /> },
+    { name: 'Leave Policies',          href: '/hr/leave-policies',     perm: 'hr.hr_leave.view',      icon: <CalendarIcon className="w-4 h-4" /> },
+    { name: 'Leave Encashments',       href: '/hr/leave-encashments',  perm: 'hr.hr_leave.view',      icon: <DollarIcon className="w-4 h-4" /> },
+    { name: 'HR Settings',             href: '/hr/settings',           perm: 'hr.hr_settings.view',   icon: <SettingsIcon className="w-4 h-4" /> },
+    { name: 'Approval Chains',         href: '/hr/approvals/chains',   perm: 'hr.hr_approval.view',   icon: <ShieldCheckIcon className="w-4 h-4" /> },
+    { name: 'Penalty Rules',           href: '/hr/penalties',          perm: 'hr.hr_penalty.view',    icon: <AlertIcon className="w-4 h-4" /> },
+  ].filter(item => isAdmin || hasPermission(item.perm));
+
   const otherItems = [
     ...(isAdmin || hasPermission('procurement.supplier.view') ? [
       { name: t('nav', 'suppliers'),     href: '/suppliers',  icon: BuildingIcon, subItems: [{ name: t('nav', 'supplierList'), href: '/suppliers' }] },
@@ -339,7 +356,7 @@ export default function Sidebar() {
               {isAdmin &&
                 navLink('/dashboard', t('nav', 'dashboard'), <DashboardIcon className="w-4 h-4" />)
               }
-              {showModule('violations') && (isAdmin || user?.role === 'procurement_manager') &&
+              {showModule('violations') && isAdmin &&
                 navLink('/violations', t('nav', 'violations'), <AlertIcon className="w-4 h-4" />)
               }
               {user?.id && navLink(
@@ -366,29 +383,14 @@ export default function Sidebar() {
             )}
 
             {/* HR */}
-            {showModule('hr') && (isAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '')) && (
+            {showModule('hr') && hrItems.length > 0 && (
               <>
                 <SectionDivider collapsed={sidebarCollapsed} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <CollapsibleMenu
                     title={t('nav', 'hrModule')}
                     icon={<UsersIcon className="w-4 h-4" />}
-                    items={[
-                      { name: 'Employees',                href: '/hr/employees',         adminOnly: true, icon: <UserIcon className="w-4 h-4" /> },
-                      { name: 'Employee Groups',          href: '/hr/groups',            adminOnly: true, icon: <UsersIcon className="w-4 h-4" /> },
-                      { name: 'Work Shifts',              href: '/hr/shifts',            adminOnly: true, icon: <ClockIcon className="w-4 h-4" /> },
-                      { name: t('nav', 'hrDepartments'),  href: '/hr/departments',                        icon: <BuildingIcon className="w-4 h-4" /> },
-                      { name: t('nav', 'hrAttendance'),   href: '/hr/attendance',        adminOnly: true, icon: <CalendarIcon className="w-4 h-4" /> },
-                      { name: 'Employee Locations',       href: '/hr/employee-locations', adminOnly: true, icon: <MapPinIcon className="w-4 h-4" /> },
-                      { name: t('nav', 'hrRequests'),     href: '/hr/requests',                           icon: <FileTextIcon className="w-4 h-4" /> },
-                      { name: t('nav', 'hrPayroll'),      href: '/hr/payroll',           adminOnly: true, icon: <DollarIcon className="w-4 h-4" /> },
-                      { name: 'Loans & Advances',         href: '/hr/loans',             adminOnly: true, icon: <CurrencyIcon className="w-4 h-4" /> },
-                      { name: 'Leave Policies',           href: '/hr/leave-policies',    adminOnly: true, icon: <CalendarIcon className="w-4 h-4" /> },
-                      { name: 'Leave Encashments',        href: '/hr/leave-encashments', adminOnly: true, icon: <DollarIcon className="w-4 h-4" /> },
-                      { name: 'HR Settings',              href: '/hr/settings',          adminOnly: true, icon: <SettingsIcon className="w-4 h-4" /> },
-                      { name: 'Approval Chains',          href: '/hr/approvals/chains',  adminOnly: true, icon: <ShieldCheckIcon className="w-4 h-4" /> },
-                      { name: 'Penalty Rules',            href: '/hr/penalties',          adminOnly: true, icon: <AlertIcon className="w-4 h-4" /> },
-                    ]}
+                    items={hrItems}
                     defaultOpen={isHRActive}
                     {...collapsibleProps}
                   />

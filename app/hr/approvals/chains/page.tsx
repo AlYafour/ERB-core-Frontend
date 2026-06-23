@@ -728,9 +728,9 @@ function ChainBuilder({
 
 export default function ApprovalChainsPage() {
   const { user } = useAuth();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const { hasPermission } = useMyPermissions();
   const qc = useQueryClient();
-  const admin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
+  const admin = hasPermission('hr.hr_approval.view');
 
   const [filterGroup, setFilterGroup]   = useState<string>('');
   const [filterType,  setFilterType]    = useState<string>('');

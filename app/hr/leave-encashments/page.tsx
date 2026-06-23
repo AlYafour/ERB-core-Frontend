@@ -346,9 +346,9 @@ export default function LeaveEncashmentsPage() {
   const tableState = useTableState();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const { hasPermission } = useMyPermissions();
   const router = useRouter();
-  const isAdmin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
+  const isAdmin = hasPermission('hr.hr_leave.view');
 
   const [showNew, setShowNew] = useState(false);
 

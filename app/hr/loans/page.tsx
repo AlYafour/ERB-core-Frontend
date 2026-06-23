@@ -308,9 +308,9 @@ export default function HRLoansPage() {
   const { page, search, filters } = tableState;
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const { hasPermission } = useMyPermissions();
   const router = useRouter();
-  const isAdmin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
+  const isAdmin = hasPermission('hr.hr_loan.view');
 
   const [showNew, setShowNew]         = useState(false);
   const [detailLoan, setDetailLoan]   = useState<EmployeeLoan | null>(null);

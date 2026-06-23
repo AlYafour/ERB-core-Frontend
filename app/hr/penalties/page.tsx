@@ -598,10 +598,10 @@ function RuleBuilder({
 
 export default function PenaltyRulesPage() {
   const { user } = useAuth();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const { hasPermission } = useMyPermissions();
   const router = useRouter();
   const qc = useQueryClient();
-  const admin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
+  const admin = hasPermission('hr.hr_penalty.view');
 
   const [filterGroup,    setFilterGroup]   = useState('');
   const [filterType,     setFilterType]    = useState('');

@@ -182,11 +182,10 @@ export default function HRAttendancePage() {
   const { page, search, filters, handleFilterChange } = tableState;
   const t = useT();
   const { user } = useAuth();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const { hasPermission } = useMyPermissions();
   const qc = useQueryClient();
 
-  const admin = isTenantAdmin || isPlatformAdmin ||
-    ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
+  const admin = hasPermission('hr.hr_attendance.view');
 
   const [editRecord, setEditRecord] = useState<HRAttendance | null>(null);
 

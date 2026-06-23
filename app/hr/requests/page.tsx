@@ -47,9 +47,9 @@ export default function HRRequestsPage() {
 
   const queryClient = useQueryClient();
   const { user }    = useAuth();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const { hasPermission } = useMyPermissions();
   const t           = useT();
-  const isAdmin     = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
+  const isAdmin     = hasPermission('hr.hr_request.view');
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['hr-requests', page, search, filters],

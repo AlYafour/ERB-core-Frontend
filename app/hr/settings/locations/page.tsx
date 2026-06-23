@@ -23,9 +23,9 @@ const tdStyle: React.CSSProperties = { padding: 'var(--space-3) var(--space-4)' 
 export default function HRSettingsLocationsPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const { hasPermission } = useMyPermissions();
   const router = useRouter();
-  const isAdmin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
+  const isAdmin = hasPermission('hr.hr_settings.view');
 
   const [selectedType,  setSelectedType]  = useState<HRLocationType | null>(null);
   const [searchLoc,     setSearchLoc]     = useState('');

@@ -46,12 +46,7 @@ export default function CollapsibleMenu({
   const pathname = usePathname();
 
   const visibleItems = items.filter((item) => {
-    const isTenantAdmin = user?.role === 'admin' || !!user?.is_superuser;
-    const isAdmin = !!(
-      isTenantAdmin ||
-      user?.role === 'hr_manager' || user?.role === 'hr_secretary' ||
-      user?.role === 'company_director'
-    );
+    const isAdmin = !!(user?.role === 'admin' || user?.is_superuser);
     if (item.superAdminOnly && !isAdmin) return false;
     if (item.adminOnly      && !isAdmin) return false;
     if (item.roles && !item.roles.includes(user?.role || '')) return false;

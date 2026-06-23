@@ -41,10 +41,10 @@ export default function HRPayrollPage() {
 
   const queryClient = useQueryClient();
   const { user }    = useAuth();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const { isTenantAdmin, isPlatformAdmin, hasPermission } = useMyPermissions();
   const router      = useRouter();
   const t           = useT();
-  const isAdmin     = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(user?.role ?? '');
+  const isAdmin     = hasPermission('hr.hr_payroll.view');
   const [showGenerate,   setShowGenerate]   = useState(false);
   const [showAutoCalc,   setShowAutoCalc]   = useState(false);
   const [showWpsExport,  setShowWpsExport]  = useState(false);

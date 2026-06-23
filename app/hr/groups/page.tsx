@@ -403,8 +403,8 @@ function GroupModal({
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function EmployeeGroupsPage() {
   const { user: me } = useAuth();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
-  const admin = isTenantAdmin || isPlatformAdmin || ['hr_manager', 'hr_secretary', 'company_director'].includes(me?.role ?? '');
+  const { hasPermission } = useMyPermissions();
+  const admin = hasPermission('hr.hr_employee.view');
   const queryClient = useQueryClient();
 
   const [modalGroup, setModalGroup] = useState<EmployeeGroup | null | 'new'>(null);
