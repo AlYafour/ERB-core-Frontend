@@ -228,8 +228,6 @@ export default function Sidebar() {
       { name: t('nav', 'projects'),    href: '/projects',             icon: BuildingIcon, subItems: [{ name: t('nav', 'projectsList'), href: '/projects'  }] },
     ] : []),
     { name: t('nav', 'settings'), href: '/settings/permissions', icon: UsersIcon, adminOnly: true, subItems: [
-      { name: 'System Accounts',        href: '/users'                },
-      { name: 'Pending Approvals',     href: '/users/pending'        },
       { name: t('nav', 'permissions'), href: '/settings/permissions' },
       { name: 'Roles',                 href: '/settings/roles'       },
       { name: 'Company & Branding',    href: '/settings/company'     },
@@ -340,7 +338,7 @@ export default function Sidebar() {
                 navLink('/violations', t('nav', 'violations'), <AlertIcon className="w-4 h-4" />)
               }
               {user?.id && navLink(
-                myEmp?.id ? `/hr/employees/${myEmp.id}` : `/users/${user.id}`,
+                myEmp?.id ? `/hr/employees/${myEmp.id}` : `/hr/employees`,
                 t('nav', 'myProfile'),
                 <UsersIcon className="w-4 h-4" />
               )}

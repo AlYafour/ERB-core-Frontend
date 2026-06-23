@@ -301,7 +301,7 @@ export default function EmployeesPage() {
 
   // ── Action handlers ────────────────────────────────────────
   const handleDelete = async (emp: HREmployee) => {
-    const linked = emp.user?.id ? ` Their login account will remain — deactivate it from /users if needed.` : '';
+    const linked = '';
     if (await confirm(`Delete ${emp.full_name}? This cannot be undone.${linked}`))
       deleteMutation.mutate(emp.id);
   };

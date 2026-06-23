@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyEmployeeRecord } from '@/lib/hooks/use-my-employee-record';
 import { useUIStore } from '@/lib/store/ui-store';
 import { MenuIcon } from '@/components/icons';
 import GlobalSearch from '@/components/ui/GlobalSearch';
@@ -13,6 +14,7 @@ import { useT } from '@/lib/i18n/useT';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { emp: myEmp } = useMyEmployeeRecord();
   const { toggleSidebar } = useUIStore();
   const t = useT();
 
@@ -54,7 +56,7 @@ export default function Navbar() {
 
           {/* User */}
           <Link
-            href={user?.id ? `/users/${user.id}` : '/users'}
+            href={myEmp?.id ? `/hr/employees/${myEmp.id}` : `/hr/employees`}
             className="flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors duration-150"
             style={{ color: 'var(--text-secondary)' }}
             onMouseEnter={(e) => {

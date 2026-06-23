@@ -387,14 +387,14 @@ function DashboardContent() {
             {/* Top active users */}
             {userActivity && userActivity.length > 0 && (
               <div className="card">
-                <SectionHeader title={t('dash', 'topUsers')} viewAllLabel={t('dash', 'viewAll')} href="/users" />
+                <SectionHeader title={t('dash', 'topUsers')} viewAllLabel={t('dash', 'viewAll')} href="/hr/employees" />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                   {userActivity.slice(0, 5).map((u) => {
                     const total = u.createdPR + u.approvedRequests + u.createdPO + u.createdInvoices;
                     return (
                       <Link
                         key={u.id}
-                        href={`/users/view/${u.id}`}
+                        href={`/hr/employees`}
                         style={{ display: 'block', padding: 'var(--space-3)', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', textDecoration: 'none' }}
                         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--surface-inset)'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--surface-subtle)'; }}
