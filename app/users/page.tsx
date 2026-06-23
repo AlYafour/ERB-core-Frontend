@@ -108,11 +108,20 @@ export default function UsersPage() {
     <MainLayout>
       <PageShell>
         <PageHeader
-          title="Users"
+          title="System Accounts"
           count={total}
-          breadcrumbs={[{ label: 'Users' }]}
-          actions={<Link href="/hr/employees/new"><Button variant="primary">+ New Employee</Button></Link>}
+          breadcrumbs={[{ label: 'System Accounts' }]}
+          actions={<Link href="/users/new"><Button variant="primary">+ New User</Button></Link>}
         />
+
+        <div style={{
+          padding: '10px 16px', borderRadius: 8, marginBottom: 12,
+          background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)',
+          fontSize: 13, color: 'var(--text-secondary)',
+        }}>
+          System accounts control login access and permissions. For HR profiles (department, position, attendance), go to{' '}
+          <Link href="/hr/employees" style={{ color: 'var(--brand)', fontWeight: 600 }}>HR → Employees</Link>.
+        </div>
 
         <WorkspaceSurface
           toolbar={

@@ -34,7 +34,7 @@ export default function UserProfilePage() {
     // Guard: wait for auth to resolve before deciding — avoids race condition
     // where user=null (Zustand not yet hydrated) makes isSelf=false incorrectly
     if (user && !isLoading && !emp && !isSelf) {
-      router.replace(isAdmin ? '/hr/employees' : '/tasks');
+      router.replace(isAdmin ? '/hr/employees' : '/dashboard');
     }
   }, [user, isLoading, emp, isSelf, isAdmin, router]);
 

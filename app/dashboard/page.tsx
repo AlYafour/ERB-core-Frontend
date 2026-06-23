@@ -1,7 +1,6 @@
 'use client';
 
 import { useAuth } from '@/lib/hooks/use-auth';
-import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api/dashboard';
@@ -11,8 +10,8 @@ import { formatPrice } from '@/lib/utils/format';
 import dynamic from 'next/dynamic';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { useT } from '@/lib/i18n/useT';
-import { useEffect } from 'react';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
+import MyWorkspace from '@/components/dashboard/MyWorkspace';
 
 /* ─── Lazy-load chart components — recharts only downloaded when dashboard renders ─ */
 const StatusPieCard       = dynamic(() => import('./charts').then(m => ({ default: m.StatusPieCard })),       { ssr: false });
@@ -103,17 +102,11 @@ function CardSkeleton({ height = 120 }: { height?: number }) {
 /* ─── Page guards / redirect ────────────────────────────────────── */
 export default function DashboardPage() {
   const { user } = useAuth();
-  const router = useRouter();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
 
-  useEffect(() => {
-    if (user && !isTenantAdmin && !isPlatformAdmin) {
-      router.push('/tasks');
-    }
-  }, [user, isTenantAdmin, isPlatformAdmin, router]);
-
+  // Non-admins see their personalized workspace instead of the analytics dashboard
   if (user && !isTenantAdmin && !isPlatformAdmin) {
-    return null;
+    return <MyWorkspace />;
   }
 
   return (
