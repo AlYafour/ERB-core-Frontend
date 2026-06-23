@@ -316,7 +316,8 @@ export default function Sidebar() {
     ? `${user.first_name} ${user.last_name || ''}`.trim()
     : (user?.username || '');
   const initials = displayName.split(' ').slice(0, 2).map((w: string) => w[0]?.toUpperCase() || '').join('');
-  const roleLabel = user?.role?.replace(/_/g, ' ') || '';
+  const roleLabel = (user as any)?.permission_set?.name
+    || (user?.role === 'admin' ? 'Company Admin' : user?.role?.replace(/_/g, ' ') || '');
 
   return (
     <>
