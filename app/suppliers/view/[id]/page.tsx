@@ -8,6 +8,7 @@ import Link from 'next/link';
 import EntityHeader from '@/components/ui/EntityHeader';
 import { PageShell } from '@/components/ui';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { useT } from '@/lib/i18n/useT';
 
 function Field({ label, value, mono, full }: { label: string; value?: string | null; mono?: boolean; full?: boolean }) {
@@ -24,13 +25,13 @@ export default function SupplierDetailPage() {
   const params = useParams();
   const id = Number(params.id);
   const { user } = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
 
   const { data: supplier, isLoading } = useQuery({
     queryKey: ['suppliers', id],
     queryFn: () => suppliersApi.getById(id),
   });
-
-  const isAdmin = user?.role === 'super_admin' || user?.is_staff;
 
   if (isLoading) {
     return (

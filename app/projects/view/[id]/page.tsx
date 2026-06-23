@@ -10,6 +10,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import EntityHeader from '@/components/ui/EntityHeader';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 
 
 function Field({ label, value, mono, full }: { label: string; value?: string | null; mono?: boolean; full?: boolean }) {
@@ -25,13 +26,13 @@ export default function ProjectDetailPage() {
   const params = useParams();
   const id = Number(params.id);
   const { user } = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
 
   const { data: project, isLoading } = useQuery({
     queryKey: ['projects', id],
     queryFn: () => projectsApi.getById(id),
   });
-
-  const isAdmin = user?.role === 'super_admin' || user?.is_staff;
 
   if (isLoading) {
     return (

@@ -7,7 +7,6 @@ import { Button, Loader, PageHeader, SearchInput, Drawer, PageShell, Badge } fro
 import { hrRolesApi } from '@/lib/api/hr';
 import { HRTenantRole } from '@/types';
 import { toast, confirm } from '@/lib/hooks/use-toast';
-import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 
 type FormState = {
@@ -22,10 +21,8 @@ const EMPTY_FORM: FormState = { name: '', name_ar: '', description: '', level: 1
 
 export default function TenantRolesPage() {
   const qc = useQueryClient();
-  const { user } = useAuth();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
-  const isAdmin = isTenantAdmin || isPlatformAdmin ||
-    ['hr_manager', 'hr_secretary', 'company_director', 'admin'].includes(user?.role ?? '');
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
 
   const [search,      setSearch]      = useState('');
   const [drawerOpen,  setDrawerOpen]  = useState(false);

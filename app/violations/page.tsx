@@ -7,6 +7,7 @@ import { violationsApi } from '@/lib/api/violations';
 import { projectsApi } from '@/lib/api/projects';
 import { MunicipalViolation } from '@/types';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { PageHeader, PageShell, WorkspaceSurface } from '@/components/ui';
 
 const FRONTEND_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://purchase-self.vercel.app';
@@ -258,6 +259,7 @@ function ViolationDetailPanel({
 /* ─── Main Page ──────────────────────────────────────────────────────────── */
 export default function ViolationsPage() {
   const { user } = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const queryClient = useQueryClient();
   const [page, setPage]                 = useState(1);
   const [search, setSearch]             = useState('');
@@ -270,7 +272,7 @@ export default function ViolationsPage() {
   const [selectAllPages, setSelectAllPages] = useState(false);
   const [confirmDelete, setConfirmDelete]   = useState(false);
 
-  const isAdmin = user?.role === 'admin' || !!user?.is_superuser || user?.role === 'procurement_manager';
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
 
   const { data: stats } = useQuery({
     queryKey: ['violations-stats'],

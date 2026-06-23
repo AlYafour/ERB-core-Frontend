@@ -9,6 +9,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { formatPrice, formatPercentage, formatNumber } from '@/lib/utils/format';
 import EntityHeader from '@/components/ui/EntityHeader';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import BilingualName from '@/components/domain/BilingualName';
 import { useT } from '@/lib/i18n/useT';
 import Drawer from '@/components/ui/Drawer';
@@ -35,6 +36,7 @@ export default function ProductDetailPage() {
   const params = useParams();
   const id = Number(params.id);
   const { user } = useAuth();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const queryClient = useQueryClient();
 
   const { data: product, isLoading } = useQuery({
@@ -48,7 +50,7 @@ export default function ProductDetailPage() {
   const [isEditOpen, setIsEditOpen] = React.useState(false);
   const [form, setForm] = React.useState<Partial<Product>>({});
 
-  const isAdmin = user?.role === 'super_admin' || user?.is_staff || user?.role === 'admin';
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
 
   const updateMutation = useMutation({
     mutationFn: (data: Partial<Product>) => productsApi.update(id, data),

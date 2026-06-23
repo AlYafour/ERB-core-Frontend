@@ -53,7 +53,7 @@ export default function PurchaseRequestDetailPage() {
 
   const canApprove = can('purchase_request', 'approve');
   const canReject  = can('purchase_request', 'reject');
-  const canManageAdditionalOrders = isAdmin || user?.role === 'procurement_manager';
+  const canManageAdditionalOrders = isAdmin || can('purchase_request', 'approve');
 
   const { data: request, isLoading } = useQuery({
     queryKey: ['purchase-requests', id],
