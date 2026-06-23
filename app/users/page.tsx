@@ -111,7 +111,7 @@ export default function UsersPage() {
           title="System Accounts"
           count={total}
           breadcrumbs={[{ label: 'System Accounts' }]}
-          actions={<Link href="/users/new"><Button variant="primary">+ New User</Button></Link>}
+          actions={<Link href="/hr/employees/new"><Button variant="primary">+ New Employee</Button></Link>}
         />
 
         <div style={{
