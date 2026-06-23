@@ -227,9 +227,8 @@ export default function Sidebar() {
     ...(showModule('projects') ? [
       { name: t('nav', 'projects'),    href: '/projects',             icon: BuildingIcon, subItems: [{ name: t('nav', 'projectsList'), href: '/projects'  }] },
     ] : []),
-    { name: t('nav', 'settings'), href: '/settings/permissions', icon: UsersIcon, adminOnly: true, subItems: [
-      { name: t('nav', 'permissions'), href: '/settings/permissions' },
-      { name: 'Roles',                 href: '/settings/roles'       },
+    { name: t('nav', 'settings'), href: '/settings/roles', icon: UsersIcon, adminOnly: true, subItems: [
+      { name: 'Roles & Permissions',   href: '/settings/roles'       },
       { name: 'Company & Branding',    href: '/settings/company'     },
     ]},
   ];
