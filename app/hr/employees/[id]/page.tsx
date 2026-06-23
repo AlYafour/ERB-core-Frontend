@@ -645,7 +645,7 @@ export default function EmployeeDetailPage() {
               </div>
 
               {/* Salary Package */}
-              <div className="card">
+              {isAdmin && <div className="card">
                 <SectionHead title="Salary Package" onEdit={() => openEdit('salary')} isAdmin={isAdmin} />
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-3)' }}>
                   {([
@@ -669,7 +669,7 @@ export default function EmployeeDetailPage() {
                     {Number(emp.total_salary).toLocaleString('en-US', { minimumFractionDigits: 2 })} AED
                   </span>
                 </div>
-              </div>
+              </div>}
 
               {/* Attendance Summary */}
               {summary && (

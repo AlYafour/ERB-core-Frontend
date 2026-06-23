@@ -27,13 +27,10 @@ export default function UserProfilePage() {
   const emp = empData?.results?.[0] ?? null;
 
   useEffect(() => {
-    // Only redirect admins to the full HR employee page — not the employee themselves
-    // (non-admin employees may get 403 from the HR API)
-    if (emp && isAdmin && !isSelf) router.replace(`/hr/employees/${emp.id}`);
-  }, [emp, isAdmin, isSelf, router]);
+    if (emp) router.replace(`/hr/employees/${emp.id}`);
+  }, [emp, router]);
 
   useEffect(() => {
-    // Redirect away only if: auth resolved + not own profile + no HR record
     if (user && !isLoading && !emp && !isSelf) {
       router.replace(isAdmin ? '/hr/employees' : '/dashboard');
     }

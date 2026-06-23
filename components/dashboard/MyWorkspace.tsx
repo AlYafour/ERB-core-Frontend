@@ -12,6 +12,7 @@ import { hrRequestsApi } from '@/lib/api/hr';
 import MainLayout from '@/components/layout/MainLayout';
 import { Badge, Loader } from '@/components/ui';
 import Avatar from '@/components/ui/Avatar';
+import { useMyEmployeeRecord } from '@/lib/hooks/use-my-employee-record';
 
 /* ── helpers ─────────────────────────────────────────────────────── */
 const ROLE_LABEL: Record<string, string> = {
@@ -208,7 +209,7 @@ function MyHRWidget() {
 }
 
 /* ── My Profile Card ─────────────────────────────────────────────── */
-function ProfileCard({ user }: { user: any }) {
+function ProfileCard({ user, profileHref }: { user: any; profileHref: string }) {
   const displayName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || '';
   const initials    = displayName.split(' ').slice(0, 2).map((w: string) => w[0]?.toUpperCase() || '').join('');
 
@@ -220,7 +221,7 @@ function ProfileCard({ user }: { user: any }) {
       <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>{displayName}</p>
       {user.role && <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 4px', textTransform: 'capitalize' }}>{roleLabel(user.role)}</p>}
       {user.email && <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '0 0 18px' }}>{user.email}</p>}
-      <Link href={`/users/${user.id}`} style={{
+      <Link href={profileHref} style={{
         display: 'inline-block', padding: '7px 18px', borderRadius: 8,
         background: 'var(--brand-muted)', color: 'var(--brand)',
         fontSize: 12, fontWeight: 600, textDecoration: 'none',
@@ -267,6 +268,7 @@ export default function MyWorkspace() {
   const { user } = useAuth();
   const { hasPermission, hasModule } = useMyPermissions();
   const { data: tenantData } = useTenantInfo();
+  const { emp: myEmp } = useMyEmployeeRecord();
 
   const showProcurement = hasModule('procurement') && hasPermission('purchase_request', 'view');
   const showHR          = hasModule('hr');
@@ -305,7 +307,7 @@ export default function MyWorkspace() {
         }}>
           {/* Always visible */}
           <MyTasksWidget />
-          <ProfileCard user={user} />
+          <ProfileCard user={user} profileHref={myEmp?.id ? `/hr/employees/${myEmp.id}` : `/users/${user.id}`} />
 
           {/* Procurement — only if has permission */}
           {showProcurement && <MyProcurementWidget userId={user.id} />}

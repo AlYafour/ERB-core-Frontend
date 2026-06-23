@@ -10,6 +10,7 @@ import CollapsibleMenu from './CollapsibleMenu';
 import { usePendingCounts } from '@/lib/hooks/use-pending-counts';
 import { useTasksBadge } from '@/lib/hooks/use-tasks-badge';
 import { useTenantInfo } from '@/lib/hooks/use-tenant';
+import { useMyEmployeeRecord } from '@/lib/hooks/use-my-employee-record';
 import {
   DashboardIcon, FileTextIcon, BuildingIcon, PackageIcon,
   BriefcaseIcon, DollarIcon, UsersIcon, ShoppingCartIcon, AlertIcon,
@@ -209,6 +210,7 @@ export default function Sidebar() {
 
   const tenantName = tenantData?.name ?? '';
   const logoUrl    = (tenantData as any)?.branding?.logo_url || undefined;
+  const { emp: myEmp } = useMyEmployeeRecord();
 
   const purchaseItems = [
     { name: t('nav', 'prList'),         href: '/purchase-requests',   icon: <FileTextIcon className="w-4 h-4" />,      badge: pending.pr        },
@@ -337,7 +339,11 @@ export default function Sidebar() {
               {showModule('violations') && (isAdmin || user?.role === 'procurement_manager') &&
                 navLink('/violations', t('nav', 'violations'), <AlertIcon className="w-4 h-4" />)
               }
-              {user?.id && navLink(`/users/${user.id}`, t('nav', 'myProfile'), <UsersIcon className="w-4 h-4" />)}
+              {user?.id && navLink(
+                myEmp?.id ? `/hr/employees/${myEmp.id}` : `/users/${user.id}`,
+                t('nav', 'myProfile'),
+                <UsersIcon className="w-4 h-4" />
+              )}
             </div>
 
             {/* Procurement */}

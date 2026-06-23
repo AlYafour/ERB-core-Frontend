@@ -558,7 +558,6 @@ export default function EmployeesPage() {
                       {/* Row actions */}
                       <div onClick={e => e.stopPropagation()}>
                         <RowActions actions={[
-                          { label: 'View Profile', href: emp.user?.id ? `/users/${emp.user.id}` : undefined, hidden: !emp.user?.id },
                           { label: 'Open Employee File', href: `/hr/employees/${emp.id}` },
                           { separator: true },
                           {
