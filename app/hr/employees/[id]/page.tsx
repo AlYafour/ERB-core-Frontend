@@ -50,10 +50,16 @@ const empTypeLabel: Record<string, string> = {
 };
 
 const ROLES = [
+  { value: 'employee',            label: 'Employee' },
   { value: 'site_engineer',       label: 'Site Engineer' },
-  { value: 'procurement_manager', label: 'Procurement Manager' },
+  { value: 'site_manager',        label: 'Site Manager' },
+  { value: 'supervisor',          label: 'Supervisor' },
   { value: 'procurement_officer', label: 'Procurement Officer' },
-  { value: 'super_admin',         label: 'Super Admin' },
+  { value: 'procurement_manager', label: 'Procurement Manager' },
+  { value: 'hr_secretary',        label: 'HR Secretary' },
+  { value: 'hr_manager',          label: 'HR Manager' },
+  { value: 'company_director',    label: 'Company Director' },
+  { value: 'admin',               label: 'Admin' },
 ];
 
 const TABS = [
@@ -400,8 +406,9 @@ export default function EmployeeDetailPage() {
       }
       const accountData: any = {
         username: form.username, email: form.email, phone: form.phone,
-        role: form.role, first_name: form.first_name, last_name: form.last_name,
+        first_name: form.first_name, last_name: form.last_name,
       };
+      if (form.role) accountData.role = form.role;
       if (changePassword && form.password) accountData.password = form.password;
       userUpdateMutation.mutate(accountData);
     } else {
