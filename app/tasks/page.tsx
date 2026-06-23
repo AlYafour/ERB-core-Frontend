@@ -52,7 +52,7 @@ export default function TasksPage() {
     queryFn:  () => myTasksApi.getAll().then(r => r.filter(t => !t.is_done).length),
   });
 
-  const effectiveScope = (filters.scope as string) || (isAdmin ? 'all' : undefined);
+  const effectiveScope = (filters.scope as string) || (isAdmin ? 'all' : 'mine');
 
   const { data: raw, isLoading, error } = useQuery({
     queryKey: ['tasks', page, search, filters],
