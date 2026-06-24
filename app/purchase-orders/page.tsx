@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
 import { projectsApi } from '@/lib/api/projects';
+import { suppliersApi } from '@/lib/api/suppliers';
+import { usersApi } from '@/lib/api/users';
 import { PurchaseOrder } from '@/types';
 import Link from 'next/link';
 import { toast } from '@/lib/hooks/use-toast';
@@ -47,10 +49,28 @@ export default function PurchaseOrdersPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  const { data: suppliersData } = useQuery({
+    queryKey: ['suppliers-list-filter'],
+    queryFn:  () => suppliersApi.getAll({ page: 1, page_size: 500, is_active: true }),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: engineersData } = useQuery({
+    queryKey: ['users-engineers-filter'],
+    queryFn:  () => usersApi.getAll({ page: 1, page_size: 200, role: 'site_engineer' }),
+    staleTime: 10 * 60 * 1000,
+  });
+
   const filterFields: FilterField[] = [
     { name: 'order_number', label: 'Order Number', type: 'text',   group: 'Order Info' },
     { name: 'project_name', label: 'Project',      type: 'select', group: 'Order Info',
       options: projectsData?.results?.map(p => ({ value: p.name, label: p.name })) ?? [] },
+    { name: 'supplier',     label: 'Supplier',     type: 'select', group: 'Order Info',
+      options: (Array.isArray((suppliersData as any)?.results) ? (suppliersData as any).results : Array.isArray(suppliersData) ? suppliersData : [])
+        .map((s: any) => ({ value: String(s.id), label: s.name })) },
+    { name: 'project_engineer', label: 'Project Engineer', type: 'select', group: 'Order Info',
+      options: (Array.isArray((engineersData as any)?.results) ? (engineersData as any).results : Array.isArray(engineersData) ? engineersData : [])
+        .map((u: any) => ({ value: String(u.id), label: u.full_name || u.username || `User ${u.id}` })) },
     { name: 'order_date_after',  label: 'Order Date From', type: 'date',   group: 'Dates' },
     { name: 'order_date_before', label: 'Order Date To',   type: 'date',   group: 'Dates' },
     { name: 'total_min',         label: 'Min Total',       type: 'number', group: 'Amount' },

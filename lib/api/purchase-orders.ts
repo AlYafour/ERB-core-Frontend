@@ -14,6 +14,7 @@ export const purchaseOrdersApi = {
     delivery_terms?: string;
     // Foreign key filters
     supplier?: number;
+    project_engineer?: number;
     purchase_request?: number;
     purchase_quotation?: number;
     created_by?: number;
