@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import MainLayout from '@/components/layout/MainLayout';
 import CustomerFormWizard from '@/components/customers/CustomerFormWizard';
 import { useT } from '@/lib/i18n/useT';
