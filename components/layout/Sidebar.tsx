@@ -201,6 +201,8 @@ export default function Sidebar() {
   const pending = usePendingCounts();
   const tasksBadge = useTasksBadge();
   const { data: tenantData } = useTenantInfo();
+  const { emp: myEmp } = useMyEmployeeRecord();
+  const { hasPermission, isTenantAdmin } = useMyPermissions();
 
   const isAdmin = isTenantAdmin || isPlatformAdmin;
 
@@ -211,8 +213,6 @@ export default function Sidebar() {
 
   const tenantName = tenantData?.name ?? '';
   const logoUrl    = (tenantData as any)?.branding?.logo_url || undefined;
-  const { emp: myEmp } = useMyEmployeeRecord();
-  const { hasPermission, isTenantAdmin } = useMyPermissions();
 
   const purchaseItems = [
     { name: t('nav', 'prList'),         href: '/purchase-requests',   icon: <FileTextIcon className="w-4 h-4" />,      badge: pending.pr        },

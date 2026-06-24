@@ -3,9 +3,6 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 
-// All pages show user-specific data. Force dynamic to prevent Turbopack SSR TDZ at build time.
-export const dynamic = 'force-dynamic';
-
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
