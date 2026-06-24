@@ -1,7 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Checkbox, Button, Loader, Skeleton } from '@/components/ui';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { Button } from '@/components/ui/Button';
+import { Loader, Skeleton } from '@/components/ui/Loader';
 
 // ── Column definition ────────────────────────────────────────────────────────
 export interface Column<T> {

@@ -1,7 +1,8 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { SearchInput, WorkspaceSurface } from '@/components/ui';
+import { SearchInput } from '@/components/ui/SearchInput';
+import { WorkspaceSurface } from '@/components/ui/WorkspaceSurface';
 import FilterPanel, { FilterField } from '@/components/ui/FilterPanel';
 import FilterTags from '@/components/ui/FilterTags';
 import DataTable, { Column } from '@/components/ui/DataTable';
