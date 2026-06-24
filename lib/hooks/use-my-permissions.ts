@@ -32,11 +32,7 @@ export function useMyPermissions() {
   const storeIsPlatformAdmin = useAuthStore((s) => s.isPlatformAdmin);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  // Derived directly from user object — no API call, no loading flicker on guards
-  // data?.is_tenant_admin covers PermissionSet-based admins (level >= 100) after RBAC refactor
-  const isTenantAdmin = user?.role === 'admin' || !!user?.is_superuser || !!data?.is_tenant_admin;
-  const isPlatformAdmin = storeIsPlatformAdmin || !!user?.is_superuser;
-
+  // Must be declared before isTenantAdmin which reads data?.is_tenant_admin
   const { data, isLoading } = useQuery<MyPermissionsData>({
     queryKey: MY_AUTH_PERMISSIONS_QUERY_KEY,
     queryFn: async () => {
@@ -49,6 +45,11 @@ export function useMyPermissions() {
     refetchOnWindowFocus: false,
     retry: false,
   });
+
+  // data?.is_tenant_admin covers PermissionSet-based admins (level >= 100) after RBAC refactor.
+  // Falls back to user.role === 'admin' for zero-flicker on initial render before data arrives.
+  const isTenantAdmin = user?.role === 'admin' || !!user?.is_superuser || !!data?.is_tenant_admin;
+  const isPlatformAdmin = storeIsPlatformAdmin || !!user?.is_superuser;
 
   // Fixes stale 'Super Admin' PermissionSet name displayed to company admins
   const displayRole = isTenantAdmin || isPlatformAdmin
