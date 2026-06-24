@@ -41,8 +41,8 @@ export default function UserProfilePage() {
     return <MainLayout><div className="card empty-state"><Loader /></div></MainLayout>;
   }
 
-  // Admin viewing someone else with HR record → redirect handled in useEffect, show loader
-  if (emp && isAdmin && !isSelf) {
+  // Any user with an HR record → redirect handled in useEffect, show loader
+  if (emp) {
     return <MainLayout><div className="card empty-state"><Loader /></div></MainLayout>;
   }
 

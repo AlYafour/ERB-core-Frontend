@@ -307,7 +307,7 @@ export default function MyWorkspace() {
         }}>
           {/* Always visible */}
           <MyTasksWidget />
-          <ProfileCard user={user} profileHref={myEmp?.id ? `/hr/employees/${myEmp.id}` : `/hr/employees`} />
+          <ProfileCard user={user} profileHref={myEmp?.id ? `/hr/employees/${myEmp.id}` : `/users/${user.id}`} />
 
           {/* Procurement — only if has permission */}
           {showProcurement && <MyProcurementWidget userId={user.id} />}
