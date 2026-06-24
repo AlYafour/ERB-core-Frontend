@@ -51,6 +51,9 @@ export default function RolesPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create');
   const [form, setForm] = useState<typeof EMPTY_FORM>({ ...EMPTY_FORM });
+  const [collapsedModules, setCollapsedModules] = useState<Set<string>>(new Set());
+  const toggleModule = (key: string) =>
+    setCollapsedModules(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
 
   // ── Queries ────────────────────────────────────────────────────────────────
   const { data: roles = [], isLoading: rolesLoading } = useQuery({
@@ -156,6 +159,37 @@ export default function RolesPage() {
     const current = selectedRole.granted_permission_ids;
     const next = checked ? [...current, permId] : current.filter((id) => id !== permId);
     permMutation.mutate(next);
+  };
+
+  const handleCatToggle = (catPerms: { id: number }[], grant: boolean) => {
+    if (!selectedRole?.is_editable) return;
+    const ids = catPerms.map(p => p.id);
+    const idSet = new Set(ids);
+    const current = selectedRole.granted_permission_ids;
+    const next = grant ? [...new Set([...current, ...ids])] : current.filter(id => !idSet.has(id));
+    permMutation.mutate(next);
+  };
+
+  const handleModToggle = (modAllIds: number[], grant: boolean) => {
+    if (!selectedRole?.is_editable) return;
+    const modSet = new Set(modAllIds);
+    const current = selectedRole.granted_permission_ids;
+    const next = grant ? [...new Set([...current, ...modAllIds])] : current.filter(id => !modSet.has(id));
+    permMutation.mutate(next);
+  };
+
+  const handleGrantAll = () => {
+    if (!selectedRole?.is_editable || !catalog) return;
+    const allIds = catalog.modules.flatMap(m => m.categories.flatMap(c => c.permissions.map(p => p.id)));
+    permMutation.mutate([...new Set(allIds)]);
+  };
+
+  const handleRevokeAll = async () => {
+    if (!selectedRole?.is_editable) return;
+    const { confirm } = await import('@/lib/hooks/use-toast');
+    const ok = await confirm(`Remove all permissions from "${selectedRole.name}"?`);
+    if (!ok) return;
+    permMutation.mutate([]);
   };
 
   const handleSaveForm = () => {
@@ -344,60 +378,216 @@ export default function RolesPage() {
                 </div>
 
                 {/* ── Permissions tab ── */}
-                {rightTab === 'permissions' && (
-                  <div className="card">
-                    {permMutation.isPending && (
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-3)' }}>
-                        Saving…
-                      </div>
-                    )}
-                    {!catalog ? (
-                      <Loader />
-                    ) : catalog.modules.length === 0 ? (
-                      <p style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>No permissions in catalog.</p>
-                    ) : (
-                      catalog.modules.map((mod) => (
-                        <div key={mod.key}>
-                          <div style={{ borderBottom: '1px solid var(--border-subtle)', padding: 'var(--space-2) 0', marginBottom: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
-                            <span style={{ fontWeight: 600, fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-secondary)' }}>
-                              {mod.label || mod.key}
+                {rightTab === 'permissions' && (() => {
+                  const totalPerms = catalog?.modules.reduce((s, m) => s + m.categories.reduce((s2, c) => s2 + c.permissions.length, 0), 0) ?? 0;
+                  const grantedCount = selectedRole.granted_permission_ids.length;
+                  const pct = totalPerms > 0 ? Math.round((grantedCount / totalPerms) * 100) : 0;
+                  return (
+                    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+
+                      {/* ── Sticky toolbar ── */}
+                      <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '10px 16px', borderBottom: '1px solid var(--border-subtle)',
+                        background: 'var(--surface-default)',
+                        position: 'sticky', top: 0, zIndex: 2,
+                        gap: 'var(--space-3)',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                          {/* Progress bar */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 120, height: 6, borderRadius: 3, background: 'var(--border-subtle)', overflow: 'hidden' }}>
+                              <div style={{
+                                height: '100%', borderRadius: 3,
+                                background: pct === 100 ? 'var(--status-success)' : pct > 50 ? 'var(--brand)' : 'var(--status-warning)',
+                                width: `${pct}%`, transition: 'width 200ms',
+                              }} />
+                            </div>
+                            <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                              <strong style={{ color: 'var(--text-primary)' }}>{grantedCount}</strong>
+                              {' / '}{totalPerms}
+                              <span style={{ color: 'var(--text-tertiary)', marginLeft: 4 }}>({pct}%)</span>
                             </span>
                           </div>
-                          {mod.categories.map((cat) => (
-                            <div
-                              key={cat.key}
-                              style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 'var(--space-2)', marginBottom: 'var(--space-3)', alignItems: 'center' }}
+                          {permMutation.isPending && (
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <svg style={{ animation: 'spin 1s linear infinite' }} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>
+                              Saving…
+                            </span>
+                          )}
+                        </div>
+                        {selectedRole.is_editable && (
+                          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                            <button
+                              onClick={handleGrantAll}
+                              disabled={permMutation.isPending || grantedCount === totalPerms}
+                              style={{
+                                fontSize: '0.75rem', fontWeight: 600, padding: '4px 10px', borderRadius: 6,
+                                border: '1px solid var(--brand)', color: 'var(--brand)',
+                                background: 'transparent', cursor: 'pointer',
+                                opacity: (permMutation.isPending || grantedCount === totalPerms) ? 0.4 : 1,
+                                transition: 'all 120ms',
+                              }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--brand-subtle)'; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
                             >
-                              <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{cat.label}</span>
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
-                                {cat.permissions.map((perm) => {
-                                  const checked = selectedRole.granted_permission_ids.includes(perm.id);
+                              Grant All
+                            </button>
+                            <button
+                              onClick={handleRevokeAll}
+                              disabled={permMutation.isPending || grantedCount === 0}
+                              style={{
+                                fontSize: '0.75rem', fontWeight: 600, padding: '4px 10px', borderRadius: 6,
+                                border: '1px solid var(--error)', color: 'var(--error)',
+                                background: 'transparent', cursor: 'pointer',
+                                opacity: (permMutation.isPending || grantedCount === 0) ? 0.4 : 1,
+                                transition: 'all 120ms',
+                              }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--status-error-bg)'; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                            >
+                              Revoke All
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* ── Modules ── */}
+                      {!catalog ? (
+                        <div style={{ padding: 'var(--space-4)' }}><Loader /></div>
+                      ) : catalog.modules.length === 0 ? (
+                        <p style={{ padding: 'var(--space-4)', color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>No permissions in catalog.</p>
+                      ) : catalog.modules.map((mod) => {
+                        const modAllIds = mod.categories.flatMap(c => c.permissions.map(p => p.id));
+                        const grantedInMod = modAllIds.filter(id => selectedRole.granted_permission_ids.includes(id));
+                        const allModGranted = modAllIds.length > 0 && grantedInMod.length === modAllIds.length;
+                        const someModGranted = grantedInMod.length > 0 && !allModGranted;
+                        const isCollapsed = collapsedModules.has(mod.key);
+
+                        return (
+                          <div key={mod.key} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+
+                            {/* Module header — clickable to collapse */}
+                            <div
+                              onClick={() => toggleModule(mod.key)}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 10,
+                                padding: '8px 16px',
+                                background: 'var(--surface-subtle)',
+                                cursor: 'pointer', userSelect: 'none',
+                              }}
+                            >
+                              {selectedRole.is_editable && (
+                                <input
+                                  type="checkbox"
+                                  checked={allModGranted}
+                                  ref={el => { if (el) el.indeterminate = someModGranted; }}
+                                  onChange={e => { e.stopPropagation(); handleModToggle(modAllIds, e.target.checked); }}
+                                  onClick={e => e.stopPropagation()}
+                                  disabled={permMutation.isPending}
+                                  title={allModGranted ? 'Deselect module' : 'Select all in module'}
+                                  style={{ width: 15, height: 15, accentColor: 'var(--brand)', cursor: 'pointer', flexShrink: 0 }}
+                                />
+                              )}
+                              <span style={{ fontWeight: 700, fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-secondary)', flex: 1 }}>
+                                {mod.label || mod.key}
+                              </span>
+                              <span style={{
+                                fontSize: '0.6875rem', fontWeight: 600, padding: '1px 7px', borderRadius: 10,
+                                background: allModGranted ? 'var(--status-success-bg)' : someModGranted ? 'var(--brand-subtle)' : 'var(--surface-default)',
+                                color: allModGranted ? 'var(--status-success)' : someModGranted ? 'var(--brand)' : 'var(--text-tertiary)',
+                                border: '1px solid',
+                                borderColor: allModGranted ? 'var(--status-success)' : someModGranted ? 'var(--brand)' : 'var(--border-subtle)',
+                              }}>
+                                {grantedInMod.length}/{modAllIds.length}
+                              </span>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                                style={{ flexShrink: 0, color: 'var(--text-tertiary)', transition: 'transform 150ms', transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>
+                                <path d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </div>
+
+                            {/* Categories */}
+                            {!isCollapsed && (
+                              <div style={{ padding: '4px 0 8px' }}>
+                                {mod.categories.map((cat) => {
+                                  const catIds = cat.permissions.map(p => p.id);
+                                  const grantedInCat = catIds.filter(id => selectedRole.granted_permission_ids.includes(id));
+                                  const allCatGranted = catIds.length > 0 && grantedInCat.length === catIds.length;
+                                  const someCatGranted = grantedInCat.length > 0 && !allCatGranted;
+
                                   return (
-                                    <label
-                                      key={perm.id}
+                                    <div
+                                      key={cat.key}
                                       style={{
-                                        display: 'flex', alignItems: 'center', gap: 'var(--space-1)',
-                                        cursor: selectedRole.is_editable ? 'pointer' : 'default',
-                                        opacity: selectedRole.is_editable ? 1 : 0.6,
+                                        display: 'grid', gridTemplateColumns: '220px 1fr',
+                                        gap: 'var(--space-3)', padding: '6px 16px',
+                                        alignItems: 'center', borderRadius: 0,
+                                        transition: 'background 100ms',
                                       }}
+                                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-subtle)')}
+                                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                                     >
-                                      <Checkbox
-                                        checked={checked}
-                                        disabled={!selectedRole.is_editable || permMutation.isPending}
-                                        onChange={(e) => handlePermToggle(perm.id, e.target.checked)}
-                                      />
-                                      <span style={{ fontSize: '0.75rem' }}>{perm.action_label}</span>
-                                    </label>
+                                      {/* Category label + row-select */}
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                                        {selectedRole.is_editable && (
+                                          <input
+                                            type="checkbox"
+                                            checked={allCatGranted}
+                                            ref={el => { if (el) el.indeterminate = someCatGranted; }}
+                                            onChange={e => handleCatToggle(cat.permissions, e.target.checked)}
+                                            disabled={permMutation.isPending}
+                                            title={allCatGranted ? 'Deselect row' : 'Select all in row'}
+                                            style={{ width: 14, height: 14, accentColor: 'var(--brand)', cursor: 'pointer', flexShrink: 0 }}
+                                          />
+                                        )}
+                                        <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                          {cat.label}
+                                        </span>
+                                      </div>
+
+                                      {/* Permission chips */}
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                                        {cat.permissions.map((perm) => {
+                                          const checked = selectedRole.granted_permission_ids.includes(perm.id);
+                                          return (
+                                            <label
+                                              key={perm.id}
+                                              style={{
+                                                display: 'flex', alignItems: 'center', gap: 5,
+                                                padding: '3px 9px', borderRadius: 6,
+                                                border: '1px solid',
+                                                borderColor: checked ? 'var(--brand)' : 'var(--border-subtle)',
+                                                background: checked ? 'var(--brand-subtle)' : 'transparent',
+                                                fontSize: '0.75rem', fontWeight: checked ? 600 : 400,
+                                                color: checked ? 'var(--brand)' : 'var(--text-secondary)',
+                                                cursor: selectedRole.is_editable ? 'pointer' : 'default',
+                                                opacity: selectedRole.is_editable ? 1 : 0.6,
+                                                transition: 'all 100ms',
+                                                userSelect: 'none',
+                                              }}
+                                            >
+                                              <Checkbox
+                                                checked={checked}
+                                                disabled={!selectedRole.is_editable || permMutation.isPending}
+                                                onChange={(e) => handlePermToggle(perm.id, e.target.checked)}
+                                              />
+                                              {perm.action_label}
+                                            </label>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
                                   );
                                 })}
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
 
                 {/* ── Compare tab ── */}
                 {rightTab === 'compare' && (
