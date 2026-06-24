@@ -33,7 +33,8 @@ export function useMyPermissions() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   // Derived directly from user object — no API call, no loading flicker on guards
-  const isTenantAdmin = user?.role === 'admin' || !!user?.is_superuser;
+  // data?.is_tenant_admin covers PermissionSet-based admins (level >= 100) after RBAC refactor
+  const isTenantAdmin = user?.role === 'admin' || !!user?.is_superuser || !!data?.is_tenant_admin;
   const isPlatformAdmin = storeIsPlatformAdmin || !!user?.is_superuser;
 
   const { data, isLoading } = useQuery<MyPermissionsData>({

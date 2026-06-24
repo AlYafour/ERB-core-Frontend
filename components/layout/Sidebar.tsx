@@ -425,7 +425,7 @@ export default function Sidebar() {
                       {...collapsibleProps}
                     />
                   )}
-                  {showModule('subcontractors') && (isAdmin || hasPermission('subcontractors.subcontractor.view')) && (
+                  {(isAdmin || hasPermission('subcontractors.subcontractor.view')) && (isAdmin || showModule('subcontractors')) && (
                     <CollapsibleMenu
                       title={t('nav', 'subcontractors')}
                       icon={<BuildingIcon className="w-4 h-4" />}
