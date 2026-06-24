@@ -60,10 +60,12 @@ function AttendanceEditModal({
   onSave: (patch: Partial<HRAttendance>) => void;
   isLoading: boolean;
 }) {
-  const [checkIn,  setCheckIn]  = useState(toTimeValue(record.check_in));
-  const [checkOut, setCheckOut] = useState(toTimeValue(record.check_out));
-  const [status,   setStatus]   = useState(record.status);
-  const [notes,    setNotes]    = useState(record.notes ?? '');
+  const [checkIn,    setCheckIn]    = useState(toTimeValue(record.check_in));
+  const [checkOut,   setCheckOut]   = useState(toTimeValue(record.check_out));
+  const [breakStart, setBreakStart] = useState(toTimeValue(record.break_start));
+  const [breakEnd,   setBreakEnd]   = useState(toTimeValue(record.break_end));
+  const [status,     setStatus]     = useState(record.status);
+  const [notes,      setNotes]      = useState(record.notes ?? '');
 
   const fieldStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 'var(--space-1-5)' };
   const labelStyle: React.CSSProperties = { fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' };
@@ -85,6 +87,16 @@ function AttendanceEditModal({
             <label style={labelStyle}>Check Out</label>
             <input type="time" className="form-input" value={checkOut}
               onChange={e => setCheckOut(e.target.value)} />
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>Break Start</label>
+            <input type="time" className="form-input" value={breakStart}
+              onChange={e => setBreakStart(e.target.value)} />
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>Break End</label>
+            <input type="time" className="form-input" value={breakEnd}
+              onChange={e => setBreakEnd(e.target.value)} />
           </div>
         </div>
 
@@ -119,8 +131,10 @@ function AttendanceEditModal({
           <button
             type="button"
             onClick={() => onSave({
-              check_in:  buildDatetime(record.date, checkIn)  as any,
-              check_out: buildDatetime(record.date, checkOut) as any,
+              check_in:    buildDatetime(record.date, checkIn)    as any,
+              check_out:   buildDatetime(record.date, checkOut)   as any,
+              break_start: buildDatetime(record.date, breakStart) as any,
+              break_end:   buildDatetime(record.date, breakEnd)   as any,
               status,
               notes,
             })}
@@ -248,6 +262,14 @@ export default function HRAttendancePage() {
     {
       key: 'checkout', header: 'Check Out',
       render: r => <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)' }}>{formatTime(r.check_out)}</span>,
+    },
+    {
+      key: 'break', header: 'Break',
+      render: r => r.break_start
+        ? <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: '#b45309' }}>
+            {formatTime(r.break_start)}{r.break_end ? `–${formatTime(r.break_end)}` : '…'}
+          </span>
+        : <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>—</span>,
     },
     {
       key: 'work', header: 'Work Hrs',

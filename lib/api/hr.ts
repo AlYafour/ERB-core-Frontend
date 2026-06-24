@@ -482,6 +482,8 @@ export interface AttendanceRecord {
   status: string;
   work_hours: number | null;
   duration_hours: number | null;
+  break_start: string | null;
+  break_end: string | null;
   notes: string;
 }
 
@@ -580,6 +582,14 @@ export const hrSelfAttendanceApi = {
   },
   checkOut: async (data?: { latitude?: number; longitude?: number }): Promise<AttendanceRecord> => {
     const response = await apiClient.post('/hr/attendance/self-check-out/', data ?? {});
+    return response.data;
+  },
+  breakOut: async (): Promise<AttendanceRecord> => {
+    const response = await apiClient.post('/hr/attendance/self-break-out/', {});
+    return response.data;
+  },
+  breakIn: async (): Promise<AttendanceRecord> => {
+    const response = await apiClient.post('/hr/attendance/self-break-in/', {});
     return response.data;
   },
 };

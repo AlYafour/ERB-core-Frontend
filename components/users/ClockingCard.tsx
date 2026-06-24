@@ -24,6 +24,17 @@ function fmtHours(h: number | null | undefined): string {
   return mins === 0 ? `${hrs}h` : `${hrs}h ${mins}m`;
 }
 
+function getLocation(): Promise<GeolocationCoordinates | null> {
+  return new Promise(resolve => {
+    if (!navigator.geolocation) return resolve(null);
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve(pos.coords),
+      () => resolve(null),
+      { timeout: 10000, maximumAge: 30000 },
+    );
+  });
+}
+
 export default function ClockingCard({ emp, isSelf }: Props) {
   const queryClient = useQueryClient();
   const [gpsError, setGpsError] = useState<string | null>(null);
@@ -41,103 +52,60 @@ export default function ClockingCard({ emp, isSelf }: Props) {
     staleTime: 30_000,
   });
 
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['attendance-today', emp?.id] });
+
   const checkInMut = useMutation({
-    mutationFn: (coords: { latitude: number; longitude: number }) =>
-      hrSelfAttendanceApi.checkIn(coords),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance-today', emp?.id] });
-      toast('Checked in successfully.', 'success');
-    },
-    onError: (err: any) => {
-      setGpsError(err?.response?.data?.detail ?? 'Check-in failed. Please try again.');
-    },
+    mutationFn: (coords: { latitude: number; longitude: number }) => hrSelfAttendanceApi.checkIn(coords),
+    onSuccess: () => { invalidate(); toast('Checked in successfully.', 'success'); },
+    onError: (err: any) => setGpsError(err?.response?.data?.detail ?? 'Check-in failed.'),
     throwOnError: false,
   });
 
   const checkOutMut = useMutation({
-    mutationFn: (data?: { latitude?: number; longitude?: number }) =>
-      hrSelfAttendanceApi.checkOut(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance-today', emp?.id] });
-      toast('Checked out successfully.', 'success');
-    },
-    onError: (err: any) => {
-      setGpsError(err?.response?.data?.detail ?? 'Check-out failed. Please try again.');
-    },
+    mutationFn: (data?: { latitude?: number; longitude?: number }) => hrSelfAttendanceApi.checkOut(data),
+    onSuccess: () => { invalidate(); toast('Checked out successfully.', 'success'); },
+    onError: (err: any) => setGpsError(err?.response?.data?.detail ?? 'Check-out failed.'),
     throwOnError: false,
   });
 
-  const handleCheckIn = () => {
+  const breakOutMut = useMutation({
+    mutationFn: () => hrSelfAttendanceApi.breakOut(),
+    onSuccess: () => { invalidate(); toast('Break started.', 'success'); },
+    onError: (err: any) => setGpsError(err?.response?.data?.detail ?? 'Failed to start break.'),
+    throwOnError: false,
+  });
+
+  const breakInMut = useMutation({
+    mutationFn: () => hrSelfAttendanceApi.breakIn(),
+    onSuccess: () => { invalidate(); toast('Break ended — welcome back.', 'success'); },
+    onError: (err: any) => setGpsError(err?.response?.data?.detail ?? 'Failed to end break.'),
+    throwOnError: false,
+  });
+
+  const handleCheckIn = async () => {
     setGpsError(null);
-    if (checkedIn) {
-      setGpsError('You have already clocked in today.');
-      return;
-    }
-    if (!navigator.geolocation) {
-      setGpsError('GPS not available. Please use a device with location services enabled.');
-      return;
-    }
+    if (checkedIn) { setGpsError('You have already clocked in today.'); return; }
     setGettingGps(true);
-    try {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setGettingGps(false);
-          checkInMut.mutate({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-        },
-        (err) => {
-          setGettingGps(false);
-          const msg =
-            err.code === err.PERMISSION_DENIED
-              ? 'Location access denied. Enable GPS in your browser settings and try again.'
-              : err.code === err.TIMEOUT
-              ? 'GPS timed out. Check your signal and try again.'
-              : 'Could not get your location. Please try again.';
-          setGpsError(msg);
-        },
-        { timeout: 10000, maximumAge: 30000 },
-      );
-    } catch {
-      setGettingGps(false);
-      setGpsError('Could not access location services. Please try again.');
-    }
+    const coords = await getLocation();
+    setGettingGps(false);
+    if (!coords) { setGpsError('Could not get your location. Please enable GPS and try again.'); return; }
+    checkInMut.mutate({ latitude: coords.latitude, longitude: coords.longitude });
   };
 
-  const handleCheckOut = () => {
+  const handleCheckOut = async () => {
     setGpsError(null);
-    if (checkedOut) {
-      setGpsError('Your shift is already complete for today.');
-      return;
-    }
-    if (!checkedIn) {
-      setGpsError('Please clock in before clocking out.');
-      return;
-    }
-    if (!navigator.geolocation) {
-      checkOutMut.mutate();
-      return;
-    }
+    if (checkedOut) { setGpsError('Your shift is already complete for today.'); return; }
+    if (!checkedIn) { setGpsError('Please clock in before clocking out.'); return; }
     setGettingGps(true);
-    try {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setGettingGps(false);
-          checkOutMut.mutate({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-        },
-        () => {
-          setGettingGps(false);
-          checkOutMut.mutate();
-        },
-        { timeout: 5000, maximumAge: 60000 },
-      );
-    } catch {
-      setGettingGps(false);
-      checkOutMut.mutate();
-    }
+    const coords = await getLocation();
+    setGettingGps(false);
+    checkOutMut.mutate(coords ? { latitude: coords.latitude, longitude: coords.longitude } : undefined);
   };
 
-  const busy      = gettingGps || checkInMut.isPending || checkOutMut.isPending;
+  const busy       = gettingGps || checkInMut.isPending || checkOutMut.isPending || breakOutMut.isPending || breakInMut.isPending;
   const checkedIn  = !!record?.check_in;
   const checkedOut = !!record?.check_out;
+  const isOnBreak  = !!record?.break_start && !record?.break_end;
 
   return (
     <div className="card">
@@ -150,7 +118,6 @@ export default function ClockingCard({ emp, isSelf }: Props) {
         <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{todayLabel}</span>
       </div>
 
-      {/* No employee profile linked */}
       {!emp && (
         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
           No employee profile is linked to your account.
@@ -169,30 +136,43 @@ export default function ClockingCard({ emp, isSelf }: Props) {
                 {fmtTime(record?.check_in)}
               </p>
             </div>
+            {record?.break_start && (
+              <div>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '0 0 var(--space-1)' }}>Break</p>
+                <p style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--weight-semibold)', margin: 0, fontVariantNumeric: 'tabular-nums', color: '#b45309' }}>
+                  {fmtTime(record.break_start)}{record.break_end ? `–${fmtTime(record.break_end)}` : '…'}
+                </p>
+              </div>
+            )}
             <div>
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '0 0 var(--space-1)' }}>Check Out</p>
               <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-bold)', margin: 0, fontVariantNumeric: 'tabular-nums' }}>
                 {fmtTime(record?.check_out)}
               </p>
             </div>
-            {checkedOut && record?.duration_hours != null && (
+            {checkedOut && record?.work_hours != null && (
               <div>
-                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '0 0 var(--space-1)' }}>Duration</p>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '0 0 var(--space-1)' }}>Hours</p>
                 <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-bold)', margin: 0 }}>
-                  {fmtHours(record.duration_hours)}
+                  {fmtHours(record.work_hours)}
                 </p>
               </div>
             )}
           </div>
 
-          {/* Status pill + out-of-range notice */}
+          {/* Status pill */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
             {!checkedIn && (
               <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', padding: '2px 10px', borderRadius: '999px', border: '1px solid var(--border)' }}>
                 Not started
               </span>
             )}
-            {checkedIn && !checkedOut && (
+            {checkedIn && isOnBreak && (
+              <span style={{ fontSize: 'var(--text-xs)', color: '#b45309', padding: '2px 10px', borderRadius: '999px', border: '1px solid #b45309' }}>
+                On break · since {fmtTime(record?.break_start)}
+              </span>
+            )}
+            {checkedIn && !isOnBreak && !checkedOut && (
               <span style={{ fontSize: 'var(--text-xs)', color: '#b45309', padding: '2px 10px', borderRadius: '999px', border: '1px solid #b45309' }}>
                 In progress
               </span>
@@ -219,18 +199,31 @@ export default function ClockingCard({ emp, isSelf }: Props) {
           {/* Action buttons — shown only when viewing own profile */}
           {isSelf && (
             <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', flexWrap: 'wrap' }}>
-              <Button
-                onClick={handleCheckIn}
-                disabled={busy || checkedIn}
-              >
-                {(gettingGps && !checkedIn) || checkInMut.isPending ? 'Locating…' : 'Clock In'}
-              </Button>
-              <Button
-                onClick={handleCheckOut}
-                disabled={busy || !checkedIn || checkedOut}
-              >
-                {(gettingGps && checkedIn && !checkedOut) || checkOutMut.isPending ? 'Locating…' : 'Clock Out'}
-              </Button>
+              {!checkedIn && (
+                <Button onClick={handleCheckIn} disabled={busy}>
+                  {gettingGps || checkInMut.isPending ? 'Locating…' : 'Clock In'}
+                </Button>
+              )}
+
+              {checkedIn && !checkedOut && !isOnBreak && (
+                <>
+                  <Button onClick={handleCheckOut} disabled={busy}>
+                    {checkOutMut.isPending ? 'Saving…' : 'Clock Out'}
+                  </Button>
+                  {!record?.break_start && (
+                    <Button variant="secondary" onClick={() => { setGpsError(null); breakOutMut.mutate(); }} disabled={busy}>
+                      {breakOutMut.isPending ? 'Saving…' : 'Start Break'}
+                    </Button>
+                  )}
+                </>
+              )}
+
+              {isOnBreak && (
+                <Button onClick={() => { setGpsError(null); breakInMut.mutate(); }} disabled={busy}>
+                  {breakInMut.isPending ? 'Saving…' : 'End Break'}
+                </Button>
+              )}
+
               {checkedOut && (
                 <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
                   Shift complete for today.
