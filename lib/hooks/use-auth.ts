@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authApi } from '@/lib/api/auth';
 import { useAuthStore } from '@/lib/store/auth-store';
@@ -5,15 +6,36 @@ import { useRouter } from 'next/navigation';
 import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 
+// Typed accessor for Zustand persist API (not in AuthState interface but added by middleware)
+const authPersist = (useAuthStore as unknown as {
+  persist: {
+    hasHydrated: () => boolean;
+    onFinishHydration: (cb: () => void) => () => void;
+  };
+}).persist;
+
 export function useAuth() {
-  const { setAuth, logout: logoutStore, user, isAuthenticated, _hasHydrated } = useAuthStore();
+  const { setAuth, logout: logoutStore, user, isAuthenticated } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  // Track when Zustand has finished reading from localStorage.
+  // Without this, RouteGuard sees user=null on the first render after a hard
+  // refresh (before hydration) and redirects to /login → /dashboard.
+  const [hasHydrated, setHasHydrated] = useState(() => authPersist.hasHydrated());
+
+  useEffect(() => {
+    if (hasHydrated) return;
+    // Race: check in case hydration completed between render and effect mount
+    if (authPersist.hasHydrated()) { setHasHydrated(true); return; }
+    const unsub = authPersist.onFinishHydration(() => setHasHydrated(true));
+    return unsub;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: currentUser, isLoading: isQueryLoading } = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: authApi.me,
-    enabled: _hasHydrated && isAuthenticated,
+    enabled: hasHydrated && isAuthenticated,
     retry: false,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -21,9 +43,8 @@ export function useAuth() {
     refetchOnReconnect: false,
   });
 
-  // Treat pre-hydration as loading — prevents RouteGuard from redirecting
-  // during the brief window between JS init and localStorage restore.
-  const isLoading = !_hasHydrated || isQueryLoading;
+  // isLoading stays true until: (1) localStorage is read, (2) /me query settles
+  const isLoading = !hasHydrated || isQueryLoading;
 
   const loginMutation = useMutation({
     mutationFn: ({ username, password }: { username: string; password: string }) =>
@@ -64,7 +85,7 @@ export function useAuth() {
   return {
     user: currentUser || user,
     isLoading,
-    isAuthenticated: _hasHydrated && isAuthenticated,
+    isAuthenticated: hasHydrated && isAuthenticated,
     login: loginMutation.mutate,
     register: registerMutation.mutate,
     logout,

@@ -14,12 +14,9 @@ interface AuthState {
   isPlatformAdmin: boolean;
   /** Module keys enabled for this user's tenant (from JWT claim). */
   enabledModules: string[];
-  /** True once localStorage hydration has finished — prevents flash-of-unauthenticated state on hard refresh. */
-  _hasHydrated: boolean;
   setAuth: (user: User, accessToken: string, refreshToken: string) => void;
   setUser: (user: User) => void;
   setTokens: (accessToken: string, refreshToken: string) => void;
-  setHasHydrated: (v: boolean) => void;
   logout: () => void;
 }
 
@@ -58,9 +55,6 @@ export const useAuthStore = create<AuthState>()(
       tenantId: null,
       isPlatformAdmin: false,
       enabledModules: [],
-      _hasHydrated: false,
-
-      setHasHydrated: (v) => set({ _hasHydrated: v }),
 
       setAuth: (user, accessToken, refreshToken) => {
         saveTokens(accessToken, refreshToken);
@@ -116,7 +110,6 @@ export const useAuthStore = create<AuthState>()(
         enabledModules: state.enabledModules,
       }),
       onRehydrateStorage: () => (state) => {
-        useAuthStore.getState().setHasHydrated(true);
         if (state?.accessToken && state?.isAuthenticated) {
           setCookie('access_token', state.accessToken, 1);
         }
