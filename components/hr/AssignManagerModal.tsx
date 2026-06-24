@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { BaseModal, SearchInput } from '@/components/ui';
+import { BaseModal } from '@/components/ui/base/BaseModal';
+import { SearchInput } from '@/components/ui/SearchInput';
 import type { HREmployee } from '@/types';
 
 const hasLogin = (e: HREmployee) => !!(e.user?.id);

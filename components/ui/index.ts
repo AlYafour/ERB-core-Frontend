@@ -1,5 +1,7 @@
-// Base Components
-export * from './base';
+// Base Components — explicit exports (avoids export* TDZ with Turbopack module concatenation)
+export { BaseButton, type BaseButtonProps } from './base/BaseButton';
+export { BaseInput, BaseTextarea, type BaseInputProps, type BaseTextareaProps } from './base/BaseInput';
+export { BaseModal, type BaseModalProps } from './base/BaseModal';
 
 // Buttons
 export {

@@ -1,6 +1,6 @@
 'use client';
 
-import { BaseModal } from '@/components/ui';
+import { BaseModal } from '@/components/ui/base/BaseModal';
 import type { EmployeeGroup, HREmployee } from '@/types';
 
 interface Props {

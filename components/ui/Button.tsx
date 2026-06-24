@@ -4,8 +4,9 @@ import { ReactNode } from 'react';
 import { BaseButton, BaseButtonProps } from './base/BaseButton';
 import { cn } from '@/lib/utils/cn';
 
-export type ButtonProps = BaseButtonProps;
-export { BaseButton as Button };
+// Direct re-export avoids Turbopack TDZ from indirect import→re-export pattern
+export { BaseButton as Button } from './base/BaseButton';
+export type { BaseButtonProps as ButtonProps } from './base/BaseButton';
 
 export interface IconButtonProps extends Omit<BaseButtonProps, 'children'> {
   icon: ReactNode;
