@@ -6,7 +6,7 @@ import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import MainLayout from '@/components/layout/MainLayout';
-import { Loader } from '@/components/ui';
+import { Loader } from '@/components/ui/Loader';
 
 interface RouteGuardProps {
   children: React.ReactNode;
