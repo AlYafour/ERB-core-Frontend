@@ -202,7 +202,7 @@ export default function Sidebar() {
   const tasksBadge = useTasksBadge();
   const { data: tenantData } = useTenantInfo();
 
-  const isAdmin = !!(user?.role === 'admin' || user?.is_superuser || isPlatformAdmin);
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
@@ -212,7 +212,7 @@ export default function Sidebar() {
   const tenantName = tenantData?.name ?? '';
   const logoUrl    = (tenantData as any)?.branding?.logo_url || undefined;
   const { emp: myEmp } = useMyEmployeeRecord();
-  const { hasPermission } = useMyPermissions();
+  const { hasPermission, isTenantAdmin } = useMyPermissions();
 
   const purchaseItems = [
     { name: t('nav', 'prList'),         href: '/purchase-requests',   icon: <FileTextIcon className="w-4 h-4" />,      badge: pending.pr        },
@@ -316,8 +316,7 @@ export default function Sidebar() {
     ? `${user.first_name} ${user.last_name || ''}`.trim()
     : (user?.username || '');
   const initials = displayName.split(' ').slice(0, 2).map((w: string) => w[0]?.toUpperCase() || '').join('');
-  const roleLabel = (user as any)?.permission_set?.name
-    || (user?.role === 'admin' ? 'Company Admin' : user?.role?.replace(/_/g, ' ') || '');
+  const roleLabel = (user as any)?.permission_set?.name || user?.role?.replace(/_/g, ' ') || '';
 
   return (
     <>

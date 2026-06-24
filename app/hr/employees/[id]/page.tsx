@@ -377,7 +377,6 @@ export default function EmployeeDetailPage() {
       username:             emp.user?.username || '',
       email:                emp.user?.email || '',
       phone:                emp.user?.phone || '',
-      is_company_admin:     emp.user?.role === 'admin',
       first_name:           (emp.full_name || '').split(' ')[0] || '',
       last_name:            (emp.full_name || '').split(' ').slice(-1)[0] || '',
       password:             '',
@@ -395,7 +394,6 @@ export default function EmployeeDetailPage() {
       const accountData: any = {
         username: form.username, email: form.email, phone: form.phone,
         first_name: form.first_name, last_name: form.last_name,
-        role: form.is_company_admin ? 'admin' : 'employee',
       };
       if (changePassword && form.password) accountData.password = form.password;
       userUpdateMutation.mutate(accountData);
@@ -560,7 +558,7 @@ export default function EmployeeDetailPage() {
                   <InfoRow label="Username"    value={emp.user?.username} />
                   <InfoRow label="Work Email"  value={emp.user?.email} />
                   <InfoRow label="Phone"       value={emp.user?.phone} />
-                  <InfoRow label="Company Admin" value={emp.user?.role === 'admin' ? 'Yes — Full Access' : 'No'} />
+                  <InfoRow label="Role" value={(emp.user as any)?.permission_set?.name || '—'} />
                   <InfoRow label="Status"      value={emp.is_active ? 'Active' : 'Inactive'} />
                 </div>
               </div>
@@ -802,19 +800,6 @@ export default function EmployeeDetailPage() {
               <div className={fld}><label className={lbl}>Username</label><input className={inp} value={form.username} onChange={f('username')} /></div>
               <div className={fld}><label className={lbl}>Email</label><input className={inp} type="email" value={form.email} onChange={f('email')} /></div>
               <div className={fld}><label className={lbl}>Phone</label><input className={inp} type="tel" value={form.phone} onChange={f('phone')} /></div>
-              <div className={fld} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                <label className={lbl}>Company Admin</label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer', height: 38 }}>
-                  <input
-                    type="checkbox"
-                    checked={!!form.is_company_admin}
-                    onChange={e => setForm(p => ({ ...p, is_company_admin: e.target.checked }))}
-                  />
-                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-                    Full access to all modules
-                  </span>
-                </label>
-              </div>
             </div>
 
             <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-4)', marginTop: 'var(--space-4)' }}>

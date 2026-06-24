@@ -219,7 +219,7 @@ function ProfileCard({ user, profileHref }: { user: any; profileHref: string }) 
         <Avatar src={user.avatar_url || user.avatar} alt={displayName} size={72} username={user.username} />
       </div>
       <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>{displayName}</p>
-      {user.role && <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 4px', textTransform: 'capitalize' }}>{roleLabel(user.role)}</p>}
+      {((user as any)?.permission_set?.name || user.role) && <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 4px', textTransform: 'capitalize' }}>{(user as any)?.permission_set?.name || roleLabel(user.role)}</p>}
       {user.email && <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '0 0 18px' }}>{user.email}</p>}
       <Link href={profileHref} style={{
         display: 'inline-block', padding: '7px 18px', borderRadius: 8,
@@ -294,7 +294,7 @@ export default function MyWorkspace() {
             {greeting}, {displayName}
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>
-            {tenantData?.name ?? 'Your workspace'} · {roleLabel(user.role)}
+            {tenantData?.name ?? 'Your workspace'} · {(user as any)?.permission_set?.name || roleLabel(user.role)}
           </p>
         </div>
 
