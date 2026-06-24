@@ -16,12 +16,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { setAuth, isAuthenticated } = useAuthStore();
-  const [hydrated, setHydrated] = useState(
-    () => (useAuthStore as unknown as { persist: { hasHydrated: () => boolean } }).persist.hasHydrated()
-  );
+  const p = (useAuthStore as unknown as { persist?: { hasHydrated: () => boolean; onFinishHydration: (cb: () => void) => () => void } }).persist;
+  const [hydrated, setHydrated] = useState(() => p?.hasHydrated() ?? false);
   useEffect(() => {
-    if (hydrated) return;
-    const p = (useAuthStore as unknown as { persist: { hasHydrated: () => boolean; onFinishHydration: (cb: () => void) => () => void } }).persist;
+    if (hydrated || !p) return;
     if (p.hasHydrated()) { setHydrated(true); return; }
     return p.onFinishHydration(() => setHydrated(true));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

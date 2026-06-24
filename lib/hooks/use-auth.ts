@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation';
 import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 
-// Typed accessor for Zustand persist API (not in AuthState interface but added by middleware)
+// Typed accessor for Zustand persist API — undefined on the server (no localStorage)
 const authPersist = (useAuthStore as unknown as {
-  persist: {
+  persist?: {
     hasHydrated: () => boolean;
     onFinishHydration: (cb: () => void) => () => void;
   };
@@ -22,14 +22,13 @@ export function useAuth() {
   // Track when Zustand has finished reading from localStorage.
   // Without this, RouteGuard sees user=null on the first render after a hard
   // refresh (before hydration) and redirects to /login → /dashboard.
-  const [hasHydrated, setHasHydrated] = useState(() => authPersist.hasHydrated());
+  // On SSR authPersist is undefined (no localStorage) — default to false, client picks it up
+  const [hasHydrated, setHasHydrated] = useState(() => authPersist?.hasHydrated() ?? false);
 
   useEffect(() => {
-    if (hasHydrated) return;
-    // Race: check in case hydration completed between render and effect mount
+    if (hasHydrated || !authPersist) return;
     if (authPersist.hasHydrated()) { setHasHydrated(true); return; }
-    const unsub = authPersist.onFinishHydration(() => setHasHydrated(true));
-    return unsub;
+    return authPersist.onFinishHydration(() => setHasHydrated(true));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: currentUser, isLoading: isQueryLoading } = useQuery({
