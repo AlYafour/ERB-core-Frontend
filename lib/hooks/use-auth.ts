@@ -6,20 +6,24 @@ import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 
 export function useAuth() {
-  const { setAuth, logout: logoutStore, user, isAuthenticated } = useAuthStore();
+  const { setAuth, logout: logoutStore, user, isAuthenticated, _hasHydrated } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const { data: currentUser, isLoading } = useQuery({
+  const { data: currentUser, isLoading: isQueryLoading } = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: authApi.me,
-    enabled: isAuthenticated,
+    enabled: _hasHydrated && isAuthenticated,
     retry: false,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
+
+  // Treat pre-hydration as loading — prevents RouteGuard from redirecting
+  // during the brief window between JS init and localStorage restore.
+  const isLoading = !_hasHydrated || isQueryLoading;
 
   const loginMutation = useMutation({
     mutationFn: ({ username, password }: { username: string; password: string }) =>
@@ -54,13 +58,13 @@ export function useAuth() {
   const logout = () => {
     logoutStore();
     queryClient.clear();
-    router.push('/login');
+    router.push('/company-login');
   };
 
   return {
     user: currentUser || user,
     isLoading,
-    isAuthenticated,
+    isAuthenticated: _hasHydrated && isAuthenticated,
     login: loginMutation.mutate,
     register: registerMutation.mutate,
     logout,

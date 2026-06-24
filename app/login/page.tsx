@@ -15,11 +15,11 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { setAuth, isAuthenticated } = useAuthStore();
+  const { setAuth, isAuthenticated, _hasHydrated } = useAuthStore();
 
   useEffect(() => {
-    if (isAuthenticated) window.location.replace('/dashboard');
-  }, [isAuthenticated]);
+    if (_hasHydrated && isAuthenticated) window.location.replace('/dashboard');
+  }, [_hasHydrated, isAuthenticated]);
 
   const [error, setError] = useState('');
 

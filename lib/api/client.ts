@@ -56,10 +56,16 @@ apiClient.interceptors.response.use(
 
       isRefreshing = true;
 
-      try {
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (!refreshToken) throw new Error('No refresh token');
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (!refreshToken) {
+        // No token stored at all — clear stale state and send to login.
+        isRefreshing = false;
+        useAuthStore.getState().logout();
+        window.location.href = '/company-login';
+        return Promise.reject(error);
+      }
 
+      try {
         const response = await axios.post(`${API_BASE_URL}/auth/token/refresh/`, {
           refresh: refreshToken,
         });
@@ -71,9 +77,15 @@ apiClient.interceptors.response.use(
 
         originalRequest.headers.Authorization = `Bearer ${access}`;
         return apiClient(originalRequest);
-      } catch {
-        useAuthStore.getState().logout();
-        window.location.href = '/login';
+      } catch (refreshErr: unknown) {
+        // Only force-logout on actual auth failures (4xx).
+        // Network errors and server errors (5xx) should not kill the session —
+        // the user can retry once connectivity is restored.
+        const status = (refreshErr as { response?: { status?: number } })?.response?.status;
+        if (status !== undefined && status >= 400 && status < 500) {
+          useAuthStore.getState().logout();
+          window.location.href = '/company-login';
+        }
         return Promise.reject(error);
       } finally {
         isRefreshing = false;
