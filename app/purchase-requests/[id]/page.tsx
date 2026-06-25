@@ -51,8 +51,9 @@ export default function PurchaseRequestDetailPage() {
     description: '', charge_type: 'lump_sum', rate: '', quantity: '1',
   });
 
-  const canApprove = can('purchase_request', 'approve');
-  const canReject  = can('purchase_request', 'reject');
+  const canApprove      = can('purchase_request', 'approve');
+  const canUndoApprove  = can('purchase_request', 'undo_approve');
+  const canReject       = can('purchase_request', 'reject');
   const canManageAdditionalOrders = isAdmin || can('purchase_request', 'approve');
 
   const { data: request, isLoading } = useQuery({
@@ -279,7 +280,7 @@ export default function PurchaseRequestDetailPage() {
               {t('btn', 'reject')}
             </Button>
           )}
-          {request.status === 'approved' && (isAdmin || canApprove) && !request.has_quotation_requests && !request.has_purchase_orders && (
+          {request.status === 'approved' && (isAdmin || canUndoApprove) && !request.has_quotation_requests && !request.has_active_purchase_orders && (
             <Button variant="secondary" size="sm" isLoading={undoApprovalMutation.isPending} onClick={() => undoApprovalMutation.mutate()}>
               Undo Approval
             </Button>
