@@ -85,12 +85,19 @@ export default function PurchaseOrderDetailPage() {
     onError: (err: unknown) => toast(getApiError(err, 'Failed to reject amendment'), 'error'),
   });
 
+  const reopenMutation = useMutation({
+    mutationFn: () => purchaseOrdersApi.reopen(id),
+    onSuccess: () => { invalidate(); toast('Purchase Order reopened — pending re-approval', 'success'); },
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to reopen'), 'error'),
+  });
+
   if (isLoading) return <DocLoadState type="loading" />;
   if (!order)    return <DocLoadState type="not-found" message="Purchase Order not found." />;
 
   const canApprove         = can('purchase_order', 'approve');
   const canReject          = can('purchase_order', 'reject');
   const canCancel          = can('purchase_order', 'cancel');
+  const canReopen          = can('purchase_order', 'reopen');
   const canUpdate          = can('purchase_order', 'update');
   const canCreateGRNPerm   = can('goods_receiving', 'create');
   const canCreateInvPerm   = can('purchase_invoice', 'create');
@@ -154,6 +161,11 @@ export default function PurchaseOrderDetailPage() {
             )}
             {canReject && isDraftOrPending && (
               <Button variant="destructive" size="sm" onClick={() => setRejectDialogOpen(true)}>Reject</Button>
+            )}
+            {canReopen && order.status === 'rejected' && (
+              <Button variant="secondary" size="sm" isLoading={reopenMutation.isPending} onClick={() => reopenMutation.mutate()}>
+                Reopen
+              </Button>
             )}
             {canCancelOrder && (
               <Button variant="destructive" size="sm" onClick={() => setCancelDialogOpen(true)}>Cancel</Button>

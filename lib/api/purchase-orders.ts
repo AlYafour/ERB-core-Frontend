@@ -89,6 +89,11 @@ export const purchaseOrdersApi = {
     return response.data;
   },
 
+  reopen: async (id: number): Promise<PurchaseOrder> => {
+    const response = await apiClient.post(`/purchase-orders/${id}/reopen/`);
+    return response.data;
+  },
+
   requestAmendment: async (id: number, reason: string): Promise<PurchaseOrder> => {
     const response = await apiClient.post(`/purchase-orders/${id}/request-amendment/`, { reason });
     return response.data;
