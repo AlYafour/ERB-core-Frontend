@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -248,9 +248,228 @@ function NewLoanModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose
   );
 }
 
+// ── Pay Cash Modal ─────────────────────────────────────────────────────────────
+
+function PayCashModal({ loan, onClose, onSuccess }: { loan: EmployeeLoan; onClose: () => void; onSuccess: (updated: EmployeeLoan) => void }) {
+  const [month,  setMonth]  = useState(NOW_MONTH);
+  const [year,   setYear]   = useState(NOW_YEAR);
+  const [amount, setAmount] = useState('');
+
+  const defaultAmount = Math.min(
+    parseFloat(loan.installment_amount as unknown as string),
+    parseFloat(loan.remaining_balance as unknown as string),
+  );
+
+  const mutation = useMutation({
+    mutationFn: () => hrLoansApi.payCash(loan.id, {
+      month, year,
+      amount: amount ? parseFloat(amount) : undefined,
+    }),
+    onSuccess: (updated) => { toast('Cash payment recorded', 'success'); onSuccess(updated); onClose(); },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Failed to record payment';
+      toast(msg, 'error');
+    },
+  });
+
+  return (
+    <BaseModal
+      isOpen onClose={onClose}
+      title="Record Cash Payment" size="sm"
+      closeOnOverlayClick={false}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>Cancel</Button>
+          <Button variant="primary" onClick={() => mutation.mutate()} isLoading={mutation.isPending}>
+            Confirm Payment
+          </Button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        <div style={{ background: 'var(--surface-subtle)', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: 'var(--text-sm)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>Remaining Balance</span>
+            <strong>{fmt(loan.remaining_balance)}</strong>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+            <span style={{ color: 'var(--text-secondary)' }}>Default Installment</span>
+            <strong>{fmt(loan.installment_amount)}</strong>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+          <div>
+            <label style={LABEL}>Month <span style={{ color: 'var(--color-error)' }}>*</span></label>
+            <select value={month} onChange={e => setMonth(parseInt(e.target.value))} style={INPUT}>
+              {MONTH_NAMES.slice(1).map((name, i) => (
+                <option key={i + 1} value={i + 1}>{name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={LABEL}>Year <span style={{ color: 'var(--color-error)' }}>*</span></label>
+            <select value={year} onChange={e => setYear(parseInt(e.target.value))} style={INPUT}>
+              {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label style={LABEL}>
+            Amount (AED)
+            <span style={{ fontWeight: 400, color: 'var(--text-tertiary)', marginLeft: 4 }}>
+              leave blank to use default ({fmt(defaultAmount)})
+            </span>
+          </label>
+          <input
+            type="number" min="0.01" step="0.01"
+            placeholder={`Default: ${defaultAmount.toFixed(2)}`}
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
+            style={INPUT}
+          />
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
+// ── Skip Installment Modal ────────────────────────────────────────────────────
+
+function SkipModal({ loan, onClose, onSuccess }: { loan: EmployeeLoan; onClose: () => void; onSuccess: (updated: EmployeeLoan) => void }) {
+  const [month, setMonth] = useState(NOW_MONTH);
+  const [year,  setYear]  = useState(NOW_YEAR);
+
+  const mutation = useMutation({
+    mutationFn: () => hrLoansApi.skip(loan.id, { month, year }),
+    onSuccess: (updated) => { toast('Installment skipped — loan term extended by 1 month', 'success'); onSuccess(updated); onClose(); },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Failed to skip installment';
+      toast(msg, 'error');
+    },
+  });
+
+  return (
+    <BaseModal
+      isOpen onClose={onClose}
+      title="Skip Installment" size="sm"
+      closeOnOverlayClick={false}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>Cancel</Button>
+          <Button variant="warning" onClick={() => mutation.mutate()} isLoading={mutation.isPending}>
+            Skip Month
+          </Button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
+          No deduction will be made for the selected month. The loan term will extend by one month to compensate.
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+          <div>
+            <label style={LABEL}>Month <span style={{ color: 'var(--color-error)' }}>*</span></label>
+            <select value={month} onChange={e => setMonth(parseInt(e.target.value))} style={INPUT}>
+              {MONTH_NAMES.slice(1).map((name, i) => (
+                <option key={i + 1} value={i + 1}>{name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={LABEL}>Year <span style={{ color: 'var(--color-error)' }}>*</span></label>
+            <select value={year} onChange={e => setYear(parseInt(e.target.value))} style={INPUT}>
+              {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
+// ── Reschedule Modal ──────────────────────────────────────────────────────────
+
+function RescheduleModal({ loan, onClose, onSuccess }: { loan: EmployeeLoan; onClose: () => void; onSuccess: (updated: EmployeeLoan) => void }) {
+  const [installmentAmount, setInstallmentAmount] = useState(
+    parseFloat(loan.installment_amount as unknown as string).toFixed(2)
+  );
+
+  const remaining    = parseFloat(loan.remaining_balance as unknown as string);
+  const newAmount    = parseFloat(installmentAmount) || 0;
+  const newInstCount = newAmount > 0 ? Math.ceil(remaining / newAmount) : null;
+
+  const mutation = useMutation({
+    mutationFn: () => hrLoansApi.reschedule(loan.id, { installment_amount: newAmount }),
+    onSuccess: (updated) => { toast('Loan rescheduled successfully', 'success'); onSuccess(updated); onClose(); },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Failed to reschedule loan';
+      toast(msg, 'error');
+    },
+  });
+
+  return (
+    <BaseModal
+      isOpen onClose={onClose}
+      title="Reschedule Loan" size="sm"
+      closeOnOverlayClick={false}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>Cancel</Button>
+          <Button variant="primary" onClick={() => mutation.mutate()} isLoading={mutation.isPending} disabled={newAmount <= 0}>
+            Apply Reschedule
+          </Button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        <div style={{ background: 'var(--surface-subtle)', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: 'var(--text-sm)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>Remaining Balance</span>
+            <strong>{fmt(loan.remaining_balance)}</strong>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+            <span style={{ color: 'var(--text-secondary)' }}>Current Installment</span>
+            <strong>{fmt(loan.installment_amount)}</strong>
+          </div>
+        </div>
+
+        <div>
+          <label style={LABEL}>New Monthly Installment (AED) <span style={{ color: 'var(--color-error)' }}>*</span></label>
+          <input
+            type="number" min="0.01" step="0.01"
+            value={installmentAmount}
+            onChange={e => setInstallmentAmount(e.target.value)}
+            style={INPUT}
+          />
+        </div>
+
+        {newInstCount !== null && newAmount > 0 && (
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
+            New schedule: <strong>{newInstCount}</strong> remaining installment{newInstCount !== 1 ? 's' : ''}
+          </p>
+        )}
+      </div>
+    </BaseModal>
+  );
+}
+
 // ── Loan Detail Modal ──────────────────────────────────────────────────────────
 
-function LoanDetailModal({ loan, onClose }: { loan: EmployeeLoan; onClose: () => void }) {
+interface LoanDetailProps {
+  loan: EmployeeLoan;
+  onClose: () => void;
+  canPayCash:   boolean;
+  canSkip:      boolean;
+  canReschedule: boolean;
+  onPayCash:    () => void;
+  onSkip:       () => void;
+  onReschedule: () => void;
+}
+
+function LoanDetailModal({ loan, onClose, canPayCash, canSkip, canReschedule, onPayCash, onSkip, onReschedule }: LoanDetailProps) {
   const rows: [string, string][] = [
     ['Employee',          loan.employee_name],
     ['Employee ID',       loan.employee_id_code],
@@ -262,6 +481,9 @@ function LoanDetailModal({ loan, onClose }: { loan: EmployeeLoan; onClose: () =>
     ['Status',            loan.status.charAt(0).toUpperCase() + loan.status.slice(1)],
     ['Notes',             loan.notes || '—'],
   ];
+
+  const isActive = loan.status === 'active';
+  const showActions = isActive && (canPayCash || canSkip || canReschedule);
 
   return (
     <BaseModal
@@ -297,6 +519,35 @@ function LoanDetailModal({ loan, onClose }: { loan: EmployeeLoan; onClose: () =>
             </p>
           </div>
         )}
+
+        {/* Action buttons */}
+        {showActions && (
+          <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-3)', marginTop: 'var(--space-1)', display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+            {canPayCash && (
+              <Button variant="primary" size="sm" onClick={onPayCash}>
+                Pay Cash
+              </Button>
+            )}
+            {canSkip && (
+              <Button variant="secondary" size="sm" onClick={onSkip}>
+                Skip Month
+              </Button>
+            )}
+            {canReschedule && (
+              <Button variant="secondary" size="sm" onClick={onReschedule}>
+                Reschedule
+              </Button>
+            )}
+          </div>
+        )}
+        {/* Reschedule also available for paused loans */}
+        {!isActive && loan.status === 'paused' && canReschedule && (
+          <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-3)', marginTop: 'var(--space-1)' }}>
+            <Button variant="secondary" size="sm" onClick={onReschedule}>
+              Reschedule
+            </Button>
+          </div>
+        )}
       </div>
     </BaseModal>
   );
@@ -311,29 +562,38 @@ export default function HRLoansPage() {
   const { user } = useAuth();
   const { hasPermission } = useMyPermissions();
   const router = useRouter();
-  const isAdmin = hasPermission('hr.hr_loan.view');
 
-  const [showNew, setShowNew]         = useState(false);
-  const [detailLoan, setDetailLoan]   = useState<EmployeeLoan | null>(null);
+  const isAdmin       = hasPermission('hr.hr_loan.view');
+  const canPayCash    = hasPermission('hr.hr_loan.pay_cash');
+  const canSkip       = hasPermission('hr.hr_loan.skip');
+  const canReschedule = hasPermission('hr.hr_loan.reschedule');
+
+  const [showNew,      setShowNew]      = useState(false);
+  const [detailLoan,   setDetailLoan]   = useState<EmployeeLoan | null>(null);
+  const [payCashLoan,  setPayCashLoan]  = useState<EmployeeLoan | null>(null);
+  const [skipLoan,     setSkipLoan]     = useState<EmployeeLoan | null>(null);
+  const [rescheduleLoan, setRescheduleLoan] = useState<EmployeeLoan | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['hr-loans', page, search, filters],
     queryFn:  () => hrLoansApi.getAll({ page, search, ...filters }),
   });
 
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['hr-loans'] });
+
   const cancelMutation = useMutation({
     mutationFn: (id: number) => hrLoansApi.cancel(id),
-    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['hr-loans'] }); toast('Loan cancelled', 'success'); },
+    onSuccess:  () => { invalidate(); toast('Loan cancelled', 'success'); },
     onError:    () => toast('Failed to cancel loan', 'error'),
   });
   const pauseMutation = useMutation({
     mutationFn: (id: number) => hrLoansApi.pause(id),
-    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['hr-loans'] }); toast('Loan paused', 'success'); },
+    onSuccess:  () => { invalidate(); toast('Loan paused', 'success'); },
     onError:    () => toast('Failed to pause loan', 'error'),
   });
   const resumeMutation = useMutation({
     mutationFn: (id: number) => hrLoansApi.resume(id),
-    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['hr-loans'] }); toast('Loan resumed', 'success'); },
+    onSuccess:  () => { invalidate(); toast('Loan resumed', 'success'); },
     onError:    () => toast('Failed to resume loan', 'error'),
   });
 
@@ -341,6 +601,11 @@ export default function HRLoansPage() {
     if (await confirm(`Cancel loan for ${loan.employee_name}?\nRemaining: ${fmt(loan.remaining_balance)}`)) {
       cancelMutation.mutate(loan.id);
     }
+  };
+
+  const handleLoanUpdated = (updated: EmployeeLoan) => {
+    invalidate();
+    setDetailLoan(updated);
   };
 
   useEffect(() => {
@@ -412,6 +677,10 @@ export default function HRLoansPage() {
         <RowActions actions={[
           { label: 'View Details', onClick: () => setDetailLoan(r) },
           { separator: true, hidden: !isAdmin },
+          { label: 'Pay Cash',   onClick: () => { setDetailLoan(null); setPayCashLoan(r); },  hidden: !canPayCash    || r.status !== 'active' },
+          { label: 'Skip Month', onClick: () => { setDetailLoan(null); setSkipLoan(r); },     hidden: !canSkip       || r.status !== 'active' },
+          { label: 'Reschedule', onClick: () => { setDetailLoan(null); setRescheduleLoan(r); }, hidden: !canReschedule || (r.status !== 'active' && r.status !== 'paused') },
+          { separator: true, hidden: !isAdmin || (r.status !== 'active' && r.status !== 'paused') },
           { label: 'Pause',   onClick: () => pauseMutation.mutate(r.id),  hidden: !isAdmin || r.status !== 'active' },
           { label: 'Resume',  onClick: () => resumeMutation.mutate(r.id), hidden: !isAdmin || r.status !== 'paused' },
           { separator: true, hidden: !isAdmin || (r.status !== 'active' && r.status !== 'paused') },
@@ -447,10 +716,40 @@ export default function HRLoansPage() {
       <NewLoanModal
         isOpen={showNew}
         onClose={() => setShowNew(false)}
-        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['hr-loans'] })}
+        onSuccess={invalidate}
       />
       {detailLoan && (
-        <LoanDetailModal loan={detailLoan} onClose={() => setDetailLoan(null)} />
+        <LoanDetailModal
+          loan={detailLoan}
+          onClose={() => setDetailLoan(null)}
+          canPayCash={canPayCash}
+          canSkip={canSkip}
+          canReschedule={canReschedule}
+          onPayCash={() => { setPayCashLoan(detailLoan); setDetailLoan(null); }}
+          onSkip={() => { setSkipLoan(detailLoan); setDetailLoan(null); }}
+          onReschedule={() => { setRescheduleLoan(detailLoan); setDetailLoan(null); }}
+        />
+      )}
+      {payCashLoan && (
+        <PayCashModal
+          loan={payCashLoan}
+          onClose={() => setPayCashLoan(null)}
+          onSuccess={handleLoanUpdated}
+        />
+      )}
+      {skipLoan && (
+        <SkipModal
+          loan={skipLoan}
+          onClose={() => setSkipLoan(null)}
+          onSuccess={handleLoanUpdated}
+        />
+      )}
+      {rescheduleLoan && (
+        <RescheduleModal
+          loan={rescheduleLoan}
+          onClose={() => setRescheduleLoan(null)}
+          onSuccess={handleLoanUpdated}
+        />
       )}
     </AppListPage>
   );

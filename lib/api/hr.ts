@@ -623,6 +623,18 @@ export const hrLoansApi = {
     const response = await apiClient.post(`/hr/payroll/loans/${id}/resume/`);
     return response.data;
   },
+  payCash: async (id: number, data: { month: number; year: number; amount?: number }): Promise<EmployeeLoan> => {
+    const response = await apiClient.post(`/hr/payroll/loans/${id}/pay-cash/`, data);
+    return response.data;
+  },
+  skip: async (id: number, data: { month: number; year: number }): Promise<EmployeeLoan> => {
+    const response = await apiClient.post(`/hr/payroll/loans/${id}/skip/`, data);
+    return response.data;
+  },
+  reschedule: async (id: number, data: { installment_amount: number }): Promise<EmployeeLoan> => {
+    const response = await apiClient.post(`/hr/payroll/loans/${id}/reschedule/`, data);
+    return response.data;
+  },
 };
 
 // ── Penalty Rules (P2) ────────────────────────────────────────────────────────
