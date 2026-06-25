@@ -261,6 +261,12 @@ function NewEmployeeForm() {
                   onChange={(v) => setEmployment((p) => ({ ...p, employee_group: v as number | null }))}
                   placeholder="— None —"
                   allowClear
+                  onCreateOption={async (label) => {
+                    const code = label.toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 20);
+                    const g = await hrEmployeeGroupsApi.create({ name: label, name_ar: '', code, description: '', is_active: true });
+                    queryClient.invalidateQueries({ queryKey: ['hr-employee-groups-all'] });
+                    return { value: g.id, label: `${g.name} (${g.code})` };
+                  }}
                 />
               </div>
               <div className="form-field">

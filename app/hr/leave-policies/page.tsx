@@ -190,6 +190,12 @@ function PolicyModal({
                 onChange={v => setForm(f => ({ ...f, employee_group: v === '__catchall__' ? null : v as number }))}
                 placeholder="Any group (catch-all)"
                 allowClear={false}
+                onCreateOption={async (label) => {
+                  const code = label.toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 20);
+                  const g = await hrEmployeeGroupsApi.create({ name: label, name_ar: '', code, description: '', is_active: true });
+                  queryClient.invalidateQueries({ queryKey: ['hr-employee-groups'] });
+                  return { value: g.id, label: `${g.name} (${g.code})` };
+                }}
               />
               <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
                 {'"'}Any group{'"'} is the catch-all fallback used when no group-specific policy matches.

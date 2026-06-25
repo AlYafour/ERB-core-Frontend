@@ -463,6 +463,12 @@ function RuleBuilder({
                 onChange={v => setField({ employee_group: v === '__catchall__' ? null : v as number })}
                 allowClear={false}
                 placeholder="Any group (catch-all)"
+                onCreateOption={async (label) => {
+                  const code = label.toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 20);
+                  const g = await hrEmployeeGroupsApi.create({ name: label, name_ar: '', code, description: '', is_active: true });
+                  qc.invalidateQueries({ queryKey: ['employee-groups'] });
+                  return { value: g.id, label: `${g.name} (${g.code})` };
+                }}
               />
             </div>
             <div>

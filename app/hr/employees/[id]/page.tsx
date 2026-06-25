@@ -924,6 +924,12 @@ export default function EmployeeDetailPage() {
                 onChange={(v) => setForm((p) => ({ ...p, employee_group: v ? String(v) : '' }))}
                 placeholder="— None —"
                 allowClear
+                onCreateOption={async (label) => {
+                  const code = label.toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 20);
+                  const g = await hrEmployeeGroupsApi.create({ name: label, name_ar: '', code, description: '', is_active: true });
+                  queryClient.invalidateQueries({ queryKey: ['hr-employee-groups-all'] });
+                  return { value: g.id, label: g.name + (g.name_ar ? ` — ${g.name_ar}` : '') };
+                }}
               />
             </div>
             <div className={fld}><label className={lbl}>Salary Display Name</label><input className={inp} value={form.salary_display_name} onChange={f('salary_display_name')} /></div>
