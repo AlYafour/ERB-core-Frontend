@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
-import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi, hrLocationsApi } from '@/lib/api/hr';
+import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi, hrEmployeeGroupsApi } from '@/lib/api/hr';
 import { usersApi } from '@/lib/api/users';
 import { toast } from '@/lib/hooks/use-toast';
 import { Button, PageHeader, PageShell } from '@/components/ui';
@@ -42,7 +42,7 @@ function NewEmployeeForm() {
     join_date: new Date().toISOString().split('T')[0],
     probation_end_date: '', end_date: '',
     department: '', position: '',
-    work_location: '', salary_display_name: '',
+    employee_group: '', salary_display_name: '',
     basic_salary: '0', housing_allowance: '0',
     transport_allowance: '0', other_allowances: '0',
   });
@@ -70,7 +70,7 @@ function NewEmployeeForm() {
 
   const { data: depts }     = useQuery({ queryKey: ['hr-depts'],     queryFn: () => hrDepartmentsApi.getAll({ page: 1 }), staleTime: 300_000 });
   const { data: positions } = useQuery({ queryKey: ['hr-positions'], queryFn: () => hrPositionsApi.getAll({ page: 1 }), staleTime: 300_000 });
-  const { data: locations } = useQuery({ queryKey: ['hr-locations-all'], queryFn: () => hrLocationsApi.getAll({ is_active: true, page_size: 100 }), staleTime: 300_000 });
+  const { data: groups } = useQuery({ queryKey: ['hr-employee-groups-all'], queryFn: () => hrEmployeeGroupsApi.getAll(), staleTime: 300_000 });
 
   const selectedPosition: HRPosition | undefined = positions?.results?.find(
     (pos: HRPosition) => String(pos.id) === String(employment.position)
@@ -94,7 +94,7 @@ function NewEmployeeForm() {
     end_date:             employment.end_date             || null,
     department:           employment.department           || null,
     position:             employment.position             || null,
-    work_location:        employment.work_location,
+    employee_group:       employment.employee_group || null,
     salary_display_name:  employment.salary_display_name,
     basic_salary:         employment.basic_salary,
     housing_allowance:    employment.housing_allowance,
@@ -248,11 +248,11 @@ function NewEmployeeForm() {
                 </select>
               </div>
               <div className="form-field">
-                <label className="form-label">Work Location</label>
-                <select className="form-select" value={employment.work_location} onChange={em('work_location')}>
+                <label className="form-label">Employee Group</label>
+                <select className="form-select" value={employment.employee_group} onChange={em('employee_group')}>
                   <option value="">— None —</option>
-                  {locations?.results?.map((l) => (
-                    <option key={l.id} value={l.name}>{l.name}</option>
+                  {groups?.results?.map((g) => (
+                    <option key={g.id} value={g.id}>{g.name}{g.name_ar ? ` — ${g.name_ar}` : ''}</option>
                   ))}
                 </select>
               </div>

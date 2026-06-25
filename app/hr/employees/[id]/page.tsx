@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
-import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi, hrLocationsApi } from '@/lib/api/hr';
+import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi, hrEmployeeGroupsApi } from '@/lib/api/hr';
 import { usersApi } from '@/lib/api/users';
 import HomeTab       from '@/components/users/HomeTab';
 import AttendanceTab from '@/components/users/AttendanceTab';
@@ -278,7 +278,7 @@ export default function EmployeeDetailPage() {
   const isSelf = !!emp && currentUser?.id === emp.user?.id;
   const { data: depts }     = useQuery({ queryKey: ['hr-departments-all'], queryFn: () => hrDepartmentsApi.getAll({ page: 1 }), staleTime: 300_000 });
   const { data: positions } = useQuery({ queryKey: ['hr-positions-all'],   queryFn: () => hrPositionsApi.getAll({ page: 1 }), staleTime: 300_000 });
-  const { data: locations } = useQuery({ queryKey: ['hr-locations-all'],   queryFn: () => hrLocationsApi.getAll({ is_active: true, page_size: 100 }), staleTime: 300_000 });
+  const { data: groups }    = useQuery({ queryKey: ['hr-employee-groups-all'], queryFn: () => hrEmployeeGroupsApi.getAll(), staleTime: 300_000 });
   const { data: summary }   = useQuery({
     queryKey: ['hr-emp-summary', id],
     queryFn:  () => hrEmployeesApi.getAttendanceSummary(Number(id)),
@@ -360,6 +360,7 @@ export default function EmployeeDetailPage() {
       position:             emp.position ?? '',
       manager:              emp.manager ?? '',
       work_location:        emp.work_location || '',
+      employee_group:       emp.employee_group ?? '',
       is_active:            emp.is_active,
       mobile_number:        emp.mobile_number || '',
       extension_number:     emp.extension_number || '',
@@ -616,7 +617,7 @@ export default function EmployeeDetailPage() {
                 <div className="info-grid">
                   <InfoRow label="Job Title"           value={emp.position_title} />
                   <InfoRow label="Department"          value={emp.department_name} />
-                  <InfoRow label="Work Location"       value={emp.work_location} />
+                  <InfoRow label="Employee Group"      value={emp.employee_group_name} />
                   <InfoRow label="Work Type"           value={empTypeLabel[emp.employment_type] || emp.employment_type} />
                   <InfoRow label="Direct Manager"      value={emp.manager_detail?.full_name} />
                   <InfoRow label="Hiring Date"         value={fmtDate(emp.join_date)} />
@@ -893,11 +894,11 @@ export default function EmployeeDetailPage() {
               </select>
             </div>
             <div className={fld}>
-              <label className={lbl}>Work Location</label>
-              <select className={sel} value={form.work_location} onChange={f('work_location')}>
+              <label className={lbl}>Employee Group</label>
+              <select className={sel} value={form.employee_group} onChange={f('employee_group')}>
                 <option value="">— None —</option>
-                {locations?.results?.map((l) => (
-                  <option key={l.id} value={l.name}>{l.name}</option>
+                {groups?.results?.map((g) => (
+                  <option key={g.id} value={g.id}>{g.name}{g.name_ar ? ` — ${g.name_ar}` : ''}</option>
                 ))}
               </select>
             </div>
