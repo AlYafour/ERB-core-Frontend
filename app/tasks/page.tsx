@@ -52,7 +52,7 @@ export default function TasksPage() {
     queryFn:  () => myTasksApi.getAll().then(r => r.filter(t => !t.is_done).length),
   });
 
-  const effectiveScope = (filters.scope as string) || (isAdmin ? 'all' : 'mine');
+  const effectiveScope = (filters.scope as string) || (isPrivileged ? 'all' : 'mine');
 
   const { data: raw, isLoading, error } = useQuery({
     queryKey: ['tasks', page, search, filters],
@@ -200,7 +200,7 @@ export default function TasksPage() {
         </div>
       ) : <span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Unassigned</span>,
     },
-    ...(isAdmin ? [{
+    ...(isPrivileged ? [{
       key: 'created_by' as keyof TaskListItem,
       header: 'Created By',
       render: (t: TaskListItem) => t.created_by_detail ? (

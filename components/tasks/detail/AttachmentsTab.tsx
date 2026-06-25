@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { TaskDetail } from '@/types';
 import { fmtFileSize } from '../shared/constants';
 import { toast } from '@/lib/hooks/use-toast';
+import { useAuthStore } from '@/lib/store/auth-store';
 
 const MAX_MB = 25;
 
@@ -34,7 +35,10 @@ interface PreviewItem {
 function FilePreviewModal({ item, onClose }: { item: PreviewItem; onClose: () => void }) {
   const handleDownload = async () => {
     try {
-      const resp = await fetch(item.url);
+      const token = useAuthStore.getState().accessToken;
+      const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+      const resp = await fetch(item.url, { headers });
+      if (!resp.ok) { window.open(item.url, '_blank'); return; }
       const blob = await resp.blob();
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -113,15 +117,21 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
     const type = isImage(fileName) ? 'image' : isPdf(fileName) ? 'pdf' : 'other';
 
     if (type === 'pdf') {
-      // Cloudinary blocks iframe embedding via X-Frame-Options — fetch as blob first
       setLoading(fileName);
       try {
-        const resp = await fetch(fileUrl);
+        const token = useAuthStore.getState().accessToken;
+        const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+        const resp = await fetch(fileUrl, { headers });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const contentType = resp.headers.get('content-type') ?? '';
+        const isPdfContent = contentType.includes('pdf') || contentType.includes('octet-stream') || contentType === 'application/pdf';
+        if (!isPdfContent) throw new Error('not-pdf');
         const blob = await resp.blob();
         const url = URL.createObjectURL(blob);
         setBlobUrl(url);
         setPreview({ url, name: fileName, type: 'pdf' });
       } catch {
+        // Can't preview inline — open directly in new tab
         window.open(fileUrl, '_blank');
       } finally {
         setLoading(null);
@@ -143,7 +153,10 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
 
   async function downloadFile(fileUrl: string, fileName: string) {
     try {
-      const resp = await fetch(fileUrl);
+      const token = useAuthStore.getState().accessToken;
+      const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+      const resp = await fetch(fileUrl, { headers });
+      if (!resp.ok) { window.open(fileUrl, '_blank'); return; }
       const blob = await resp.blob();
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
