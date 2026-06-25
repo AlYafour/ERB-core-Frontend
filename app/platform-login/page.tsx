@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { authApi } from '@/lib/api/auth';
@@ -14,6 +15,7 @@ import { getApiError } from '@/lib/utils/error';
 const C = XERB.colors;
 
 export default function PlatformLoginPage() {
+  const router = useRouter();
   const [username, setUsername]       = useState('');
   const [password, setPassword]       = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -24,9 +26,9 @@ export default function PlatformLoginPage() {
   // A stale non-admin Zustand state must NOT redirect away from this page.
   useEffect(() => {
     if (isAuthenticated && isPlatformAdmin) {
-      window.location.replace('/super-admin');
+      router.replace('/super-admin');
     }
-  }, [isAuthenticated, isPlatformAdmin]);
+  }, [isAuthenticated, isPlatformAdmin, router]);
 
   const { mutate: login, isPending: isLoggingIn } = useMutation({
     mutationFn: ({ username, password }: { username: string; password: string }) =>
@@ -41,7 +43,7 @@ export default function PlatformLoginPage() {
         return;
       }
       setAuth(data.user, data.tokens.access, data.tokens.refresh);
-      window.location.replace('/super-admin');
+      router.replace('/super-admin');
     },
     onError: (err: unknown) => {
       setError(getApiError(err, 'Invalid username or password.'));

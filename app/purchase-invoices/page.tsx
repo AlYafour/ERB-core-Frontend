@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -52,11 +52,11 @@ export default function PurchaseInvoicesPage() {
   });
 
   const invAll = (extra?: object) => purchaseInvoicesApi.getAll({ page: 1, page_size: 1, ...extra } as any);
-  const { data: kpiTotal }    = useQuery({ queryKey: ['inv-kpi', 'total'],    queryFn: () => invAll(),                      staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
-  const { data: kpiPending }  = useQuery({ queryKey: ['inv-kpi', 'pending'],  queryFn: () => invAll({ status: 'pending' }),  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
-  const { data: kpiApproved } = useQuery({ queryKey: ['inv-kpi', 'approved'], queryFn: () => invAll({ status: 'approved' }), staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
-  const { data: kpiPaid }     = useQuery({ queryKey: ['inv-kpi', 'paid'],     queryFn: () => invAll({ status: 'paid' }),     staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
-  const { data: kpiRejected } = useQuery({ queryKey: ['inv-kpi', 'rejected'], queryFn: () => invAll({ status: 'rejected' }), staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiTotal }    = useQuery({ queryKey: ['inv-kpi', 'total'],    queryFn: () => invAll(),                      staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
+  const { data: kpiPending }  = useQuery({ queryKey: ['inv-kpi', 'pending'],  queryFn: () => invAll({ status: 'pending' }),  staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
+  const { data: kpiApproved } = useQuery({ queryKey: ['inv-kpi', 'approved'], queryFn: () => invAll({ status: 'approved' }), staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
+  const { data: kpiPaid }     = useQuery({ queryKey: ['inv-kpi', 'paid'],     queryFn: () => invAll({ status: 'paid' }),     staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
+  const { data: kpiRejected } = useQuery({ queryKey: ['inv-kpi', 'rejected'], queryFn: () => invAll({ status: 'rejected' }), staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
 
   const deleteMutation = useMutation({
     mutationFn: purchaseInvoicesApi.delete,
@@ -79,7 +79,7 @@ export default function PurchaseInvoicesPage() {
     { key: 'number', header: t('col', 'invoiceNumber'), render: i => <span className="font-medium">{i.invoice_number}</span> },
     { key: 'po',     header: t('col', 'relatedPO'),     render: i => <span>{typeof i.purchase_order === 'object' ? (i.purchase_order as any)?.order_number : 'N/A'}</span> },
     { key: 'date',   header: t('col', 'invoiceDate'),   render: i => <span style={{ color: 'var(--text-secondary)' }}>{fmtDate(i.invoice_date)}</span> },
-    { key: 'due',    header: t('col', 'deliveryDate'),  render: i => <span style={{ color: 'var(--text-secondary)' }}>{i.due_date ? fmtDate(i.due_date) : '—'}</span> },
+    { key: 'due',    header: t('col', 'deliveryDate'),  render: i => <span style={{ color: 'var(--text-secondary)' }}>{i.due_date ? fmtDate(i.due_date) : 'â€”'}</span> },
     { key: 'status', header: t('col', 'status'),        render: i => <Badge variant={INVOICE_STATUS[i.status] ?? 'info'}>{INVOICE_LABEL[i.status] || i.status}</Badge> },
     { key: 'total',  header: t('col', 'total'),         render: i => <span className="font-semibold">{formatPrice(Number(i.total || 0))}</span> },
     { key: 'paid',   header: t('misc', 'paidAmount'),   render: i => <span>{formatPrice(Number(i.paid_amount || 0))}</span> },
@@ -112,7 +112,7 @@ export default function PurchaseInvoicesPage() {
         { value: 'rejected',  label: 'Rejected',  count: kpiRejected, loading: kpiRejected === undefined },
         { value: 'cancelled', label: 'Cancelled' },
       ]}
-      searchPlaceholder="Search invoices…"
+      searchPlaceholder="Search invoicesâ€¦"
       filterFields={filterFields}
       advFilterTitle="Invoice Filters"
       advFilterDesc="Filter by invoice number, dates, or payment status."

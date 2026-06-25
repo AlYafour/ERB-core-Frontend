@@ -92,21 +92,22 @@ function NewGRNPageContent() {
         router.push(`/purchase-orders/${formData.purchase_order_id}`);
       }
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const errorMessage = formatBackendError(error);
       toast(errorMessage, 'error');
-      
+
       // Set field-specific errors
-      if (error?.response?.data) {
+      const errObj = error as { response?: { data?: Record<string, unknown> } };
+      if (errObj?.response?.data) {
         const backendErrors: Record<string, string> = {};
-        Object.entries(error.response.data).forEach(([key, value]) => {
+        Object.entries(errObj.response.data).forEach(([key, value]) => {
           if (Array.isArray(value)) {
             backendErrors[key] = value[0] || 'Error';
           } else if (typeof value === 'string') {
             backendErrors[key] = value;
           } else if (typeof value === 'object' && value !== null) {
-            Object.entries(value as Record<string, any>).forEach(([nestedKey, nestedValue]) => {
-              backendErrors[`${key}.${nestedKey}`] = Array.isArray(nestedValue) ? nestedValue[0] : nestedValue;
+            Object.entries(value as Record<string, unknown>).forEach(([nestedKey, nestedValue]) => {
+              backendErrors[`${key}.${nestedKey}`] = Array.isArray(nestedValue) ? nestedValue[0] : String(nestedValue);
             });
           }
         });

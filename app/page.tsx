@@ -425,7 +425,7 @@ export default function LandingPage() {
             Ready to get started?
           </h2>
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.65)', marginBottom: 36, maxWidth: 480, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.65 }}>
-            Your company code is all you need. Log in and see your team's operations in one place.
+            Your company code is all you need. Log in and see your team&apos;s operations in one place.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button onClick={goToLogin} style={{ padding: '12px 28px', borderRadius: 10, background: '#fff', color: C.primaryDark, fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer', transition: 'opacity 140ms' }}

@@ -375,9 +375,10 @@ function RuleBuilder({
       await qc.invalidateQueries({ queryKey: ['penalty-rules'] });
       toast(editing ? 'Rule updated' : 'Rule created', 'success');
       onClose();
-    } catch (err: any) {
-      const msg = err?.response?.data
-        ? Object.values(err.response.data).flat().join(' ')
+    } catch (err: unknown) {
+      const errData = (err as { response?: { data?: Record<string, unknown> } })?.response?.data;
+      const msg = errData
+        ? Object.values(errData).flat().join(' ')
         : 'Save failed';
       toast(msg, 'error');
     } finally {
@@ -553,7 +554,7 @@ function RuleBuilder({
               + Add Tier
             </button>
             <p style={{ margin: '6px 0 0', fontSize: 11, color: 'var(--text-tertiary)' }}>
-              "From" is inclusive; "To" is exclusive. Leave "To" blank for the last tier (catches all higher values). Grace minutes are subtracted before tier matching.
+              &quot;From&quot; is inclusive; &quot;To&quot; is exclusive. Leave &quot;To&quot; blank for the last tier (catches all higher values). Grace minutes are subtracted before tier matching.
             </p>
           </div>
         </div>

@@ -6,6 +6,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { rolesApi, Role } from '@/lib/api/roles';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { Button, Checkbox, Loader, PageShell, PageHeader, Drawer } from '@/components/ui';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -108,9 +109,8 @@ export default function RolesPage() {
       setDrawerOpen(false);
       setSelectedRoleId(created.id);
     },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.name?.[0] ?? err?.response?.data?.detail ?? 'Failed to create role';
-      toast(msg, 'error');
+    onError: (err: unknown) => {
+      toast(getApiError(err, 'Failed to create role'), 'error');
     },
   });
 
@@ -123,9 +123,8 @@ export default function RolesPage() {
       toast('Role updated', 'success');
       setDrawerOpen(false);
     },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.name?.[0] ?? err?.response?.data?.detail ?? 'Failed to update role';
-      toast(msg, 'error');
+    onError: (err: unknown) => {
+      toast(getApiError(err, 'Failed to update role'), 'error');
     },
   });
 
@@ -135,8 +134,8 @@ export default function RolesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['role', selectedRoleId] });
     },
-    onError: (err: any) => {
-      toast(err?.response?.data?.detail ?? 'Failed to save permissions', 'error');
+    onError: (err: unknown) => {
+      toast(getApiError(err, 'Failed to save permissions'), 'error');
     },
   });
 
@@ -148,8 +147,8 @@ export default function RolesPage() {
       setDrawerOpen(false);
       setSelectedRoleId(null);
     },
-    onError: (err: any) => {
-      toast(err?.response?.data?.detail ?? 'Failed to delete role', 'error');
+    onError: (err: unknown) => {
+      toast(getApiError(err, 'Failed to delete role'), 'error');
     },
   });
 

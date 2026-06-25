@@ -240,7 +240,7 @@ export default function CompanySettingsPage() {
                 }}
               />
               <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 6 }}>
-                Tip: start each condition with a number e.g. "1- " for auto-formatting in print.
+                Tip: start each condition with a number e.g. {'"'}1-{'"'} for auto-formatting in print.
               </p>
               {isDirty && (
                 <div style={{ marginTop: 14, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>

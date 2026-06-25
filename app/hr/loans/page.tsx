@@ -134,11 +134,12 @@ function NewLoanModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose
       start_month:        form.start_month,
       start_year:         form.start_year,
       notes:              form.notes,
-    } as any),
+    } as Partial<EmployeeLoan>),
     onSuccess: () => { toast('Loan created', 'success'); onSuccess(); onClose(); },
-    onError: (err: any) => {
-      const data = err?.response?.data;
-      const msg = data?.detail ?? data?.non_field_errors?.[0]
+    onError: (err: unknown) => {
+      const data = (err as { response?: { data?: Record<string, unknown> } })?.response?.data;
+      const msg = (data?.detail as string | undefined)
+        ?? (data?.non_field_errors as string[] | undefined)?.[0]
         ?? (data && typeof data === 'object' ? Object.values(data).flat().join(' ') : null)
         ?? 'Failed to create loan';
       toast(String(msg), 'error');

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -54,11 +54,11 @@ export default function PurchaseQuotationsPage() {
   });
 
   const pqAll = (extra?: object) => purchaseQuotationsApi.getAll({ page: 1, page_size: 1, ...extra } as any);
-  const { data: kpiTotal }    = useQuery({ queryKey: ['pq-kpi', 'total'],    queryFn: () => pqAll(),                      staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
-  const { data: kpiPending }  = useQuery({ queryKey: ['pq-kpi', 'pending'],  queryFn: () => pqAll({ status: 'pending' }),  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
-  const { data: kpiAwarded }  = useQuery({ queryKey: ['pq-kpi', 'awarded'],  queryFn: () => pqAll({ status: 'awarded' }),  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
-  const { data: kpiRejected } = useQuery({ queryKey: ['pq-kpi', 'rejected'], queryFn: () => pqAll({ status: 'rejected' }), staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
-  const { data: kpiExpired }  = useQuery({ queryKey: ['pq-kpi', 'expired'],  queryFn: () => pqAll({ status: 'expired' }),  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiTotal }    = useQuery({ queryKey: ['pq-kpi', 'total'],    queryFn: () => pqAll(),                      staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
+  const { data: kpiPending }  = useQuery({ queryKey: ['pq-kpi', 'pending'],  queryFn: () => pqAll({ status: 'pending' }),  staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
+  const { data: kpiAwarded }  = useQuery({ queryKey: ['pq-kpi', 'awarded'],  queryFn: () => pqAll({ status: 'awarded' }),  staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
+  const { data: kpiRejected } = useQuery({ queryKey: ['pq-kpi', 'rejected'], queryFn: () => pqAll({ status: 'rejected' }), staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
+  const { data: kpiExpired }  = useQuery({ queryKey: ['pq-kpi', 'expired'],  queryFn: () => pqAll({ status: 'expired' }),  staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
 
   const invalidatePQ = () => {
     queryClient.invalidateQueries({ queryKey: ['purchase-quotations'] });
@@ -92,7 +92,7 @@ export default function PurchaseQuotationsPage() {
         const prId = q.purchase_request_id ?? resolveId(q.purchase_request as any);
         return q.purchase_request_code && prId
           ? <Link href={`/purchase-requests/${prId}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>{q.purchase_request_code}</Link>
-          : <span style={{ color: 'var(--text-secondary)' }}>—</span>;
+          : <span style={{ color: 'var(--text-secondary)' }}>â€”</span>;
       },
     },
     {
@@ -101,21 +101,21 @@ export default function PurchaseQuotationsPage() {
         const qrId = q.quotation_request_id ?? resolveId(q.quotation_request as any);
         return q.quotation_request_code && qrId
           ? <Link href={`/quotation-requests/${qrId}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>{q.quotation_request_code}</Link>
-          : <span style={{ color: 'var(--text-secondary)' }}>—</span>;
+          : <span style={{ color: 'var(--text-secondary)' }}>â€”</span>;
       },
     },
     {
       key: 'project', header: 'Project',
       render: q => q.project_name
         ? <div><div style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{q.project_name}</div>{q.project_code && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{q.project_code}</div>}</div>
-        : <span style={{ color: 'var(--text-secondary)' }}>—</span>,
+        : <span style={{ color: 'var(--text-secondary)' }}>â€”</span>,
     },
     {
       key: 'supplier', header: t('col', 'supplier'),
       render: q => <span style={{ color: 'var(--text-primary)' }}>{typeof q.supplier === 'object' && q.supplier ? (q.supplier as any).business_name || (q.supplier as any).name || 'N/A' : 'N/A'}</span>,
     },
     { key: 'date',     header: t('col', 'requestDate'),   render: q => <span style={{ color: 'var(--text-secondary)' }}>{new Date(q.quotation_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span> },
-    { key: 'delivery', header: t('col', 'deliveryMethod'), render: q => <span>{q.delivery_method ? (q.delivery_method === 'pickup' ? 'Pick Up' : 'Delivery') : '—'}</span> },
+    { key: 'delivery', header: t('col', 'deliveryMethod'), render: q => <span>{q.delivery_method ? (q.delivery_method === 'pickup' ? 'Pick Up' : 'Delivery') : 'â€”'}</span> },
     { key: 'total',    header: t('col', 'totalAmount'),    render: q => <span style={{ fontWeight: 'var(--weight-medium)' }}>{formatPrice(q.total || 0)}</span> },
     {
       key: 'actions', header: '',
@@ -142,7 +142,7 @@ export default function PurchaseQuotationsPage() {
         { value: 'rejected', label: 'Rejected', count: kpiRejected, loading: kpiRejected === undefined },
         { value: 'expired',  label: 'Expired',  count: kpiExpired,  loading: kpiExpired === undefined },
       ]}
-      searchPlaceholder="Search quotations…"
+      searchPlaceholder="Search quotationsâ€¦"
       filterFields={filterFields}
       advFilterTitle="Purchase Quotation Filters"
       advFilterDesc="Narrow by quotation number or date range."

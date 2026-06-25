@@ -48,25 +48,25 @@ export default function PurchaseOrderDetailPage() {
   const approveMutation = useMutation({
     mutationFn: () => purchaseOrdersApi.approve(id),
     onSuccess: () => { invalidate(); toast('Purchase Order approved!', 'success'); },
-    onError: (err: any) => toast(getApiError(err, 'Failed to approve'), 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to approve'), 'error'),
   });
 
   const rejectMutation = useMutation({
     mutationFn: (reason: string) => purchaseOrdersApi.reject(id, reason),
     onSuccess: () => { invalidate(); setRejectDialogOpen(false); toast('Purchase Order rejected', 'info'); },
-    onError: (err: any) => toast(getApiError(err, 'Failed to reject'), 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to reject'), 'error'),
   });
 
   const cancelMutation = useMutation({
     mutationFn: (reason: string) => purchaseOrdersApi.cancel(id, reason),
     onSuccess: () => { invalidate(); setCancelDialogOpen(false); toast('Purchase Order cancelled', 'info'); },
-    onError: (err: any) => toast(getApiError(err, 'Failed to cancel'), 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to cancel'), 'error'),
   });
 
   const requestAmendmentMutation = useMutation({
     mutationFn: (reason: string) => purchaseOrdersApi.requestAmendment(id, reason),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['purchase-orders'] }); setAmendmentDialogOpen(false); toast('Amendment request submitted.', 'success'); },
-    onError: (err: any) => toast(getApiError(err, 'Failed to submit amendment'), 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to submit amendment'), 'error'),
   });
 
   const approveAmendmentMutation = useMutation({
@@ -76,13 +76,13 @@ export default function PurchaseOrderDetailPage() {
       toast('Amendment approved. Revision draft created.', 'success');
       router.push(`/purchase-orders/${data.revision_po.id}`);
     },
-    onError: (err: any) => toast(getApiError(err, 'Failed to approve amendment'), 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to approve amendment'), 'error'),
   });
 
   const rejectAmendmentMutation = useMutation({
     mutationFn: (notes: string) => purchaseOrdersApi.rejectAmendment(id, notes),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['purchase-orders'] }); setRejectAmendmentOpen(false); toast('Amendment request rejected.', 'info'); },
-    onError: (err: any) => toast(getApiError(err, 'Failed to reject amendment'), 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to reject amendment'), 'error'),
   });
 
   if (isLoading) return <DocLoadState type="loading" />;

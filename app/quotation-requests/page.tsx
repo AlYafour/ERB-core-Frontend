@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -47,7 +47,7 @@ export default function QuotationRequestsPage() {
     queryKey: ['qr-kpi', 'total'],
     queryFn:  () => quotationRequestsApi.getAll({ page: 1, page_size: 1 }),
     staleTime: 5 * 60 * 1000,
-    select: (d: any) => d.count ?? 0,
+    select: (d: { count?: number }) => d.count ?? 0,
   });
 
   const deleteMutation = useMutation({
@@ -80,7 +80,7 @@ export default function QuotationRequestsPage() {
       key: 'project', header: 'Project',
       render: r => r.project_name
         ? <div><div className="font-medium">{r.project_name}</div>{r.project_code && <div className="font-mono" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{r.project_code}</div>}</div>
-        : <span style={{ color: 'var(--text-secondary)' }}>—</span>,
+        : <span style={{ color: 'var(--text-secondary)' }}>â€”</span>,
     },
     {
       key: 'supplier', header: t('col', 'supplier'),
@@ -106,7 +106,7 @@ export default function QuotationRequestsPage() {
       totalCount={totalCount}
       createAction={canCreate ? <Link href="/quotation-requests/new"><Button variant="primary">New Request</Button></Link> : undefined}
       statusItems={[{ value: '', label: 'All RFQs', count: kpiTotal, loading: kpiTotal === undefined }]}
-      searchPlaceholder="Search by code, title…"
+      searchPlaceholder="Search by code, titleâ€¦"
       filterFields={filterFields}
       advFilterTitle="Quotation Request Filters"
       advFilterDesc="Filter by creation date range."

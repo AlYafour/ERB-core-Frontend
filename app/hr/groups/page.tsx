@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { hrEmployeeGroupsApi, hrShiftsApi, hrEmployeesApi } from '@/lib/api/hr';
@@ -187,7 +188,7 @@ function ManagerPicker({
                       {inactive && <span style={{ color: '#9ca3af' }}>· inactive</span>}
                       {!hasUser && !inactive && (
                         <span style={{ color: '#f59e0b', fontWeight: 'var(--weight-medium)' }}>
-                          · won't route approvals
+                          · won&apos;t route approvals
                         </span>
                       )}
                     </span>
@@ -358,7 +359,7 @@ function GroupModal({
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
               Approval fallback when an employee has no direct manager.{' '}
               <span style={{ color: '#10b981', fontWeight: 'var(--weight-semibold)' }}>●</span> Has login · routes approvals.{' '}
-              <span style={{ color: '#f59e0b', fontWeight: 'var(--weight-semibold)' }}>●</span> No account · approvals won't deliver.
+              <span style={{ color: '#f59e0b', fontWeight: 'var(--weight-semibold)' }}>●</span> No account · approvals won&apos;t deliver.
             </p>
           </div>
 
@@ -448,13 +449,13 @@ export default function EmployeeGroupsPage() {
   const createMutation = useMutation({
     mutationFn: (data: FormState) => hrEmployeeGroupsApi.create(data),
     onSuccess: () => { invalidate(); setModalGroup(null); toast('Group created', 'success'); },
-    onError: (err: any) => toast(err?.response?.data?.code?.[0] ?? 'Failed to create group', 'error'),
+    onError: (err: unknown) => toast((err as { response?: { data?: { code?: string[] } } })?.response?.data?.code?.[0] ?? 'Failed to create group', 'error'),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: FormState }) => hrEmployeeGroupsApi.update(id, data),
     onSuccess: () => { invalidate(); setModalGroup(null); toast('Group updated', 'success'); },
-    onError: (err: any) => toast(err?.response?.data?.code?.[0] ?? 'Failed to update group', 'error'),
+    onError: (err: unknown) => toast((err as { response?: { data?: { code?: string[] } } })?.response?.data?.code?.[0] ?? 'Failed to update group', 'error'),
   });
 
   const deleteMutation = useMutation({
@@ -716,7 +717,7 @@ export default function EmployeeGroupsPage() {
           <div style={{ padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)' }}>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
               <strong>G4 active.</strong> Set a default manager per group — used as approval fallback when employees have no direct manager assigned. Default shift (G3) is also live. Assign employees to groups from the{' '}
-              <a href="/hr/employees" style={{ color: 'var(--sidebar-active-text)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>Employees page</a>.
+              <Link href="/hr/employees" style={{ color: 'var(--sidebar-active-text)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>Employees page</Link>.
             </p>
           </div>
         )}

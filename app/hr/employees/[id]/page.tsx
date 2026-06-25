@@ -15,7 +15,7 @@ import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import { Button, Badge, PageShell, PageHeader, Drawer, Loader } from '@/components/ui';
 import { rolesApi, Role, UserRoles, AdditionalRoleAssignment } from '@/lib/api/roles';
-import { HREmployee } from '@/types';
+import { HREmployee, User } from '@/types';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -113,7 +113,7 @@ function RolesTab({ empUserId, isAdmin }: { empUserId?: number; isAdmin: boolean
       queryClient.invalidateQueries({ queryKey: ['user-roles', empUserId] });
       toast('Role assigned', 'success');
     },
-    onError: (err: any) => toast(err?.response?.data?.detail ?? 'Failed to assign role', 'error'),
+    onError: (err: unknown) => toast((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Failed to assign role', 'error'),
   });
 
   const unassignMutation = useMutation({
@@ -123,7 +123,7 @@ function RolesTab({ empUserId, isAdmin }: { empUserId?: number; isAdmin: boolean
       queryClient.invalidateQueries({ queryKey: ['user-roles', empUserId] });
       toast('Role removed', 'success');
     },
-    onError: (err: any) => toast(err?.response?.data?.detail ?? 'Failed to remove role', 'error'),
+    onError: (err: unknown) => toast((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Failed to remove role', 'error'),
   });
 
   if (!empUserId) return <p style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>No linked user account.</p>;
@@ -260,7 +260,7 @@ export default function EmployeeDetailPage() {
 
   const [activeTab,     setActiveTab]     = useState('Profile');
   const [editSection,   setEditSection]   = useState<'personal' | 'professional' | 'contact' | 'legal' | 'salary' | 'account' | null>(null);
-  const [form,          setForm]          = useState<Record<string, any>>({});
+  const [form,          setForm]          = useState<Record<string, unknown>>({});
   const [avatarFile,    setAvatarFile]    = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [stampFile,     setStampFile]     = useState<File | null>(null);
@@ -294,7 +294,7 @@ export default function EmployeeDetailPage() {
 
   // ── Mutations ──────────────────────────────────────────────────────────────
   const updateMutation = useMutation({
-    mutationFn: (data: any) => hrEmployeesApi.update(Number(id), data),
+    mutationFn: (data: Partial<HREmployee>) => hrEmployeesApi.update(Number(id), data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hr-employee', id] });
       queryClient.invalidateQueries({ queryKey: ['hr-employees'] });
@@ -305,7 +305,7 @@ export default function EmployeeDetailPage() {
   });
 
   const userUpdateMutation = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: Partial<User & { password?: string; avatar?: File; stamp?: File }>) =>
       usersApi.update(emp!.user!.id, {
         ...data,
         ...(avatarFile ? { avatar: avatarFile } : {}),
@@ -391,19 +391,19 @@ export default function EmployeeDetailPage() {
         if (!form.password || form.password.length < 8) { toast('Password must be at least 8 characters', 'error'); return; }
         if (form.password !== form.password2) { toast('Passwords do not match', 'error'); return; }
       }
-      const accountData: any = {
+      const accountData: Record<string, unknown> = {
         username: form.username, email: form.email, phone: form.phone,
         first_name: form.first_name, last_name: form.last_name,
       };
       if (changePassword && form.password) accountData.password = form.password;
-      userUpdateMutation.mutate(accountData);
+      userUpdateMutation.mutate(accountData as Partial<User & { password?: string }>);
     } else {
       updateMutation.mutate({
         ...form,
         department: form.department || null,
         position:   form.position   || null,
         manager:    form.manager    || null,
-      });
+      } as Partial<HREmployee>);
     }
   };
 
@@ -558,7 +558,7 @@ export default function EmployeeDetailPage() {
                   <InfoRow label="Username"    value={emp.user?.username} />
                   <InfoRow label="Work Email"  value={emp.user?.email} />
                   <InfoRow label="Phone"       value={emp.user?.phone} />
-                  <InfoRow label="Role" value={(emp.user as any)?.permission_set?.name || '—'} />
+                  <InfoRow label="Role" value={(emp.user as { permission_set?: { name?: string } } | undefined)?.permission_set?.name || '—'} />
                   <InfoRow label="Status"      value={emp.is_active ? 'Active' : 'Inactive'} />
                 </div>
               </div>
@@ -881,14 +881,14 @@ export default function EmployeeDetailPage() {
               <label className={lbl}>Department</label>
               <select className={sel} value={form.department} onChange={f('department')}>
                 <option value="">— None —</option>
-                {depts?.results?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                {depts?.results?.map((d: { id: number; name: string }) => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
             </div>
             <div className={fld}>
               <label className={lbl}>Position</label>
               <select className={sel} value={form.position} onChange={f('position')}>
                 <option value="">— None —</option>
-                {positions?.results?.map((p: any) => <option key={p.id} value={p.id}>{p.title}</option>)}
+                {positions?.results?.map((p: { id: number; title: string }) => <option key={p.id} value={p.id}>{p.title}</option>)}
               </select>
             </div>
             <div className={fld}><label className={lbl}>Work Location</label><input className={inp} value={form.work_location} onChange={f('work_location')} /></div>

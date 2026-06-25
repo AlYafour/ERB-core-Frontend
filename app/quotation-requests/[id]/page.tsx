@@ -13,6 +13,7 @@ import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
 import { StickyDocBar } from '@/components/procurement/shared/StickyDocBar';
 import { fmtDate, formatPrice } from '@/lib/utils/format';
 import { toast, confirm } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { PQ_STATUS } from '@/lib/utils/status-colors';
 
@@ -42,7 +43,7 @@ export default function QuotationRequestDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['purchase-quotations'] });
       toast('Quotation awarded.', 'success');
     },
-    onError: (err: any) => toast(err?.response?.data?.error || 'Award failed.', 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Award failed.'), 'error'),
   });
 
   const rejectMutation = useMutation({
@@ -51,7 +52,7 @@ export default function QuotationRequestDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['purchase-quotations'] });
       toast('Quotation rejected.', 'info');
     },
-    onError: (err: any) => toast(err?.response?.data?.error || 'Reject failed.', 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Reject failed.'), 'error'),
   });
 
   const handleAward = async (pqId: number, supplierName: string) => {

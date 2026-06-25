@@ -87,11 +87,11 @@ export default function PurchaseOrdersPage() {
   });
 
   const poAll = (extra?: object) => purchaseOrdersApi.getAll({ page: 1, page_size: 1, ...extra } as any);
-  const { data: kpiTotal }     = useQuery({ queryKey: ['po-kpi', 'total'],     queryFn: () => poAll(),                       staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
-  const { data: kpiPending }   = useQuery({ queryKey: ['po-kpi', 'pending'],   queryFn: () => poAll({ status: 'pending' }),   staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
-  const { data: kpiApproved }  = useQuery({ queryKey: ['po-kpi', 'approved'],  queryFn: () => poAll({ status: 'approved' }),  staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
-  const { data: kpiCompleted } = useQuery({ queryKey: ['po-kpi', 'completed'], queryFn: () => poAll({ status: 'completed' }), staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
-  const { data: kpiCancelled } = useQuery({ queryKey: ['po-kpi', 'cancelled'], queryFn: () => poAll({ status: 'cancelled' }), staleTime: 5 * 60 * 1000, select: (d: any) => d.count ?? 0 });
+  const { data: kpiTotal }     = useQuery({ queryKey: ['po-kpi', 'total'],     queryFn: () => poAll(),                       staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
+  const { data: kpiPending }   = useQuery({ queryKey: ['po-kpi', 'pending'],   queryFn: () => poAll({ status: 'pending' }),   staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
+  const { data: kpiApproved }  = useQuery({ queryKey: ['po-kpi', 'approved'],  queryFn: () => poAll({ status: 'approved' }),  staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
+  const { data: kpiCompleted } = useQuery({ queryKey: ['po-kpi', 'completed'], queryFn: () => poAll({ status: 'completed' }), staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
+  const { data: kpiCancelled } = useQuery({ queryKey: ['po-kpi', 'cancelled'], queryFn: () => poAll({ status: 'cancelled' }), staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => purchaseOrdersApi.delete(id),

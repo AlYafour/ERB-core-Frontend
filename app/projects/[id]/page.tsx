@@ -96,7 +96,7 @@ export default function EditProjectPage() {
       queryClient.invalidateQueries({ queryKey: ['projects', id] });
       router.push('/projects');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast(getApiError(error, 'Failed to update project'), 'error');
     },
   });

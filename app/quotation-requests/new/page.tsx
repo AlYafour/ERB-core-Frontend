@@ -82,7 +82,7 @@ function NewQuotationRequestPageContent() {
       toast('Quotation request created successfully!', 'success');
       router.push('/quotation-requests');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const errorMessage = formatBackendError(error);
       toast(errorMessage, 'error');
       

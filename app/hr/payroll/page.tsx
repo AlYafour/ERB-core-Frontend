@@ -69,8 +69,8 @@ export default function HRPayrollPage() {
       toast('Payroll auto-calculated from attendance', 'success');
       setShowAutoCalc(false);
     },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.detail ?? 'Auto-calculate failed';
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Auto-calculate failed';
       toast(String(msg), 'error');
     },
   });

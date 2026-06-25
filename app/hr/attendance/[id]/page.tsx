@@ -32,7 +32,7 @@ export default function AttendanceDetailPage() {
           title="Attendance Record"
           description={`${record.employee_name} — ${new Date(record.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`}
           breadcrumbs={[{ label: 'HR' }, { label: 'Attendance', href: '/hr/attendance' }, { label: record.employee_name }]}
-          actions={<Badge variant={(STATUS_VARIANT[record.status] as any) || 'default'}>{record.status.replace('_', ' ').toUpperCase()}</Badge>}
+          actions={<Badge variant={(STATUS_VARIANT[record.status] as string | undefined) || 'default'}>{record.status.replace('_', ' ').toUpperCase()}</Badge>}
         />
 
         <div className="card" style={{ maxWidth: '42rem', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>

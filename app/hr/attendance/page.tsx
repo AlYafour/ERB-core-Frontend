@@ -131,10 +131,10 @@ function AttendanceEditModal({
           <button
             type="button"
             onClick={() => onSave({
-              check_in:    buildDatetime(record.date, checkIn)    as any,
-              check_out:   buildDatetime(record.date, checkOut)   as any,
-              break_start: buildDatetime(record.date, breakStart) as any,
-              break_end:   buildDatetime(record.date, breakEnd)   as any,
+              check_in:    buildDatetime(record.date, checkIn)    as string | null,
+              check_out:   buildDatetime(record.date, checkOut)   as string | null,
+              break_start: buildDatetime(record.date, breakStart) as string | null,
+              break_end:   buildDatetime(record.date, breakEnd)   as string | null,
               status,
               notes,
             })}
@@ -241,7 +241,7 @@ export default function HRAttendancePage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `attendance-${(filters as any).date || todayStr}.csv`;
+    a.download = `attendance-${(filters as Record<string, string>).date || todayStr}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };

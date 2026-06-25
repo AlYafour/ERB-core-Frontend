@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { authApi } from '@/lib/api/auth';
@@ -12,6 +13,7 @@ import AuthParticles from '@/components/layout/AuthParticles';
 import { getApiError } from '@/lib/utils/error';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -25,8 +27,8 @@ export default function LoginPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (hydrated && isAuthenticated) window.location.replace('/dashboard');
-  }, [hydrated, isAuthenticated]);
+    if (hydrated && isAuthenticated) router.replace('/dashboard');
+  }, [hydrated, isAuthenticated, router]);
 
   const [error, setError] = useState('');
 
@@ -36,7 +38,7 @@ export default function LoginPage() {
     onSuccess: (data) => {
       setError('');
       setAuth(data.user, data.tokens.access, data.tokens.refresh);
-      window.location.replace('/dashboard');
+      router.replace('/dashboard');
     },
     onError: (err: unknown) => {
       setError(getApiError(err, 'Invalid username or password'));
@@ -124,7 +126,7 @@ export default function LoginPage() {
                 onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-primary)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
               >
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <span style={{ color: 'var(--color-primary)' }}>Sign up</span>
               </Link>
             </div>

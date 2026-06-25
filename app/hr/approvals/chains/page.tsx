@@ -121,7 +121,7 @@ function PersonPicker({
   );
 
   const hasAccount = (e: HREmployee) => !!e.user_id;
-  const isActive   = (e: HREmployee) => (e as any).is_active !== false;
+  const isActive   = (e: HREmployee) => e.is_active !== false;
 
   const dot = (e: HREmployee) => {
     if (!isActive(e)) return { bg: '#9ca3af', title: 'Inactive' };
@@ -287,7 +287,7 @@ function StageRowUI({
 
       {(stage.strategy === 'DIRECT_MANAGER' || stage.strategy === 'INDIRECT_MANAGER') && (
         <span style={{ flex: 1, fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', paddingLeft: 4 }}>
-          resolved from employee's org chart at submission
+          resolved from employee&apos;s org chart at submission
         </span>
       )}
 
@@ -484,11 +484,12 @@ function ChainBuilder({
       await qc.invalidateQueries({ queryKey: ['approval-chains'] });
       toast(editing ? 'Chain updated' : 'Chain created', 'success');
       onClose();
-    } catch (err: any) {
-      const msg = err?.response?.data
-        ? Object.values(err.response.data).flat().join(' ')
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: Record<string, unknown[]> } };
+      const msg = e?.response?.data
+        ? Object.values(e.response.data).flat().join(' ')
         : 'Save failed';
-      toast(msg, 'error');
+      toast(msg as string, 'error');
     } finally {
       setSaving(false);
     }

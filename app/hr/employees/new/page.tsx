@@ -82,7 +82,7 @@ function NewEmployeeForm() {
     parseFloat(employment.other_allowances || '0');
 
   const createUserMutation = useMutation({ mutationFn: usersApi.create });
-  const createEmpMutation  = useMutation({ mutationFn: (data: any) => hrEmployeesApi.create(data) });
+  const createEmpMutation  = useMutation({ mutationFn: (data: Partial<import('@/types').HREmployee>) => hrEmployeesApi.create(data) });
   const isSubmitting = createUserMutation.isPending || createEmpMutation.isPending;
 
   const buildEmpPayload = (userId: number) => ({
@@ -131,22 +131,23 @@ function NewEmployeeForm() {
           password:    account.password,
           role:        account.role,
           is_active:   account.is_active,
-        } as any);
+        });
         await createEmpMutation.mutateAsync(buildEmpPayload(user.id));
       }
       toast('Employee created successfully', 'success');
       router.push('/hr/employees');
-    } catch (err: any) {
-      const msg = err?.response?.data
-        ? Object.values(err.response.data).flat().join(' — ')
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: Record<string, unknown[]> } };
+      const msg = e?.response?.data
+        ? Object.values(e.response.data).flat().join(' — ')
         : 'Failed to create employee';
       toast(msg as string, 'error');
     }
   };
 
-  const p  = (k: string) => (e: React.ChangeEvent<any>) => setPersonal(prev => ({ ...prev, [k]: e.target.value }));
-  const em = (k: string) => (e: React.ChangeEvent<any>) => setEmployment(prev => ({ ...prev, [k]: e.target.value }));
-  const ac = (k: string) => (e: React.ChangeEvent<any>) => setAccount(prev => ({ ...prev, [k]: e.target.value }));
+  const p  = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setPersonal(prev => ({ ...prev, [k]: e.target.value }));
+  const em = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setEmployment(prev => ({ ...prev, [k]: e.target.value }));
+  const ac = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setAccount(prev => ({ ...prev, [k]: e.target.value }));
 
   const isLastStep = step === STEPS.length - 1;
 
@@ -249,7 +250,7 @@ function NewEmployeeForm() {
               <div className="form-field"><label className="form-label">Department</label>
                 <select className="form-select" value={employment.department} onChange={em('department')}>
                   <option value="">— None —</option>
-                  {depts?.results?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  {depts?.results?.map((d: { id: number; name: string }) => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
               </div>
               <div className="form-field"><label className="form-label">Position</label>
@@ -267,7 +268,7 @@ function NewEmployeeForm() {
                       Access auto-assigned from position
                     </p>
                     <p style={{ fontSize: 'var(--text-xs)', color: 'var(--sidebar-active-text)', opacity: 0.8, margin: 0 }}>
-                      "{selectedPosition.title}" → <strong>{selectedPosition.permission_set_name}</strong>
+                      {'"'}{selectedPosition.title}{'"'} → <strong>{selectedPosition.permission_set_name}</strong>
                     </p>
                   </div>
                 </div>
@@ -283,7 +284,7 @@ function NewEmployeeForm() {
               <div className="form-grid">
                 {[['basic_salary','Basic Salary'],['housing_allowance','Housing'],['transport_allowance','Transport'],['other_allowances','Other']].map(([k, l]) => (
                   <div key={k} className="form-field"><label className="form-label">{l}</label>
-                    <input className="form-input" type="number" min="0" value={(employment as any)[k]} onChange={em(k)} />
+                    <input className="form-input" type="number" min="0" value={(employment as Record<string, string>)[k]} onChange={em(k)} />
                   </div>
                 ))}
               </div>

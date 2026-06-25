@@ -133,7 +133,7 @@ export default function EmployeesPage() {
 
   // ── Filter + Sort ──────────────────────────────────────────
   const filtered = useMemo(() => {
-    let list = employees.filter(e => {
+    const list = employees.filter(e => {
       if (deletedIds.has(e.id)) return false;
       const isActive = resolveIsActive(e);
       if (statusFilter === 'active'   && !isActive) return false;
@@ -193,7 +193,7 @@ export default function EmployeesPage() {
   const mgrMutation = useMutation({
     mutationFn: ({ empId, managerId }: { empId: number; managerId: number | null }) =>
       hrEmployeesApi.update(empId, { direct_manager: managerId } as Partial<HREmployee>),
-    onSuccess: (data: any, vars) => {
+    onSuccess: (data: HREmployee, vars) => {
       const name: string | null = data?.direct_manager_name ?? null;
       setMgrOverrides(p => ({ ...p, [vars.empId]: vars.managerId !== null && name ? { id: vars.managerId, name } : null }));
       setActiveModal(null);
@@ -257,7 +257,7 @@ export default function EmployeesPage() {
   const bulkMgrMutation = useMutation({
     mutationFn: ({ managerId, ids }: { managerId: number | null; ids: number[] }) =>
       Promise.all(ids.map(id => hrEmployeesApi.update(id, { direct_manager: managerId } as Partial<HREmployee>))),
-    onSuccess: (results: any[], vars) => {
+    onSuccess: (results: HREmployee[], vars) => {
       setMgrOverrides(prev => { const n = { ...prev }; vars.ids.forEach((id, i) => { const name = results[i]?.direct_manager_name ?? null; n[id] = vars.managerId !== null && name ? { id: vars.managerId, name } : null; }); return n; });
       setBulkModal(null); setSelectedIds(new Set());
       toast(`Manager ${vars.managerId ? 'assigned' : 'removed'} for ${vars.ids.length} employees`, 'success');
@@ -376,7 +376,7 @@ export default function EmployeesPage() {
                   <div className="emp-filter-field">
                     <label className="emp-filter-label">Status</label>
                     <select className="proc-adv-select" value={statusFilter}
-                      onChange={e => setStatusFilter(e.target.value as any)}>
+                      onChange={e => setStatusFilter(e.target.value as 'active' | 'inactive' | '')}>
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
                       <option value="">All</option>
@@ -411,7 +411,7 @@ export default function EmployeesPage() {
                   <div className="emp-filter-field">
                     <label className="emp-filter-label">Manager flag</label>
                     <select className="proc-adv-select" value={mgrFilter}
-                      onChange={e => setMgrFilter(e.target.value as any)}>
+                      onChange={e => setMgrFilter(e.target.value as 'yes' | 'no' | '')}>
                       <option value="">All</option>
                       <option value="yes">Managers only</option>
                       <option value="no">Non-managers</option>

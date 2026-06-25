@@ -102,7 +102,7 @@ function NewPurchaseInvoicePageContent() {
         router.push(`/purchase-orders/${formData.purchase_order_id}`);
       }
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const errorMessage = formatBackendError(error);
       toast(errorMessage, 'error');
       

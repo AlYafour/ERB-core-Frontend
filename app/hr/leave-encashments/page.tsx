@@ -166,10 +166,11 @@ function NewEncashmentModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; o
       onSuccess();
       onClose();
     },
-    onError: (e: any) => {
-      const data = e?.response?.data;
-      const msg = data?.detail ?? data?.non_field_errors?.[0]
-        ?? (data && typeof data === 'object' ? Object.values(data).flat().join(' ') : null)
+    onError: (e: unknown) => {
+      const errData = (e as { response?: { data?: Record<string, unknown> } })?.response?.data;
+      const msg = (errData?.detail as string | undefined)
+        ?? (errData?.non_field_errors as string[] | undefined)?.[0]
+        ?? (errData && typeof errData === 'object' ? Object.values(errData).flat().join(' ') : null)
         ?? 'Failed to create encashment';
       toast(String(msg), 'error');
     },
@@ -318,7 +319,7 @@ function NewEncashmentModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; o
                   </div>
                 )}
                 <p style={{ margin: 0, fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-                  Rate is frozen at creation — future policy changes won't affect this record.
+                  Rate is frozen at creation — future policy changes won&apos;t affect this record.
                 </p>
               </>
             )}

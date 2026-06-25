@@ -128,13 +128,19 @@ function PolicyModal({
   const createMut = useMutation({
     mutationFn: (data: Partial<LeavePolicy>) => hrLeavePoliciesApi.create(data),
     onSuccess: () => { toast('Leave policy created', 'success'); queryClient.invalidateQueries({ queryKey: ['leave-policies'] }); onSuccess(); onClose(); },
-    onError: (e: any) => toast(e?.response?.data?.detail ?? Object.values(e?.response?.data ?? {}).flat().join(' ') ?? 'Failed', 'error'),
+    onError: (e: unknown) => {
+      const d = (e as { response?: { data?: Record<string, unknown> } })?.response?.data;
+      toast((d?.detail as string | undefined) ?? Object.values(d ?? {}).flat().join(' ') ?? 'Failed', 'error');
+    },
   });
 
   const updateMut = useMutation({
     mutationFn: (data: Partial<LeavePolicy>) => hrLeavePoliciesApi.update(editing!.id, data),
     onSuccess: () => { toast('Leave policy updated', 'success'); queryClient.invalidateQueries({ queryKey: ['leave-policies'] }); onSuccess(); onClose(); },
-    onError: (e: any) => toast(e?.response?.data?.detail ?? Object.values(e?.response?.data ?? {}).flat().join(' ') ?? 'Failed', 'error'),
+    onError: (e: unknown) => {
+      const d = (e as { response?: { data?: Record<string, unknown> } })?.response?.data;
+      toast((d?.detail as string | undefined) ?? Object.values(d ?? {}).flat().join(' ') ?? 'Failed', 'error');
+    },
   });
 
   const isPending = createMut.isPending || updateMut.isPending;
@@ -186,7 +192,7 @@ function PolicyModal({
                 allowClear={false}
               />
               <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-                "Any group" is the catch-all fallback used when no group-specific policy matches.
+                {'"'}Any group{'"'} is the catch-all fallback used when no group-specific policy matches.
               </p>
             </div>
             <div>
@@ -291,7 +297,7 @@ function AccrualPanel() {
         'success',
       );
     },
-    onError: (e: any) => toast(e?.response?.data?.detail ?? 'Accrual failed', 'error'),
+    onError: (e: unknown) => toast((e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Accrual failed', 'error'),
   });
 
   const STATUS_COLOR: Record<string, string> = {

@@ -34,7 +34,7 @@ export default function HRSettingsLocationsPage() {
   const [editTarget,    setEditTarget]    = useState<HRLocationType | HRLocation | null>(null);
 
   const [typeForm, setTypeForm] = useState({ name: '', name_ar: '', icon: '📍', color: '#6b7280' });
-  const [locForm,  setLocForm]  = useState({ name: '', name_ar: '', parent: '' as any, address: '', description: '', is_active: true });
+  const [locForm,  setLocForm]  = useState({ name: '', name_ar: '', parent: '' as string | number, address: '', description: '', is_active: true });
   const [officeForm, setOfficeForm] = useState({ name: '', name_ar: '', latitude: '', longitude: '', radius_m: '200', address: '', is_active: true });
   const [editOffice, setEditOffice] = useState<OfficeLocation | null>(null);
 
@@ -50,7 +50,7 @@ export default function HRSettingsLocationsPage() {
       location_type: selectedType?.id,
       search: searchLoc || undefined,
       page_size: 500,
-    } as any),
+    } as Record<string, unknown>),
     enabled: !!selectedType,
   });
   const allLocs: HRLocation[] = locsData?.results ?? [];
@@ -402,7 +402,7 @@ export default function HRSettingsLocationsPage() {
                       <div className="card empty-state"><Loader /></div>
                     ) : allLocs.length === 0 ? (
                       <div className="card empty-state">
-                        <p className="empty-state-title">No locations yet for "{selectedType.name}"</p>
+                        <p className="empty-state-title">No locations yet for &quot;{selectedType.name}&quot;</p>
                         {isAdmin && (
                           <Button variant="primary" size="sm" onClick={() => openLocCreate()}>+ Add First Location</Button>
                         )}

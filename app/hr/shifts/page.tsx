@@ -340,9 +340,10 @@ export default function ShiftsPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => hrShiftsApi.delete(id),
     onSuccess: () => { invalidate(); setDeletingId(null); toast('Shift deleted', 'success'); },
-    onError: (err: any) => {
-      const detail = err?.response?.data?.detail ?? '';
-      if (detail.toLowerCase().includes('protected') || err?.response?.status === 409) {
+    onError: (err: unknown) => {
+      const errTyped = err as { response?: { data?: { detail?: string }; status?: number } };
+      const detail = errTyped?.response?.data?.detail ?? '';
+      if (detail.toLowerCase().includes('protected') || errTyped?.response?.status === 409) {
         toast('Cannot delete — this shift has active employee assignments. Remove assignments first.', 'error');
       } else {
         toast('Failed to delete shift', 'error');
@@ -521,7 +522,7 @@ export default function ShiftsPage() {
                     }}>
                       <div>
                         <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: '#7f1d1d', margin: 0 }}>
-                          Delete "{shift.name}"?
+                          Delete &quot;{shift.name}&quot;?
                         </p>
                         <p style={{ fontSize: 'var(--text-xs)', color: '#991b1b', margin: '2px 0 0' }}>
                           This cannot be undone. Shifts assigned to employees cannot be deleted.

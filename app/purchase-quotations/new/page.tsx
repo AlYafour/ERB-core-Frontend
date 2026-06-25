@@ -138,7 +138,7 @@ function NewPurchaseQuotationPageContent() {
       toast('Purchase quotation created successfully!', 'success');
       router.push('/purchase-quotations');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const errorMessage = formatBackendError(error);
       toast(errorMessage, 'error');
       

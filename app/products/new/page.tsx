@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -64,7 +64,7 @@ export default function NewProductPage() {
       toast('Product created successfully!', 'success');
       router.push(`/products/view/${data.id}`);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast(getApiError(error, 'Failed to create product'), 'error');
     },
   });

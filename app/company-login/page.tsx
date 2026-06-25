@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { BRAND, XERB } from '@/lib/config/brand';
@@ -146,7 +147,7 @@ export default function CompanyLoginPage() {
         }
       } catch { /* ignore decode errors — proceed normally */ }
       setAuth(data.user, data.tokens.access, data.tokens.refresh);
-      window.location.replace('/dashboard');
+      router.replace('/dashboard');
     },
     onError: (err: unknown) => {
       setError(getApiError(err, 'Invalid username or password.'));
@@ -397,7 +398,7 @@ export default function CompanyLoginPage() {
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 'var(--space-6)', fontSize: 'var(--text-sm)' }}>
-          <a href="/" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>← Back to home</a>
+          <Link href="/" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>← Back to home</Link>
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 'var(--space-4)', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>

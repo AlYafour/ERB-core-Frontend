@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -64,7 +64,7 @@ export default function NewProjectPage() {
       toast('Project created successfully!', 'success');
       router.push('/projects');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast(getApiError(error, 'Failed to create project'), 'error');
     },
   });
@@ -87,7 +87,7 @@ export default function NewProjectPage() {
             onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
           >
-            ← {t('btn', 'back')} {t('page', 'projects')}
+            â† {t('btn', 'back')} {t('page', 'projects')}
           </Link>
           <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', margin: 0, marginBottom: 'var(--space-1)' }}>
             {t('page', 'newProject')}
@@ -119,7 +119,7 @@ export default function NewProjectPage() {
 
               <div style={{ gridColumn: 'span 2' }}>
                 <FormField label={t('field', 'projectNameAr')}>
-                  <input type="text" className="form-input" dir="rtl" placeholder="اسم المشروع بالعربي"
+                  <input type="text" className="form-input" dir="rtl" placeholder="Ø§Ø³Ù… Ø§Ù„Ù…Ø´Ø±ÙˆØ¹ Ø¨Ø§Ù„Ø¹Ø±Ø¨ÙŠ"
                     value={formData.name_ar}
                     onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })} />
                 </FormField>
@@ -148,7 +148,7 @@ export default function NewProjectPage() {
               {t('section', 'contactInfo')}
             </h2>
             <p style={{ fontSize: 'var(--text-sm)', marginBottom: 'var(--space-4)', marginTop: 0, color: 'var(--text-secondary)' }}>
-              {t('field', 'staffMember')} — {t('role', 'site_engineer')}
+              {t('field', 'staffMember')} â€” {t('role', 'site_engineer')}
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--space-4)' }}>
 
@@ -157,7 +157,7 @@ export default function NewProjectPage() {
                 <FormField label={`${t('role', 'site_engineer')} (${t('misc', 'optional')})`}>
                   <SearchableDropdown
                     options={[
-                      { value: '', label: `— ${t('misc', 'selectRole')} —` },
+                      { value: '', label: `â€” ${t('misc', 'selectRole')} â€”` },
                       ...engineers.map(e => ({
                         value: String(e.id),
                         label: `${e.first_name} ${e.last_name}`.trim() || e.username,
@@ -170,7 +170,7 @@ export default function NewProjectPage() {
                   />
                 </FormField>
 
-                {/* Engineer info card — shown when selected */}
+                {/* Engineer info card â€” shown when selected */}
                 {selectedEngineer && (
                   <div
                     style={{
@@ -198,7 +198,7 @@ export default function NewProjectPage() {
                       </div>
                       <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
                         {selectedEngineer.job_title || t('role', 'site_engineer')}
-                        {selectedEngineer.phone ? ` · ${selectedEngineer.phone}` : ''}
+                        {selectedEngineer.phone ? ` Â· ${selectedEngineer.phone}` : ''}
                       </div>
                     </div>
                     <button
@@ -206,7 +206,7 @@ export default function NewProjectPage() {
                       onClick={() => setFormData(f => ({ ...f, responsible_engineer: null }))}
                       style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-2)', borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
                     >
-                      ✕
+                      âœ•
                     </button>
                   </div>
                 )}

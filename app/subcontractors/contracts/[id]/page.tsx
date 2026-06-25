@@ -319,7 +319,7 @@ function ImportModal({
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {filteredGrouped.length === 0 && (
-                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: 32 }}>No items match "{search}"</p>
+                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: 32 }}>No items match {'"'}{search}{'"'}</p>
               )}
               {filteredGrouped.map(({ code, name, items }) => {
                 const lineItems = items;

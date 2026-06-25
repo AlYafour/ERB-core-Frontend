@@ -65,7 +65,7 @@ export default function HRRequestDetailPage() {
           breadcrumbs={[{ label: 'HR' }, { label: 'Requests', href: '/hr/requests' }, { label: `#${req.id}` }]}
           actions={
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-              <Badge variant={(STATUS_VARIANT[req.status] as any) || 'default'}>{req.status.toUpperCase()}</Badge>
+              <Badge variant={(STATUS_VARIANT[req.status] as string | undefined) || 'default'}>{req.status.toUpperCase()}</Badge>
               {isAdmin && req.status === 'pending' && (
                 <>
                   <Button variant="success" size="sm" onClick={handleApprove} isLoading={approveMutation.isPending}>Approve</Button>

@@ -60,7 +60,7 @@ export default function EmployeeLocationsPage() {
   const [drawerOpen, setDrawerOpen]         = useState(false);
   const [empSearchTerm, setEmpSearchTerm]   = useState('');
   const [debouncedEmpSearch, setDebounced]  = useState('');
-  const [selectedEmp, setSelectedEmp]       = useState<any>(null);
+  const [selectedEmp, setSelectedEmp]       = useState<{ id: number; full_name: string; employee_id: string } | null>(null);
   const [selectedLocIds, setSelectedLocIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function EmployeeLocationsPage() {
   const { data: empSearchData, isLoading: searchingEmps } = useQuery({
     queryKey: ['emp-search-drawer', debouncedEmpSearch],
     queryFn:  () =>
-      hrEmployeesApi.getAll({ search: debouncedEmpSearch, page_size: 10 } as any),
+      hrEmployeesApi.getAll({ search: debouncedEmpSearch, page_size: 10 }),
     enabled:  isAdmin && debouncedEmpSearch.length >= 2,
     staleTime: 30_000,
   });
@@ -92,7 +92,7 @@ export default function EmployeeLocationsPage() {
     enabled:  isAdmin,
     staleTime: 60_000,
   });
-  const officeLocs: any[] = officeLocsData?.results ?? [];
+  const officeLocs: Array<{ id: number; name: string; address?: string; radius_m?: number }> = officeLocsData?.results ?? [];
 
   // ── Mutations ─────────────────────────────────────────────────────────────
   const assignMutation = useMutation({
@@ -102,8 +102,8 @@ export default function EmployeeLocationsPage() {
         try {
           await hrEmployeeLocationsApi.assign(empId, locId);
           assigned++;
-        } catch (err: any) {
-          if (err?.response?.status === 400) duplicates++;
+        } catch (err: unknown) {
+          if ((err as { response?: { status?: number } })?.response?.status === 400) duplicates++;
           else failed++;
         }
       }
@@ -146,7 +146,7 @@ export default function EmployeeLocationsPage() {
     setSelectedLocIds(new Set());
   };
 
-  const openDrawer = (emp?: any) => {
+  const openDrawer = (emp?: { id: number; full_name: string; employee_id: string }) => {
     setSelectedEmp(emp ?? null);
     setEmpSearchTerm('');
     setDebounced('');
@@ -162,19 +162,8 @@ export default function EmployeeLocationsPage() {
     });
   };
 
-  // ── Guards ────────────────────────────────────────────────────────────────
-  if (!user) return <MainLayout><div className="card empty-state"><Loader /></div></MainLayout>;
-  if (!isAdmin) return (
-    <MainLayout>
-      <div className="card empty-state">
-        <p style={{ color: 'var(--color-error)', margin: 0 }}>
-          Access denied. This page is for administrators only.
-        </p>
-      </div>
-    </MainLayout>
-  );
-
   // ── Derived: group assignments by employee, filter client-side ────────────
+  // Must be declared before early returns to satisfy rules-of-hooks.
   const grouped = useMemo<GroupedRow[]>(() => {
     const map = new Map<number, GroupedRow>();
     for (const a of assignments) {
@@ -199,6 +188,18 @@ export default function EmployeeLocationsPage() {
       r.employee_id_code.toLowerCase().includes(q)
     );
   }, [grouped, tableSearch]);
+
+  // ── Guards ────────────────────────────────────────────────────────────────
+  if (!user) return <MainLayout><div className="card empty-state"><Loader /></div></MainLayout>;
+  if (!isAdmin) return (
+    <MainLayout>
+      <div className="card empty-state">
+        <p style={{ color: 'var(--color-error)', margin: 0 }}>
+          Access denied. This page is for administrators only.
+        </p>
+      </div>
+    </MainLayout>
+  );
 
   const alreadyAssignedIds = new Set<number>(
     selectedEmp
@@ -240,7 +241,7 @@ export default function EmployeeLocationsPage() {
           <div className="card empty-state">
             <p className="empty-state-title">No employee geolocations assigned yet</p>
             <p className="empty-state-desc">
-              Use "+ Add Assignment" to link employees to their approved check-in sites.
+              Use {'"'}+ Add Assignment{'"'} to link employees to their approved check-in sites.
             </p>
           </div>
 
@@ -473,7 +474,7 @@ export default function EmployeeLocationsPage() {
                   maxHeight: 280,
                   overflowY: 'auto',
                 }}>
-                  {officeLocs.map((loc: any, idx: number) => {
+                  {officeLocs.map((loc, idx) => {
                     const checked    = selectedLocIds.has(loc.id);
                     const alreadyHas = alreadyAssignedIds.has(loc.id);
                     return (
