@@ -119,7 +119,7 @@ export default function PurchaseRequestsPage() {
     { key: 'req_by',    header: t('col', 'requiredBy'),  render: r => <span style={{ color: 'var(--text-secondary)' }}>{fmtDate(r.required_by)}</span> },
     {
       key: 'status', header: t('col', 'status'),
-      render: r => <Badge variant={PR_STATUS[r.status] ?? 'info'}>{t('status', r.status as any) || r.status}</Badge>,
+      render: r => <Badge variant={PR_STATUS[r.status] ?? 'info'}>{t('status', r.status) || r.status}</Badge>,
     },
     {
       key: 'actions', header: t('col', 'actions'),

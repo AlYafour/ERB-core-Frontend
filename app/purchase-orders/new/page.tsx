@@ -11,7 +11,7 @@ import { productsApi } from '@/lib/api/products';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import { PageShell, PageHeader } from '@/components/ui';
-import { PurchaseOrderItem } from '@/types';
+import { PurchaseOrderItem, Product } from '@/types';
 import { PurchaseOrderFormData, toPurchaseOrderCreateData } from '@/lib/types/form-data';
 import { toast } from '@/lib/hooks/use-toast';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
@@ -96,7 +96,7 @@ Terms & Conditions:
   const [selectedCostCode, setSelectedCostCode] = useState<import('@/types').CostCode | null>(null);
 
   const [items, setItems] = useState<
-    (Omit<PurchaseOrderItem, 'product' | 'total' | 'created_at'> & { _product?: any })[]
+    (Omit<PurchaseOrderItem, 'product' | 'total' | 'created_at'> & { _product?: Product | null })[]
   >([]);
   const [currentItem, setCurrentItem] = useState({
     product_id: 0,
@@ -194,7 +194,7 @@ Terms & Conditions:
     if (products?.results && items.length > 0) {
       setItems((prevItems) => 
         prevItems.map((item) => {
-          if (!(item as any)._product) {
+          if (!item._product) {
             const product = products.results.find((p) => p.id === item.product_id);
             if (product) {
               return { ...item, _product: product };
@@ -346,8 +346,8 @@ Terms & Conditions:
                        document.querySelector(`[data-field="${firstErrorField}"]`);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          if ('focus' in element && typeof (element as any).focus === 'function') {
-            (element as any).focus();
+          if (element instanceof HTMLElement) {
+            element.focus();
           }
         }
       }, 100);
@@ -699,21 +699,21 @@ Terms & Conditions:
                     <tbody>
                       {items.map((item, index) => {
                         // Get product from stored _product, products list, or quotation
-                        let product = (item as any)._product;
+                        let product = item._product;
                         if (!product && products?.results) {
                           product = products.results.find((p) => p.id === item.product_id);
                           if (product) {
-                            (item as any)._product = product;
+                            item._product = product;
                           }
                         }
                         if (!product && purchaseQuotation?.items) {
-                          const quotationItem = purchaseQuotation.items.find((qi: any) => {
-                            const qiProductId = qi.product?.id || qi.product_id;
+                          const quotationItem = purchaseQuotation.items.find((qi) => {
+                            const qiProductId = (qi.product as { id?: number } | null | undefined)?.id || qi.product_id;
                             return qiProductId === item.product_id;
                           });
                           if (quotationItem?.product) {
-                            product = quotationItem.product;
-                            (item as any)._product = product;
+                            product = quotationItem.product as Product;
+                            item._product = product;
                           }
                         }
 

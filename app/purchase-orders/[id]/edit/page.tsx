@@ -96,7 +96,7 @@ function EditPurchaseOrderPageContent() {
         payment_terms: order.payment_terms || '',
         delivery_terms: order.delivery_terms || '',
         notes: order.notes || '',
-        terms_and_conditions: (order as any).terms_and_conditions || '',
+        terms_and_conditions: order.terms_and_conditions || '',
         tax_rate: order.tax_rate || 0,
         discount: order.discount || 0,
         status: order.status,

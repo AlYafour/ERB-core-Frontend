@@ -87,7 +87,7 @@ export default function PurchaseInvoicesPage() {
     { key: 'number',  header: t('col', 'invoiceNumber'), render: i => <span className="font-medium">{i.invoice_number}</span> },
     {
       key: 'po', header: t('col', 'relatedPO'),
-      render: i => <span>{typeof i.purchase_order === 'object' ? (i.purchase_order as any)?.order_number : 'N/A'}</span>,
+      render: i => <span>{typeof i.purchase_order === 'object' ? (i.purchase_order as { order_number?: string })?.order_number : 'N/A'}</span>,
     },
     { key: 'date',   header: t('col', 'invoiceDate'),  render: i => <span style={{ color: 'var(--text-secondary)' }}>{fmtDate(i.invoice_date)}</span> },
     { key: 'due',    header: t('col', 'deliveryDate'), render: i => <span style={{ color: 'var(--text-secondary)' }}>{i.due_date ? fmtDate(i.due_date) : '—'}</span> },

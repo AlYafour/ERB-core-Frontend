@@ -259,7 +259,7 @@ export default function NewProjectPage() {
                 <SearchableDropdown
                   options={statusOptions}
                   value={formData.project_status}
-                  onChange={(val) => setFormData({ ...formData, project_status: val as any })}
+                  onChange={(val) => setFormData({ ...formData, project_status: val as typeof formData.project_status })}
                   placeholder="Select Status"
                 />
               </FormField>

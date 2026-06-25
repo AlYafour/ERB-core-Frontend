@@ -90,14 +90,18 @@ export default function QuotationRequestDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {qr.items.map((item, idx) => (
-                  <tr key={(item as any).id ?? idx}>
-                    <td>{(item as any).product?.name || `Product #${(item as any).product_id}`}</td>
-                    <td>{(item as any).quantity}</td>
-                    <td>{(item as any).unit || '—'}</td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{(item as any).notes || '—'}</td>
-                  </tr>
-                ))}
+                {qr.items.map((item, idx) => {
+                  type QRItem = { id?: number; product?: { name?: string }; product_id?: number; quantity?: number; unit?: string; notes?: string };
+                  const row = item as QRItem;
+                  return (
+                    <tr key={row.id ?? idx}>
+                      <td>{row.product?.name || `Product #${row.product_id}`}</td>
+                      <td>{row.quantity}</td>
+                      <td>{row.unit || '—'}</td>
+                      <td style={{ color: 'var(--text-secondary)' }}>{row.notes || '—'}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

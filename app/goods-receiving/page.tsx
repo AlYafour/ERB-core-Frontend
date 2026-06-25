@@ -51,7 +51,7 @@ export default function GoodsReceivingPage() {
       key: 'number', header: 'GRN Number',
       render: g => <span className="font-mono font-semibold" style={{ fontSize: 'var(--text-sm)' }}>{g.grn_number}</span>,
     },
-    { key: 'po',    header: 'Purchase Order', render: g => <span style={{ color: 'var(--text-secondary)' }}>{typeof g.purchase_order === 'object' && g.purchase_order ? (g.purchase_order as any).order_number : g.purchase_order_id}</span> },
+    { key: 'po',    header: 'Purchase Order', render: g => <span style={{ color: 'var(--text-secondary)' }}>{typeof g.purchase_order === 'object' && g.purchase_order ? (g.purchase_order as { order_number?: string }).order_number : g.purchase_order_id}</span> },
     { key: 'date',  header: 'Receipt Date',   render: g => <span style={{ color: 'var(--text-secondary)' }}>{new Date(g.receipt_date).toLocaleDateString('en-US')}</span> },
     { key: 'items', header: 'Total Items',    render: g => g.total_items ?? g.items?.length ?? 0 },
     { key: 'status', header: t('col', 'status'), render: g => <Badge variant={GRN_STATUS[g.status] ?? 'info'}>{STATUS_LABEL[g.status] || g.status}</Badge> },

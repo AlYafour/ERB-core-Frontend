@@ -7,7 +7,7 @@ import { hrPayrollApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
-import { Button, Badge, Loader, PageHeader, PageShell } from '@/components/ui';
+import { Button, Badge, BadgeProps, Loader, PageHeader, PageShell } from '@/components/ui';
 
 const STATUS_VARIANT: Record<string, string> = {
   draft: 'default', processed: 'info', paid: 'success',
@@ -50,7 +50,7 @@ export default function PayrollDetailPage() {
           breadcrumbs={[{ label: 'HR' }, { label: 'Payroll', href: '/hr/payroll' }, { label: `${payroll.month_name} ${payroll.year}` }]}
           actions={
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-              <Badge variant={(STATUS_VARIANT[payroll.status] as any) || 'default'}>{payroll.status.toUpperCase()}</Badge>
+              <Badge variant={(STATUS_VARIANT[payroll.status] as BadgeProps['variant']) || 'default'}>{payroll.status.toUpperCase()}</Badge>
               {isAdmin && payroll.status === 'processed' && (
                 <Button variant="primary" size="sm" onClick={handleMarkPaid} isLoading={markPaidMutation.isPending}>
                   Mark as Paid

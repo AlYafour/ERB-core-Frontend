@@ -8,7 +8,7 @@ import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi } from '@/lib/api/hr';
 import { usersApi } from '@/lib/api/users';
 import { toast } from '@/lib/hooks/use-toast';
 import { Button, PageHeader, PageShell } from '@/components/ui';
-import { HRPosition } from '@/types';
+import { HRPosition, User } from '@/types';
 
 export default function NewEmployeePage() {
   return (
@@ -131,7 +131,7 @@ function NewEmployeeForm() {
           password:    account.password,
           role:        account.role,
           is_active:   account.is_active,
-        } as any);
+        } as Partial<User> & { second_name?: string; third_name?: string; password?: string });
         await createEmpMutation.mutateAsync(buildEmpPayload(user.id));
       }
       toast('Employee created successfully', 'success');
@@ -283,7 +283,7 @@ function NewEmployeeForm() {
               <div className="form-grid">
                 {[['basic_salary','Basic Salary'],['housing_allowance','Housing'],['transport_allowance','Transport'],['other_allowances','Other']].map(([k, l]) => (
                   <div key={k} className="form-field"><label className="form-label">{l}</label>
-                    <input className="form-input" type="number" min="0" value={(employment as any)[k]} onChange={em(k)} />
+                    <input className="form-input" type="number" min="0" value={employment[k as keyof typeof employment]} onChange={em(k)} />
                   </div>
                 ))}
               </div>

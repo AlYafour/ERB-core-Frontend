@@ -85,7 +85,7 @@ export default function UserProfilePage() {
 
   const { data: depts }     = useQuery({ queryKey: ['hr-depts'],     queryFn: () => hrDepartmentsApi.getAll({ page: 1 }) });
   const { data: positions } = useQuery({ queryKey: ['hr-positions'], queryFn: () => hrPositionsApi.getAll({ page: 1 }) });
-  const { data: locations } = useQuery({ queryKey: ['hr-locations-all'], queryFn: () => hrLocationsApi.getAll({ page_size: 200 } as any) });
+  const { data: locations } = useQuery({ queryKey: ['hr-locations-all'], queryFn: () => hrLocationsApi.getAll({ page_size: 200 }) });
 
   const emp = empData?.results?.[0] ?? null;
 
@@ -222,12 +222,12 @@ export default function UserProfilePage() {
     </MainLayout>
   );
 
-  const avatarSrc    = (user as any).avatar || null;
+  const avatarSrc    = (user as { avatar?: string }).avatar || null;
   const displayName  = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username;
   const avatarLetter = displayName[0].toUpperCase();
   const roleLabel    = ROLES.find(r => r.value === user.role)?.label || user.role || '—';
   const totalSalary  = ['basic_salary','housing_allowance','transport_allowance','other_allowances']
-    .reduce((s, k) => s + parseFloat((emp as any)?.[k] || '0'), 0);
+    .reduce((s, k) => s + parseFloat((emp?.[k as keyof typeof emp] as string) || '0'), 0);
   const deptName     = depts?.results?.find((d: any) => d.id === emp?.department)?.name;
   const posName      = positions?.results?.find((p: any) => p.id === emp?.position)?.title;
 

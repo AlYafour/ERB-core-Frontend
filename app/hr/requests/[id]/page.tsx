@@ -7,7 +7,7 @@ import { hrRequestsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
-import { Button, Badge, Loader, PageHeader, PageShell } from '@/components/ui';
+import { Button, Badge, BadgeProps, Loader, PageHeader, PageShell } from '@/components/ui';
 import { useState } from 'react';
 
 const STATUS_VARIANT: Record<string, string> = {
@@ -64,7 +64,7 @@ export default function HRRequestDetailPage() {
           breadcrumbs={[{ label: 'HR' }, { label: 'Requests', href: '/hr/requests' }, { label: `#${req.id}` }]}
           actions={
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-              <Badge variant={(STATUS_VARIANT[req.status] as any) || 'default'}>{req.status.toUpperCase()}</Badge>
+              <Badge variant={(STATUS_VARIANT[req.status] as BadgeProps['variant']) || 'default'}>{req.status.toUpperCase()}</Badge>
               {isAdmin && req.status === 'pending' && (
                 <>
                   <Button variant="success" size="sm" onClick={handleApprove} isLoading={approveMutation.isPending}>Approve</Button>

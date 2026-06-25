@@ -67,7 +67,7 @@ export default function QuotationRequestsPage() {
       key: 'code', header: t('col', 'code'),
       render: r => (
         <span className="font-medium">
-          {typeof r.purchase_request === 'object' && r.purchase_request ? (r.purchase_request as any).code || 'N/A' : 'N/A'}
+          {typeof r.purchase_request === 'object' && r.purchase_request ? (r.purchase_request as { code?: string }).code || 'N/A' : 'N/A'}
         </span>
       ),
     },
@@ -88,7 +88,7 @@ export default function QuotationRequestsPage() {
       key: 'supplier', header: t('col', 'supplier'),
       render: r => (
         <span>
-          {typeof r.supplier === 'object' && r.supplier ? (r.supplier as any).business_name || (r.supplier as any).name || 'N/A' : 'N/A'}
+          {typeof r.supplier === 'object' && r.supplier ? (r.supplier as { business_name?: string; name?: string }).business_name || (r.supplier as { name?: string }).name || 'N/A' : 'N/A'}
         </span>
       ),
     },

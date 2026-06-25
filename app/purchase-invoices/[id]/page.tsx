@@ -142,7 +142,7 @@ export default function PurchaseInvoiceDetailPage() {
         <LinkedDocumentsSection
           documents={{
             purchaseOrder: typeof invoice.purchase_order === 'object' && invoice.purchase_order
-              ? { id: (invoice.purchase_order as any).id, order_number: (invoice.purchase_order as any).order_number }
+              ? { id: (invoice.purchase_order as { id: number; order_number?: string }).id, order_number: (invoice.purchase_order as { id: number; order_number?: string }).order_number }
               : invoice.purchase_order_id ? { id: invoice.purchase_order_id } : null,
             invoice: { id: invoice.id, invoice_number: invoice.invoice_number },
           }}

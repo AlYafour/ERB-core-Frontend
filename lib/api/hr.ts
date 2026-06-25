@@ -24,7 +24,7 @@ export const hrLocationTypesApi = {
 // ── Locations ──────────────────────────────────────────────────────────────────
 
 export const hrLocationsApi = {
-  getAll: async (params?: { page?: number; search?: string; location_type?: string; parent?: number | null; is_active?: boolean }): Promise<PaginatedResponse<HRLocation>> => {
+  getAll: async (params?: { page?: number; page_size?: number; search?: string; location_type?: string; parent?: number | null; is_active?: boolean }): Promise<PaginatedResponse<HRLocation>> => {
     const response = await apiClient.get('/hr/employees/locations/', { params });
     return response.data;
   },

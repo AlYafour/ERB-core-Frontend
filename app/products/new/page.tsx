@@ -59,7 +59,7 @@ export default function NewProductPage() {
   });
 
   const mutation = useMutation({
-    mutationFn: () => productsApi.create(form as any),
+    mutationFn: () => productsApi.create(form as Parameters<typeof productsApi.create>[0]),
     onSuccess: (data) => {
       toast('Product created successfully!', 'success');
       router.push(`/products/view/${data.id}`);

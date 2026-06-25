@@ -5,6 +5,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Team } from '@/types';
 import { teamsApi } from '@/lib/api/tasks';
+import { confirm } from '@/lib/hooks/use-toast';
 
 import { TeamList } from '@/components/tasks/teams/TeamList';
 import { TeamDetail } from '@/components/tasks/teams/TeamDetail';
@@ -50,8 +51,8 @@ export default function TeamsPage() {
     },
   });
 
-  function handleDelete(teamId: number, teamName: string) {
-    if (window.confirm(`Delete team "${teamName}"?\n\nThis action cannot be undone.`)) {
+  async function handleDelete(teamId: number, teamName: string) {
+    if (await confirm(`Delete team "${teamName}"?\n\nThis action cannot be undone.`)) {
       deleteTeam.mutate(teamId);
     }
   }

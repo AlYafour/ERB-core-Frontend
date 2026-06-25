@@ -70,7 +70,7 @@ export default function ProductDetailPage() {
 
   const supplierName = product.supplier
     ? typeof product.supplier === 'object'
-      ? (product.supplier as any).business_name || (product.supplier as any).name
+      ? (product.supplier as { business_name?: string; name?: string }).business_name || (product.supplier as { name?: string }).name
       : `Supplier #${product.supplier}`
     : null;
 

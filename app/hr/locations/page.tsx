@@ -29,7 +29,7 @@ export default function LocationsPage() {
   const [editTarget,    setEditTarget]    = useState<HRLocationType | HRLocation | null>(null);
 
   const [typeForm, setTypeForm] = useState({ name: '', name_ar: '', icon: '📍', color: '#6b7280' });
-  const [locForm,  setLocForm]  = useState({ name: '', name_ar: '', parent: '' as any, address: '', description: '', is_active: true });
+  const [locForm,  setLocForm]  = useState({ name: '', name_ar: '', parent: '' as number | '', address: '', description: '', is_active: true });
 
   const { data: typesData, isLoading: loadingTypes } = useQuery({
     queryKey: ['hr-location-types'],
@@ -40,10 +40,10 @@ export default function LocationsPage() {
   const { data: locsData, isLoading: loadingLocs } = useQuery({
     queryKey: ['hr-locations', selectedType?.id, searchLoc],
     queryFn: () => hrLocationsApi.getAll({
-      location_type: selectedType?.id,
+      location_type: selectedType?.id !== undefined ? String(selectedType.id) : undefined,
       search: searchLoc || undefined,
       page_size: 500,
-    } as any),
+    }),
     enabled: !!selectedType,
   });
   const allLocs: HRLocation[] = locsData?.results ?? [];
@@ -417,7 +417,7 @@ export default function LocationsPage() {
           <div className="form-field" style={{ marginTop: 'var(--space-4)' }}>
             <label className="form-label">Parent Location (optional)</label>
             <select className="form-select" value={locForm.parent ?? ''}
-              onChange={e => setLocForm(p => ({ ...p, parent: e.target.value }))}>
+              onChange={e => setLocForm(p => ({ ...p, parent: e.target.value === '' ? '' : Number(e.target.value) }))}>
               <option value="">— None (top level) —</option>
               {allLocs
                 .filter(l => l.id !== (editTarget as HRLocation)?.id)

@@ -87,7 +87,7 @@ export default function PurchaseQuotationsPage() {
     {
       key: 'pr', header: 'PR',
       render: q => {
-        const prId = q.purchase_request_id ?? resolveId(q.purchase_request as any);
+        const prId = q.purchase_request_id ?? resolveId(q.purchase_request as number | { id: number } | null | undefined);
         return q.purchase_request_code && prId
           ? <Link href={`/purchase-requests/${prId}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }} onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none'; }}>{q.purchase_request_code}</Link>
           : <span style={{ color: 'var(--text-secondary)' }}>—</span>;
@@ -96,7 +96,7 @@ export default function PurchaseQuotationsPage() {
     {
       key: 'qr', header: 'QR',
       render: q => {
-        const qrId = q.quotation_request_id ?? resolveId(q.quotation_request as any);
+        const qrId = q.quotation_request_id ?? resolveId(q.quotation_request as number | { id: number } | null | undefined);
         return q.quotation_request_code && qrId
           ? <Link href={`/quotation-requests/${qrId}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }} onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none'; }}>{q.quotation_request_code}</Link>
           : <span style={{ color: 'var(--text-secondary)' }}>—</span>;

@@ -223,8 +223,8 @@ function NewPurchaseInvoicePageContent() {
                        document.querySelector(`[data-field="${firstErrorField}"]`);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          if ('focus' in element && typeof (element as any).focus === 'function') {
-            (element as any).focus();
+          if (element instanceof HTMLElement) {
+            element.focus();
           }
         }
       }, 100);

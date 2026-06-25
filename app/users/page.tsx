@@ -69,7 +69,7 @@ export default function UsersPage() {
         const name = [u.first_name, u.last_name].filter(Boolean).join(' ');
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-            <Avatar src={(u as any).avatar_url || (u as any).avatar} alt={u.username} size={36} username={u.username} />
+            <Avatar src={(u as { avatar_url?: string; avatar?: string }).avatar_url || (u as { avatar?: string }).avatar} alt={u.username} size={36} username={u.username} />
             <div>
               <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', lineHeight: 'tight', margin: 0 }}>
                 {name || u.username}

@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { purchaseRequestsApi } from '@/lib/api/purchase-requests';
 import { PurchaseRequest, PurchaseRequestItem } from '@/types';
 import PrintTemplate, {
@@ -120,7 +120,7 @@ export default function PrintPRPage() {
                   { label: 'Project Site',                     width: 110 },
                   { label: 'Reason / Specs'                               },
                 ].map((h, i) => (
-                  <th key={i} style={{ padding: '8px 10px', textAlign: (h.align as any) ?? 'left', fontSize: '7.5pt', fontWeight: 700, letterSpacing: '.5px', textTransform: 'uppercase', width: h.width }}>
+                  <th key={i} style={{ padding: '8px 10px', textAlign: (h.align as CSSProperties['textAlign']) ?? 'left', fontSize: '7.5pt', fontWeight: 700, letterSpacing: '.5px', textTransform: 'uppercase', width: h.width }}>
                     {h.label}
                   </th>
                 ))}

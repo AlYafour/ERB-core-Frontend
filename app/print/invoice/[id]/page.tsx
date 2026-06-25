@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { purchaseInvoicesApi } from '@/lib/api/purchase-invoices';
 import { PurchaseInvoice, PurchaseInvoiceItem, PurchaseOrder, Supplier } from '@/types';
 import PrintTemplate, {
@@ -166,7 +166,7 @@ export default function PrintInvoicePage() {
                   ...(discount > 0 ? [{ label: 'Disc%', align: 'right', width: 55 }] : []),
                   { label: 'Amount',     align: 'right',  width: 80  },
                 ].map((h, i) => (
-                  <th key={i} style={{ padding: '8px 10px', textAlign: (h.align as any) ?? 'left', fontSize: '7.5pt', fontWeight: 700, letterSpacing: '.5px', textTransform: 'uppercase', width: h.width }}>
+                  <th key={i} style={{ padding: '8px 10px', textAlign: (h.align as CSSProperties['textAlign']) ?? 'left', fontSize: '7.5pt', fontWeight: 700, letterSpacing: '.5px', textTransform: 'uppercase', width: h.width }}>
                     {h.label}
                   </th>
                 ))}

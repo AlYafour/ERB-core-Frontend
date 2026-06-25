@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { goodsReceivingApi, GoodsReceivedNote, GRNItem } from '@/lib/api/goods-receiving';
 import { PurchaseOrder, Supplier } from '@/types';
 import Image from 'next/image';
@@ -166,7 +166,7 @@ export default function PrintGRNPage() {
                   { label: 'Quality',  align: 'center', width: 75 },
                   { label: 'Remarks',                   width: 90 },
                 ].map((h, i) => (
-                  <th key={i} style={{ padding: '8px 10px', textAlign: (h.align as any) ?? 'left', fontSize: '7.5pt', fontWeight: 700, letterSpacing: '.5px', textTransform: 'uppercase', width: h.width }}>
+                  <th key={i} style={{ padding: '8px 10px', textAlign: (h.align as CSSProperties['textAlign']) ?? 'left', fontSize: '7.5pt', fontWeight: 700, letterSpacing: '.5px', textTransform: 'uppercase', width: h.width }}>
                     {h.label}
                   </th>
                 ))}
