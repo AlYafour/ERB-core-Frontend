@@ -252,7 +252,7 @@ function ApprovalsInbox({ userId }: { userId: number }) {
 
 // ── My Requests list ───────────────────────────────────────────────────────────
 
-function MyRequestsList({ userId, isSelf, isAdmin }: { userId: number; isSelf: boolean; isAdmin: boolean }) {
+function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; isSelf: boolean; isAdmin: boolean; empId?: number }) {
   const queryClient = useQueryClient();
   const [drawerOpen, setDrawerOpen]     = useState(false);
   const [expandedId, setExpandedId]     = useState<number | null>(null);
@@ -321,6 +321,7 @@ function MyRequestsList({ userId, isSelf, isAdmin }: { userId: number; isSelf: b
     if (!form.reason.trim()) { toast('Please provide a reason', 'error'); return; }
 
     createMutation.mutate({
+      ...(empId && { employee: empId }),
       request_type: form.request_type as HRRequest['request_type'],
       reason: form.reason,
       ...(isDateType && {
@@ -602,6 +603,7 @@ function TypeSummary({ userId }: { userId: number }) {
 // ── Root export ────────────────────────────────────────────────────────────────
 
 export default function RequestsTab({ user, emp, isSelf, isAdmin, userId }: UserTabProps) {
+  const empId: number | undefined = emp?.id;
   const [activeTab, setActiveTab] = useState<'approvals' | 'mine'>('approvals');
 
   // Pre-fetch counts for the tab labels
@@ -667,7 +669,7 @@ export default function RequestsTab({ user, emp, isSelf, isAdmin, userId }: User
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           {activeTab === 'approvals'
             ? <ApprovalsInbox userId={userId} />
-            : <MyRequestsList userId={userId} isSelf={isSelf} isAdmin={isAdmin} />
+            : <MyRequestsList userId={userId} isSelf={isSelf} isAdmin={isAdmin} empId={empId} />
           }
         </div>
 
