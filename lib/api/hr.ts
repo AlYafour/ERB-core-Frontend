@@ -133,9 +133,7 @@ export const hrEmployeesApi = {
     return response.data;
   },
   uploadDocument: async (empId: number, data: FormData): Promise<EmployeeDocument> => {
-    const response = await apiClient.post(`/hr/employees/${empId}/documents/`, data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await apiClient.post(`/hr/employees/${empId}/documents/`, data);
     return response.data;
   },
   deleteDocument: async (empId: number, docId: number): Promise<void> => {

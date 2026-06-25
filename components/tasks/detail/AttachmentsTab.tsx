@@ -4,34 +4,8 @@ import { useState } from 'react';
 import type { TaskDetail } from '@/types';
 import { fmtFileSize } from '../shared/constants';
 import { toast } from '@/lib/hooks/use-toast';
-import { taskAttachmentsApi } from '@/lib/api/tasks';
 
 const MAX_MB = 25;
-
-async function openFile(attachmentId: number, fileName: string, asDownload = false) {
-  const newWin = asDownload ? null : window.open('', '_blank');
-  try {
-    const blob = await taskAttachmentsApi.download(attachmentId);
-    const blobUrl = URL.createObjectURL(blob);
-    if (asDownload) {
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = fileName;
-      a.click();
-    } else if (newWin) {
-      newWin.location.href = blobUrl;
-    } else {
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = fileName;
-      a.click();
-    }
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 30_000);
-  } catch {
-    if (newWin) newWin.close();
-    toast('Could not open file.', 'error');
-  }
-}
 
 function isImage(name: string) {
   return /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(name);
@@ -52,13 +26,27 @@ function fileIcon(name: string) {
 }
 
 interface PreviewItem {
-  id: number;
   name: string;
   url: string;
   type: 'image' | 'pdf' | 'other';
 }
 
 function FilePreviewModal({ item, onClose }: { item: PreviewItem; onClose: () => void }) {
+  const handleDownload = async () => {
+    try {
+      const resp = await fetch(item.url);
+      const blob = await resp.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = item.name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 5_000);
+    } catch {
+      window.open(item.url, '_blank');
+    }
+  };
+
   return (
     <div
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
@@ -75,7 +63,7 @@ function FilePreviewModal({ item, onClose }: { item: PreviewItem; onClose: () =>
           </p>
           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
             <button
-              onClick={() => openFile(item.id, item.name, true)}
+              onClick={handleDownload}
               style={{ padding: '6px 12px', borderRadius: 6, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: 12, cursor: 'pointer' }}
             >
               ↓ Download
@@ -97,7 +85,7 @@ function FilePreviewModal({ item, onClose }: { item: PreviewItem; onClose: () =>
             <div style={{ height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
               <span style={{ fontSize: 48 }}>📎</span>
               <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Preview not available for this file type.</p>
-              <button onClick={() => openFile(item.id, item.name, true)} className="task-btn task-btn--primary">
+              <button onClick={handleDownload} className="task-btn task-btn--primary">
                 Download File
               </button>
             </div>
@@ -118,19 +106,28 @@ interface Props {
 
 export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fileInputRef }: Props) {
   const [preview, setPreview] = useState<PreviewItem | null>(null);
-  const [loadingPreview, setLoadingPreview] = useState<number | null>(null);
 
-  async function handlePreview(attachmentId: number, fileName: string) {
-    setLoadingPreview(attachmentId);
+  function openPreview(fileUrl: string, fileName: string) {
+    const type = isImage(fileName) ? 'image' : isPdf(fileName) ? 'pdf' : 'other';
+    setPreview({ url: fileUrl, name: fileName, type });
+  }
+
+  function openInTab(fileUrl: string) {
+    window.open(fileUrl, '_blank');
+  }
+
+  async function downloadFile(fileUrl: string, fileName: string) {
     try {
-      const blob = await taskAttachmentsApi.download(attachmentId);
-      const url = URL.createObjectURL(blob);
-      const type = isImage(fileName) ? 'image' : isPdf(fileName) ? 'pdf' : 'other';
-      setPreview({ id: attachmentId, name: fileName, url, type });
+      const resp = await fetch(fileUrl);
+      const blob = await resp.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 5_000);
     } catch {
-      toast('Could not load preview.', 'error');
-    } finally {
-      setLoadingPreview(null);
+      window.open(fileUrl, '_blank');
     }
   }
 
@@ -176,41 +173,38 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
                   {a.uploaded_by_detail && ` · ${a.uploaded_by_detail.full_name}`}
                 </p>
               </div>
-              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                {a.file_url && (
-                  <>
-                    <button
-                      type="button"
-                      className="attachment-download"
-                      onClick={() => handlePreview(a.id, a.file_name)}
-                      disabled={loadingPreview === a.id}
-                    >
-                      {loadingPreview === a.id ? '…' : 'Preview'}
-                    </button>
-                    <button
-                      type="button"
-                      className="attachment-download"
-                      onClick={() => openFile(a.id, a.file_name)}
-                    >
-                      ↗
-                    </button>
-                    <button
-                      type="button"
-                      className="attachment-download"
-                      onClick={() => openFile(a.id, a.file_name, true)}
-                    >
-                      ↓
-                    </button>
-                  </>
-                )}
-                <button
-                  onClick={() => onDelete(a.id)}
-                  className="attachment-delete-btn"
-                  aria-label="Remove attachment"
-                >
-                  ×
-                </button>
-              </div>
+              {a.file_url && (
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <button
+                    type="button"
+                    className="attachment-download"
+                    onClick={() => openPreview(a.file_url!, a.file_name)}
+                  >
+                    Preview
+                  </button>
+                  <button
+                    type="button"
+                    className="attachment-download"
+                    onClick={() => openInTab(a.file_url!)}
+                  >
+                    ↗
+                  </button>
+                  <button
+                    type="button"
+                    className="attachment-download"
+                    onClick={() => downloadFile(a.file_url!, a.file_name)}
+                  >
+                    ↓
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={() => onDelete(a.id)}
+                className="attachment-delete-btn"
+                aria-label="Remove attachment"
+              >
+                ×
+              </button>
             </div>
           ))}
         </div>
@@ -219,10 +213,7 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
       {preview && (
         <FilePreviewModal
           item={preview}
-          onClose={() => {
-            URL.revokeObjectURL(preview.url);
-            setPreview(null);
-          }}
+          onClose={() => setPreview(null)}
         />
       )}
     </div>

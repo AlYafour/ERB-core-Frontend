@@ -21,15 +21,18 @@ function RolePill({ role }: { role: TeamMemberRole }) {
   return (
     <span
       style={{
-        padding: '3px 10px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        padding: '2px 9px',
         borderRadius: 99,
         fontSize: 11,
-        fontWeight: 600,
+        fontWeight: 700,
         background: bg,
         color,
-        border: `1px solid ${color}25`,
+        border: `1px solid ${color}30`,
         whiteSpace: 'nowrap',
         flexShrink: 0,
+        letterSpacing: '0.02em',
       }}
     >
       {label}
@@ -453,75 +456,79 @@ export function TeamDetail({ teamId, onEdit, onDelete }: Props) {
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {(team.members ?? []).map((m: TeamMember) => (
               <div
                 key={m.id}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 14,
-                  padding: '12px 16px',
+                  gap: 12,
+                  padding: '10px 14px',
                   borderRadius: 10,
                   background: 'var(--card-bg)',
                   border: '1px solid var(--border-subtle)',
-                  transition: 'background 0.1s',
+                  transition: 'border-color 0.15s',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-subtle)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--card-bg)')}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = `${BRAND_HEX}30`)}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-subtle)')}
               >
                 <TaskAvatar
                   name={m.user_detail.full_name}
                   url={m.user_detail.avatar_url}
-                  size={38}
+                  size={36}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p
                     style={{
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: 600,
                       color: 'var(--text-primary)',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
+                      lineHeight: 1.3,
                     }}
                   >
                     {m.user_detail.full_name}
                   </p>
-                  <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 1 }}>
+                  <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 1, lineHeight: 1 }}>
                     @{m.user_detail.username}
                   </p>
                 </div>
-                <select
-                  value={m.role}
-                  onChange={(e) => changeRole.mutate({ userId: m.user, role: e.target.value })}
-                  disabled={changeRole.isPending}
-                  style={{
-                    padding: '4px 8px',
-                    borderRadius: 7,
-                    border: `1px solid ${ROLE_CONFIG[m.role].color}40`,
-                    background: ROLE_CONFIG[m.role].bg,
-                    color: ROLE_CONFIG[m.role].color,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    outline: 'none',
-                    flexShrink: 0,
-                  }}
-                >
-                  <option value="leader">Leader</option>
-                  <option value="member">Member</option>
-                  <option value="observer">Observer</option>
-                </select>
+
+                {/* Role pill — doubles as a select trigger */}
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <RolePill role={m.role} />
+                  <select
+                    value={m.role}
+                    onChange={(e) => changeRole.mutate({ userId: m.user, role: e.target.value })}
+                    disabled={changeRole.isPending}
+                    title="Change role"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      opacity: 0,
+                      cursor: 'pointer',
+                      width: '100%',
+                      height: '100%',
+                    }}
+                  >
+                    <option value="leader">Leader</option>
+                    <option value="member">Member</option>
+                    <option value="observer">Observer</option>
+                  </select>
+                </div>
+
                 <button
                   onClick={() => removeMember.mutate(m.user)}
                   disabled={removeMember.isPending}
                   title="Remove from team"
                   style={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: 7,
-                    border: '1px solid var(--border-subtle)',
+                    width: 28,
+                    height: 28,
+                    borderRadius: 6,
+                    border: '1px solid transparent',
                     background: 'transparent',
                     cursor: 'pointer',
                     color: 'var(--text-tertiary)',
@@ -529,7 +536,8 @@ export function TeamDetail({ teamId, onEdit, onDelete }: Props) {
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
-                    fontSize: 14,
+                    fontSize: 16,
+                    lineHeight: 1,
                     transition: 'all 0.15s',
                   }}
                   onMouseEnter={(e) => {
@@ -538,7 +546,7 @@ export function TeamDetail({ teamId, onEdit, onDelete }: Props) {
                     e.currentTarget.style.background = '#FEF2F2';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                    e.currentTarget.style.borderColor = 'transparent';
                     e.currentTarget.style.color = 'var(--text-tertiary)';
                     e.currentTarget.style.background = 'transparent';
                   }}

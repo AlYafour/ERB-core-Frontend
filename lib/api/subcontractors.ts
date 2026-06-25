@@ -494,9 +494,7 @@ export const subcontractorsApi = {
   // Attachments
   attachments: {
     upload: async (formData: FormData): Promise<ContractAttachment> => {
-      const res = await apiClient.post(`${BASE}/attachments/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const res = await apiClient.post(`${BASE}/attachments/`, formData);
       return res.data;
     },
 

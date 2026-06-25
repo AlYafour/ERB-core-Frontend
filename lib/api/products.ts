@@ -65,9 +65,7 @@ export const productsApi = {
   importExcel: async (file: File): Promise<{ created: number; updated: number; skipped: number; errors: string[]; total_in_db: number }> => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await apiClient.post('/products/import_excel/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await apiClient.post('/products/import_excel/', formData);
     return response.data;
   },
 };
