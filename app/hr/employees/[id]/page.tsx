@@ -14,6 +14,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import { Button, Badge, PageShell, PageHeader, Drawer, Loader } from '@/components/ui';
+import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { rolesApi, Role, UserRoles, AdditionalRoleAssignment } from '@/lib/api/roles';
 import { HREmployee, User } from '@/types';
 
@@ -279,6 +280,10 @@ export default function EmployeeDetailPage() {
   const { data: depts }     = useQuery({ queryKey: ['hr-departments-all'], queryFn: () => hrDepartmentsApi.getAll({ page: 1 }), staleTime: 300_000 });
   const { data: positions } = useQuery({ queryKey: ['hr-positions-all'],   queryFn: () => hrPositionsApi.getAll({ page: 1 }), staleTime: 300_000 });
   const { data: groups }    = useQuery({ queryKey: ['hr-employee-groups-all'], queryFn: () => hrEmployeeGroupsApi.getAll(), staleTime: 300_000 });
+
+  const deptOptions     = (depts?.results     ?? []).map((d) => ({ value: d.id, label: d.name }));
+  const positionOptions = (positions?.results ?? []).map((p) => ({ value: p.id, label: p.title }));
+  const groupOptions    = (groups?.results    ?? []).map((g) => ({ value: g.id, label: g.name + (g.name_ar ? ` — ${g.name_ar}` : '') }));
   const { data: summary }   = useQuery({
     queryKey: ['hr-emp-summary', id],
     queryFn:  () => hrEmployeesApi.getAttendanceSummary(Number(id)),
@@ -881,26 +886,45 @@ export default function EmployeeDetailPage() {
             </div>
             <div className={fld}>
               <label className={lbl}>Department</label>
-              <select className={sel} value={form.department} onChange={f('department')}>
-                <option value="">— None —</option>
-                {depts?.results?.map((d: { id: number; name: string }) => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
+              <SearchableDropdown
+                options={deptOptions}
+                value={form.department ? Number(form.department) : null}
+                onChange={(v) => setForm((p) => ({ ...p, department: v ? String(v) : '' }))}
+                placeholder="— None —"
+                allowClear
+                onCreateOption={async (name) => {
+                  const dept = await hrDepartmentsApi.create({ name });
+                  queryClient.invalidateQueries({ queryKey: ['hr-departments-all'] });
+                  toast(`Department "${name}" created`, 'success');
+                  return { value: dept.id, label: dept.name };
+                }}
+              />
             </div>
             <div className={fld}>
               <label className={lbl}>Position</label>
-              <select className={sel} value={form.position} onChange={f('position')}>
-                <option value="">— None —</option>
-                {positions?.results?.map((p: { id: number; title: string }) => <option key={p.id} value={p.id}>{p.title}</option>)}
-              </select>
+              <SearchableDropdown
+                options={positionOptions}
+                value={form.position ? Number(form.position) : null}
+                onChange={(v) => setForm((p) => ({ ...p, position: v ? String(v) : '' }))}
+                placeholder="— None —"
+                allowClear
+                onCreateOption={async (title) => {
+                  const pos = await hrPositionsApi.create({ title });
+                  queryClient.invalidateQueries({ queryKey: ['hr-positions-all'] });
+                  toast(`Position "${title}" created`, 'success');
+                  return { value: pos.id, label: pos.title };
+                }}
+              />
             </div>
             <div className={fld}>
               <label className={lbl}>Employee Group</label>
-              <select className={sel} value={form.employee_group} onChange={f('employee_group')}>
-                <option value="">— None —</option>
-                {groups?.results?.map((g) => (
-                  <option key={g.id} value={g.id}>{g.name}{g.name_ar ? ` — ${g.name_ar}` : ''}</option>
-                ))}
-              </select>
+              <SearchableDropdown
+                options={groupOptions}
+                value={form.employee_group ? Number(form.employee_group) : null}
+                onChange={(v) => setForm((p) => ({ ...p, employee_group: v ? String(v) : '' }))}
+                placeholder="— None —"
+                allowClear
+              />
             </div>
             <div className={fld}><label className={lbl}>Salary Display Name</label><input className={inp} value={form.salary_display_name} onChange={f('salary_display_name')} /></div>
             <div className={fld}><label className={lbl}>Hiring Date</label><input className={inp} type="date" value={form.join_date} onChange={f('join_date')} /></div>

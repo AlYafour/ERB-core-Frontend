@@ -2,12 +2,13 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi, hrEmployeeGroupsApi } from '@/lib/api/hr';
 import { usersApi } from '@/lib/api/users';
 import { toast } from '@/lib/hooks/use-toast';
 import { Button, PageHeader, PageShell } from '@/components/ui';
+import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { HRPosition } from '@/types';
 
 export default function NewEmployeePage() {
@@ -68,9 +69,14 @@ function NewEmployeeForm() {
     }
   }, [existingUser]);
 
+  const queryClient = useQueryClient();
   const { data: depts }     = useQuery({ queryKey: ['hr-depts'],     queryFn: () => hrDepartmentsApi.getAll({ page: 1 }), staleTime: 300_000 });
   const { data: positions } = useQuery({ queryKey: ['hr-positions'], queryFn: () => hrPositionsApi.getAll({ page: 1 }), staleTime: 300_000 });
-  const { data: groups } = useQuery({ queryKey: ['hr-employee-groups-all'], queryFn: () => hrEmployeeGroupsApi.getAll(), staleTime: 300_000 });
+  const { data: groups }    = useQuery({ queryKey: ['hr-employee-groups-all'], queryFn: () => hrEmployeeGroupsApi.getAll(), staleTime: 300_000 });
+
+  const deptOptions     = (depts?.results     ?? []).map((d) => ({ value: d.id,    label: d.name }));
+  const positionOptions = (positions?.results ?? []).map((p) => ({ value: p.id,    label: p.title }));
+  const groupOptions    = (groups?.results    ?? []).map((g) => ({ value: g.id,    label: g.name + (g.name_ar ? ` — ${g.name_ar}` : '') }));
 
   const selectedPosition: HRPosition | undefined = positions?.results?.find(
     (pos: HRPosition) => String(pos.id) === String(employment.position)
@@ -249,24 +255,45 @@ function NewEmployeeForm() {
               </div>
               <div className="form-field">
                 <label className="form-label">Employee Group</label>
-                <select className="form-select" value={employment.employee_group} onChange={em('employee_group')}>
-                  <option value="">— None —</option>
-                  {groups?.results?.map((g) => (
-                    <option key={g.id} value={g.id}>{g.name}{g.name_ar ? ` — ${g.name_ar}` : ''}</option>
-                  ))}
-                </select>
+                <SearchableDropdown
+                  options={groupOptions}
+                  value={employment.employee_group ? Number(employment.employee_group) : null}
+                  onChange={(v) => setEmployment((p) => ({ ...p, employee_group: v ? String(v) : '' }))}
+                  placeholder="— None —"
+                  allowClear
+                />
               </div>
-              <div className="form-field"><label className="form-label">Department</label>
-                <select className="form-select" value={employment.department} onChange={em('department')}>
-                  <option value="">— None —</option>
-                  {depts?.results?.map((d: { id: number; name: string }) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
+              <div className="form-field">
+                <label className="form-label">Department</label>
+                <SearchableDropdown
+                  options={deptOptions}
+                  value={employment.department ? Number(employment.department) : null}
+                  onChange={(v) => setEmployment((p) => ({ ...p, department: v ? String(v) : '' }))}
+                  placeholder="— None —"
+                  allowClear
+                  onCreateOption={async (name) => {
+                    const dept = await hrDepartmentsApi.create({ name });
+                    queryClient.invalidateQueries({ queryKey: ['hr-depts'] });
+                    toast(`Department "${name}" created`, 'success');
+                    return { value: dept.id, label: dept.name };
+                  }}
+                />
               </div>
-              <div className="form-field"><label className="form-label">Position</label>
-                <select className="form-select" value={employment.position} onChange={em('position')}>
-                  <option value="">— None —</option>
-                  {positions?.results?.map((pos: HRPosition) => <option key={pos.id} value={pos.id}>{pos.title}</option>)}
-                </select>
+              <div className="form-field">
+                <label className="form-label">Position</label>
+                <SearchableDropdown
+                  options={positionOptions}
+                  value={employment.position ? Number(employment.position) : null}
+                  onChange={(v) => setEmployment((p) => ({ ...p, position: v ? String(v) : '' }))}
+                  placeholder="— None —"
+                  allowClear
+                  onCreateOption={async (title) => {
+                    const pos = await hrPositionsApi.create({ title });
+                    queryClient.invalidateQueries({ queryKey: ['hr-positions'] });
+                    toast(`Position "${title}" created`, 'success');
+                    return { value: pos.id, label: pos.title };
+                  }}
+                />
               </div>
 
               {selectedPosition?.permission_set_name && (

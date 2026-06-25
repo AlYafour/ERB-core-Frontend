@@ -25,6 +25,13 @@ interface SearchableDropdownProps {
   /** When provided, disables internal filtering and calls this on every keystroke (use for server-side search). */
   onSearch?: (query: string) => void;
   isLoading?: boolean;
+  /**
+   * When provided, shows a "+ Add '[query]'" button when no exact match exists.
+   * Should create the item via API and return the new option, or null on failure.
+   */
+  onCreateOption?: (label: string) => Promise<DropdownOption | null>;
+  /** Label for the create button — defaults to "Add" */
+  createLabel?: string;
 }
 
 interface MenuPosition {
@@ -52,11 +59,14 @@ export default function SearchableDropdown({
   filterFunction,
   onSearch,
   isLoading = false,
+  onCreateOption,
+  createLabel = 'Add',
 }: SearchableDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [menuPos, setMenuPos] = useState<MenuPosition | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   const triggerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -157,6 +167,26 @@ export default function SearchableDropdown({
     closeMenu();
   };
 
+  const handleCreate = async () => {
+    if (!onCreateOption || !searchQuery.trim() || isCreating) return;
+    setIsCreating(true);
+    try {
+      const newOption = await onCreateOption(searchQuery.trim());
+      if (newOption) {
+        onChange(newOption.value);
+        closeMenu();
+      }
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const trimmedQuery = searchQuery.trim().toLowerCase();
+  const hasExactMatch = trimmedQuery
+    ? options.some((o) => o.label.toLowerCase() === trimmedQuery)
+    : false;
+  const showCreateButton = !!onCreateOption && trimmedQuery.length > 0 && !hasExactMatch && !isLoading;
+
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
     onChange(null);
@@ -185,31 +215,62 @@ export default function SearchableDropdown({
         <div style={{ padding: '10px 16px', fontSize: 'var(--font-sm)', color: 'var(--text-tertiary)', textAlign: 'center' }}>
           Searching…
         </div>
-      ) : filteredOptions.length === 0 ? (
-        <div
-          style={{
-            padding: '10px 16px',
-            fontSize: 'var(--font-sm)',
-            color: 'var(--text-tertiary)',
-            textAlign: 'center',
-          }}
-        >
-          {emptyMessage}
-        </div>
       ) : (
-        filteredOptions.map((option) => (
-          <button
-            key={String(option.value)}
-            type="button"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              handleSelect(option);
-            }}
-            className={`dropdown-item${selectedOption?.value === option.value ? ' selected' : ''}`}
-          >
-            {option.label}
-          </button>
-        ))
+        <>
+          {filteredOptions.length === 0 && !showCreateButton && (
+            <div style={{ padding: '10px 16px', fontSize: 'var(--font-sm)', color: 'var(--text-tertiary)', textAlign: 'center' }}>
+              {emptyMessage}
+            </div>
+          )}
+
+          {filteredOptions.map((option) => (
+            <button
+              key={String(option.value)}
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); handleSelect(option); }}
+              className={`dropdown-item${selectedOption?.value === option.value ? ' selected' : ''}`}
+            >
+              {option.label}
+            </button>
+          ))}
+
+          {showCreateButton && (
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); handleCreate(); }}
+              disabled={isCreating}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                width: '100%',
+                padding: '8px 16px',
+                background: 'none',
+                border: 'none',
+                borderTop: filteredOptions.length > 0 ? '1px solid var(--border-subtle)' : 'none',
+                cursor: isCreating ? 'wait' : 'pointer',
+                color: 'var(--color-primary)',
+                fontSize: 'var(--font-sm)',
+                fontWeight: 500,
+                textAlign: 'left',
+              }}
+              onMouseEnter={(e) => { if (!isCreating) e.currentTarget.style.background = 'var(--dropdown-item-hover, var(--surface-hover))'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
+            >
+              {isCreating ? (
+                <>
+                  <span className="animate-spin" style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid var(--color-primary)', borderTopColor: 'transparent', borderRadius: '50%' }} />
+                  Creating…
+                </>
+              ) : (
+                <>
+                  <span style={{ fontSize: 16, lineHeight: 1 }}>＋</span>
+                  {createLabel} &ldquo;{searchQuery.trim()}&rdquo;
+                </>
+              )}
+            </button>
+          )}
+        </>
       )}
     </div>,
     document.body
