@@ -105,11 +105,36 @@ interface Props {
 }
 
 export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fileInputRef }: Props) {
-  const [preview, setPreview] = useState<PreviewItem | null>(null);
+  const [preview, setPreview]        = useState<PreviewItem | null>(null);
+  const [loadingPreview, setLoading] = useState<string | null>(null);
+  const [blobUrl, setBlobUrl]        = useState<string | null>(null);
 
-  function openPreview(fileUrl: string, fileName: string) {
+  async function openPreview(fileUrl: string, fileName: string) {
     const type = isImage(fileName) ? 'image' : isPdf(fileName) ? 'pdf' : 'other';
+
+    if (type === 'pdf') {
+      // Cloudinary blocks iframe embedding via X-Frame-Options — fetch as blob first
+      setLoading(fileName);
+      try {
+        const resp = await fetch(fileUrl);
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        setBlobUrl(url);
+        setPreview({ url, name: fileName, type: 'pdf' });
+      } catch {
+        window.open(fileUrl, '_blank');
+      } finally {
+        setLoading(null);
+      }
+      return;
+    }
+
     setPreview({ url: fileUrl, name: fileName, type });
+  }
+
+  function closePreview() {
+    if (blobUrl) { URL.revokeObjectURL(blobUrl); setBlobUrl(null); }
+    setPreview(null);
   }
 
   function openInTab(fileUrl: string) {
@@ -179,8 +204,9 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
                     type="button"
                     className="attachment-download"
                     onClick={() => openPreview(a.file_url!, a.file_name)}
+                    disabled={loadingPreview === a.file_name}
                   >
-                    Preview
+                    {loadingPreview === a.file_name ? '…' : 'Preview'}
                   </button>
                   <button
                     type="button"
@@ -213,7 +239,7 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
       {preview && (
         <FilePreviewModal
           item={preview}
-          onClose={() => setPreview(null)}
+          onClose={closePreview}
         />
       )}
     </div>

@@ -200,6 +200,18 @@ export default function TasksPage() {
         </div>
       ) : <span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Unassigned</span>,
     },
+    ...(isAdmin ? [{
+      key: 'created_by' as keyof TaskListItem,
+      header: 'Created By',
+      render: (t: TaskListItem) => t.created_by_detail ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <TaskAvatar name={t.created_by_detail.full_name} url={t.created_by_detail.avatar_url} size={22} />
+          <span style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {t.created_by_detail.full_name}
+          </span>
+        </div>
+      ) : <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>—</span>,
+    }] : []),
     {
       key: 'due_date', header: 'Due Date',
       render: t => {
