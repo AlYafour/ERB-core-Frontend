@@ -20,7 +20,7 @@ import RouteGuard from '@/components/auth/RouteGuard';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { Button, PageHeader, PageShell } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
-import { usePOFormTotals } from '@/lib/hooks/use-po-form-totals';
+import { usePOFormTotals, POFormCharge } from '@/lib/hooks/use-po-form-totals';
 import { EditableStandardItemsTable } from '@/components/procurement/EditableStandardItemsTable';
 import { AddItemPanel, AddItemState } from '@/components/procurement/shared/AddItemPanel';
 import { POFormSummary } from '@/components/procurement/shared/POFormSummary';
@@ -38,7 +38,17 @@ export default function EditPurchaseOrderPage() {
 
 type FormItem = Omit<PurchaseOrderItem, 'product' | 'total' | 'created_at'>;
 
+interface FormCharge {
+  id?: number;
+  pr_charge_id?: number | null;
+  description: string;
+  charge_type: 'lump_sum' | 'per_unit';
+  rate: number;
+  quantity: number;
+}
+
 const BLANK_ITEM: AddItemState = { product_id: 0, quantity: 0, unit_price: 0, discount: 0, tax_rate: 0, notes: '' };
+const BLANK_CHARGE: FormCharge = { description: '', charge_type: 'lump_sum', rate: 0, quantity: 1 };
 
 function EditPOContent() {
   const t = useT();
@@ -65,8 +75,9 @@ function EditPOContent() {
     delivery_date: '', delivery_method: '', payment_terms: '', delivery_terms: '',
     notes: '', terms_and_conditions: '', tax_rate: 0, discount: 0, status: 'draft', cost_code_id: null,
   });
-  const [items, setItems]       = useState<FormItem[]>([]);
-  const [newItem, setNewItem]   = useState<AddItemState>(BLANK_ITEM);
+  const [items, setItems]     = useState<FormItem[]>([]);
+  const [charges, setCharges] = useState<FormCharge[]>([]);
+  const [newItem, setNewItem] = useState<AddItemState>(BLANK_ITEM);
   const [costCode, setCostCode] = useState<CostCode | null>(null);
 
   useEffect(() => {
@@ -101,6 +112,14 @@ function EditPOContent() {
       tax_rate: item.tax_rate ?? 0,
       notes: item.notes || '',
     })));
+    setCharges((order.charges ?? []).map((c) => ({
+      id: c.id,
+      pr_charge_id: c.pr_charge_id ?? null,
+      description: c.description,
+      charge_type: c.charge_type,
+      rate: Number(c.rate),
+      quantity: Number(c.quantity),
+    })));
     if (order.cost_code) {
       const cc = order.cost_code as CostCode;
       setCostCode(cc);
@@ -109,8 +128,17 @@ function EditPOContent() {
   }, [order]);
 
   const mutation = useMutation({
-    mutationFn: (data: PurchaseOrderUpdateFormData) =>
-      purchaseOrdersApi.update(id, toPurchaseOrderUpdateData(data, items) as unknown as Partial<PurchaseOrder>),
+    mutationFn: () =>
+      purchaseOrdersApi.update(id, {
+        ...toPurchaseOrderUpdateData(formData, items),
+        charges: charges.map((c) => ({
+          pr_charge_id: c.pr_charge_id ?? null,
+          description: c.description,
+          charge_type: c.charge_type,
+          rate: c.rate,
+          quantity: c.quantity,
+        })),
+      } as unknown as Partial<PurchaseOrder>),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       toast('Purchase Order updated!', 'success');
@@ -119,7 +147,7 @@ function EditPOContent() {
     onError: (err: unknown) => toast(getApiError(err, 'Failed to update purchase order'), 'error'),
   });
 
-  const totals = usePOFormTotals(formData, items);
+  const totals = usePOFormTotals(formData, items, charges as POFormCharge[]);
   const setForm = (patch: Partial<PurchaseOrderUpdateFormData>) => setFormData((p) => ({ ...p, ...patch }));
   const productOptions = (products?.results || []).map((p) => ({ value: p.id, label: `${p.name} (${p.code})`, searchText: `${p.name} ${p.code}` }));
 
@@ -129,11 +157,17 @@ function EditPOContent() {
     setNewItem(BLANK_ITEM);
   };
 
+  const updateCharge = (idx: number, patch: Partial<FormCharge>) =>
+    setCharges((prev) => prev.map((c, i) => i === idx ? { ...c, ...patch } : c));
+
+  const removeCharge = (idx: number) =>
+    setCharges((prev) => prev.filter((_, i) => i !== idx));
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.supplier_id) { toast('Please select a supplier', 'warning'); return; }
     if (items.length === 0)    { toast('Please add at least one product', 'warning'); return; }
-    mutation.mutate(formData);
+    mutation.mutate();
   };
 
   if (isLoading) return <DocLoadState type="loading" />;
@@ -247,6 +281,114 @@ function EditPOContent() {
             )}
           </div>
 
+          {/* Additional Charges */}
+          <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+              <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', margin: 0 }}>
+                Additional Charges
+                {charges.length > 0 && (
+                  <span style={{ marginLeft: 8, fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-normal)', color: 'var(--text-secondary)' }}>
+                    ({charges.length})
+                  </span>
+                )}
+              </h3>
+              <Button type="button" variant="secondary" size="sm" onClick={() => setCharges((p) => [...p, { ...BLANK_CHARGE }])}>
+                + Add Charge
+              </Button>
+            </div>
+
+            {charges.length > 0 && (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-default)' }}>
+                      <th style={{ padding: '6px 8px', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Description</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', width: 130 }}>Type</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-secondary)', fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', width: 110 }}>Rate</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-secondary)', fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', width: 90 }}>Qty</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', color: 'var(--text-secondary)', fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', width: 120 }}>Total</th>
+                      <th style={{ width: 36 }} />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {charges.map((charge, idx) => {
+                      const chargeTotal = charge.charge_type === 'lump_sum'
+                        ? Number(charge.rate) || 0
+                        : (Number(charge.rate) || 0) * (Number(charge.quantity) || 1);
+                      return (
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                          <td style={{ padding: '6px 8px' }}>
+                            <input
+                              type="text"
+                              className="form-input"
+                              style={{ fontSize: 'var(--text-sm)' }}
+                              placeholder="Charge description…"
+                              value={charge.description}
+                              onChange={(e) => updateCharge(idx, { description: e.target.value })}
+                            />
+                          </td>
+                          <td style={{ padding: '6px 8px' }}>
+                            <select
+                              className="form-select"
+                              style={{ fontSize: 'var(--text-sm)' }}
+                              value={charge.charge_type}
+                              onChange={(e) => updateCharge(idx, { charge_type: e.target.value as 'lump_sum' | 'per_unit' })}
+                            >
+                              <option value="lump_sum">Lump Sum</option>
+                              <option value="per_unit">Per Unit</option>
+                            </select>
+                          </td>
+                          <td style={{ padding: '6px 8px' }}>
+                            <input
+                              type="number"
+                              className="form-input"
+                              style={{ fontSize: 'var(--text-sm)', textAlign: 'right' }}
+                              min="0"
+                              step="0.01"
+                              value={charge.rate}
+                              onChange={(e) => updateCharge(idx, { rate: Number(e.target.value) })}
+                            />
+                          </td>
+                          <td style={{ padding: '6px 8px' }}>
+                            <input
+                              type="number"
+                              className="form-input"
+                              style={{ fontSize: 'var(--text-sm)', textAlign: 'right' }}
+                              min="1"
+                              step="1"
+                              disabled={charge.charge_type === 'lump_sum'}
+                              value={charge.charge_type === 'lump_sum' ? '—' : charge.quantity}
+                              onChange={(e) => updateCharge(idx, { quantity: Number(e.target.value) })}
+                            />
+                          </td>
+                          <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
+                            {formatPrice(chargeTotal)} AED
+                          </td>
+                          <td style={{ padding: '6px 4px', textAlign: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => removeCharge(idx)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-error)', padding: 4, lineHeight: 1 }}
+                              title="Remove charge"
+                            >
+                              ×
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {charges.length === 0 && (
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', margin: 0 }}>
+                No additional charges. Click <strong>+ Add Charge</strong> to add one.
+              </p>
+            )}
+          </div>
+
           {/* Terms */}
           <div className="card" style={{ marginBottom: 'var(--space-4)', background: 'var(--surface-inset)' }}>
             <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--weight-semibold)', margin: '0 0 var(--space-4)' }}>{t('section', 'termsConditions')}</h3>
@@ -281,6 +423,7 @@ function EditPOContent() {
             taxRate={formData.tax_rate}
             transportationCharge={formData.transportation_charge}
             transportVatIncluded={formData.transport_vat_included}
+            chargesCount={charges.length}
             onDiscountChange={(v) => setForm({ discount: v })}
             onTaxRateChange={(v) => setForm({ tax_rate: v })}
             onTransportChange={(v) => setForm({ transportation_charge: v })}
