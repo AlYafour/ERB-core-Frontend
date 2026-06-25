@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
+import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { hrApprovalsApi, hrEmployeeGroupsApi, hrEmployeesApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
@@ -392,6 +393,15 @@ function ChainBuilder({
 
   const setField = (patch: Partial<FormState>) => setForm(f => ({ ...f, ...patch }));
 
+  const groupOptions = useMemo(() => [
+    { value: '__catchall__', label: 'Any group (catch-all)', searchText: 'any catch-all' },
+    ...groups.map(g => ({ value: g.id, label: `${g.name} (${g.code})`, searchText: `${g.name} ${g.code}` })),
+  ], [groups]);
+
+  const requestTypeOptions = useMemo(() =>
+    requestTypes.map(rt => ({ value: rt.id, label: rt.name })),
+  [requestTypes]);
+
   const updateStage = (i: number, patch: Partial<StageRow>) =>
     setStages(s => s.map((r, idx) => idx === i ? { ...r, ...patch } : r));
 
@@ -566,29 +576,24 @@ function ChainBuilder({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px', gap: 12 }}>
             <div>
               <label style={LABEL}>Group</label>
-              <select
-                value={form.employee_group ?? ''}
-                onChange={e => setField({ employee_group: e.target.value ? Number(e.target.value) : null })}
-                style={SELECT}
-              >
-                <option value="">Any group (catch-all)</option>
-                {groups.map(g => (
-                  <option key={g.id} value={g.id}>{g.name}</option>
-                ))}
-              </select>
+              <SearchableDropdown
+                options={groupOptions}
+                value={form.employee_group ?? '__catchall__'}
+                onChange={v => setField({ employee_group: v === '__catchall__' ? null : v as number })}
+                allowClear={false}
+                placeholder="Any group (catch-all)"
+              />
             </div>
             <div>
               <label style={LABEL}>Request Type</label>
-              <select
-                value={form.request_type ?? ''}
-                onChange={e => setField({ request_type: e.target.value ? Number(e.target.value) : null })}
-                style={SELECT}
-              >
-                <option value="">— select type —</option>
-                {requestTypes.map(rt => (
-                  <option key={rt.id} value={rt.id}>{rt.name}</option>
-                ))}
-              </select>
+              <SearchableDropdown
+                options={requestTypeOptions}
+                value={form.request_type}
+                onChange={v => setField({ request_type: v as number | null })}
+                allowClear
+                placeholder="— select type —"
+                emptyMessage="No request types found"
+              />
             </div>
             <div>
               <label style={LABEL}>Priority</label>

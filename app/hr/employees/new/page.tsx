@@ -43,7 +43,7 @@ function NewEmployeeForm() {
     join_date: new Date().toISOString().split('T')[0],
     probation_end_date: '', end_date: '',
     department: '', position: '',
-    employee_group: '', salary_display_name: '',
+    employee_group: null as number | null, salary_display_name: '',
     basic_salary: '0', housing_allowance: '0',
     transport_allowance: '0', other_allowances: '0',
   });
@@ -257,8 +257,8 @@ function NewEmployeeForm() {
                 <label className="form-label">Employee Group</label>
                 <SearchableDropdown
                   options={groupOptions}
-                  value={employment.employee_group ? Number(employment.employee_group) : null}
-                  onChange={(v) => setEmployment((p) => ({ ...p, employee_group: v ? String(v) : '' }))}
+                  value={employment.employee_group}
+                  onChange={(v) => setEmployment((p) => ({ ...p, employee_group: v as number | null }))}
                   placeholder="— None —"
                   allowClear
                 />
@@ -320,7 +320,7 @@ function NewEmployeeForm() {
               <div className="form-grid">
                 {[['basic_salary','Basic Salary'],['housing_allowance','Housing'],['transport_allowance','Transport'],['other_allowances','Other']].map(([k, l]) => (
                   <div key={k} className="form-field"><label className="form-label">{l}</label>
-                    <input className="form-input" type="number" min="0" value={(employment as Record<string, string>)[k]} onChange={em(k)} />
+                    <input className="form-input" type="number" min="0" value={(employment as Record<string, unknown>)[k] as string} onChange={em(k)} />
                   </div>
                 ))}
               </div>

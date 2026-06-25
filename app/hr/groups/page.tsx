@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
+import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { hrEmployeeGroupsApi, hrShiftsApi, hrEmployeesApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
@@ -244,6 +245,15 @@ function GroupModal({
 
   const activeShifts = shifts.filter(s => s.is_active);
 
+  const shiftOptions = useMemo(() => [
+    { value: '__none__', label: '— No default shift —', searchText: 'none' },
+    ...activeShifts.map(s => ({
+      value: s.id,
+      label: s.start_time && s.end_time ? `${s.name} (${fmtTime(s.start_time)} – ${fmtTime(s.end_time)})` : s.name,
+      searchText: s.name,
+    })),
+  ], [activeShifts]);
+
   return (
     <div
       style={{
@@ -326,22 +336,13 @@ function GroupModal({
           {/* Default Shift */}
           <div>
             <label style={LABEL_STYLE}>Default Shift</label>
-            <select
-              value={form.default_shift ?? ''}
-              onChange={e => set('default_shift', e.target.value ? parseInt(e.target.value, 10) : null)}
-              className="form-input"
-              style={{ width: '100%', fontSize: 'var(--text-sm)' }}
-            >
-              <option value="">— No default shift —</option>
-              {activeShifts.map(s => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                  {s.start_time && s.end_time
-                    ? ` (${fmtTime(s.start_time)} – ${fmtTime(s.end_time)})`
-                    : ''}
-                </option>
-              ))}
-            </select>
+            <SearchableDropdown
+              options={shiftOptions}
+              value={form.default_shift ?? '__none__'}
+              onChange={v => set('default_shift', v === '__none__' ? null : v as number)}
+              allowClear={false}
+              placeholder="— No default shift —"
+            />
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
               Group members inherit this shift. Individual overrides apply in a later phase.
             </p>

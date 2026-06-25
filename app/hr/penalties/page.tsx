@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
+import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { hrPenaltyRulesApi, hrEmployeeGroupsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
@@ -292,6 +293,11 @@ function RuleBuilder({
 
   const setField = (patch: Partial<FormState>) => setForm(f => ({ ...f, ...patch }));
 
+  const groupOptions = useMemo(() => [
+    { value: '__catchall__', label: 'Any group (catch-all)', searchText: 'any catch-all' },
+    ...groups.map(g => ({ value: g.id, label: `${g.name} (${g.code})`, searchText: `${g.name} ${g.code}` })),
+  ], [groups]);
+
   const updateTier = (i: number, patch: Partial<TierRow>) =>
     setTiers(ts => ts.map((t, idx) => idx === i ? { ...t, ...patch } : t));
 
@@ -451,16 +457,13 @@ function RuleBuilder({
             </div>
             <div>
               <label style={LABEL}>Group</label>
-              <select
-                value={form.employee_group ?? ''}
-                onChange={e => setField({ employee_group: e.target.value ? Number(e.target.value) : null })}
-                style={SELECT}
-              >
-                <option value="">Any group (catch-all)</option>
-                {groups.map(g => (
-                  <option key={g.id} value={g.id}>{g.name}</option>
-                ))}
-              </select>
+              <SearchableDropdown
+                options={groupOptions}
+                value={form.employee_group ?? '__catchall__'}
+                onChange={v => setField({ employee_group: v === '__catchall__' ? null : v as number })}
+                allowClear={false}
+                placeholder="Any group (catch-all)"
+              />
             </div>
             <div>
               <label style={LABEL}>Priority</label>
