@@ -14,7 +14,8 @@ import { BaseModal } from '@/components/ui/base/BaseModal';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { useTableState } from '@/lib/hooks/use-table-state';
-import type { EmployeeLoan, HREmployee } from '@/types';
+import type { EmployeeLoan, HREmployee, LoanType } from '@/types';
+import { LOAN_TYPE_LABELS } from '@/types';
 import { MONTH_NAMES } from '@/lib/utils/hr';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -82,6 +83,7 @@ const SECTION: React.CSSProperties = {
 
 interface LoanForm {
   employeeId:         number | null;
+  loan_type:          LoanType;
   total_amount:       string;
   installment_amount: string;
   start_month:        number;
@@ -91,6 +93,7 @@ interface LoanForm {
 
 const LOAN_INITIAL: LoanForm = {
   employeeId:         null,
+  loan_type:          'personal',
   total_amount:       '',
   installment_amount: '',
   start_month:        NOW_MONTH,
@@ -129,6 +132,7 @@ function NewLoanModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose
   const createMutation = useMutation({
     mutationFn: () => hrLoansApi.create({
       employee:           form.employeeId!,
+      loan_type:          form.loan_type,
       total_amount:       form.total_amount,
       installment_amount: form.installment_amount,
       start_month:        form.start_month,
@@ -191,6 +195,16 @@ function NewLoanModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose
             searchPlaceholder="Type to search…"
             allowClear emptyMessage="No employees found"
           />
+        </div>
+
+        <div>
+          <p style={SECTION}>Loan Type</p>
+          <label style={LABEL}>Type <span style={{ color: 'var(--color-error)' }}>*</span></label>
+          <select value={form.loan_type} onChange={e => setForm(f => ({ ...f, loan_type: e.target.value as LoanType }))} style={INPUT}>
+            {(Object.entries(LOAN_TYPE_LABELS) as [LoanType, string][]).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
         </div>
 
         <div>
@@ -473,6 +487,7 @@ function LoanDetailModal({ loan, onClose, canPayCash, canSkip, canReschedule, on
   const rows: [string, string][] = [
     ['Employee',          loan.employee_name],
     ['Employee ID',       loan.employee_id_code],
+    ['Type',              LOAN_TYPE_LABELS[loan.loan_type] ?? loan.loan_type],
     ['Total Amount',      fmt(loan.total_amount)],
     ['Installment / Mo.', fmt(loan.installment_amount)],
     ['Remaining Balance', fmt(loan.remaining_balance)],
@@ -626,6 +641,14 @@ export default function HRLoansPage() {
             {r.employee_id_code}
           </div>
         </div>
+      ),
+    },
+    {
+      key: 'loan_type', header: 'Type',
+      render: r => (
+        <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+          {LOAN_TYPE_LABELS[r.loan_type] ?? r.loan_type}
+        </span>
       ),
     },
     {

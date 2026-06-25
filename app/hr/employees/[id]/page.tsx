@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
-import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi } from '@/lib/api/hr';
+import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi, hrLocationsApi } from '@/lib/api/hr';
 import { usersApi } from '@/lib/api/users';
 import HomeTab       from '@/components/users/HomeTab';
 import AttendanceTab from '@/components/users/AttendanceTab';
@@ -278,6 +278,7 @@ export default function EmployeeDetailPage() {
   const isSelf = !!emp && currentUser?.id === emp.user?.id;
   const { data: depts }     = useQuery({ queryKey: ['hr-departments-all'], queryFn: () => hrDepartmentsApi.getAll({ page: 1 }), staleTime: 300_000 });
   const { data: positions } = useQuery({ queryKey: ['hr-positions-all'],   queryFn: () => hrPositionsApi.getAll({ page: 1 }), staleTime: 300_000 });
+  const { data: locations } = useQuery({ queryKey: ['hr-locations-all'],   queryFn: () => hrLocationsApi.getAll({ is_active: true, page_size: 100 }), staleTime: 300_000 });
   const { data: summary }   = useQuery({
     queryKey: ['hr-emp-summary', id],
     queryFn:  () => hrEmployeesApi.getAttendanceSummary(Number(id)),
@@ -891,7 +892,15 @@ export default function EmployeeDetailPage() {
                 {positions?.results?.map((p: { id: number; title: string }) => <option key={p.id} value={p.id}>{p.title}</option>)}
               </select>
             </div>
-            <div className={fld}><label className={lbl}>Work Location</label><input className={inp} value={form.work_location} onChange={f('work_location')} /></div>
+            <div className={fld}>
+              <label className={lbl}>Work Location</label>
+              <select className={sel} value={form.work_location} onChange={f('work_location')}>
+                <option value="">— None —</option>
+                {locations?.results?.map((l) => (
+                  <option key={l.id} value={l.name}>{l.name}</option>
+                ))}
+              </select>
+            </div>
             <div className={fld}><label className={lbl}>Salary Display Name</label><input className={inp} value={form.salary_display_name} onChange={f('salary_display_name')} /></div>
             <div className={fld}><label className={lbl}>Hiring Date</label><input className={inp} type="date" value={form.join_date} onChange={f('join_date')} /></div>
             <div className={fld}><label className={lbl}>End of Probation</label><input className={inp} type="date" value={form.probation_end_date} onChange={f('probation_end_date')} /></div>

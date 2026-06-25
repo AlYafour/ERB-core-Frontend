@@ -898,12 +898,24 @@ export interface LeaveEncashment {
   updated_at: string;
 }
 
+export type LoanType = 'salary_advance' | 'vehicle' | 'personal' | 'medical' | 'housing' | 'other';
+
+export const LOAN_TYPE_LABELS: Record<LoanType, string> = {
+  salary_advance: 'Salary Advance',
+  vehicle:        'Vehicle Purchase',
+  personal:       'Personal Loan',
+  medical:        'Medical',
+  housing:        'Housing',
+  other:          'Other',
+};
+
 export interface EmployeeLoan {
   id: number;
   employee: number;
   employee_name: string;
   employee_id_code: string;
   hr_request: number | null;
+  loan_type: LoanType;
   total_amount: string;
   installment_amount: string;
   remaining_balance: string;

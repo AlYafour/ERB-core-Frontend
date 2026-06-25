@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
-import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi } from '@/lib/api/hr';
+import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi, hrLocationsApi } from '@/lib/api/hr';
 import { usersApi } from '@/lib/api/users';
 import { toast } from '@/lib/hooks/use-toast';
 import { Button, PageHeader, PageShell } from '@/components/ui';
@@ -70,6 +70,7 @@ function NewEmployeeForm() {
 
   const { data: depts }     = useQuery({ queryKey: ['hr-depts'],     queryFn: () => hrDepartmentsApi.getAll({ page: 1 }), staleTime: 300_000 });
   const { data: positions } = useQuery({ queryKey: ['hr-positions'], queryFn: () => hrPositionsApi.getAll({ page: 1 }), staleTime: 300_000 });
+  const { data: locations } = useQuery({ queryKey: ['hr-locations-all'], queryFn: () => hrLocationsApi.getAll({ is_active: true, page_size: 100 }), staleTime: 300_000 });
 
   const selectedPosition: HRPosition | undefined = positions?.results?.find(
     (pos: HRPosition) => String(pos.id) === String(employment.position)
@@ -246,7 +247,15 @@ function NewEmployeeForm() {
                   <option value="contract">Contract</option><option value="intern">Intern</option>
                 </select>
               </div>
-              <div className="form-field"><label className="form-label">Work Location</label><input className="form-input" value={employment.work_location} onChange={em('work_location')} /></div>
+              <div className="form-field">
+                <label className="form-label">Work Location</label>
+                <select className="form-select" value={employment.work_location} onChange={em('work_location')}>
+                  <option value="">— None —</option>
+                  {locations?.results?.map((l) => (
+                    <option key={l.id} value={l.name}>{l.name}</option>
+                  ))}
+                </select>
+              </div>
               <div className="form-field"><label className="form-label">Department</label>
                 <select className="form-select" value={employment.department} onChange={em('department')}>
                   <option value="">— None —</option>
