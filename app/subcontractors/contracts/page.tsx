@@ -9,7 +9,7 @@ import { type FilterField } from '@/components/ui/FilterPanel';
 import { useListState } from '@/lib/hooks/use-list-state';
 import { CONTRACT_STATUS } from '@/lib/utils/status-colors';
 import { toast, confirm } from '@/lib/hooks/use-toast';
-import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { EnterpriseListPage, type EnterpriseColumn, type BulkAction } from '@/components/ui/enterprise';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -35,8 +35,8 @@ function ContractsContent() {
   const listState = useListState('subcon-contracts');
   const { page, search, filters, pageSize, selectedItems, clearSelection } = listState;
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const isSuperuser = user?.is_superuser ?? false;
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isPrivileged = isTenantAdmin || isPlatformAdmin;
 
   const [rejectDialog, setRejectDialog] = useState<RejectDialog | null>(null);
 
@@ -188,7 +188,7 @@ function ContractsContent() {
     { label: 'Page Value', value: `AED ${(totalValue / 1000000).toFixed(1)}M`, variant: 'default' as const },
   ];
 
-  const bulkActions: BulkAction[] = isSuperuser ? [
+  const bulkActions: BulkAction[] = isPrivileged ? [
     {
       key: 'delete', label: 'Delete Selected', variant: 'destructive',
       onClick: handleBulkDelete,
@@ -219,7 +219,7 @@ function ContractsContent() {
         error={error}
         onRefetch={refetch}
         paginatedData={data}
-        selectable={isSuperuser}
+        selectable={isPrivileged}
         bulkActions={bulkActions}
         emptyMessage="No contracts found."
       />

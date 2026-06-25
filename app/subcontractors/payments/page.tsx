@@ -9,7 +9,7 @@ import { type FilterField } from '@/components/ui/FilterPanel';
 import { useListState } from '@/lib/hooks/use-list-state';
 import { PAYMENT_STATUS } from '@/lib/utils/status-colors';
 import { toast, confirm } from '@/lib/hooks/use-toast';
-import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { EnterpriseListPage, type EnterpriseColumn, type BulkAction } from '@/components/ui/enterprise';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -29,8 +29,8 @@ function PaymentsContent() {
   const listState = useListState('subcon-payments');
   const { page, search, filters, pageSize, selectedItems, clearSelection } = listState;
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const isSuperuser = user?.is_superuser ?? false;
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const isPrivileged = isTenantAdmin || isPlatformAdmin;
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['subcon-payments', page, pageSize, search, filters],
@@ -63,7 +63,7 @@ function PaymentsContent() {
 
   const deletableIds = [...selectedItems].filter(id => {
     const row = rows.find(r => r.id === id);
-    return row && (isSuperuser || DELETABLE_STATUSES.has(row.status));
+    return row && (isPrivileged || DELETABLE_STATUSES.has(row.status));
   });
   const nonDeletableCount = selectedItems.size - deletableIds.length;
 

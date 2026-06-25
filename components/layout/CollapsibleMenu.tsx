@@ -20,7 +20,7 @@ interface CollapsibleMenuProps {
   icon: ReactNode;
   items: MenuItem[];
   defaultOpen?: boolean;
-  user?: any;
+  isAdmin?: boolean;
   collapsed?: boolean;
 }
 
@@ -39,14 +39,13 @@ export default function CollapsibleMenu({
   icon,
   items,
   defaultOpen = false,
-  user,
+  isAdmin = false,
   collapsed = false,
 }: CollapsibleMenuProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const pathname = usePathname();
 
   const visibleItems = items.filter((item) => {
-    const isAdmin = !!(user?.is_company_admin || user?.is_superuser || user?.role === 'admin');
     if (item.superAdminOnly && !isAdmin) return false;
     if (item.adminOnly      && !isAdmin) return false;
     return true;

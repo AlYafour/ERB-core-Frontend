@@ -263,7 +263,7 @@ export default function Sidebar() {
   const isSubActive       = pathname.startsWith('/subcontractors');
 
   const showOperations = true || showModule('crm') || showModule('subcontractors'); // tasks always visible
-  const collapsibleProps = { user, collapsed: sidebarCollapsed };
+  const collapsibleProps = { isAdmin, collapsed: sidebarCollapsed };
 
   function navLink(href: string, label: string, icon: React.ReactNode) {
     const active = isActive(href);
