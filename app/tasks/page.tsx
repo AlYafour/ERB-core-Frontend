@@ -6,7 +6,6 @@ import type { TaskListItem } from '@/types';
 import { tasksApi, myTasksApi } from '@/lib/api/tasks';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
-import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { Button, type Column } from '@/components/ui';
@@ -28,8 +27,7 @@ export default function TasksPage() {
   const { page, search, filters, selectedItems, clearSelection } = tableState;
 
   const { user } = useAuth();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
-  const { isAdmin } = usePermissions();
+  const { isTenantAdmin, isPlatformAdmin, hasPermission } = useMyPermissions();
   const isPrivileged = isTenantAdmin || isPlatformAdmin;
   const qc = useQueryClient();
 
@@ -52,7 +50,8 @@ export default function TasksPage() {
     queryFn:  () => myTasksApi.getAll().then(r => r.filter(t => !t.is_done).length),
   });
 
-  const effectiveScope = (filters.scope as string) || (isPrivileged ? 'all' : 'mine');
+  const canViewAll = isPrivileged || hasPermission('tasks.task.view_all');
+  const effectiveScope = (filters.scope as string) || (canViewAll ? 'all' : 'mine');
 
   const { data: raw, isLoading, error } = useQuery({
     queryKey: ['tasks', page, search, filters],

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { TaskDetail } from '@/types';
 import { fmtFileSize } from '../shared/constants';
 import { toast } from '@/lib/hooks/use-toast';
-import { useAuthStore } from '@/lib/store/auth-store';
+import apiClient from '@/lib/api/client';
 
 const MAX_MB = 25;
 
@@ -26,6 +26,15 @@ function fileIcon(name: string) {
   return '📎';
 }
 
+/** Fetch a file through the authenticated backend download endpoint and return a blob URL. */
+async function fetchBlobUrl(attachmentId: number): Promise<string> {
+  const resp = await apiClient.get<Blob>(
+    `/tasks/attachments/${attachmentId}/download/`,
+    { responseType: 'blob' },
+  );
+  return URL.createObjectURL(resp.data);
+}
+
 interface PreviewItem {
   name: string;
   url: string;
@@ -33,22 +42,11 @@ interface PreviewItem {
 }
 
 function FilePreviewModal({ item, onClose }: { item: PreviewItem; onClose: () => void }) {
-  const handleDownload = async () => {
-    try {
-      const token = useAuthStore.getState().accessToken;
-      const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
-      const resp = await fetch(item.url, { headers });
-      if (!resp.ok) { window.open(item.url, '_blank'); return; }
-      const blob = await resp.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = item.name;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 5_000);
-    } catch {
-      window.open(item.url, '_blank');
-    }
+  const handleDownload = () => {
+    const a = document.createElement('a');
+    a.href = item.url;
+    a.download = item.name;
+    a.click();
   };
 
   return (
@@ -109,63 +107,56 @@ interface Props {
 }
 
 export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fileInputRef }: Props) {
-  const [preview, setPreview]        = useState<PreviewItem | null>(null);
-  const [loadingPreview, setLoading] = useState<string | null>(null);
-  const [blobUrl, setBlobUrl]        = useState<string | null>(null);
+  const [preview, setPreview]    = useState<PreviewItem | null>(null);
+  const [loading, setLoading]    = useState<number | null>(null);
+  const [blobUrls, setBlobUrls]  = useState<Record<number, string>>({});
 
-  async function openPreview(fileUrl: string, fileName: string) {
-    const type = isImage(fileName) ? 'image' : isPdf(fileName) ? 'pdf' : 'other';
-
-    if (type === 'pdf') {
-      setLoading(fileName);
-      try {
-        const token = useAuthStore.getState().accessToken;
-        const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
-        const resp = await fetch(fileUrl, { headers });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const contentType = resp.headers.get('content-type') ?? '';
-        const isPdfContent = contentType.includes('pdf') || contentType.includes('octet-stream') || contentType === 'application/pdf';
-        if (!isPdfContent) throw new Error('not-pdf');
-        const blob = await resp.blob();
-        const url = URL.createObjectURL(blob);
-        setBlobUrl(url);
-        setPreview({ url, name: fileName, type: 'pdf' });
-      } catch {
-        // Can't preview inline — open directly in new tab
-        window.open(fileUrl, '_blank');
-      } finally {
-        setLoading(null);
-      }
-      return;
+  async function openPreview(id: number, fileName: string) {
+    setLoading(id);
+    try {
+      const cached = blobUrls[id];
+      const url = cached ?? await fetchBlobUrl(id);
+      if (!cached) setBlobUrls(prev => ({ ...prev, [id]: url }));
+      const type = isImage(fileName) ? 'image' : isPdf(fileName) ? 'pdf' : 'other';
+      setPreview({ url, name: fileName, type });
+    } catch {
+      toast('Could not load file preview', 'error');
+    } finally {
+      setLoading(null);
     }
-
-    setPreview({ url: fileUrl, name: fileName, type });
   }
 
   function closePreview() {
-    if (blobUrl) { URL.revokeObjectURL(blobUrl); setBlobUrl(null); }
     setPreview(null);
   }
 
-  function openInTab(fileUrl: string) {
-    window.open(fileUrl, '_blank');
+  async function openInTab(id: number, fileName: string) {
+    setLoading(id);
+    try {
+      const cached = blobUrls[id];
+      const url = cached ?? await fetchBlobUrl(id);
+      if (!cached) setBlobUrls(prev => ({ ...prev, [id]: url }));
+      window.open(url, '_blank');
+    } catch {
+      toast('Could not open file', 'error');
+    } finally {
+      setLoading(null);
+    }
   }
 
-  async function downloadFile(fileUrl: string, fileName: string) {
+  async function downloadFile(id: number, fileName: string) {
+    setLoading(id);
     try {
-      const token = useAuthStore.getState().accessToken;
-      const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
-      const resp = await fetch(fileUrl, { headers });
-      if (!resp.ok) { window.open(fileUrl, '_blank'); return; }
-      const blob = await resp.blob();
-      const blobUrl = URL.createObjectURL(blob);
+      const url = await fetchBlobUrl(id);
       const a = document.createElement('a');
-      a.href = blobUrl;
+      a.href = url;
       a.download = fileName;
       a.click();
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 5_000);
+      setTimeout(() => URL.revokeObjectURL(url), 5_000);
     } catch {
-      window.open(fileUrl, '_blank');
+      toast('Download failed', 'error');
+    } finally {
+      setLoading(null);
     }
   }
 
@@ -211,32 +202,32 @@ export function AttachmentsTab({ attachments, onUpload, onDelete, uploading, fil
                   {a.uploaded_by_detail && ` · ${a.uploaded_by_detail.full_name}`}
                 </p>
               </div>
-              {a.file_url && (
-                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                  <button
-                    type="button"
-                    className="attachment-download"
-                    onClick={() => openPreview(a.file_url!, a.file_name)}
-                    disabled={loadingPreview === a.file_name}
-                  >
-                    {loadingPreview === a.file_name ? '…' : 'Preview'}
-                  </button>
-                  <button
-                    type="button"
-                    className="attachment-download"
-                    onClick={() => openInTab(a.file_url!)}
-                  >
-                    ↗
-                  </button>
-                  <button
-                    type="button"
-                    className="attachment-download"
-                    onClick={() => downloadFile(a.file_url!, a.file_name)}
-                  >
-                    ↓
-                  </button>
-                </div>
-              )}
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                <button
+                  type="button"
+                  className="attachment-download"
+                  onClick={() => openPreview(a.id, a.file_name)}
+                  disabled={loading === a.id}
+                >
+                  {loading === a.id ? '…' : 'Preview'}
+                </button>
+                <button
+                  type="button"
+                  className="attachment-download"
+                  onClick={() => openInTab(a.id, a.file_name)}
+                  disabled={loading === a.id}
+                >
+                  ↗
+                </button>
+                <button
+                  type="button"
+                  className="attachment-download"
+                  onClick={() => downloadFile(a.id, a.file_name)}
+                  disabled={loading === a.id}
+                >
+                  ↓
+                </button>
+              </div>
               <button
                 onClick={() => onDelete(a.id)}
                 className="attachment-delete-btn"
