@@ -37,6 +37,7 @@ export default function PurchaseRequestDetailPage() {
   const { isAdmin, can } = useProcPermissions();
 
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [resubmitDialogOpen, setResubmitDialogOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editingForm, setEditingForm] = useState<{
     productId: number; quantity: number; unit: string; reason: string; notes: string;
@@ -99,6 +100,17 @@ export default function PurchaseRequestDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['pending-count'] });
     },
     onError: (err: unknown) => toast(getApiError(err, 'Failed to undo approval'), 'error'),
+  });
+
+  const resubmitMutation = useMutation({
+    mutationFn: (comment: string) => purchaseRequestsApi.resubmit(id, comment),
+    onSuccess: () => {
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: ['pending-count'] });
+      setResubmitDialogOpen(false);
+      toast('Request resubmitted for approval', 'success');
+    },
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to resubmit request'), 'error'),
   });
 
   const allowAdditionalOrderMutation = useMutation({
@@ -278,6 +290,11 @@ export default function PurchaseRequestDetailPage() {
           {request.status === 'pending' && canReject && (
             <Button variant="destructive" size="sm" disabled={rejectMutation.isPending} onClick={() => setRejectDialogOpen(true)}>
               {t('btn', 'reject')}
+            </Button>
+          )}
+          {request.status === 'rejected' && (isAdmin || request.created_by === user?.id) && (
+            <Button variant="primary" size="sm" disabled={resubmitMutation.isPending} onClick={() => setResubmitDialogOpen(true)}>
+              Resubmit
             </Button>
           )}
           {request.status === 'approved' && (isAdmin || canUndoApprove) && !request.has_quotation_requests && !request.has_active_purchase_orders && (
@@ -547,6 +564,18 @@ export default function PurchaseRequestDetailPage() {
           onConfirm={(reason) => rejectMutation.mutate(reason)}
           title={`${t('btn', 'reject')} ${t('page', 'purchaseRequests')}`}
           message={t('confirm', 'rejectReason')}
+        />
+
+        <RejectionReasonDialog
+          isOpen={resubmitDialogOpen}
+          onClose={() => setResubmitDialogOpen(false)}
+          onConfirm={(comment) => resubmitMutation.mutate(comment)}
+          title="Resubmit Purchase Request"
+          message="Optionally add a note explaining what you changed before resubmitting:"
+          placeholder="e.g. Corrected item quantities and attached updated quote…"
+          confirmLabel="Resubmit"
+          confirmVariant="primary"
+          requireText={false}
         />
 
       </PageShell>

@@ -11,6 +11,10 @@ interface RejectionReasonDialogProps {
   onConfirm: (reason: string) => void;
   title?: string;
   message?: string;
+  placeholder?: string;
+  confirmLabel?: string;
+  confirmVariant?: 'primary' | 'secondary' | 'destructive' | 'success';
+  requireText?: boolean;
 }
 
 export default function RejectionReasonDialog({
@@ -19,6 +23,10 @@ export default function RejectionReasonDialog({
   onConfirm,
   title = 'Reject Request',
   message = 'Please provide a reason for rejecting this request:',
+  placeholder = 'Enter rejection reason...',
+  confirmLabel = 'Reject',
+  confirmVariant = 'destructive',
+  requireText = true,
 }: RejectionReasonDialogProps) {
   const [reason, setReason] = useState('');
 
@@ -30,11 +38,13 @@ export default function RejectionReasonDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (reason.trim()) {
+    if (!requireText || reason.trim()) {
       onConfirm(reason.trim());
       setReason('');
     }
   };
+
+  const canSubmit = !requireText || !!reason.trim();
 
   return (
     <BaseModal
@@ -48,11 +58,11 @@ export default function RejectionReasonDialog({
             Cancel
           </Button>
           <Button
-            variant="destructive"
-            disabled={!reason.trim()}
+            variant={confirmVariant}
+            disabled={!canSubmit}
             onClick={handleSubmit}
           >
-            Reject
+            {confirmLabel}
           </Button>
         </>
       }
@@ -62,8 +72,8 @@ export default function RejectionReasonDialog({
         <TextArea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          placeholder="Enter rejection reason..."
-          required
+          placeholder={placeholder}
+          required={requireText}
           rows={4}
           autoFocus
         />

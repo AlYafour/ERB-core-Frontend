@@ -101,6 +101,13 @@ export const purchaseRequestsApi = {
     return response.data;
   },
 
+  resubmit: async (id: number, resubmit_comment?: string): Promise<PurchaseRequest> => {
+    const response = await apiClient.post(`/purchase-requests/${id}/resubmit/`, {
+      resubmit_comment: resubmit_comment || '',
+    });
+    return response.data;
+  },
+
   allowAdditionalOrder: async (id: number): Promise<PurchaseRequest> => {
     const response = await apiClient.post(`/purchase-requests/${id}/allow_additional_order/`);
     return response.data;
