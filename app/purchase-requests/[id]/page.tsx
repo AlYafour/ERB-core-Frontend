@@ -364,6 +364,12 @@ export default function PurchaseRequestDetailPage() {
                   <div style={{ fontSize: 'var(--text-sm)', color: '#991B1B', lineHeight: 1.5 }}>{request.rejection_reason}</div>
                 </div>
               )}
+              {request.resubmit_comment && request.status === 'pending' && (
+                <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 8, background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
+                  <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: '#1D4ED8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Resubmit Note</div>
+                  <div style={{ fontSize: 'var(--text-sm)', color: '#1E40AF', lineHeight: 1.5 }}>{request.resubmit_comment}</div>
+                </div>
+              )}
             </div>
 
             {/* Tracking shortcut */}

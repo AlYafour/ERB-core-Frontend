@@ -264,6 +264,7 @@ export interface PurchaseRequest {
   status: 'pending' | 'approved' | 'rejected';
   notes: string;
   rejection_reason?: string;
+  resubmit_comment?: string;
   created_by: number;
   created_by_name?: string;
   created_by_phone?: string;
