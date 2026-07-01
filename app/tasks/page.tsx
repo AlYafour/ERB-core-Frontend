@@ -51,7 +51,7 @@ export default function TasksPage() {
   });
 
   const canViewAll = isPrivileged || hasPermission('tasks.task.view_all');
-  const effectiveScope = (filters.scope as string) || (canViewAll ? 'all' : 'mine');
+  const effectiveScope = (filters.scope as string) || 'all';
 
   const { data: raw, isLoading, error } = useQuery({
     queryKey: ['tasks', page, search, filters],
