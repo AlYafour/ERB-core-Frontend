@@ -231,10 +231,10 @@ export default function TasksPage() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
               <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{t.subtasks_done}/{t.subtasks_total}</span>
-              <span style={{ fontSize: 10, fontWeight: 600, color: pct === 100 ? '#16A34A' : 'var(--text-tertiary)' }}>{pct}%</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: pct === 100 ? '#C9943A' : 'var(--text-tertiary)' }}>{pct}%</span>
             </div>
             <div style={{ height: 4, background: 'var(--surface-inset)', borderRadius: 99, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#16A34A' : 'var(--brand)', borderRadius: 99 }} />
+              <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#C9943A' : 'var(--brand)', borderRadius: 99 }} />
             </div>
           </div>
         ) : <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>—</span>;

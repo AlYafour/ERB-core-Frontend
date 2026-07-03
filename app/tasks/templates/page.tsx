@@ -107,7 +107,7 @@ export default function TaskTemplatesPage() {
                     {pc.label}
                   </span>
                   {t.requires_approval && (
-                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: '#EFF6FF', color: '#1D4ED8', fontWeight: 600 }}>Requires Approval</span>
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: 'rgba(201,148,58,0.10)', color: '#C9943A', fontWeight: 600 }}>Requires Approval</span>
                   )}
                 </div>
 

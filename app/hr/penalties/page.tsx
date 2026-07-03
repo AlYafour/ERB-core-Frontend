@@ -14,9 +14,9 @@ import type { PenaltyRule, PenaltyTier, PenaltyRuleType, PenaltyPenaltyType, Emp
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const RULE_TYPES: { value: PenaltyRuleType; label: string; color: string; bg: string }[] = [
-  { value: 'LATENESS',    label: 'Lateness',    color: '#92400e', bg: '#fef3c7' },
-  { value: 'EARLY_LEAVE', label: 'Early Leave', color: '#5b21b6', bg: '#ede9fe' },
-  { value: 'ABSENCE',     label: 'Absence',     color: '#991b1b', bg: '#fee2e2' },
+  { value: 'LATENESS',    label: 'Lateness',    color: '#A07228', bg: 'rgba(201,148,58,0.10)' },
+  { value: 'EARLY_LEAVE', label: 'Early Leave', color: '#64748B', bg: '#E2E8F0' },
+  { value: 'ABSENCE',     label: 'Absence',     color: '#E05C5C', bg: '#FEF2F2' },
 ];
 
 const PENALTY_TYPES: { value: PenaltyPenaltyType; label: string }[] = [
@@ -94,7 +94,7 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
       onClick={() => onChange(!value)}
       style={{
         width: 44, height: 24, borderRadius: 12, border: 'none',
-        background: value ? 'var(--color-primary)' : '#d1d5db',
+        background: value ? 'var(--color-primary)' : '#CBD5E1',
         cursor: 'pointer', position: 'relative', transition: 'background 0.15s',
         flexShrink: 0,
       }}
@@ -202,8 +202,8 @@ function TierRowUI({
             type="button"
             onClick={onRemove}
             style={{
-              width: 26, height: 26, border: '1px solid #fca5a5',
-              borderRadius: 'var(--radius-sm)', background: '#fff1f2',
+              width: 26, height: 26, border: '1px solid #FECACA',
+              borderRadius: 'var(--radius-sm)', background: '#FEF2F2',
               cursor: 'pointer', color: '#dc2626',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
@@ -591,7 +591,7 @@ function RuleBuilder({
             style={{
               padding: '8px 20px', border: 'none',
               borderRadius: 'var(--radius-md)',
-              background: saving ? '#9ca3af' : 'var(--color-primary)',
+              background: saving ? '#94A3B8' : 'var(--color-primary)',
               color: '#fff', cursor: saving ? 'not-allowed' : 'pointer',
               fontSize: 'var(--text-sm)', fontWeight: 600,
             }}
@@ -804,7 +804,7 @@ export default function PenaltyRulesPage() {
             <span style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               minWidth: 24, height: 24, borderRadius: '50%',
-              background: r.tiers?.length ? 'var(--color-primary)' : '#d1d5db',
+              background: r.tiers?.length ? 'var(--color-primary)' : '#CBD5E1',
               color: r.tiers?.length ? '#fff' : 'var(--text-tertiary)',
               fontSize: 11, fontWeight: 700,
             }}>
@@ -824,7 +824,7 @@ export default function PenaltyRulesPage() {
                 title={r.is_active ? 'Click to deactivate' : 'Click to activate'}
                 style={{
                   width: 36, height: 20, borderRadius: 10, border: 'none',
-                  background: r.is_active ? 'var(--color-primary)' : '#d1d5db',
+                  background: r.is_active ? 'var(--color-primary)' : '#CBD5E1',
                   cursor: 'pointer', position: 'relative',
                 }}
               >
@@ -838,7 +838,7 @@ export default function PenaltyRulesPage() {
             ) : (
               <span style={{
                 width: 8, height: 8, borderRadius: '50%',
-                background: r.is_active ? '#22c55e' : '#d1d5db',
+                background: r.is_active ? '#C9943A' : '#CBD5E1',
                 display: 'inline-block',
               }} />
             )}
@@ -861,9 +861,9 @@ export default function PenaltyRulesPage() {
                   onClick={() => handleDelete(r)}
                   style={{
                     padding: '4px 10px', fontSize: 11,
-                    border: '1px solid #fca5a5',
+                    border: '1px solid #FECACA',
                     borderRadius: 'var(--radius-sm)',
-                    background: '#fff1f2', color: '#dc2626', cursor: 'pointer',
+                    background: '#FEF2F2', color: '#dc2626', cursor: 'pointer',
                   }}
                 >
                   Del

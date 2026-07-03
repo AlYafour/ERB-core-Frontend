@@ -17,7 +17,7 @@ const FALLBACK = {
 export const COMPANY = FALLBACK;
 
 const NAVY   = '#1a1a2e';
-const ORANGE = '#f97316';
+const ORANGE = '#C9943A';
 const GREY   = '#64748b';
 const LIGHT  = '#f8fafc';
 const BORDER = '#e2e8f0';
@@ -34,14 +34,14 @@ export function fmtDate(d: string | null | undefined) {
 
 /* ─── Status badge ──────────────────────────────────────────────── */
 const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  pending:   { bg: '#fffbeb', text: '#b45309', border: '#fcd34d' },
-  approved:  { bg: '#f0fdf4', text: '#15803d', border: '#86efac' },
-  rejected:  { bg: '#fef2f2', text: '#b91c1c', border: '#fca5a5' },
+  pending:   { bg: '#FBF4E8', text: '#A07228', border: '#E0AE55' },
+  approved:  { bg: '#F1F5F9', text: '#475569', border: '#CBD5E1' },
+  rejected:  { bg: '#fef2f2', text: '#DC2626', border: '#FECACA' },
   draft:     { bg: '#f8fafc', text: '#475569', border: '#cbd5e1' },
-  partial:   { bg: '#eff6ff', text: '#1d4ed8', border: '#93c5fd' },
-  completed: { bg: '#f0fdf4', text: '#15803d', border: '#86efac' },
-  cancelled: { bg: '#fef2f2', text: '#b91c1c', border: '#fca5a5' },
-  paid:      { bg: '#f0fdf4', text: '#15803d', border: '#86efac' },
+  partial:   { bg: '#F1F5F9', text: '#64748B', border: '#CBD5E1' },
+  completed: { bg: '#F1F5F9', text: '#475569', border: '#CBD5E1' },
+  cancelled: { bg: '#fef2f2', text: '#DC2626', border: '#FECACA' },
+  paid:      { bg: '#F1F5F9', text: '#475569', border: '#CBD5E1' },
 };
 
 export function StatusBadge({ status }: { status: string }) {
@@ -136,7 +136,7 @@ export default function PrintTemplate({ docType, docNumber, date, status, childr
       </table>
 
       {/* ── Divider ── */}
-      <div style={{ height: 3, background: `linear-gradient(90deg,${ORANGE} 0%,#fb923c 60%,${BORDER} 100%)`, margin: '7px 0 10px', borderRadius: 2 }} />
+      <div style={{ height: 3, background: `linear-gradient(90deg,${ORANGE} 0%,#E0AE55 60%,${BORDER} 100%)`, margin: '7px 0 10px', borderRadius: 2 }} />
 
       {/* ── BODY ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -154,7 +154,7 @@ export function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       fontSize: '9pt', fontWeight: 700, letterSpacing: '.8px', textTransform: 'uppercase',
-      color: ORANGE, borderBottom: `1.5px solid #fed7aa`, paddingBottom: 4, margin: '16px 0 10px',
+      color: ORANGE, borderBottom: `1.5px solid #E0AE55`, paddingBottom: 4, margin: '16px 0 10px',
     }}>
       {children}
     </div>
@@ -189,11 +189,11 @@ export function NotesBox({ label = 'Notes', text }: { label?: string; text?: str
   if (!text) return null;
   return (
     <div style={{
-      background: '#fffbeb', border: `1px solid #fed7aa`, borderLeft: `3px solid ${ORANGE}`,
+      background: '#FBF4E8', border: `1px solid #E0AE55`, borderLeft: `3px solid ${ORANGE}`,
       borderRadius: '0 6px 6px 0', padding: '8px 12px',
-      fontSize: '9pt', color: '#78350f', margin: '12px 0', lineHeight: 1.55,
+      fontSize: '9pt', color: '#A07228', margin: '12px 0', lineHeight: 1.55,
     }}>
-      <span style={{ fontWeight: 700, color: '#c2410c', marginRight: 4 }}>{label}:</span> {text}
+      <span style={{ fontWeight: 700, color: '#A07228', marginRight: 4 }}>{label}:</span> {text}
     </div>
   );
 }

@@ -266,7 +266,7 @@ export default function HRAttendancePage() {
     {
       key: 'break', header: 'Break',
       render: r => r.break_start
-        ? <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: '#b45309' }}>
+        ? <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: '#A07228' }}>
             {formatTime(r.break_start)}{r.break_end ? `–${formatTime(r.break_end)}` : '…'}
           </span>
         : <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>—</span>,

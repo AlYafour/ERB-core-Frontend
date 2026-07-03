@@ -25,8 +25,7 @@ function getInitials(first: string, last: string, username: string): string {
 
 function getAvatarColor(str: string): string {
   const palette = [
-    '#c2410c', '#b45309', '#15803d', '#0e7490', '#1d4ed8',
-    '#6d28d9', '#7c3aed', '#a21caf', '#be185d', '#0f766e',
+    '#C9943A', '#B8832E', '#A07228', '#E05C5C', '#DC2626', '#64748B', '#475569', '#334155', '#4A6280', '#9AB0C8', '#E0AE55', '#D4A44C', '#94A3B8', '#CBD5E1', '#1A2235',
   ];
   let h = 0;
   for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
@@ -299,8 +298,8 @@ function SearchableCombobox({ items, value, onChange, placeholder, clearLabel = 
                     background: isSelected
                       ? `${BRAND_HEX}10`
                       : isHovered
-                      ? '#f5f5f4'
-                      : '#fff',
+                      ? '#F1F5F9'
+                      : 'var(--surface-base)',
                   }}
                 >
                   <Avatar inits={item.inits} color={item.color} size={30} />

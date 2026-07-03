@@ -198,7 +198,7 @@ export default function PurchaseOrderDetailPage() {
             <div className="proc-status-banner proc-status-banner--info">
               <span>📋</span>
               <span>Revision <strong>R{order.revision_number}</strong> of{' '}
-                <Link href={`/purchase-orders/${order.parent_po}`} style={{ fontWeight: 700, textDecoration: 'underline', color: '#1d4ed8' }}>
+                <Link href={`/purchase-orders/${order.parent_po}`} style={{ fontWeight: 700, textDecoration: 'underline', color: '#C9943A' }}>
                   {order.parent_order_number || `PO #${order.parent_po}`}
                 </Link>.
               </span>
@@ -221,11 +221,11 @@ export default function PurchaseOrderDetailPage() {
           {order.status === 'amendment_requested' && order.pending_amendment && (
             <div className="proc-status-banner proc-status-banner--warning">
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 4 }}>
+                <div style={{ fontWeight: 700, color: '#C9943A', marginBottom: 4 }}>
                   ⚠️ Amendment Requested — {order.pending_amendment.requested_by_name || 'team member'}
                 </div>
-                <div style={{ color: '#78350f', lineHeight: 1.5 }}><strong>Reason:</strong> {order.pending_amendment.reason}</div>
-                <div style={{ color: '#a16207', fontSize: 'var(--text-xs)', marginTop: 4 }}>
+                <div style={{ color: 'var(--text-primary)', lineHeight: 1.5 }}><strong>Reason:</strong> {order.pending_amendment.reason}</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', marginTop: 4 }}>
                   {new Date(order.pending_amendment.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </div>
               </div>
@@ -279,7 +279,7 @@ export default function PurchaseOrderDetailPage() {
                     <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--status-error)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>
                       {order.status === 'cancelled' ? 'Cancellation Reason' : 'Rejection Reason'}
                     </div>
-                    <div style={{ fontSize: 'var(--text-sm)', color: '#991B1B', lineHeight: 1.5 }}>{order.rejection_reason}</div>
+                    <div style={{ fontSize: 'var(--text-sm)', color: '#E05C5C', lineHeight: 1.5 }}>{order.rejection_reason}</div>
                   </div>
                 )}
               </div>

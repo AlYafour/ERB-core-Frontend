@@ -2,7 +2,7 @@ import type { TaskStatus, TaskPriority } from '@/types';
 import { taskStatus, priority as priorityTokens } from '@/lib/design-system/tokens';
 
 export const BRAND = 'var(--brand)';
-export const BRAND_HEX = '#7C2D3A'; // for rgba() compositing only — do NOT use for solid fills
+export const BRAND_HEX = '#C9943A'; // for rgba() compositing only — do NOT use for solid fills
 
 export const STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; bg: string; border: string }> = {
   draft:       { label: 'Draft',        ...taskStatus.draft },

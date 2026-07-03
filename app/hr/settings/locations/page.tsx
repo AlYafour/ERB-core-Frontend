@@ -33,7 +33,7 @@ export default function HRSettingsLocationsPage() {
   const [drawerMode,    setDrawerMode]    = useState<DrawerMode>(null);
   const [editTarget,    setEditTarget]    = useState<HRLocationType | HRLocation | null>(null);
 
-  const [typeForm, setTypeForm] = useState({ name: '', name_ar: '', icon: '📍', color: '#6b7280' });
+  const [typeForm, setTypeForm] = useState({ name: '', name_ar: '', icon: '📍', color: '#C9943A' });
   const [locForm,  setLocForm]  = useState({ name: '', name_ar: '', parent: '' as string | number, address: '', description: '', is_active: true });
   const [officeForm, setOfficeForm] = useState({ name: '', name_ar: '', latitude: '', longitude: '', radius_m: '200', address: '', is_active: true });
   const [editOffice, setEditOffice] = useState<OfficeLocation | null>(null);
@@ -131,7 +131,7 @@ export default function HRSettingsLocationsPage() {
   if (user && !isAdmin) return null;
 
   const openTypeCreate = () => {
-    setTypeForm({ name: '', name_ar: '', icon: '📍', color: '#6b7280' });
+    setTypeForm({ name: '', name_ar: '', icon: '📍', color: '#C9943A' });
     setEditTarget(null);
     setDrawerMode('type-create');
   };

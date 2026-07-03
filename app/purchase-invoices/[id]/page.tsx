@@ -142,7 +142,7 @@ export default function PurchaseInvoiceDetailPage() {
               {invoice.rejection_reason && (
                 <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 8, background: 'var(--status-error-bg)', border: '1px solid var(--status-error-border)' }}>
                   <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--status-error)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Rejection Reason</div>
-                  <div style={{ fontSize: 'var(--text-sm)', color: '#991B1B', lineHeight: 1.5 }}>{invoice.rejection_reason}</div>
+                  <div style={{ fontSize: 'var(--text-sm)', color: 'var(--status-error)', lineHeight: 1.5 }}>{invoice.rejection_reason}</div>
                 </div>
               )}
             </div>

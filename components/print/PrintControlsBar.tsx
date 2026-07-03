@@ -57,7 +57,7 @@ export function PrintControlsBar({ backHref, docType, docTypeColor, docNumber, s
             display: 'inline-flex', alignItems: 'center', gap: 4,
             padding: '4px 10px', borderRadius: 6,
             border: `1px solid ${BORDER}`, background: BG,
-            color: '#374151', fontSize: 11, fontWeight: 600, textDecoration: 'none',
+            color: '#475569', fontSize: 11, fontWeight: 600, textDecoration: 'none',
           }}
         >
           {BACK_SVG} Back
@@ -87,7 +87,7 @@ export function PrintControlsBar({ backHref, docType, docTypeColor, docNumber, s
             display: 'inline-flex', alignItems: 'center', gap: 4,
             padding: '5px 12px', borderRadius: 6,
             border: `1px solid ${BORDER}`, background: BG,
-            color: '#374151', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+            color: '#475569', fontSize: 11, fontWeight: 600, cursor: 'pointer',
           }}
         >
           {PRINT_SVG} Print

@@ -72,11 +72,11 @@ export function DependenciesTab({ taskId }: Props) {
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '8px 12px', borderRadius: 8,
                   background: isBlocking ? '#FEF2F2' : 'var(--surface-subtle)',
-                  border: `1px solid ${isBlocking ? '#FCA5A5' : 'var(--border-subtle)'}`,
+                  border: `1px solid ${isBlocking ? '#FECACA' : 'var(--border-subtle)'}`,
                 }}>
                   <div style={{
                     width: 6, height: 6, borderRadius: '50%',
-                    background: isBlocking ? '#EF4444' : '#22C55E', flexShrink: 0,
+                    background: isBlocking ? '#EF4444' : '#C9943A', flexShrink: 0,
                   }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

@@ -125,9 +125,9 @@ function PersonPicker({
   const isActive   = (e: HREmployee) => e.is_active !== false;
 
   const dot = (e: HREmployee) => {
-    if (!isActive(e)) return { bg: '#9ca3af', title: 'Inactive' };
-    if (!hasAccount(e)) return { bg: '#f59e0b', title: 'No user account — cannot receive approvals' };
-    return { bg: '#22c55e', title: 'Active with account' };
+    if (!isActive(e)) return { bg: '#94A3B8', title: 'Inactive' };
+    if (!hasAccount(e)) return { bg: '#C9943A', title: 'No user account — cannot receive approvals' };
+    return { bg: '#C9943A', title: 'Active with account' };
   };
 
   return (
@@ -329,8 +329,8 @@ function StageRowUI({
           onClick={onRemove}
           title="Remove stage"
           style={{
-            width: 26, height: 26, border: '1px solid #fca5a5',
-            borderRadius: 'var(--radius-sm)', background: '#fff1f2',
+            width: 26, height: 26, border: '1px solid #FECACA',
+            borderRadius: 'var(--radius-sm)', background: '#FEF2F2',
             cursor: 'pointer', color: '#dc2626',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
@@ -558,7 +558,7 @@ function ChainBuilder({
                 onClick={() => setField({ is_active: !form.is_active })}
                 style={{
                   width: 44, height: 24, borderRadius: 12, border: 'none',
-                  background: form.is_active ? 'var(--color-primary)' : '#d1d5db',
+                  background: form.is_active ? 'var(--color-primary)' : '#CBD5E1',
                   cursor: 'pointer', position: 'relative', transition: 'background 0.15s',
                 }}
               >
@@ -723,7 +723,7 @@ function ChainBuilder({
             style={{
               padding: '8px 20px', border: 'none',
               borderRadius: 'var(--radius-md)',
-              background: saving ? '#9ca3af' : 'var(--color-primary)',
+              background: saving ? '#94A3B8' : 'var(--color-primary)',
               color: '#fff', cursor: saving ? 'not-allowed' : 'pointer',
               fontSize: 'var(--text-sm)', fontWeight: 600,
             }}
@@ -926,7 +926,7 @@ export default function ApprovalChainsPage() {
               {p.condition_field && (
                 <span style={{
                   marginLeft: 8, fontSize: 10, padding: '1px 6px',
-                  background: '#ede9fe', color: '#5b21b6',
+                  background: '#E2E8F0', color: '#64748B',
                   borderRadius: 10, fontWeight: 500,
                 }}>
                   if {p.condition_field} {p.condition_operator} {p.condition_value}
@@ -971,7 +971,7 @@ export default function ApprovalChainsPage() {
                 title={p.is_active ? 'Click to deactivate' : 'Click to activate'}
                 style={{
                   width: 36, height: 20, borderRadius: 10, border: 'none',
-                  background: p.is_active ? 'var(--color-primary)' : '#d1d5db',
+                  background: p.is_active ? 'var(--color-primary)' : '#CBD5E1',
                   cursor: 'pointer', position: 'relative',
                 }}
               >
@@ -985,7 +985,7 @@ export default function ApprovalChainsPage() {
             ) : (
               <span style={{
                 width: 8, height: 8, borderRadius: '50%',
-                background: p.is_active ? '#22c55e' : '#d1d5db',
+                background: p.is_active ? '#C9943A' : '#CBD5E1',
                 display: 'inline-block',
               }} />
             )}
@@ -1008,9 +1008,9 @@ export default function ApprovalChainsPage() {
                   onClick={() => handleDelete(p)}
                   style={{
                     padding: '4px 10px', fontSize: 11,
-                    border: '1px solid #fca5a5',
+                    border: '1px solid #FECACA',
                     borderRadius: 'var(--radius-sm)',
-                    background: '#fff1f2', color: '#dc2626', cursor: 'pointer',
+                    background: '#FEF2F2', color: '#dc2626', cursor: 'pointer',
                   }}
                 >
                   Del

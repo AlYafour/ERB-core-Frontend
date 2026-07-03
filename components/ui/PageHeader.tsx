@@ -26,21 +26,21 @@ interface PageHeaderProps {
 }
 
 const METRIC_COLOR: Record<string, string> = {
-  warning: '#92400e',
-  success: '#065f46',
+  warning: '#A07228',
+  success: '#475569',
   error:   '#991b1b',
-  info:    'var(--wine-700, #6b21a8)',
+  info:    'var(--text-brand)',
 };
 const METRIC_BG: Record<string, string> = {
-  warning: '#fef3c7',
-  success: '#d1fae5',
-  error:   '#fee2e2',
-  info:    'var(--wine-50, #f5f3ff)',
+  warning: 'rgba(201,148,58,0.12)',
+  success: '#F1F5F9',
+  error:   '#FEF2F2',
+  info:    'var(--brand-subtle)',
 };
 const METRIC_BORDER: Record<string, string> = {
-  warning: '#fde68a',
-  success: '#6ee7b7',
-  error:   '#fca5a5',
+  warning: 'rgba(201,148,58,0.30)',
+  success: '#CBD5E1',
+  error:   '#FECACA',
   info:    'var(--wine-100, #ede9fe)',
 };
 

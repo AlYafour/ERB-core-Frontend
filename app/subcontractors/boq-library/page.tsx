@@ -468,7 +468,7 @@ export default function BOQLibraryPage() {
                                                 deleteMutation.mutate(item.id);
                                               }
                                             }}
-                                            style={{ padding: '3px 10px', background: 'transparent', border: '1px solid var(--error-border, #fca5a5)', borderRadius: 4, fontSize: 12, cursor: 'pointer', color: 'var(--error, #dc2626)' }}
+                                            style={{ padding: '3px 10px', background: 'transparent', border: '1px solid var(--error-border, #FECACA)', borderRadius: 4, fontSize: 12, cursor: 'pointer', color: 'var(--error, #dc2626)' }}
                                           >
                                             Delete
                                           </button>

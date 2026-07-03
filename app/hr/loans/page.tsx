@@ -671,7 +671,7 @@ export default function HRLoansPage() {
       render: r => (
         <span className="font-mono" style={{
           color: parseFloat(r.remaining_balance) > 0
-            ? 'var(--color-warning, #f59e0b)'
+            ? 'var(--color-warning, #C9943A)'
             : 'var(--text-tertiary)',
         }}>
           {parseFloat(r.remaining_balance) > 0 ? fmt(r.remaining_balance) : '—'}

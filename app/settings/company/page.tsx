@@ -175,12 +175,12 @@ export default function CompanySettingsPage() {
               <div style={{ marginTop: 18 }}>
                 <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 6px' }}>Brand Color</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <input type="color" value={val('primary_color') || '#c0392b'}
+                  <input type="color" value={val('primary_color') || '#C9943A'}
                     onChange={e => setForm(f => ({ ...f, primary_color: e.target.value }))}
                     style={{ width: 40, height: 40, padding: 2, borderRadius: 8, border: '1px solid var(--border-subtle)', cursor: 'pointer' }} />
                   <input type="text" value={val('primary_color')}
                     onChange={e => setForm(f => ({ ...f, primary_color: e.target.value }))}
-                    placeholder="#c0392b"
+                    placeholder="#C9943A"
                     style={{ width: 110, padding: '8px 10px', fontSize: 13, borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--input-bg)', color: 'var(--text-primary)' }} />
                   <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Used across the app theme</span>
                 </div>

@@ -283,11 +283,11 @@ function NewPurchaseRequestPageContent() {
                   <div style={{
                     display: 'flex', alignItems: 'flex-start', gap: 10,
                     padding: '9px 13px', borderRadius: 8,
-                    background: 'rgba(59,130,246,0.04)',
-                    border: '1px solid rgba(59,130,246,0.13)',
-                    borderLeft: '3px solid rgba(59,130,246,0.38)',
+                    background: 'rgba(201,148,58,0.08)',
+                    border: '1px solid rgba(201,148,58,0.13)',
+                    borderLeft: '3px solid #C9943A',
                   }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(59,130,246,0.65)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0, marginTop: 1 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C9943A" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0, marginTop: 1 }}>
                       <circle cx="12" cy="12" r="10" /><path d="M12 16v-4m0-4h.01" />
                     </svg>
                     <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>

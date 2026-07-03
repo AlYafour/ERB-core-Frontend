@@ -6,10 +6,10 @@ import { violationsApi } from '@/lib/api/violations';
 import { useState } from 'react';
 
 const statusColors: Record<string, { bg: string; text: string; label: string }> = {
-  new:       { bg: '#FEF9C3', text: '#854D0E', label: 'جديدة' },
-  notified:  { bg: '#DBEAFE', text: '#1E40AF', label: 'تم الإبلاغ' },
-  resolved:  { bg: '#DCFCE7', text: '#166534', label: 'تم الحل' },
-  fined:     { bg: '#FEE2E2', text: '#991B1B', label: 'صدرت غرامة' },
+  new:       { bg: 'rgba(201,148,58,0.10)', text: '#A07228',  label: 'جديدة' },
+  notified:  { bg: 'rgba(201,148,58,0.10)', text: '#C9943A',  label: 'تم الإبلاغ' },
+  resolved:  { bg: '#F1F5F9',              text: '#475569',   label: 'تم الحل' },
+  fined:     { bg: '#FEF2F2',              text: '#E05C5C',   label: 'صدرت غرامة' },
 };
 
 export default function ViolationResolvePage() {
@@ -250,7 +250,7 @@ export default function ViolationResolvePage() {
               style={{
                 flex: 1,
                 padding: '12px 20px',
-                background: '#1D4ED8',
+                background: '#C9943A',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 8,

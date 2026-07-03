@@ -566,10 +566,10 @@ export default function ViolationsPage() {
                           key={v.id}
                           onClick={() => setSelectedId(isActive ? null : v.id)}
                           style={{
-                            background: isActive ? '#EFF6FF' : isSel ? '#F0F9FF' : noProj ? '#FFFBEB' : isEven ? '#fff' : '#FAFAFA',
-                            borderBottom: '1px solid #F1F5F9',
+                            background: isActive ? 'rgba(201,148,58,0.08)' : isSel ? 'var(--surface-subtle)' : noProj ? '#FBF4E8' : isEven ? 'var(--surface-base)' : 'var(--surface-subtle)',
+                            borderBottom: '1px solid var(--border-subtle)',
                             cursor: 'pointer',
-                            borderLeft: isActive ? '3px solid #2563EB' : '3px solid transparent',
+                            borderLeft: isActive ? '3px solid #C9943A' : '3px solid transparent',
                             transition: 'background 0.1s',
                           }}
                         >

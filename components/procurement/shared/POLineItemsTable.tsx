@@ -155,7 +155,7 @@ export function POLineItemsTable({ items, charges = [], chargesVat = 0 }: Props)
               <td style={{ ...TD, textAlign: 'right', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
                 {formatPrice(row.exclVat)}
               </td>
-              <td style={{ ...TD, textAlign: 'right', fontFamily: 'monospace', color: row.vat > 0 ? '#d97706' : 'var(--text-tertiary)', fontWeight: row.vat > 0 ? 600 : 400 }}>
+              <td style={{ ...TD, textAlign: 'right', fontFamily: 'monospace', color: row.vat > 0 ? '#C9943A' : 'var(--text-tertiary)', fontWeight: row.vat > 0 ? 600 : 400 }}>
                 {row.vat > 0 ? formatPrice(row.vat) : '—'}
               </td>
               <td style={{ ...TD, textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-primary)' }}>
@@ -174,7 +174,7 @@ export function POLineItemsTable({ items, charges = [], chargesVat = 0 }: Props)
               <td style={{ padding: '10px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-secondary)' }}>
                 {formatPrice(totalExcl)}
               </td>
-              <td style={{ padding: '10px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: totalVat > 0 ? '#d97706' : 'var(--text-tertiary)' }}>
+              <td style={{ padding: '10px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: totalVat > 0 ? '#C9943A' : 'var(--text-tertiary)' }}>
                 {totalVat > 0 ? formatPrice(totalVat) : '—'}
               </td>
               <td style={{ padding: '10px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, color: 'var(--text-primary)' }}>

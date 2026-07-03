@@ -508,14 +508,14 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
             </div>
 
             {isDraft && (
-              <div style={{ marginBottom: 12, padding: '8px 12px', background: 'rgba(245,158,11,0.08)', borderRadius: 6, border: '1px solid rgba(245,158,11,0.3)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+              <div style={{ marginBottom: 12, padding: '8px 12px', background: 'rgba(201,148,58,0.08)', borderRadius: 6, border: '1px solid rgba(201,148,58,0.3)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
                 Edit claimed quantities, then <strong>Save</strong>. Submit for review when ready.
               </div>
             )}
 
             {isSubmitted && (
               <div style={{ marginBottom: 12 }}>
-                <div style={{ padding: '8px 12px', background: 'rgba(59,130,246,0.08)', borderRadius: 6, border: '1px solid rgba(59,130,246,0.2)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 8 }}>
+                <div style={{ padding: '8px 12px', background: 'rgba(201,148,58,0.08)', borderRadius: 6, border: '1px solid rgba(201,148,58,0.2)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 8 }}>
                   Enter engineer-approved quantities per location, then click <strong>Submit Engineer Review</strong>.
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -543,7 +543,7 @@ export default function CertificateDetailPage({ params }: { params: Promise<{ id
 
             {isReviewed && (
               <div style={{ marginBottom: 12 }}>
-                <div style={{ padding: '10px 14px', background: 'rgba(245,158,11,0.08)', borderRadius: 6, border: '1px solid rgba(245,158,11,0.3)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 10 }}>
+                <div style={{ padding: '10px 14px', background: 'rgba(201,148,58,0.08)', borderRadius: 6, border: '1px solid rgba(201,148,58,0.3)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 10 }}>
                   Choose which quantities to approve, then click <strong>Approve</strong> in the header — quantities are saved automatically.
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

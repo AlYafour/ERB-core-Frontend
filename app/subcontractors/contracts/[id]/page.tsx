@@ -774,7 +774,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
             {contract.contract_type === 'lump_sum' && (
               <div style={{
                 padding: '16px', marginBottom: 16, borderRadius: 8,
-                background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)',
+                background: 'rgba(201,148,58,0.08)', border: '1px solid rgba(201,148,58,0.3)',
                 fontSize: 'var(--text-sm)', color: 'var(--text-secondary)',
               }}>
                 This is a <strong style={{ color: 'var(--text-primary)' }}>Lump Sum (مقطوع)</strong> contract with
@@ -787,7 +787,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
               const boqTotal = boqItems.reduce((s, i) => s + Number(i.total_amount), 0);
               const cv = Number(contract.contract_value);
               if (cv > 0 && boqTotal > cv) return (
-                <div style={{ marginBottom: 12, padding: '8px 12px', background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.4)', borderRadius: 6, fontSize: 'var(--text-sm)', color: 'rgb(120,90,0)' }}>
+                <div style={{ marginBottom: 12, padding: '8px 12px', background: 'rgba(201,148,58,0.1)', border: '1px solid rgba(201,148,58,0.4)', borderRadius: 6, fontSize: 'var(--text-sm)', color: '#A07228' }}>
                   Warning: BOQ total (AED {boqTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}) exceeds contract value (AED {cv.toLocaleString(undefined, { minimumFractionDigits: 2 })}).
                 </div>
               );

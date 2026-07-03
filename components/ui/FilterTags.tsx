@@ -91,7 +91,7 @@ export default function FilterTags({ filters, fields, onRemoveFilter, onClearAll
         <span
           key={tag.key}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border"
-          style={{ backgroundColor: 'var(--color-wine-50)', color: 'var(--color-wine-500)', borderColor: 'rgba(124,45,58,0.22)' }}
+          style={{ backgroundColor: 'var(--color-wine-50)', color: 'var(--color-wine-500)', borderColor: 'rgba(201,148,58,0.22)' }}
         >
           {tag.label}
           <button
@@ -105,8 +105,8 @@ export default function FilterTags({ filters, fields, onRemoveFilter, onClearAll
                 onRemoveFilter(tag.key);
               }
             }}
-            className="rounded-full p-0.5 transition-colors ml-0.5" style={{ '--tw-hover-bg': 'rgba(124,45,58,0.15)' } as any}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(124,45,58,0.15)')}
+            className="rounded-full p-0.5 transition-colors ml-0.5" style={{ '--tw-hover-bg': 'rgba(201,148,58,0.15)' } as any}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(201,148,58,0.15)')}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

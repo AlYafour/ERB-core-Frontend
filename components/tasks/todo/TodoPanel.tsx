@@ -248,14 +248,14 @@ export function TodoPanel({ onClose, onOpenTask }: Props) {
                 width: 52,
                 height: 52,
                 borderRadius: '50%',
-                background: '#ECFDF5',
+                background: '#F1F5F9',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 margin: '0 auto 14px',
               }}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C9943A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
@@ -400,8 +400,8 @@ function TodoItem({
           borderRadius: 5,
           flexShrink: 0,
           cursor: 'pointer',
-          border: `2px solid ${done ? '#16A34A' : prioColor}`,
-          background: done ? '#16A34A' : 'transparent',
+          border: `2px solid ${done ? '#C9943A' : prioColor}`,
+          background: done ? '#C9943A' : 'transparent',
           color: '#fff',
           display: 'flex',
           alignItems: 'center',
@@ -537,7 +537,7 @@ function AssignedTaskItem({ task, onClick }: { task: TaskListItem; onClick: () =
               style={{
                 width: `${pct}%`,
                 height: '100%',
-                background: pct === 100 ? '#16A34A' : BRAND_HEX,
+                background: pct === 100 ? '#C9943A' : BRAND_HEX,
                 borderRadius: 99,
                 transition: 'width 0.3s ease',
               }}

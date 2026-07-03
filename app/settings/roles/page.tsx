@@ -36,7 +36,7 @@ const LEVEL_OPTIONS = [
   { value: 100, label: '100 — Super' },
 ];
 
-const EMPTY_FORM = { name: '', description: '', color: '#2563EB', level: 0, parent: '' };
+const EMPTY_FORM = { name: '', description: '', color: '#C9943A', level: 0, parent: '' };
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
@@ -90,7 +90,7 @@ export default function RolesPage() {
       setForm({
         name: selectedRole.name,
         description: selectedRole.description ?? '',
-        color: selectedRole.color || '#2563EB',
+        color: selectedRole.color || '#C9943A',
         level: selectedRole.level,
         parent: selectedRole.parent?.toString() ?? '',
       });
@@ -341,7 +341,7 @@ export default function RolesPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                         <span style={{ fontWeight: 600, fontSize: '1rem' }}>{selectedRole.name}</span>
                         {selectedRole.is_system && (
-                          <span style={{ fontSize: '0.6875rem', padding: '2px 8px', borderRadius: 4, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' }}>
+                          <span style={{ fontSize: '0.6875rem', padding: '2px 8px', borderRadius: 4, background: 'var(--status-warning-bg)', color: 'var(--status-warning)', border: '1px solid var(--status-warning)' }}>
                             System Role
                           </span>
                         )}
@@ -610,14 +610,14 @@ export default function RolesPage() {
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
                         {/* Only in A */}
                         <div>
-                          <p style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#15803d', marginBottom: 'var(--space-2)' }}>
+                          <p style={{ fontWeight: 600, fontSize: '0.8125rem', color: 'var(--status-success)', marginBottom: 'var(--space-2)' }}>
                             Only in {selectedRole.name} ({diffData.onlyInA.length})
                           </p>
                           {diffData.onlyInA.length === 0 ? (
                             <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>None</p>
                           ) : (
                             diffData.onlyInA.map((id) => (
-                              <div key={id} style={{ fontSize: '0.8125rem', padding: '3px 8px', borderRadius: 4, background: '#f0fdf4', color: '#166534', marginBottom: 2 }}>
+                              <div key={id} style={{ fontSize: '0.8125rem', padding: '3px 8px', borderRadius: 4, background: 'var(--status-success-bg)', color: 'var(--status-success)', marginBottom: 2 }}>
                                 {permLabelMap[id] ?? `Permission #${id}`}
                               </div>
                             ))
@@ -625,14 +625,14 @@ export default function RolesPage() {
                         </div>
                         {/* Only in B */}
                         <div>
-                          <p style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#c2410c', marginBottom: 'var(--space-2)' }}>
+                          <p style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#E05C5C', marginBottom: 'var(--space-2)' }}>
                             Only in {compareRole?.name} ({diffData.onlyInB.length})
                           </p>
                           {diffData.onlyInB.length === 0 ? (
                             <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>None</p>
                           ) : (
                             diffData.onlyInB.map((id) => (
-                              <div key={id} style={{ fontSize: '0.8125rem', padding: '3px 8px', borderRadius: 4, background: '#fff7ed', color: '#9a3412', marginBottom: 2 }}>
+                              <div key={id} style={{ fontSize: '0.8125rem', padding: '3px 8px', borderRadius: 4, background: 'var(--status-error-bg)', color: '#E05C5C', marginBottom: 2 }}>
                                 {permLabelMap[id] ?? `Permission #${id}`}
                               </div>
                             ))
@@ -721,7 +721,7 @@ export default function RolesPage() {
                     className="form-input"
                     value={form.color}
                     onChange={(e) => setForm((p) => ({ ...p, color: e.target.value }))}
-                    placeholder="#2563EB"
+                    placeholder="#C9943A"
                     style={{ flex: 1 }}
                   />
                 </div>

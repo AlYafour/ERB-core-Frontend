@@ -89,7 +89,7 @@ export default function ResolvePage() {
           </div>
         )}
         {isReceived && !isResolved && (
-          <div style={{ ...styles.successBanner, background: '#DBEAFE', color: '#1E40AF' }}>
+          <div style={{ ...styles.successBanner, background: 'rgba(201,148,58,0.10)', color: '#A07228' }}>
             ✅ تم تسجيل الاستلام — يرجى إنهاء المعالجة في أقرب وقت
           </div>
         )}
@@ -243,8 +243,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     transition: 'opacity 0.15s',
   },
-  btnPrimary: { background: '#10B981', color: '#fff' },
-  btnSecondary: { background: '#EFF6FF', color: '#1D4ED8' },
+  btnPrimary: { background: '#C9943A', color: '#fff' },
+  btnSecondary: { background: 'var(--surface-subtle)', color: 'var(--text-secondary)' },
   footer: {
     textAlign: 'center',
     fontSize: 11,

@@ -2,16 +2,16 @@
 
 // ── Colour palette — deterministic from name hash ─────────────
 const PALETTE = [
-  { bg: '#dbeafe', text: '#1d4ed8' },
-  { bg: '#dcfce7', text: '#15803d' },
-  { bg: '#fce7f3', text: '#be185d' },
-  { bg: '#fef3c7', text: '#b45309' },
-  { bg: '#ede9fe', text: '#6d28d9' },
-  { bg: '#ffedd5', text: '#c2410c' },
-  { bg: '#e0f2fe', text: '#0369a1' },
-  { bg: '#ecfdf5', text: '#065f46' },
-  { bg: '#fdf4ff', text: '#86198f' },
-  { bg: '#fff7ed', text: '#9a3412' },
+  { bg: 'rgba(201,148,58,0.12)', text: '#A07228' },
+  { bg: '#E2E8F0', text: '#475569' },
+  { bg: 'rgba(224,92,92,0.12)', text: '#E05C5C' },
+  { bg: 'rgba(201,148,58,0.18)', text: '#B8832E' },
+  { bg: '#F1F5F9', text: '#64748B' },
+  { bg: 'rgba(201,148,58,0.08)', text: '#C9943A' },
+  { bg: '#E2EAF4', text: '#4A6280' },
+  { bg: '#F8FAFC', text: '#475569' },
+  { bg: 'rgba(224,92,92,0.08)', text: '#DC2626' },
+  { bg: '#E2E8F0', text: '#334155' },
 ];
 
 function hash(s: string): number {

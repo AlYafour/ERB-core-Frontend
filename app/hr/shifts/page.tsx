@@ -29,10 +29,10 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-  morning:  { bg: '#fef9c3', text: '#854d0e' },
-  evening:  { bg: '#dbeafe', text: '#1e40af' },
-  night:    { bg: '#ede9fe', text: '#4c1d95' },
-  flexible: { bg: '#d1fae5', text: '#065f46' },
+  morning:  { bg: 'rgba(201,148,58,0.10)', text: '#A07228' },
+  evening:  { bg: '#E2E8F0', text: '#64748B' },
+  night:    { bg: '#F1F5F9', text: '#64748B' },
+  flexible: { bg: 'rgba(201,148,58,0.10)', text: '#A07228' },
 };
 
 function fmtTime(t: string): string {
@@ -265,7 +265,7 @@ function ShiftModal({
               onClick={() => set('is_active', !form.is_active)}
               style={{
                 width: 40, height: 22, borderRadius: 99, flexShrink: 0,
-                background: form.is_active ? '#10b981' : 'var(--border-default)',
+                background: form.is_active ? '#C9943A' : 'var(--border-default)',
                 position: 'relative', cursor: 'pointer', transition: 'background 200ms',
               }}
             >
@@ -486,10 +486,10 @@ export default function ShiftsPage() {
                       display: 'inline-flex', alignItems: 'center', gap: 5,
                       padding: '3px 8px', borderRadius: 99, fontSize: 'var(--text-xs)',
                       fontWeight: 'var(--weight-semibold)',
-                      background: shift.is_active ? '#d1fae5' : 'var(--surface-subtle)',
-                      color: shift.is_active ? '#065f46' : 'var(--text-secondary)',
+                      background: shift.is_active ? 'rgba(201,148,58,0.10)' : 'var(--surface-subtle)',
+                      color: shift.is_active ? '#A07228' : 'var(--text-secondary)',
                     }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: shift.is_active ? '#10b981' : '#9ca3af' }} />
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: shift.is_active ? '#C9943A' : '#94A3B8' }} />
                       {shift.is_active ? 'Active' : 'Inactive'}
                     </span>
 
@@ -521,10 +521,10 @@ export default function ShiftsPage() {
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-4)',
                     }}>
                       <div>
-                        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: '#7f1d1d', margin: 0 }}>
+                        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: '#E05C5C', margin: 0 }}>
                           Delete &quot;{shift.name}&quot;?
                         </p>
-                        <p style={{ fontSize: 'var(--text-xs)', color: '#991b1b', margin: '2px 0 0' }}>
+                        <p style={{ fontSize: 'var(--text-xs)', color: '#E05C5C', margin: '2px 0 0' }}>
                           This cannot be undone. Shifts assigned to employees cannot be deleted.
                         </p>
                       </div>

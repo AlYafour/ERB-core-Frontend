@@ -288,7 +288,7 @@ function NewPOContent() {
                   <CostCodePicker value={costCode} onChange={setCostCode} />
                   {costCode && (
                     <div style={{ marginTop: 5, padding: '5px 10px', background: 'var(--muted)', borderRadius: 6, fontSize: 13 }}>
-                      <span style={{ fontWeight: 600, color: '#f97316' }}>{costCode.excel_code}</span>
+                      <span style={{ fontWeight: 600, color: '#C9943A' }}>{costCode.excel_code}</span>
                       <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>{costCode.description}</span>
                     </div>
                   )}
@@ -432,11 +432,11 @@ function NewPOContent() {
                             </td>
                           </tr>
                           {totals.chargesVat > 0 && (
-                            <tr style={{ background: '#fefce8', borderTop: '1px solid var(--border-subtle)' }}>
-                              <td colSpan={5} style={{ padding: '6px 12px', fontSize: 11, fontWeight: 600, color: '#92400e' }}>
+                            <tr style={{ background: 'var(--surface-subtle)', borderTop: '1px solid var(--border-subtle)' }}>
+                              <td colSpan={5} style={{ padding: '6px 12px', fontSize: 11, fontWeight: 600, color: '#C9943A' }}>
                                 Service VAT ({Math.round(totals.effectiveVatRate * 100)}%)
                               </td>
-                              <td style={{ padding: '6px 12px', fontWeight: 700, color: '#92400e', fontSize: 12 }}>
+                              <td style={{ padding: '6px 12px', fontWeight: 700, color: '#C9943A', fontSize: 12 }}>
                                 AED {totals.chargesVat.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                               </td>
                             </tr>

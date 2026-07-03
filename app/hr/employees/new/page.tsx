@@ -189,7 +189,7 @@ function NewEmployeeForm() {
                   width: 32, height: 32, borderRadius: '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)', cursor: 'pointer',
-                  backgroundColor: i < step ? '#10b981' : i === step ? 'var(--sidebar-active-bg)' : 'var(--surface-subtle)',
+                  backgroundColor: i < step ? '#C9943A' : i === step ? 'var(--sidebar-active-bg)' : 'var(--surface-subtle)',
                   color: i <= step ? 'white' : 'var(--text-secondary)',
                 }}
                 onClick={() => { if (i < step) setStep(i); }}>
@@ -197,7 +197,7 @@ function NewEmployeeForm() {
               </div>
               <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: i === step ? 'inherit' : 'var(--text-secondary)' }}>{s}</span>
               {i < STEPS.length - 1 && (
-                <div style={{ width: 32, height: 1, margin: '0 var(--space-1)', backgroundColor: i < step ? '#10b981' : 'var(--border-subtle)' }} />
+                <div style={{ width: 32, height: 1, margin: '0 var(--space-1)', backgroundColor: i < step ? '#C9943A' : 'var(--border-subtle)' }} />
               )}
             </div>
           ))}

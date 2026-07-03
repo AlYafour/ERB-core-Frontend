@@ -10,17 +10,17 @@ import { Loader, PageShell } from '@/components/ui';
 import { useT } from '@/lib/i18n/useT';
 
 const statusColors: Record<string, string> = {
-  completed: '#10B981', // Green
-  in_progress: '#F59E0B', // Amber
-  pending: '#3B82F6', // Blue
+  completed: '#3A7D52', // Green
+  in_progress: '#C9943A', // Amber
+  pending: '#C9943A', // Blue
   rejected: '#EF4444', // Red
 };
 
 const statusBgColors: Record<string, string> = {
-  completed: 'rgba(16, 185, 129, 0.1)',
-  in_progress: 'rgba(245, 158, 11, 0.1)',
-  pending: 'rgba(59, 130, 246, 0.1)',
-  rejected: 'rgba(239, 68, 68, 0.1)',
+  completed: 'rgba(58, 125, 82, 0.1)',
+  in_progress: 'rgba(201, 148, 58, 0.1)',
+  pending: 'rgba(201, 148, 58, 0.08)',
+  rejected: 'rgba(220, 38, 38, 0.1)',
 };
 
 const statusLabels: Record<string, string> = {

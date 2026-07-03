@@ -361,13 +361,13 @@ export default function PurchaseRequestDetailPage() {
               {request.rejection_reason && (
                 <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 8, background: 'var(--status-error-bg)', border: '1px solid var(--status-error-border)' }}>
                   <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--status-error)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{t('confirm', 'rejectReason')}</div>
-                  <div style={{ fontSize: 'var(--text-sm)', color: '#991B1B', lineHeight: 1.5 }}>{request.rejection_reason}</div>
+                  <div style={{ fontSize: 'var(--text-sm)', color: 'var(--status-error)', lineHeight: 1.5 }}>{request.rejection_reason}</div>
                 </div>
               )}
               {request.resubmit_comment && request.status === 'pending' && (
-                <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 8, background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
-                  <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: '#1D4ED8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Resubmit Note</div>
-                  <div style={{ fontSize: 'var(--text-sm)', color: '#1E40AF', lineHeight: 1.5 }}>{request.resubmit_comment}</div>
+                <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 8, background: 'var(--status-info-bg)', border: '1px solid var(--status-info-border)' }}>
+                  <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--brand)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Resubmit Note</div>
+                  <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)', lineHeight: 1.5 }}>{request.resubmit_comment}</div>
                 </div>
               )}
             </div>
@@ -542,7 +542,7 @@ export default function PurchaseRequestDetailPage() {
                               <button type="button"
                                 disabled={deleteChargeMutation.isPending}
                                 onClick={() => deleteChargeMutation.mutate(c.id)}
-                                style={{ fontSize: 10, fontWeight: 600, color: '#ef4444', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>
+                                style={{ fontSize: 10, fontWeight: 600, color: '#ef4444', background: '#fef2f2', border: '1px solid var(--status-error-border)', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>
                                 Remove
                               </button>
                             </td>
