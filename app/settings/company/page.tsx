@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { tenantApi } from '@/lib/api/tenants';
-import { usersApi } from '@/lib/api/users';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { toast } from '@/lib/hooks/use-toast';
@@ -12,6 +11,139 @@ import type { TenantBrandingData } from '@/types/saas';
 import type { User } from '@/types';
 import Link from 'next/link';
 import Image from 'next/image';
+import { generateScale, hexToRgba, applyTenantTheme } from '@/lib/utils/tenant-theme';
+
+/* ── color presets ────────────────────────────────────────────────── */
+const PRESETS = [
+  { hex: '#C9943A', name: 'Gold' },
+  { hex: '#1B4F72', name: 'Navy' },
+  { hex: '#1A6B3C', name: 'Forest' },
+  { hex: '#7B2D8B', name: 'Purple' },
+  { hex: '#C0392B', name: 'Crimson' },
+  { hex: '#2E86AB', name: 'Steel' },
+  { hex: '#B7410E', name: 'Rust' },
+  { hex: '#2C3E50', name: 'Slate' },
+];
+
+function ThemePreview({ color, mode }: { color: string; mode: 'light' | 'dark' }) {
+  const sc = generateScale(color);
+  const isDark = mode === 'dark';
+  const bg      = isDark ? '#0F1D30' : '#F7F4F0';
+  const surf    = isDark ? '#1A2235' : '#FFFFFF';
+  const border  = isDark ? '#1E2D45' : '#E2DBD6';
+  const textPri = isDark ? '#F1F5F9' : '#1C1414';
+  const textSec = isDark ? '#94A3B8' : '#6D5F5C';
+  const active  = isDark ? sc['400'] : sc['500'];
+  const btnBg   = active;
+  const sideAct = hexToRgba(color, 0.12);
+
+  return (
+    <div style={{ background: bg, border: `1px solid ${border}`, borderRadius: 10, padding: 14, flex: 1, minWidth: 0 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: textSec, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>
+        {mode === 'dark' ? '🌙 Dark' : '☀️ Light'}
+      </div>
+      {/* sidebar active item */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: sideAct, borderRadius: 7, padding: '6px 10px', borderLeft: `3px solid ${active}`, marginBottom: 8 }}>
+        <div style={{ width: 12, height: 12, borderRadius: 3, background: active, opacity: 0.8 }} />
+        <span style={{ fontSize: 11, fontWeight: 600, color: active }}>Dashboard</span>
+      </div>
+      {/* primary button */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+        <div style={{ background: btnBg, color: '#fff', borderRadius: 6, padding: '5px 12px', fontSize: 11, fontWeight: 600 }}>Save</div>
+        <div style={{ background: surf, color: textSec, borderRadius: 6, padding: '5px 12px', fontSize: 11, border: `1px solid ${border}` }}>Cancel</div>
+      </div>
+      {/* badge */}
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: hexToRgba(color, 0.10), border: `1px solid ${hexToRgba(color, 0.25)}`, borderRadius: 20, padding: '2px 10px' }}>
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: active }} />
+        <span style={{ fontSize: 10, fontWeight: 600, color: active }}>Active</span>
+      </div>
+      {/* input focus */}
+      <div style={{ marginTop: 8, border: `1.5px solid ${active}`, borderRadius: 6, padding: '5px 10px', background: surf, boxShadow: `0 0 0 3px ${hexToRgba(color, 0.14)}` }}>
+        <span style={{ fontSize: 10, color: textPri }}>Input focused</span>
+      </div>
+    </div>
+  );
+}
+
+function BrandColorPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const isValidHex = /^#[0-9A-Fa-f]{6}$/.test(value);
+  const safeColor = isValidHex ? value : '#C9943A';
+
+  return (
+    <div>
+      {/* Preset swatches */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+        {PRESETS.map(p => (
+          <button
+            key={p.hex}
+            title={p.name}
+            onClick={() => onChange(p.hex)}
+            style={{
+              width: 36, height: 36, borderRadius: 8, background: p.hex, cursor: 'pointer',
+              border: value.toLowerCase() === p.hex.toLowerCase() ? `3px solid ${p.hex}` : '3px solid transparent',
+              outline: value.toLowerCase() === p.hex.toLowerCase() ? '2px solid var(--text-primary)' : 'none',
+              outlineOffset: 1,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+              transition: 'transform 0.1s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.12)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+          />
+        ))}
+        {/* Custom color picker */}
+        <label title="Custom color" style={{ width: 36, height: 36, borderRadius: 8, border: '2px dashed var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'var(--surface-subtle)', position: 'relative', overflow: 'hidden' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          <input type="color" value={safeColor} onChange={e => onChange(e.target.value)}
+            style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
+        </label>
+      </div>
+
+      {/* Hex input */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <div style={{ width: 32, height: 32, borderRadius: 7, background: safeColor, border: '1px solid var(--border-subtle)', flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
+        <input
+          type="text"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder="#C9943A"
+          maxLength={7}
+          style={{
+            width: 120, padding: '7px 10px', fontSize: 13, fontFamily: 'monospace',
+            borderRadius: 7, border: `1px solid ${isValidHex ? safeColor : 'var(--border-default)'}`,
+            background: 'var(--input-bg)', color: 'var(--text-primary)',
+            outline: 'none',
+          }}
+        />
+        <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Controls buttons, sidebar, badges, and focus rings</span>
+      </div>
+
+      {/* Live preview — light + dark */}
+      {isValidHex && (
+        <div>
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 0 10px' }}>Live Preview</p>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <ThemePreview color={safeColor} mode="light" />
+            <ThemePreview color={safeColor} mode="dark" />
+          </div>
+          {/* Color scale strip */}
+          <div style={{ display: 'flex', gap: 3, marginTop: 12, borderRadius: 6, overflow: 'hidden' }}>
+            {['50','100','200','300','400','500','600','700','800','900'].map(k => {
+              const sc = generateScale(safeColor);
+              return (
+                <div key={k} style={{ flex: 1, height: 20, background: sc[k] }} title={`${k}: ${sc[k]}`} />
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+            <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>50</span>
+            <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>500</span>
+            <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>900</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ── helpers ──────────────────────────────────────────────────────── */
 function Field({ label, name, value, onChange, type = 'text', placeholder }: {
@@ -174,16 +306,13 @@ export default function CompanySettingsPage() {
               {/* Primary color */}
               <div style={{ marginTop: 18 }}>
                 <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 6px' }}>Brand Color</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <input type="color" value={val('primary_color') || '#C9943A'}
-                    onChange={e => setForm(f => ({ ...f, primary_color: e.target.value }))}
-                    style={{ width: 40, height: 40, padding: 2, borderRadius: 8, border: '1px solid var(--border-subtle)', cursor: 'pointer' }} />
-                  <input type="text" value={val('primary_color')}
-                    onChange={e => setForm(f => ({ ...f, primary_color: e.target.value }))}
-                    placeholder="#C9943A"
-                    style={{ width: 110, padding: '8px 10px', fontSize: 13, borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--input-bg)', color: 'var(--text-primary)' }} />
-                  <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Used across the app theme</span>
-                </div>
+                <BrandColorPicker
+                  value={val('primary_color') || '#C9943A'}
+                  onChange={v => {
+                    setForm(f => ({ ...f, primary_color: v }));
+                    if (/^#[0-9A-Fa-f]{6}$/.test(v)) applyTenantTheme(v);
+                  }}
+                />
               </div>
             </Section>
 
