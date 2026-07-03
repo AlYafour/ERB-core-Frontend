@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
+import TenantThemeInjector from '@/components/layout/TenantThemeInjector';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -23,10 +24,11 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
-        {/* Restore theme + locale before React hydrates to prevent flash */}
+        {/* Restore theme + locale before React hydrates — no flash */}
         <script dangerouslySetInnerHTML={{ __html: `
           try {
-            document.documentElement.setAttribute('data-theme', 'dark');
+            var t = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', t);
             var l = localStorage.getItem('locale');
             if (l === 'ar') {
               document.documentElement.setAttribute('dir', 'rtl');
@@ -38,7 +40,10 @@ export default function RootLayout({
         `}} />
       </head>
       <body className={inter.className}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <TenantThemeInjector />
+          {children}
+        </Providers>
       </body>
     </html>
   );
