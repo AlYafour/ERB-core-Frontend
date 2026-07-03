@@ -287,8 +287,8 @@ export default function EmployeeLocationsPage() {
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: 4,
-                                background: 'var(--sidebar-active-bg)',
-                                color: 'var(--sidebar-active-text)',
+                                background: 'var(--brand)',
+                                color: 'var(--card-bg)',
                                 borderRadius: 'var(--radius-full)',
                                 padding: '2px 6px 2px 10px',
                                 fontSize: 'var(--text-xs)',
@@ -321,7 +321,7 @@ export default function EmployeeLocationsPage() {
                           })}
                           style={{
                             fontSize: 'var(--text-xs)', fontWeight: 500,
-                            color: 'var(--sidebar-active-text)',
+                            color: 'var(--brand)',
                             background: 'none', border: 'none', cursor: 'pointer',
                           }}
                         >
@@ -456,7 +456,7 @@ export default function EmployeeLocationsPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 'var(--space-2)' }}>
                 <label className="form-label" style={{ margin: 0 }}>Check-in Locations</label>
                 {selectedLocIds.size > 0 && (
-                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--sidebar-active-text)', fontWeight: 600 }}>
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', fontWeight: 600 }}>
                     {selectedLocIds.size} selected
                   </span>
                 )}
@@ -485,7 +485,7 @@ export default function EmployeeLocationsPage() {
                           padding: 'var(--space-2-5) var(--space-3)',
                           cursor: 'pointer',
                           borderBottom: idx < officeLocs.length - 1 ? '1px solid var(--border-subtle)' : 'none',
-                          background: checked ? 'var(--sidebar-active-bg)' : 'transparent',
+                          background: checked ? 'var(--brand)' : 'transparent',
                           transition: 'background 80ms',
                           opacity: alreadyHas ? 0.5 : 1,
                         }}
@@ -502,7 +502,7 @@ export default function EmployeeLocationsPage() {
                           <div style={{
                             fontSize: 'var(--text-sm)',
                             fontWeight: checked ? 600 : 400,
-                            color: checked ? 'var(--sidebar-active-text)' : 'var(--text-primary)',
+                            color: checked ? 'var(--card-bg)' : 'var(--text-primary)',
                           }}>
                             {loc.name}
                             {alreadyHas && (

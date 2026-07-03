@@ -29,10 +29,10 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-  morning:  { bg: 'rgba(201,148,58,0.10)', text: '#A07228' },
-  evening:  { bg: '#E2E8F0', text: '#64748B' },
-  night:    { bg: '#F1F5F9', text: '#64748B' },
-  flexible: { bg: 'rgba(201,148,58,0.10)', text: '#A07228' },
+  morning:  { bg: 'var(--brand-muted)', text: 'var(--brand)' },
+  evening:  { bg: 'var(--border-subtle)', text: 'var(--text-secondary)' },
+  night:    { bg: 'var(--surface-subtle)', text: 'var(--text-secondary)' },
+  flexible: { bg: 'var(--brand-muted)', text: 'var(--brand)' },
 };
 
 function fmtTime(t: string): string {
@@ -240,9 +240,9 @@ function ShiftModal({
                     onClick={() => toggleDay(value)}
                     style={{
                       width: 40, height: 40, borderRadius: 'var(--radius-sm)',
-                      border: active ? '2px solid var(--sidebar-active-bg)' : '1px solid var(--border-default)',
-                      background: active ? 'var(--sidebar-active-bg)' : 'none',
-                      color: active ? 'var(--sidebar-active-text)' : 'var(--text-secondary)',
+                      border: active ? '2px solid var(--brand)' : '1px solid var(--border-default)',
+                      background: active ? 'var(--brand)' : 'none',
+                      color: active ? 'var(--card-bg)' : 'var(--text-secondary)',
                       fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)',
                       cursor: 'pointer', transition: 'all 120ms', flexShrink: 0,
                     }}
@@ -265,7 +265,7 @@ function ShiftModal({
               onClick={() => set('is_active', !form.is_active)}
               style={{
                 width: 40, height: 22, borderRadius: 99, flexShrink: 0,
-                background: form.is_active ? '#C9943A' : 'var(--border-default)',
+                background: form.is_active ? 'var(--brand)' : 'var(--border-default)',
                 position: 'relative', cursor: 'pointer', transition: 'background 200ms',
               }}
             >
@@ -291,7 +291,7 @@ function ShiftModal({
               disabled={isSaving || !form.name.trim() || form.work_days.length === 0}
               style={{
                 padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-md)',
-                border: 'none', background: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)',
+                border: 'none', background: 'var(--brand)', color: 'var(--card-bg)',
                 cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)',
                 opacity: isSaving ? 0.6 : 1,
               }}
@@ -396,7 +396,7 @@ export default function ShiftsPage() {
             onClick={() => setModalShift('new')}
             style={{
               padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-md)',
-              background: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)',
+              background: 'var(--brand)', color: 'var(--card-bg)',
               border: 'none', cursor: 'pointer', fontSize: 'var(--text-sm)',
               fontWeight: 'var(--weight-semibold)', whiteSpace: 'nowrap', flexShrink: 0,
             }}
@@ -486,10 +486,10 @@ export default function ShiftsPage() {
                       display: 'inline-flex', alignItems: 'center', gap: 5,
                       padding: '3px 8px', borderRadius: 99, fontSize: 'var(--text-xs)',
                       fontWeight: 'var(--weight-semibold)',
-                      background: shift.is_active ? 'rgba(201,148,58,0.10)' : 'var(--surface-subtle)',
-                      color: shift.is_active ? '#A07228' : 'var(--text-secondary)',
+                      background: shift.is_active ? 'var(--brand-muted)' : 'var(--surface-subtle)',
+                      color: shift.is_active ? 'var(--brand)' : 'var(--text-secondary)',
                     }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: shift.is_active ? '#C9943A' : '#94A3B8' }} />
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: shift.is_active ? 'var(--brand)' : 'var(--text-tertiary)' }} />
                       {shift.is_active ? 'Active' : 'Inactive'}
                     </span>
 

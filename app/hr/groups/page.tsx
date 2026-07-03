@@ -97,7 +97,7 @@ function ManagerPicker({
             <>
               <span style={{
                 width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                background: selected ? (selected.user?.id ? '#C9943A' : '#E05C5C') : '#9ca3af',
+                background: selected ? (selected.user?.id ? 'var(--brand)' : '#E05C5C') : 'var(--text-tertiary)',
               }} />
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
             </>
@@ -153,7 +153,7 @@ function ManagerPicker({
               const hasUser  = !!emp.user?.id;
               const inactive = !emp.is_active;
               const isSel    = emp.id === value;
-              const dotColor = !hasUser ? '#E05C5C' : inactive ? '#9ca3af' : '#C9943A';
+              const dotColor = !hasUser ? '#E05C5C' : inactive ? 'var(--text-tertiary)' : 'var(--brand)';
               return (
                 <div
                   key={emp.id}
@@ -161,7 +161,7 @@ function ManagerPicker({
                   style={{
                     padding: 'var(--space-2) var(--space-3)', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
-                    background: isSel ? 'var(--sidebar-active-bg)' : undefined,
+                    background: isSel ? 'var(--brand)' : undefined,
                     opacity: inactive ? 0.6 : 1,
                   }}
                   onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = 'var(--surface-subtle)'; }}
@@ -175,18 +175,18 @@ function ManagerPicker({
                     <span style={{
                       fontSize: 'var(--text-sm)',
                       fontWeight: isSel ? 'var(--weight-semibold)' : 'var(--weight-normal)',
-                      color: isSel ? 'var(--sidebar-active-text)' : undefined,
+                      color: isSel ? 'var(--card-bg)' : undefined,
                       display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
                       {emp.full_name}
                     </span>
                     <span style={{
                       fontSize: 'var(--text-xs)',
-                      color: isSel ? 'var(--sidebar-active-text)' : 'var(--text-secondary)',
+                      color: isSel ? 'var(--card-bg)' : 'var(--text-secondary)',
                       display: 'flex', alignItems: 'center', gap: 'var(--space-1-5)',
                     }}>
                       {emp.employee_id}
-                      {inactive && <span style={{ color: '#9ca3af' }}>· inactive</span>}
+                      {inactive && <span style={{ color: 'var(--text-tertiary)' }}>· inactive</span>}
                       {!hasUser && !inactive && (
                         <span style={{ color: '#E05C5C', fontWeight: 'var(--weight-medium)' }}>
                           · won&apos;t route approvals
@@ -359,7 +359,7 @@ function GroupModal({
             />
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
               Approval fallback when an employee has no direct manager.{' '}
-              <span style={{ color: '#C9943A', fontWeight: 'var(--weight-semibold)' }}>●</span> Has login · routes approvals.{' '}
+              <span style={{ color: 'var(--brand)', fontWeight: 'var(--weight-semibold)' }}>●</span> Has login · routes approvals.{' '}
               <span style={{ color: '#E05C5C', fontWeight: 'var(--weight-semibold)' }}>●</span> No account · approvals won&apos;t deliver.
             </p>
           </div>
@@ -370,7 +370,7 @@ function GroupModal({
               onClick={() => set('is_active', !form.is_active)}
               style={{
                 width: 40, height: 22, borderRadius: 99, flexShrink: 0,
-                background: form.is_active ? '#C9943A' : 'var(--border-default)',
+                background: form.is_active ? 'var(--brand)' : 'var(--border-default)',
                 position: 'relative', cursor: 'pointer', transition: 'background 200ms',
               }}
             >
@@ -392,7 +392,7 @@ function GroupModal({
               Cancel
             </button>
             <button type="submit" disabled={isSaving || !form.name.trim() || !form.code.trim()}
-              style={{ padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', opacity: isSaving ? 0.6 : 1 }}>
+              style={{ padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--brand)', color: 'var(--card-bg)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', opacity: isSaving ? 0.6 : 1 }}>
               {isSaving ? 'Saving…' : group ? 'Save Changes' : 'Create Group'}
             </button>
           </div>
@@ -526,7 +526,7 @@ export default function EmployeeGroupsPage() {
               onClick={() => setModalGroup('new')}
             style={{
               padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-md)',
-              background: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)',
+              background: 'var(--brand)', color: 'var(--card-bg)',
               border: 'none', cursor: 'pointer', fontSize: 'var(--text-sm)',
               fontWeight: 'var(--weight-semibold)', whiteSpace: 'nowrap', flexShrink: 0,
             }}
@@ -580,7 +580,7 @@ export default function EmployeeGroupsPage() {
                     {/* Code */}
                     <span style={{
                       fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-bold)',
-                      color: 'var(--sidebar-active-text)', background: 'var(--sidebar-active-bg)',
+                      color: 'var(--card-bg)', background: 'var(--brand)',
                       padding: '2px 8px', borderRadius: 'var(--radius-sm)', display: 'inline-block',
                       opacity: group.is_active ? 1 : 0.5,
                     }}>
@@ -633,7 +633,7 @@ export default function EmployeeGroupsPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                           <span style={{
                             width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                            background: mgrHasUser === false ? '#E05C5C' : '#C9943A',
+                            background: mgrHasUser === false ? '#E05C5C' : 'var(--brand)',
                           }} />
                           <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {group.default_manager_name}
@@ -649,10 +649,10 @@ export default function EmployeeGroupsPage() {
                       display: 'inline-flex', alignItems: 'center', gap: 5,
                       padding: '3px 8px', borderRadius: 99, fontSize: 'var(--text-xs)',
                       fontWeight: 'var(--weight-semibold)',
-                      background: group.is_active ? 'rgba(201,148,58,0.10)' : 'var(--surface-subtle)',
-                      color: group.is_active ? '#A07228' : 'var(--text-secondary)',
+                      background: group.is_active ? 'var(--brand-muted)' : 'var(--surface-subtle)',
+                      color: group.is_active ? 'var(--brand)' : 'var(--text-secondary)',
                     }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: group.is_active ? '#C9943A' : '#9ca3af' }} />
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: group.is_active ? 'var(--brand)' : 'var(--text-tertiary)' }} />
                       {group.is_active ? 'Active' : 'Inactive'}
                     </span>
 
@@ -718,7 +718,7 @@ export default function EmployeeGroupsPage() {
           <div style={{ padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)' }}>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
               <strong>G4 active.</strong> Set a default manager per group — used as approval fallback when employees have no direct manager assigned. Default shift (G3) is also live. Assign employees to groups from the{' '}
-              <Link href="/hr/employees" style={{ color: 'var(--sidebar-active-text)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>Employees page</Link>.
+              <Link href="/hr/employees" style={{ color: 'var(--brand)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>Employees page</Link>.
             </p>
           </div>
         )}

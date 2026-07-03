@@ -293,7 +293,7 @@ export default function PayrollDetailPage() {
             })()}
           </div>{/* /deductions */}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-base)', fontWeight: 'var(--weight-bold)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-base)', fontWeight: 'var(--weight-bold)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--brand)', color: 'var(--card-bg)' }}>
             <span>Net Salary</span>
             <span>{fmt(payroll.net_salary)}</span>
           </div>

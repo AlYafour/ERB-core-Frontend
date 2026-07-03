@@ -125,9 +125,9 @@ function PersonPicker({
   const isActive   = (e: HREmployee) => e.is_active !== false;
 
   const dot = (e: HREmployee) => {
-    if (!isActive(e)) return { bg: '#94A3B8', title: 'Inactive' };
-    if (!hasAccount(e)) return { bg: '#C9943A', title: 'No user account — cannot receive approvals' };
-    return { bg: '#C9943A', title: 'Active with account' };
+    if (!isActive(e)) return { bg: 'var(--text-tertiary)', title: 'Inactive' };
+    if (!hasAccount(e)) return { bg: 'var(--brand)', title: 'No user account — cannot receive approvals' };
+    return { bg: 'var(--brand)', title: 'Active with account' };
   };
 
   return (
@@ -558,7 +558,7 @@ function ChainBuilder({
                 onClick={() => setField({ is_active: !form.is_active })}
                 style={{
                   width: 44, height: 24, borderRadius: 12, border: 'none',
-                  background: form.is_active ? 'var(--color-primary)' : '#CBD5E1',
+                  background: form.is_active ? 'var(--color-primary)' : 'var(--border-default)',
                   cursor: 'pointer', position: 'relative', transition: 'background 0.15s',
                 }}
               >
@@ -723,7 +723,7 @@ function ChainBuilder({
             style={{
               padding: '8px 20px', border: 'none',
               borderRadius: 'var(--radius-md)',
-              background: saving ? '#94A3B8' : 'var(--color-primary)',
+              background: saving ? 'var(--text-tertiary)' : 'var(--color-primary)',
               color: '#fff', cursor: saving ? 'not-allowed' : 'pointer',
               fontSize: 'var(--text-sm)', fontWeight: 600,
             }}
@@ -971,7 +971,7 @@ export default function ApprovalChainsPage() {
                 title={p.is_active ? 'Click to deactivate' : 'Click to activate'}
                 style={{
                   width: 36, height: 20, borderRadius: 10, border: 'none',
-                  background: p.is_active ? 'var(--color-primary)' : '#CBD5E1',
+                  background: p.is_active ? 'var(--color-primary)' : 'var(--border-default)',
                   cursor: 'pointer', position: 'relative',
                 }}
               >
@@ -985,7 +985,7 @@ export default function ApprovalChainsPage() {
             ) : (
               <span style={{
                 width: 8, height: 8, borderRadius: '50%',
-                background: p.is_active ? '#C9943A' : '#CBD5E1',
+                background: p.is_active ? 'var(--brand)' : 'var(--border-default)',
                 display: 'inline-block',
               }} />
             )}

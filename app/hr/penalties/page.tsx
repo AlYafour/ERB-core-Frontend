@@ -14,8 +14,8 @@ import type { PenaltyRule, PenaltyTier, PenaltyRuleType, PenaltyPenaltyType, Emp
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const RULE_TYPES: { value: PenaltyRuleType; label: string; color: string; bg: string }[] = [
-  { value: 'LATENESS',    label: 'Lateness',    color: '#A07228', bg: 'rgba(201,148,58,0.10)' },
-  { value: 'EARLY_LEAVE', label: 'Early Leave', color: '#64748B', bg: '#E2E8F0' },
+  { value: 'LATENESS',    label: 'Lateness',    color: 'var(--brand)', bg: 'var(--brand-muted)' },
+  { value: 'EARLY_LEAVE', label: 'Early Leave', color: 'var(--text-secondary)', bg: 'var(--border-subtle)' },
   { value: 'ABSENCE',     label: 'Absence',     color: '#E05C5C', bg: '#FEF2F2' },
 ];
 
@@ -94,7 +94,7 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
       onClick={() => onChange(!value)}
       style={{
         width: 44, height: 24, borderRadius: 12, border: 'none',
-        background: value ? 'var(--color-primary)' : '#CBD5E1',
+        background: value ? 'var(--color-primary)' : 'var(--border-default)',
         cursor: 'pointer', position: 'relative', transition: 'background 0.15s',
         flexShrink: 0,
       }}
@@ -591,7 +591,7 @@ function RuleBuilder({
             style={{
               padding: '8px 20px', border: 'none',
               borderRadius: 'var(--radius-md)',
-              background: saving ? '#94A3B8' : 'var(--color-primary)',
+              background: saving ? 'var(--text-tertiary)' : 'var(--color-primary)',
               color: '#fff', cursor: saving ? 'not-allowed' : 'pointer',
               fontSize: 'var(--text-sm)', fontWeight: 600,
             }}
@@ -804,7 +804,7 @@ export default function PenaltyRulesPage() {
             <span style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               minWidth: 24, height: 24, borderRadius: '50%',
-              background: r.tiers?.length ? 'var(--color-primary)' : '#CBD5E1',
+              background: r.tiers?.length ? 'var(--color-primary)' : 'var(--border-default)',
               color: r.tiers?.length ? '#fff' : 'var(--text-tertiary)',
               fontSize: 11, fontWeight: 700,
             }}>
@@ -824,7 +824,7 @@ export default function PenaltyRulesPage() {
                 title={r.is_active ? 'Click to deactivate' : 'Click to activate'}
                 style={{
                   width: 36, height: 20, borderRadius: 10, border: 'none',
-                  background: r.is_active ? 'var(--color-primary)' : '#CBD5E1',
+                  background: r.is_active ? 'var(--color-primary)' : 'var(--border-default)',
                   cursor: 'pointer', position: 'relative',
                 }}
               >
@@ -838,7 +838,7 @@ export default function PenaltyRulesPage() {
             ) : (
               <span style={{
                 width: 8, height: 8, borderRadius: '50%',
-                background: r.is_active ? '#C9943A' : '#CBD5E1',
+                background: r.is_active ? 'var(--brand)' : 'var(--border-default)',
                 display: 'inline-block',
               }} />
             )}

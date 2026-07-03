@@ -167,13 +167,13 @@ function NewEmployeeForm() {
         />
 
         {existingUserId && existingUser && (
-          <div style={{ borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)', border: '1px solid var(--sidebar-active-text)', background: 'var(--sidebar-active-bg)' }}>
+          <div style={{ borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)', border: '1px solid var(--brand)', background: 'var(--brand-muted)' }}>
             <span>🔗</span>
             <div>
-              <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--sidebar-active-text)', margin: 0 }}>
+              <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--brand)', margin: 0 }}>
                 Linking to existing account
               </p>
-              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--sidebar-active-text)', opacity: 0.8, margin: 0 }}>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', opacity: 0.8, margin: 0 }}>
                 @{existingUser.username} · {existingUser.email}
               </p>
             </div>
@@ -189,7 +189,7 @@ function NewEmployeeForm() {
                   width: 32, height: 32, borderRadius: '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)', cursor: 'pointer',
-                  backgroundColor: i < step ? '#C9943A' : i === step ? 'var(--sidebar-active-bg)' : 'var(--surface-subtle)',
+                  backgroundColor: i < step ? 'var(--brand)' : i === step ? 'var(--brand)' : 'var(--surface-subtle)',
                   color: i <= step ? 'white' : 'var(--text-secondary)',
                 }}
                 onClick={() => { if (i < step) setStep(i); }}>
@@ -197,7 +197,7 @@ function NewEmployeeForm() {
               </div>
               <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: i === step ? 'inherit' : 'var(--text-secondary)' }}>{s}</span>
               {i < STEPS.length - 1 && (
-                <div style={{ width: 32, height: 1, margin: '0 var(--space-1)', backgroundColor: i < step ? '#C9943A' : 'var(--border-subtle)' }} />
+                <div style={{ width: 32, height: 1, margin: '0 var(--space-1)', backgroundColor: i < step ? 'var(--brand)' : 'var(--border-subtle)' }} />
               )}
             </div>
           ))}
@@ -303,13 +303,13 @@ function NewEmployeeForm() {
               </div>
 
               {selectedPosition?.permission_set_name && (
-                <div style={{ gridColumn: '1 / -1', borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)', background: 'var(--sidebar-active-bg)' }}>
+                <div style={{ gridColumn: '1 / -1', borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)', background: 'var(--brand-muted)' }}>
                   <span>🔑</span>
                   <div>
-                    <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--sidebar-active-text)', margin: 0 }}>
+                    <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--brand)', margin: 0 }}>
                       Access auto-assigned from position
                     </p>
-                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--sidebar-active-text)', opacity: 0.8, margin: 0 }}>
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', opacity: 0.8, margin: 0 }}>
                       {'"'}{selectedPosition.title}{'"'} → <strong>{selectedPosition.permission_set_name}</strong>
                     </p>
                   </div>
@@ -330,9 +330,9 @@ function NewEmployeeForm() {
                   </div>
                 ))}
               </div>
-              <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--sidebar-active-bg)' }}>
-                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--sidebar-active-text)' }}>Total</span>
-                <span style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', color: 'var(--sidebar-active-text)' }}>
+              <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--brand)' }}>
+                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--card-bg)' }}>Total</span>
+                <span style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', color: 'var(--card-bg)' }}>
                   {totalSalary.toLocaleString('en-US', { minimumFractionDigits: 2 })} AED
                 </span>
               </div>
@@ -384,7 +384,7 @@ function NewEmployeeForm() {
                     { val: false, label: 'Inactive — activate later', desc: 'Cannot log in until activated' },
                     { val: true,  label: 'Active immediately',         desc: 'Can log in right away' },
                   ].map(({ val, label, desc }) => (
-                    <label key={String(val)} style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', cursor: 'pointer', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: `1px solid ${account.is_active === val ? 'var(--sidebar-active-text)' : 'var(--border-subtle)'}`, background: account.is_active === val ? 'var(--sidebar-active-bg)' : 'transparent', flex: 1 }}>
+                    <label key={String(val)} style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', cursor: 'pointer', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: `1px solid ${account.is_active === val ? 'var(--brand)' : 'var(--border-subtle)'}`, background: account.is_active === val ? 'var(--brand-muted)' : 'transparent', flex: 1 }}>
                       <input type="radio" style={{ marginTop: 2 }} checked={account.is_active === val}
                         onChange={() => setAccount(prev => ({ ...prev, is_active: val }))} />
                       <div>
@@ -406,7 +406,7 @@ function NewEmployeeForm() {
                 <span style={{ color: 'var(--text-secondary)' }}>Position</span>
                 <span style={{ fontWeight: 'var(--weight-medium)' }}>{selectedPosition?.title || '—'}</span>
                 <span style={{ color: 'var(--text-secondary)' }}>Access</span>
-                <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--sidebar-active-text)' }}>
+                <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--brand)' }}>
                   {selectedPosition?.permission_set_name || account.role.replace(/_/g, ' ')}
                 </span>
                 <span style={{ color: 'var(--text-secondary)' }}>Total Salary</span>
