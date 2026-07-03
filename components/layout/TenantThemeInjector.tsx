@@ -9,9 +9,8 @@ export default function TenantThemeInjector() {
   const primary = data?.branding?.primary_color;
 
   useEffect(() => {
-    if (primary && primary.startsWith('#')) {
-      applyTenantTheme(primary);
-    }
+    // Apply default gold until tenant color loads; switch when API responds
+    applyTenantTheme(primary?.startsWith('#') ? primary : '#C9943A');
   }, [primary]);
 
   return null;

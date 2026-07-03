@@ -143,9 +143,9 @@ export function buildThemeCss(primaryHex: string): string {
   --sidebar-active-text:   ${darkActive};
   --sidebar-section-label: ${sidebarSection};
 
-  /* Navbar — always dark */
-  --navbar-bg:             ${navbarBg};
-  --navbar-border:         ${navbarBorder};
+  /* Navbar — light in light mode (sidebar stays dark) */
+  --navbar-bg:             var(--surface-base);
+  --navbar-border:         var(--border-subtle);
 
   /* Light mode brand-linked status / tasks / banners */
   --status-info:           ${primaryHex};

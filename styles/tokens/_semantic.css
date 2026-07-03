@@ -109,9 +109,9 @@
   --sidebar-active-text:    #E0AE55;
   --sidebar-section-label:  #243850;
 
-  /* Navbar */
-  --navbar-bg:              #07101F;
-  --navbar-border:          #162236;
+  /* Navbar — light in light mode */
+  --navbar-bg:              var(--surface-base);
+  --navbar-border:          var(--border-subtle);
 
   /* Input */
   --input-bg:               var(--gray-0);
