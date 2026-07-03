@@ -406,7 +406,7 @@ function DashboardContent() {
           </div>
 
           {/* ── 3-column grid ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, alignItems: 'stretch' }}>
 
             {/* ── Col 1: Active Projects ── */}
             <div style={card({ padding: '14px 16px', display: 'flex', flexDirection: 'column' })}>
@@ -464,7 +464,7 @@ function DashboardContent() {
             </div>
 
             {/* ── Col 2: Middle ── */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, height: '100%' }}>
 
               {cycleMetrics && (
                 <div style={card({ padding: '14px 16px' })}>
@@ -552,10 +552,34 @@ function DashboardContent() {
                   </div>
                 </div>
               )}
+
+              {/* HR & Tasks Activity — moved to Col 2 */}
+              {hrStats && hrStats.recentActivity.length > 0 && (
+                <div style={card({ padding: '14px 16px', flex: 1 })}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <div style={sectionTitle}>HR & Tasks Activity</div>
+                    <Link href="/hr/requests" style={viewAllLink}>View all →</Link>
+                  </div>
+                  {hrStats.recentActivity.slice(0, 5).map((a: any, i: number) => (
+                    <Link key={`hr-${a.type}-${a.id}`} href={a.link}
+                      style={{ display: 'block', textDecoration: 'none', padding: '8px 0', borderBottom: i < 4 ? `1px solid ${V.border}` : 'none' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: a.action === 'rejected' ? V.danger : V.text3, flexShrink: 0 }} />
+                        <span style={{ fontSize: 11, fontWeight: 600, color: V.text2 }}>{a.type === 'task' ? 'Task' : 'HR Request'}</span>
+                        <span style={{ fontSize: 10, color: V.text3, marginLeft: 'auto' }}>{new Date(a.timestamp).toLocaleDateString('en-GB')}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 11 }}>
+                        <span style={{ fontSize: 11, color: V.text2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{a.title}</span>
+                        <span style={{ fontSize: 10, color: V.text3, flexShrink: 0 }}>{a.user}</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* ── Col 3: Right — Approvals + Deadlines + Activity + Tasks ── */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, height: '100%' }}>
 
               {/* ── PENDING APPROVALS (new) ── */}
               <div style={card({ padding: '14px 16px' })}>
@@ -709,29 +733,6 @@ function DashboardContent() {
                 </div>
               )}
 
-              {/* HR & Tasks Activity */}
-              {hrStats && hrStats.recentActivity.length > 0 && (
-                <div style={card({ padding: '14px 16px' })}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <div style={sectionTitle}>HR & Tasks Activity</div>
-                    <Link href="/hr/requests" style={viewAllLink}>View all →</Link>
-                  </div>
-                  {hrStats.recentActivity.slice(0, 5).map((a: any, i: number) => (
-                    <Link key={`hr-${a.type}-${a.id}`} href={a.link}
-                      style={{ display: 'block', textDecoration: 'none', padding: '8px 0', borderBottom: i < 4 ? `1px solid ${V.border}` : 'none' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: a.action === 'rejected' ? V.danger : V.text3, flexShrink: 0 }} />
-                        <span style={{ fontSize: 11, fontWeight: 600, color: V.text2 }}>{a.type === 'task' ? 'Task' : 'HR Request'}</span>
-                        <span style={{ fontSize: 10, color: V.text3, marginLeft: 'auto' }}>{new Date(a.timestamp).toLocaleDateString('en-GB')}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 11 }}>
-                        <span style={{ fontSize: 11, color: V.text2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{a.title}</span>
-                        <span style={{ fontSize: 10, color: V.text3, flexShrink: 0 }}>{a.user}</span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
 
