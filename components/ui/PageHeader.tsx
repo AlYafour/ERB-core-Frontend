@@ -26,22 +26,22 @@ interface PageHeaderProps {
 }
 
 const METRIC_COLOR: Record<string, string> = {
-  warning: '#A07228',
-  success: '#475569',
-  error:   '#991b1b',
+  warning: 'var(--status-warning)',
+  success: 'var(--text-secondary)',
+  error:   'var(--status-error)',
   info:    'var(--text-brand)',
 };
 const METRIC_BG: Record<string, string> = {
-  warning: 'rgba(201,148,58,0.12)',
-  success: '#F1F5F9',
-  error:   '#FEF2F2',
+  warning: 'var(--status-warning-bg)',
+  success: 'var(--surface-app)',
+  error:   'var(--status-error-bg)',
   info:    'var(--brand-subtle)',
 };
 const METRIC_BORDER: Record<string, string> = {
-  warning: 'rgba(201,148,58,0.30)',
-  success: '#CBD5E1',
-  error:   '#FECACA',
-  info:    'var(--wine-100, #ede9fe)',
+  warning: 'var(--status-warning-border)',
+  success: 'var(--border-default)',
+  error:   'var(--status-error-border)',
+  info:    'var(--border-subtle)',
 };
 
 export default function PageHeader({

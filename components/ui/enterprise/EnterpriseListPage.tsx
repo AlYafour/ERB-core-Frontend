@@ -68,7 +68,7 @@ function ColumnVisibilityMenu<T>({
         {hiddenColumns.length > 0 && (
           <span style={{
             minWidth: 16, height: 16, borderRadius: 'var(--radius-full)',
-            background: 'var(--brand)', color: '#fff',
+            background: 'var(--brand)', color: 'var(--color-on-primary, #fff)',
             fontSize: 10, fontWeight: 700,
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px',
           }}>

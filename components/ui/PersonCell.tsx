@@ -1,17 +1,19 @@
 'use client';
 
 // ── Colour palette — deterministic from name hash ─────────────
+// These are intentional avatar accent colors (not UI chrome), kept as-is for
+// visual variety. Brand amber tones align with the design language.
 const PALETTE = [
   { bg: 'rgba(201,148,58,0.12)', text: '#A07228' },
-  { bg: '#E2E8F0', text: '#475569' },
+  { bg: 'var(--surface-subtle)',  text: 'var(--text-secondary)' },
   { bg: 'rgba(224,92,92,0.12)', text: '#E05C5C' },
   { bg: 'rgba(201,148,58,0.18)', text: '#B8832E' },
-  { bg: '#F1F5F9', text: '#64748B' },
+  { bg: 'var(--surface-app)',    text: 'var(--text-tertiary)' },
   { bg: 'rgba(201,148,58,0.08)', text: '#C9943A' },
-  { bg: '#E2EAF4', text: '#4A6280' },
-  { bg: '#F8FAFC', text: '#475569' },
+  { bg: 'var(--border-subtle)',  text: 'var(--text-secondary)' },
+  { bg: 'var(--surface-app)',    text: 'var(--text-secondary)' },
   { bg: 'rgba(224,92,92,0.08)', text: '#DC2626' },
-  { bg: '#E2E8F0', text: '#334155' },
+  { bg: 'var(--surface-subtle)', text: 'var(--text-primary)' },
 ];
 
 function hash(s: string): number {

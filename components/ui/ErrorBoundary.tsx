@@ -92,7 +92,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               borderRadius: 'var(--radius-md)',
               border: '1px solid transparent',
               background: 'var(--color-primary)',
-              color: '#fff',
+              color: 'var(--color-on-primary, #fff)',
               fontSize: 'var(--text-sm)',
               cursor: 'pointer',
               textDecoration: 'none',

@@ -212,7 +212,7 @@ export default function FilterPanel({ fields, filters, onFilterChange, onReset, 
                         </button>
                         <button
                           onClick={(e) => handleDeleteSavedFilter(filterSet.name, e)}
-                          className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px]"
+                          className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--status-error)] text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px]"
                         >
                           ×
                         </button>
@@ -355,24 +355,34 @@ export default function FilterPanel({ fields, filters, onFilterChange, onReset, 
             </div>
 
             {/* Footer */}
-            <div className="flex gap-3 px-5 py-4 border-t border-gray-200 bg-gray-50">
+            <div
+              className="flex gap-3 px-5 py-4 border-t"
+              style={{ borderColor: 'var(--border-subtle)', background: 'var(--surface-subtle)' }}
+            >
               {saveKey && (
                 <button
                   onClick={handleSaveFilters}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 text-sm font-medium rounded-md transition-colors"
+                  style={{ color: 'var(--text-primary)', background: 'var(--card-bg)', border: '1px solid var(--border-default)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-subtle)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--card-bg)'; }}
                 >
                   Save
                 </button>
               )}
               <button
                 onClick={handleReset}
-                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors"
+                style={{ color: 'var(--text-primary)', background: 'var(--card-bg)', border: '1px solid var(--border-default)' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-subtle)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--card-bg)'; }}
               >
                 Reset
               </button>
               <button
                 onClick={handleApply}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white rounded-md transition-colors shadow-sm" style={{ backgroundColor: 'var(--color-wine-500)' }}
+                className="flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors shadow-sm"
+                style={{ backgroundColor: 'var(--brand)', color: 'var(--color-on-primary, #fff)', border: '1px solid transparent' }}
               >
                 Apply Filters
               </button>

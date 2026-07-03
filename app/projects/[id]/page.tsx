@@ -210,8 +210,8 @@ export default function EditProjectPage() {
                       gap: 'var(--space-3)',
                       padding: 'var(--space-2) var(--space-3)',
                       borderRadius: 'var(--radius-lg)',
-                      background: 'var(--sidebar-active-bg)',
-                      border: '1px solid var(--color-primary)',
+                      background: 'var(--brand-subtle, var(--surface-subtle))',
+                      border: '1px solid var(--brand)',
                     }}
                   >
                     <div
@@ -219,7 +219,7 @@ export default function EditProjectPage() {
                         width: 32, height: 32, borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-bold)', flexShrink: 0,
-                        background: 'var(--color-primary)', color: '#fff',
+                        background: 'var(--brand)', color: '#fff',
                       }}
                     >
                       {(selectedEngineer.first_name?.[0] ?? selectedEngineer.username[0]).toUpperCase()}

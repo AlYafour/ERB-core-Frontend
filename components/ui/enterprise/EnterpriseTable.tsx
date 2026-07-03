@@ -170,7 +170,7 @@ function PaginationFooter({
               style={{
                 ...btnBase,
                 background: p === page ? 'var(--brand)' : 'var(--surface-primary)',
-                color:      p === page ? '#fff'         : 'var(--text-secondary)',
+                color:      p === page ? 'var(--color-on-primary, #fff)' : 'var(--text-secondary)',
                 borderColor:p === page ? 'var(--brand)' : 'var(--border-default)',
                 fontWeight: p === page ? 700 : 500,
               }}

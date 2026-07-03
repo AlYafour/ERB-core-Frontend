@@ -19,11 +19,11 @@ interface SearchResult {
 }
 
 const TYPE_COLOR: Record<string, string> = {
-  PR:  '#C9943A',
-  LPO: '#C9943A',
-  GRN: '#C9943A',
-  INV: '#C9943A',
-  PQ:  '#C9943A',
+  PR:  'var(--brand)',
+  LPO: 'var(--brand)',
+  GRN: 'var(--brand)',
+  INV: 'var(--brand)',
+  PQ:  'var(--brand)',
 };
 
 const STATUS_CLASS: Record<string, string> = {
@@ -238,7 +238,7 @@ export default function GlobalSearch() {
               {/* Type badge */}
               <span style={{
                 fontSize: 10, fontWeight: 700, letterSpacing: 0.5,
-                color: '#fff', background: TYPE_COLOR[r.type],
+                color: 'var(--color-on-primary, #fff)', background: TYPE_COLOR[r.type],
                 borderRadius: 4, padding: '2px 6px', flexShrink: 0,
                 minWidth: 34, textAlign: 'center',
               }}>

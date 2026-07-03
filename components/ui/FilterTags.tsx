@@ -118,7 +118,10 @@ export default function FilterTags({ filters, fields, onRemoveFilter, onClearAll
       {tags.length > 1 && (
         <button
           onClick={onClearAll}
-          className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 underline transition-colors"
+          className="text-xs underline transition-colors"
+          style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
         >
           Clear all
         </button>

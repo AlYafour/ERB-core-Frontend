@@ -248,7 +248,7 @@ export function TodoPanel({ onClose, onOpenTask }: Props) {
                 width: 52,
                 height: 52,
                 borderRadius: '50%',
-                background: '#F1F5F9',
+                background: 'var(--surface-subtle)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

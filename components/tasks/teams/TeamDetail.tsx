@@ -12,8 +12,8 @@ import { getApiError } from '@/lib/utils/error';
 
 const ROLE_CONFIG: Record<TeamMemberRole, { label: string; color: string; bg: string }> = {
   leader:   { label: 'Leader',   color: '#C9943A', bg: '#FBF4E8' },
-  member:   { label: 'Member',   color: '#64748B', bg: '#F1F5F9' },
-  observer: { label: 'Observer', color: '#64748B', bg: '#F1F5F9' },
+  member:   { label: 'Member',   color: 'var(--text-secondary)', bg: 'var(--surface-subtle)' },
+  observer: { label: 'Observer', color: 'var(--text-secondary)', bg: 'var(--surface-subtle)' },
 };
 
 function RolePill({ role }: { role: TeamMemberRole }) {
