@@ -5,125 +5,51 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api/dashboard';
 import Link from 'next/link';
-import { Badge, PageShell, PageHeader } from '@/components/ui';
 import { formatPrice } from '@/lib/utils/format';
 import dynamic from 'next/dynamic';
-import { useEffect } from 'react';
+import { useEffect, type CSSProperties } from 'react';
 import AuthLoadingScreen from '@/components/auth/AuthLoadingScreen';
 import { useT } from '@/lib/i18n/useT';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import MyWorkspace from '@/components/dashboard/MyWorkspace';
 
-/* ─── Lazy-load chart components — recharts only downloaded when dashboard renders ─ */
-const StatusPieCard       = dynamic(() => import('./charts').then(m => ({ default: m.StatusPieCard })),       { ssr: false });
-const MonthlyVolumeChart  = dynamic(() => import('./charts').then(m => ({ default: m.MonthlyVolumeChart })),  { ssr: false });
+/* ─── Lazy-load chart components ─────────────────────────────────── */
+const StatusPieCard        = dynamic(() => import('./charts').then(m => ({ default: m.StatusPieCard })),        { ssr: false });
+const MonthlyVolumeChart   = dynamic(() => import('./charts').then(m => ({ default: m.MonthlyVolumeChart })),   { ssr: false });
 const ProjectSpendingChart = dynamic(() => import('./charts').then(m => ({ default: m.ProjectSpendingChart })), { ssr: false });
 
-/* ─── Palette (CSS semantic tokens) ─────────────────────────────── */
-const C = {
-  blue:   'var(--color-info)',
-  green:  'var(--color-success)',
-  amber:  'var(--color-warning)',
-  red:    'var(--color-error)',
-  purple: '#8B5CF6',
-  indigo: '#6366F1',
-  teal:   '#0D9488',
+/* ─── Dark design tokens ─────────────────────────────────────────── */
+const D = {
+  ground:  '#07101F',
+  surf:    '#0F1D30',
+  surf2:   '#152640',
+  border:  '#1A2C42',
+  border2: '#243650',
+  text:    '#E2EAF4',
+  text2:   '#9AB0C8',
+  text3:   '#4A6280',
+  gold:    '#C9943A',
+  goldL:   '#E0AE55',
+  teal:    '#2ECFA8',
+  danger:  '#E05C5C',
+  warn:    '#E8A94A',
 };
 
-/* ─── Reusable: Section header with optional "View All" link ─────── */
-function SectionHeader({ title, viewAllLabel, href, size = 'lg' }: { title: string; viewAllLabel?: string; href?: string; size?: 'base' | 'lg' }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
-      <h2
-        style={{
-          fontSize: size === 'lg' ? 'var(--text-lg)' : 'var(--text-base)',
-          fontWeight: 'var(--weight-semibold)',
-          color: 'var(--text-primary)',
-          margin: 0,
-        }}
-      >
-        {title}
-      </h2>
-      {href && (
-        <Link
-          href={href}
-          style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textDecoration: 'none' }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
-        >
-          {viewAllLabel ?? 'View All →'}
-        </Link>
-      )}
-    </div>
-  );
-}
-
-/* ─── Reusable: MetricGroup card (grouped stat columns) ─────────── */
-interface MetricItem { label: string; value: number | string; color: string; href: string; }
-function MetricGroup({ title, href, metrics }: { title: string; href: string; metrics: MetricItem[] }) {
-  return (
-    <div className="card" style={{ padding: '18px 20px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{title}</span>
-        <Link href={href} style={{ fontSize: 12, color: 'var(--text-tertiary)', textDecoration: 'none' }}
-          onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; }}
-          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-tertiary)'; }}>
-          View all →
-        </Link>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${metrics.length}, 1fr)`, gap: 0 }}>
-        {metrics.map((m, i) => (
-          <Link key={i} href={m.href} style={{ textDecoration: 'none', padding: '0 16px 0 0', borderRight: i < metrics.length - 1 ? '1px solid var(--border-subtle)' : 'none', marginRight: i < metrics.length - 1 ? 16 : 0 }}>
-            <div style={{ fontSize: 28, fontWeight: 800, color: m.color, lineHeight: 1, letterSpacing: '-0.02em' }}>{m.value}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 5, lineHeight: 1.3 }}>{m.label}</div>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ─── Reusable: Metric block (cycle time, etc.) ─────────────────── */
-function MetricBlock({ label, value, color }: { label: string; value: string | number; color: string }) {
-  return (
-    <div style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--surface-subtle)' }}>
-      <div style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', marginBottom: 'var(--space-1)', color: 'var(--text-secondary)' }}>{label}</div>
-      <div style={{ fontSize: '1.25rem', fontWeight: 700, color }}>{value}</div>
-    </div>
-  );
-}
-
-/* ─── Reusable: Skeleton loader ─────────────────────────────────── */
-function CardSkeleton({ height = 120 }: { height?: number }) {
-  return (
-    <div className="card animate-pulse" style={{ height, backgroundColor: 'var(--surface-subtle)' }} />
-  );
-}
-
-/* ─── Page guards / redirect ────────────────────────────────────── */
+/* ─── Page guards ────────────────────────────────────────────────── */
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
 
-  // Wait for auth to fully resolve — prevents blank screen and false redirects
   if (authLoading || !user) return <AuthLoadingScreen />;
-
-  // Non-admins see their personalized workspace
-  if (!isTenantAdmin && !isPlatformAdmin) {
-    return <MyWorkspace />;
-  }
-
-  // Admins: render dashboard directly — no RouteGuard needed here
-  // (isTenantAdmin || isPlatformAdmin confirmed above; admins bypass all permission checks)
+  if (!isTenantAdmin && !isPlatformAdmin) return <MyWorkspace />;
   return <DashboardContent />;
 }
 
-/* ─── Main content ───────────────────────────────────────────────── */
+/* ─── Main dashboard ─────────────────────────────────────────────── */
 function DashboardContent() {
   const { isAuthenticated, logout } = useAuth();
   const t = useT();
 
-  /* Single combined query — replaces 6 individual requests */
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard', 'combined'],
     queryFn: dashboardApi.getCombined,
@@ -131,13 +57,13 @@ function DashboardContent() {
     staleTime: 2 * 60 * 1000,
   });
 
-  const stats           = data?.stats;
-  const chartData       = data?.chartData;
-  const recentActivity  = data?.recentActivity;
-  const userActivity    = data?.userActivity;
-  const cycleMetrics    = data?.cycleMetrics;
+  const stats            = data?.stats;
+  const chartData        = data?.chartData;
+  const recentActivity   = data?.recentActivity;
+  const userActivity     = data?.userActivity;
+  const cycleMetrics     = data?.cycleMetrics;
   const projectAnalytics = data?.projectAnalytics;
-  const hrStats         = data?.hrStats;
+  const hrStats          = data?.hrStats;
 
   const { data: taskStats } = useQuery({
     queryKey: ['task-stats-dashboard'],
@@ -157,14 +83,10 @@ function DashboardContent() {
   const myTaskList = Array.isArray(myTasksRaw) ? myTasksRaw : (myTasksRaw as any)?.results ?? [];
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      logout();
-    }
+    if (!isAuthenticated) logout();
   }, [isAuthenticated, logout]);
 
-  if (!isAuthenticated) {
-    return null;
-  }
+  if (!isAuthenticated) return null;
 
   const actionBadge = (action: string) =>
     action === 'approved' || action === 'paid' ? 'success'
@@ -181,355 +103,387 @@ function DashboardContent() {
     task:             'Task',
   };
 
+  /* ── Shared card style ── */
+  const card = (extra?: CSSProperties): CSSProperties => ({
+    background: D.surf,
+    border: `1px solid ${D.border}`,
+    borderRadius: 10,
+    ...extra,
+  });
+
   return (
     <MainLayout>
-      <PageShell>
+      {/* Dark shell */}
+      <div style={{ background: D.ground, minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
 
-        {/* ── Page header ─────────────────────────────────────────── */}
-        <PageHeader
-          title={t('dash', 'execDashboard')}
-          description={t('dash', 'overviewSubtitle')}
-          breadcrumbs={[{ label: 'Dashboard' }]}
-        />
-
-        {/* ── MetricGroup KPI row ─────────────────────────────────── */}
-        {isLoading && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
-            {[130, 130, 130].map((h, i) => <CardSkeleton key={i} height={h} />)}
+        {/* ── Header bar ────────────────────────────────────────────── */}
+        <div style={{ background: D.surf, borderBottom: `1px solid ${D.border}`, padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+          <div>
+            <h1 style={{ fontSize: 15, fontWeight: 800, color: D.text, margin: 0, letterSpacing: '-0.3px' }}>
+              Executive Dashboard
+            </h1>
+            <p style={{ fontSize: 11, color: D.text3, margin: '2px 0 0' }}>
+              Real-time procurement & operations overview
+            </p>
           </div>
-        )}
-
-        {stats && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
-            <MetricGroup title="Purchase Requests" href="/purchase-requests" metrics={[
-              { label: t('dash', 'prTotal'),    value: stats.purchaseRequests.total,   color: C.blue,  href: '/purchase-requests' },
-              { label: t('dash', 'prPending'),  value: stats.purchaseRequests.pending, color: C.amber, href: '/purchase-requests?status=pending' },
-              { label: t('dash', 'prApproved'), value: stats.purchaseRequests.approved, color: C.green, href: '/purchase-requests?status=approved' },
-              { label: t('dash', 'prRejected'), value: stats.purchaseRequests.rejected, color: C.red,   href: '/purchase-requests?status=rejected' },
-            ]} />
-            <MetricGroup title="Purchase Orders" href="/purchase-orders" metrics={[
-              { label: t('dash', 'poTotal'),     value: stats.purchaseOrders.total,     color: C.blue,  href: '/purchase-orders' },
-              { label: t('dash', 'poPending'),   value: stats.purchaseOrders.pending,   color: C.amber, href: '/purchase-orders?status=pending' },
-              { label: t('dash', 'poApproved'),  value: stats.purchaseOrders.approved,  color: C.green, href: '/purchase-orders?status=approved' },
-              { label: t('dash', 'poCompleted'), value: stats.purchaseOrders.completed, color: C.teal,  href: '/purchase-orders?status=completed' },
-            ]} />
-            <MetricGroup title="Invoices & Catalog" href="/purchase-invoices" metrics={[
-              { label: t('dash', 'invPaid'),    value: stats.invoices.paid,    color: C.green,  href: '/purchase-invoices?status=paid' },
-              { label: t('dash', 'invPending'), value: stats.invoices.pending, color: C.amber,  href: '/purchase-invoices?status=pending' },
-              { label: t('dash', 'suppliers'),  value: stats.suppliers.total,  color: C.indigo, href: '/suppliers' },
-              { label: t('dash', 'products'),   value: stats.products.total,   color: C.purple, href: '/products' },
-            ]} />
-          </div>
-        )}
-
-        {/* ── HR + Tasks KPI row ─────────────────────────────────── */}
-        {hrStats && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
-            <MetricGroup title="HR — People" href="/hr/employees" metrics={[
-              { label: 'Total Employees', value: hrStats.employees,    color: C.indigo, href: '/hr/employees' },
-              { label: 'Present Today',   value: hrStats.presentToday, color: C.green,  href: '/hr/attendance' },
-              { label: 'Absent Today',    value: hrStats.absentToday,  color: C.red,    href: '/hr/attendance' },
-            ]} />
-            <MetricGroup title="HR — Requests & Payroll" href="/hr/requests" metrics={[
-              { label: 'Pending Requests', value: hrStats.pendingRequests, color: C.amber,  href: '/hr/requests?status=pending' },
-              { label: 'Draft Payrolls',   value: hrStats.draftPayrolls,   color: C.purple, href: '/hr/payroll?status=draft' },
-            ]} />
-            <MetricGroup title="Tasks" href="/tasks" metrics={[
-              { label: 'Open Tasks', value: hrStats.openTasks, color: C.teal, href: '/tasks' },
-            ]} />
-          </div>
-        )}
-
-        {/* ── Status pie charts ───────────────────────────────────── */}
-        {isLoading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-6)' }}>
-            <CardSkeleton height={240} />
-            <CardSkeleton height={240} />
-            <CardSkeleton height={240} />
-          </div>
-        ) : chartData && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-6)' }}>
-            {[
-              { title: t('dash', 'prByStatus'),  href: '/purchase-requests', data: [
-                  { name: t('dash', 'pending'),  value: chartData.statusDistribution.purchaseRequests.pending },
-                  { name: t('dash', 'approved'), value: chartData.statusDistribution.purchaseRequests.approved },
-                  { name: t('dash', 'rejected'), value: chartData.statusDistribution.purchaseRequests.rejected },
-              ]},
-              { title: t('dash', 'poByStatus'),  href: '/purchase-orders', data: [
-                  { name: t('dash', 'pending'),   value: chartData.statusDistribution.purchaseOrders.pending },
-                  { name: t('dash', 'approved'),  value: chartData.statusDistribution.purchaseOrders.approved },
-                  { name: t('dash', 'rejected'),  value: chartData.statusDistribution.purchaseOrders.rejected },
-                  { name: t('dash', 'completed'), value: chartData.statusDistribution.purchaseOrders.completed },
-              ]},
-              { title: t('dash', 'invByStatus'), href: '/purchase-invoices', data: [
-                  { name: t('dash', 'pending'),  value: chartData.statusDistribution.invoices.pending },
-                  { name: t('dash', 'approved'), value: chartData.statusDistribution.invoices.approved },
-                  { name: t('dash', 'paid'),     value: chartData.statusDistribution.invoices.paid },
-              ]},
-            ].map(({ title, href, data }) => (
-              <div key={href} className="card">
-                <SectionHeader title={title} viewAllLabel={t('dash', 'viewAll')} href={href} size="base" />
-                <StatusPieCard title={title} href={href} data={data} />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ── Main content: 2/3 left + 1/3 right ─────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--space-6)' }}>
-
-          {/* Left column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-
-            {/* Top spending projects */}
-            {isLoading ? (
-              <CardSkeleton height={220} />
-            ) : projectAnalytics && projectAnalytics.length > 0 && (
-              <div className="card">
-                <SectionHeader title={t('dash', 'topProjects')} viewAllLabel={t('dash', 'viewAll')} href="/projects" />
-                <div style={{ overflowX: 'auto' }}>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>{t('dash', 'project')}</th>
-                        <th>{t('dash', 'code')}</th>
-                        <th>{t('dash', 'spending')}</th>
-                        <th>{t('dash', 'pos')}</th>
-                        <th>{t('dash', 'progress')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {projectAnalytics.slice(0, 5).map((project) => (
-                        <tr key={project.id}>
-                          <td>
-                            <Link
-                              href={`/projects/view/${project.id}`}
-                              style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 'var(--weight-medium)' }}
-                              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-primary)'; e.currentTarget.style.textDecoration = 'underline'; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.textDecoration = 'none'; }}
-                            >
-                              {project.name}
-                            </Link>
-                          </td>
-                          <td><span style={{ color: 'var(--text-secondary)' }}>{project.code}</span></td>
-                          <td><span style={{ fontWeight: 'var(--weight-semibold)' }}>{formatPrice(project.totalSpending)}</span></td>
-                          <td><Badge variant="info">{project.poCount}</Badge></td>
-                          <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                              <div style={{ flex: 1, height: 8, borderRadius: 9999, overflow: 'hidden', backgroundColor: 'var(--surface-inset)', minWidth: 60 }}>
-                                <div
-                                  style={{
-                                    height: '100%',
-                                    borderRadius: 9999,
-                                    width: `${project.progress}%`,
-                                    backgroundColor: project.progress > 75 ? C.green : project.progress > 50 ? C.amber : C.blue,
-                                  }}
-                                />
-                              </div>
-                              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{project.progress}%</span>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+            {!!stats?.purchaseRequests.pending && (
+              <Link href="/purchase-requests?status=pending" style={{ background: 'rgba(201,148,58,.12)', border: '1px solid rgba(201,148,58,.25)', borderRadius: 20, padding: '4px 12px', fontSize: 11, fontWeight: 700, color: D.goldL, textDecoration: 'none' }}>
+                ⚡ {stats.purchaseRequests.pending} PRs pending
+              </Link>
             )}
-
-            {/* Monthly procurement volume chart */}
-            {(chartData?.monthlyProcurement?.length ?? 0) > 0 && chartData && (
-              <div className="card">
-                <SectionHeader title={t('dash', 'monthlyVolume')} />
-                <MonthlyVolumeChart data={chartData.monthlyProcurement} label={t('dash', 'requests')} />
-              </div>
+            {!!hrStats?.openTasks && (
+              <Link href="/tasks" style={{ background: 'rgba(46,207,168,.10)', border: '1px solid rgba(46,207,168,.2)', borderRadius: 20, padding: '4px 12px', fontSize: 11, fontWeight: 700, color: D.teal, textDecoration: 'none' }}>
+                ✓ {hrStats.openTasks} tasks open
+              </Link>
             )}
-
-            {/* Project spending bar chart */}
-            {(chartData?.projectSpending?.length ?? 0) > 0 && chartData && (
-              <div className="card">
-                <SectionHeader title={t('dash', 'projectSpending')} />
-                <ProjectSpendingChart data={chartData.projectSpending} label={t('dash', 'spendingAed')} />
-              </div>
+            {!!hrStats?.pendingRequests && (
+              <Link href="/hr/requests?status=pending" style={{ background: 'rgba(224,92,92,.10)', border: '1px solid rgba(224,92,92,.2)', borderRadius: 20, padding: '4px 12px', fontSize: 11, fontWeight: 700, color: D.danger, textDecoration: 'none' }}>
+                ⚠ {hrStats.pendingRequests} HR requests
+              </Link>
             )}
-          </div>
-
-          {/* Right column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-
-            {/* Procurement cycle metrics */}
-            {cycleMetrics && (
-              <div className="card">
-                <SectionHeader title={t('dash', 'procCycle')} />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                  <MetricBlock label={t('dash', 'prToPoAvg')}   value={`${cycleMetrics.avgPRToPO} ${t('dash', 'days')}`}        color={C.blue} />
-                  <MetricBlock label={t('dash', 'poToGrnAvg')}  value={`${cycleMetrics.avgPOToGRN} ${t('dash', 'days')}`}       color={C.green} />
-                  <MetricBlock label={t('dash', 'grnToInvAvg')} value={`${cycleMetrics.avgGRNToInvoice} ${t('dash', 'days')}`}  color={C.purple} />
-                </div>
-                {cycleMetrics.bottlenecks?.length > 0 && (
-                  <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
-                    <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', marginBottom: 'var(--space-3)', color: 'var(--text-primary)' }}>{t('dash', 'bottlenecks')}</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                      {cycleMetrics.bottlenecks.map((b, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-2)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--surface-inset)' }}>
-                          <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{b.stage}</span>
-                          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: b.avgDays > 7 ? C.red : b.avgDays > 3 ? C.amber : C.green }}>
-                            {b.avgDays}d
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Top active users */}
-            {userActivity && userActivity.length > 0 && (
-              <div className="card">
-                <SectionHeader title={t('dash', 'topUsers')} viewAllLabel={t('dash', 'viewAll')} href="/hr/employees" />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                  {userActivity.slice(0, 5).map((u) => {
-                    const total = u.createdPR + u.approvedRequests + u.createdPO + u.createdInvoices;
-                    return (
-                      <Link
-                        key={u.id}
-                        href={`/hr/employees`}
-                        style={{ display: 'block', padding: 'var(--space-3)', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', textDecoration: 'none' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--surface-inset)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--surface-subtle)'; }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-1)' }}>
-                          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{u.username}</span>
-                          <Badge variant="info">{total}</Badge>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-1)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                          <span>PR: {u.createdPR}</span>
-                          <span>Approved: {u.approvedRequests}</span>
-                          <span>PO: {u.createdPO}</span>
-                          <span>Invoices: {u.createdInvoices}</span>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* My Tasks Widget */}
-            {taskStats && (
-              <div className="card">
-                <SectionHeader title="My Tasks" viewAllLabel="View All →" href="/tasks?scope=mine" />
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
-                  {[
-                    { label: 'Assigned', value: taskStats.my_tasks, color: '#6366F1' },
-                    { label: 'Overdue', value: taskStats.overdue, color: '#EF4444' },
-                    { label: 'Review', value: taskStats.pending_review, color: '#F59E0B' },
-                  ].map(m => (
-                    <div key={m.label} style={{ background: 'var(--surface-subtle)', borderRadius: 8, padding: '10px 12px' }}>
-                      <p style={{ fontSize: 22, fontWeight: 800, color: m.color, margin: 0, lineHeight: 1 }}>{m.value}</p>
-                      <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: '4px 0 0', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em' }}>{m.label}</p>
-                    </div>
-                  ))}
-                </div>
-                {myTaskList.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {myTaskList.slice(0, 4).map((t: any) => {
-                      const overdue = t.due_date && !['approved','closed'].includes(t.status) && new Date(t.due_date) < new Date();
-                      return (
-                        <Link key={t.id} href={`/tasks/${t.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', textDecoration: 'none' }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-inset)'; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-subtle)'; }}
-                        >
-                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: overdue ? '#EF4444' : '#22C55E', flexShrink: 0 }} />
-                          <span style={{ fontSize: 12, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                            {t.title}
-                          </span>
-                          {overdue && <span style={{ fontSize: 10, color: '#EF4444', fontWeight: 600, flexShrink: 0 }}>Overdue</span>}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-                <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-                  <Link href="/tasks/reports" style={{ fontSize: 11, color: 'var(--text-tertiary)', textDecoration: 'none' }}>Reports →</Link>
-                  <Link href="/tasks/calendar" style={{ fontSize: 11, color: 'var(--text-tertiary)', textDecoration: 'none' }}>Calendar →</Link>
-                </div>
-              </div>
-            )}
-
-            {/* HR & Tasks Recent Activity */}
-            {hrStats && hrStats.recentActivity.length > 0 && (
-              <div className="card">
-                <SectionHeader title="HR & Tasks Activity" viewAllLabel="View All →" href="/hr/requests" />
-                <div>
-                  {hrStats.recentActivity.slice(0, 6).map((a, i) => {
-                    const dotColor = a.action === 'approved' ? C.green : a.action === 'rejected' ? C.red : a.type === 'task' ? C.teal : C.purple;
-                    return (
-                      <Link
-                        key={`${a.type}-${a.id}`}
-                        href={a.link}
-                        style={{ display: 'block', textDecoration: 'none', padding: '9px 0', borderBottom: i < 5 ? '1px solid var(--border-subtle)' : 'none' }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
-                          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
-                            {a.type === 'task' ? 'Task' : 'HR Request'}
-                          </span>
-                          <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 'auto' }}>
-                            {new Date(a.timestamp).toLocaleDateString('en-GB')}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 12 }}>
-                          <span style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{a.title}</span>
-                          <span style={{ fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0 }}>{a.user}</span>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Recent activity feed */}
-            {isLoading ? (
-              <CardSkeleton height={300} />
-            ) : recentActivity && recentActivity.length > 0 && (
-              <div className="card">
-                <SectionHeader title={t('dash', 'recentActivity')} />
-                <div>
-                  {recentActivity.slice(0, 8).map((a, i) => (
-                    <Link
-                      key={`${a.type}-${a.id}`}
-                      href={a.link}
-                      style={{ display: 'block', textDecoration: 'none', padding: '9px 0', borderBottom: i < 7 ? '1px solid var(--border-subtle)' : 'none' }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.paddingLeft = '8px';
-                        e.currentTarget.style.borderLeft = `2px solid ${actionBadge(a.action) === 'success' ? C.green : actionBadge(a.action) === 'error' ? C.red : C.blue}`;
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.paddingLeft = '0';
-                        e.currentTarget.style.borderLeft = 'none';
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: actionBadge(a.action) === 'success' ? C.green : actionBadge(a.action) === 'error' ? C.red : C.blue, flexShrink: 0 }} />
-                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{typeLabel[a.type] ?? a.type}</span>
-                        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 'auto' }}>{new Date(a.timestamp).toLocaleDateString('en-GB')}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 12 }}>
-                        <span style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{a.title}</span>
-                        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0 }}>{a.user}</span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
           </div>
         </div>
-      </PageShell>
+
+        {/* ── Main content ───────────────────────────────────────────── */}
+        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
+
+          {/* ── KPI Grid ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
+            {isLoading
+              ? [0,1,2,3,4,5].map(i => (
+                  <div key={i} style={{ ...card({ height: 100 }) }} />
+                ))
+              : stats && hrStats && [
+                  { label: 'Purchase Requests', value: stats.purchaseRequests.total,  sub: `${stats.purchaseRequests.pending} pending`,  accent: D.gold,    href: '/purchase-requests' },
+                  { label: 'Purchase Orders',   value: stats.purchaseOrders.total,    sub: `${stats.purchaseOrders.pending} pending`,    accent: D.teal,    href: '/purchase-orders' },
+                  { label: 'Invoices Paid',     value: stats.invoices.paid,           sub: `${stats.invoices.pending} pending`,          accent: D.warn,    href: '/purchase-invoices' },
+                  { label: 'Active Projects',   value: projectAnalytics?.length ?? 0, sub: 'view all projects',                         accent: '#6B8FE8', href: '/projects' },
+                  { label: 'Employees',         value: hrStats.employees,             sub: `${hrStats.presentToday} present today`,      accent: D.teal,    href: '/hr/employees' },
+                  { label: 'Suppliers',         value: stats.suppliers.total,         sub: `${stats.products.total} products`,          accent: '#9B6FE8', href: '/suppliers' },
+                ].map(({ label, value, sub, accent, href }) => (
+                  <Link key={href} href={href}
+                    style={{ ...card({ padding: '16px 18px', textDecoration: 'none', display: 'flex', flexDirection: 'column', cursor: 'pointer', position: 'relative', overflow: 'hidden', transition: 'border-color .15s, transform .15s' }) }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = D.border2; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = D.border;  (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
+                  >
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: accent, opacity: 0.75 }} />
+                    <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.9px', color: D.text3, marginBottom: 10 }}>{label}</div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: D.text, lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+                    <div style={{ fontSize: 10, color: D.text3, marginTop: 8 }}>{sub}</div>
+                  </Link>
+                ))
+            }
+          </div>
+
+          {/* ── Charts row ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14 }}>
+
+            {/* Monthly volume */}
+            <div style={card({ padding: '18px 20px' })}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: D.text }}>Procurement Volume</div>
+                  <div style={{ fontSize: 11, color: D.text3, marginTop: 2 }}>Monthly request & order count</div>
+                </div>
+                <div style={{ display: 'flex', gap: 14 }}>
+                  {[{ color: D.gold, label: 'Requests' }, { color: D.teal, label: 'Orders' }].map(({ color, label }) => (
+                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: D.text2 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+                      {label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {(chartData?.monthlyProcurement?.length ?? 0) > 0 && chartData ? (
+                <MonthlyVolumeChart data={chartData.monthlyProcurement} label={t('dash', 'requests')} />
+              ) : (
+                <div style={{ height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center', color: D.text3, fontSize: 12 }}>
+                  No monthly data yet
+                </div>
+              )}
+            </div>
+
+            {/* PR Status donut */}
+            <div style={card({ padding: '18px 20px' })}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: D.text, marginBottom: 3 }}>PR Status Split</div>
+              <div style={{ fontSize: 11, color: D.text3, marginBottom: 14 }}>All-time distribution</div>
+              {chartData ? (
+                <>
+                  <StatusPieCard title="PR Status" href="/purchase-requests" data={[
+                    { name: t('dash', 'pending'),  value: chartData.statusDistribution.purchaseRequests.pending },
+                    { name: t('dash', 'approved'), value: chartData.statusDistribution.purchaseRequests.approved },
+                    { name: t('dash', 'rejected'), value: chartData.statusDistribution.purchaseRequests.rejected },
+                  ]} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+                    {[
+                      { label: t('dash', 'approved'), value: chartData.statusDistribution.purchaseRequests.approved, color: D.teal },
+                      { label: t('dash', 'pending'),  value: chartData.statusDistribution.purchaseRequests.pending,  color: D.gold },
+                      { label: t('dash', 'rejected'), value: chartData.statusDistribution.purchaseRequests.rejected, color: D.danger },
+                    ].map(({ label, value, color }) => (
+                      <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: D.text2 }}>
+                          <div style={{ width: 10, height: 10, borderRadius: 3, background: color }} />
+                          {label}
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: D.text, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: D.text3, fontSize: 12 }}>No data yet</div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Bottom 3-column grid ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+
+            {/* Projects */}
+            <div style={card({ padding: '18px 20px', display: 'flex', flexDirection: 'column' })}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: D.text }}>Active Projects</div>
+                <Link href="/projects" style={{ fontSize: 11, color: D.gold, textDecoration: 'none' }}>View all →</Link>
+              </div>
+              {projectAnalytics && projectAnalytics.length > 0 ? (
+                projectAnalytics.slice(0, 5).map((project, idx) => (
+                  <div key={project.id} style={{ padding: '10px 0', borderBottom: idx < 4 ? `1px solid ${D.border}` : 'none' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <Link href={`/projects/view/${project.id}`}
+                          style={{ fontSize: 12, fontWeight: 600, color: D.text, textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = D.goldL; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = D.text; }}
+                        >{project.name}</Link>
+                        <div style={{ fontSize: 10, color: D.text3, marginTop: 2 }}>{project.code}</div>
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: D.text, fontVariantNumeric: 'tabular-nums', flexShrink: 0, paddingLeft: 8 }}>{project.progress}%</div>
+                    </div>
+                    <div style={{ height: 4, background: D.border2, borderRadius: 99, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', borderRadius: 99, width: `${project.progress}%`, background: project.progress > 75 ? `linear-gradient(90deg,${D.teal},#1A8C72)` : project.progress > 50 ? `linear-gradient(90deg,${D.gold},${D.warn})` : `linear-gradient(90deg,${D.danger},#C04040)` }} />
+                    </div>
+                    <div style={{ fontSize: 10, color: D.text3, marginTop: 5, fontVariantNumeric: 'tabular-nums' }}>
+                      {formatPrice(project.totalSpending)} · {project.poCount} POs
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: D.text3, padding: '24px 0' }}>
+                  No projects yet
+                </div>
+              )}
+            </div>
+
+            {/* Middle: Cycle + HR stats */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+              {/* Procurement Cycle */}
+              {cycleMetrics && (
+                <div style={card({ padding: '18px 20px' })}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: D.text, marginBottom: 14 }}>Procurement Cycle</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {[
+                      { label: 'PR → PO Avg',        value: cycleMetrics.avgPRToPO,      color: D.gold },
+                      { label: 'PO → GRN Avg',        value: cycleMetrics.avgPOToGRN,     color: D.teal },
+                      { label: 'GRN → Invoice Avg',   value: cycleMetrics.avgGRNToInvoice,color: '#9B6FE8' },
+                    ].map(({ label, value, color }) => (
+                      <div key={label} style={{ background: D.surf2, borderRadius: 8, padding: '10px 12px' }}>
+                        <div style={{ fontSize: 10, color: D.text3, marginBottom: 3 }}>{label}</div>
+                        <div style={{ fontSize: 20, fontWeight: 800, color, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                          {value} <span style={{ fontSize: 11, fontWeight: 500, color: D.text3 }}>days</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {cycleMetrics.bottlenecks?.length > 0 && (
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${D.border}` }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: D.text2, marginBottom: 8 }}>Bottlenecks</div>
+                      {cycleMetrics.bottlenecks.map((b, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: i < cycleMetrics.bottlenecks.length - 1 ? `1px solid ${D.border}` : 'none' }}>
+                          <span style={{ fontSize: 11, color: D.text2 }}>{b.stage}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: b.avgDays > 7 ? D.danger : b.avgDays > 3 ? D.warn : D.teal, fontVariantNumeric: 'tabular-nums' }}>{b.avgDays}d</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* HR Overview */}
+              {hrStats && (
+                <div style={card({ padding: '18px 20px' })}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: D.text }}>HR Overview</div>
+                    <Link href="/hr/employees" style={{ fontSize: 11, color: D.gold, textDecoration: 'none' }}>View all →</Link>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                    {[
+                      { label: 'Employees',    value: hrStats.employees,       color: '#6B8FE8' },
+                      { label: 'Present',      value: hrStats.presentToday,    color: D.teal },
+                      { label: 'Absent',       value: hrStats.absentToday,     color: D.danger },
+                      { label: 'Open Tasks',   value: hrStats.openTasks,       color: D.gold },
+                      { label: 'HR Requests',  value: hrStats.pendingRequests, color: D.warn },
+                      { label: 'Payrolls',     value: hrStats.draftPayrolls,   color: '#9B6FE8' },
+                    ].map(({ label, value, color }) => (
+                      <div key={label} style={{ background: D.surf2, borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 20, fontWeight: 800, color, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{value}</div>
+                        <div style={{ fontSize: 9, color: D.text3, marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.6px' }}>{label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right: Activity + Tasks */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+              {/* Recent Activity */}
+              {recentActivity && recentActivity.length > 0 && (
+                <div style={card({ padding: '18px 20px', flex: 1 })}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: D.text, marginBottom: 14 }}>Live Activity</div>
+                  {recentActivity.slice(0, 6).map((a, i) => {
+                    const dotColor = actionBadge(a.action) === 'success' ? D.teal : actionBadge(a.action) === 'error' ? D.danger : D.gold;
+                    return (
+                      <Link key={`${a.type}-${a.id}`} href={a.link}
+                        style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: i < 5 ? `1px solid ${D.border}` : 'none', textDecoration: 'none' }}>
+                        <div style={{ width: 26, height: 26, borderRadius: '50%', background: `${dotColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                          <div style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, color: D.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <span style={{ fontWeight: 600 }}>{typeLabel[a.type] ?? a.type}</span>
+                            {' — '}
+                            <span style={{ color: D.goldL }}>{a.title}</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                            <span style={{ fontSize: 10, color: D.text3 }}>{a.user}</span>
+                            <span style={{ fontSize: 10, color: D.text3 }}>{new Date(a.timestamp).toLocaleDateString('en-GB')}</span>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* My Tasks */}
+              {taskStats && (
+                <div style={card({ padding: '18px 20px' })}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: D.text }}>My Tasks</div>
+                    <Link href="/tasks?scope=mine" style={{ fontSize: 11, color: D.gold, textDecoration: 'none' }}>View all →</Link>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
+                    {[
+                      { label: 'Assigned', value: taskStats.my_tasks,      color: '#6366F1' },
+                      { label: 'Overdue',  value: taskStats.overdue,        color: D.danger },
+                      { label: 'Review',   value: taskStats.pending_review, color: D.warn },
+                    ].map(({ label, value, color }) => (
+                      <div key={label} style={{ background: D.surf2, borderRadius: 8, padding: '10px 12px' }}>
+                        <p style={{ fontSize: 22, fontWeight: 800, color, margin: 0, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{value}</p>
+                        <p style={{ fontSize: 9, color: D.text3, margin: '4px 0 0', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {myTaskList.slice(0, 4).map((task: any) => {
+                    const overdue = task.due_date && !['approved','closed'].includes(task.status) && new Date(task.due_date) < new Date();
+                    return (
+                      <Link key={task.id} href={`/tasks/${task.id}`}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, background: D.surf2, border: `1px solid ${D.border}`, textDecoration: 'none', marginBottom: 6 }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = D.border2; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = D.border; }}
+                      >
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: overdue ? D.danger : D.teal, flexShrink: 0 }} />
+                        <span style={{ fontSize: 12, color: D.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{task.title}</span>
+                        {overdue && <span style={{ fontSize: 10, color: D.danger, fontWeight: 600, flexShrink: 0 }}>Overdue</span>}
+                      </Link>
+                    );
+                  })}
+                  <div style={{ marginTop: 10, display: 'flex', gap: 12 }}>
+                    <Link href="/tasks/reports"  style={{ fontSize: 11, color: D.text3, textDecoration: 'none' }}>Reports →</Link>
+                    <Link href="/tasks/calendar" style={{ fontSize: 11, color: D.text3, textDecoration: 'none' }}>Calendar →</Link>
+                  </div>
+                </div>
+              )}
+
+              {/* HR & Tasks recent activity */}
+              {hrStats && hrStats.recentActivity.length > 0 && (
+                <div style={card({ padding: '18px 20px' })}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: D.text }}>HR & Tasks Activity</div>
+                    <Link href="/hr/requests" style={{ fontSize: 11, color: D.gold, textDecoration: 'none' }}>View all →</Link>
+                  </div>
+                  {hrStats.recentActivity.slice(0, 5).map((a, i) => {
+                    const dotColor = a.action === 'approved' ? D.teal : a.action === 'rejected' ? D.danger : a.type === 'task' ? D.teal : '#9B6FE8';
+                    return (
+                      <Link key={`hr-${a.type}-${a.id}`} href={a.link}
+                        style={{ display: 'block', textDecoration: 'none', padding: '8px 0', borderBottom: i < 4 ? `1px solid ${D.border}` : 'none' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+                          <span style={{ fontSize: 11, fontWeight: 600, color: D.text2 }}>{a.type === 'task' ? 'Task' : 'HR Request'}</span>
+                          <span style={{ fontSize: 10, color: D.text3, marginLeft: 'auto' }}>{new Date(a.timestamp).toLocaleDateString('en-GB')}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 12 }}>
+                          <span style={{ fontSize: 11, color: D.text2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{a.title}</span>
+                          <span style={{ fontSize: 10, color: D.text3, flexShrink: 0 }}>{a.user}</span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+
+            </div>
+          </div>
+
+          {/* ── Top users row ── */}
+          {userActivity && userActivity.length > 0 && (
+            <div style={card({ padding: '18px 20px' })}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: D.text }}>Top Active Users</div>
+                <Link href="/hr/employees" style={{ fontSize: 11, color: D.gold, textDecoration: 'none' }}>View all →</Link>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(userActivity.length, 5)}, 1fr)`, gap: 10 }}>
+                {userActivity.slice(0, 5).map((u) => {
+                  const total = u.createdPR + u.approvedRequests + u.createdPO + u.createdInvoices;
+                  return (
+                    <Link key={u.id} href="/hr/employees"
+                      style={{ background: D.surf2, border: `1px solid ${D.border}`, borderRadius: 8, padding: '14px', textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 0, transition: 'border-color .15s' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = D.border2; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = D.border; }}
+                    >
+                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: `linear-gradient(135deg,${D.gold},#8B5E1A)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', marginBottom: 10 }}>
+                        {u.username.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: D.text, marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.username}</div>
+                      <div style={{ fontSize: 24, fontWeight: 800, color: D.gold, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{total}</div>
+                      <div style={{ fontSize: 9, color: D.text3, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.5px' }}>total actions</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 10, fontSize: 10, color: D.text3 }}>
+                        <span>PR: {u.createdPR}</span>
+                        <span>OK: {u.approvedRequests}</span>
+                        <span>PO: {u.createdPO}</span>
+                        <span>INV: {u.createdInvoices}</span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── Project spending bar chart ── */}
+          {(chartData?.projectSpending?.length ?? 0) > 0 && chartData && (
+            <div style={card({ padding: '18px 20px' })}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: D.text, marginBottom: 3 }}>Project Spending</div>
+              <div style={{ fontSize: 11, color: D.text3, marginBottom: 16 }}>Total AED spending per project</div>
+              <ProjectSpendingChart data={chartData.projectSpending} label={t('dash', 'spendingAed')} />
+            </div>
+          )}
+
+        </div>
+      </div>
     </MainLayout>
   );
 }
