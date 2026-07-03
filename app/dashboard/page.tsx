@@ -148,29 +148,39 @@ function DashboardContent() {
         {/* ── Main content ───────────────────────────────────────────── */}
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
 
-          {/* ── KPI Grid ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
+          {/* ── KPI Strip — no individual boxes ── */}
+          <div style={{ ...card({ display: 'flex', alignItems: 'stretch', overflow: 'hidden' }) }}>
             {isLoading
               ? [0,1,2,3,4,5].map(i => (
-                  <div key={i} style={{ ...card({ height: 100 }) }} />
+                  <div key={i} style={{ flex: 1, padding: '20px 24px', borderRight: i < 5 ? `1px solid ${D.border}` : 'none' }}>
+                    <div style={{ height: 10, width: '60%', background: D.surf2, borderRadius: 4, marginBottom: 12 }} />
+                    <div style={{ height: 32, width: '40%', background: D.surf2, borderRadius: 4 }} />
+                  </div>
                 ))
               : stats && hrStats && [
-                  { label: 'Purchase Requests', value: stats.purchaseRequests.total,  sub: `${stats.purchaseRequests.pending} pending`,  accent: D.gold,    href: '/purchase-requests' },
-                  { label: 'Purchase Orders',   value: stats.purchaseOrders.total,    sub: `${stats.purchaseOrders.pending} pending`,    accent: D.teal,    href: '/purchase-orders' },
-                  { label: 'Invoices Paid',     value: stats.invoices.paid,           sub: `${stats.invoices.pending} pending`,          accent: D.warn,    href: '/purchase-invoices' },
-                  { label: 'Active Projects',   value: projectAnalytics?.length ?? 0, sub: 'view all projects',                         accent: '#6B8FE8', href: '/projects' },
-                  { label: 'Employees',         value: hrStats.employees,             sub: `${hrStats.presentToday} present today`,      accent: D.teal,    href: '/hr/employees' },
-                  { label: 'Suppliers',         value: stats.suppliers.total,         sub: `${stats.products.total} products`,          accent: '#9B6FE8', href: '/suppliers' },
-                ].map(({ label, value, sub, accent, href }) => (
-                  <Link key={href} href={href}
-                    style={{ ...card({ padding: '16px 18px', textDecoration: 'none', display: 'flex', flexDirection: 'column', cursor: 'pointer', position: 'relative', overflow: 'hidden', transition: 'border-color .15s, transform .15s' }) }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = D.border2; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = D.border;  (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
+                  { label: 'Purchase Requests', value: stats.purchaseRequests.total,  sub: `${stats.purchaseRequests.pending} pending`,     href: '/purchase-requests' },
+                  { label: 'Purchase Orders',   value: stats.purchaseOrders.total,    sub: `${stats.purchaseOrders.pending} pending`,       href: '/purchase-orders' },
+                  { label: 'Invoices Paid',     value: stats.invoices.paid,           sub: `${stats.invoices.pending} pending`,             href: '/purchase-invoices' },
+                  { label: 'Active Projects',   value: projectAnalytics?.length ?? 0, sub: 'view all projects',                            href: '/projects' },
+                  { label: 'Employees',         value: hrStats.employees,             sub: `${hrStats.presentToday} present today`,         href: '/hr/employees' },
+                  { label: 'Suppliers',         value: stats.suppliers.total,         sub: `${stats.products.total} products`,             href: '/suppliers' },
+                ].map(({ label, value, sub, href }, i, arr) => (
+                  <Link key={href} href={href} style={{
+                    flex: 1,
+                    padding: '20px 24px',
+                    borderRight: i < arr.length - 1 ? `1px solid ${D.border}` : 'none',
+                    textDecoration: 'none',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 5,
+                    transition: 'background .15s',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = D.surf2; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   >
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: accent, opacity: 0.75 }} />
-                    <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.9px', color: D.text3, marginBottom: 10 }}>{label}</div>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: D.text, lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-                    <div style={{ fontSize: 10, color: D.text3, marginTop: 8 }}>{sub}</div>
+                    <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.9px', color: D.text3 }}>{label}</div>
+                    <div style={{ fontSize: 30, fontWeight: 800, color: D.text, lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+                    <div style={{ fontSize: 11, color: D.text3 }}>{sub}</div>
                   </Link>
                 ))
             }
@@ -319,12 +329,12 @@ function DashboardContent() {
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                     {[
-                      { label: 'Employees',    value: hrStats.employees,       color: '#6B8FE8' },
+                      { label: 'Employees',    value: hrStats.employees,       color: D.text2 },
                       { label: 'Present',      value: hrStats.presentToday,    color: D.teal },
                       { label: 'Absent',       value: hrStats.absentToday,     color: D.danger },
                       { label: 'Open Tasks',   value: hrStats.openTasks,       color: D.gold },
-                      { label: 'HR Requests',  value: hrStats.pendingRequests, color: D.warn },
-                      { label: 'Payrolls',     value: hrStats.draftPayrolls,   color: '#9B6FE8' },
+                      { label: 'HR Requests',  value: hrStats.pendingRequests, color: D.gold },
+                      { label: 'Payrolls',     value: hrStats.draftPayrolls,   color: D.text2 },
                     ].map(({ label, value, color }) => (
                       <div key={label} style={{ background: D.surf2, borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
                         <div style={{ fontSize: 20, fontWeight: 800, color, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{value}</div>
