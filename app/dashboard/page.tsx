@@ -431,8 +431,22 @@ function DashboardContent() {
                     <div style={{ height: 3, background: V.border2, borderRadius: 99, overflow: 'hidden' }}>
                       <div style={{ height: '100%', borderRadius: 99, width: `${project.progress}%`, background: project.progress < 25 ? V.danger : V.gold }} />
                     </div>
-                    <div style={{ fontSize: 10, color: V.text3, marginTop: 5, fontVariantNumeric: 'tabular-nums' }}>
-                      {formatPrice(project.totalSpending)} · {project.poCount} POs
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+                      <span style={{
+                        fontSize: 11, fontWeight: 600, color: V.text2,
+                        fontVariantNumeric: 'tabular-nums', fontFamily: 'ui-monospace, monospace',
+                        letterSpacing: '-0.01em',
+                      }}>
+                        {formatPrice(project.totalSpending)}
+                      </span>
+                      <span style={{
+                        fontSize: 10, fontWeight: 600, color: V.text3,
+                        background: V.surf2, border: `1px solid ${V.border}`,
+                        padding: '1px 8px', borderRadius: 99,
+                        fontVariantNumeric: 'tabular-nums',
+                      }}>
+                        {project.poCount} POs
+                      </span>
                     </div>
                   </div>
                 ))
