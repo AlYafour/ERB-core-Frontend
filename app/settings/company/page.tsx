@@ -13,16 +13,18 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { generateScale, hexToRgba, applyTenantTheme } from '@/lib/utils/tenant-theme';
 
-/* ── color presets ────────────────────────────────────────────────── */
+/* ── color presets — each is a named pair (brand + derived surface) ── */
 const PRESETS = [
-  { hex: '#C9943A', name: 'Gold' },
-  { hex: '#1B4F72', name: 'Navy' },
-  { hex: '#1A6B3C', name: 'Forest' },
-  { hex: '#7B2D8B', name: 'Purple' },
-  { hex: '#C0392B', name: 'Crimson' },
-  { hex: '#2E86AB', name: 'Steel' },
-  { hex: '#B7410E', name: 'Rust' },
-  { hex: '#2C3E50', name: 'Slate' },
+  { hex: '#C9943A', name: 'Gold',    surface: 'Warm Cream'     },
+  { hex: '#1B4F72', name: 'Navy',    surface: 'Cool Ivory'     },
+  { hex: '#1A6B3C', name: 'Forest',  surface: 'Sage White'     },
+  { hex: '#7B2D8B', name: 'Plum',    surface: 'Lavender Mist'  },
+  { hex: '#C0392B', name: 'Crimson', surface: 'Rose White'     },
+  { hex: '#2E86AB', name: 'Steel',   surface: 'Sky Ivory'      },
+  { hex: '#B7410E', name: 'Rust',    surface: 'Sand White'     },
+  { hex: '#2C3E50', name: 'Slate',   surface: 'Pearl Grey'     },
+  { hex: '#276749', name: 'Emerald', surface: 'Mint White'     },
+  { hex: '#6B21A8', name: 'Violet',  surface: 'Lilac White'    },
 ];
 
 function hexToHue(hex: string): number {
@@ -51,15 +53,17 @@ function ThemePreview({ color, mode }: { color: string; mode: 'light' | 'dark' }
   const sc = generateScale(color);
   const isDark = mode === 'dark';
   const h = hexToHue(color);
-  const bg      = isDark ? previewHsl(h, 14, 10) : '#F7F4F0';
-  const surf    = isDark ? previewHsl(h, 18, 13) : '#FFFFFF';
-  const border  = isDark ? previewHsl(h, 20, 20) : '#E2DBD6';
-  const sidebar = isDark ? previewHsl(h, 18,  8) : previewHsl(h, 18, 8);
+  // Light mode: tinted off-white surfaces (matches buildThemeCss output)
+  const bg      = isDark ? previewHsl(h, 14, 10) : previewHsl(h,  7, 96);
+  const surf    = isDark ? previewHsl(h, 18, 13) : previewHsl(h,  4, 99);
+  const border  = isDark ? previewHsl(h, 20, 20) : previewHsl(h, 13, 90);
+  // Sidebar: dark in dark mode, matches surface in light mode (light sidebar)
+  const sidebar = isDark ? previewHsl(h, 18,  8) : previewHsl(h,  4, 99);
   const textPri = isDark ? '#F1F5F9' : '#1C1414';
   const textSec = isDark ? '#94A3B8' : '#6D5F5C';
   const active  = isDark ? sc['400'] : sc['500'];
   const btnBg   = active;
-  const sideAct = hexToRgba(color, 0.12);
+  const sideAct = hexToRgba(color, isDark ? 0.12 : 0.08);
 
   return (
     <div style={{ border: `1px solid ${border}`, borderRadius: 10, overflow: 'hidden', flex: 1, minWidth: 0, display: 'flex' }}>
@@ -100,25 +104,41 @@ function BrandColorPicker({ value, onChange }: { value: string; onChange: (v: st
 
   return (
     <div>
-      {/* Preset swatches */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-        {PRESETS.map(p => (
-          <button
-            key={p.hex}
-            title={p.name}
-            onClick={() => onChange(p.hex)}
-            style={{
-              width: 36, height: 36, borderRadius: 8, background: p.hex, cursor: 'pointer',
-              border: value.toLowerCase() === p.hex.toLowerCase() ? `3px solid ${p.hex}` : '3px solid transparent',
-              outline: value.toLowerCase() === p.hex.toLowerCase() ? '2px solid var(--text-primary)' : 'none',
-              outlineOffset: 1,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
-              transition: 'transform 0.1s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.12)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-          />
-        ))}
+      {/* Preset swatches — each shows brand color + derived light surface as a pair */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 16 }}>
+        {PRESETS.map(p => {
+          const h = hexToHue(p.hex);
+          const lightSurf = previewHsl(h, 7, 96); // matches buildThemeCss lSurfApp
+          const isSelected = value.toLowerCase() === p.hex.toLowerCase();
+          return (
+            <button
+              key={p.hex}
+              title={`${p.name} / ${p.surface}`}
+              onClick={() => onChange(p.hex)}
+              style={{
+                height: 48, borderRadius: 10, cursor: 'pointer',
+                border: isSelected ? `2.5px solid ${p.hex}` : '2.5px solid transparent',
+                outline: isSelected ? '2px solid var(--text-primary)' : 'none',
+                outlineOffset: 2,
+                overflow: 'hidden', display: 'flex', flexDirection: 'column',
+                boxShadow: isSelected ? `0 0 0 1px ${p.hex}, 0 2px 8px rgba(0,0,0,0.2)` : '0 1px 3px rgba(0,0,0,0.18)',
+                transition: 'transform 0.12s, box-shadow 0.12s',
+                padding: 0, background: 'none',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+            >
+              {/* Top half: brand (dark accent) */}
+              <div style={{ flex: 1, background: p.hex, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: 8, fontWeight: 800, color: '#fff', letterSpacing: '0.05em', opacity: 0.9 }}>{p.name.toUpperCase()}</span>
+              </div>
+              {/* Bottom half: derived light surface */}
+              <div style={{ flex: 1, background: lightSurf, display: 'flex', alignItems: 'center', justifyContent: 'center', borderTop: `1px solid ${previewHsl(h, 13, 88)}` }}>
+                <span style={{ fontSize: 7, color: p.hex, fontWeight: 700, letterSpacing: '0.04em', opacity: 0.8 }}>{p.surface.toUpperCase()}</span>
+              </div>
+            </button>
+          );
+        })}
         {/* Custom color picker */}
         <label title="Custom color" style={{ width: 36, height: 36, borderRadius: 8, border: '2px dashed var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'var(--surface-subtle)', position: 'relative', overflow: 'hidden' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>

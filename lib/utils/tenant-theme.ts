@@ -119,6 +119,16 @@ export function buildThemeCss(primaryHex: string): string {
 
   const ra = (a: number) => hexToRgba(primaryHex, a);
 
+  // Light mode tinted surfaces — brand hue, very low saturation, very high lightness
+  // Creates a warm/cool "off-white" that matches the brand personality
+  const lSurfApp      = hslToHex(h,  7, 96);   // page background (e.g. warm cream for gold)
+  const lSurfBase     = hslToHex(h,  4, 99);   // cards / panels (near-white with trace of hue)
+  const lSurfOverlay  = hslToHex(h,  7, 97);   // overlays / hover surfaces
+  const lSurfSubtle   = hslToHex(h, 11, 94);   // table headers, sidebar sections
+  const lBorderSubtle = hslToHex(h, 13, 90);   // subtle dividers
+  const lBorderDef    = hslToHex(h, 10, 83);   // default borders
+  const lDropdownHov  = hslToHex(h, 10, 96);   // dropdown item hover
+
   return `/* tenant-theme: ${primaryHex} */
 
 /* ── Brand scale + shared structural colors ───────────────────── */
@@ -133,6 +143,43 @@ export function buildThemeCss(primaryHex: string): string {
   --wine-700: ${scale['700']};
   --wine-800: ${scale['800']};
   --wine-900: ${scale['900']};
+
+  /* Light mode — tinted surfaces (subtle brand hue, not pure white) */
+  --surface-app:       ${lSurfApp};
+  --surface-base:      ${lSurfBase};
+  --surface-raised:    ${lSurfBase};
+  --surface-overlay:   ${lSurfOverlay};
+  --surface-subtle:    ${lSurfSubtle};
+  --surface-inset:     ${lSurfApp};
+  --surface-primary:   ${lSurfBase};
+  --surface-secondary: ${lSurfOverlay};
+
+  /* Light mode — tinted borders */
+  --border-subtle:     ${lBorderSubtle};
+  --border-default:    ${lBorderDef};
+
+  /* Light mode — cards / inputs / tables / dropdowns */
+  --card-bg:              ${lSurfBase};
+  --card-border:          ${lBorderSubtle};
+  --input-bg:             ${lSurfBase};
+  --input-border:         ${lBorderDef};
+  --table-header-bg:      ${lSurfApp};
+  --table-row-hover:      ${lSurfOverlay};
+  --table-border:         ${lBorderSubtle};
+  --dropdown-bg:          ${lSurfBase};
+  --dropdown-border:      ${lBorderSubtle};
+  --dropdown-item-hover:  ${lDropdownHov};
+  --dropdown-item-active: ${scale['50']};
+
+  /* Legacy / bg aliases — light mode */
+  --bg-primary:   ${lSurfBase};
+  --bg-secondary: ${lSurfApp};
+  --bg-tertiary:  ${lSurfSubtle};
+  --background:   ${lSurfApp};
+  --muted:        ${lSurfBase};
+  --hover-surface:${lSurfSubtle};
+  --accent:       ${lSurfSubtle};
+  --secondary:    ${lSurfSubtle};
 
   /* Sidebar — light in light mode */
   --sidebar-bg:            var(--surface-base);
