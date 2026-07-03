@@ -54,7 +54,7 @@
   /* info: brand maroon — keeps palette anchored to brand */
   --status-info:            var(--wine-500);
   --status-info-bg:         var(--wine-50);
-  --status-info-border:     rgba(124, 45, 58, 0.18);
+  --status-info-border:     rgba(201, 148, 58, 0.18);
 
   /* Priority */
   --priority-critical:        #DC2626;
@@ -118,7 +118,7 @@
   --input-border:           var(--gray-300);
   --input-placeholder:      var(--gray-400);
   --input-focus-border:     var(--wine-500);
-  --input-focus-ring:       rgba(124, 45, 58, 0.10);
+  --input-focus-ring:       rgba(201, 148, 58, 0.10);
 
   /* Card */
   --card-bg:                var(--gray-0);

@@ -505,7 +505,7 @@ export default function Sidebar() {
                     background: 'var(--brand-muted)', border: '1px solid var(--border-subtle)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0, overflow: 'hidden',
-                    fontSize: 10, fontWeight: 700, color: 'var(--wine-600)',
+                    fontSize: 10, fontWeight: 700, color: '#C9943A',
                   }}
                 >
                   {(user as any).avatar_url ? (

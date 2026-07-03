@@ -227,7 +227,13 @@ function DashboardContent() {
                   </div>
                 </>
               ) : (
-                <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: D.text3, fontSize: 12 }}>No data yet</div>
+                <div style={{ height: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: D.text3 }}>
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.25 }}>
+                    <circle cx="12" cy="12" r="9" stroke={D.gold} strokeWidth="1.5"/>
+                    <path d="M12 7v5l3 3" stroke={D.gold} strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                  <span style={{ fontSize: 12 }}>No distribution data yet</span>
+                </div>
               )}
             </div>
           </div>

@@ -3,17 +3,17 @@
    Never reference these directly in components; use semantic tokens.
    ================================================================ */
 :root {
-  /* Wine (brand) */
-  --wine-50:  #FCF0F2;
-  --wine-100: #F5D6DC;
-  --wine-200: #E9ACBA;
-  --wine-300: #D67D92;
-  --wine-400: #B85570;
-  --wine-500: #7C2D3A;
-  --wine-600: #6B2233;
-  --wine-700: #5C1F2A;
-  --wine-800: #4A1622;
-  --wine-900: #3A1019;
+  /* Gold (brand) — replaces wine/maroon scale */
+  --wine-50:  #FBF4E8;
+  --wine-100: #F5E3C3;
+  --wine-200: #EDCF9A;
+  --wine-300: #E0B86D;
+  --wine-400: #D4A44C;
+  --wine-500: #C9943A;
+  --wine-600: #B8832E;
+  --wine-700: #A07228;
+  --wine-800: #7D5820;
+  --wine-900: #5C4018;
 
   /* Warm neutral */
   --gray-0:   #FFFFFF;

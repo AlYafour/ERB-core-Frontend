@@ -4,7 +4,7 @@
 
 .auth-bg {
   background-image:
-    linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(45, 26, 30, 0.95) 100%);
+    linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(10, 22, 40, 0.95) 100%);
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
@@ -12,19 +12,19 @@
 
 .auth-bg[data-bg-url] {
   background-image:
-    linear-gradient(135deg, rgba(15, 23, 42, 0.88) 0%, rgba(45, 26, 30, 0.88) 100%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.88) 0%, rgba(10, 22, 40, 0.88) 100%),
     var(--auth-bg-url);
 }
 
 .auth-logo-box {
-  background-color: rgba(124, 45, 58, 0.12);
+  background-color: rgba(201, 148, 58, 0.12);
   backdrop-filter: blur(10px);
-  border: 2px solid rgba(124, 45, 58, 0.35);
-  box-shadow: 0 8px 32px rgba(124, 45, 58, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(201, 148, 58, 0.35);
+  box-shadow: 0 8px 32px rgba(201, 148, 58, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .auth-logo-glow {
-  background: radial-gradient(circle at center, rgba(124, 45, 58, 0.28) 0%, transparent 70%);
+  background: radial-gradient(circle at center, rgba(201, 148, 58, 0.28) 0%, transparent 70%);
   animation: auth-pulse 3s ease-in-out infinite;
 }
 
@@ -38,12 +38,12 @@
   background-color: var(--wine-500) !important;
   border-color: var(--wine-500) !important;
   color: #fff !important;
-  box-shadow: 0 4px 14px rgba(124, 45, 58, 0.40);
+  box-shadow: 0 4px 14px rgba(201, 148, 58, 0.40);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 .auth-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(124, 45, 58, 0.50);
+  box-shadow: 0 6px 20px rgba(201, 148, 58, 0.50);
 }
 
 .auth-fade-in    { animation: auth-fade-in 0.6s ease-out both; }
