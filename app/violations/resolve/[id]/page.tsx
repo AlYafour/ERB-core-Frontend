@@ -6,9 +6,9 @@ import { violationsApi } from '@/lib/api/violations';
 import { useState } from 'react';
 
 const statusColors: Record<string, { bg: string; text: string; label: string }> = {
-  new:       { bg: 'rgba(201,148,58,0.10)', text: '#A07228',  label: 'جديدة' },
-  notified:  { bg: 'rgba(201,148,58,0.10)', text: '#C9943A',  label: 'تم الإبلاغ' },
-  resolved:  { bg: '#F1F5F9',              text: '#475569',   label: 'تم الحل' },
+  new:       { bg: 'var(--brand-muted, rgba(201,148,58,0.10))', text: 'var(--brand)', label: 'جديدة' },
+  notified:  { bg: 'var(--brand-muted, rgba(201,148,58,0.10))', text: 'var(--brand)', label: 'تم الإبلاغ' },
+  resolved:  { bg: 'var(--surface-subtle)',                      text: 'var(--text-secondary)', label: 'تم الحل' },
   fined:     { bg: '#FEF2F2',              text: '#E05C5C',   label: 'صدرت غرامة' },
 };
 
@@ -250,7 +250,7 @@ export default function ViolationResolvePage() {
               style={{
                 flex: 1,
                 padding: '12px 20px',
-                background: '#C9943A',
+                background: 'var(--brand)',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 8,

@@ -14,9 +14,9 @@ const FRONTEND_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://purchase-self.v
 
 /* ─── Status config ──────────────────────────────────────────────────────── */
 const STATUS_CFG = {
-  new:      { bg: '#FBF4E8', color: '#A07228', dot: '#C9943A', border: 'rgba(201,148,58,0.30)', label: 'New' },
-  notified: { bg: '#FBF4E8', color: '#A07228', dot: '#C9943A', border: 'rgba(201,148,58,0.30)', label: 'Notified' },
-  resolved: { bg: '#F1F5F9', color: '#475569', dot: '#94A3B8', border: '#E2E8F0',               label: 'Resolved' },
+  new:      { bg: 'var(--brand-muted, #FBF4E8)', color: 'var(--brand)', dot: 'var(--brand)', border: 'var(--brand-border, rgba(201,148,58,0.30))', label: 'New' },
+  notified: { bg: 'var(--brand-muted, #FBF4E8)', color: 'var(--brand)', dot: 'var(--brand)', border: 'var(--brand-border, rgba(201,148,58,0.30))', label: 'Notified' },
+  resolved: { bg: 'var(--surface-subtle)',        color: 'var(--text-secondary)', dot: 'var(--text-tertiary)', border: 'var(--border-subtle)', label: 'Resolved' },
   fined:    { bg: '#FEF2F2', color: '#7F1D1D', dot: '#E05C5C', border: 'rgba(224,92,92,0.30)',  label: 'Fined' },
 } as const;
 
@@ -463,10 +463,10 @@ export default function ViolationsPage() {
         {/* Delete confirmation dialog */}
         {confirmDelete && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ background: '#fff', borderRadius: 16, padding: '28px 32px', maxWidth: 420, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+            <div style={{ background: 'var(--card-bg)', borderRadius: 16, padding: '28px 32px', maxWidth: 420, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>🗑️</div>
-              <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, color: '#0F172A' }}>Confirm Delete</h3>
-              <p style={{ margin: '0 0 24px', fontSize: 13, color: '#64748B', lineHeight: 1.6 }}>
+              <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>Confirm Delete</h3>
+              <p style={{ margin: '0 0 24px', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                 You are about to permanently delete{' '}
                 <strong style={{ color: '#DC2626' }}>
                   {selectAllPages ? `all ${totalCount} violations` : `${selectedIds.size} violation${selectedIds.size !== 1 ? 's' : ''}`}
@@ -479,7 +479,7 @@ export default function ViolationsPage() {
                   {bulkDeleteMutation.isPending ? 'Deleting...' : 'Yes, Delete'}
                 </button>
                 <button onClick={() => setConfirmDelete(false)} disabled={bulkDeleteMutation.isPending}
-                  style={{ flex: 1, padding: '11px', borderRadius: 9, border: '1.5px solid #E2E8F0', background: '#fff', color: '#374151', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                  style={{ flex: 1, padding: '11px', borderRadius: 9, border: '1.5px solid var(--border-subtle)', background: 'var(--card-bg)', color: 'var(--text-primary)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
                   Cancel
                 </button>
               </div>
@@ -566,10 +566,10 @@ export default function ViolationsPage() {
                           key={v.id}
                           onClick={() => setSelectedId(isActive ? null : v.id)}
                           style={{
-                            background: isActive ? 'rgba(201,148,58,0.08)' : isSel ? 'var(--surface-subtle)' : noProj ? '#FBF4E8' : isEven ? 'var(--surface-base)' : 'var(--surface-subtle)',
+                            background: isActive ? 'var(--brand-muted, rgba(201,148,58,0.08))' : isSel ? 'var(--surface-subtle)' : noProj ? 'var(--status-warning-bg, #FBF4E8)' : isEven ? 'var(--surface-base)' : 'var(--surface-subtle)',
                             borderBottom: '1px solid var(--border-subtle)',
                             cursor: 'pointer',
-                            borderLeft: isActive ? '3px solid #C9943A' : '3px solid transparent',
+                            borderLeft: isActive ? '3px solid var(--brand)' : '3px solid transparent',
                             transition: 'background 0.1s',
                           }}
                         >
@@ -583,20 +583,20 @@ export default function ViolationsPage() {
                           <td style={tdS()}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                               {noProj && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#F59E0B', display: 'inline-block', flexShrink: 0 }} title="No project linked" />}
-                              <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: '#0F172A' }}>
+                              <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--text-primary)' }}>
                                 {v.reference_number || `#${v.id}`}
                               </span>
                             </div>
-                            <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 2 }}>{fmtDate(v.received_at)}</div>
+                            <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 2 }}>{fmtDate(v.received_at)}</div>
                           </td>
 
                           {/* Violation description */}
                           <td style={{ ...tdS(), maxWidth: 260 }}>
                             {v.violation_description
-                              ? <span style={{ fontSize: 12, color: '#334155', direction: 'rtl', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 240 }}>
+                              ? <span style={{ fontSize: 12, color: 'var(--text-secondary)', direction: 'rtl', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 240 }}>
                                   {v.violation_description}
                                 </span>
-                              : <span style={{ fontSize: 11, color: '#CBD5E1', fontStyle: 'italic' }}>Click to view SMS</span>
+                              : <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Click to view SMS</span>
                             }
                           </td>
 
@@ -604,21 +604,21 @@ export default function ViolationsPage() {
                           <td style={tdS()}>
                             {v.sector || v.plot || v.area
                               ? <div>
-                                  {v.area && <div style={{ fontWeight: 600, fontSize: 12, color: '#0F172A' }}>{v.area}</div>}
+                                  {v.area && <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--text-primary)' }}>{v.area}</div>}
                                   {(v.sector || v.plot) && (
-                                    <div style={{ fontSize: 11, color: '#64748B' }}>
+                                    <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
                                       {[v.sector && `Sector ${v.sector}`, v.plot && `Plot ${v.plot}`].filter(Boolean).join(' · ')}
                                     </div>
                                   )}
                                 </div>
-                              : <span style={{ color: '#CBD5E1' }}>—</span>
+                              : <span style={{ color: 'var(--text-tertiary)' }}>—</span>
                             }
                           </td>
 
                           {/* Project */}
                           <td style={tdS()}>
                             {v.project_name
-                              ? <span style={{ fontWeight: 500, fontSize: 12, color: '#0F172A' }}>{v.project_name}</span>
+                              ? <span style={{ fontWeight: 500, fontSize: 12, color: 'var(--text-primary)' }}>{v.project_name}</span>
                               : <span style={{ display: 'inline-block', padding: '2px 9px', borderRadius: 20, background: '#FEF3C7', color: '#92400E', fontSize: 11, fontWeight: 600 }}>
                                   No Project
                                 </span>
@@ -635,7 +635,7 @@ export default function ViolationsPage() {
                                 }}>
                                   {v.deadline_days}d
                                 </span>
-                              : <span style={{ color: '#CBD5E1' }}>—</span>
+                              : <span style={{ color: 'var(--text-tertiary)' }}>—</span>
                             }
                           </td>
 
@@ -644,9 +644,9 @@ export default function ViolationsPage() {
                             {v.fine_amount
                               ? <div>
                                   <div style={{ fontWeight: 800, color: '#DC2626', fontSize: 13 }}>{Number(v.fine_amount).toLocaleString()}</div>
-                                  <div style={{ fontSize: 10, color: '#9CA3AF' }}>AED</div>
+                                  <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>AED</div>
                                 </div>
-                              : <span style={{ color: '#CBD5E1' }}>—</span>
+                              : <span style={{ color: 'var(--text-tertiary)' }}>—</span>
                             }
                           </td>
 
@@ -665,17 +665,17 @@ export default function ViolationsPage() {
             {/* Pagination inside card */}
             {totalPages > 1 && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderTop: '1px solid var(--border-subtle)', background: 'var(--surface-subtle)' }}>
-                <span style={{ fontSize: 12, color: '#94A3B8' }}>
+                <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
                   Showing {(page - 1) * 25 + 1}–{Math.min(page * 25, totalCount)} of {totalCount}
                 </span>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                    style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid #E2E8F0', background: '#fff', fontSize: 12, fontWeight: 600, cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.4 : 1 }}>
+                    style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid var(--border-subtle)', background: 'var(--card-bg)', fontSize: 12, fontWeight: 600, cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.4 : 1 }}>
                     ← Prev
                   </button>
-                  <span style={{ padding: '6px 12px', fontSize: 12, color: '#64748B', fontWeight: 600 }}>{page} / {totalPages}</span>
+                  <span style={{ padding: '6px 12px', fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600 }}>{page} / {totalPages}</span>
                   <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                    style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid #E2E8F0', background: '#fff', fontSize: 12, fontWeight: 600, cursor: page === totalPages ? 'not-allowed' : 'pointer', opacity: page === totalPages ? 0.4 : 1 }}>
+                    style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid var(--border-subtle)', background: 'var(--card-bg)', fontSize: 12, fontWeight: 600, cursor: page === totalPages ? 'not-allowed' : 'pointer', opacity: page === totalPages ? 0.4 : 1 }}>
                     Next →
                   </button>
                 </div>
@@ -704,7 +704,7 @@ export default function ViolationsPage() {
 }
 
 function thS(w?: number): React.CSSProperties {
-  return { padding: '11px 14px', fontSize: 10, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.6, whiteSpace: 'nowrap', width: w, textAlign: 'left' };
+  return { padding: '11px 14px', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.6, whiteSpace: 'nowrap', width: w, textAlign: 'left' };
 }
 function tdS(): React.CSSProperties {
   return { padding: '11px 14px', verticalAlign: 'middle' };
