@@ -97,7 +97,7 @@ function ManagerPicker({
             <>
               <span style={{
                 width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                background: selected ? (selected.user?.id ? '#10b981' : '#f59e0b') : '#9ca3af',
+                background: selected ? (selected.user?.id ? '#C9943A' : '#E05C5C') : '#9ca3af',
               }} />
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
             </>
@@ -153,7 +153,7 @@ function ManagerPicker({
               const hasUser  = !!emp.user?.id;
               const inactive = !emp.is_active;
               const isSel    = emp.id === value;
-              const dotColor = !hasUser ? '#f59e0b' : inactive ? '#9ca3af' : '#10b981';
+              const dotColor = !hasUser ? '#E05C5C' : inactive ? '#9ca3af' : '#C9943A';
               return (
                 <div
                   key={emp.id}
@@ -188,7 +188,7 @@ function ManagerPicker({
                       {emp.employee_id}
                       {inactive && <span style={{ color: '#9ca3af' }}>· inactive</span>}
                       {!hasUser && !inactive && (
-                        <span style={{ color: '#f59e0b', fontWeight: 'var(--weight-medium)' }}>
+                        <span style={{ color: '#E05C5C', fontWeight: 'var(--weight-medium)' }}>
                           · won&apos;t route approvals
                         </span>
                       )}
@@ -359,8 +359,8 @@ function GroupModal({
             />
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
               Approval fallback when an employee has no direct manager.{' '}
-              <span style={{ color: '#10b981', fontWeight: 'var(--weight-semibold)' }}>●</span> Has login · routes approvals.{' '}
-              <span style={{ color: '#f59e0b', fontWeight: 'var(--weight-semibold)' }}>●</span> No account · approvals won&apos;t deliver.
+              <span style={{ color: '#C9943A', fontWeight: 'var(--weight-semibold)' }}>●</span> Has login · routes approvals.{' '}
+              <span style={{ color: '#E05C5C', fontWeight: 'var(--weight-semibold)' }}>●</span> No account · approvals won&apos;t deliver.
             </p>
           </div>
 
@@ -370,7 +370,7 @@ function GroupModal({
               onClick={() => set('is_active', !form.is_active)}
               style={{
                 width: 40, height: 22, borderRadius: 99, flexShrink: 0,
-                background: form.is_active ? '#10b981' : 'var(--border-default)',
+                background: form.is_active ? '#C9943A' : 'var(--border-default)',
                 position: 'relative', cursor: 'pointer', transition: 'background 200ms',
               }}
             >
@@ -633,7 +633,7 @@ export default function EmployeeGroupsPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                           <span style={{
                             width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                            background: mgrHasUser === false ? '#f59e0b' : '#10b981',
+                            background: mgrHasUser === false ? '#E05C5C' : '#C9943A',
                           }} />
                           <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {group.default_manager_name}
@@ -649,10 +649,10 @@ export default function EmployeeGroupsPage() {
                       display: 'inline-flex', alignItems: 'center', gap: 5,
                       padding: '3px 8px', borderRadius: 99, fontSize: 'var(--text-xs)',
                       fontWeight: 'var(--weight-semibold)',
-                      background: group.is_active ? '#d1fae5' : 'var(--surface-subtle)',
-                      color: group.is_active ? '#065f46' : 'var(--text-secondary)',
+                      background: group.is_active ? 'rgba(201,148,58,0.10)' : 'var(--surface-subtle)',
+                      color: group.is_active ? '#A07228' : 'var(--text-secondary)',
                     }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: group.is_active ? '#10b981' : '#9ca3af' }} />
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: group.is_active ? '#C9943A' : '#9ca3af' }} />
                       {group.is_active ? 'Active' : 'Inactive'}
                     </span>
 

@@ -106,7 +106,7 @@ function DashboardContent() {
 
   return (
     <MainLayout>
-      <div style={{ background: D.ground, minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ background: 'var(--surface-app)', minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
 
         {/* ── Header ── */}
         <div style={{ background: D.surf, borderBottom: `1px solid ${D.border}`, padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>

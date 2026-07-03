@@ -64,10 +64,10 @@ export default function TaskReportsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
             <StatCard label="Total Tasks" value={totalTasks} color="var(--text-primary)" />
             <StatCard label="My Tasks" value={stats?.my_tasks ?? 0} color="var(--brand)" />
-            <StatCard label="Pending Review" value={stats?.pending_review ?? 0} color="#F59E0B" sub="Waiting for approval" />
-            <StatCard label="Overdue" value={stats?.overdue ?? 0} color="#EF4444" sub="Past due date" />
-            <StatCard label="Completed This Month" value={stats?.completed_this_month ?? 0} color="#16A34A" />
-            <StatCard label="Completion Rate" value={`${completionRate}%`} color={completionRate >= 70 ? '#16A34A' : '#F59E0B'} sub={`${closedDone} of ${totalTasks} closed/approved`} />
+            <StatCard label="Pending Review" value={stats?.pending_review ?? 0} color="#C9943A" sub="Waiting for approval" />
+            <StatCard label="Overdue" value={stats?.overdue ?? 0} color="#E05C5C" sub="Past due date" />
+            <StatCard label="Completed This Month" value={stats?.completed_this_month ?? 0} color="#C9943A" />
+            <StatCard label="Completion Rate" value={`${completionRate}%`} color={completionRate >= 70 ? '#C9943A' : '#E05C5C'} sub={`${closedDone} of ${totalTasks} closed/approved`} />
           </div>
 
           {/* Two column charts */}

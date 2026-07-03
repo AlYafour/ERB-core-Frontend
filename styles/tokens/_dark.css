@@ -36,15 +36,19 @@
   --brand-muted:     rgba(184, 85, 112, 0.24);
 
   /* Status */
-  --status-success:         #4ADE80;
-  --status-success-bg:      rgba(34, 197, 94, 0.10);
-  --status-success-border:  rgba(34, 197, 94, 0.22);
-  --status-warning:         #FCD34D;
-  --status-warning-bg:      rgba(245, 158, 11, 0.10);
-  --status-warning-border:  rgba(245, 158, 11, 0.22);
+  /* success: muted sage — toned down from neon #4ADE80 to stay readable without popping */
+  --status-success:         #6EAF86;
+  --status-success-bg:      rgba(58, 125, 82, 0.12);
+  --status-success-border:  rgba(58, 125, 82, 0.24);
+  /* warning: brand gold — mirrors light-mode #C9943A, not bright yellow */
+  --status-warning:         #D4A44C;
+  --status-warning-bg:      rgba(201, 148, 58, 0.12);
+  --status-warning-border:  rgba(201, 148, 58, 0.24);
+  /* error: intentionally vivid — danger must stand out */
   --status-error:           #FCA5A5;
   --status-error-bg:        rgba(239, 68, 68, 0.10);
   --status-error-border:    rgba(239, 68, 68, 0.22);
+  /* info: brand maroon — anchors palette to brand identity */
   --status-info:            var(--wine-400);
   --status-info-bg:         rgba(184, 85, 112, 0.10);
   --status-info-border:     rgba(184, 85, 112, 0.22);

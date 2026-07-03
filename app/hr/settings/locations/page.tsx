@@ -14,7 +14,7 @@ import { Button, Badge, Loader, PageHeader, PageShell, SearchInput, Drawer } fro
 import HRSettingsNav from '@/components/hr/HRSettingsNav';
 
 const PRESET_ICONS  = ['🏢', '🏗️', '🔧', '🏭', '🏪', '🏠', '📍', '🗺️', '⚙️', '🏛️', '🚧', '🏕️'];
-const PRESET_COLORS = ['#3b82f6','#f97316','#8b5cf6','#10b981','#ef4444','#f59e0b','#06b6d4','#ec4899','#6b7280'];
+const PRESET_COLORS = ['#C9943A','#B8832E','#E0AE55','#4A6280','#64748B','#94A3B8','#334155','#E05C5C','#475569'];
 
 type DrawerMode = 'type-create' | 'type-edit' | 'loc-create' | 'loc-edit' | 'office-create' | 'office-edit' | null;
 

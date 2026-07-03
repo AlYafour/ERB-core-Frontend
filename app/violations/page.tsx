@@ -14,10 +14,10 @@ const FRONTEND_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://purchase-self.v
 
 /* ─── Status config ──────────────────────────────────────────────────────── */
 const STATUS_CFG = {
-  new:      { bg: '#FEF9C3', color: '#854D0E', dot: '#EAB308', border: '#FDE047', label: 'New' },
-  notified: { bg: '#DBEAFE', color: '#1E3A8A', dot: '#3B82F6', border: '#93C5FD', label: 'Notified' },
-  resolved: { bg: '#DCFCE7', color: '#14532D', dot: '#22C55E', border: '#86EFAC', label: 'Resolved' },
-  fined:    { bg: '#FEE2E2', color: '#7F1D1D', dot: '#EF4444', border: '#FCA5A5', label: 'Fined' },
+  new:      { bg: '#FBF4E8', color: '#A07228', dot: '#C9943A', border: 'rgba(201,148,58,0.30)', label: 'New' },
+  notified: { bg: '#FBF4E8', color: '#A07228', dot: '#C9943A', border: 'rgba(201,148,58,0.30)', label: 'Notified' },
+  resolved: { bg: '#F1F5F9', color: '#475569', dot: '#94A3B8', border: '#E2E8F0',               label: 'Resolved' },
+  fined:    { bg: '#FEF2F2', color: '#7F1D1D', dot: '#E05C5C', border: 'rgba(224,92,92,0.30)',  label: 'Fined' },
 } as const;
 
 function fmtDate(iso: string) {

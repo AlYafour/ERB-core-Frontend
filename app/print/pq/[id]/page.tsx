@@ -101,7 +101,7 @@ export default function PrintPQPage() {
 
       <PrintControlsBar
         backHref={`/purchase-quotations/${id}`}
-        docType="PQ" docTypeColor="#6366f1"
+        docType="PQ" docTypeColor="#C9943A"
         docNumber={pq.quotation_number} status={pq.status ?? 'pending'}
       />
 
@@ -162,7 +162,7 @@ export default function PrintPQPage() {
             {/* PQ Number Box */}
             <div style={{ flexShrink: 0, display: 'flex' }}>
               <div style={{
-                background: '#6366f1', borderRadius: 8,
+                background: '#C9943A', borderRadius: 8,
                 padding: '10px 16px', display: 'flex', flexDirection: 'column',
                 justifyContent: 'space-between', textAlign: 'center', minWidth: 155,
               }}>
@@ -198,7 +198,7 @@ export default function PrintPQPage() {
           </div>
 
           {/* ── Indigo divider ── */}
-          <div style={{ height: 2, background: '#6366f1', borderRadius: 1, margin: '5px 0 7px' }} />
+          <div style={{ height: 2, background: '#C9943A', borderRadius: 1, margin: '5px 0 7px' }} />
 
           {/* ════════════════════════════════════════
               SUPPLIER + QUOTATION DETAILS — side by side
@@ -256,12 +256,12 @@ export default function PrintPQPage() {
               ITEMS TABLE
               ════════════════════════════════════════ */}
           <div style={{ fontSize: '8pt', fontWeight: 700, letterSpacing: '.8px',
-            textTransform: 'uppercase', color: STEEL, borderBottom: `1.5px solid #6366f1`,
+            textTransform: 'uppercase', color: STEEL, borderBottom: `1.5px solid #C9943A`,
             paddingBottom: 2, marginBottom: 4 }}>Quoted Items</div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5pt', marginBottom: 4 }}>
             <thead>
-              <tr style={{ background: '#6366f1', color: '#fff' }}>
+              <tr style={{ background: '#C9943A', color: '#fff' }}>
                 <th style={{ padding: '6px 8px', textAlign: 'left', fontSize: '6.5pt', fontWeight: 700,
                   letterSpacing: '.5px', textTransform: 'uppercase', width: 24 }}>#</th>
                 <th style={{ padding: '6px 8px', textAlign: 'left', fontSize: '6.5pt', fontWeight: 700,
@@ -345,7 +345,7 @@ export default function PrintPQPage() {
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between',
-                padding: '8px 12px', background: '#6366f1', color: '#fff',
+                padding: '8px 12px', background: '#C9943A', color: '#fff',
                 fontSize: '10pt', fontWeight: 800 }}>
                 <span>TOTAL</span>
                 <span>AED {fmt(Number(pq.total))}</span>
@@ -392,7 +392,7 @@ export default function PrintPQPage() {
           <div style={{ breakInside: 'avoid', pageBreakInside: 'avoid', marginTop: 6 }}>
 
             <div style={{ fontSize: '8pt', fontWeight: 700, letterSpacing: '.8px',
-              textTransform: 'uppercase', color: STEEL, borderBottom: `1.5px solid #6366f1`,
+              textTransform: 'uppercase', color: STEEL, borderBottom: `1.5px solid #C9943A`,
               paddingBottom: 3, marginBottom: 8 }}>Authorization</div>
 
             <div style={{ display: 'flex', border: `1px solid ${BORDER}`, borderRadius: 8, overflow: 'hidden' }}>

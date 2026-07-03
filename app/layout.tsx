@@ -26,8 +26,7 @@ export default function RootLayout({
         {/* Restore theme + locale before React hydrates to prevent flash */}
         <script dangerouslySetInnerHTML={{ __html: `
           try {
-            var t = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', t);
+            document.documentElement.setAttribute('data-theme', 'dark');
             var l = localStorage.getItem('locale');
             if (l === 'ar') {
               document.documentElement.setAttribute('dir', 'rtl');

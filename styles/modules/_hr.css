@@ -101,8 +101,8 @@
   border-radius: 99px;
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
-  background: rgba(109, 40, 217, 0.1);
-  color: #6d28d9;
+  background: rgba(201,148,58,0.10);
+  color: #C9943A;
   cursor: pointer;
   border: none;
   white-space: nowrap;
@@ -111,12 +111,12 @@
   text-overflow: ellipsis;
   transition: background 0.12s;
 }
-.emp-group-badge:hover { background: rgba(109, 40, 217, 0.18); }
+.emp-group-badge:hover { background: rgba(201,148,58,0.18); }
 [data-theme="dark"] .emp-group-badge {
-  background: rgba(167, 139, 250, 0.15);
-  color: #a78bfa;
+  background: rgba(201,148,58,0.15);
+  color: #E0AE55;
 }
-[data-theme="dark"] .emp-group-badge:hover { background: rgba(167, 139, 250, 0.25); }
+[data-theme="dark"] .emp-group-badge:hover { background: rgba(201,148,58,0.25); }
 
 /* ── Manager cell ────────────────────────────────────────────── */
 .emp-manager-btn {
@@ -248,22 +248,22 @@
   letter-spacing: 0.02em;
 }
 .emp-mgr-flag:hover:not(:disabled) {
-  border-color: #6d28d9;
-  color: #6d28d9;
+  border-color: #C9943A;
+  color: #C9943A;
 }
 .emp-mgr-flag--on {
   border-style: solid;
-  border-color: #6d28d9;
-  background: rgba(109,40,217,0.08);
-  color: #6d28d9;
+  border-color: #C9943A;
+  background: rgba(201,148,58,0.08);
+  color: #C9943A;
 }
 .emp-mgr-flag--on:hover:not(:disabled) {
-  background: rgba(109,40,217,0.15);
+  background: rgba(201,148,58,0.15);
 }
 [data-theme="dark"] .emp-mgr-flag--on {
-  border-color: #a78bfa;
-  background: rgba(167,139,250,0.12);
-  color: #a78bfa;
+  border-color: #E0AE55;
+  background: rgba(201,148,58,0.12);
+  color: #E0AE55;
 }
 .emp-mgr-flag:disabled { opacity: 0.5; cursor: default; }
 
@@ -324,12 +324,12 @@
   letter-spacing: 0.03em;
   padding: 3px 9px;
   border-radius: var(--radius-sm);
-  background: rgba(109,40,217,0.12);
-  color: #6d28d9;
+  background: rgba(201,148,58,0.12);
+  color: #C9943A;
   min-width: 48px;
   text-align: center;
 }
-[data-theme="dark"] .emp-grp-code { background: rgba(167,139,250,0.18); color: #a78bfa; }
+[data-theme="dark"] .emp-grp-code { background: rgba(201,148,58,0.18); color: #E0AE55; }
 .emp-grp-body {
   display: flex;
   flex-direction: column;

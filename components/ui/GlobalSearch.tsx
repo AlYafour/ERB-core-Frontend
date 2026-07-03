@@ -19,11 +19,11 @@ interface SearchResult {
 }
 
 const TYPE_COLOR: Record<string, string> = {
-  PR:  '#3b82f6',
-  LPO: '#f97316',
-  GRN: '#10b981',
-  INV: '#8b5cf6',
-  PQ:  '#f59e0b',
+  PR:  '#C9943A',
+  LPO: '#C9943A',
+  GRN: '#C9943A',
+  INV: '#C9943A',
+  PQ:  '#C9943A',
 };
 
 const STATUS_CLASS: Record<string, string> = {
