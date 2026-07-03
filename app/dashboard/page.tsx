@@ -101,18 +101,25 @@ function DashboardContent() {
     ...extra,
   });
 
-  const sectionTitle: CSSProperties = { fontSize: 13, fontWeight: 700, color: D.text };
-  const viewAllLink: CSSProperties  = { fontSize: 11, color: D.gold, textDecoration: 'none' };
+  const sectionTitle: CSSProperties = {
+    fontSize: 13, fontWeight: 700, color: D.text,
+    paddingLeft: 10,
+    borderLeft: `2px solid ${D.gold}`,
+  };
+  const viewAllLink: CSSProperties  = { fontSize: 11, color: D.gold, textDecoration: 'none', letterSpacing: '0.02em' };
 
   return (
     <MainLayout>
       <div style={{ background: 'var(--surface-app)', minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
 
+        {/* ── Gold accent bar ── */}
+        <div style={{ height: 2, background: `linear-gradient(90deg, ${D.gold} 0%, rgba(201,148,58,0.4) 55%, transparent 100%)`, flexShrink: 0 }} />
+
         {/* ── Header ── */}
         <div style={{ background: D.surf, borderBottom: `1px solid ${D.border}`, padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
           <div>
-            <h1 style={{ fontSize: 15, fontWeight: 800, color: D.text, margin: 0 }}>Executive Dashboard</h1>
-            <p style={{ fontSize: 11, color: D.text3, margin: '2px 0 0' }}>Real-time procurement & operations overview</p>
+            <h1 style={{ fontSize: 15, fontWeight: 800, color: D.text, margin: 0, letterSpacing: '-0.01em' }}>Executive Dashboard</h1>
+            <p style={{ fontSize: 11, color: D.text3, margin: '2px 0 0', letterSpacing: '0.02em' }}>Real-time procurement & operations overview</p>
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
             {!!stats?.purchaseRequests.pending && (
@@ -180,7 +187,16 @@ function DashboardContent() {
               {(chartData?.monthlyProcurement?.length ?? 0) > 0 && chartData ? (
                 <MonthlyVolumeChart data={chartData.monthlyProcurement} label={t('dash', 'requests')} />
               ) : (
-                <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: D.text3, fontSize: 12 }}>No monthly data yet</div>
+                <div style={{ height: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: D.text3 }}>
+                  <svg width="40" height="32" viewBox="0 0 40 32" fill="none" style={{ opacity: 0.3 }}>
+                    <rect x="0" y="20" width="6" height="12" rx="1" fill={D.gold}/>
+                    <rect x="9" y="12" width="6" height="20" rx="1" fill={D.gold}/>
+                    <rect x="18" y="16" width="6" height="16" rx="1" fill={D.gold}/>
+                    <rect x="27" y="8" width="6" height="24" rx="1" fill={D.gold}/>
+                    <rect x="36" y="4" width="4" height="28" rx="1" fill={D.gold}/>
+                  </svg>
+                  <span style={{ fontSize: 12 }}>No procurement data yet</span>
+                </div>
               )}
             </div>
 
@@ -248,7 +264,15 @@ function DashboardContent() {
                   </div>
                 ))
               ) : (
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: D.text3, padding: '24px 0' }}>No projects yet</div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '24px 0' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.25 }}>
+                    <rect x="3" y="3" width="8" height="8" rx="1.5" stroke={D.gold} strokeWidth="1.5"/>
+                    <rect x="13" y="3" width="8" height="8" rx="1.5" stroke={D.gold} strokeWidth="1.5"/>
+                    <rect x="3" y="13" width="8" height="8" rx="1.5" stroke={D.gold} strokeWidth="1.5"/>
+                    <rect x="13" y="13" width="8" height="8" rx="1.5" stroke={D.gold} strokeWidth="1.5"/>
+                  </svg>
+                  <span style={{ fontSize: 12, color: D.text3 }}>No projects yet</span>
+                </div>
               )}
             </div>
 
