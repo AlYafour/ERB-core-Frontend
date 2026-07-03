@@ -136,12 +136,12 @@ export default function ClockingCard({ emp, isSelf }: Props) {
 
   // ── Status pill ────────────────────────────────────────────────────────────
   const statusCfg = !checkedIn
-    ? { label: 'Not started',                                     bg: '#F0EDEA', color: '#6B6560', dot: '#A8A29E', pulse: false }
+    ? { label: 'Not started',                                     bg: 'var(--surface-subtle)', color: 'var(--text-secondary)', dot: 'var(--text-tertiary)', pulse: false }
     : isOnBreak
     ? { label: `On break · ${fmtTime(record?.break_start)}`,      bg: '#FEF3C7', color: '#B45309', dot: '#B45309', pulse: false }
     : checkedOut
     ? { label: 'Shift complete',                                   bg: '#DCFCE7', color: '#166534', dot: '#16a34a', pulse: false }
-    : { label: 'Working',                                          bg: '#F5EEF0', color: 'var(--sidebar-active-bg,#7B1D2E)', dot: 'var(--sidebar-active-bg,#7B1D2E)', pulse: true };
+    : { label: 'Working',                                          bg: 'var(--brand-subtle)', color: 'var(--brand)', dot: 'var(--brand)', pulse: true };
 
   // ── Timeline track ─────────────────────────────────────────────────────────
   const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
@@ -169,9 +169,10 @@ export default function ClockingCard({ emp, isSelf }: Props) {
 
   return (
     <div style={{
-      background: '#fff',
+      background: 'var(--card-bg)',
+      border: '1px solid var(--border-subtle)',
       borderRadius: 24,
-      boxShadow: '0 2px 8px rgba(28,25,23,.07), 0 8px 32px rgba(28,25,23,.08)',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.04)',
       overflow: 'hidden',
     }}>
       <style>{`
@@ -182,8 +183,8 @@ export default function ClockingCard({ emp, isSelf }: Props) {
       `}</style>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 24px 16px', borderBottom: '1px solid #F0EDEA' }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: '#1C1917' }}>Today&apos;s Clocking</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 24px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Today&apos;s Clocking</span>
         {emp && !isLoading && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, padding: '4px 12px', borderRadius: 999, background: statusCfg.bg, color: statusCfg.color }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusCfg.dot, flexShrink: 0, animation: statusCfg.pulse ? 'clock-dot-pulse 1.8s ease-in-out infinite' : 'none' }} />
@@ -194,7 +195,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
 
       {!emp && (
         <div style={{ padding: '20px 24px' }}>
-          <p style={{ fontSize: 13, color: '#6B6560', margin: 0 }}>No employee profile is linked to your account.</p>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>No employee profile is linked to your account.</p>
         </div>
       )}
 
@@ -207,32 +208,32 @@ export default function ClockingCard({ emp, isSelf }: Props) {
 
             {/* Check In */}
             <div>
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#A8A29E', margin: '0 0 4px' }}>Check In</p>
-              <p style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', color: checkedIn ? '#1C1917' : '#D6D1CC', margin: 0, lineHeight: 1 }}>
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-tertiary)', margin: '0 0 4px' }}>Check In</p>
+              <p style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', color: checkedIn ? 'var(--text-primary)' : 'var(--border-default)', margin: 0, lineHeight: 1 }}>
                 {fmtTime(record?.check_in)}
               </p>
             </div>
 
-            <span style={{ padding: '0 10px', color: '#D6D1CC', fontSize: 20, userSelect: 'none' }}>›</span>
+            <span style={{ padding: '0 10px', color: 'var(--border-default)', fontSize: 20, userSelect: 'none' }}>›</span>
 
             {/* Break */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#A8A29E', margin: '0 0 4px' }}>Break</p>
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-tertiary)', margin: '0 0 4px' }}>Break</p>
               {record?.break_start ? (
                 <p style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: 'tabular-nums', color: '#B45309', margin: 0, lineHeight: 1, whiteSpace: 'nowrap' }}>
                   {fmtTime(record.break_start)}{record.break_end ? `–${fmtTime(record.break_end)}` : '…'}
                 </p>
               ) : (
-                <p style={{ fontSize: 20, fontWeight: 600, color: '#D6D1CC', margin: 0, lineHeight: 1 }}>—</p>
+                <p style={{ fontSize: 20, fontWeight: 600, color: 'var(--border-default)', margin: 0, lineHeight: 1 }}>—</p>
               )}
             </div>
 
-            <span style={{ padding: '0 10px', color: '#D6D1CC', fontSize: 20, userSelect: 'none' }}>›</span>
+            <span style={{ padding: '0 10px', color: 'var(--border-default)', fontSize: 20, userSelect: 'none' }}>›</span>
 
             {/* Check Out */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#A8A29E', margin: '0 0 4px' }}>Check Out</p>
-              <p style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', color: checkedOut ? '#1C1917' : '#D6D1CC', margin: 0, lineHeight: 1 }}>
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-tertiary)', margin: '0 0 4px' }}>Check Out</p>
+              <p style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', color: checkedOut ? 'var(--text-primary)' : 'var(--border-default)', margin: 0, lineHeight: 1 }}>
                 {fmtTime(record?.check_out)}
               </p>
             </div>
@@ -243,16 +244,16 @@ export default function ClockingCard({ emp, isSelf }: Props) {
             <div style={{ padding: '0 24px 18px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                 {['07:00', '09:00', '11:00', '13:00', '15:00', '17:00'].map(t => (
-                  <span key={t} style={{ fontSize: 10, color: '#C7C3BF', fontVariantNumeric: 'tabular-nums' }}>{t}</span>
+                  <span key={t} style={{ fontSize: 10, color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>{t}</span>
                 ))}
               </div>
-              <div style={{ height: 8, borderRadius: 999, background: '#EDE9E5', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ height: 8, borderRadius: 999, background: 'var(--surface-subtle)', position: 'relative', overflow: 'hidden' }}>
                 {/* Worked segment before break (or full segment if no break) */}
                 <div style={{
                   position: 'absolute', top: 0, bottom: 0,
                   left: `${ciPct}%`,
                   width: `${(hasBrk ? brkSPct : endPct) - ciPct}%`,
-                  background: 'var(--sidebar-active-bg, #7B1D2E)',
+                  background: 'var(--brand)',
                   borderRadius: 999,
                 }} />
                 {/* Break gap (card bg shows through) */}
@@ -261,7 +262,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
                     position: 'absolute', top: 0, bottom: 0,
                     left: `${brkSPct}%`,
                     width: `${(brkDone ? brkEPct : endPct) - brkSPct}%`,
-                    background: '#fff',
+                    background: 'var(--card-bg)',
                   }} />
                 )}
                 {/* Post-break segment (dimmer) */}
@@ -270,14 +271,14 @@ export default function ClockingCard({ emp, isSelf }: Props) {
                     position: 'absolute', top: 0, bottom: 0,
                     left: `${brkEPct}%`,
                     width: `${endPct - brkEPct}%`,
-                    background: 'var(--sidebar-active-bg, #7B1D2E)',
+                    background: 'var(--brand)',
                     opacity: 0.5,
                     borderRadius: 999,
                   }} />
                 )}
               </div>
               {trackLabel && (
-                <p style={{ fontSize: 12, fontWeight: 600, margin: '7px 0 0', textAlign: 'right', color: isOnBreak ? '#B45309' : 'var(--sidebar-active-bg, #7B1D2E)' }}>
+                <p style={{ fontSize: 12, fontWeight: 600, margin: '7px 0 0', textAlign: 'right', color: isOnBreak ? '#B45309' : 'var(--brand)' }}>
                   {trackLabel}
                 </p>
               )}
@@ -304,7 +305,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
 
               {!checkedIn && (
                 <button onClick={handleCheckIn} disabled={busy}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 24px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: 'var(--sidebar-active-bg, #7B1D2E)', color: '#fff', opacity: busy ? 0.65 : 1, transition: 'opacity .15s' }}>
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 24px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: 'var(--brand)', color: '#fff', opacity: busy ? 0.65 : 1, transition: 'opacity .15s' }}>
                   {gettingGps || checkInMut.isPending ? '⏳ Locating…' : '⏱ Clock In'}
                 </button>
               )}
@@ -318,7 +319,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
                     </button>
                   )}
                   <button onClick={handleCheckOut} disabled={busy}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 20px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: 'var(--sidebar-active-bg, #7B1D2E)', color: '#fff', opacity: busy ? 0.65 : 1 }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 20px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: 'var(--brand)', color: '#fff', opacity: busy ? 0.65 : 1 }}>
                     {checkOutMut.isPending || gettingGps ? '⏳ Saving…' : '✓ Clock Out'}
                   </button>
                 </>
@@ -332,7 +333,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
               )}
 
               {checkedOut && (
-                <p style={{ fontSize: 13, color: '#6B6560', margin: 0 }}>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
                   Great work today — {fmtHours(displayHours)} logged.
                 </p>
               )}

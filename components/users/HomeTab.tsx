@@ -62,14 +62,14 @@ function userInitials(user: any): string {
 }
 
 // ── SVG arc leave indicator ────────────────────────────────────────────────────
-const ARC_LEN = 81.7; // π × r, r=26 on a 64×36 viewBox
+const ARC_LEN = 81.7;
 
 function LeaveArc({ remaining, total, warn }: { remaining: number; total: number; warn: boolean }) {
   const pct   = total > 0 ? Math.min(1, remaining / total) : 0;
-  const color = warn ? '#B45309' : 'var(--sidebar-active-bg, #7B1D2E)';
+  const color = warn ? 'var(--status-warning)' : 'var(--brand)';
   return (
     <svg width="64" height="36" viewBox="0 0 64 36" style={{ overflow: 'visible' }}>
-      <path d="M6 34 A 26 26 0 0 1 58 34" fill="none" stroke="#EDE9E5"  strokeWidth="5" strokeLinecap="round" />
+      <path d="M6 34 A 26 26 0 0 1 58 34" fill="none" stroke="var(--border-default)" strokeWidth="5" strokeLinecap="round" />
       {pct > 0 && (
         <path d="M6 34 A 26 26 0 0 1 58 34" fill="none" stroke={color} strokeWidth="5" strokeLinecap="round"
           strokeDasharray={ARC_LEN} strokeDashoffset={ARC_LEN * (1 - pct)} />
@@ -78,11 +78,12 @@ function LeaveArc({ remaining, total, warn }: { remaining: number; total: number
   );
 }
 
-// ── Shared card style ─────────────────────────────────────────────────────────
+// ── Shared card style — uses CSS vars so it adapts to light/dark + tenant theme
 const CARD: React.CSSProperties = {
-  background:   '#fff',
+  background:   'var(--card-bg)',
+  border:       '1px solid var(--border-subtle)',
   borderRadius: 24,
-  boxShadow:    '0 2px 8px rgba(28,25,23,.07), 0 8px 32px rgba(28,25,23,.08)',
+  boxShadow:    '0 2px 8px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.04)',
   overflow:     'hidden',
 };
 
@@ -124,8 +125,13 @@ export default function HomeTab({ user, emp, isSelf }: UserTabProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-      {/* Welcome banner */}
-      <div style={{ background: 'var(--sidebar-active-bg, #7B1D2E)', borderRadius: 24, padding: '28px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+      {/* Welcome banner — always uses wine-700/800 (rich dark shade of brand) so white text reads clearly */}
+      <div style={{
+        background: 'linear-gradient(135deg, var(--wine-800), var(--wine-700))',
+        borderRadius: 24,
+        padding: '28px 32px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+      }}>
         <div>
           {company && (
             <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,.55)', margin: '0 0 4px' }}>
@@ -139,7 +145,13 @@ export default function HomeTab({ user, emp, isSelf }: UserTabProps) {
             {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
-        <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: '#fff', flexShrink: 0, border: '2px solid rgba(255,255,255,.25)', letterSpacing: '0.02em' }}>
+        <div style={{
+          width: 52, height: 52, borderRadius: '50%',
+          background: 'rgba(255,255,255,.15)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 18, fontWeight: 700, color: '#fff', flexShrink: 0,
+          border: '2px solid rgba(255,255,255,.25)', letterSpacing: '0.02em',
+        }}>
           {initials}
         </div>
       </div>
@@ -151,22 +163,22 @@ export default function HomeTab({ user, emp, isSelf }: UserTabProps) {
 
         {/* Quick Actions */}
         <div style={{ ...CARD, padding: '22px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', margin: '0 0 4px' }}>Quick Actions</p>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Quick Actions</p>
           {([
             { label: 'Requests & Approvals', sub: 'Leave, overtime & more', icon: '📋', href: '/hr/requests'    },
             { label: 'My Schedule',           sub: 'Attendance & shifts',    icon: '📅', href: '/hr/attendance' },
           ] as const).map(({ label, sub, icon, href }) => (
             <button key={href} onClick={() => router.push(href)}
-              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', borderRadius: 14, background: '#F4F2EF', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#EDE9E5')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#F4F2EF')}
+              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', borderRadius: 14, background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', cursor: 'pointer', textAlign: 'left', width: '100%' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--table-row-hover)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-default)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-subtle)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-subtle)'; }}
             >
-              <div style={{ width: 38, height: 38, borderRadius: 10, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0, boxShadow: '0 1px 3px rgba(28,25,23,.07), 0 2px 6px rgba(28,25,23,.06)' }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--card-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.04)' }}>
                 {icon}
               </div>
               <div>
-                <p style={{ fontSize: 13, fontWeight: 600, margin: 0, color: '#1C1917' }}>{label}</p>
-                <p style={{ fontSize: 11, color: '#6B6560', margin: '1px 0 0' }}>{sub}</p>
+                <p style={{ fontSize: 13, fontWeight: 600, margin: 0, color: 'var(--text-primary)' }}>{label}</p>
+                <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '1px 0 0' }}>{sub}</p>
               </div>
             </button>
           ))}
@@ -176,9 +188,9 @@ export default function HomeTab({ user, emp, isSelf }: UserTabProps) {
       {/* Leave Balances */}
       {emp && (
         <div style={{ ...CARD, padding: '22px 24px' }}>
-          <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', margin: '0 0 16px' }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px' }}>
             Time Off Balances
-            <span style={{ fontSize: 11, fontWeight: 400, color: '#A8A29E', marginLeft: 6 }}>{CURRENT_YEAR}</span>
+            <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-tertiary)', marginLeft: 6 }}>{CURRENT_YEAR}</span>
           </p>
           {leaveBalances?.results?.length ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
@@ -191,13 +203,13 @@ export default function HomeTab({ user, emp, isSelf }: UserTabProps) {
                 const remaining = Math.max(0, total - used - pending);
                 const warn      = remaining <= 2 && total > 0;
                 return (
-                  <div key={type} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '16px 10px', borderRadius: 14, background: '#F4F2EF' }}>
+                  <div key={type} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '16px 10px', borderRadius: 14, background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)' }}>
                     <LeaveArc remaining={remaining} total={total} warn={warn} />
-                    <p style={{ fontSize: 22, fontWeight: 700, margin: 0, fontVariantNumeric: 'tabular-nums', color: warn ? '#B45309' : '#1C1917', lineHeight: 1 }}>
+                    <p style={{ fontSize: 22, fontWeight: 700, margin: 0, fontVariantNumeric: 'tabular-nums', color: warn ? 'var(--status-warning)' : 'var(--text-primary)', lineHeight: 1 }}>
                       {total === 0 ? '—' : remaining % 1 === 0 ? String(remaining) : remaining.toFixed(1)}
                     </p>
-                    <p style={{ fontSize: 10, color: '#A8A29E', margin: 0 }}>of {total} days</p>
-                    <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#6B6560', textAlign: 'center', margin: '2px 0 0' }}>
+                    <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: 0 }}>of {total} days</p>
+                    <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-secondary)', textAlign: 'center', margin: '2px 0 0' }}>
                       {LEAVE_LABELS[type]}
                     </p>
                   </div>
@@ -205,7 +217,7 @@ export default function HomeTab({ user, emp, isSelf }: UserTabProps) {
               })}
             </div>
           ) : (
-            <p style={{ fontSize: 13, color: '#6B6560', margin: 0 }}>No leave balances recorded for {CURRENT_YEAR}.</p>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>No leave balances recorded for {CURRENT_YEAR}.</p>
           )}
         </div>
       )}
@@ -216,9 +228,9 @@ export default function HomeTab({ user, emp, isSelf }: UserTabProps) {
         {/* My Tasks */}
         <div style={{ ...CARD, padding: '22px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', margin: 0 }}>My Tasks</p>
+            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>My Tasks</p>
             <button onClick={() => router.push('/tasks')}
-              style={{ fontSize: 11, fontWeight: 600, color: 'var(--sidebar-active-bg, #7B1D2E)', background: 'none', border: 'none', cursor: 'pointer' }}>
+              style={{ fontSize: 11, fontWeight: 600, color: 'var(--brand)', background: 'none', border: 'none', cursor: 'pointer' }}>
               View all →
             </button>
           </div>
@@ -226,16 +238,16 @@ export default function HomeTab({ user, emp, isSelf }: UserTabProps) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {activeTasks.map((task: any) => (
                 <div key={task.id} onClick={() => router.push(`/tasks/${task.id}`)}
-                  style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 12, background: '#F4F2EF', cursor: 'pointer' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#EDE9E5')}
-                  onMouseLeave={e => (e.currentTarget.style.background = '#F4F2EF')}
+                  style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 12, background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', cursor: 'pointer' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--table-row-hover)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-default)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-subtle)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-subtle)'; }}
                 >
                   <div style={{ width: 3, minHeight: 32, borderRadius: 2, flexShrink: 0, background: PRIORITY_DOT[task.priority] || '#6b7280', marginTop: 3 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13, fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#1C1917' }}>
+                    <p style={{ fontSize: 13, fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
                       {task.title}
                     </p>
-                    <p style={{ fontSize: 11, color: '#6B6560', margin: '2px 0 0' }}>
+                    <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '2px 0 0' }}>
                       {STATUS_LABELS[task.status] || task.status}{task.due_date ? ` · Due ${fmtShortDate(task.due_date)}` : ''}
                     </p>
                   </div>
@@ -245,24 +257,24 @@ export default function HomeTab({ user, emp, isSelf }: UserTabProps) {
           ) : (
             <div style={{ textAlign: 'center', padding: '32px 16px' }}>
               <p style={{ fontSize: 28, margin: '0 0 8px' }}>✓</p>
-              <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 4px', color: '#1C1917' }}>All clear</p>
-              <p style={{ fontSize: 12, color: '#6B6560', margin: 0 }}>No active tasks assigned to you.</p>
+              <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 4px', color: 'var(--text-primary)' }}>All clear</p>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>No active tasks assigned to you.</p>
             </div>
           )}
         </div>
 
         {/* Who's Off Today */}
         <div style={{ ...CARD, padding: '22px 24px' }}>
-          <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', margin: '0 0 14px' }}>Who&apos;s Off Today</p>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 14px' }}>Who&apos;s Off Today</p>
           {whosOff && whosOff.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {whosOff.map((entry, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: i < whosOff.length - 1 ? '1px solid #F0EDEA' : 'none' }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: i < whosOff.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
                   <div>
-                    <p style={{ fontSize: 13, fontWeight: 500, margin: 0, color: '#1C1917' }}>{entry.employee_name}</p>
-                    <p style={{ fontSize: 11, color: '#6B6560', margin: 0 }}>{LEAVE_TYPE_LABELS[entry.leave_type] || entry.leave_type}</p>
+                    <p style={{ fontSize: 13, fontWeight: 500, margin: 0, color: 'var(--text-primary)' }}>{entry.employee_name}</p>
+                    <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: 0 }}>{LEAVE_TYPE_LABELS[entry.leave_type] || entry.leave_type}</p>
                   </div>
-                  <p style={{ fontSize: 11, color: '#A8A29E', margin: 0, flexShrink: 0, paddingLeft: 10 }}>
+                  <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0, flexShrink: 0, paddingLeft: 10 }}>
                     {fmtShortDate(entry.start_date)}{entry.start_date !== entry.end_date ? ` – ${fmtShortDate(entry.end_date)}` : ''}
                   </p>
                 </div>
@@ -271,8 +283,8 @@ export default function HomeTab({ user, emp, isSelf }: UserTabProps) {
           ) : (
             <div style={{ textAlign: 'center', padding: '32px 16px' }}>
               <p style={{ fontSize: 28, margin: '0 0 8px' }}>🏢</p>
-              <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 4px', color: '#1C1917' }}>Full team in</p>
-              <p style={{ fontSize: 12, color: '#6B6560', margin: 0 }}>Everyone is present today.</p>
+              <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 4px', color: 'var(--text-primary)' }}>Full team in</p>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>Everyone is present today.</p>
             </div>
           )}
         </div>
@@ -281,19 +293,19 @@ export default function HomeTab({ user, emp, isSelf }: UserTabProps) {
       {/* Upcoming Birthdays */}
       {birthdays && birthdays.length > 0 && (
         <div style={{ ...CARD, padding: '22px 24px' }}>
-          <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', margin: '0 0 14px' }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 14px' }}>
             Upcoming Birthdays
-            <span style={{ fontSize: 11, fontWeight: 400, color: '#A8A29E', marginLeft: 6 }}>next 30 days</span>
+            <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-tertiary)', marginLeft: 6 }}>next 30 days</span>
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
             {birthdays.map(b => (
-              <div key={b.employee_id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 14, background: '#F4F2EF' }}>
+              <div key={b.employee_id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 14, background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)' }}>
                 <span style={{ fontSize: 22, flexShrink: 0 }}>🎂</span>
                 <div style={{ minWidth: 0 }}>
-                  <p style={{ fontSize: 13, fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#1C1917' }}>
+                  <p style={{ fontSize: 13, fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
                     {b.full_name}
                   </p>
-                  <p style={{ fontSize: 11, color: '#6B6560', margin: 0 }}>
+                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: 0 }}>
                     {b.days_until === 0 ? 'Today! 🎉' : `In ${b.days_until} day${b.days_until === 1 ? '' : 's'}`}
                     {' · '}{fmtShortDate(b.birthday_date)}
                   </p>
