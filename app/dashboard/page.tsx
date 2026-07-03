@@ -13,39 +13,36 @@ import { useT } from '@/lib/i18n/useT';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import MyWorkspace from '@/components/dashboard/MyWorkspace';
 
-/* ─── Lazy-load chart components ─────────────────────────────────── */
 const StatusPieCard        = dynamic(() => import('./charts').then(m => ({ default: m.StatusPieCard })),        { ssr: false });
 const MonthlyVolumeChart   = dynamic(() => import('./charts').then(m => ({ default: m.MonthlyVolumeChart })),   { ssr: false });
 const ProjectSpendingChart = dynamic(() => import('./charts').then(m => ({ default: m.ProjectSpendingChart })), { ssr: false });
 
-/* ─── Dark design tokens ─────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────
+   DESIGN TOKENS  —  TWO accent colors only, no exceptions
+   gold  = positive / interactive / attention
+   red   = negative / danger / absent / overdue / rejected
+   ───────────────────────────────────────────────────────────────── */
 const D = {
   ground:  '#07101F',
   surf:    '#0F1D30',
   surf2:   '#152640',
   border:  '#1A2C42',
   border2: '#243650',
-  text:    '#E2EAF4',
-  text2:   '#9AB0C8',
-  text3:   '#4A6280',
-  gold:    '#C9943A',
-  goldL:   '#E0AE55',
-  teal:    '#2ECFA8',
-  danger:  '#E05C5C',
-  warn:    '#E8A94A',
+  text:    '#E2EAF4',   // primary text — all numbers by default
+  text2:   '#9AB0C8',   // secondary text
+  text3:   '#4A6280',   // labels / captions
+  gold:    '#C9943A',   // THE accent — links, cta, key metrics needing attention
+  danger:  '#E05C5C',   // THE only other color — absent / overdue / rejected
 };
 
-/* ─── Page guards ────────────────────────────────────────────────── */
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
-
   if (authLoading || !user) return <AuthLoadingScreen />;
   if (!isTenantAdmin && !isPlatformAdmin) return <MyWorkspace />;
   return <DashboardContent />;
 }
 
-/* ─── Main dashboard ─────────────────────────────────────────────── */
 function DashboardContent() {
   const { isAuthenticated, logout } = useAuth();
   const t = useT();
@@ -82,16 +79,10 @@ function DashboardContent() {
   });
   const myTaskList = Array.isArray(myTasksRaw) ? myTasksRaw : (myTasksRaw as any)?.results ?? [];
 
-  useEffect(() => {
-    if (!isAuthenticated) logout();
-  }, [isAuthenticated, logout]);
-
+  useEffect(() => { if (!isAuthenticated) logout(); }, [isAuthenticated, logout]);
   if (!isAuthenticated) return null;
 
-  const actionBadge = (action: string) =>
-    action === 'approved' || action === 'paid' ? 'success'
-    : action === 'rejected' ? 'error'
-    : 'info';
+  const isRejected = (a: string) => a === 'rejected';
 
   const typeLabel: Record<string, string> = {
     purchase_request: t('dash', 'purchaseRequest'),
@@ -103,7 +94,6 @@ function DashboardContent() {
     task:             'Task',
   };
 
-  /* ── Shared card style ── */
   const card = (extra?: CSSProperties): CSSProperties => ({
     background: D.surf,
     border: `1px solid ${D.border}`,
@@ -111,68 +101,59 @@ function DashboardContent() {
     ...extra,
   });
 
+  const sectionTitle: CSSProperties = { fontSize: 13, fontWeight: 700, color: D.text };
+  const viewAllLink: CSSProperties  = { fontSize: 11, color: D.gold, textDecoration: 'none' };
+
   return (
     <MainLayout>
-      {/* Dark shell */}
       <div style={{ background: D.ground, minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
 
-        {/* ── Header bar ────────────────────────────────────────────── */}
+        {/* ── Header ── */}
         <div style={{ background: D.surf, borderBottom: `1px solid ${D.border}`, padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
           <div>
-            <h1 style={{ fontSize: 15, fontWeight: 800, color: D.text, margin: 0, letterSpacing: '-0.3px' }}>
-              Executive Dashboard
-            </h1>
-            <p style={{ fontSize: 11, color: D.text3, margin: '2px 0 0' }}>
-              Real-time procurement & operations overview
-            </p>
+            <h1 style={{ fontSize: 15, fontWeight: 800, color: D.text, margin: 0 }}>Executive Dashboard</h1>
+            <p style={{ fontSize: 11, color: D.text3, margin: '2px 0 0' }}>Real-time procurement & operations overview</p>
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
             {!!stats?.purchaseRequests.pending && (
-              <Link href="/purchase-requests?status=pending" style={{ background: 'rgba(201,148,58,.12)', border: '1px solid rgba(201,148,58,.25)', borderRadius: 20, padding: '4px 12px', fontSize: 11, fontWeight: 700, color: D.goldL, textDecoration: 'none' }}>
-                ⚡ {stats.purchaseRequests.pending} PRs pending
-              </Link>
-            )}
-            {!!hrStats?.openTasks && (
-              <Link href="/tasks" style={{ background: 'rgba(46,207,168,.10)', border: '1px solid rgba(46,207,168,.2)', borderRadius: 20, padding: '4px 12px', fontSize: 11, fontWeight: 700, color: D.teal, textDecoration: 'none' }}>
-                ✓ {hrStats.openTasks} tasks open
+              <Link href="/purchase-requests?status=pending"
+                style={{ background: 'rgba(201,148,58,.1)', border: '1px solid rgba(201,148,58,.22)', borderRadius: 20, padding: '4px 12px', fontSize: 11, fontWeight: 600, color: D.gold, textDecoration: 'none' }}>
+                {stats.purchaseRequests.pending} PRs pending
               </Link>
             )}
             {!!hrStats?.pendingRequests && (
-              <Link href="/hr/requests?status=pending" style={{ background: 'rgba(224,92,92,.10)', border: '1px solid rgba(224,92,92,.2)', borderRadius: 20, padding: '4px 12px', fontSize: 11, fontWeight: 700, color: D.danger, textDecoration: 'none' }}>
-                ⚠ {hrStats.pendingRequests} HR requests
+              <Link href="/hr/requests?status=pending"
+                style={{ background: 'rgba(224,92,92,.08)', border: '1px solid rgba(224,92,92,.18)', borderRadius: 20, padding: '4px 12px', fontSize: 11, fontWeight: 600, color: D.danger, textDecoration: 'none' }}>
+                {hrStats.pendingRequests} HR requests
               </Link>
             )}
           </div>
         </div>
 
-        {/* ── Main content ───────────────────────────────────────────── */}
+        {/* ── Content ── */}
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
 
-          {/* ── KPI Strip — no individual boxes ── */}
-          <div style={{ ...card({ display: 'flex', alignItems: 'stretch', overflow: 'hidden' }) }}>
+          {/* ── KPI strip — no individual boxes ── */}
+          <div style={card({ display: 'flex', alignItems: 'stretch', overflow: 'hidden' })}>
             {isLoading
               ? [0,1,2,3,4,5].map(i => (
                   <div key={i} style={{ flex: 1, padding: '20px 24px', borderRight: i < 5 ? `1px solid ${D.border}` : 'none' }}>
-                    <div style={{ height: 10, width: '60%', background: D.surf2, borderRadius: 4, marginBottom: 12 }} />
-                    <div style={{ height: 32, width: '40%', background: D.surf2, borderRadius: 4 }} />
+                    <div style={{ height: 9, width: '55%', background: D.surf2, borderRadius: 4, marginBottom: 14 }} />
+                    <div style={{ height: 28, width: '35%', background: D.surf2, borderRadius: 4 }} />
                   </div>
                 ))
               : stats && hrStats && [
-                  { label: 'Purchase Requests', value: stats.purchaseRequests.total,  sub: `${stats.purchaseRequests.pending} pending`,     href: '/purchase-requests' },
-                  { label: 'Purchase Orders',   value: stats.purchaseOrders.total,    sub: `${stats.purchaseOrders.pending} pending`,       href: '/purchase-orders' },
-                  { label: 'Invoices Paid',     value: stats.invoices.paid,           sub: `${stats.invoices.pending} pending`,             href: '/purchase-invoices' },
-                  { label: 'Active Projects',   value: projectAnalytics?.length ?? 0, sub: 'view all projects',                            href: '/projects' },
-                  { label: 'Employees',         value: hrStats.employees,             sub: `${hrStats.presentToday} present today`,         href: '/hr/employees' },
-                  { label: 'Suppliers',         value: stats.suppliers.total,         sub: `${stats.products.total} products`,             href: '/suppliers' },
+                  { label: 'Purchase Requests', value: stats.purchaseRequests.total,  sub: `${stats.purchaseRequests.pending} pending`,  href: '/purchase-requests' },
+                  { label: 'Purchase Orders',   value: stats.purchaseOrders.total,    sub: `${stats.purchaseOrders.pending} pending`,    href: '/purchase-orders' },
+                  { label: 'Invoices Paid',     value: stats.invoices.paid,           sub: `${stats.invoices.pending} pending`,          href: '/purchase-invoices' },
+                  { label: 'Active Projects',   value: projectAnalytics?.length ?? 0, sub: 'view all',                                  href: '/projects' },
+                  { label: 'Employees',         value: hrStats.employees,             sub: `${hrStats.presentToday} present today`,      href: '/hr/employees' },
+                  { label: 'Suppliers',         value: stats.suppliers.total,         sub: `${stats.products.total} products`,           href: '/suppliers' },
                 ].map(({ label, value, sub, href }, i, arr) => (
                   <Link key={href} href={href} style={{
-                    flex: 1,
-                    padding: '20px 24px',
+                    flex: 1, padding: '20px 24px',
                     borderRight: i < arr.length - 1 ? `1px solid ${D.border}` : 'none',
-                    textDecoration: 'none',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 5,
+                    textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 5,
                     transition: 'background .15s',
                   }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = D.surf2; }}
@@ -189,35 +170,23 @@ function DashboardContent() {
           {/* ── Charts row ── */}
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14 }}>
 
-            {/* Monthly volume */}
             <div style={card({ padding: '18px 20px' })}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: D.text }}>Procurement Volume</div>
-                  <div style={{ fontSize: 11, color: D.text3, marginTop: 2 }}>Monthly request & order count</div>
-                </div>
-                <div style={{ display: 'flex', gap: 14 }}>
-                  {[{ color: D.gold, label: 'Requests' }, { color: D.teal, label: 'Orders' }].map(({ color, label }) => (
-                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: D.text2 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
-                      {label}
-                    </div>
-                  ))}
+                  <div style={sectionTitle}>Procurement Volume</div>
+                  <div style={{ fontSize: 11, color: D.text3, marginTop: 2 }}>Monthly request count</div>
                 </div>
               </div>
               {(chartData?.monthlyProcurement?.length ?? 0) > 0 && chartData ? (
                 <MonthlyVolumeChart data={chartData.monthlyProcurement} label={t('dash', 'requests')} />
               ) : (
-                <div style={{ height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center', color: D.text3, fontSize: 12 }}>
-                  No monthly data yet
-                </div>
+                <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: D.text3, fontSize: 12 }}>No monthly data yet</div>
               )}
             </div>
 
-            {/* PR Status donut */}
             <div style={card({ padding: '18px 20px' })}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: D.text, marginBottom: 3 }}>PR Status Split</div>
-              <div style={{ fontSize: 11, color: D.text3, marginBottom: 14 }}>All-time distribution</div>
+              <div style={sectionTitle}>PR Status Split</div>
+              <div style={{ fontSize: 11, color: D.text3, marginBottom: 14, marginTop: 3 }}>All-time distribution</div>
               {chartData ? (
                 <>
                   <StatusPieCard title="PR Status" href="/purchase-requests" data={[
@@ -225,15 +194,15 @@ function DashboardContent() {
                     { name: t('dash', 'approved'), value: chartData.statusDistribution.purchaseRequests.approved },
                     { name: t('dash', 'rejected'), value: chartData.statusDistribution.purchaseRequests.rejected },
                   ]} />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
                     {[
-                      { label: t('dash', 'approved'), value: chartData.statusDistribution.purchaseRequests.approved, color: D.teal },
-                      { label: t('dash', 'pending'),  value: chartData.statusDistribution.purchaseRequests.pending,  color: D.gold },
+                      { label: t('dash', 'approved'), value: chartData.statusDistribution.purchaseRequests.approved, color: D.gold },
+                      { label: t('dash', 'pending'),  value: chartData.statusDistribution.purchaseRequests.pending,  color: D.text2 },
                       { label: t('dash', 'rejected'), value: chartData.statusDistribution.purchaseRequests.rejected, color: D.danger },
                     ].map(({ label, value, color }) => (
                       <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: D.text2 }}>
-                          <div style={{ width: 10, height: 10, borderRadius: 3, background: color }} />
+                          <div style={{ width: 8, height: 8, borderRadius: 2, background: color }} />
                           {label}
                         </div>
                         <div style={{ fontSize: 13, fontWeight: 700, color: D.text, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
@@ -247,14 +216,14 @@ function DashboardContent() {
             </div>
           </div>
 
-          {/* ── Bottom 3-column grid ── */}
+          {/* ── 3-column grid ── */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
 
-            {/* Projects */}
+            {/* Active Projects */}
             <div style={card({ padding: '18px 20px', display: 'flex', flexDirection: 'column' })}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: D.text }}>Active Projects</div>
-                <Link href="/projects" style={{ fontSize: 11, color: D.gold, textDecoration: 'none' }}>View all →</Link>
+                <div style={sectionTitle}>Active Projects</div>
+                <Link href="/projects" style={viewAllLink}>View all →</Link>
               </div>
               {projectAnalytics && projectAnalytics.length > 0 ? (
                 projectAnalytics.slice(0, 5).map((project, idx) => (
@@ -263,15 +232,15 @@ function DashboardContent() {
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <Link href={`/projects/view/${project.id}`}
                           style={{ fontSize: 12, fontWeight: 600, color: D.text, textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = D.goldL; }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = D.gold; }}
                           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = D.text; }}
                         >{project.name}</Link>
                         <div style={{ fontSize: 10, color: D.text3, marginTop: 2 }}>{project.code}</div>
                       </div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: D.text, fontVariantNumeric: 'tabular-nums', flexShrink: 0, paddingLeft: 8 }}>{project.progress}%</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: D.text, fontVariantNumeric: 'tabular-nums', flexShrink: 0, paddingLeft: 8 }}>{project.progress}%</div>
                     </div>
-                    <div style={{ height: 4, background: D.border2, borderRadius: 99, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', borderRadius: 99, width: `${project.progress}%`, background: project.progress > 75 ? `linear-gradient(90deg,${D.teal},#1A8C72)` : project.progress > 50 ? `linear-gradient(90deg,${D.gold},${D.warn})` : `linear-gradient(90deg,${D.danger},#C04040)` }} />
+                    <div style={{ height: 3, background: D.border2, borderRadius: 99, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', borderRadius: 99, width: `${project.progress}%`, background: project.progress < 25 ? D.danger : D.gold }} />
                     </div>
                     <div style={{ fontSize: 10, color: D.text3, marginTop: 5, fontVariantNumeric: 'tabular-nums' }}>
                       {formatPrice(project.totalSpending)} · {project.poCount} POs
@@ -279,29 +248,26 @@ function DashboardContent() {
                   </div>
                 ))
               ) : (
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: D.text3, padding: '24px 0' }}>
-                  No projects yet
-                </div>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: D.text3, padding: '24px 0' }}>No projects yet</div>
               )}
             </div>
 
-            {/* Middle: Cycle + HR stats */}
+            {/* Middle column: Cycle + HR */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-              {/* Procurement Cycle */}
               {cycleMetrics && (
                 <div style={card({ padding: '18px 20px' })}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: D.text, marginBottom: 14 }}>Procurement Cycle</div>
+                  <div style={{ ...sectionTitle, marginBottom: 14 }}>Procurement Cycle</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {[
-                      { label: 'PR → PO Avg',        value: cycleMetrics.avgPRToPO,      color: D.gold },
-                      { label: 'PO → GRN Avg',        value: cycleMetrics.avgPOToGRN,     color: D.teal },
-                      { label: 'GRN → Invoice Avg',   value: cycleMetrics.avgGRNToInvoice,color: '#9B6FE8' },
-                    ].map(({ label, value, color }) => (
-                      <div key={label} style={{ background: D.surf2, borderRadius: 8, padding: '10px 12px' }}>
+                      { label: 'PR → PO Avg',      value: cycleMetrics.avgPRToPO },
+                      { label: 'PO → GRN Avg',      value: cycleMetrics.avgPOToGRN },
+                      { label: 'GRN → Invoice Avg', value: cycleMetrics.avgGRNToInvoice },
+                    ].map(({ label, value }) => (
+                      <div key={label} style={{ background: D.surf2, borderRadius: 8, padding: '10px 14px' }}>
                         <div style={{ fontSize: 10, color: D.text3, marginBottom: 3 }}>{label}</div>
-                        <div style={{ fontSize: 20, fontWeight: 800, color, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
-                          {value} <span style={{ fontSize: 11, fontWeight: 500, color: D.text3 }}>days</span>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: D.gold, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                          {value} <span style={{ fontSize: 11, fontWeight: 400, color: D.text3 }}>days</span>
                         </div>
                       </div>
                     ))}
@@ -312,7 +278,7 @@ function DashboardContent() {
                       {cycleMetrics.bottlenecks.map((b, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: i < cycleMetrics.bottlenecks.length - 1 ? `1px solid ${D.border}` : 'none' }}>
                           <span style={{ fontSize: 11, color: D.text2 }}>{b.stage}</span>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: b.avgDays > 7 ? D.danger : b.avgDays > 3 ? D.warn : D.teal, fontVariantNumeric: 'tabular-nums' }}>{b.avgDays}d</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: b.avgDays > 7 ? D.danger : b.avgDays > 3 ? D.gold : D.text3, fontVariantNumeric: 'tabular-nums' }}>{b.avgDays}d</span>
                         </div>
                       ))}
                     </div>
@@ -320,21 +286,20 @@ function DashboardContent() {
                 </div>
               )}
 
-              {/* HR Overview */}
               {hrStats && (
                 <div style={card({ padding: '18px 20px' })}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: D.text }}>HR Overview</div>
-                    <Link href="/hr/employees" style={{ fontSize: 11, color: D.gold, textDecoration: 'none' }}>View all →</Link>
+                    <div style={sectionTitle}>HR Overview</div>
+                    <Link href="/hr/employees" style={viewAllLink}>View all →</Link>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                     {[
-                      { label: 'Employees',    value: hrStats.employees,       color: D.text2 },
-                      { label: 'Present',      value: hrStats.presentToday,    color: D.teal },
-                      { label: 'Absent',       value: hrStats.absentToday,     color: D.danger },
-                      { label: 'Open Tasks',   value: hrStats.openTasks,       color: D.gold },
-                      { label: 'HR Requests',  value: hrStats.pendingRequests, color: D.gold },
-                      { label: 'Payrolls',     value: hrStats.draftPayrolls,   color: D.text2 },
+                      { label: 'Employees',   value: hrStats.employees,       color: D.text },
+                      { label: 'Present',     value: hrStats.presentToday,    color: D.text },
+                      { label: 'Absent',      value: hrStats.absentToday,     color: D.danger },
+                      { label: 'Open Tasks',  value: hrStats.openTasks,       color: D.gold },
+                      { label: 'HR Pending',  value: hrStats.pendingRequests, color: hrStats.pendingRequests > 0 ? D.gold : D.text },
+                      { label: 'Payrolls',    value: hrStats.draftPayrolls,   color: D.text },
                     ].map(({ label, value, color }) => (
                       <div key={label} style={{ background: D.surf2, borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
                         <div style={{ fontSize: 20, fontWeight: 800, color, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{value}</div>
@@ -346,26 +311,22 @@ function DashboardContent() {
               )}
             </div>
 
-            {/* Right: Activity + Tasks */}
+            {/* Right column: Activity + Tasks */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-              {/* Recent Activity */}
               {recentActivity && recentActivity.length > 0 && (
                 <div style={card({ padding: '18px 20px', flex: 1 })}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: D.text, marginBottom: 14 }}>Live Activity</div>
+                  <div style={{ ...sectionTitle, marginBottom: 14 }}>Live Activity</div>
                   {recentActivity.slice(0, 6).map((a, i) => {
-                    const dotColor = actionBadge(a.action) === 'success' ? D.teal : actionBadge(a.action) === 'error' ? D.danger : D.gold;
+                    const dotColor = isRejected(a.action) ? D.danger : D.text3;
                     return (
                       <Link key={`${a.type}-${a.id}`} href={a.link}
                         style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: i < 5 ? `1px solid ${D.border}` : 'none', textDecoration: 'none' }}>
-                        <div style={{ width: 26, height: 26, borderRadius: '50%', background: `${dotColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-                          <div style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor }} />
-                        </div>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: dotColor, flexShrink: 0, marginTop: 6 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 12, color: D.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             <span style={{ fontWeight: 600 }}>{typeLabel[a.type] ?? a.type}</span>
-                            {' — '}
-                            <span style={{ color: D.goldL }}>{a.title}</span>
+                            {' — '}{a.title}
                           </div>
                           <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
                             <span style={{ fontSize: 10, color: D.text3 }}>{a.user}</span>
@@ -378,18 +339,17 @@ function DashboardContent() {
                 </div>
               )}
 
-              {/* My Tasks */}
               {taskStats && (
                 <div style={card({ padding: '18px 20px' })}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: D.text }}>My Tasks</div>
-                    <Link href="/tasks?scope=mine" style={{ fontSize: 11, color: D.gold, textDecoration: 'none' }}>View all →</Link>
+                    <div style={sectionTitle}>My Tasks</div>
+                    <Link href="/tasks?scope=mine" style={viewAllLink}>View all →</Link>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
                     {[
-                      { label: 'Assigned', value: taskStats.my_tasks,      color: '#6366F1' },
-                      { label: 'Overdue',  value: taskStats.overdue,        color: D.danger },
-                      { label: 'Review',   value: taskStats.pending_review, color: D.warn },
+                      { label: 'Assigned', value: taskStats.my_tasks,      color: D.text },
+                      { label: 'Overdue',  value: taskStats.overdue,        color: taskStats.overdue > 0 ? D.danger : D.text },
+                      { label: 'Review',   value: taskStats.pending_review, color: D.text },
                     ].map(({ label, value, color }) => (
                       <div key={label} style={{ background: D.surf2, borderRadius: 8, padding: '10px 12px' }}>
                         <p style={{ fontSize: 22, fontWeight: 800, color, margin: 0, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{value}</p>
@@ -405,7 +365,7 @@ function DashboardContent() {
                         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = D.border2; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = D.border; }}
                       >
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: overdue ? D.danger : D.teal, flexShrink: 0 }} />
+                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: overdue ? D.danger : D.text3, flexShrink: 0 }} />
                         <span style={{ fontSize: 12, color: D.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{task.title}</span>
                         {overdue && <span style={{ fontSize: 10, color: D.danger, fontWeight: 600, flexShrink: 0 }}>Overdue</span>}
                       </Link>
@@ -418,63 +378,56 @@ function DashboardContent() {
                 </div>
               )}
 
-              {/* HR & Tasks recent activity */}
               {hrStats && hrStats.recentActivity.length > 0 && (
                 <div style={card({ padding: '18px 20px' })}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: D.text }}>HR & Tasks Activity</div>
-                    <Link href="/hr/requests" style={{ fontSize: 11, color: D.gold, textDecoration: 'none' }}>View all →</Link>
+                    <div style={sectionTitle}>HR & Tasks Activity</div>
+                    <Link href="/hr/requests" style={viewAllLink}>View all →</Link>
                   </div>
-                  {hrStats.recentActivity.slice(0, 5).map((a, i) => {
-                    const dotColor = a.action === 'approved' ? D.teal : a.action === 'rejected' ? D.danger : a.type === 'task' ? D.teal : '#9B6FE8';
-                    return (
-                      <Link key={`hr-${a.type}-${a.id}`} href={a.link}
-                        style={{ display: 'block', textDecoration: 'none', padding: '8px 0', borderBottom: i < 4 ? `1px solid ${D.border}` : 'none' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
-                          <span style={{ fontSize: 11, fontWeight: 600, color: D.text2 }}>{a.type === 'task' ? 'Task' : 'HR Request'}</span>
-                          <span style={{ fontSize: 10, color: D.text3, marginLeft: 'auto' }}>{new Date(a.timestamp).toLocaleDateString('en-GB')}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 12 }}>
-                          <span style={{ fontSize: 11, color: D.text2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{a.title}</span>
-                          <span style={{ fontSize: 10, color: D.text3, flexShrink: 0 }}>{a.user}</span>
-                        </div>
-                      </Link>
-                    );
-                  })}
+                  {hrStats.recentActivity.slice(0, 5).map((a, i) => (
+                    <Link key={`hr-${a.type}-${a.id}`} href={a.link}
+                      style={{ display: 'block', textDecoration: 'none', padding: '8px 0', borderBottom: i < 4 ? `1px solid ${D.border}` : 'none' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: a.action === 'rejected' ? D.danger : D.text3, flexShrink: 0 }} />
+                        <span style={{ fontSize: 11, fontWeight: 600, color: D.text2 }}>{a.type === 'task' ? 'Task' : 'HR Request'}</span>
+                        <span style={{ fontSize: 10, color: D.text3, marginLeft: 'auto' }}>{new Date(a.timestamp).toLocaleDateString('en-GB')}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 11 }}>
+                        <span style={{ fontSize: 11, color: D.text2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{a.title}</span>
+                        <span style={{ fontSize: 10, color: D.text3, flexShrink: 0 }}>{a.user}</span>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
               )}
-
             </div>
           </div>
 
-          {/* ── Top users row ── */}
+          {/* ── Top active users ── */}
           {userActivity && userActivity.length > 0 && (
             <div style={card({ padding: '18px 20px' })}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: D.text }}>Top Active Users</div>
-                <Link href="/hr/employees" style={{ fontSize: 11, color: D.gold, textDecoration: 'none' }}>View all →</Link>
+                <div style={sectionTitle}>Top Active Users</div>
+                <Link href="/hr/employees" style={viewAllLink}>View all →</Link>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(userActivity.length, 5)}, 1fr)`, gap: 10 }}>
                 {userActivity.slice(0, 5).map((u) => {
                   const total = u.createdPR + u.approvedRequests + u.createdPO + u.createdInvoices;
                   return (
                     <Link key={u.id} href="/hr/employees"
-                      style={{ background: D.surf2, border: `1px solid ${D.border}`, borderRadius: 8, padding: '14px', textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 0, transition: 'border-color .15s' }}
+                      style={{ background: D.surf2, border: `1px solid ${D.border}`, borderRadius: 8, padding: '14px', textDecoration: 'none', transition: 'border-color .15s' }}
                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = D.border2; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = D.border; }}
                     >
-                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: `linear-gradient(135deg,${D.gold},#8B5E1A)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', marginBottom: 10 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: `linear-gradient(135deg,${D.gold},#7A5520)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', marginBottom: 10 }}>
                         {u.username.slice(0, 2).toUpperCase()}
                       </div>
                       <div style={{ fontSize: 12, fontWeight: 600, color: D.text, marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.username}</div>
-                      <div style={{ fontSize: 24, fontWeight: 800, color: D.gold, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{total}</div>
-                      <div style={{ fontSize: 9, color: D.text3, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.5px' }}>total actions</div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 10, fontSize: 10, color: D.text3 }}>
-                        <span>PR: {u.createdPR}</span>
-                        <span>OK: {u.approvedRequests}</span>
-                        <span>PO: {u.createdPO}</span>
-                        <span>INV: {u.createdInvoices}</span>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: D.gold, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{total}</div>
+                      <div style={{ fontSize: 9, color: D.text3, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.5px' }}>actions</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, marginTop: 10, fontSize: 10, color: D.text3 }}>
+                        <span>PR {u.createdPR}</span><span>OK {u.approvedRequests}</span>
+                        <span>PO {u.createdPO}</span><span>INV {u.createdInvoices}</span>
                       </div>
                     </Link>
                   );
@@ -483,11 +436,11 @@ function DashboardContent() {
             </div>
           )}
 
-          {/* ── Project spending bar chart ── */}
+          {/* ── Project spending chart ── */}
           {(chartData?.projectSpending?.length ?? 0) > 0 && chartData && (
             <div style={card({ padding: '18px 20px' })}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: D.text, marginBottom: 3 }}>Project Spending</div>
-              <div style={{ fontSize: 11, color: D.text3, marginBottom: 16 }}>Total AED spending per project</div>
+              <div style={sectionTitle}>Project Spending</div>
+              <div style={{ fontSize: 11, color: D.text3, marginBottom: 16, marginTop: 3 }}>Total AED per project</div>
               <ProjectSpendingChart data={chartData.projectSpending} label={t('dash', 'spendingAed')} />
             </div>
           )}
