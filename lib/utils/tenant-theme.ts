@@ -134,16 +134,17 @@ export function buildThemeCss(primaryHex: string): string {
   --wine-800: ${scale['800']};
   --wine-900: ${scale['900']};
 
-  /* Sidebar — always dark regardless of light/dark content */
-  --sidebar-bg:            ${sidebarBg};
-  --sidebar-border:        ${sidebarBorder};
-  --sidebar-text:          ${sidebarText};
-  --sidebar-text-hover:    ${sidebarTextHov};
-  --sidebar-active-bg:     ${ra(0.12)};
-  --sidebar-active-text:   ${darkActive};
-  --sidebar-section-label: ${sidebarSection};
+  /* Sidebar — light in light mode */
+  --sidebar-bg:            var(--surface-base);
+  --sidebar-border:        var(--border-subtle);
+  --sidebar-text:          var(--text-secondary);
+  --sidebar-text-hover:    var(--text-primary);
+  --sidebar-hover:         rgba(0,0,0,0.04);
+  --sidebar-active-bg:     ${scale['50']};
+  --sidebar-active-text:   ${scale['700']};
+  --sidebar-section-label: var(--text-tertiary);
 
-  /* Navbar — light in light mode (sidebar stays dark) */
+  /* Navbar — light in light mode */
   --navbar-bg:             var(--surface-base);
   --navbar-border:         var(--border-subtle);
 

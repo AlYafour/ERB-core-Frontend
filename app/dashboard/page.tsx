@@ -92,16 +92,17 @@ function DashboardContent() {
   const card = (extra?: CSSProperties): CSSProperties => ({
     background: V.surf,
     border: `1px solid ${V.border}`,
-    borderRadius: 10,
+    borderRadius: 12,
     ...extra,
   });
 
   const sectionTitle: CSSProperties = {
-    fontSize: 13, fontWeight: 700, color: V.text,
-    paddingLeft: 10,
+    fontSize: 12, fontWeight: 700, color: V.text,
+    paddingLeft: 9,
     borderLeft: `2px solid ${V.gold}`,
+    letterSpacing: '0.01em',
   };
-  const viewAllLink: CSSProperties  = { fontSize: 11, color: V.gold, textDecoration: 'none', letterSpacing: '0.02em' };
+  const viewAllLink: CSSProperties  = { fontSize: 11, color: V.gold, textDecoration: 'none', letterSpacing: '0.02em', opacity: 0.9 };
 
   return (
     <MainLayout>
@@ -111,10 +112,10 @@ function DashboardContent() {
         <div style={{ height: 2, background: 'linear-gradient(90deg, var(--brand) 0%, var(--brand-subtle) 55%, transparent 100%)', flexShrink: 0 }} />
 
         {/* ── Header ── */}
-        <div style={{ background: V.surf, borderBottom: `1px solid ${V.border}`, padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+        <div style={{ background: V.surf, borderBottom: `1px solid ${V.border}`, padding: '12px 22px', display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
           <div>
-            <h1 style={{ fontSize: 15, fontWeight: 800, color: V.text, margin: 0, letterSpacing: '-0.01em' }}>Executive Dashboard</h1>
-            <p style={{ fontSize: 11, color: V.text3, margin: '2px 0 0', letterSpacing: '0.02em' }}>Real-time procurement & operations overview</p>
+            <h1 style={{ fontSize: 14, fontWeight: 800, color: V.text, margin: 0, letterSpacing: '-0.01em' }}>Executive Dashboard</h1>
+            <p style={{ fontSize: 11, color: V.text3, margin: '1px 0 0', letterSpacing: '0.02em' }}>Real-time procurement & operations overview</p>
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
             {!!stats?.purchaseRequests.pending && (
@@ -133,13 +134,13 @@ function DashboardContent() {
         </div>
 
         {/* ── Content ── */}
-        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
+        <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
 
           {/* ── KPI strip — no individual boxes ── */}
           <div style={card({ display: 'flex', alignItems: 'stretch', overflow: 'hidden' })}>
             {isLoading
               ? [0,1,2,3,4,5].map(i => (
-                  <div key={i} style={{ flex: 1, padding: '20px 24px', borderRight: i < 5 ? `1px solid ${V.border}` : 'none' }}>
+                  <div key={i} style={{ flex: 1, padding: '14px 18px', borderRight: i < 5 ? `1px solid ${V.border}` : 'none' }}>
                     <div style={{ height: 9, width: '55%', background: V.surf2, borderRadius: 4, marginBottom: 14 }} />
                     <div style={{ height: 28, width: '35%', background: V.surf2, borderRadius: 4 }} />
                   </div>
@@ -153,7 +154,7 @@ function DashboardContent() {
                   { label: 'Suppliers',         value: stats.suppliers.total,         sub: `${stats.products.total} products`,           href: '/suppliers' },
                 ].map(({ label, value, sub, href }, i, arr) => (
                   <Link key={href} href={href} style={{
-                    flex: 1, padding: '20px 24px',
+                    flex: 1, padding: '14px 18px',
                     borderRight: i < arr.length - 1 ? `1px solid ${V.border}` : 'none',
                     textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 5,
                     transition: 'background .15s',
@@ -170,9 +171,9 @@ function DashboardContent() {
           </div>
 
           {/* ── Charts row ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
 
-            <div style={card({ padding: '18px 20px' })}>
+            <div style={card({ padding: '14px 16px' })}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <div>
                   <div style={sectionTitle}>Procurement Volume</div>
@@ -195,7 +196,7 @@ function DashboardContent() {
               )}
             </div>
 
-            <div style={card({ padding: '18px 20px' })}>
+            <div style={card({ padding: '14px 16px' })}>
               <div style={sectionTitle}>PR Status Split</div>
               <div style={{ fontSize: 11, color: V.text3, marginBottom: 14, marginTop: 3 }}>All-time distribution</div>
               {chartData ? (
@@ -234,10 +235,10 @@ function DashboardContent() {
           </div>
 
           {/* ── 3-column grid ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
 
             {/* Active Projects */}
-            <div style={card({ padding: '18px 20px', display: 'flex', flexDirection: 'column' })}>
+            <div style={card({ padding: '14px 16px', display: 'flex', flexDirection: 'column' })}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <div style={sectionTitle}>Active Projects</div>
                 <Link href="/projects" style={viewAllLink}>View all →</Link>
@@ -281,7 +282,7 @@ function DashboardContent() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
               {cycleMetrics && (
-                <div style={card({ padding: '18px 20px' })}>
+                <div style={card({ padding: '14px 16px' })}>
                   <div style={{ ...sectionTitle, marginBottom: 14 }}>Procurement Cycle</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {[
@@ -289,7 +290,7 @@ function DashboardContent() {
                       { label: 'PO → GRN Avg',      value: cycleMetrics.avgPOToGRN },
                       { label: 'GRN → Invoice Avg', value: cycleMetrics.avgGRNToInvoice },
                     ].map(({ label, value }) => (
-                      <div key={label} style={{ background: V.surf2, borderRadius: 8, padding: '10px 14px' }}>
+                      <div key={label} style={{ background: V.surf2, borderRadius: 8, padding: '8px 12px' }}>
                         <div style={{ fontSize: 10, color: V.text3, marginBottom: 3 }}>{label}</div>
                         <div style={{ fontSize: 20, fontWeight: 800, color: V.gold, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
                           {value} <span style={{ fontSize: 11, fontWeight: 400, color: V.text3 }}>days</span>
@@ -312,7 +313,7 @@ function DashboardContent() {
               )}
 
               {hrStats && (
-                <div style={card({ padding: '18px 20px' })}>
+                <div style={card({ padding: '14px 16px' })}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                     <div style={sectionTitle}>HR Overview</div>
                     <Link href="/hr/employees" style={viewAllLink}>View all →</Link>
@@ -326,7 +327,7 @@ function DashboardContent() {
                       { label: 'HR Pending',  value: hrStats.pendingRequests, color: hrStats.pendingRequests > 0 ? V.gold : V.text },
                       { label: 'Payrolls',    value: hrStats.draftPayrolls,   color: V.text },
                     ].map(({ label, value, color }) => (
-                      <div key={label} style={{ background: V.surf2, borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
+                      <div key={label} style={{ background: V.surf2, borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
                         <div style={{ fontSize: 20, fontWeight: 800, color, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{value}</div>
                         <div style={{ fontSize: 9, color: V.text3, marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.6px' }}>{label}</div>
                       </div>
@@ -340,7 +341,7 @@ function DashboardContent() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
               {recentActivity && recentActivity.length > 0 && (
-                <div style={card({ padding: '18px 20px', flex: 1 })}>
+                <div style={card({ padding: '14px 16px', flex: 1 })}>
                   <div style={{ ...sectionTitle, marginBottom: 14 }}>Live Activity</div>
                   {recentActivity.slice(0, 6).map((a, i) => {
                     const dotColor = isRejected(a.action) ? V.danger : V.text3;
@@ -365,7 +366,7 @@ function DashboardContent() {
               )}
 
               {taskStats && (
-                <div style={card({ padding: '18px 20px' })}>
+                <div style={card({ padding: '14px 16px' })}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                     <div style={sectionTitle}>My Tasks</div>
                     <Link href="/tasks?scope=mine" style={viewAllLink}>View all →</Link>
@@ -376,7 +377,7 @@ function DashboardContent() {
                       { label: 'Overdue',  value: taskStats.overdue,        color: taskStats.overdue > 0 ? V.danger : V.text },
                       { label: 'Review',   value: taskStats.pending_review, color: V.text },
                     ].map(({ label, value, color }) => (
-                      <div key={label} style={{ background: V.surf2, borderRadius: 8, padding: '10px 12px' }}>
+                      <div key={label} style={{ background: V.surf2, borderRadius: 8, padding: '8px 10px' }}>
                         <p style={{ fontSize: 22, fontWeight: 800, color, margin: 0, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{value}</p>
                         <p style={{ fontSize: 9, color: V.text3, margin: '4px 0 0', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</p>
                       </div>
@@ -404,7 +405,7 @@ function DashboardContent() {
               )}
 
               {hrStats && hrStats.recentActivity.length > 0 && (
-                <div style={card({ padding: '18px 20px' })}>
+                <div style={card({ padding: '14px 16px' })}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                     <div style={sectionTitle}>HR & Tasks Activity</div>
                     <Link href="/hr/requests" style={viewAllLink}>View all →</Link>
@@ -430,7 +431,7 @@ function DashboardContent() {
 
           {/* ── Top active users ── */}
           {userActivity && userActivity.length > 0 && (
-            <div style={card({ padding: '18px 20px' })}>
+            <div style={card({ padding: '14px 16px' })}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <div style={sectionTitle}>Top Active Users</div>
                 <Link href="/hr/employees" style={viewAllLink}>View all →</Link>
@@ -463,7 +464,7 @@ function DashboardContent() {
 
           {/* ── Project spending chart ── */}
           {(chartData?.projectSpending?.length ?? 0) > 0 && chartData && (
-            <div style={card({ padding: '18px 20px' })}>
+            <div style={card({ padding: '14px 16px' })}>
               <div style={sectionTitle}>Project Spending</div>
               <div style={{ fontSize: 11, color: V.text3, marginBottom: 16, marginTop: 3 }}>Total AED per project</div>
               <ProjectSpendingChart data={chartData.projectSpending} label={t('dash', 'spendingAed')} />

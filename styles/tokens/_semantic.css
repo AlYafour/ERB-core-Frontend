@@ -99,15 +99,15 @@
   --task-closed-bg:           #F8FAFC;
   --task-closed-border:       #E2E8F0;
 
-  /* Sidebar — dark enterprise */
-  --sidebar-bg:             #0A1628;
-  --sidebar-border:         #162236;
-  --sidebar-text:           #4A6280;
-  --sidebar-text-hover:     #E2EAF4;
-  --sidebar-hover:          rgba(255,255,255,0.04);
-  --sidebar-active-bg:      rgba(201,148,58,0.12);
-  --sidebar-active-text:    #E0AE55;
-  --sidebar-section-label:  #243850;
+  /* Sidebar — light in light mode */
+  --sidebar-bg:             var(--surface-base);
+  --sidebar-border:         var(--border-subtle);
+  --sidebar-text:           var(--text-secondary);
+  --sidebar-text-hover:     var(--text-primary);
+  --sidebar-hover:          rgba(0,0,0,0.04);
+  --sidebar-active-bg:      var(--wine-50);
+  --sidebar-active-text:    var(--wine-700);
+  --sidebar-section-label:  var(--text-tertiary);
 
   /* Navbar — light in light mode */
   --navbar-bg:              var(--surface-base);
