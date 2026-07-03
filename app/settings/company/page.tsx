@@ -25,12 +25,36 @@ const PRESETS = [
   { hex: '#2C3E50', name: 'Slate' },
 ];
 
+function hexToHue(hex: string): number {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.slice(0, 2), 16) / 255;
+  const g = parseInt(c.slice(2, 4), 16) / 255;
+  const b = parseInt(c.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  if (d === 0) return 0;
+  let h = max === r ? ((g - b) / d + (g < b ? 6 : 0)) / 6
+        : max === g ? ((b - r) / d + 2) / 6
+        : ((r - g) / d + 4) / 6;
+  return h * 360;
+}
+function previewHsl(h: number, s: number, l: number): string {
+  s /= 100; l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    return Math.round(255 * (l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1))).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
 function ThemePreview({ color, mode }: { color: string; mode: 'light' | 'dark' }) {
   const sc = generateScale(color);
   const isDark = mode === 'dark';
-  const bg      = isDark ? '#0F1D30' : '#F7F4F0';
-  const surf    = isDark ? '#1A2235' : '#FFFFFF';
-  const border  = isDark ? '#1E2D45' : '#E2DBD6';
+  const h = hexToHue(color);
+  const bg      = isDark ? previewHsl(h, 14, 10) : '#F7F4F0';
+  const surf    = isDark ? previewHsl(h, 18, 13) : '#FFFFFF';
+  const border  = isDark ? previewHsl(h, 20, 20) : '#E2DBD6';
+  const sidebar = isDark ? previewHsl(h, 18,  8) : previewHsl(h, 18, 8);
   const textPri = isDark ? '#F1F5F9' : '#1C1414';
   const textSec = isDark ? '#94A3B8' : '#6D5F5C';
   const active  = isDark ? sc['400'] : sc['500'];
@@ -38,28 +62,33 @@ function ThemePreview({ color, mode }: { color: string; mode: 'light' | 'dark' }
   const sideAct = hexToRgba(color, 0.12);
 
   return (
-    <div style={{ background: bg, border: `1px solid ${border}`, borderRadius: 10, padding: 14, flex: 1, minWidth: 0 }}>
-      <div style={{ fontSize: 10, fontWeight: 700, color: textSec, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>
-        {mode === 'dark' ? '🌙 Dark' : '☀️ Light'}
+    <div style={{ border: `1px solid ${border}`, borderRadius: 10, overflow: 'hidden', flex: 1, minWidth: 0, display: 'flex' }}>
+      {/* Sidebar strip */}
+      <div style={{ width: 52, background: sidebar, borderRight: `1px solid ${previewHsl(h, 18, 12)}`, display: 'flex', flexDirection: 'column', padding: '10px 0', gap: 4, flexShrink: 0 }}>
+        <div style={{ height: 8, background: sideAct, borderRight: `2px solid ${active}`, margin: '0 0 4px 0' }} />
+        {[0.3, 0.15, 0.15].map((op, i) => (
+          <div key={i} style={{ height: 6, background: previewHsl(h, 14, 37), opacity: op, margin: '0 8px', borderRadius: 3 }} />
+        ))}
       </div>
-      {/* sidebar active item */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: sideAct, borderRadius: 7, padding: '6px 10px', borderLeft: `3px solid ${active}`, marginBottom: 8 }}>
-        <div style={{ width: 12, height: 12, borderRadius: 3, background: active, opacity: 0.8 }} />
-        <span style={{ fontSize: 11, fontWeight: 600, color: active }}>Dashboard</span>
-      </div>
-      {/* primary button */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-        <div style={{ background: btnBg, color: '#fff', borderRadius: 6, padding: '5px 12px', fontSize: 11, fontWeight: 600 }}>Save</div>
-        <div style={{ background: surf, color: textSec, borderRadius: 6, padding: '5px 12px', fontSize: 11, border: `1px solid ${border}` }}>Cancel</div>
-      </div>
-      {/* badge */}
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: hexToRgba(color, 0.10), border: `1px solid ${hexToRgba(color, 0.25)}`, borderRadius: 20, padding: '2px 10px' }}>
-        <div style={{ width: 6, height: 6, borderRadius: '50%', background: active }} />
-        <span style={{ fontSize: 10, fontWeight: 600, color: active }}>Active</span>
-      </div>
-      {/* input focus */}
-      <div style={{ marginTop: 8, border: `1.5px solid ${active}`, borderRadius: 6, padding: '5px 10px', background: surf, boxShadow: `0 0 0 3px ${hexToRgba(color, 0.14)}` }}>
-        <span style={{ fontSize: 10, color: textPri }}>Input focused</span>
+      {/* Content area */}
+      <div style={{ background: bg, padding: 12, flex: 1 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: textSec, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+          {mode === 'dark' ? '🌙 Dark' : '☀️ Light'}
+        </div>
+        {/* primary button */}
+        <div style={{ display: 'flex', gap: 5, marginBottom: 8 }}>
+          <div style={{ background: btnBg, color: '#fff', borderRadius: 5, padding: '4px 10px', fontSize: 10, fontWeight: 600 }}>Save</div>
+          <div style={{ background: surf, color: textSec, borderRadius: 5, padding: '4px 10px', fontSize: 10, border: `1px solid ${border}` }}>Cancel</div>
+        </div>
+        {/* badge */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: hexToRgba(color, 0.10), border: `1px solid ${hexToRgba(color, 0.25)}`, borderRadius: 20, padding: '2px 8px', marginBottom: 7 }}>
+          <div style={{ width: 5, height: 5, borderRadius: '50%', background: active }} />
+          <span style={{ fontSize: 9, fontWeight: 600, color: active }}>Active</span>
+        </div>
+        {/* input focus */}
+        <div style={{ border: `1.5px solid ${active}`, borderRadius: 5, padding: '4px 8px', background: surf, boxShadow: `0 0 0 3px ${hexToRgba(color, 0.14)}` }}>
+          <span style={{ fontSize: 9, color: textPri }}>Input focused</span>
+        </div>
       </div>
     </div>
   );

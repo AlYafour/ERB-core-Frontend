@@ -1,7 +1,9 @@
 /* ================================================================
    TENANT THEME UTILITY
-   Generates a full CSS variable scale from a single brand hex color.
-   Works for both light and dark data-theme contexts.
+   Derives EVERY app color from a single brand hex.
+   Structural backgrounds (sidebar, navbar, surfaces, inputs, cards,
+   tables, dropdowns) are generated at the brand hue with low sat so
+   the tint is professional and not overwhelming.
    ================================================================ */
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -69,13 +71,57 @@ export function generateScale(primaryHex: string): Record<string, string> {
 
 export function buildThemeCss(primaryHex: string): string {
   if (!primaryHex || !primaryHex.startsWith('#') || primaryHex.length < 7) return '';
+
   const scale = generateScale(primaryHex);
   const [r, g, b] = hexToRgb(primaryHex);
-  const [h, s, l] = rgbToHsl(r, g, b);
-  const darkActive  = hslToHex(h, clamp(s - 8, 28, 100), clamp(l + 18, 58, 82));
-  const darkHover   = hslToHex(h, clamp(s - 5, 28, 100), clamp(l + 27, 65, 86));
+  const [h, , l] = rgbToHsl(r, g, b);
+
+  // Accent colors for dark mode — brighter than primary for readability on dark bg
+  const darkActive = hslToHex(h, 55, clamp(l + 18, 58, 82));
+  const darkHover  = hslToHex(h, 50, clamp(l + 27, 65, 86));
+
+  // Structural dark backgrounds — same hue, low saturation, dark lightness
+  // This gives a subtle professional tint (not overwhelming)
+  const S = 18; // structural saturation — low so the bg reads as near-neutral
+
+  // Sidebar/navbar — always dark regardless of light/dark mode
+  const navbarBg       = hslToHex(h, S, 6);
+  const sidebarBg      = hslToHex(h, S, 8);
+  const sidebarBorder  = hslToHex(h, S, 12);
+  const sidebarText    = hslToHex(h, 14, 37);
+  const sidebarTextHov = hslToHex(h, 10, 87);
+  const sidebarSection = hslToHex(h, S, 16);
+  const navbarBorder   = hslToHex(h, S, 13);
+
+  // Dark mode page surfaces
+  const surfaceApp      = hslToHex(h, 14, 10);
+  const surfaceBase     = hslToHex(h, 18, 13);
+  const surfaceRaised   = hslToHex(h, 18, 16);
+  const surfaceOverlay  = hslToHex(h, 18, 18);
+  const surfaceSubtle   = hslToHex(h, 20, 15);
+
+  // Dark mode borders
+  const borderSubtle  = hslToHex(h, 20, 16);
+  const borderDefault = hslToHex(h, 20, 20);
+  const borderStrong  = hslToHex(h, 20, 26);
+
+  // Dark mode inputs / cards / tables / dropdowns
+  const inputBg       = hslToHex(h, 18, 16);
+  const inputBorder   = hslToHex(h, 20, 20);
+  const cardBg        = hslToHex(h, 18, 13);
+  const cardBorder    = hslToHex(h, 20, 16);
+  const tableHdrBg    = hslToHex(h, 20, 15);
+  const tableHover    = hslToHex(h, 20, 16);
+  const tableBorder   = hslToHex(h, 20, 16);
+  const dropdownBg    = hslToHex(h, 18, 16);
+  const dropdownBord  = hslToHex(h, 20, 20);
+  const dropdownHover = hslToHex(h, 20, 21);
+
+  const ra = (a: number) => hexToRgba(primaryHex, a);
 
   return `/* tenant-theme: ${primaryHex} */
+
+/* ── Brand scale + shared structural colors ───────────────────── */
 :root {
   --wine-50:  ${scale['50']};
   --wine-100: ${scale['100']};
@@ -87,34 +133,170 @@ export function buildThemeCss(primaryHex: string): string {
   --wine-700: ${scale['700']};
   --wine-800: ${scale['800']};
   --wine-900: ${scale['900']};
-  --status-info:        ${primaryHex};
-  --status-info-bg:     ${hexToRgba(primaryHex, 0.08)};
-  --status-info-border: ${hexToRgba(primaryHex, 0.20)};
+
+  /* Sidebar — always dark regardless of light/dark content */
+  --sidebar-bg:            ${sidebarBg};
+  --sidebar-border:        ${sidebarBorder};
+  --sidebar-text:          ${sidebarText};
+  --sidebar-text-hover:    ${sidebarTextHov};
+  --sidebar-active-bg:     ${ra(0.12)};
+  --sidebar-active-text:   ${darkActive};
+  --sidebar-section-label: ${sidebarSection};
+
+  /* Navbar — always dark */
+  --navbar-bg:             ${navbarBg};
+  --navbar-border:         ${navbarBorder};
+
+  /* Light mode brand-linked status / tasks / banners */
+  --status-info:           ${primaryHex};
+  --status-info-bg:        ${ra(0.08)};
+  --status-info-border:    ${ra(0.20)};
+  --status-warning:        ${primaryHex};
+  --status-warning-bg:     ${scale['50']};
+  --status-warning-border: ${ra(0.18)};
+  --info-banner-bg:        ${scale['50']};
+  --info-banner-border:    ${primaryHex};
+  --info-banner-text:      ${scale['700']};
+
+  --task-assigned:         ${primaryHex};
+  --task-assigned-bg:      ${scale['50']};
+  --task-assigned-border:  ${ra(0.28)};
+  --task-accepted:         ${primaryHex};
+  --task-accepted-bg:      ${scale['50']};
+  --task-accepted-border:  ${ra(0.28)};
+  --task-in_progress:      ${primaryHex};
+  --task-in_progress-bg:   ${scale['50']};
+  --task-in_progress-border:${ra(0.28)};
+  --task-submitted:        ${primaryHex};
+  --task-submitted-bg:     ${scale['50']};
+  --task-submitted-border: ${ra(0.28)};
+  --task-review:           ${primaryHex};
+  --task-review-bg:        ${scale['50']};
+  --task-review-border:    ${ra(0.28)};
+  --task-approved:         ${primaryHex};
+  --task-approved-bg:      ${scale['50']};
+  --task-approved-border:  ${ra(0.28)};
 }
+
+/* ── Dark mode — everything ────────────────────────────────────── */
 [data-theme="dark"] {
+  /* Brand scale (dark-mode adjusted) */
   --wine-300: ${darkHover};
   --wine-400: ${darkActive};
   --wine-500: ${primaryHex};
-  --brand:              ${darkActive};
-  --brand-hover:        ${darkHover};
-  --brand-subtle:       ${hexToRgba(primaryHex, 0.12)};
-  --brand-muted:        ${hexToRgba(primaryHex, 0.22)};
-  --border-focus:       ${darkActive};
-  --text-brand:         ${darkActive};
-  --sidebar-active-bg:  ${hexToRgba(primaryHex, 0.12)};
-  --sidebar-active-text:${darkActive};
-  --input-focus-border: ${darkActive};
-  --input-focus-ring:   ${hexToRgba(primaryHex, 0.18)};
-  --primary:            ${darkActive};
-  --primary-hover:      ${darkHover};
-  --ring:               ${darkActive};
-  --status-info:        ${darkActive};
-  --status-info-bg:     ${hexToRgba(primaryHex, 0.10)};
-  --status-info-border: ${hexToRgba(primaryHex, 0.22)};
-  --color-orange-500:   ${darkActive};
-  --color-orange-600:   ${primaryHex};
-  --brand-orange:       ${darkActive};
-  --brand-orange-hover: ${darkHover};
+
+  /* Page surfaces */
+  --surface-app:       ${surfaceApp};
+  --surface-base:      ${surfaceBase};
+  --surface-raised:    ${surfaceRaised};
+  --surface-overlay:   ${surfaceOverlay};
+  --surface-subtle:    ${surfaceSubtle};
+  --surface-inset:     ${surfaceBase};
+  --surface-primary:   ${surfaceBase};
+  --surface-secondary: ${surfaceOverlay};
+
+  /* Borders */
+  --border-subtle:     ${borderSubtle};
+  --border-default:    ${borderDefault};
+  --border-strong:     ${borderStrong};
+  --border-focus:      ${darkActive};
+
+  /* Brand tokens */
+  --brand:             ${darkActive};
+  --brand-hover:       ${darkHover};
+  --brand-active:      ${darkHover};
+  --brand-subtle:      ${ra(0.12)};
+  --brand-muted:       ${ra(0.22)};
+  --text-brand:        ${darkActive};
+
+  /* Sidebar */
+  --sidebar-bg:            ${sidebarBg};
+  --sidebar-border:        ${sidebarBorder};
+  --sidebar-text:          ${sidebarText};
+  --sidebar-text-hover:    ${sidebarTextHov};
+  --sidebar-active-bg:     ${ra(0.12)};
+  --sidebar-active-text:   ${darkActive};
+  --sidebar-section-label: ${sidebarSection};
+
+  /* Navbar */
+  --navbar-bg:             ${navbarBg};
+  --navbar-border:         ${navbarBorder};
+
+  /* Inputs */
+  --input-bg:              ${inputBg};
+  --input-border:          ${inputBorder};
+  --input-focus-border:    ${darkActive};
+  --input-focus-ring:      ${ra(0.18)};
+
+  /* Cards */
+  --card-bg:               ${cardBg};
+  --card-border:           ${cardBorder};
+
+  /* Tables */
+  --table-header-bg:       ${tableHdrBg};
+  --table-header-text:     ${sidebarText};
+  --table-row-hover:       ${tableHover};
+  --table-border:          ${tableBorder};
+
+  /* Dropdowns */
+  --dropdown-bg:           ${dropdownBg};
+  --dropdown-border:       ${dropdownBord};
+  --dropdown-item-hover:   ${dropdownHover};
+  --dropdown-item-active:  ${ra(0.15)};
+
+  /* Status */
+  --status-info:           ${darkActive};
+  --status-info-bg:        ${ra(0.10)};
+  --status-info-border:    ${ra(0.22)};
+  --status-warning:        ${darkActive};
+  --status-warning-bg:     ${ra(0.12)};
+  --status-warning-border: ${ra(0.24)};
+
+  /* Info banner */
+  --info-banner-bg:        ${ra(0.10)};
+  --info-banner-border:    ${darkActive};
+  --info-banner-text:      ${darkActive};
+
+  /* Tasks (brand-linked states) */
+  --task-assigned:         ${darkActive};
+  --task-assigned-bg:      ${ra(0.12)};
+  --task-assigned-border:  ${ra(0.28)};
+  --task-accepted:         ${darkActive};
+  --task-accepted-bg:      ${ra(0.12)};
+  --task-accepted-border:  ${ra(0.28)};
+  --task-in_progress:      ${darkActive};
+  --task-in_progress-bg:   ${ra(0.12)};
+  --task-in_progress-border:${ra(0.28)};
+  --task-submitted:        ${darkActive};
+  --task-submitted-bg:     ${ra(0.12)};
+  --task-submitted-border: ${ra(0.28)};
+  --task-review:           ${darkActive};
+  --task-review-bg:        ${ra(0.12)};
+  --task-review-border:    ${ra(0.28)};
+  --task-approved:         ${darkActive};
+  --task-approved-bg:      ${ra(0.12)};
+  --task-approved-border:  ${ra(0.28)};
+
+  /* Legacy aliases */
+  --bg-primary:            ${surfaceBase};
+  --bg-secondary:          ${surfaceApp};
+  --bg-tertiary:           ${surfaceSubtle};
+  --border-primary:        ${borderSubtle};
+  --border-secondary:      ${borderDefault};
+  --color-orange-500:      ${darkActive};
+  --color-orange-600:      ${primaryHex};
+  --brand-orange:          ${darkActive};
+  --brand-orange-hover:    ${darkHover};
+  --primary:               ${darkActive};
+  --primary-hover:         ${darkHover};
+  --ring:                  ${darkActive};
+  --hover-surface:         ${surfaceSubtle};
+  --accent:                ${surfaceSubtle};
+  --secondary:             ${surfaceSubtle};
+  --secondary-hover:       ${borderSubtle};
+  --muted:                 ${cardBg};
+  --background:            ${surfaceApp};
+  --border:                ${borderSubtle};
 }`;
 }
 
