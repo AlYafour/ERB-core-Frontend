@@ -625,14 +625,14 @@ export default function RolesPage() {
                         </div>
                         {/* Only in B */}
                         <div>
-                          <p style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#E05C5C', marginBottom: 'var(--space-2)' }}>
+                          <p style={{ fontWeight: 600, fontSize: '0.8125rem', color: 'var(--status-error)', marginBottom: 'var(--space-2)' }}>
                             Only in {compareRole?.name} ({diffData.onlyInB.length})
                           </p>
                           {diffData.onlyInB.length === 0 ? (
                             <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>None</p>
                           ) : (
                             diffData.onlyInB.map((id) => (
-                              <div key={id} style={{ fontSize: '0.8125rem', padding: '3px 8px', borderRadius: 4, background: 'var(--status-error-bg)', color: '#E05C5C', marginBottom: 2 }}>
+                              <div key={id} style={{ fontSize: '0.8125rem', padding: '3px 8px', borderRadius: 4, background: 'var(--status-error-bg)', color: 'var(--status-error)', marginBottom: 2 }}>
                                 {permLabelMap[id] ?? `Permission #${id}`}
                               </div>
                             ))

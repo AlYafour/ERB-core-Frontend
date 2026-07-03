@@ -59,8 +59,8 @@ function ThemePreview({ color, mode }: { color: string; mode: 'light' | 'dark' }
   const border  = isDark ? previewHsl(h, 20, 20) : previewHsl(h, 13, 90);
   // Sidebar: dark in dark mode, matches surface in light mode (light sidebar)
   const sidebar = isDark ? previewHsl(h, 18,  8) : previewHsl(h,  4, 99);
-  const textPri = isDark ? '#F1F5F9' : '#1C1414';
-  const textSec = isDark ? '#94A3B8' : '#6D5F5C';
+  const textPri = isDark ? '#F1F5F9' : 'var(--text-primary)';
+  const textSec = isDark ? '#94A3B8' : 'var(--text-secondary)';
   const active  = isDark ? sc['400'] : sc['500'];
   const btnBg   = active;
   const sideAct = hexToRgba(color, isDark ? 0.12 : 0.08);
