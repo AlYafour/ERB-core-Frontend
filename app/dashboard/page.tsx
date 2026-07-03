@@ -67,12 +67,14 @@ function DashboardContent() {
   const { data: myTasksRaw } = useQuery({
     queryKey: ['my-tasks-dashboard'],
     queryFn: () => import('@/lib/api/tasks').then(m =>
-      m.tasksApi.getAll({ scope: 'mine', page_size: 5, status: 'in_progress' } as any)
+      m.tasksApi.getAll({ scope: 'mine', page_size: 8 } as any)
     ),
     enabled: isAuthenticated,
     staleTime: 2 * 60 * 1000,
   });
-  const myTaskList = Array.isArray(myTasksRaw) ? myTasksRaw : (myTasksRaw as any)?.results ?? [];
+  const myTaskList = (Array.isArray(myTasksRaw) ? myTasksRaw : (myTasksRaw as any)?.results ?? [])
+    .filter((task: any) => !['approved', 'closed', 'rejected'].includes(task.status))
+    .slice(0, 4);
 
   useEffect(() => { if (!isAuthenticated) logout(); }, [isAuthenticated, logout]);
   if (!isAuthenticated) return null;
@@ -383,7 +385,15 @@ function DashboardContent() {
                       </div>
                     ))}
                   </div>
-                  {myTaskList.slice(0, 4).map((task: any) => {
+                  {myTaskList.length === 0 ? (
+                    <div style={{ padding: '14px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.2, color: 'var(--brand)' }}>
+                        <path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <span style={{ fontSize: 11, color: V.text3 }}>No active tasks</span>
+                    </div>
+                  ) : myTaskList.map((task: any) => {
                     const overdue = task.due_date && !['approved','closed'].includes(task.status) && new Date(task.due_date) < new Date();
                     return (
                       <Link key={task.id} href={`/tasks/${task.id}`}
