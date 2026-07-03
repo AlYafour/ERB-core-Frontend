@@ -337,6 +337,38 @@ function DashboardContent() {
                   </div>
                 </div>
               )}
+
+              {userActivity && userActivity.length > 0 && (
+                <div style={card({ padding: '14px 16px' })}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <div style={sectionTitle}>Top Active Users</div>
+                    <Link href="/hr/employees" style={viewAllLink}>View all →</Link>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                    {userActivity.slice(0, 4).map((u) => {
+                      const total = u.createdPR + u.approvedRequests + u.createdPO + u.createdInvoices;
+                      return (
+                        <Link key={u.id} href="/hr/employees"
+                          style={{ background: V.surf2, border: `1px solid ${V.border}`, borderRadius: 8, padding: '10px', textDecoration: 'none', transition: 'border-color .15s' }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = V.border2; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = V.border; }}
+                        >
+                          <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg, var(--brand), var(--wine-700))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', marginBottom: 8 }}>
+                            {u.username.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: V.text, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.username}</div>
+                          <div style={{ fontSize: 22, fontWeight: 800, color: V.gold, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{total}</div>
+                          <div style={{ fontSize: 9, color: V.text3, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.5px' }}>actions</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, marginTop: 8, fontSize: 9, color: V.text3 }}>
+                            <span>PR {u.createdPR}</span><span>OK {u.approvedRequests}</span>
+                            <span>PO {u.createdPO}</span><span>INV {u.createdInvoices}</span>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Right column: Activity + Tasks */}
@@ -438,39 +470,6 @@ function DashboardContent() {
               )}
             </div>
           </div>
-
-          {/* ── Top active users ── */}
-          {userActivity && userActivity.length > 0 && (
-            <div style={card({ padding: '14px 16px' })}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <div style={sectionTitle}>Top Active Users</div>
-                <Link href="/hr/employees" style={viewAllLink}>View all →</Link>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(userActivity.length, 5)}, 1fr)`, gap: 10 }}>
-                {userActivity.slice(0, 5).map((u) => {
-                  const total = u.createdPR + u.approvedRequests + u.createdPO + u.createdInvoices;
-                  return (
-                    <Link key={u.id} href="/hr/employees"
-                      style={{ background: V.surf2, border: `1px solid ${V.border}`, borderRadius: 8, padding: '14px', textDecoration: 'none', transition: 'border-color .15s' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = V.border2; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = V.border; }}
-                    >
-                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, var(--brand), var(--wine-700))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', marginBottom: 10 }}>
-                        {u.username.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: V.text, marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.username}</div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: V.gold, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{total}</div>
-                      <div style={{ fontSize: 9, color: V.text3, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.5px' }}>actions</div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, marginTop: 10, fontSize: 10, color: V.text3 }}>
-                        <span>PR {u.createdPR}</span><span>OK {u.approvedRequests}</span>
-                        <span>PO {u.createdPO}</span><span>INV {u.createdInvoices}</span>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
 
           {/* ── Project spending chart ── */}
           {(chartData?.projectSpending?.length ?? 0) > 0 && chartData && (
