@@ -13,9 +13,9 @@ import { useT } from '@/lib/i18n/useT';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import MyWorkspace from '@/components/dashboard/MyWorkspace';
 
-const StatusPieCard        = dynamic(() => import('./charts').then(m => ({ default: m.StatusPieCard })),        { ssr: false });
-const MonthlyVolumeChart   = dynamic(() => import('./charts').then(m => ({ default: m.MonthlyVolumeChart })),   { ssr: false });
-const ProjectSpendingChart = dynamic(() => import('./charts').then(m => ({ default: m.ProjectSpendingChart })), { ssr: false });
+const StatusPieCard            = dynamic(() => import('./charts').then(m => ({ default: m.StatusPieCard })),            { ssr: false });
+const MonthlyVolumeChart       = dynamic(() => import('./charts').then(m => ({ default: m.MonthlyVolumeChart })),       { ssr: false });
+const ProjectSpendingPieChart  = dynamic(() => import('./charts').then(m => ({ default: m.ProjectSpendingPieChart })),  { ssr: false });
 
 /* CSS-variable aliases — theme-aware, no hardcoded colors */
 const V = {
@@ -173,8 +173,9 @@ function DashboardContent() {
           </div>
 
           {/* ── Charts row ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 12 }}>
 
+            {/* Monthly Volume */}
             <div style={card({ padding: '14px 16px' })}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <div>
@@ -198,6 +199,7 @@ function DashboardContent() {
               )}
             </div>
 
+            {/* PR Status Pie */}
             <div style={card({ padding: '14px 16px' })}>
               <div style={sectionTitle}>PR Status Split</div>
               <div style={{ fontSize: 11, color: V.text3, marginBottom: 14, marginTop: 3 }}>All-time distribution</div>
@@ -231,6 +233,22 @@ function DashboardContent() {
                     <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                   </svg>
                   <span style={{ fontSize: 12 }}>No distribution data yet</span>
+                </div>
+              )}
+            </div>
+
+            {/* Project Spending Pie */}
+            <div style={card({ padding: '14px 16px' })}>
+              <div style={sectionTitle}>Project Spending</div>
+              <div style={{ fontSize: 11, color: V.text3, marginBottom: 14, marginTop: 3 }}>Top projects by AED</div>
+              {(chartData?.projectSpending?.length ?? 0) > 0 && chartData ? (
+                <ProjectSpendingPieChart data={chartData.projectSpending} />
+              ) : (
+                <div style={{ height: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: V.text3 }}>
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.25, color: 'var(--brand)' }}>
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span style={{ fontSize: 12 }}>No spending data yet</span>
                 </div>
               )}
             </div>
@@ -471,14 +489,6 @@ function DashboardContent() {
             </div>
           </div>
 
-          {/* ── Project spending chart ── */}
-          {(chartData?.projectSpending?.length ?? 0) > 0 && chartData && (
-            <div style={card({ padding: '14px 16px' })}>
-              <div style={sectionTitle}>Project Spending</div>
-              <div style={{ fontSize: 11, color: V.text3, marginBottom: 16, marginTop: 3 }}>Total AED per project</div>
-              <ProjectSpendingChart data={chartData.projectSpending} label={t('dash', 'spendingAed')} />
-            </div>
-          )}
 
         </div>
       </div>

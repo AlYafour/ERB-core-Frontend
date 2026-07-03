@@ -100,28 +100,48 @@ export function MonthlyVolumeChart({ data, label }: {
   );
 }
 
-/* ── Project spending bar chart ──────────────────────────────────── */
-export function ProjectSpendingChart({ data, label }: {
+/* ── Project spending pie/donut chart ────────────────────────────── */
+export function ProjectSpendingPieChart({ data }: {
   data: ChartData['projectSpending'];
-  label: string;
 }) {
-  const brand      = useCSSVar('--brand',          '#C9943A');
-  const brandSubtle= useCSSVar('--brand-subtle',   'rgba(201,148,58,0.12)');
-  const grid       = useCSSVar('--border-subtle',  '#1E2D45');
-  const text3      = useCSSVar('--text-tertiary',  '#64748B');
+  const c1 = useCSSVar('--brand',          '#C9943A');
+  const c2 = useCSSVar('--wine-300',       '#E0B870');
+  const c3 = useCSSVar('--status-error',   '#E05C5C');
+  const c4 = useCSSVar('--border-strong',  '#4A5568');
+  const c5 = useCSSVar('--text-tertiary',  '#94A3B8');
+
+  const PIE = [c1, c3, c2, c4, c5];
+  const top = data.slice(0, 5);
+  const total = top.reduce((s, d) => s + d.spending, 0);
 
   return (
-    <ResponsiveContainer width="100%" height={220}>
-      <BarChart data={data} margin={{ bottom: 60, left: 0, right: 8 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={grid} vertical={false} />
-        <XAxis dataKey="project" tick={{ fontSize: 10, fill: text3 }} axisLine={false}
-          tickLine={false} angle={-40} textAnchor="end" interval={0} />
-        <YAxis tick={{ fontSize: 11, fill: text3 }} axisLine={false} tickLine={false} width={40} />
-        <Tooltip contentStyle={tipStyle} itemStyle={tipItemStyle}
-          formatter={(v: number) => formatPrice(v)}
-          cursor={{ fill: brandSubtle }} />
-        <Bar dataKey="spending" fill={brand} name={label} radius={[4, 4, 0, 0]} />
-      </BarChart>
-    </ResponsiveContainer>
+    <>
+      <ResponsiveContainer width="100%" height={130}>
+        <PieChart>
+          <Pie data={top} cx="50%" cy="50%" innerRadius={34} outerRadius={54}
+            paddingAngle={3} dataKey="spending" strokeWidth={0}>
+            {top.map((_, i) => <Cell key={i} fill={PIE[i % PIE.length]} />)}
+          </Pie>
+          <Tooltip contentStyle={tipStyle} itemStyle={tipItemStyle}
+            formatter={(v: number) => formatPrice(v)}
+            labelFormatter={(_, payload) => payload?.[0]?.name ?? ''} />
+        </PieChart>
+      </ResponsiveContainer>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 10 }}>
+        {top.slice(0, 4).map((d, i) => (
+          <div key={d.project} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0, flex: 1 }}>
+              <div style={{ width: 7, height: 7, borderRadius: 2, background: PIE[i], flexShrink: 0 }} />
+              <span style={{ fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {d.project}
+              </span>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', flexShrink: 0, paddingLeft: 6 }}>
+              {total > 0 ? Math.round(d.spending / total * 100) : 0}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
