@@ -373,6 +373,7 @@ export default function CompanySettingsPage() {
           }
         />
 
+        <div style={{ maxWidth: 740, width: '100%' }}>
         {isLoading ? (
           <div style={{ height: 220, background: 'var(--surface-subtle)', borderRadius: 12 }} className="animate-pulse" />
         ) : !isAdmin ? (
@@ -568,6 +569,7 @@ export default function CompanySettingsPage() {
             )}
           </>
         )}
+        </div>
       </PageShell>
     </MainLayout>
   );
