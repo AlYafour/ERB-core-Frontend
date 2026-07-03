@@ -334,7 +334,7 @@ export function ProcListPage({
 
             <div className="proc-adv-body">
               {filterFields.length === 0 ? (
-                <p style={{ color: '#94A3B8', fontSize: 13, textAlign: 'center', margin: '24px 0' }}>
+                <p style={{ color: 'var(--text-tertiary)', fontSize: 13, textAlign: 'center', margin: '24px 0' }}>
                   No filters available.
                 </p>
               ) : (
