@@ -373,9 +373,14 @@ export default function CompanySettingsPage() {
           }
         />
 
-        <div style={{ maxWidth: 740, width: '100%' }}>
         {isLoading ? (
-          <div style={{ height: 220, background: 'var(--surface-subtle)', borderRadius: 12 }} className="animate-pulse" />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div style={{ height: 320, background: 'var(--surface-subtle)', borderRadius: 12 }} className="animate-pulse" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ height: 180, background: 'var(--surface-subtle)', borderRadius: 12 }} className="animate-pulse" />
+              <div style={{ height: 120, background: 'var(--surface-subtle)', borderRadius: 12 }} className="animate-pulse" />
+            </div>
+          </div>
         ) : !isAdmin ? (
           <div className="card" style={{ padding: 40, textAlign: 'center' }}>
             <p style={{ color: 'var(--text-tertiary)', fontSize: 14, margin: 0 }}>
@@ -384,163 +389,159 @@ export default function CompanySettingsPage() {
           </div>
         ) : (
           <>
-            {/* ── Branding Assets ── */}
-            <CardSection
-              title="Branding Assets"
-              description="Your logo appears on all printed documents. The login background is shown on the sign-in page."
-            >
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 22 }}>
-                <UploadZone
-                  label="Company Logo"
-                  hint="PNG or SVG recommended · shown on all printed documents"
-                  inputRef={logoRef}
-                  imageUrl={logoUrl}
-                  uploading={uploading === 'logo'}
-                  accept="image/*"
-                  onClick={() => logoRef.current?.click()}
-                  onChange={f => handleAssetUpload(f, 'logo')}
-                />
-                <UploadZone
-                  label="Login Background"
-                  hint="Displayed on the sign-in page · any ratio accepted"
-                  inputRef={bgRef}
-                  imageUrl={bgUrl}
-                  uploading={uploading === 'login_bg'}
-                  accept="image/*"
-                  onClick={() => bgRef.current?.click()}
-                  onChange={f => handleAssetUpload(f, 'login_bg')}
-                />
-              </div>
+            {/* ── 2-column grid ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, alignItems: 'start' }}>
 
-              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 20 }}>
-                <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 12px' }}>Brand Color</p>
-                <BrandColorPicker
-                  value={val('primary_color') || '#C9943A'}
-                  onChange={v => {
-                    setForm(f => ({ ...f, primary_color: v }));
-                    if (/^#[0-9A-Fa-f]{6}$/.test(v)) applyTenantTheme(v);
-                  }}
-                />
-              </div>
-            </CardSection>
+              {/* Left col — Branding */}
+              <CardSection
+                title="Branding"
+                description="Logo, login background, and brand color."
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 18 }}>
+                  <UploadZone
+                    label="Company Logo"
+                    hint="PNG or SVG · shown on all printed documents"
+                    inputRef={logoRef}
+                    imageUrl={logoUrl}
+                    uploading={uploading === 'logo'}
+                    accept="image/*"
+                    onClick={() => logoRef.current?.click()}
+                    onChange={f => handleAssetUpload(f, 'logo')}
+                  />
+                  <UploadZone
+                    label="Login Background"
+                    hint="Displayed on the sign-in page"
+                    inputRef={bgRef}
+                    imageUrl={bgUrl}
+                    uploading={uploading === 'login_bg'}
+                    accept="image/*"
+                    onClick={() => bgRef.current?.click()}
+                    onChange={f => handleAssetUpload(f, 'login_bg')}
+                  />
+                </div>
+                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 16 }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 12px' }}>Brand Color</p>
+                  <BrandColorPicker
+                    value={val('primary_color') || '#C9943A'}
+                    onChange={v => {
+                      setForm(f => ({ ...f, primary_color: v }));
+                      if (/^#[0-9A-Fa-f]{6}$/.test(v)) applyTenantTheme(v);
+                    }}
+                  />
+                </div>
+              </CardSection>
 
-            {/* ── Legal Information ── */}
-            <CardSection
-              title="Legal Information"
-              description="These details appear on printed documents, contracts, and official correspondence."
-            >
+              {/* Right col — Legal + Terms + Stamp */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <Field
-                  label="Company Legal Name"
-                  value={val('company_legal_name')}
-                  onChange={v => setForm(f => ({ ...f, company_legal_name: v }))}
-                  placeholder="Your Company Legal Name"
-                />
-                <Field
-                  label="Address"
-                  value={val('company_address')}
-                  onChange={v => setForm(f => ({ ...f, company_address: v }))}
-                  placeholder="Abu Dhabi, United Arab Emirates"
-                />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                  <Field
-                    label="Phone"
-                    value={val('company_phone')}
-                    onChange={v => setForm(f => ({ ...f, company_phone: v }))}
-                    placeholder="+971 XX XXX XXXX"
-                  />
-                  <Field
-                    label="Email"
-                    value={val('company_email')}
-                    onChange={v => setForm(f => ({ ...f, company_email: v }))}
-                    type="email"
-                    placeholder="info@company.ae"
-                  />
-                </div>
-                <Field
-                  label="Tax Registration Number (TRN)"
-                  value={val('company_trn')}
-                  onChange={v => setForm(f => ({ ...f, company_trn: v }))}
-                  placeholder="1XXXXXXXXXXXXX"
-                />
-              </div>
-            </CardSection>
-
-            {/* ── Default Terms & Conditions ── */}
-            <CardSection
-              title="Default Terms & Conditions"
-              description="These terms appear automatically on all printed documents (LPO, PQ, GRN). Write each condition on a new line or number them manually."
-            >
-              <textarea
-                value={val('default_terms')}
-                onChange={e => setForm(f => ({ ...f, default_terms: e.target.value }))}
-                placeholder={`1- The Company reserves the right to return items partially or completely in the following instances: non-compliance with specifications, failure to meet the delivery date, or in the case of defective materials.\n2- This purchase order is confidential and intended exclusively for use by the specified supplier and our organization.\n3- Please acknowledge the receipt & confirm the delivery dates.\n4- This LPO must be signed and stamped by the authorized signatory.`}
-                rows={9}
-                style={{
-                  width: '100%', padding: '10px 12px', fontSize: 13,
-                  borderRadius: 8, border: '1px solid var(--border-subtle)',
-                  background: 'var(--input-bg)', color: 'var(--text-primary)',
-                  boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.6,
-                  fontFamily: 'inherit', outline: 'none',
-                  transition: 'border-color 0.15s',
-                }}
-                onFocus={e => { e.currentTarget.style.borderColor = 'var(--brand)'; }}
-                onBlur={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
-              />
-              <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 6 }}>
-                Tip: start each condition with a number e.g. &ldquo;1-&rdquo; for auto-formatting in print.
-              </p>
-            </CardSection>
-
-            {/* ── My Signature Stamp ── */}
-            <CardSection
-              title="My Signature Stamp"
-              description="Your stamp appears on printed documents (LPO, PQ, GRN) where you are listed as Prepared By / Approved By."
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-                <div
-                  onClick={() => stampRef.current?.click()}
-                  style={{
-                    width: 120, height: 120, border: '2px dashed var(--border-default)',
-                    borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'var(--surface-subtle)', overflow: 'hidden', cursor: 'pointer',
-                    position: 'relative', flexShrink: 0, transition: 'border-color 0.15s',
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--brand)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-default)'; }}
+                <CardSection
+                  title="Legal Information"
+                  description="Appears on printed documents and official correspondence."
                 >
-                  {me?.stamp_url
-                    ? <Image src={me.stamp_url} alt="stamp" fill style={{ objectFit: 'contain', padding: 8 }} unoptimized />
-                    : (
-                      <span style={{ fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'center', padding: 8, lineHeight: 1.4 }}>
-                        Click to<br />upload stamp
-                      </span>
-                    )}
-                  {uploading === 'stamp' && (
-                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, fontWeight: 600 }}>
-                      Uploading…
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <Field
+                      label="Company Legal Name"
+                      value={val('company_legal_name')}
+                      onChange={v => setForm(f => ({ ...f, company_legal_name: v }))}
+                      placeholder="Your Company Legal Name"
+                    />
+                    <Field
+                      label="Address"
+                      value={val('company_address')}
+                      onChange={v => setForm(f => ({ ...f, company_address: v }))}
+                      placeholder="Abu Dhabi, United Arab Emirates"
+                    />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      <Field
+                        label="Phone"
+                        value={val('company_phone')}
+                        onChange={v => setForm(f => ({ ...f, company_phone: v }))}
+                        placeholder="+971 XX XXX XXXX"
+                      />
+                      <Field
+                        label="Email"
+                        value={val('company_email')}
+                        onChange={v => setForm(f => ({ ...f, company_email: v }))}
+                        type="email"
+                        placeholder="info@company.ae"
+                      />
                     </div>
-                  )}
-                </div>
-                <input ref={stampRef} type="file" accept="image/png,image/svg+xml" style={{ display: 'none' }}
-                  onChange={e => { const f = e.target.files?.[0]; if (f) handleStampUpload(f); }} />
-                <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-                    {me?.stamp_url ? 'Stamp uploaded' : 'No stamp yet'}
+                    <Field
+                      label="Tax Registration Number (TRN)"
+                      value={val('company_trn')}
+                      onChange={v => setForm(f => ({ ...f, company_trn: v }))}
+                      placeholder="1XXXXXXXXXXXXX"
+                    />
+                  </div>
+                </CardSection>
+
+                {/* ── Default Terms & Conditions ── */}
+                <CardSection
+                  title="Default Terms & Conditions"
+                  description="Auto-appended on LPO, PQ, and GRN prints."
+                >
+                  <textarea
+                    value={val('default_terms')}
+                    onChange={e => setForm(f => ({ ...f, default_terms: e.target.value }))}
+                    placeholder={`1- The Company reserves the right to return items partially or completely in the following instances: non-compliance with specifications, failure to meet the delivery date, or in the case of defective materials.\n2- This purchase order is confidential and intended exclusively for use by the specified supplier and our organization.\n3- Please acknowledge the receipt & confirm the delivery dates.\n4- This LPO must be signed and stamped by the authorized signatory.`}
+                    rows={7}
+                    style={{
+                      width: '100%', padding: '10px 12px', fontSize: 13,
+                      borderRadius: 8, border: '1px solid var(--border-subtle)',
+                      background: 'var(--input-bg)', color: 'var(--text-primary)',
+                      boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.6,
+                      fontFamily: 'inherit', outline: 'none', transition: 'border-color 0.15s',
+                    }}
+                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--brand)'; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
+                  />
+                  <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 6 }}>
+                    Tip: start each condition with a number e.g. &ldquo;1-&rdquo; for auto-formatting in print.
                   </p>
-                  <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '0 0 14px', lineHeight: 1.5 }}>
-                    PNG or SVG with a transparent background preferred.<br />Max file size 2 MB.
-                  </p>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => stampRef.current?.click()}
-                  >
-                    {me?.stamp_url ? 'Replace Stamp' : 'Upload Stamp'}
-                  </Button>
-                </div>
-              </div>
-            </CardSection>
+                </CardSection>
+
+                {/* ── My Signature Stamp ── */}
+                <CardSection
+                  title="My Signature Stamp"
+                  description="Appears on LPO, PQ, GRN where you are Prepared By / Approved By."
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+                    <div
+                      onClick={() => stampRef.current?.click()}
+                      style={{
+                        width: 96, height: 96, border: '2px dashed var(--border-default)',
+                        borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'var(--surface-subtle)', overflow: 'hidden', cursor: 'pointer',
+                        position: 'relative', flexShrink: 0, transition: 'border-color 0.15s',
+                      }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--brand)'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-default)'; }}
+                    >
+                      {me?.stamp_url
+                        ? <Image src={me.stamp_url} alt="stamp" fill style={{ objectFit: 'contain', padding: 8 }} unoptimized />
+                        : <span style={{ fontSize: 10, color: 'var(--text-tertiary)', textAlign: 'center', padding: 6, lineHeight: 1.4 }}>Click to<br />upload</span>}
+                      {uploading === 'stamp' && (
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 600 }}>
+                          Uploading…
+                        </div>
+                      )}
+                    </div>
+                    <input ref={stampRef} type="file" accept="image/png,image/svg+xml" style={{ display: 'none' }}
+                      onChange={e => { const f = e.target.files?.[0]; if (f) handleStampUpload(f); }} />
+                    <div>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                        {me?.stamp_url ? 'Stamp uploaded' : 'No stamp yet'}
+                      </p>
+                      <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '0 0 12px', lineHeight: 1.5 }}>
+                        PNG or SVG · transparent bg · max 2 MB
+                      </p>
+                      <Button variant="secondary" size="sm" onClick={() => stampRef.current?.click()}>
+                        {me?.stamp_url ? 'Replace Stamp' : 'Upload Stamp'}
+                      </Button>
+                    </div>
+                  </div>
+                </CardSection>
+              </div>{/* end right col */}
+            </div>{/* end 2-col grid */}
 
             {/* ── Bottom save bar ── */}
             {isDirty && (
@@ -569,7 +570,6 @@ export default function CompanySettingsPage() {
             )}
           </>
         )}
-        </div>
       </PageShell>
     </MainLayout>
   );
