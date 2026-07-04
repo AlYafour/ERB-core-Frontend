@@ -174,7 +174,7 @@ function DashboardContent() {
         <div style={{ background: V.surf, borderBottom: `1px solid ${V.border}`, padding: '12px 22px', display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
           <div>
             <h1 style={{ fontSize: 14, fontWeight: 800, color: V.text, margin: 0, letterSpacing: '-0.01em' }}>Executive Dashboard</h1>
-            <p style={{ fontSize: 11, color: V.text3, margin: '1px 0 0', letterSpacing: '0.02em' }}>Real-time procurement & operations overview</p>
+            <p style={{ fontSize: 11, color: V.text3, margin: '1px 0 0', letterSpacing: '0.02em' }}>AL YAFOUR · Real-time procurement & operations overview</p>
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
             {!!stats?.purchaseRequests.pending && (
