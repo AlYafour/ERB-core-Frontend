@@ -67,7 +67,7 @@ type FormState = {
   is_active: boolean;
   priority: number;
   employee_group: number | null;
-  request_type: number | null;
+  request_types: number[];
   condition_field: string;
   condition_operator: ConditionOperator | '';
   condition_value: string;
@@ -78,7 +78,7 @@ const EMPTY_FORM: FormState = {
   is_active: true,
   priority: 0,
   employee_group: null,
-  request_type: null,
+  request_types: [],
   condition_field: '',
   condition_operator: '',
   condition_value: '',
@@ -233,6 +233,114 @@ function PersonPicker({
               </div>
             )}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Request-type multi-chip picker ───────────────────────────────────────────
+
+function TypeMultiPicker({
+  selected,
+  options,
+  onChange,
+}: {
+  selected: number[];
+  options: import('@/lib/api/hr').HRRequestType[];
+  onChange: (ids: number[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const h = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [open]);
+
+  const remaining = options.filter(rt => !selected.includes(rt.id));
+  const selectedItems = options.filter(rt => selected.includes(rt.id));
+
+  const add    = (id: number) => { onChange([...selected, id]); };
+  const remove = (id: number) => { onChange(selected.filter(x => x !== id)); };
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <div style={{
+        ...INPUT,
+        display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center',
+        minHeight: 34, cursor: 'text',
+        padding: '4px 8px',
+      }} onClick={() => remaining.length > 0 && setOpen(o => !o)}>
+
+        {selectedItems.length === 0 ? (
+          <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)', fontStyle: 'italic' }}>
+            Any type (catch-all)
+          </span>
+        ) : (
+          selectedItems.map(rt => (
+            <span key={rt.id} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              background: 'var(--brand)', color: 'var(--primary-foreground)',
+              borderRadius: 4, padding: '2px 6px',
+              fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap',
+            }}>
+              {rt.name}
+              <button
+                type="button"
+                onClick={e => { e.stopPropagation(); remove(rt.id); }}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: 'inherit', padding: 0, lineHeight: 1, fontSize: 13,
+                  opacity: 0.75,
+                }}
+              >×</button>
+            </span>
+          ))
+        )}
+
+        {remaining.length > 0 && (
+          <button
+            type="button"
+            onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+            style={{
+              background: 'none', border: '1px dashed var(--border-default)',
+              borderRadius: 4, cursor: 'pointer',
+              color: 'var(--brand)', fontSize: 11, padding: '2px 6px',
+              fontWeight: 500,
+            }}
+          >
+            + Add
+          </button>
+        )}
+      </div>
+
+      {open && remaining.length > 0 && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
+          background: 'var(--surface-raised)', border: '1px solid var(--border-default)',
+          borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-lg)',
+          maxHeight: 200, overflowY: 'auto', marginTop: 2,
+        }}>
+          {remaining.map(rt => (
+            <button
+              key={rt.id}
+              type="button"
+              onClick={() => { add(rt.id); if (remaining.length <= 1) setOpen(false); }}
+              style={{
+                display: 'block', width: '100%', textAlign: 'left',
+                padding: '7px 12px', background: 'none', border: 'none',
+                cursor: 'pointer', fontSize: 'var(--text-sm)',
+                color: 'var(--text-primary)',
+              }}
+            >
+              {rt.name}
+            </button>
+          ))}
         </div>
       )}
     </div>
@@ -437,7 +545,7 @@ function ChainBuilder({
           is_active: editing.is_active,
           priority: editing.priority,
           employee_group: editing.employee_group,
-          request_type: editing.request_type,
+          request_types: editing.request_types ?? [],
           condition_field: editing.condition_field,
           condition_operator: (editing.condition_operator as ConditionOperator | '') || '',
           condition_value: editing.condition_value ?? '',
@@ -472,10 +580,7 @@ function ChainBuilder({
     ...groups.map(g => ({ value: g.id, label: `${g.name} (${g.code})`, searchText: `${g.name} ${g.code}` })),
   ], [groups]);
 
-  const requestTypeOptions = useMemo(() => [
-    { value: '__anytype__', label: 'Any type (catch-all)', searchText: 'any catch-all all types' },
-    ...requestTypes.map(rt => ({ value: rt.id, label: rt.name })),
-  ], [requestTypes]);
+  // requestTypes passed directly to TypeMultiPicker — no extra options needed
 
   const updateStage = (i: number, patch: Partial<StageRow>) =>
     setStages(s => s.map((r, idx) => idx === i ? { ...r, ...patch } : r));
@@ -554,7 +659,7 @@ function ChainBuilder({
         is_active: form.is_active,
         priority: form.priority,
         employee_group: form.employee_group,
-        request_type: form.request_type,
+        request_types: form.request_types,
         condition_field: form.condition_field,
         condition_operator: (form.condition_operator || '') as ConditionOperator,
         condition_value: form.condition_value || null,
@@ -649,8 +754,8 @@ function ChainBuilder({
             </div>
           </div>
 
-          {/* Row 2: Group + Type + Priority */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px', gap: 12 }}>
+          {/* Row 2: Group + Priority */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: 12 }}>
             <div>
               <label style={LABEL}>Group</label>
               <SearchableDropdown
@@ -668,17 +773,6 @@ function ChainBuilder({
               />
             </div>
             <div>
-              <label style={LABEL}>Request Type</label>
-              <SearchableDropdown
-                options={requestTypeOptions}
-                value={form.request_type ?? '__anytype__'}
-                onChange={v => setField({ request_type: v === '__anytype__' ? null : v as number })}
-                allowClear={false}
-                placeholder="Any type (catch-all)"
-                emptyMessage="No request types found"
-              />
-            </div>
-            <div>
               <label style={LABEL}>Priority</label>
               <input
                 type="number"
@@ -688,6 +782,21 @@ function ChainBuilder({
                 onChange={e => setField({ priority: Number(e.target.value) })}
               />
             </div>
+          </div>
+
+          {/* Row 3: Request Types multi-picker */}
+          <div>
+            <label style={LABEL}>
+              Request Types
+              <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: 'var(--text-tertiary)', marginLeft: 6 }}>
+                — leave empty for catch-all
+              </span>
+            </label>
+            <TypeMultiPicker
+              selected={form.request_types}
+              options={requestTypes}
+              onChange={ids => setField({ request_types: ids })}
+            />
           </div>
 
           {/* Condition section */}
@@ -898,14 +1007,14 @@ export default function ApprovalChainsPage() {
       if (filters.employee_group !== '__null__' && String(p.employee_group) !== String(filters.employee_group)) return false;
     }
     if (filters.request_type) {
-      if (filters.request_type === '__null__' && p.request_type !== null) return false;
-      if (filters.request_type !== '__null__' && String(p.request_type) !== String(filters.request_type)) return false;
+      if (filters.request_type === '__null__' && (p.request_types?.length ?? 0) > 0) return false;
+      if (filters.request_type !== '__null__' && !p.request_types?.includes(Number(filters.request_type))) return false;
     }
     return true;
   }), [policies, search, filters]);
 
-  const rtName = (id: number | null) =>
-    id === null ? null : (requestTypes.find(rt => rt.id === id)?.name ?? String(id));
+  const rtNames = (ids: number[]) =>
+    ids.map(id => requestTypes.find(rt => rt.id === id)?.name ?? String(id));
 
   // ── Filter fields ────────────────────────────────────────────────────────────
 
@@ -974,19 +1083,24 @@ export default function ApprovalChainsPage() {
       ),
     },
     {
-      key: 'request_type',
-      header: 'Request Type',
-      width: 140,
+      key: 'request_types',
+      header: 'Request Types',
+      width: 160,
       render: (p) => {
-        const name = p.request_type_name ?? rtName(p.request_type);
+        const names = p.request_type_names?.length ? p.request_type_names : rtNames(p.request_types ?? []);
+        if (!names.length) {
+          return <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Any type</span>;
+        }
         return (
-          <span style={{
-            fontSize: 'var(--text-xs)',
-            color: name ? 'var(--text-secondary)' : 'var(--text-tertiary)',
-            fontStyle: name ? 'normal' : 'italic',
-          }}>
-            {name ?? 'Any type'}
-          </span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+            {names.map(n => (
+              <span key={n} style={{
+                fontSize: 10, padding: '1px 5px',
+                background: 'var(--surface-subtle)', color: 'var(--text-secondary)',
+                borderRadius: 4, whiteSpace: 'nowrap',
+              }}>{n}</span>
+            ))}
+          </div>
         );
       },
     },
@@ -1059,7 +1173,7 @@ export default function ApprovalChainsPage() {
       ) : null,
     },
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [admin, requestTypes, toggleActive, handleDelete]);
+  ], [admin, rtNames, toggleActive, handleDelete]);
 
   // ── Create action button ─────────────────────────────────────────────────────
 
