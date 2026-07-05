@@ -80,13 +80,13 @@ const EMPTY_FORM: FormState = {
 const LABEL: React.CSSProperties = {
   fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)',
   color: 'var(--text-secondary)', textTransform: 'uppercase',
-  letterSpacing: '0.05em', display: 'block', marginBottom: 'var(--space-1-5)',
+  letterSpacing: '0.05em', display: 'block', marginBottom: 6,
 };
 
 const INPUT: React.CSSProperties = {
   width: '100%', padding: '6px 10px',
   border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)',
-  background: 'var(--bg-input)', color: 'var(--text-primary)',
+  background: 'var(--input-bg)', color: 'var(--text-primary)',
   fontSize: 'var(--text-sm)',
 };
 
@@ -101,7 +101,7 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
       onClick={() => onChange(!value)}
       style={{
         width: 44, height: 24, borderRadius: 12, border: 'none',
-        background: value ? 'var(--color-primary)' : 'var(--border-default)',
+        background: value ? 'var(--brand)' : 'var(--border-default)',
         cursor: 'pointer', position: 'relative', transition: 'background 0.15s',
         flexShrink: 0,
       }}
@@ -110,7 +110,7 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
         position: 'absolute', top: 3,
         left: value ? 22 : 3,
         width: 18, height: 18, borderRadius: '50%',
-        background: 'var(--primary-foreground)', transition: 'left 0.15s',
+        background: '#fff', transition: 'left 0.15s',
       }} />
     </button>
   );
@@ -146,7 +146,7 @@ function TierRowUI({
 
   return (
     <div style={{
-      background: 'var(--bg-subtle)',
+      background: 'var(--surface-subtle)',
       border: '1px solid var(--border-subtle)',
       borderRadius: 'var(--radius-md)',
       padding: '10px 12px',
@@ -156,7 +156,7 @@ function TierRowUI({
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{
           minWidth: 22, height: 22, borderRadius: '50%',
-          background: 'var(--color-primary)', color: 'var(--primary-foreground)',
+          background: 'var(--brand)', color: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 11, fontWeight: 700, flexShrink: 0,
         }}>
@@ -195,7 +195,7 @@ function TierRowUI({
                 disabled={disabled}
                 style={{
                   width: 26, height: 26, border: '1px solid var(--border-default)',
-                  borderRadius: 'var(--radius-sm)', background: 'var(--bg-surface)',
+                  borderRadius: 'var(--radius-sm)', background: 'var(--surface-raised)',
                   cursor: disabled ? 'not-allowed' : 'pointer',
                   opacity: disabled ? 0.35 : 1,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -563,7 +563,7 @@ function RuleBuilder({
                 border: '1px dashed var(--border-default)',
                 borderRadius: 'var(--radius-md)',
                 background: 'none', cursor: 'pointer',
-                color: 'var(--color-primary)',
+                color: 'var(--brand)',
                 fontSize: 'var(--text-sm)', fontWeight: 500,
               }}
             >
@@ -585,8 +585,8 @@ function RuleBuilder({
             onClick={onClose}
             style={{
               padding: '8px 18px', border: '1px solid var(--border-default)',
-              borderRadius: 'var(--radius-md)', background: 'var(--bg-surface)',
-              cursor: 'pointer', fontSize: 'var(--text-sm)',
+              borderRadius: 'var(--radius-md)', background: 'var(--surface-raised)',
+              cursor: 'pointer', fontSize: 'var(--text-sm)', color: 'var(--text-primary)',
             }}
           >
             Cancel
@@ -598,8 +598,8 @@ function RuleBuilder({
             style={{
               padding: '8px 20px', border: 'none',
               borderRadius: 'var(--radius-md)',
-              background: saving ? 'var(--text-tertiary)' : 'var(--color-primary)',
-              color: 'var(--primary-foreground)', cursor: saving ? 'not-allowed' : 'pointer',
+              background: saving ? 'var(--text-tertiary)' : 'var(--brand)',
+              color: '#fff', cursor: saving ? 'not-allowed' : 'pointer',
               fontSize: 'var(--text-sm)', fontWeight: 600,
             }}
           >
@@ -732,8 +732,9 @@ export default function PenaltyRulesPage() {
         <span style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           minWidth: 24, height: 24, borderRadius: '50%',
-          background: r.tiers?.length ? 'var(--color-primary)' : 'var(--border-default)',
-          color: r.tiers?.length ? 'var(--primary-foreground)' : 'var(--text-tertiary)',
+          background: r.tiers?.length ? 'var(--brand-muted)' : 'var(--surface-subtle)',
+          color: r.tiers?.length ? 'var(--brand)' : 'var(--text-tertiary)',
+          border: r.tiers?.length ? '1px solid var(--brand)' : '1px solid var(--border-subtle)',
           fontSize: 11, fontWeight: 700,
         }}>
           {r.tiers?.length ?? 0}
@@ -759,15 +760,15 @@ export default function PenaltyRulesPage() {
           title={r.is_active ? 'Click to deactivate' : 'Click to activate'}
           style={{
             width: 36, height: 20, borderRadius: 10, border: 'none',
-            background: r.is_active ? 'var(--color-primary)' : 'var(--border-default)',
-            cursor: 'pointer', position: 'relative',
+            background: r.is_active ? 'var(--brand)' : 'var(--border-default)',
+            cursor: 'pointer', position: 'relative', transition: 'background 0.15s',
           }}
         >
           <span style={{
             position: 'absolute', top: 2,
             left: r.is_active ? 18 : 2,
             width: 16, height: 16, borderRadius: '50%',
-            background: 'var(--primary-foreground)', transition: 'left 0.15s',
+            background: '#fff', transition: 'left 0.15s',
           }} />
         </button>
       ) : (
