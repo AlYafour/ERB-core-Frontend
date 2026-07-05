@@ -226,6 +226,7 @@ export default function Sidebar() {
   const hrItems = [
     { name: 'Employees',               href: '/hr/employees',          perm: 'hr.hr_employee.view',   icon: <UserIcon className="w-4 h-4" /> },
     { name: 'Employee Groups',         href: '/hr/groups',             perm: 'hr.hr_employee.view',   icon: <UsersIcon className="w-4 h-4" /> },
+    { name: 'Work Teams',              href: '/hr/teams',              perm: 'hr.hr_employee.view',   icon: <UsersIcon className="w-4 h-4" /> },
     { name: 'Work Shifts',             href: '/hr/shifts',             perm: 'hr.hr_employee.view',   icon: <ClockIcon className="w-4 h-4" /> },
     { name: t('nav', 'hrDepartments'), href: '/hr/departments',        perm: 'hr.hr_employee.view',   icon: <BuildingIcon className="w-4 h-4" /> },
     { name: t('nav', 'hrAttendance'),  href: '/hr/attendance',         perm: 'hr.hr_attendance.view', icon: <CalendarIcon className="w-4 h-4" /> },

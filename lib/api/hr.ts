@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRTenantRole, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRTenantRole, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment } from '@/types';
 
 export interface WhosOffEntry {
   employee_name: string;
@@ -562,6 +562,32 @@ export const hrEmployeeGroupsApi = {
   },
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/hr/employees/groups/${id}/`);
+  },
+};
+
+// ── Work Teams ────────────────────────────────────────────────────────────────
+
+export const hrWorkTeamsApi = {
+  getAll: async (params?: Record<string, unknown>): Promise<PaginatedResponse<WorkTeam>> => {
+    const response = await apiClient.get('/hr/employees/work-teams/', { params: { page_size: 200, ...params } });
+    const data = response.data;
+    if (Array.isArray(data)) return { results: data, count: data.length, next: null, previous: null };
+    return data;
+  },
+  getMembers: async (id: number): Promise<HREmployee[]> => {
+    const response = await apiClient.get(`/hr/employees/work-teams/${id}/members/`);
+    return Array.isArray(response.data) ? response.data : response.data?.results ?? [];
+  },
+  create: async (data: Partial<WorkTeam>): Promise<WorkTeam> => {
+    const response = await apiClient.post('/hr/employees/work-teams/', data);
+    return response.data;
+  },
+  update: async (id: number, data: Partial<WorkTeam>): Promise<WorkTeam> => {
+    const response = await apiClient.patch(`/hr/employees/work-teams/${id}/`, data);
+    return response.data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/employees/work-teams/${id}/`);
   },
 };
 

@@ -604,6 +604,22 @@ export interface EmployeeGroup {
   updated_at: string;
 }
 
+export interface WorkTeam {
+  id: number;
+  name: string;
+  name_ar: string;
+  code: string;
+  description: string;
+  employee_group: number | null;
+  employee_group_name: string | null;
+  supervisor: number | null;
+  supervisor_name: string | null;
+  member_count: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface HREmployeeUser {
   id: number;
   username: string;
