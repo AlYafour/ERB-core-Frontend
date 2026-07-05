@@ -110,7 +110,7 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
         position: 'absolute', top: 3,
         left: value ? 22 : 3,
         width: 18, height: 18, borderRadius: '50%',
-        background: '#fff', transition: 'left 0.15s',
+        background: 'var(--primary-foreground)', transition: 'left 0.15s',
       }} />
     </button>
   );
@@ -156,7 +156,7 @@ function TierRowUI({
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{
           minWidth: 22, height: 22, borderRadius: '50%',
-          background: 'var(--brand)', color: '#fff',
+          background: 'var(--brand)', color: 'var(--primary-foreground)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 11, fontWeight: 700, flexShrink: 0,
         }}>
@@ -768,7 +768,7 @@ export default function PenaltyRulesPage() {
             position: 'absolute', top: 2,
             left: r.is_active ? 18 : 2,
             width: 16, height: 16, borderRadius: '50%',
-            background: '#fff', transition: 'left 0.15s',
+            background: 'var(--primary-foreground)', transition: 'left 0.15s',
           }} />
         </button>
       ) : (
