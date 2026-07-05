@@ -76,7 +76,7 @@ function NewEmployeeForm() {
 
   const deptOptions     = (depts?.results     ?? []).map((d) => ({ value: d.id,    label: d.name }));
   const positionOptions = (positions?.results ?? []).map((p) => ({ value: p.id,    label: p.title }));
-  const groupOptions    = (groups?.results    ?? []).map((g) => ({ value: g.id,    label: g.name + (g.name_ar ? ` — ${g.name_ar}` : '') }));
+  const groupOptions    = (groups?.results    ?? []).map((g) => ({ value: g.id,    label: g.name }));
 
   const selectedPosition: HRPosition | undefined = positions?.results?.find(
     (pos: HRPosition) => String(pos.id) === String(employment.position)

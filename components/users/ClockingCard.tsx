@@ -48,11 +48,39 @@ function computeWorkHours(record: any): number | null {
 }
 
 // ── Timeline track helpers ─────────────────────────────────────────────────────
-const SHIFT_START_M = 7 * 60;
-const SHIFT_END_M   = 17 * 60;
-const SHIFT_SPAN_M  = SHIFT_END_M - SHIFT_START_M;
+function toMins(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  return d.getHours() * 60 + d.getMinutes();
+}
 
-function toShiftPct(iso: string | null | undefined, fallbackMins?: number): number {
+function buildTimelineWindow(record: any): { startM: number; endM: number; ticks: string[] } {
+  const ci = toMins(record?.check_in);
+  const co = record?.check_out ? toMins(record.check_out) : null;
+  const now = new Date().getHours() * 60 + new Date().getMinutes();
+
+  const dataStart = ci ?? 7 * 60;
+  const dataEnd   = co ?? (record?.check_in ? now : 17 * 60);
+
+  // Round start down to nearest hour, clamp max 1 hour before first event.
+  const startM = Math.floor(Math.max(0, dataStart - 60) / 60) * 60;
+  // Round end up to nearest hour, at least 1 hour after last event.
+  const rawEnd = Math.ceil((dataEnd + 60) / 60) * 60;
+  const endM   = Math.max(rawEnd, startM + 2 * 60); // minimum 2-hour window
+
+  // Generate 5–7 evenly-spaced tick labels.
+  const span  = endM - startM;
+  const step  = span <= 360 ? 60 : span <= 720 ? 120 : 180;
+  const ticks: string[] = [];
+  for (let m = startM; m <= endM; m += step) {
+    const h  = Math.floor(m / 60) % 24;
+    const mm = m % 60;
+    ticks.push(`${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`);
+  }
+  return { startM, endM, ticks };
+}
+
+function toPct(iso: string | null | undefined, fallbackMins: number | undefined, startM: number, span: number): number {
   let mins: number;
   if (iso) {
     const d = new Date(iso);
@@ -62,7 +90,7 @@ function toShiftPct(iso: string | null | undefined, fallbackMins?: number): numb
   } else {
     return 0;
   }
-  return Math.max(0, Math.min(100, ((mins - SHIFT_START_M) / SHIFT_SPAN_M) * 100));
+  return Math.max(0, Math.min(100, ((mins - startM) / span) * 100));
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -144,13 +172,15 @@ export default function ClockingCard({ emp, isSelf }: Props) {
     : { label: 'Working',                                          bg: 'var(--brand-subtle)', color: 'var(--brand)', dot: 'var(--brand)', pulse: true };
 
   // ── Timeline track ─────────────────────────────────────────────────────────
+  const { startM, endM, ticks } = buildTimelineWindow(record);
+  const span    = endM - startM;
   const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
-  const ciPct   = toShiftPct(record?.check_in);
-  const brkSPct = toShiftPct(record?.break_start);
-  const brkEPct = toShiftPct(record?.break_end);
+  const ciPct   = toPct(record?.check_in,   undefined, startM, span);
+  const brkSPct = toPct(record?.break_start, undefined, startM, span);
+  const brkEPct = toPct(record?.break_end,   undefined, startM, span);
   const endPct  = record?.check_out
-    ? toShiftPct(record.check_out)
-    : toShiftPct(undefined, Math.min(nowMins, SHIFT_END_M));
+    ? toPct(record.check_out, undefined, startM, span)
+    : toPct(undefined, nowMins, startM, span);
   const hasBrk  = !!record?.break_start;
   const brkDone = hasBrk && !!record?.break_end;
 
@@ -243,7 +273,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
           {checkedIn && (
             <div style={{ padding: '0 24px 18px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                {['07:00', '09:00', '11:00', '13:00', '15:00', '17:00'].map(t => (
+                {ticks.map(t => (
                   <span key={t} style={{ fontSize: 10, color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>{t}</span>
                 ))}
               </div>

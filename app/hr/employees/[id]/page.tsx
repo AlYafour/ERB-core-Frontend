@@ -312,7 +312,7 @@ export default function EmployeeDetailPage() {
 
   const deptOptions     = (depts?.results     ?? []).map((d) => ({ value: d.id, label: d.name }));
   const positionOptions = (positions?.results ?? []).map((p) => ({ value: p.id, label: p.title }));
-  const groupOptions    = (groups?.results    ?? []).map((g) => ({ value: g.id, label: g.name + (g.name_ar ? ` — ${g.name_ar}` : '') }));
+  const groupOptions    = (groups?.results    ?? []).map((g) => ({ value: g.id, label: g.name }));
   const { data: summary }   = useQuery({
     queryKey: ['hr-emp-summary', id],
     queryFn:  () => hrEmployeesApi.getAttendanceSummary(Number(id)),
@@ -436,9 +436,10 @@ export default function EmployeeDetailPage() {
     } else {
       updateMutation.mutate({
         ...form,
-        department: form.department || null,
-        position:   form.position   || null,
-        manager:    form.manager    || null,
+        department:     form.department     || null,
+        position:       form.position       || null,
+        manager:        form.manager        || null,
+        employee_group: form.employee_group || null,
       } as Partial<HREmployee>);
     }
   };
@@ -1122,7 +1123,7 @@ export default function EmployeeDetailPage() {
                   const code = label.toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 20);
                   const g = await hrEmployeeGroupsApi.create({ name: label, name_ar: '', code, description: '', is_active: true });
                   queryClient.invalidateQueries({ queryKey: ['hr-employee-groups-all'] });
-                  return { value: g.id, label: g.name + (g.name_ar ? ` — ${g.name_ar}` : '') };
+                  return { value: g.id, label: g.name };
                 }}
               />
             </div>
