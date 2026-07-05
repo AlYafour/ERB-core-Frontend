@@ -970,10 +970,14 @@ export interface ApprovalStep {
   policy: number;
   order: number;
   approver_strategy: ApproverStrategy;
-  role_name: string;
+  role: number | null;
+  role_display: string | null;
+  role_name: string;           // legacy
   specific_user: number | null;
   sod_fallback_strategy: ApproverStrategy | '';
-  sod_fallback_role: string;
+  sod_fallback_role: number | null;
+  sod_role_display: string | null;
+  sod_fallback_role_name: string;  // legacy
   sod_fallback_user: number | null;
   escalation_after_hours: number | null;
   created_at: string;

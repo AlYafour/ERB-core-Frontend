@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { hrApprovalsApi, hrEmployeeGroupsApi, hrEmployeesApi } from '@/lib/api/hr';
+import { hrApprovalsApi, hrEmployeeGroupsApi, hrEmployeesApi, hrRolesApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
@@ -12,15 +12,14 @@ import { type Column } from '@/components/ui/DataTable';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { RowActions } from '@/components/ui/RowActions';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
-import { ROLES } from '@/lib/constants/roles';
-import type { ApprovalPolicy, ApprovalStep, ApproverStrategy, ConditionOperator, EmployeeGroup, HREmployee } from '@/types';
+import type { ApprovalPolicy, ApprovalStep, ApproverStrategy, ConditionOperator, EmployeeGroup, HREmployee, HRTenantRole } from '@/types';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const STRATEGIES: { value: ApproverStrategy; label: string }[] = [
   { value: 'DIRECT_MANAGER',   label: 'Direct Manager' },
   { value: 'INDIRECT_MANAGER', label: 'Indirect Manager' },
-  { value: 'ROLE',             label: 'Role' },
+  { value: 'ROLE',             label: 'Role (from Settings)' },
   { value: 'SPECIFIC_USER',    label: 'Specific Person' },
 ];
 
@@ -44,10 +43,10 @@ type StageRow = {
   _key: string;
   id: number | null;
   strategy: ApproverStrategy;
-  role_name: string;
+  role: number | null;           // TenantRole FK (preferred)
   specific_user: number | null;
   sod_fallback_strategy: ApproverStrategy | '';
-  sod_fallback_role: string;
+  sod_fallback_role: number | null;  // TenantRole FK
   sod_fallback_user: number | null;
 };
 
@@ -55,10 +54,10 @@ const EMPTY_STAGE = (): StageRow => ({
   _key: Math.random().toString(36).slice(2),
   id: null,
   strategy: 'DIRECT_MANAGER',
-  role_name: '',
+  role: null,
   specific_user: null,
   sod_fallback_strategy: '',
-  sod_fallback_role: '',
+  sod_fallback_role: null,
   sod_fallback_user: null,
 });
 
@@ -370,13 +369,14 @@ const BTN_ICON: React.CSSProperties = {
 };
 
 function StageRowUI({
-  stage, index, total, employees,
+  stage, index, total, employees, tenantRoles,
   onChange, onMove, onRemove,
 }: {
   stage: StageRow;
   index: number;
   total: number;
   employees: HREmployee[];
+  tenantRoles: HRTenantRole[];
   onChange: (patch: Partial<StageRow>) => void;
   onMove: (dir: -1 | 1) => void;
   onRemove: () => void;
@@ -384,6 +384,7 @@ function StageRowUI({
   const isManager = stage.strategy === 'DIRECT_MANAGER' || stage.strategy === 'INDIRECT_MANAGER';
   const needsTarget = stage.strategy === 'ROLE' || stage.strategy === 'SPECIFIC_USER';
   const hint = STRATEGY_META[stage.strategy]?.hint ?? '';
+  const activeRoles = tenantRoles.filter(r => r.is_active !== false);
 
   return (
     <div style={{
@@ -408,8 +409,8 @@ function StageRowUI({
         {/* Strategy type — fixed-width, does NOT grow */}
         <select
           value={stage.strategy}
-          onChange={e => onChange({ strategy: e.target.value as ApproverStrategy, role_name: '', specific_user: null })}
-          style={{ ...INLINE_SELECT, minWidth: 155 }}
+          onChange={e => onChange({ strategy: e.target.value as ApproverStrategy, role: null, specific_user: null })}
+          style={{ ...INLINE_SELECT, minWidth: 165 }}
         >
           {STRATEGIES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
@@ -417,12 +418,12 @@ function StageRowUI({
         {/* Target field — grows to fill remaining space */}
         {stage.strategy === 'ROLE' && (
           <select
-            value={stage.role_name}
-            onChange={e => onChange({ role_name: e.target.value })}
-            style={{ ...INLINE_SELECT, flex: 1, minWidth: 120 }}
+            value={stage.role ?? ''}
+            onChange={e => onChange({ role: e.target.value ? Number(e.target.value) : null })}
+            style={{ ...INLINE_SELECT, flex: 1, minWidth: 140 }}
           >
             <option value="">— select role —</option>
-            {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+            {activeRoles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         )}
 
@@ -483,7 +484,7 @@ function StageRowUI({
             value={stage.sod_fallback_strategy}
             onChange={e => onChange({
               sod_fallback_strategy: e.target.value as ApproverStrategy | '',
-              sod_fallback_role: '', sod_fallback_user: null,
+              sod_fallback_role: null, sod_fallback_user: null,
             })}
             style={{ ...INLINE_SELECT, minWidth: 155, padding: '3px 28px 3px 8px', fontSize: 12 }}
           >
@@ -492,12 +493,12 @@ function StageRowUI({
           </select>
           {stage.sod_fallback_strategy === 'ROLE' && (
             <select
-              value={stage.sod_fallback_role}
-              onChange={e => onChange({ sod_fallback_role: e.target.value })}
+              value={stage.sod_fallback_role ?? ''}
+              onChange={e => onChange({ sod_fallback_role: e.target.value ? Number(e.target.value) : null })}
               style={{ ...INLINE_SELECT, minWidth: 140, padding: '3px 28px 3px 8px', fontSize: 12 }}
             >
               <option value="">— select role —</option>
-              {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+              {activeRoles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
           )}
           {stage.sod_fallback_strategy === 'SPECIFIC_USER' && (
@@ -510,7 +511,7 @@ function StageRowUI({
               />
             </div>
           )}
-          {(stage.sod_fallback_strategy === 'DIRECT_MANAGER' || stage.sod_fallback_strategy === 'INDIRECT_MANAGER') && (
+          {(stage.sod_fallback_strategy === 'DIRECT_MANAGER' || stage.sod_fallback_strategy === 'INDIRECT_MANAGER') && !stage.sod_fallback_role && (
             <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
               escalates up the chain
             </span>
@@ -528,12 +529,14 @@ function ChainBuilder({
   groups,
   requestTypes,
   employees,
+  tenantRoles,
   onClose,
 }: {
   editing: ApprovalPolicy | null;
   groups: EmployeeGroup[];
   requestTypes: import('@/lib/api/hr').HRRequestType[];
   employees: HREmployee[];
+  tenantRoles: HRTenantRole[];
   onClose: () => void;
 }) {
   const qc = useQueryClient();
@@ -562,10 +565,10 @@ function ChainBuilder({
             _key: String(s.id),
             id: s.id,
             strategy: s.approver_strategy,
-            role_name: s.role_name,
+            role: s.role ?? null,
             specific_user: s.specific_user,
             sod_fallback_strategy: s.sod_fallback_strategy ?? '',
-            sod_fallback_role: s.sod_fallback_role ?? '',
+            sod_fallback_role: s.sod_fallback_role ?? null,
             sod_fallback_user: s.sod_fallback_user ?? null,
           }))
       : [EMPTY_STAGE()]
@@ -617,10 +620,10 @@ function ChainBuilder({
         policy: policyId,
         order: i + 1,
         approver_strategy: stage.strategy,
-        role_name: stage.role_name || '',
+        role: stage.role ?? null,
         specific_user: stage.specific_user ?? null,
         sod_fallback_strategy: (stage.sod_fallback_strategy || '') as ApproverStrategy | '',
-        sod_fallback_role: stage.sod_fallback_role || '',
+        sod_fallback_role: stage.sod_fallback_role ?? null,
         sod_fallback_user: stage.sod_fallback_user,
       };
       if (stage.id !== null && remaining.has(stage.id)) {
@@ -644,7 +647,7 @@ function ChainBuilder({
     // Validate stage targets
     for (let i = 0; i < stages.length; i++) {
       const s = stages[i];
-      if (s.strategy === 'ROLE' && !s.role_name) {
+      if (s.strategy === 'ROLE' && !s.role) {
         toast(`Stage ${i + 1}: select a role`, 'error'); return;
       }
       if (s.strategy === 'SPECIFIC_USER' && !s.specific_user) {
@@ -863,6 +866,7 @@ function ChainBuilder({
                     index={i}
                     total={stages.length}
                     employees={employees}
+                    tenantRoles={tenantRoles}
                     onChange={patch => updateStage(i, patch)}
                     onMove={dir => moveStage(i, dir)}
                     onRemove={() => removeStage(i)}
@@ -971,6 +975,15 @@ export default function ApprovalChainsPage() {
     queryKey: ['employees-all'],
     queryFn: async () => {
       const res = await hrEmployeesApi.getAll();
+      return res.results ?? [];
+    },
+    staleTime: 300_000,
+  });
+
+  const { data: tenantRoles = [] } = useQuery({
+    queryKey: ['tenant-roles'],
+    queryFn: async (): Promise<HRTenantRole[]> => {
+      const res = await hrRolesApi.getAll({ is_active: true });
       return res.results ?? [];
     },
     staleTime: 300_000,
@@ -1217,6 +1230,7 @@ export default function ApprovalChainsPage() {
           groups={groups}
           requestTypes={requestTypes}
           employees={employees}
+          tenantRoles={tenantRoles}
           onClose={closeModal}
         />
       )}
