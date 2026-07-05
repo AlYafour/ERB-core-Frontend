@@ -558,8 +558,6 @@ export interface HRDepartment {
   name: string;
   name_ar: string;
   description: string;
-  manager: number | null;
-  manager_name: string | null;
   parent: number | null;
   parent_name: string | null;
   employee_count: number;
@@ -602,8 +600,6 @@ export interface EmployeeGroup {
   member_count: number;
   default_shift?: number | null;
   default_shift_name?: string | null;
-  default_manager?: number | null;
-  default_manager_name?: string | null;
   created_at: string;
   updated_at: string;
 }

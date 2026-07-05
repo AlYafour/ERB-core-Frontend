@@ -116,13 +116,6 @@ export default function DepartmentsPage() {
         : <span style={{ color: 'var(--text-tertiary)' }}>—</span>,
     },
     {
-      key: 'manager_name',
-      header: 'Manager',
-      render: r => r.manager_name
-        ? <span>{r.manager_name}</span>
-        : <span style={{ color: 'var(--text-tertiary)' }}>—</span>,
-    },
-    {
       key: 'employee_count',
       header: 'Members',
       render: r => (

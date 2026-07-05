@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppListPage } from '@/components/app/AppListPage';
@@ -9,10 +9,10 @@ import { type Column } from '@/components/ui/DataTable';
 import { RowActions } from '@/components/ui/RowActions';
 import { Badge, Button } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
-import { hrEmployeeGroupsApi, hrShiftsApi, hrEmployeesApi } from '@/lib/api/hr';
+import { hrEmployeeGroupsApi, hrShiftsApi } from '@/lib/api/hr';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast, confirm } from '@/lib/hooks/use-toast';
-import type { EmployeeGroup, HRShift, HREmployee } from '@/types';
+import type { EmployeeGroup, HRShift } from '@/types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -31,8 +31,7 @@ const EMPTY_FORM = {
   code: '',
   description: '',
   is_active: true,
-  default_shift:   null as number | null,
-  default_manager: null as number | null,
+  default_shift: null as number | null,
 };
 type FormState = typeof EMPTY_FORM;
 
@@ -42,180 +41,16 @@ const LABEL_STYLE: React.CSSProperties = {
   letterSpacing: '0.05em', display: 'block', marginBottom: 'var(--space-1-5)',
 };
 
-// ── Manager Picker ─────────────────────────────────────────────────────────────
-function ManagerPicker({
-  value,
-  onChange,
-  employees,
-  fallbackName,
-}: {
-  value: number | null;
-  onChange: (id: number | null) => void;
-  employees: HREmployee[];
-  fallbackName?: string | null;
-}) {
-  const [search, setSearch]   = useState('');
-  const [open, setOpen]       = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  const selected = value ? employees.find(e => e.id === value) : null;
-  const label    = selected?.full_name ?? (value && fallbackName ? fallbackName : null);
-
-  const filtered = employees.filter(e =>
-    !search ||
-    e.full_name.toLowerCase().includes(search.toLowerCase()) ||
-    e.employee_id.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const select = (id: number | null) => {
-    onChange(id);
-    setOpen(false);
-    setSearch('');
-  };
-
-  return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      {/* Trigger */}
-      <button
-        type="button"
-        onClick={() => { setOpen(o => !o); setSearch(''); }}
-        className="form-input"
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between', gap: 'var(--space-2)',
-          cursor: 'pointer', textAlign: 'left', fontSize: 'var(--text-sm)',
-        }}
-      >
-        <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0, flex: 1, overflow: 'hidden' }}>
-          {label ? (
-            <>
-              <span style={{
-                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                background: selected ? (selected.user?.id ? 'var(--brand)' : 'var(--color-error)') : 'var(--text-tertiary)',
-              }} />
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
-            </>
-          ) : (
-            <span style={{ color: 'var(--text-secondary)' }}>— No default manager —</span>
-          )}
-        </span>
-        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', flexShrink: 0 }}>▾</span>
-      </button>
-
-      {/* Dropdown */}
-      {open && (
-        <div style={{
-          position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 200,
-          background: 'var(--surface-default)', border: '1px solid var(--border-default)',
-          borderRadius: 'var(--radius-md)', boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-          overflow: 'hidden',
-        }}>
-          {/* Search input */}
-          <div style={{ padding: 'var(--space-2)', borderBottom: '1px solid var(--border-subtle)' }}>
-            <input
-              autoFocus
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search by name or ID…"
-              className="form-input"
-              style={{ width: '100%', fontSize: 'var(--text-sm)', padding: 'var(--space-1-5) var(--space-2-5)' }}
-            />
-          </div>
-
-          {/* Option list */}
-          <div style={{ maxHeight: 220, overflowY: 'auto' }}>
-            {/* Clear option */}
-            <div
-              onClick={() => select(null)}
-              style={{
-                padding: 'var(--space-2) var(--space-3)', cursor: 'pointer',
-                fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontStyle: 'italic',
-                background: value === null ? 'var(--surface-subtle)' : undefined,
-                borderBottom: '1px solid var(--border-subtle)',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-subtle)')}
-              onMouseLeave={e => (e.currentTarget.style.background = value === null ? 'var(--surface-subtle)' : 'transparent')}
-            >
-              — No default manager —
-            </div>
-
-            {filtered.length === 0 ? (
-              <div style={{ padding: 'var(--space-3)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', textAlign: 'center' }}>
-                No employees found
-              </div>
-            ) : filtered.map(emp => {
-              const hasUser  = !!emp.user?.id;
-              const inactive = !emp.is_active;
-              const isSel    = emp.id === value;
-              const dotColor = !hasUser ? 'var(--color-error)' : inactive ? 'var(--text-tertiary)' : 'var(--brand)';
-              return (
-                <div
-                  key={emp.id}
-                  onClick={() => select(emp.id)}
-                  style={{
-                    padding: 'var(--space-2) var(--space-3)', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
-                    background: isSel ? 'var(--brand)' : undefined,
-                    opacity: inactive ? 0.6 : 1,
-                  }}
-                  onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = 'var(--surface-subtle)'; }}
-                  onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = 'transparent'; }}
-                >
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: dotColor }} />
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{
-                      fontSize: 'var(--text-sm)',
-                      fontWeight: isSel ? 'var(--weight-semibold)' : 'var(--weight-normal)',
-                      color: isSel ? '#fff' : undefined,
-                      display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
-                      {emp.full_name}
-                    </span>
-                    <span style={{
-                      fontSize: 'var(--text-xs)',
-                      color: isSel ? '#fff' : 'var(--text-secondary)',
-                      display: 'flex', alignItems: 'center', gap: 'var(--space-1-5)',
-                    }}>
-                      {emp.employee_id}
-                      {inactive && <span style={{ color: 'var(--text-tertiary)' }}>· inactive</span>}
-                      {!hasUser && !inactive && (
-                        <span style={{ color: 'var(--color-error)', fontWeight: 'var(--weight-medium)' }}>
-                          · won&apos;t route approvals
-                        </span>
-                      )}
-                    </span>
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── Modal ─────────────────────────────────────────────────────────────────────
 function GroupModal({
   group,
   shifts,
-  employees,
   onClose,
   onSave,
   isSaving,
 }: {
   group: EmployeeGroup | null;
   shifts: HRShift[];
-  employees: HREmployee[];
   onClose: () => void;
   onSave: (data: FormState) => void;
   isSaving: boolean;
@@ -223,13 +58,12 @@ function GroupModal({
   const [form, setForm] = useState<FormState>(
     group
       ? {
-          name:            group.name,
-          name_ar:         group.name_ar,
-          code:            group.code,
-          description:     group.description,
-          is_active:       group.is_active,
-          default_shift:   group.default_shift   ?? null,
-          default_manager: group.default_manager ?? null,
+          name:          group.name,
+          name_ar:       group.name_ar,
+          code:          group.code,
+          description:   group.description,
+          is_active:     group.is_active,
+          default_shift: group.default_shift ?? null,
         }
       : EMPTY_FORM,
   );
@@ -348,22 +182,6 @@ function GroupModal({
             </p>
           </div>
 
-          {/* Default Manager */}
-          <div>
-            <label style={LABEL_STYLE}>Default Manager</label>
-            <ManagerPicker
-              value={form.default_manager}
-              onChange={id => set('default_manager', id)}
-              employees={employees}
-              fallbackName={group?.default_manager_name}
-            />
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
-              Approval fallback when an employee has no direct manager.{' '}
-              <span style={{ color: 'var(--brand)', fontWeight: 'var(--weight-semibold)' }}>●</span> Has login · routes approvals.{' '}
-              <span style={{ color: 'var(--color-error)', fontWeight: 'var(--weight-semibold)' }}>●</span> No account · approvals won&apos;t deliver.
-            </p>
-          </div>
-
           {/* Active toggle */}
           <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', cursor: 'pointer', userSelect: 'none' }}>
             <div
@@ -425,15 +243,8 @@ export default function EmployeeGroupsPage() {
     staleTime: 120_000,
   });
 
-  const { data: employeesRaw } = useQuery({
-    queryKey: ['hr-employees-all'],
-    queryFn: () => hrEmployeesApi.getAll(),
-    staleTime: 120_000,
-  });
-
   const allGroups: EmployeeGroup[] = raw?.results ?? [];
   const shifts: HRShift[]          = shiftsRaw?.results ?? [];
-  const employees: HREmployee[]    = employeesRaw?.results ?? [];
 
   const filtered = !search
     ? allGroups
@@ -525,7 +336,7 @@ export default function EmployeeGroupsPage() {
     {
       key: 'default_shift_name',
       header: 'Default Shift',
-      width: '140px',
+      width: '160px',
       render: (group) => {
         const shiftDetail = group.default_shift ? shiftById.get(group.default_shift) : null;
         return group.default_shift_name ? (
@@ -538,28 +349,6 @@ export default function EmployeeGroupsPage() {
                 {fmtTime(shiftDetail.start_time)} – {fmtTime(shiftDetail.end_time)}
               </p>
             )}
-          </div>
-        ) : (
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic' }}>None</p>
-        );
-      },
-    },
-    {
-      key: 'default_manager_name',
-      header: 'Default Manager',
-      width: '160px',
-      render: (group) => {
-        const mgrEmp     = group.default_manager ? employees.find(e => e.id === group.default_manager) : null;
-        const mgrHasUser = mgrEmp ? !!mgrEmp.user?.id : null;
-        return group.default_manager_name ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-            <span style={{
-              width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-              background: mgrHasUser === false ? 'var(--color-error)' : 'var(--brand)',
-            }} />
-            <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {group.default_manager_name}
-            </p>
           </div>
         ) : (
           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic' }}>None</p>
@@ -606,7 +395,7 @@ export default function EmployeeGroupsPage() {
   return (
     <AppListPage
       title="Employee Groups"
-      description="Workforce categories that carry a default shift, approval policy, and reporting line."
+      description="Workforce categories that carry a default shift and approval policy."
       breadcrumbs={[
         { label: 'Home', href: '/' },
         { label: 'HR' },
@@ -627,23 +416,19 @@ export default function EmployeeGroupsPage() {
       tableState={tableState}
       searchPlaceholder="Search groups…"
     >
-      {/* Context note */}
       {!isLoading && allGroups.length > 0 && (
         <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)' }}>
           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
-            The default manager is the approval fallback when an employee has no direct manager assigned.
-            Assign employees to groups from the{' '}
+            Approval routing uses the <strong>Direct Manager</strong> field on each employee — assign it from the{' '}
             <Link href="/hr/employees" style={{ color: 'var(--brand)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>Employees page</Link>.
           </p>
         </div>
       )}
 
-      {/* Group Modal */}
       {modalGroup !== null && (
         <GroupModal
           group={modalGroup === 'new' ? null : modalGroup}
           shifts={shifts}
-          employees={employees}
           onClose={() => setModalGroup(null)}
           onSave={handleSave}
           isSaving={isSaving}
