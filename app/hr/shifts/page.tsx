@@ -52,6 +52,7 @@ const EMPTY_FORM = {
   shift_type:    'morning' as HRShift['shift_type'],
   start_time:    '08:00',
   end_time:      '17:00',
+  break_enabled: true,
   break_start:   '12:00',
   break_end:     '13:00',
   break_mins:    60,
@@ -85,8 +86,9 @@ function shiftToForm(s: HRShift): FormState {
     shift_type:    s.shift_type,
     start_time:    s.start_time.slice(0, 5),
     end_time:      s.end_time.slice(0, 5),
-    break_start:   s.break_start?.slice(0, 5) ?? '',
-    break_end:     s.break_end?.slice(0, 5) ?? '',
+    break_enabled: !!(s.break_start),
+    break_start:   s.break_start?.slice(0, 5) ?? '12:00',
+    break_end:     s.break_end?.slice(0, 5) ?? '13:00',
     break_mins:    s.break_mins,
     work_days:     [...s.work_days],
     is_active:     s.is_active,
@@ -135,6 +137,9 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
     });
   };
 
+  const setDays = (days: number[]) =>
+    setForm(p => ({ ...p, work_days: days, day_schedules: p.day_schedules.filter(ds => days.includes(ds.day)) }));
+
   const togglePerDay = () => {
     setForm(p => {
       const on = !p.per_day_times;
@@ -160,7 +165,6 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
   return (
     <div
       style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-      onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div style={{
         width: '100%', maxWidth: 560,
@@ -217,7 +221,21 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
 
           {/* Work days */}
           <div>
-            <label style={LABEL}>Work Days</label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <label style={{ ...LABEL, marginBottom: 0 }}>Work Days</label>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {[
+                  { label: 'Mon–Fri', days: [0,1,2,3,4] },
+                  { label: 'Mon–Thu', days: [0,1,2,3] },
+                  { label: 'All 7', days: [0,1,2,3,4,5,6] },
+                ].map(({ label, days }) => (
+                  <button key={label} type="button" onClick={() => setDays(days)}
+                    style={{ padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 600, cursor: 'pointer', border: '1px solid var(--border-default)', background: 'transparent', color: 'var(--text-secondary)' }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
               {WEEKDAYS.map(({ label, value }) => {
                 const on = form.work_days.includes(value);
@@ -240,32 +258,60 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
           {/* Default times — hidden when per-day is on */}
           <div style={{ display: form.per_day_times ? 'none' : undefined }}>
             <label style={LABEL}>Schedule</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10 }}>
+
+            {/* Work hours */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
               <div>
-                <span style={{ ...LABEL, marginBottom: 4, fontSize: 10 }}>Start</span>
+                <span style={{ ...LABEL, marginBottom: 4, fontSize: 10 }}>Start Time</span>
                 <input type="time" value={form.start_time} onChange={e => set('start_time', e.target.value)}
                   className="form-input" style={{ width: '100%', fontSize: 'var(--text-sm)' }} />
               </div>
               <div>
-                <span style={{ ...LABEL, marginBottom: 4, fontSize: 10 }}>End</span>
+                <span style={{ ...LABEL, marginBottom: 4, fontSize: 10 }}>End Time</span>
                 <input type="time" value={form.end_time} onChange={e => set('end_time', e.target.value)}
                   className="form-input" style={{ width: '100%', fontSize: 'var(--text-sm)' }} />
               </div>
-              <div>
-                <span style={{ ...LABEL, marginBottom: 4, fontSize: 10 }}>Break Start</span>
-                <input type="time" value={form.break_start} onChange={e => set('break_start', e.target.value)}
-                  className="form-input" style={{ width: '100%', fontSize: 'var(--text-sm)' }} />
-              </div>
-              <div>
-                <span style={{ ...LABEL, marginBottom: 4, fontSize: 10 }}>Break End</span>
-                <input type="time" value={form.break_end} onChange={e => set('break_end', e.target.value)}
-                  className="form-input" style={{ width: '100%', fontSize: 'var(--text-sm)' }} />
-              </div>
             </div>
-            {form.break_start && form.break_end && (
-              <p style={{ margin: '6px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-                Break duration: {calcBreakMins(form.break_start, form.break_end)} min
-              </p>
+
+            {/* Break toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: form.break_enabled ? 10 : 0 }}>
+              <span style={{ ...LABEL, marginBottom: 0, fontSize: 10 }}>Break</span>
+              {(['Has Break', 'No Break'] as const).map(opt => {
+                const active = opt === 'Has Break' ? form.break_enabled : !form.break_enabled;
+                return (
+                  <button key={opt} type="button" onClick={() => set('break_enabled', opt === 'Has Break')}
+                    style={{
+                      padding: '4px 12px', borderRadius: 99, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                      border: active ? '2px solid var(--brand)' : '1px solid var(--border-default)',
+                      background: active ? 'var(--brand)' : 'transparent',
+                      color: active ? '#fff' : 'var(--text-secondary)',
+                      transition: 'all 100ms',
+                    }}>
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Break times — only when break is enabled */}
+            {form.break_enabled && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <span style={{ ...LABEL, marginBottom: 4, fontSize: 10 }}>Break Start</span>
+                  <input type="time" value={form.break_start} onChange={e => set('break_start', e.target.value)}
+                    className="form-input" style={{ width: '100%', fontSize: 'var(--text-sm)' }} />
+                </div>
+                <div>
+                  <span style={{ ...LABEL, marginBottom: 4, fontSize: 10 }}>Break End</span>
+                  <input type="time" value={form.break_end} onChange={e => set('break_end', e.target.value)}
+                    className="form-input" style={{ width: '100%', fontSize: 'var(--text-sm)' }} />
+                  {form.break_start && form.break_end && (
+                    <span style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 3, display: 'block' }}>
+                      {calcBreakMins(form.break_start, form.break_end)} min
+                    </span>
+                  )}
+                </div>
+              </div>
             )}
           </div>
 
@@ -282,49 +328,55 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
           )}
 
           {/* Per-day schedule table */}
-          {form.per_day_times && form.work_days.length > 0 && (
-            <div style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', overflow: 'hidden' }}>
-              {/* Table header */}
-              <div style={{ display: 'grid', gridTemplateColumns: '52px 1fr 1fr 1fr 1fr', gap: 0, background: 'var(--surface-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
-                {['Day', 'Start', 'End', 'Brk Start', 'Brk End'].map(h => (
-                  <div key={h} style={{ padding: '6px 8px', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
-                ))}
+          {form.per_day_times && form.work_days.length > 0 && (() => {
+            const cols = form.break_enabled ? '52px 1fr 1fr 1fr 1fr' : '52px 1fr 1fr';
+            const headers = form.break_enabled ? ['Day', 'Start', 'End', 'Brk Start', 'Brk End'] : ['Day', 'Start', 'End'];
+            return (
+              <div style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', overflow: 'hidden' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: cols, gap: 0, background: 'var(--surface-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
+                  {headers.map(h => (
+                    <div key={h} style={{ padding: '6px 8px', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
+                  ))}
+                </div>
+                {form.work_days.map((day, i) => {
+                  const row = form.day_schedules.find(ds => ds.day === day) ??
+                    { day, start_time: form.start_time, end_time: form.end_time, break_start: form.break_start, break_end: form.break_end, break_mins: form.break_mins };
+                  const isLast = i === form.work_days.length - 1;
+                  return (
+                    <div key={day} style={{ display: 'grid', gridTemplateColumns: cols, gap: 0, borderBottom: isLast ? 'none' : '1px solid var(--border-subtle)', alignItems: 'center' }}>
+                      <div style={{ padding: '8px 10px', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        {WEEKDAYS[day]?.label}
+                      </div>
+                      <div style={{ padding: '6px 6px 6px 0' }}>
+                        <input type="time" value={row.start_time}
+                          onChange={e => updateDayRow(day, { start_time: e.target.value })}
+                          className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
+                      </div>
+                      <div style={{ padding: '6px 6px 6px 0' }}>
+                        <input type="time" value={row.end_time}
+                          onChange={e => updateDayRow(day, { end_time: e.target.value })}
+                          className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
+                      </div>
+                      {form.break_enabled && (
+                        <>
+                          <div style={{ padding: '6px 6px 6px 0' }}>
+                            <input type="time" value={row.break_start}
+                              onChange={e => updateDayRow(day, { break_start: e.target.value })}
+                              className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
+                          </div>
+                          <div style={{ padding: '6px 8px 6px 0' }}>
+                            <input type="time" value={row.break_end}
+                              onChange={e => updateDayRow(day, { break_end: e.target.value })}
+                              className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-              {/* Rows */}
-              {form.work_days.map((day, i) => {
-                const row = form.day_schedules.find(ds => ds.day === day) ??
-                  { day, start_time: form.start_time, end_time: form.end_time, break_start: form.break_start, break_end: form.break_end, break_mins: form.break_mins };
-                const isLast = i === form.work_days.length - 1;
-                return (
-                  <div key={day} style={{ display: 'grid', gridTemplateColumns: '52px 1fr 1fr 1fr 1fr', gap: 0, borderBottom: isLast ? 'none' : '1px solid var(--border-subtle)', alignItems: 'center' }}>
-                    <div style={{ padding: '8px 10px', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      {WEEKDAYS[day]?.label}
-                    </div>
-                    <div style={{ padding: '6px 6px 6px 0' }}>
-                      <input type="time" value={row.start_time}
-                        onChange={e => updateDayRow(day, { start_time: e.target.value })}
-                        className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
-                    </div>
-                    <div style={{ padding: '6px 6px 6px 0' }}>
-                      <input type="time" value={row.end_time}
-                        onChange={e => updateDayRow(day, { end_time: e.target.value })}
-                        className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
-                    </div>
-                    <div style={{ padding: '6px 6px 6px 0' }}>
-                      <input type="time" value={row.break_start}
-                        onChange={e => updateDayRow(day, { break_start: e.target.value })}
-                        className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
-                    </div>
-                    <div style={{ padding: '6px 8px 6px 0' }}>
-                      <input type="time" value={row.break_end}
-                        onChange={e => updateDayRow(day, { break_end: e.target.value })}
-                        className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+            );
+          })()}
 
           {/* Active toggle */}
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', userSelect: 'none' }}>
@@ -429,13 +481,23 @@ export default function ShiftsPage() {
   });
 
   const handleSave = (data: FormState) => {
+    const bs = data.break_enabled ? data.break_start : '';
+    const be = data.break_enabled ? data.break_end : '';
     const enriched = {
       ...data,
-      break_mins: calcBreakMins(data.break_start, data.break_end) || data.break_mins,
-      day_schedules: data.day_schedules.map(ds => ({
-        ...ds,
-        break_mins: calcBreakMins(ds.break_start, ds.break_end) || ds.break_mins,
-      })),
+      break_start: bs || null,
+      break_end:   be || null,
+      break_mins:  data.break_enabled ? (calcBreakMins(bs, be) || data.break_mins) : 0,
+      day_schedules: data.day_schedules.map(ds => {
+        const dbs = data.break_enabled ? ds.break_start : '';
+        const dbe = data.break_enabled ? ds.break_end : '';
+        return {
+          ...ds,
+          break_start: dbs || null,
+          break_end:   dbe || null,
+          break_mins:  data.break_enabled ? (calcBreakMins(dbs, dbe) || ds.break_mins) : 0,
+        };
+      }),
     };
     if (modalShift === 'new') createMutation.mutate(enriched);
     else if (modalShift) updateMutation.mutate({ id: modalShift.id, data: enriched });
