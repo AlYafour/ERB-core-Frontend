@@ -982,7 +982,8 @@ export interface ApprovalStep {
 
 export interface ApprovalPolicy {
   id: number;
-  request_type: number;
+  request_type: number | null;
+  request_type_name: string | null;
   name: string;
   is_active: boolean;
   priority: number;

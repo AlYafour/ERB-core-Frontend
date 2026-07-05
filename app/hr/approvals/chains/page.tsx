@@ -472,9 +472,10 @@ function ChainBuilder({
     ...groups.map(g => ({ value: g.id, label: `${g.name} (${g.code})`, searchText: `${g.name} ${g.code}` })),
   ], [groups]);
 
-  const requestTypeOptions = useMemo(() =>
-    requestTypes.map(rt => ({ value: rt.id, label: rt.name })),
-  [requestTypes]);
+  const requestTypeOptions = useMemo(() => [
+    { value: '__anytype__', label: 'Any type (catch-all)', searchText: 'any catch-all all types' },
+    ...requestTypes.map(rt => ({ value: rt.id, label: rt.name })),
+  ], [requestTypes]);
 
   const updateStage = (i: number, patch: Partial<StageRow>) =>
     setStages(s => s.map((r, idx) => idx === i ? { ...r, ...patch } : r));
@@ -533,7 +534,6 @@ function ChainBuilder({
 
   const handleSave = async () => {
     if (!form.name.trim()) { toast('Chain name is required', 'error'); return; }
-    if (!form.request_type) { toast('Request type is required', 'error'); return; }
     if (stages.length === 0) { toast('At least one stage is required', 'error'); return; }
 
     // Validate stage targets
@@ -554,7 +554,7 @@ function ChainBuilder({
         is_active: form.is_active,
         priority: form.priority,
         employee_group: form.employee_group,
-        request_type: form.request_type!,
+        request_type: form.request_type,
         condition_field: form.condition_field,
         condition_operator: (form.condition_operator || '') as ConditionOperator,
         condition_value: form.condition_value || null,
@@ -671,10 +671,10 @@ function ChainBuilder({
               <label style={LABEL}>Request Type</label>
               <SearchableDropdown
                 options={requestTypeOptions}
-                value={form.request_type}
-                onChange={v => setField({ request_type: v as number | null })}
-                allowClear
-                placeholder="— select type —"
+                value={form.request_type ?? '__anytype__'}
+                onChange={v => setField({ request_type: v === '__anytype__' ? null : v as number })}
+                allowClear={false}
+                placeholder="Any type (catch-all)"
                 emptyMessage="No request types found"
               />
             </div>
@@ -897,12 +897,15 @@ export default function ApprovalChainsPage() {
       if (filters.employee_group === '__null__' && p.employee_group !== null) return false;
       if (filters.employee_group !== '__null__' && String(p.employee_group) !== String(filters.employee_group)) return false;
     }
-    if (filters.request_type && String(p.request_type) !== String(filters.request_type)) return false;
+    if (filters.request_type) {
+      if (filters.request_type === '__null__' && p.request_type !== null) return false;
+      if (filters.request_type !== '__null__' && String(p.request_type) !== String(filters.request_type)) return false;
+    }
     return true;
   }), [policies, search, filters]);
 
   const rtName = (id: number | null) =>
-    requestTypes.find(rt => rt.id === id)?.name ?? String(id);
+    id === null ? null : (requestTypes.find(rt => rt.id === id)?.name ?? String(id));
 
   // ── Filter fields ────────────────────────────────────────────────────────────
 
@@ -922,7 +925,10 @@ export default function ApprovalChainsPage() {
       label: 'Request Type',
       type: 'select',
       group: 'Filters',
-      options: requestTypes.map(rt => ({ value: String(rt.id), label: rt.name })),
+      options: [
+        { value: '__null__', label: 'Any (catch-all)' },
+        ...requestTypes.map(rt => ({ value: String(rt.id), label: rt.name })),
+      ],
     },
   ], [groups, requestTypes]);
 
@@ -971,11 +977,18 @@ export default function ApprovalChainsPage() {
       key: 'request_type',
       header: 'Request Type',
       width: 140,
-      render: (p) => (
-        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-          {rtName(p.request_type)}
-        </span>
-      ),
+      render: (p) => {
+        const name = p.request_type_name ?? rtName(p.request_type);
+        return (
+          <span style={{
+            fontSize: 'var(--text-xs)',
+            color: name ? 'var(--text-secondary)' : 'var(--text-tertiary)',
+            fontStyle: name ? 'normal' : 'italic',
+          }}>
+            {name ?? 'Any type'}
+          </span>
+        );
+      },
     },
     {
       key: 'stages',
