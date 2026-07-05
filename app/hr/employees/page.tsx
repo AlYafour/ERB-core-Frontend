@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AppListPage } from '@/components/app/AppListPage';
@@ -28,27 +28,23 @@ export default function EmployeesPage() {
   const { user: me } = useAuth();
   const { hasPermission } = useMyPermissions();
   const router = useRouter();
-  const qc = useQueryClient();
 
   const admin     = hasPermission('hr.hr_employee.view');
   const canEdit   = hasPermission('hr.hr_employee.update');
   const canDelete = hasPermission('hr.hr_employee.delete');
   const canAdd    = hasPermission('hr.hr_employee.create');
 
-  // ── Table state (search + filters + selection via useTableState) ──
   const tableState = useTableState();
   const { search, filters, selectedItems, clearSelection } = tableState;
 
-  // ── Modal state ────────────────────────────────────────────
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [bulkModal,   setBulkModal]   = useState<'group' | 'manager' | null>(null);
 
-  // ── Optimistic overrides ───────────────────────────────────
-  const [grpOverrides,     setGrpOverrides]     = useState<Record<number, GroupRec>>({});
-  const [mgrOverrides,     setMgrOverrides]     = useState<Record<number, ManagerRec>>({});
-  const [mgrFlagOverrides, setMgrFlagOverrides] = useState<Record<number, boolean>>({});
-  const [activeOverrides,  setActiveOverrides]  = useState<Record<number, boolean>>({});
-  const [deletedIds,       setDeletedIds]       = useState<Set<number>>(new Set());
+  // Optimistic overrides — used by both single and bulk mutations
+  const [grpOverrides,    setGrpOverrides]    = useState<Record<number, GroupRec>>({});
+  const [mgrOverrides,    setMgrOverrides]    = useState<Record<number, ManagerRec>>({});
+  const [activeOverrides, setActiveOverrides] = useState<Record<number, boolean>>({});
+  const [deletedIds,      setDeletedIds]      = useState<Set<number>>(new Set());
 
   useEffect(() => { if (me && !admin) router.replace('/dashboard'); }, [me, admin, router]);
 
@@ -64,31 +60,32 @@ export default function EmployeesPage() {
     staleTime: 300_000,
   });
 
-  const employees: HREmployee[]   = raw?.results ?? [];
+  const employees: HREmployee[]    = raw?.results ?? [];
   const groups:    EmployeeGroup[] = groupsRaw?.results ?? [];
 
   // ── Resolvers ──────────────────────────────────────────────
-  const resolveIsActive  = useCallback((emp: HREmployee) =>
+  const resolveIsActive = useCallback((emp: HREmployee) =>
     emp.id in activeOverrides ? activeOverrides[emp.id] : emp.is_active, [activeOverrides]);
-  const resolveIsManager = useCallback((emp: HREmployee) =>
-    emp.id in mgrFlagOverrides ? mgrFlagOverrides[emp.id] : emp.is_manager, [mgrFlagOverrides]);
+
   const resolveGroup = useCallback((emp: HREmployee): GroupRec => {
     if (emp.id in grpOverrides) return grpOverrides[emp.id];
     return emp.employee_group != null && emp.employee_group_code != null
       ? { id: emp.employee_group, code: emp.employee_group_code, name: emp.employee_group_name ?? emp.employee_group_code }
       : null;
   }, [grpOverrides]);
+
   const resolveMgrName = useCallback((emp: HREmployee) =>
     emp.id in mgrOverrides ? mgrOverrides[emp.id]?.name ?? null : emp.direct_manager_name ?? null, [mgrOverrides]);
+
   const resolveMgrId = useCallback((emp: HREmployee) =>
     emp.id in mgrOverrides ? mgrOverrides[emp.id]?.id ?? null : emp.direct_manager ?? null, [mgrOverrides]);
 
   const managerCandidates = useMemo(
-    () => employees.filter(e => resolveIsManager(e) && resolveIsActive(e)),
-    [employees, resolveIsManager, resolveIsActive],
+    () => employees.filter(e => e.is_manager && resolveIsActive(e)),
+    [employees, resolveIsActive],
   );
 
-  // ── Client-side filter + search (reads from tableState.filters) ──
+  // ── Client-side filter + search ────────────────────────────
   const statusFilter = (filters.status as string) ?? 'active';
   const deptFilter   = (filters.department as string) ?? '';
   const posFilter    = (filters.position as string) ?? '';
@@ -104,14 +101,13 @@ export default function EmployeesPage() {
       if (deptFilter  && e.department_name !== deptFilter) return false;
       if (posFilter   && e.position_title  !== posFilter)  return false;
       if (groupFilter && String(e.employee_group) !== groupFilter) return false;
-      if (mgrFilter === 'yes' && !resolveIsManager(e)) return false;
-      if (mgrFilter === 'no'  &&  resolveIsManager(e)) return false;
+      if (mgrFilter === 'yes' && !e.is_manager) return false;
+      if (mgrFilter === 'no'  &&  e.is_manager) return false;
       const q = search.toLowerCase();
       return !q || e.full_name.toLowerCase().includes(q) || e.employee_id.toLowerCase().includes(q);
     });
-  }, [employees, deletedIds, resolveIsActive, search, deptFilter, posFilter, groupFilter, statusFilter, mgrFilter, resolveIsManager]);
+  }, [employees, deletedIds, resolveIsActive, search, deptFilter, posFilter, groupFilter, statusFilter, mgrFilter]);
 
-  // ── Dynamic filter options (derived from data) ─────────────
   const departments = useMemo(
     () => Array.from(new Set(employees.map(e => e.department_name).filter(Boolean))).sort() as string[],
     [employees],
@@ -122,10 +118,9 @@ export default function EmployeesPage() {
   );
 
   const noLoginCount = employees.filter(e => !deletedIds.has(e.id) && !e.user?.id).length;
+  const activeEmp    = activeModal?.emp ?? null;
 
-  const activeEmp = activeModal?.emp ?? null;
-
-  // ── Single mutations ───────────────────────────────────────
+  // ── Single-employee mutations ──────────────────────────────
   const grpMutation = useMutation({
     mutationFn: ({ empId, groupId }: { empId: number; groupId: number | null }) =>
       hrEmployeesApi.update(empId, { employee_group: groupId } as Partial<HREmployee>),
@@ -142,7 +137,7 @@ export default function EmployeesPage() {
     mutationFn: ({ empId, managerId }: { empId: number; managerId: number | null }) =>
       hrEmployeesApi.update(empId, { direct_manager: managerId } as Partial<HREmployee>),
     onSuccess: (data: HREmployee, vars) => {
-      const name: string | null = data?.direct_manager_name ?? null;
+      const name = data?.direct_manager_name ?? null;
       setMgrOverrides(p => ({ ...p, [vars.empId]: vars.managerId !== null && name ? { id: vars.managerId, name } : null }));
       setActiveModal(null);
       toast(vars.managerId !== null ? 'Manager assigned' : 'Manager removed', 'success');
@@ -150,22 +145,9 @@ export default function EmployeesPage() {
     onError: () => toast('Failed to update manager', 'error'),
   });
 
-  const mgrFlagMutation = useMutation({
-    mutationFn: ({ empId, value }: { empId: number; value: boolean }) =>
-      hrEmployeesApi.update(empId, { is_manager: value } as Partial<HREmployee>),
-    onSuccess: (_, vars) => {
-      setMgrFlagOverrides(p => ({ ...p, [vars.empId]: vars.value }));
-      toast(vars.value ? 'Marked as manager' : 'Manager flag removed', 'success');
-    },
-    onError: () => toast('Failed to update', 'error'),
-  });
-
   const activateMutation = useMutation({
     mutationFn: (id: number) => hrEmployeesApi.activate(id),
-    onSuccess: (_, id) => {
-      setActiveOverrides(p => ({ ...p, [id]: true }));
-      toast('Employee activated', 'success');
-    },
+    onSuccess: (_, id) => { setActiveOverrides(p => ({ ...p, [id]: true })); toast('Employee activated', 'success'); },
     onError: () => toast('Failed to activate', 'error'),
   });
 
@@ -195,7 +177,11 @@ export default function EmployeesPage() {
       Promise.all(ids.map(id => hrEmployeesApi.update(id, { employee_group: groupId } as Partial<HREmployee>))),
     onSuccess: (_, vars) => {
       const g = vars.groupId !== null ? groups.find(x => x.id === vars.groupId) : null;
-      setGrpOverrides(prev => { const n = { ...prev }; vars.ids.forEach(id => { n[id] = g ? { id: g.id, code: g.code, name: g.name } : null; }); return n; });
+      setGrpOverrides(prev => {
+        const n = { ...prev };
+        vars.ids.forEach(id => { n[id] = g ? { id: g.id, code: g.code, name: g.name } : null; });
+        return n;
+      });
       setBulkModal(null); clearSelection();
       toast(`Group ${vars.groupId ? 'assigned' : 'removed'} for ${vars.ids.length} employees`, 'success');
     },
@@ -206,7 +192,14 @@ export default function EmployeesPage() {
     mutationFn: ({ managerId, ids }: { managerId: number | null; ids: number[] }) =>
       Promise.all(ids.map(id => hrEmployeesApi.update(id, { direct_manager: managerId } as Partial<HREmployee>))),
     onSuccess: (results: HREmployee[], vars) => {
-      setMgrOverrides(prev => { const n = { ...prev }; vars.ids.forEach((id, i) => { const name = results[i]?.direct_manager_name ?? null; n[id] = vars.managerId !== null && name ? { id: vars.managerId, name } : null; }); return n; });
+      setMgrOverrides(prev => {
+        const n = { ...prev };
+        vars.ids.forEach((id, i) => {
+          const name = results[i]?.direct_manager_name ?? null;
+          n[id] = vars.managerId !== null && name ? { id: vars.managerId, name } : null;
+        });
+        return n;
+      });
       setBulkModal(null); clearSelection();
       toast(`Manager ${vars.managerId ? 'assigned' : 'removed'} for ${vars.ids.length} employees`, 'success');
     },
@@ -246,7 +239,7 @@ export default function EmployeesPage() {
   const isBulkPending = bulkGrpMutation.isPending || bulkMgrMutation.isPending ||
     bulkActivateMutation.isPending || bulkDeactivateMutation.isPending || bulkDeleteMutation.isPending;
 
-  // ── Action handlers ────────────────────────────────────────
+  // ── Handlers ──────────────────────────────────────────────
   const handleDelete = async (emp: HREmployee) => {
     if (await confirm(`Delete ${emp.full_name}? This cannot be undone.`))
       deleteMutation.mutate(emp.id);
@@ -254,11 +247,11 @@ export default function EmployeesPage() {
 
   const handleBulkDelete = async () => {
     const n = selectedItems.size;
-    if (await confirm(`Delete ${n} employee${n !== 1 ? 's' : ''}? This cannot be undone. Linked login accounts are not deleted automatically.`))
+    if (await confirm(`Delete ${n} employee${n !== 1 ? 's' : ''}? This cannot be undone.`))
       bulkDeleteMutation.mutate([...selectedItems]);
   };
 
-  // ── Columns ────────────────────────────────────────────────
+  // ── Columns — cells are read-only; editing via row actions ─
   const columns: Column<HREmployee>[] = [
     {
       key: 'full_name',
@@ -295,67 +288,13 @@ export default function EmployeesPage() {
       },
     },
     {
-      key: 'is_manager',
-      header: 'Mgr',
-      render: emp => {
-        const isManager = resolveIsManager(emp);
-        if (!canEdit) {
-          return (
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              {isManager
-                ? <Badge variant="default">Mgr</Badge>
-                : <span style={{ color: 'var(--text-tertiary)' }}>—</span>}
-            </div>
-          );
-        }
-        return (
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <button
-              className={`emp-mgr-flag${isManager ? ' emp-mgr-flag--on' : ''}`}
-              onClick={e => { e.stopPropagation(); mgrFlagMutation.mutate({ empId: emp.id, value: !isManager }); }}
-              disabled={mgrFlagMutation.isPending && mgrFlagMutation.variables?.empId === emp.id}
-              title={isManager ? 'Remove manager designation' : 'Mark as manager'}
-            >
-              {isManager ? 'Mgr' : '—'}
-            </button>
-          </div>
-        );
-      },
-    },
-    {
       key: 'employee_group',
       header: 'Group',
       render: emp => {
         const grp = resolveGroup(emp);
-        if (!canEdit) {
-          return grp
-            ? <span className="emp-meta">{grp.name || grp.code}</span>
-            : <span style={{ color: 'var(--text-tertiary)' }}>—</span>;
-        }
-        return grp ? (
-          <div className="emp-group-tag">
-            <button
-              className="emp-group-badge"
-              onClick={e => { e.stopPropagation(); setActiveModal({ type: 'group', emp }); }}
-              title={grp.code}
-            >
-              {grp.name || grp.code}
-            </button>
-            <button
-              className="emp-clear-btn"
-              onClick={e => { e.stopPropagation(); grpMutation.mutate({ empId: emp.id, groupId: null }); }}
-            >
-              ✕
-            </button>
-          </div>
-        ) : (
-          <button
-            className="emp-assign-btn"
-            onClick={e => { e.stopPropagation(); setActiveModal({ type: 'group', emp }); }}
-          >
-            Assign
-          </button>
-        );
+        return grp
+          ? <span className="emp-meta">{grp.name || grp.code}</span>
+          : <span style={{ color: 'var(--text-tertiary)' }}>—</span>;
       },
     },
     {
@@ -363,39 +302,12 @@ export default function EmployeesPage() {
       header: 'Direct Manager',
       render: emp => {
         const mgrName = resolveMgrName(emp);
-        if (!canEdit) {
-          return mgrName
-            ? <span className="emp-meta">{mgrName}</span>
-            : <span style={{ color: 'var(--text-tertiary)' }}>—</span>;
-        }
-        return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
-            {mgrName ? (
-              <>
-                <span className="emp-dot emp-dot--green" />
-                <button
-                  className="emp-manager-btn"
-                  onClick={e => { e.stopPropagation(); setActiveModal({ type: 'manager', emp }); }}
-                >
-                  {mgrName}
-                </button>
-                <button
-                  className="emp-clear-btn"
-                  onClick={e => { e.stopPropagation(); mgrMutation.mutate({ empId: emp.id, managerId: null }); }}
-                >
-                  ✕
-                </button>
-              </>
-            ) : (
-              <button
-                className="emp-assign-btn"
-                onClick={e => { e.stopPropagation(); setActiveModal({ type: 'manager', emp }); }}
-              >
-                Assign
-              </button>
-            )}
+        return mgrName ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="emp-dot emp-dot--green" />
+            <span className="emp-meta">{mgrName}</span>
           </div>
-        );
+        ) : <span style={{ color: 'var(--text-tertiary)' }}>—</span>;
       },
     },
     {
@@ -407,6 +319,9 @@ export default function EmployeesPage() {
           <div onClick={e => e.stopPropagation()}>
             <RowActions actions={[
               { label: 'Open Employee File', href: `/hr/employees/${emp.id}` },
+              { separator: true, hidden: !canEdit },
+              { label: 'Assign Group',   onClick: () => setActiveModal({ type: 'group',   emp }), hidden: !canEdit },
+              { label: 'Assign Manager', onClick: () => setActiveModal({ type: 'manager', emp }), hidden: !canEdit },
               { separator: true, hidden: !canEdit && !canDelete },
               {
                 label: isActive ? 'Deactivate' : 'Activate',
@@ -427,55 +342,50 @@ export default function EmployeesPage() {
   // ── Filter fields ──────────────────────────────────────────
   const filterFields: FilterField[] = [
     {
-      name: 'status',
-      label: 'Status',
-      type: 'select',
-      group: 'Filters',
-      options: [
-        { value: 'active',   label: 'Active' },
-        { value: 'inactive', label: 'Inactive' },
-      ],
+      name: 'status', label: 'Status', type: 'select', group: 'Filters',
+      options: [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }],
     },
     {
-      name: 'department',
-      label: 'Department',
-      type: 'select',
-      group: 'Filters',
+      name: 'department', label: 'Department', type: 'select', group: 'Filters',
       options: departments.map(d => ({ value: d, label: d })),
     },
     {
-      name: 'position',
-      label: 'Position',
-      type: 'select',
-      group: 'Filters',
+      name: 'position', label: 'Position', type: 'select', group: 'Filters',
       options: positions.map(p => ({ value: p, label: p })),
     },
     {
-      name: 'group',
-      label: 'Group',
-      type: 'select',
-      group: 'Filters',
+      name: 'group', label: 'Group', type: 'select', group: 'Filters',
       options: groups.filter(g => g.is_active).map(g => ({ value: String(g.id), label: g.name })),
     },
     {
-      name: 'is_manager',
-      label: 'Manager Flag',
-      type: 'select',
-      group: 'Filters',
-      options: [
-        { value: 'yes', label: 'Managers only' },
-        { value: 'no',  label: 'Non-managers' },
-      ],
+      name: 'is_manager', label: 'Manager Flag', type: 'select', group: 'Filters',
+      options: [{ value: 'yes', label: 'Managers only' }, { value: 'no', label: 'Non-managers' }],
     },
   ];
 
   // ── Bulk actions bar ───────────────────────────────────────
   const bulkActionsBar = selectedItems.size > 0 && (canEdit || canDelete) ? (
     <div className="emp-bulk-actions">
-      {canEdit && <button className="emp-bulk-btn" onClick={() => setBulkModal('group')}   disabled={isBulkPending}>Assign Group</button>}
-      {canEdit && <button className="emp-bulk-btn" onClick={() => setBulkModal('manager')} disabled={isBulkPending}>Assign Manager</button>}
-      {canEdit && <button className="emp-bulk-btn" onClick={() => bulkActivateMutation.mutate([...selectedItems])}   disabled={isBulkPending}>Activate</button>}
-      {canEdit && <button className="emp-bulk-btn" onClick={() => bulkDeactivateMutation.mutate([...selectedItems])} disabled={isBulkPending}>Deactivate</button>}
+      {canEdit && (
+        <button className="emp-bulk-btn" onClick={() => setBulkModal('group')} disabled={isBulkPending}>
+          Assign Group
+        </button>
+      )}
+      {canEdit && (
+        <button className="emp-bulk-btn" onClick={() => setBulkModal('manager')} disabled={isBulkPending}>
+          Assign Manager
+        </button>
+      )}
+      {canEdit && (
+        <button className="emp-bulk-btn" onClick={() => bulkActivateMutation.mutate([...selectedItems])} disabled={isBulkPending}>
+          Activate
+        </button>
+      )}
+      {canEdit && (
+        <button className="emp-bulk-btn" onClick={() => bulkDeactivateMutation.mutate([...selectedItems])} disabled={isBulkPending}>
+          Deactivate
+        </button>
+      )}
       {canDelete && (
         <button
           className="emp-bulk-btn"
@@ -496,10 +406,7 @@ export default function EmployeesPage() {
     <AppListPage
       title="Employees"
       description="Manage employees, groups, and reporting lines"
-      breadcrumbs={[
-        { label: 'HR' },
-        { label: 'Employees' },
-      ]}
+      breadcrumbs={[{ label: 'HR' }, { label: 'Employees' }]}
       showBack={false}
       totalCount={filtered.length}
       createAction={canAdd ? (
@@ -520,7 +427,7 @@ export default function EmployeesPage() {
       rowStyle={emp => resolveIsActive(emp) ? undefined : { opacity: 0.6 }}
       searchPlaceholder="Search name or ID…"
     >
-      {/* Warning banner */}
+      {/* No-login warning */}
       {!isLoading && noLoginCount > 0 && (
         <div className="proc-status-banner proc-status-banner--warning">
           <strong>{noLoginCount} employee{noLoginCount !== 1 ? 's' : ''}</strong>{' '}
@@ -528,7 +435,7 @@ export default function EmployeesPage() {
         </div>
       )}
 
-      {/* Single-employee modals */}
+      {/* Single-employee modals — triggered from the row actions menu */}
       <AssignGroupModal
         isOpen={activeModal?.type === 'group'} onClose={() => setActiveModal(null)}
         employee={activeEmp} groups={groups}
