@@ -513,7 +513,7 @@ export default function EmployeeDetailPage() {
         }}>
           {/* Cover band */}
           <div style={{
-            height: 68,
+            height: 56,
             background: 'linear-gradient(135deg, var(--brand) 0%, var(--brand-muted) 100%)',
             position: 'relative',
           }}>
@@ -524,36 +524,62 @@ export default function EmployeeDetailPage() {
           </div>
 
           {/* Content */}
-          <div style={{ padding: 'var(--space-4) var(--space-6) var(--space-6)' }}>
-            {/* Avatar row — avatar overlaps cover, buttons align to avatar bottom */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-              <div style={{ position: 'relative', marginTop: -40 }}>
+          <div style={{ padding: 'var(--space-3) var(--space-5) var(--space-4)' }}>
+
+            {/* Main row: [avatar overlapping] [identity] [actions] — fills full width */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'auto 1fr auto',
+              alignItems: 'flex-end',
+              gap: 'var(--space-3)',
+              marginTop: -36,
+            }}>
+              {/* Avatar */}
+              <div style={{ position: 'relative', flexShrink: 0 }}>
                 {avatarSrc ? (
                   <img src={avatarSrc} alt={emp.full_name} style={{
-                    width: 88, height: 88, borderRadius: '50%', objectFit: 'cover',
+                    width: 80, height: 80, borderRadius: '50%', objectFit: 'cover',
                     border: '3px solid var(--surface-card)',
-                    boxShadow: '0 0 0 2px var(--border-subtle), 0 4px 20px rgba(0,0,0,0.12)',
+                    boxShadow: '0 0 0 2px var(--border-subtle), 0 4px 16px rgba(0,0,0,0.12)',
                   }} />
                 ) : (
                   <div style={{
-                    width: 88, height: 88, borderRadius: '50%',
+                    width: 80, height: 80, borderRadius: '50%',
                     background: 'var(--brand)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '2.1rem', fontWeight: 700, color: 'var(--primary-foreground)',
+                    fontSize: '1.875rem', fontWeight: 700, color: 'var(--primary-foreground)',
                     border: '3px solid var(--surface-card)',
-                    boxShadow: '0 0 0 2px var(--border-subtle), 0 4px 20px rgba(0,0,0,0.12)',
+                    boxShadow: '0 0 0 2px var(--border-subtle), 0 4px 16px rgba(0,0,0,0.12)',
                   }}>{avatarLetter}</div>
                 )}
                 <span style={{
-                  position: 'absolute', bottom: 4, right: 4,
-                  width: 16, height: 16, borderRadius: '50%',
+                  position: 'absolute', bottom: 3, right: 3,
+                  width: 14, height: 14, borderRadius: '50%',
                   border: '2.5px solid var(--surface-card)',
                   background: emp.is_active ? 'var(--status-success)' : 'var(--status-error)',
                 }} />
               </div>
 
+              {/* Identity */}
+              <div style={{ paddingBottom: 4, minWidth: 0 }}>
+                <h2 style={{
+                  fontSize: 'var(--text-xl)', fontWeight: 800,
+                  margin: 0, color: 'var(--text-primary)', lineHeight: 1.2,
+                  letterSpacing: '-0.02em',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {emp.full_name}
+                </h2>
+                {(emp.position_title || emp.department_name) && (
+                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: '3px 0 0' }}>
+                    {[emp.position_title, emp.department_name].filter(Boolean).join(' · ')}
+                  </p>
+                )}
+              </div>
+
+              {/* Admin actions */}
               {isAdmin && (
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, paddingBottom: 4 }}>
                   <Button variant="secondary" size="sm" onClick={() => openEdit('account')}>Edit Account</Button>
                   <Button
                     variant={emp.is_active ? 'delete' : 'primary'}
@@ -567,40 +593,32 @@ export default function EmployeeDetailPage() {
               )}
             </div>
 
-            {/* Name + title */}
-            <div style={{ marginTop: 14 }}>
-              <h2 style={{
-                fontSize: 'var(--text-2xl)', fontWeight: 800,
-                margin: 0, color: 'var(--text-primary)', lineHeight: 1.15,
-                letterSpacing: '-0.025em',
-              }}>
-                {emp.full_name}
-              </h2>
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
-                {[emp.position_title, emp.department_name].filter(Boolean).join(' · ') || '—'}
-              </p>
-            </div>
-
-            {/* Meta row */}
+            {/* Meta grid — auto-fill to spread across full width */}
             <div style={{
-              display: 'flex', flexWrap: 'wrap', gap: 'var(--space-5)',
-              marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+              gap: '6px 16px',
+              marginTop: 'var(--space-3)',
+              paddingTop: 'var(--space-3)',
               borderTop: '1px solid var(--border-subtle)',
             }}>
               {([
                 { label: 'Employee ID', value: emp.employee_id, mono: true },
-                emp.join_date ? { label: 'Hired', value: `${fmtDate(emp.join_date)} · ${calcPeriod(emp.join_date)}`, mono: false } : null,
-                emp.user?.email ? { label: 'Work Email', value: emp.user.email, mono: false } : null,
-                emp.manager_detail?.full_name ? { label: 'Reports To', value: emp.manager_detail.full_name, mono: false } : null,
-                emp.employee_group_name ? { label: 'Group', value: emp.employee_group_name, mono: false } : null,
+                emp.join_date ? { label: 'Hire Date',  value: fmtDate(emp.join_date),        mono: false } : null,
+                emp.join_date ? { label: 'Tenure',     value: calcPeriod(emp.join_date),     mono: false } : null,
+                emp.user?.email                ? { label: 'Work Email',  value: emp.user.email,                   mono: false } : null,
+                emp.manager_detail?.full_name  ? { label: 'Reports To',  value: emp.manager_detail.full_name,     mono: false } : null,
+                emp.employee_group_name        ? { label: 'Group',       value: emp.employee_group_name,          mono: false } : null,
+                emp.mobile_number              ? { label: 'Mobile',      value: emp.mobile_number,                mono: false } : null,
               ] as ({ label: string; value: string; mono: boolean } | null)[]).filter(Boolean).map((item) => (
-                <div key={item!.label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'var(--weight-semibold)' }}>
+                <div key={item!.label} style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <span style={{ fontSize: 10, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>
                     {item!.label}
                   </span>
                   <span style={{
-                    fontSize: 'var(--text-sm)', color: 'var(--text-primary)', fontWeight: 'var(--weight-medium)',
+                    fontSize: 'var(--text-sm)', color: 'var(--text-primary)', fontWeight: 500,
                     fontFamily: item!.mono ? 'ui-monospace, monospace' : 'inherit',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
                     {item!.value}
                   </span>
