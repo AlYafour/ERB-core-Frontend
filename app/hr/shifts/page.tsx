@@ -245,7 +245,7 @@ function ShiftModal({
                       width: 40, height: 40, borderRadius: 'var(--radius-sm)',
                       border: active ? '2px solid var(--brand)' : '1px solid var(--border-default)',
                       background: active ? 'var(--brand)' : 'none',
-                      color: active ? 'var(--card-bg)' : 'var(--text-secondary)',
+                      color: active ? '#fff' : 'var(--text-secondary)',
                       fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)',
                       cursor: 'pointer', transition: 'all 120ms', flexShrink: 0,
                     }}
@@ -294,7 +294,7 @@ function ShiftModal({
               disabled={isSaving || !form.name.trim() || form.work_days.length === 0}
               style={{
                 padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-md)',
-                border: 'none', background: 'var(--brand)', color: 'var(--card-bg)',
+                border: 'none', background: 'var(--brand)', color: '#fff',
                 cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)',
                 opacity: isSaving ? 0.6 : 1,
               }}

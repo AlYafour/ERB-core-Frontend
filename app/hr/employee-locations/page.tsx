@@ -213,7 +213,7 @@ export default function EmployeeLocationsPage() {
                 alignItems: 'center',
                 gap: 4,
                 background: 'var(--brand)',
-                color: 'var(--card-bg)',
+                color: '#fff',
                 borderRadius: 'var(--radius-full)',
                 padding: '2px 6px 2px 10px',
                 fontSize: 'var(--text-xs)',
@@ -350,7 +350,7 @@ export default function EmployeeLocationsPage() {
                     marginTop: 'var(--space-1)',
                     border: '1px solid var(--border-subtle)',
                     borderRadius: 'var(--radius-md)',
-                    background: 'var(--card-bg)',
+                    background: 'var(--surface-card)',
                     boxShadow: 'var(--shadow-md)',
                     overflow: 'hidden',
                     maxHeight: 240,
@@ -446,7 +446,7 @@ export default function EmployeeLocationsPage() {
                         <div style={{
                           fontSize: 'var(--text-sm)',
                           fontWeight: checked ? 600 : 400,
-                          color: checked ? 'var(--card-bg)' : 'var(--text-primary)',
+                          color: checked ? '#fff' : 'var(--text-primary)',
                         }}>
                           {loc.name}
                           {alreadyHas && (

@@ -334,7 +334,7 @@ export default function HRSettingsLocationsPage() {
                         style={{
                           borderRadius: 'var(--radius-md)',
                           border: isSelected ? `2px solid ${t.color}` : '1px solid var(--border-subtle)',
-                          background: isSelected ? t.color + '15' : 'var(--card-bg)',
+                          background: isSelected ? t.color + '15' : 'var(--surface-card)',
                           cursor: 'pointer',
                           padding: 'var(--space-3)',
                         }}>

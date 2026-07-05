@@ -331,8 +331,8 @@ function NewEmployeeForm() {
                 ))}
               </div>
               <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--brand)' }}>
-                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--card-bg)' }}>Total</span>
-                <span style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', color: 'var(--card-bg)' }}>
+                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: '#fff' }}>Total</span>
+                <span style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', color: '#fff' }}>
                   {totalSalary.toLocaleString('en-US', { minimumFractionDigits: 2 })} AED
                 </span>
               </div>
