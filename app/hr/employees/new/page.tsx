@@ -254,7 +254,7 @@ function NewEmployeeForm() {
                 </select>
               </div>
               <div className="form-field">
-                <label className="form-label">Employee Group</label>
+                <label className="form-label">Employee Category</label>
                 <SearchableDropdown
                   options={groupOptions}
                   value={employment.employee_group}

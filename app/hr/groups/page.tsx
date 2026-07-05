@@ -101,7 +101,7 @@ function GroupModal({
     >
       <div className="card" style={{ width: '100%', maxWidth: 520, padding: 'var(--space-6)', position: 'relative' }}>
         <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', margin: '0 0 var(--space-5)' }}>
-          {group ? 'Edit Group' : 'Create Employee Group'}
+          {group ? 'Edit Category' : 'Create Employee Category'}
         </h2>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
@@ -391,12 +391,12 @@ export default function EmployeeGroupsPage() {
 
   return (
     <AppListPage
-      title="Employee Groups"
+      title="Employee Categories"
       description="Workforce categories that carry a default shift and approval policy."
       breadcrumbs={[
         { label: 'Home', href: '/' },
         { label: 'HR' },
-        { label: 'Employee Groups' },
+        { label: 'Employee Categories' },
       ]}
       totalCount={allGroups.length}
       createAction={

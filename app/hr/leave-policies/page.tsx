@@ -185,7 +185,7 @@ function PolicyModal({
           <p style={SECTION}>Scope</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
             <div style={{ gridColumn: '1 / -1' }}>
-              <label style={LABEL}>Employee Group</label>
+              <label style={LABEL}>Employee Category</label>
               <SearchableDropdown
                 options={groupOptions}
                 value={form.employee_group ?? '__catchall__'}

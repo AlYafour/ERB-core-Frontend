@@ -840,7 +840,7 @@ export default function EmployeeDetailPage() {
                   <div className="info-grid">
                     <InfoRow label="Job Title"           value={emp.position_title} />
                     <InfoRow label="Department"          value={emp.department_name} />
-                    <InfoRow label="Employee Group"      value={emp.employee_group_name} />
+                    <InfoRow label="Employee Category"      value={emp.employee_group_name} />
                     <InfoRow label="Work Type"           value={empTypeLabel[emp.employment_type] || emp.employment_type} />
                     <InfoRow label="Direct Manager"      value={emp.manager_detail?.full_name} />
                     <InfoRow label="Hiring Date"         value={fmtDate(emp.join_date)} />
@@ -1111,7 +1111,7 @@ export default function EmployeeDetailPage() {
               />
             </div>
             <div className={fld}>
-              <label className={lbl}>Employee Group</label>
+              <label className={lbl}>Employee Category</label>
               <SearchableDropdown
                 options={groupOptions}
                 value={form.employee_group ? Number(form.employee_group) : null}

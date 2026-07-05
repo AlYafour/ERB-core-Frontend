@@ -23,7 +23,7 @@ export function AssignGroupModal({ isOpen, onClose, employee, label, groups, cur
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Assign Employee Group"
+      title="Assign Employee Category"
       size="sm"
     >
       {subtitle && (

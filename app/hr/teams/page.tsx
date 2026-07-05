@@ -110,7 +110,7 @@ function TeamModal({
 
           {/* Group */}
           <div>
-            <label style={LABEL}>Employee Group</label>
+            <label style={LABEL}>Employee Category</label>
             <SearchableDropdown
               options={groupOptions}
               value={form.employee_group ?? '__none__'}

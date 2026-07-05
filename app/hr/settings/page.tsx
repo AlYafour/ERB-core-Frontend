@@ -47,7 +47,7 @@ const SETTINGS_SECTIONS = [
   },
   {
     href:        '/hr/groups',
-    title:       'Employee Groups',
+    title:       'Employee Categories',
     description: 'Workforce categories that carry a default shift, manager fallback, and approval policy.',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
