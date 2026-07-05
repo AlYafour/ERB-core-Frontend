@@ -218,9 +218,9 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
             </div>
           </div>
 
-          {/* Default times */}
-          <div>
-            <label style={LABEL}>{form.per_day_times ? 'Default Times (fallback)' : 'Schedule'}</label>
+          {/* Default times — hidden when per-day is on */}
+          <div style={{ display: form.per_day_times ? 'none' : undefined }}>
+            <label style={LABEL}>Schedule</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 90px', gap: 10 }}>
               <div>
                 <span style={{ ...LABEL, marginBottom: 4, fontSize: 10 }}>Start</span>
