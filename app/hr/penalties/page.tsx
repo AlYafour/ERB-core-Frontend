@@ -79,18 +79,28 @@ const EMPTY_FORM: FormState = {
 
 const LABEL: React.CSSProperties = {
   fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)',
-  color: 'var(--text-secondary)', textTransform: 'uppercase',
-  letterSpacing: '0.05em', display: 'block', marginBottom: 6,
+  color: 'var(--text-tertiary)', textTransform: 'uppercase',
+  letterSpacing: '0.06em', display: 'block', marginBottom: 5,
 };
 
 const INPUT: React.CSSProperties = {
-  width: '100%', padding: '6px 10px',
-  border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)',
+  width: '100%', padding: '0 10px',
+  height: 34,
+  border: '1px solid var(--input-border)', borderRadius: 'var(--radius-md)',
   background: 'var(--input-bg)', color: 'var(--text-primary)',
-  fontSize: 'var(--text-sm)',
+  fontSize: 'var(--text-sm)', outline: 'none',
+  boxSizing: 'border-box',
 };
 
-const SELECT: React.CSSProperties = { ...INPUT, cursor: 'pointer' };
+const SELECT: React.CSSProperties = {
+  ...INPUT,
+  cursor: 'pointer',
+  appearance: 'none' as React.CSSProperties['appearance'],
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23999' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E")`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right 10px center',
+  paddingRight: 28,
+};
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -402,38 +412,50 @@ function RuleBuilder({
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 1000,
-      background: 'rgba(0,0,0,0.45)', display: 'flex',
+      background: 'rgba(0,0,0,0.35)', display: 'flex',
       alignItems: 'center', justifyContent: 'center', padding: 24,
     }}>
       <div style={{
-        background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--shadow-xl)', width: '100%', maxWidth: 660,
+        background: 'var(--surface-base)', borderRadius: 'var(--radius-xl)',
+        boxShadow: 'var(--shadow-xl)', width: '100%', maxWidth: 640,
         maxHeight: '90vh', display: 'flex', flexDirection: 'column',
-        overflow: 'hidden',
+        overflow: 'hidden', border: '1px solid var(--border-subtle)',
       }}>
         {/* Header */}
         <div style={{
-          padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)',
+          padding: '14px 20px', borderBottom: '1px solid var(--border-subtle)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           flexShrink: 0,
         }}>
-          <h3 style={{ margin: 0, fontSize: 'var(--text-base)', fontWeight: 'var(--weight-semibold)' }}>
-            {editing ? 'Edit Penalty Rule' : 'New Penalty Rule'}
-          </h3>
+          <div>
+            <p style={{ margin: 0, fontSize: 'var(--text-base)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>
+              {editing ? 'Edit Penalty Rule' : 'New Penalty Rule'}
+            </p>
+            {editing && (
+              <p style={{ margin: '2px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                {editing.name}
+              </p>
+            )}
+          </div>
           <button
             onClick={onClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text-secondary)' }}
+            style={{
+              width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'none', border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-md)', cursor: 'pointer',
+              fontSize: 16, color: 'var(--text-secondary)', lineHeight: 1,
+            }}
           >
             ×
           </button>
         </div>
 
         {/* Body */}
-        <div style={{ padding: 20, overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ padding: '20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
 
           {/* Row 1: Name + Active */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'end' }}>
-            <div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
+            <div style={{ flex: 1 }}>
               <label style={LABEL}>Rule Name</label>
               <input
                 style={INPUT}
@@ -442,14 +464,14 @@ function RuleBuilder({
                 placeholder="e.g. Site Workers — Lateness"
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-              <label style={LABEL}>Active</label>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, paddingBottom: 1 }}>
+              <span style={LABEL}>Active</span>
               <Toggle value={form.is_active} onChange={v => setField({ is_active: v })} />
             </div>
           </div>
 
-          {/* Row 2: Type + Group + Priority */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px', gap: 12 }}>
+          {/* Row 2: Type + Category + Priority */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px', gap: 10 }}>
             <div>
               <label style={LABEL}>Rule Type</label>
               <select
@@ -463,13 +485,13 @@ function RuleBuilder({
               </select>
             </div>
             <div>
-              <label style={LABEL}>Group</label>
+              <label style={LABEL}>Category</label>
               <SearchableDropdown
                 options={groupOptions}
                 value={form.employee_group ?? '__catchall__'}
                 onChange={v => setField({ employee_group: v === '__catchall__' ? null : v as number })}
                 allowClear={false}
-                placeholder="Any group (catch-all)"
+                placeholder="Any (catch-all)"
                 onCreateOption={async (label) => {
                   const code = label.toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 20);
                   const g = await hrEmployeeGroupsApi.create({ name: label, name_ar: '', code, description: '', is_active: true });
@@ -488,60 +510,84 @@ function RuleBuilder({
             </div>
           </div>
 
-          {/* Flags section */}
-          <div style={{
-            border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)',
-            padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10,
-          }}>
-            <span style={{ ...LABEL, margin: 0 }}>Rule Flags</span>
+          {/* Divider */}
+          <div style={{ height: 1, background: 'var(--border-subtle)' }} />
 
-            {/* Grace minutes */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <div>
-                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-primary)' }}>
-                  Grace period (minutes)
+          {/* Settings — divider-separated rows */}
+          <div>
+            <p style={{ ...LABEL, marginBottom: 2 }}>Rule Settings</p>
+
+            <div style={{
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-lg)',
+              overflow: 'hidden',
+            }}>
+              {/* Grace minutes */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                gap: 16, padding: '10px 14px',
+                borderBottom: '1px solid var(--border-subtle)',
+              }}>
+                <div>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>
+                    Grace period
+                  </div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
+                    Minutes ignored before any tier fires
+                  </div>
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
-                  Minutes of lateness / early-leave ignored before any tier fires.
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  <input
+                    type="number" min={0}
+                    style={{ ...INPUT, width: 68, textAlign: 'center' }}
+                    value={form.grace_minutes}
+                    onChange={e => setField({ grace_minutes: Number(e.target.value) })}
+                  />
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>min</span>
                 </div>
               </div>
-              <input
-                type="number" min={0} style={{ ...INPUT, width: 80 }}
-                value={form.grace_minutes}
-                onChange={e => setField({ grace_minutes: Number(e.target.value) })}
-              />
-            </div>
 
-            {/* Allow compensation */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <div>
-                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-primary)' }}>
-                  Allow compensation
+              {/* Allow compensation */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                gap: 16, padding: '10px 14px',
+                borderBottom: '1px solid var(--border-subtle)',
+              }}>
+                <div>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>
+                    Allow compensation
+                  </div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
+                    Extra hours same day can offset lateness or early-leave
+                  </div>
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
-                  Extra hours worked the same day can offset lateness or early-leave.
-                </div>
+                <Toggle value={form.allow_compensation} onChange={v => setField({ allow_compensation: v })} />
               </div>
-              <Toggle value={form.allow_compensation} onChange={v => setField({ allow_compensation: v })} />
-            </div>
 
-            {/* Counts extra as overtime */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <div>
-                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-primary)' }}>
-                  Extra time counts as overtime
+              {/* Counts extra as overtime */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                gap: 16, padding: '10px 14px',
+              }}>
+                <div>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>
+                    Extra time counts as overtime
+                  </div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
+                    Hours beyond scheduled are counted toward overtime
+                  </div>
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
-                  Hours worked beyond scheduled hours are counted toward overtime.
-                </div>
+                <Toggle value={form.counts_extra_as_overtime} onChange={v => setField({ counts_extra_as_overtime: v })} />
               </div>
-              <Toggle value={form.counts_extra_as_overtime} onChange={v => setField({ counts_extra_as_overtime: v })} />
             </div>
           </div>
 
+          {/* Divider */}
+          <div style={{ height: 1, background: 'var(--border-subtle)' }} />
+
           {/* Tiers */}
           <div>
-            <label style={LABEL}>Penalty Tiers — ordered brackets</label>
+            <p style={{ ...LABEL, marginBottom: 8 }}>Penalty Tiers</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {tiers.map((tier, i) => (
                 <TierRowUI
@@ -559,34 +605,37 @@ function RuleBuilder({
               type="button"
               onClick={() => setTiers(ts => [...ts, EMPTY_TIER()])}
               style={{
-                marginTop: 8, padding: '6px 14px',
+                marginTop: 8, padding: '7px 14px',
                 border: '1px dashed var(--border-default)',
                 borderRadius: 'var(--radius-md)',
                 background: 'none', cursor: 'pointer',
                 color: 'var(--brand)',
-                fontSize: 'var(--text-sm)', fontWeight: 500,
+                fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)',
+                width: '100%',
               }}
             >
               + Add Tier
             </button>
-            <p style={{ margin: '6px 0 0', fontSize: 11, color: 'var(--text-tertiary)' }}>
-              &quot;From&quot; is inclusive; &quot;To&quot; is exclusive. Leave &quot;To&quot; blank for the last tier (catches all higher values). Grace minutes are subtracted before tier matching.
+            <p style={{ margin: '8px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+              &quot;From&quot; is inclusive; &quot;To&quot; is exclusive. Leave &quot;To&quot; blank for the last tier. Grace minutes are subtracted before matching.
             </p>
           </div>
         </div>
 
         {/* Footer */}
         <div style={{
-          padding: '14px 20px', borderTop: '1px solid var(--border-subtle)',
-          display: 'flex', justifyContent: 'flex-end', gap: 10, flexShrink: 0,
+          padding: '12px 20px', borderTop: '1px solid var(--border-subtle)',
+          display: 'flex', justifyContent: 'flex-end', gap: 8, flexShrink: 0,
+          background: 'var(--surface-subtle)',
         }}>
           <button
             type="button"
             onClick={onClose}
             style={{
-              padding: '8px 18px', border: '1px solid var(--border-default)',
-              borderRadius: 'var(--radius-md)', background: 'var(--surface-raised)',
+              padding: '7px 16px', border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-md)', background: 'var(--surface-base)',
               cursor: 'pointer', fontSize: 'var(--text-sm)', color: 'var(--text-primary)',
+              fontWeight: 'var(--weight-medium)',
             }}
           >
             Cancel
@@ -596,11 +645,11 @@ function RuleBuilder({
             onClick={handleSave}
             disabled={saving}
             style={{
-              padding: '8px 20px', border: 'none',
+              padding: '7px 20px', border: 'none',
               borderRadius: 'var(--radius-md)',
               background: saving ? 'var(--text-tertiary)' : 'var(--brand)',
-              color: '#fff', cursor: saving ? 'not-allowed' : 'pointer',
-              fontSize: 'var(--text-sm)', fontWeight: 600,
+              color: 'var(--primary-foreground)', cursor: saving ? 'not-allowed' : 'pointer',
+              fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)',
             }}
           >
             {saving ? 'Saving…' : (editing ? 'Save Changes' : 'Create Rule')}
