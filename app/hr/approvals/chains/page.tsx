@@ -1061,7 +1061,6 @@ export default function ApprovalChainsPage() {
       data={filtered}
       isLoading={isLoading}
       tableState={tableState}
-      onRowClick={(r) => openEdit(r)}
       selectable={true}
       emptyTitle={
         policies.length === 0

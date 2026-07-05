@@ -897,7 +897,6 @@ export default function PenaltyRulesPage() {
       isLoading={isLoading}
       tableState={tableState}
       selectable={admin}
-      onRowClick={admin ? openEdit : undefined}
       emptyTitle={
         rules.length === 0
           ? 'No rules yet. Click "+ New Rule" to create the first one.'

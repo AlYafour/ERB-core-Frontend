@@ -394,7 +394,6 @@ export default function WorkTeamsPage() {
       createAction={admin ? (
         <Button variant="primary" size="sm" onClick={() => setModalTeam('new')}>+ Create Team</Button>
       ) : undefined}
-      onRowClick={(r) => setModalTeam(r)}
       selectable={true}
       columns={columns}
       data={filtered}

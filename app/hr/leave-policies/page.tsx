@@ -557,7 +557,6 @@ export default function LeavePoliciesPage() {
           </Button>
         ) : undefined
       }
-      onRowClick={(r) => handleEdit(r)}
       selectable={true}
       columns={columns}
       data={filtered}

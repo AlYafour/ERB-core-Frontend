@@ -406,7 +406,6 @@ export default function EmployeeGroupsPage() {
           </Button>
         ) : undefined
       }
-      onRowClick={(r) => setModalGroup(r)}
       selectable={true}
       columns={columns}
       data={filtered}
