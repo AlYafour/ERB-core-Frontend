@@ -83,7 +83,7 @@ function GroupModal({
     { value: '__none__', label: '— No default shift —', searchText: 'none' },
     ...activeShifts.map(s => ({
       value: s.id,
-      label: s.start_time && s.end_time ? `${s.name} (${fmtTime(s.start_time)} – ${fmtTime(s.end_time)})` : s.name,
+      label: s.day_schedules?.length > 0 ? `${s.name} (Varies per day)` : (s.start_time && s.end_time ? `${s.name} (${fmtTime(s.start_time)} – ${fmtTime(s.end_time)})` : s.name),
       searchText: s.name,
     })),
   ], [activeShifts]);
