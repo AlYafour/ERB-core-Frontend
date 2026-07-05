@@ -775,4 +775,8 @@ export const hrPenaltyRulesApi = {
   deleteTier: async (id: number): Promise<void> => {
     await apiClient.delete(`/hr/attendance/penalty-tiers/${id}/`);
   },
+  seedUaeRules: async (): Promise<{ created_rules: number; created_tiers: number; skipped_existing: number }> => {
+    const response = await apiClient.post('/hr/attendance/penalty-rules/seed-uae-rules/');
+    return response.data;
+  },
 };

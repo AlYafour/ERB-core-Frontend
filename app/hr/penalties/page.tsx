@@ -701,6 +701,15 @@ export default function PenaltyRulesPage() {
     onError: () => toast('Delete failed', 'error'),
   });
 
+  const seedMutation = useMutation({
+    mutationFn: hrPenaltyRulesApi.seedUaeRules,
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['penalty-rules'] });
+      toast(`Added ${data.created_rules} rules · ${data.created_tiers} tiers (${data.skipped_existing} already existed)`, 'success');
+    },
+    onError: () => toast('Seed failed', 'error'),
+  });
+
   const openNew   = () => { setEditing(null); setModalOpen(true); };
   const openEdit  = (r: PenaltyRule) => { setEditing(r); setModalOpen(true); };
   const closeModal = () => { setModalOpen(false); setEditing(null); };
@@ -866,9 +875,19 @@ export default function PenaltyRulesPage() {
       totalCount={filtered.length}
       createAction={
         admin ? (
-          <Button onClick={openNew} variant="primary" size="sm">
-            + New Rule
-          </Button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button
+              onClick={() => seedMutation.mutate()}
+              disabled={seedMutation.isPending}
+              variant="secondary"
+              size="sm"
+            >
+              {seedMutation.isPending ? 'Adding…' : '⬇ UAE Rules'}
+            </Button>
+            <Button onClick={openNew} variant="primary" size="sm">
+              + New Rule
+            </Button>
+          </div>
         ) : undefined
       }
       filterFields={filterFields}
