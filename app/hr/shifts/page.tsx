@@ -434,7 +434,9 @@ export default function ShiftsPage() {
       key: 'start_time',
       header: 'Schedule',
       width: '160px',
-      render: s => (
+      render: s => s.day_schedules?.length > 0 ? (
+        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Varies per day</span>
+      ) : (
         <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
           {fmtTime(s.start_time)} – {fmtTime(s.end_time)}
         </span>
