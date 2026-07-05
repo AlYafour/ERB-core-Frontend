@@ -2,11 +2,14 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import MainLayout from '@/components/layout/MainLayout';
+import { AppListPage } from '@/components/app/AppListPage';
+import { useTableState } from '@/lib/hooks/use-table-state';
+import { type Column } from '@/components/ui/DataTable';
+import { RowActions } from '@/components/ui/RowActions';
+import { Badge, Button } from '@/components/ui';
 import { hrShiftsApi } from '@/lib/api/hr';
-import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
-import { toast } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import type { HRShift } from '@/types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -271,7 +274,7 @@ function ShiftModal({
             >
               <div style={{
                 position: 'absolute', top: 3, left: form.is_active ? 21 : 3,
-                width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                width: 16, height: 16, borderRadius: '50%', background: 'var(--primary-foreground)',
                 transition: 'left 200ms', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
               }} />
             </div>
@@ -307,13 +310,14 @@ function ShiftModal({
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function ShiftsPage() {
-  const { user: me } = useAuth();
   const { hasPermission } = useMyPermissions();
   const admin = hasPermission('hr.hr_employee.view');
   const queryClient = useQueryClient();
 
+  const tableState = useTableState();
+  const { search } = tableState;
+
   const [modalShift, setModalShift] = useState<HRShift | null | 'new'>(null);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const { data: raw, isLoading } = useQuery({
     queryKey: ['hr-shifts'],
@@ -321,7 +325,14 @@ export default function ShiftsPage() {
     staleTime: 60_000,
   });
 
-  const shifts: HRShift[] = raw?.results ?? [];
+  const allShifts: HRShift[] = raw?.results ?? [];
+
+  const filtered = !search
+    ? allShifts
+    : allShifts.filter(s =>
+        s.name.toLowerCase().includes(search.toLowerCase()) ||
+        (s.name_ar && s.name_ar.includes(search))
+      );
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['hr-shifts'] });
 
@@ -339,7 +350,7 @@ export default function ShiftsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => hrShiftsApi.delete(id),
-    onSuccess: () => { invalidate(); setDeletingId(null); toast('Shift deleted', 'success'); },
+    onSuccess: () => { invalidate(); toast('Shift deleted', 'success'); },
     onError: (err: unknown) => {
       const errTyped = err as { response?: { data?: { detail?: string }; status?: number } };
       const detail = errTyped?.response?.data?.detail ?? '';
@@ -361,199 +372,132 @@ export default function ShiftsPage() {
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
-  if (!admin) {
-    return (
-      <MainLayout>
-        <div className="card" style={{ padding: 'var(--space-8)', textAlign: 'center' }}>
-          <p style={{ color: 'var(--color-error)', margin: 0, fontSize: 'var(--text-sm)' }}>
-            Admin access required.
+  const columns: Column<HRShift>[] = [
+    {
+      key: 'name',
+      header: 'Name',
+      render: (shift) => (
+        <div style={{ minWidth: 0 }}>
+          <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {shift.name}
           </p>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  return (
-    <MainLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-4)' }}>
-          <div>
-            <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-bold)', margin: '0 0 var(--space-1)' }}>
-              Work Shifts
-              {!isLoading && (
-                <span style={{ marginLeft: 'var(--space-2)', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-normal)', color: 'var(--text-secondary)' }}>
-                  {shifts.length} {shifts.length === 1 ? 'shift' : 'shifts'}
-                </span>
-              )}
-            </h1>
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
-              Define named work schedules (Summer, Winter, Ramadan…) and assign them to employee groups.
+          {shift.name_ar && (
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '2px 0 0', direction: 'rtl', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {shift.name_ar}
             </p>
-          </div>
-          <button
-            onClick={() => setModalShift('new')}
-            style={{
-              padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-md)',
-              background: 'var(--brand)', color: 'var(--card-bg)',
-              border: 'none', cursor: 'pointer', fontSize: 'var(--text-sm)',
-              fontWeight: 'var(--weight-semibold)', whiteSpace: 'nowrap', flexShrink: 0,
-            }}
-          >
-            + Create Shift
-          </button>
-        </div>
-
-        {/* Table */}
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          {/* Header row */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1.4fr 100px 160px 70px 1fr 80px 100px',
-            gap: 'var(--space-3)', padding: 'var(--space-3) var(--space-5)',
-            borderBottom: '1px solid var(--border-subtle)', background: 'var(--surface-subtle)',
-          }}>
-            {['Name', 'Type', 'Schedule', 'Break', 'Work Days', 'Status', ''].map(h => (
-              <span key={h} style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {h}
-              </span>
-            ))}
-          </div>
-
-          {isLoading ? (
-            <div style={{ padding: 'var(--space-12)', textAlign: 'center' }}>
-              <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: 'var(--text-sm)' }}>Loading…</p>
-            </div>
-          ) : shifts.length === 0 ? (
-            <div style={{ padding: 'var(--space-12)', textAlign: 'center' }}>
-              <p style={{ fontSize: 'var(--text-2xl)', margin: '0 0 var(--space-3)' }}>🕐</p>
-              <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', margin: '0 0 var(--space-1)' }}>No shifts yet</p>
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
-                Create your first shift to define work schedules for employee groups.
-              </p>
-            </div>
-          ) : (
-            shifts.map((shift, idx) => {
-              const isLast     = idx === shifts.length - 1;
-              const isDeleting = deletingId === shift.id;
-              const tc         = TYPE_COLORS[shift.shift_type] ?? TYPE_COLORS.morning;
-
-              return (
-                <div key={shift.id} style={{ borderBottom: !isLast ? '1px solid var(--border-subtle)' : 'none' }}>
-                  <div style={{
-                    display: 'grid', gridTemplateColumns: '1.4fr 100px 160px 70px 1fr 80px 100px',
-                    gap: 'var(--space-3)', padding: 'var(--space-4) var(--space-5)', alignItems: 'center',
-                  }}>
-                    {/* Name */}
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {shift.name}
-                      </p>
-                      {shift.name_ar && (
-                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '2px 0 0', direction: 'rtl', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {shift.name_ar}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Type badge */}
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center',
-                      padding: '3px 10px', borderRadius: 99, fontSize: 'var(--text-xs)',
-                      fontWeight: 'var(--weight-semibold)',
-                      background: tc.bg, color: tc.text,
-                    }}>
-                      {TYPE_LABELS[shift.shift_type]}
-                    </span>
-
-                    {/* Schedule */}
-                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0, whiteSpace: 'nowrap' }}>
-                      {fmtTime(shift.start_time)} – {fmtTime(shift.end_time)}
-                    </p>
-
-                    {/* Break */}
-                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
-                      {shift.break_mins}m
-                    </p>
-
-                    {/* Work days */}
-                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {workDayLabels(shift.work_days)}
-                    </p>
-
-                    {/* Status */}
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 5,
-                      padding: '3px 8px', borderRadius: 99, fontSize: 'var(--text-xs)',
-                      fontWeight: 'var(--weight-semibold)',
-                      background: shift.is_active ? 'var(--brand-muted)' : 'var(--surface-subtle)',
-                      color: shift.is_active ? 'var(--brand)' : 'var(--text-secondary)',
-                    }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: shift.is_active ? 'var(--brand)' : 'var(--text-tertiary)' }} />
-                      {shift.is_active ? 'Active' : 'Inactive'}
-                    </span>
-
-                    {/* Actions */}
-                    <div style={{ display: 'flex', gap: 'var(--space-1)', justifyContent: 'flex-end' }}>
-                      <button
-                        onClick={() => setModalShift(shift)}
-                        title="Edit"
-                        style={{ padding: '6px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => setDeletingId(isDeleting ? null : shift.id)}
-                        title="Delete"
-                        style={{ padding: '6px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)', color: isDeleting ? '#dc2626' : 'var(--text-secondary)' }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Inline delete confirmation */}
-                  {isDeleting && (
-                    <div style={{
-                      padding: 'var(--space-3) var(--space-5)',
-                      borderTop: '1px solid var(--border-subtle)',
-                      background: '#fef2f2',
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-4)',
-                    }}>
-                      <div>
-                        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: '#E05C5C', margin: 0 }}>
-                          Delete &quot;{shift.name}&quot;?
-                        </p>
-                        <p style={{ fontSize: 'var(--text-xs)', color: '#E05C5C', margin: '2px 0 0' }}>
-                          This cannot be undone. Shifts assigned to employees cannot be deleted.
-                        </p>
-                      </div>
-                      <div style={{ display: 'flex', gap: 'var(--space-2)', flexShrink: 0 }}>
-                        <button
-                          onClick={() => setDeletingId(null)}
-                          style={{ padding: 'var(--space-1-5) var(--space-3)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)', background: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)' }}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => deleteMutation.mutate(shift.id)}
-                          disabled={deleteMutation.isPending}
-                          style={{ padding: 'var(--space-1-5) var(--space-3)', borderRadius: 'var(--radius-sm)', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', opacity: deleteMutation.isPending ? 0.6 : 1 }}
-                        >
-                          {deleteMutation.isPending ? 'Deleting…' : 'Confirm Delete'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })
           )}
         </div>
+      ),
+    },
+    {
+      key: 'shift_type',
+      header: 'Type',
+      width: '100px',
+      render: (shift) => {
+        const tc = TYPE_COLORS[shift.shift_type] ?? TYPE_COLORS.morning;
+        return (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center',
+            padding: '3px 10px', borderRadius: 99, fontSize: 'var(--text-xs)',
+            fontWeight: 'var(--weight-semibold)',
+            background: tc.bg, color: tc.text,
+          }}>
+            {TYPE_LABELS[shift.shift_type]}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'start_time',
+      header: 'Schedule',
+      width: '160px',
+      render: (shift) => (
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0, whiteSpace: 'nowrap' }}>
+          {fmtTime(shift.start_time)} – {fmtTime(shift.end_time)}
+        </p>
+      ),
+    },
+    {
+      key: 'break_mins',
+      header: 'Break',
+      width: '70px',
+      render: (shift) => (
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
+          {shift.break_mins}m
+        </p>
+      ),
+    },
+    {
+      key: 'work_days',
+      header: 'Work Days',
+      render: (shift) => (
+        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {workDayLabels(shift.work_days)}
+        </p>
+      ),
+    },
+    {
+      key: 'is_active',
+      header: 'Status',
+      width: '90px',
+      render: (shift) => (
+        <Badge variant={shift.is_active ? 'active' : 'inactive'} size="sm">
+          {shift.is_active ? 'Active' : 'Inactive'}
+        </Badge>
+      ),
+    },
+    {
+      key: 'actions',
+      header: '',
+      width: '48px',
+      render: (shift) => (
+        <RowActions
+          actions={[
+            {
+              label: 'Edit',
+              onClick: () => setModalShift(shift),
+            },
+            { separator: true },
+            {
+              label: 'Delete',
+              variant: 'danger',
+              onClick: async () => {
+                if (await confirm(`Delete shift "${shift.name}"?`)) {
+                  deleteMutation.mutate(shift.id);
+                }
+              },
+            },
+          ]}
+        />
+      ),
+    },
+  ];
 
-      </div>
-
-      {/* Modal */}
+  return (
+    <AppListPage
+      title="Work Shifts"
+      description="Define named work schedules (Summer, Winter, Ramadan…) and assign them to employee groups."
+      breadcrumbs={[
+        { label: 'Home', href: '/' },
+        { label: 'HR' },
+        { label: 'Work Shifts' },
+      ]}
+      totalCount={allShifts.length}
+      createAction={
+        admin ? (
+          <Button variant="primary" size="sm" onClick={() => setModalShift('new')}>
+            + Create Shift
+          </Button>
+        ) : undefined
+      }
+      columns={columns}
+      data={filtered}
+      isLoading={isLoading}
+      emptyTitle="No shifts yet. Create your first shift to define work schedules for employee groups."
+      tableState={tableState}
+      searchPlaceholder="Search shifts…"
+    >
+      {/* Shift Modal */}
       {modalShift !== null && (
         <ShiftModal
           shift={modalShift === 'new' ? null : modalShift}
@@ -562,6 +506,6 @@ export default function ShiftsPage() {
           isSaving={isSaving}
         />
       )}
-    </MainLayout>
+    </AppListPage>
   );
 }

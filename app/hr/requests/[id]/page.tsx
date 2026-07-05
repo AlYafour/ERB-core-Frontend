@@ -48,9 +48,20 @@ export default function HRRequestDetailPage() {
     onError: () => toast('Failed to reject', 'error'),
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: () => hrRequestsApi.cancel(Number(id)),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['hr-request', id] }); toast('Request cancelled', 'info'); },
+    onError: () => toast('Failed to cancel', 'error'),
+  });
+
   const handleApprove = async () => {
     const ok = await confirm('Approve this request?');
     if (ok) approveMutation.mutate();
+  };
+
+  const handleCancel = async () => {
+    const ok = await confirm('Cancel this request? The employee will be notified.');
+    if (ok) cancelMutation.mutate();
   };
 
   if (isLoading) return <MainLayout><div className="card empty-state"><Loader /></div></MainLayout>;
@@ -70,6 +81,7 @@ export default function HRRequestDetailPage() {
                 <>
                   <Button variant="success" size="sm" onClick={handleApprove} isLoading={approveMutation.isPending}>Approve</Button>
                   <Button variant="destructive" size="sm" onClick={() => setShowRejectInput(!showRejectInput)}>Reject</Button>
+                  <Button variant="secondary" size="sm" onClick={handleCancel} isLoading={cancelMutation.isPending}>Cancel</Button>
                 </>
               )}
             </div>

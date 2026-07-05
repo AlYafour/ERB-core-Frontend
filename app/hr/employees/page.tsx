@@ -4,8 +4,11 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import MainLayout from '@/components/layout/MainLayout';
-import { Button, Badge, PageShell, SearchInput, PersonCell } from '@/components/ui';
+import { AppListPage } from '@/components/app/AppListPage';
+import { useTableState } from '@/lib/hooks/use-table-state';
+import { type Column } from '@/components/ui/DataTable';
+import { type FilterField } from '@/components/ui/FilterPanel';
+import { Button, Badge, PersonCell } from '@/components/ui';
 import { RowActions } from '@/components/ui/RowActions';
 import { hrEmployeesApi, hrEmployeeGroupsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -19,34 +22,6 @@ import type { HREmployee, EmployeeGroup } from '@/types';
 type GroupRec    = { id: number; code: string; name: string } | null;
 type ManagerRec  = { id: number; name: string } | null;
 type ActiveModal = { type: 'group' | 'manager'; emp: HREmployee } | null;
-type SortKey     = 'full_name' | 'employee_id' | 'department' | 'position';
-type SortDir     = 'asc' | 'desc';
-
-const COLS = '36px 1.5fr 80px 130px 150px 76px 56px 150px 1fr 40px';
-
-const SORTABLE_HEADS: Array<{ label: string; key?: SortKey }> = [
-  { label: '' },
-  { label: 'Employee',       key: 'full_name' },
-  { label: 'ID',             key: 'employee_id' },
-  { label: 'Department',     key: 'department' },
-  { label: 'Position',       key: 'position' },
-  { label: 'Status' },
-  { label: 'Mgr' },
-  { label: 'Group' },
-  { label: 'Direct Manager' },
-  { label: '' },
-];
-
-function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
-  return (
-    <svg width="9" height="9" viewBox="0 0 9 9" fill="currentColor"
-      style={{ opacity: active ? 1 : 0.3, color: active ? 'var(--brand)' : 'currentColor', flexShrink: 0 }}>
-      {active
-        ? dir === 'asc' ? <path d="M4.5 1 L8 6 L1 6 Z"/> : <path d="M4.5 8 L1 3 L8 3 Z"/>
-        : <><path d="M4.5 1 L7.5 4.5 L1.5 4.5 Z"/><path d="M4.5 8 L1.5 4.5 L7.5 4.5 Z"/></>}
-    </svg>
-  );
-}
 
 // ── Page ───────────────────────────────────────────────────────
 export default function EmployeesPage() {
@@ -57,23 +32,11 @@ export default function EmployeesPage() {
 
   const admin = hasPermission('hr.hr_employee.view');
 
-  // ── Filter state ───────────────────────────────────────────
-  const [search,       setSearch]       = useState('');
-  const [deptFilter,   setDeptFilter]   = useState('');
-  const [posFilter,    setPosFilter]    = useState('');
-  const [groupFilter,  setGroupFilter]  = useState('');
-  const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | ''>('active');
-  const [mgrFilter,    setMgrFilter]    = useState<'yes' | 'no' | ''>('');
-  const [filtersOpen,  setFiltersOpen]  = useState(false);
+  // ── Table state (search + filters + selection via useTableState) ──
+  const tableState = useTableState();
+  const { search, filters, selectedItems, clearSelection } = tableState;
 
-  // ── Sort ───────────────────────────────────────────────────
-  const [sortKey, setSortKey] = useState<SortKey>('full_name');
-  const [sortDir, setSortDir] = useState<SortDir>('asc');
-
-  // ── Selection ──────────────────────────────────────────────
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-
-  // ── Modal ──────────────────────────────────────────────────
+  // ── Modal state ────────────────────────────────────────────
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [bulkModal,   setBulkModal]   = useState<'group' | 'manager' | null>(null);
 
@@ -87,7 +50,7 @@ export default function EmployeesPage() {
   useEffect(() => { if (me && !admin) router.replace('/dashboard'); }, [me, admin, router]);
 
   // ── Data ───────────────────────────────────────────────────
-  const { data: raw, isLoading } = useQuery({
+  const { data: raw, isLoading, error } = useQuery({
     queryKey: ['hr-employees-all'],
     queryFn:  () => hrEmployeesApi.getAll(),
     staleTime: 60_000,
@@ -100,15 +63,6 @@ export default function EmployeesPage() {
 
   const employees: HREmployee[]   = raw?.results ?? [];
   const groups:    EmployeeGroup[] = groupsRaw?.results ?? [];
-
-  const departments = useMemo(
-    () => Array.from(new Set(employees.map(e => e.department_name).filter(Boolean))).sort() as string[],
-    [employees],
-  );
-  const positions = useMemo(
-    () => Array.from(new Set(employees.map(e => e.position_title).filter(Boolean))).sort() as string[],
-    [employees],
-  );
 
   // ── Resolvers ──────────────────────────────────────────────
   const resolveIsActive  = useCallback((emp: HREmployee) =>
@@ -131,9 +85,15 @@ export default function EmployeesPage() {
     [employees, resolveIsManager, resolveIsActive],
   );
 
-  // ── Filter + Sort ──────────────────────────────────────────
+  // ── Client-side filter + search (reads from tableState.filters) ──
+  const statusFilter = (filters.status as string) ?? 'active';
+  const deptFilter   = (filters.department as string) ?? '';
+  const posFilter    = (filters.position as string) ?? '';
+  const groupFilter  = (filters.group as string) ?? '';
+  const mgrFilter    = (filters.is_manager as string) ?? '';
+
   const filtered = useMemo(() => {
-    const list = employees.filter(e => {
+    return employees.filter(e => {
       if (deletedIds.has(e.id)) return false;
       const isActive = resolveIsActive(e);
       if (statusFilter === 'active'   && !isActive) return false;
@@ -146,34 +106,19 @@ export default function EmployeesPage() {
       const q = search.toLowerCase();
       return !q || e.full_name.toLowerCase().includes(q) || e.employee_id.toLowerCase().includes(q);
     });
-    return [...list].sort((a, b) => {
-      let va = '', vb = '';
-      if (sortKey === 'full_name')   { va = a.full_name;           vb = b.full_name; }
-      if (sortKey === 'employee_id') { va = a.employee_id;         vb = b.employee_id; }
-      if (sortKey === 'department')  { va = a.department_name||''; vb = b.department_name||''; }
-      if (sortKey === 'position')    { va = a.position_title||'';  vb = b.position_title||''; }
-      return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
-    });
-  }, [employees, deletedIds, resolveIsActive, search, deptFilter, posFilter, groupFilter, statusFilter, mgrFilter, sortKey, sortDir, resolveIsManager]);
+  }, [employees, deletedIds, resolveIsActive, search, deptFilter, posFilter, groupFilter, statusFilter, mgrFilter, resolveIsManager]);
 
-  // ── Selection helpers ──────────────────────────────────────
-  const allFilteredIds = useMemo(() => filtered.map(e => e.id), [filtered]);
-  const isAllSelected  = allFilteredIds.length > 0 && allFilteredIds.every(id => selectedIds.has(id));
-  const isSomeSelected = allFilteredIds.some(id => selectedIds.has(id)) && !isAllSelected;
+  // ── Dynamic filter options (derived from data) ─────────────
+  const departments = useMemo(
+    () => Array.from(new Set(employees.map(e => e.department_name).filter(Boolean))).sort() as string[],
+    [employees],
+  );
+  const positions = useMemo(
+    () => Array.from(new Set(employees.map(e => e.position_title).filter(Boolean))).sort() as string[],
+    [employees],
+  );
 
-  const toggleSelect    = (id: number) => setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  const toggleSelectAll = () => setSelectedIds(isAllSelected ? new Set() : new Set(allFilteredIds));
-  const removeFromSel   = (ids: number[]) => setSelectedIds(prev => { const n = new Set(prev); ids.forEach(id => n.delete(id)); return n; });
-
-  const handleSort = (key: SortKey) => {
-    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortKey(key); setSortDir('asc'); }
-  };
-
-  const noLoginCount    = employees.filter(e => !deletedIds.has(e.id) && !e.user?.id).length;
-  const activeFilterCount = [deptFilter, posFilter, groupFilter, mgrFilter,
-    statusFilter !== 'active' ? statusFilter : ''].filter(Boolean).length;
-  const resetFilters = () => { setDeptFilter(''); setPosFilter(''); setGroupFilter(''); setStatusFilter('active'); setMgrFilter(''); };
+  const noLoginCount = employees.filter(e => !deletedIds.has(e.id) && !e.user?.id).length;
 
   const activeEmp = activeModal?.emp ?? null;
 
@@ -225,7 +170,7 @@ export default function EmployeesPage() {
     mutationFn: (id: number) => hrEmployeesApi.deactivate(id),
     onSuccess: (_, id) => {
       setActiveOverrides(p => ({ ...p, [id]: false }));
-      removeFromSel([id]);
+      if (selectedItems.has(id)) tableState.toggleSelect(id);
       toast('Employee deactivated', 'success');
     },
     onError: () => toast('Failed to deactivate', 'error'),
@@ -235,7 +180,7 @@ export default function EmployeesPage() {
     mutationFn: (id: number) => hrEmployeesApi.delete(id),
     onSuccess: (_, id) => {
       setDeletedIds(prev => new Set([...prev, id]));
-      removeFromSel([id]);
+      if (selectedItems.has(id)) tableState.toggleSelect(id);
       toast('Employee deleted', 'success');
     },
     onError: () => toast('Failed to delete employee', 'error'),
@@ -248,7 +193,7 @@ export default function EmployeesPage() {
     onSuccess: (_, vars) => {
       const g = vars.groupId !== null ? groups.find(x => x.id === vars.groupId) : null;
       setGrpOverrides(prev => { const n = { ...prev }; vars.ids.forEach(id => { n[id] = g ? { id: g.id, code: g.code, name: g.name } : null; }); return n; });
-      setBulkModal(null); setSelectedIds(new Set());
+      setBulkModal(null); clearSelection();
       toast(`Group ${vars.groupId ? 'assigned' : 'removed'} for ${vars.ids.length} employees`, 'success');
     },
     onError: () => toast('Failed to update some employees', 'error'),
@@ -259,7 +204,7 @@ export default function EmployeesPage() {
       Promise.all(ids.map(id => hrEmployeesApi.update(id, { direct_manager: managerId } as Partial<HREmployee>))),
     onSuccess: (results: HREmployee[], vars) => {
       setMgrOverrides(prev => { const n = { ...prev }; vars.ids.forEach((id, i) => { const name = results[i]?.direct_manager_name ?? null; n[id] = vars.managerId !== null && name ? { id: vars.managerId, name } : null; }); return n; });
-      setBulkModal(null); setSelectedIds(new Set());
+      setBulkModal(null); clearSelection();
       toast(`Manager ${vars.managerId ? 'assigned' : 'removed'} for ${vars.ids.length} employees`, 'success');
     },
     onError: () => toast('Failed to update some employees', 'error'),
@@ -269,7 +214,7 @@ export default function EmployeesPage() {
     mutationFn: (ids: number[]) => Promise.all(ids.map(id => hrEmployeesApi.activate(id))),
     onSuccess: (_, ids) => {
       setActiveOverrides(prev => { const n = { ...prev }; ids.forEach(id => { n[id] = true; }); return n; });
-      setSelectedIds(new Set());
+      clearSelection();
       toast(`${ids.length} employees activated`, 'success');
     },
     onError: () => toast('Failed to activate some employees', 'error'),
@@ -279,7 +224,7 @@ export default function EmployeesPage() {
     mutationFn: (ids: number[]) => Promise.all(ids.map(id => hrEmployeesApi.deactivate(id))),
     onSuccess: (_, ids) => {
       setActiveOverrides(prev => { const n = { ...prev }; ids.forEach(id => { n[id] = false; }); return n; });
-      setSelectedIds(new Set());
+      clearSelection();
       toast(`${ids.length} employees deactivated`, 'success');
     },
     onError: () => toast('Failed to deactivate some employees', 'error'),
@@ -289,7 +234,7 @@ export default function EmployeesPage() {
     mutationFn: (ids: number[]) => Promise.all(ids.map(id => hrEmployeesApi.delete(id))),
     onSuccess: (_, ids) => {
       setDeletedIds(prev => new Set([...prev, ...ids]));
-      setSelectedIds(new Set());
+      clearSelection();
       toast(`${ids.length} employees deleted`, 'success');
     },
     onError: () => toast('Failed to delete some employees', 'error'),
@@ -300,291 +245,263 @@ export default function EmployeesPage() {
 
   // ── Action handlers ────────────────────────────────────────
   const handleDelete = async (emp: HREmployee) => {
-    const linked = '';
-    if (await confirm(`Delete ${emp.full_name}? This cannot be undone.${linked}`))
+    if (await confirm(`Delete ${emp.full_name}? This cannot be undone.`))
       deleteMutation.mutate(emp.id);
   };
 
   const handleBulkDelete = async () => {
-    const n = selectedIds.size;
+    const n = selectedItems.size;
     if (await confirm(`Delete ${n} employee${n !== 1 ? 's' : ''}? This cannot be undone. Linked login accounts are not deleted automatically.`))
-      bulkDeleteMutation.mutate([...selectedIds]);
+      bulkDeleteMutation.mutate([...selectedItems]);
   };
+
+  // ── Columns ────────────────────────────────────────────────
+  const columns: Column<HREmployee>[] = [
+    {
+      key: 'full_name',
+      header: 'Employee',
+      render: emp => (
+        <PersonCell
+          name={emp.full_name}
+          secondary={!emp.user?.id ? 'No login' : !resolveIsActive(emp) ? 'Inactive' : undefined}
+          avatarUrl={emp.user?.avatar ?? null}
+        />
+      ),
+    },
+    {
+      key: 'employee_id',
+      header: 'ID',
+      render: emp => <span className="emp-mono">{emp.employee_id}</span>,
+    },
+    {
+      key: 'department_name',
+      header: 'Department',
+      render: emp => <span className="emp-meta">{emp.department_name || '—'}</span>,
+    },
+    {
+      key: 'position_title',
+      header: 'Position',
+      render: emp => <span className="emp-meta">{emp.position_title || '—'}</span>,
+    },
+    {
+      key: 'is_active',
+      header: 'Status',
+      render: emp => {
+        const isActive = resolveIsActive(emp);
+        return <Badge variant={isActive ? 'success' : 'default'}>{isActive ? 'Active' : 'Inactive'}</Badge>;
+      },
+    },
+    {
+      key: 'is_manager',
+      header: 'Mgr',
+      render: emp => {
+        const isManager = resolveIsManager(emp);
+        return (
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button
+              className={`emp-mgr-flag${isManager ? ' emp-mgr-flag--on' : ''}`}
+              onClick={e => { e.stopPropagation(); mgrFlagMutation.mutate({ empId: emp.id, value: !isManager }); }}
+              disabled={mgrFlagMutation.isPending && mgrFlagMutation.variables?.empId === emp.id}
+              title={isManager ? 'Remove manager designation' : 'Mark as manager'}
+            >
+              {isManager ? 'Mgr' : '—'}
+            </button>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'employee_group',
+      header: 'Group',
+      render: emp => {
+        const grp = resolveGroup(emp);
+        return grp ? (
+          <div className="emp-group-tag">
+            <button
+              className="emp-group-badge"
+              onClick={e => { e.stopPropagation(); setActiveModal({ type: 'group', emp }); }}
+              title={grp.code}
+            >
+              {grp.name || grp.code}
+            </button>
+            <button
+              className="emp-clear-btn"
+              onClick={e => { e.stopPropagation(); grpMutation.mutate({ empId: emp.id, groupId: null }); }}
+            >
+              ✕
+            </button>
+          </div>
+        ) : (
+          <button
+            className="emp-assign-btn"
+            onClick={e => { e.stopPropagation(); setActiveModal({ type: 'group', emp }); }}
+          >
+            Assign
+          </button>
+        );
+      },
+    },
+    {
+      key: 'direct_manager',
+      header: 'Direct Manager',
+      render: emp => {
+        const mgrName = resolveMgrName(emp);
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
+            {mgrName ? (
+              <>
+                <span className="emp-dot emp-dot--green" />
+                <button
+                  className="emp-manager-btn"
+                  onClick={e => { e.stopPropagation(); setActiveModal({ type: 'manager', emp }); }}
+                >
+                  {mgrName}
+                </button>
+                <button
+                  className="emp-clear-btn"
+                  onClick={e => { e.stopPropagation(); mgrMutation.mutate({ empId: emp.id, managerId: null }); }}
+                >
+                  ✕
+                </button>
+              </>
+            ) : (
+              <button
+                className="emp-assign-btn"
+                onClick={e => { e.stopPropagation(); setActiveModal({ type: 'manager', emp }); }}
+              >
+                Assign
+              </button>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: 'actions',
+      header: '',
+      render: emp => {
+        const isActive = resolveIsActive(emp);
+        return (
+          <div onClick={e => e.stopPropagation()}>
+            <RowActions actions={[
+              { label: 'Open Employee File', href: `/hr/employees/${emp.id}` },
+              { separator: true },
+              {
+                label: isActive ? 'Deactivate' : 'Activate',
+                onClick: () => isActive
+                  ? deactivateMutation.mutate(emp.id)
+                  : activateMutation.mutate(emp.id),
+              },
+              { separator: true },
+              { label: 'Delete Employee', onClick: () => handleDelete(emp), variant: 'danger' },
+            ]} />
+          </div>
+        );
+      },
+    },
+  ];
+
+  // ── Filter fields ──────────────────────────────────────────
+  const filterFields: FilterField[] = [
+    {
+      name: 'status',
+      label: 'Status',
+      type: 'select',
+      group: 'Filters',
+      options: [
+        { value: 'active',   label: 'Active' },
+        { value: 'inactive', label: 'Inactive' },
+      ],
+    },
+    {
+      name: 'department',
+      label: 'Department',
+      type: 'select',
+      group: 'Filters',
+      options: departments.map(d => ({ value: d, label: d })),
+    },
+    {
+      name: 'position',
+      label: 'Position',
+      type: 'select',
+      group: 'Filters',
+      options: positions.map(p => ({ value: p, label: p })),
+    },
+    {
+      name: 'group',
+      label: 'Group',
+      type: 'select',
+      group: 'Filters',
+      options: groups.filter(g => g.is_active).map(g => ({ value: String(g.id), label: g.name })),
+    },
+    {
+      name: 'is_manager',
+      label: 'Manager Flag',
+      type: 'select',
+      group: 'Filters',
+      options: [
+        { value: 'yes', label: 'Managers only' },
+        { value: 'no',  label: 'Non-managers' },
+      ],
+    },
+  ];
+
+  // ── Bulk actions bar ───────────────────────────────────────
+  const bulkActionsBar = selectedItems.size > 0 ? (
+    <div className="emp-bulk-actions">
+      <button className="emp-bulk-btn" onClick={() => setBulkModal('group')}   disabled={isBulkPending}>Assign Group</button>
+      <button className="emp-bulk-btn" onClick={() => setBulkModal('manager')} disabled={isBulkPending}>Assign Manager</button>
+      <button className="emp-bulk-btn" onClick={() => bulkActivateMutation.mutate([...selectedItems])}   disabled={isBulkPending}>Activate</button>
+      <button className="emp-bulk-btn" onClick={() => bulkDeactivateMutation.mutate([...selectedItems])} disabled={isBulkPending}>Deactivate</button>
+      <button
+        className="emp-bulk-btn"
+        onClick={handleBulkDelete}
+        disabled={isBulkPending}
+        style={{ borderColor: 'var(--status-error)', color: 'var(--status-error)' }}
+      >
+        Delete
+      </button>
+      <button className="emp-bulk-btn emp-bulk-btn--clear" onClick={clearSelection}>Clear</button>
+    </div>
+  ) : undefined;
 
   if (!admin) return null;
 
   return (
-    <MainLayout>
-      <PageShell compact>
-        <div className="proc-list-page">
-
-          {/* Header */}
-          <div className="proc-list-header-card">
-            <div className="proc-lhc-nav">
-              <div className="proc-list-nav-crumb">
-                <span className="proc-list-nav-current">HR / Employees</span>
-              </div>
-            </div>
-            <div className="proc-lhc-body">
-              <div className="proc-lhc-left">
-                <div className="proc-lhc-title-row">
-                  <h1 className="proc-lhc-title">Employees</h1>
-                  {!isLoading && (
-                    <span className="proc-lhc-count">
-                      {filtered.length !== (employees.length - deletedIds.size)
-                        ? `${filtered.length} / ${employees.length - deletedIds.size}`
-                        : employees.length - deletedIds.size}
-                    </span>
-                  )}
-                </div>
-                <p className="proc-lhc-desc">Manage employees, groups, and reporting lines</p>
-              </div>
-              <div className="proc-lhc-right">
-                <Link href="/hr/employees/new">
-                  <Button variant="primary">+ New Employee</Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* Surface */}
-          <div className="proc-list-surface">
-
-            {/* Command bar */}
-            <div className="proc-cmd">
-              <div className="proc-cmd-search-wrap">
-                <SearchInput value={search} onChange={setSearch} placeholder="Search name or ID…" width="100%" />
-              </div>
-              <div className="proc-cmd-right">
-                <button
-                  className={`proc-cmd-btn${activeFilterCount > 0 ? ' proc-cmd-btn--active' : ''}`}
-                  onClick={() => setFiltersOpen(o => !o)}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-                  </svg>
-                  Filters
-                  {activeFilterCount > 0 && <span className="proc-cmd-filter-badge">{activeFilterCount}</span>}
-                </button>
-              </div>
-            </div>
-
-            {/* Filter panel */}
-            {filtersOpen && (
-              <div className="emp-filter-panel">
-                <div className="emp-filter-grid">
-                  <div className="emp-filter-field">
-                    <label className="emp-filter-label">Status</label>
-                    <select className="proc-adv-select" value={statusFilter}
-                      onChange={e => setStatusFilter(e.target.value as 'active' | 'inactive' | '')}>
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="">All</option>
-                    </select>
-                  </div>
-                  <div className="emp-filter-field">
-                    <label className="emp-filter-label">Department</label>
-                    <select className="proc-adv-select" value={deptFilter}
-                      onChange={e => setDeptFilter(e.target.value)}>
-                      <option value="">All departments</option>
-                      {departments.map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
-                  </div>
-                  <div className="emp-filter-field">
-                    <label className="emp-filter-label">Position</label>
-                    <select className="proc-adv-select" value={posFilter}
-                      onChange={e => setPosFilter(e.target.value)}>
-                      <option value="">All positions</option>
-                      {positions.map(p => <option key={p} value={p}>{p}</option>)}
-                    </select>
-                  </div>
-                  <div className="emp-filter-field">
-                    <label className="emp-filter-label">Group</label>
-                    <select className="proc-adv-select" value={groupFilter}
-                      onChange={e => setGroupFilter(e.target.value)}>
-                      <option value="">All groups</option>
-                      {groups.filter(g => g.is_active).map(g =>
-                        <option key={g.id} value={String(g.id)}>{g.name}</option>
-                      )}
-                    </select>
-                  </div>
-                  <div className="emp-filter-field">
-                    <label className="emp-filter-label">Manager flag</label>
-                    <select className="proc-adv-select" value={mgrFilter}
-                      onChange={e => setMgrFilter(e.target.value as 'yes' | 'no' | '')}>
-                      <option value="">All</option>
-                      <option value="yes">Managers only</option>
-                      <option value="no">Non-managers</option>
-                    </select>
-                  </div>
-                  {activeFilterCount > 0 && (
-                    <div className="emp-filter-field emp-filter-field--reset">
-                      <button className="emp-filter-reset" onClick={resetFilters}>Reset all filters</button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Bulk action bar */}
-            {selectedIds.size > 0 && (
-              <div className="emp-bulk-bar">
-                <span className="emp-bulk-count">
-                  {selectedIds.size} employee{selectedIds.size !== 1 ? 's' : ''} selected
-                </span>
-                <div className="emp-bulk-actions">
-                  <button className="emp-bulk-btn" onClick={() => setBulkModal('group')} disabled={isBulkPending}>Assign Group</button>
-                  <button className="emp-bulk-btn" onClick={() => setBulkModal('manager')} disabled={isBulkPending}>Assign Manager</button>
-                  <button className="emp-bulk-btn" onClick={() => bulkActivateMutation.mutate([...selectedIds])} disabled={isBulkPending}>Activate</button>
-                  <button className="emp-bulk-btn" onClick={() => bulkDeactivateMutation.mutate([...selectedIds])} disabled={isBulkPending}>Deactivate</button>
-                  <button
-                    className="emp-bulk-btn"
-                    onClick={handleBulkDelete}
-                    disabled={isBulkPending}
-                    style={{ borderColor: 'var(--status-error)', color: 'var(--status-error)' }}
-                  >
-                    Delete
-                  </button>
-                  <button className="emp-bulk-btn emp-bulk-btn--clear" onClick={() => setSelectedIds(new Set())}>Clear</button>
-                </div>
-              </div>
-            )}
-
-            {/* Table */}
-            <div className="proc-list-table-wrap">
-              <div style={{ minWidth: 960 }}>
-
-                {/* Header */}
-                <div className="emp-cols emp-thead" style={{ gridTemplateColumns: COLS }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <input type="checkbox" className="emp-cb" checked={isAllSelected}
-                      ref={el => { if (el) el.indeterminate = isSomeSelected; }}
-                      onChange={toggleSelectAll} />
-                  </div>
-                  {SORTABLE_HEADS.slice(1).map(h => h.key ? (
-                    <button key={h.label}
-                      className={`emp-thead-cell emp-sort-btn${sortKey === h.key ? ' emp-sort-btn--active' : ''}`}
-                      onClick={() => handleSort(h.key!)}>
-                      {h.label}<SortIcon active={sortKey === h.key} dir={sortDir} />
-                    </button>
-                  ) : (
-                    <span key={h.label} className="emp-thead-cell">{h.label}</span>
-                  ))}
-                </div>
-
-                {/* Rows */}
-                {isLoading ? (
-                  <div className="emp-state-msg">Loading employees…</div>
-                ) : filtered.length === 0 ? (
-                  <div className="emp-state-msg">No employees match your filters.</div>
-                ) : filtered.map(emp => {
-                  const grp       = resolveGroup(emp);
-                  const mgrName   = resolveMgrName(emp);
-                  const isManager = resolveIsManager(emp);
-                  const isActive  = resolveIsActive(emp);
-                  const isSel     = selectedIds.has(emp.id);
-
-                  return (
-                    <div key={emp.id}
-                      className={`emp-cols emp-row${isSel ? ' emp-row--selected' : ''}`}
-                      style={{ gridTemplateColumns: COLS, opacity: isActive ? 1 : 0.6 }}>
-
-                      {/* Checkbox */}
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        onClick={e => e.stopPropagation()}>
-                        <input type="checkbox" className="emp-cb" checked={isSel} onChange={() => toggleSelect(emp.id)} />
-                      </div>
-
-                      {/* Name */}
-                      <div style={{ minWidth: 0 }}>
-                        <PersonCell
-                          name={emp.full_name}
-                          secondary={!emp.user?.id ? 'No login' : !isActive ? 'Inactive' : undefined}
-                          avatarUrl={emp.user?.avatar ?? null}
-                        />
-                      </div>
-
-                      <p className="emp-mono">{emp.employee_id}</p>
-                      <p className="emp-meta">{emp.department_name || '—'}</p>
-                      <p className="emp-meta">{emp.position_title  || '—'}</p>
-
-                      {/* Status badge */}
-                      <Badge variant={isActive ? 'success' : 'default'}>
-                        {isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-
-                      {/* Mgr flag */}
-                      <div style={{ display: 'flex', justifyContent: 'center' }}>
-                        <button
-                          className={`emp-mgr-flag${isManager ? ' emp-mgr-flag--on' : ''}`}
-                          onClick={() => mgrFlagMutation.mutate({ empId: emp.id, value: !isManager })}
-                          disabled={mgrFlagMutation.isPending && mgrFlagMutation.variables?.empId === emp.id}
-                          title={isManager ? 'Remove manager designation' : 'Mark as manager'}
-                        >
-                          {isManager ? 'Mgr' : '—'}
-                        </button>
-                      </div>
-
-                      {/* Group */}
-                      <div>
-                        {grp ? (
-                          <div className="emp-group-tag">
-                            <button className="emp-group-badge"
-                              onClick={() => setActiveModal({ type: 'group', emp })} title={grp.code}>
-                              {grp.name || grp.code}
-                            </button>
-                            <button className="emp-clear-btn"
-                              onClick={() => grpMutation.mutate({ empId: emp.id, groupId: null })}>✕</button>
-                          </div>
-                        ) : (
-                          <button className="emp-assign-btn" onClick={() => setActiveModal({ type: 'group', emp })}>Assign</button>
-                        )}
-                      </div>
-
-                      {/* Direct Manager */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
-                        {mgrName ? (
-                          <>
-                            <span className="emp-dot emp-dot--green" />
-                            <button className="emp-manager-btn" onClick={() => setActiveModal({ type: 'manager', emp })}>{mgrName}</button>
-                            <button className="emp-clear-btn" onClick={() => mgrMutation.mutate({ empId: emp.id, managerId: null })}>✕</button>
-                          </>
-                        ) : (
-                          <button className="emp-assign-btn" onClick={() => setActiveModal({ type: 'manager', emp })}>Assign</button>
-                        )}
-                      </div>
-
-                      {/* Row actions */}
-                      <div onClick={e => e.stopPropagation()}>
-                        <RowActions actions={[
-                          { label: 'Open Employee File', href: `/hr/employees/${emp.id}` },
-                          { separator: true },
-                          {
-                            label: isActive ? 'Deactivate' : 'Activate',
-                            onClick: () => isActive
-                              ? deactivateMutation.mutate(emp.id)
-                              : activateMutation.mutate(emp.id),
-                          },
-                          { separator: true },
-                          { label: 'Delete Employee', onClick: () => handleDelete(emp), variant: 'danger' },
-                        ]} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Warning banner */}
-          {!isLoading && noLoginCount > 0 && (
-            <div className="proc-status-banner proc-status-banner--warning">
-              <strong>{noLoginCount} employee{noLoginCount !== 1 ? 's' : ''}</strong>{' '}
-              {noLoginCount === 1 ? 'has' : 'have'} no login account — approvals will not route to them.
-            </div>
-          )}
+    <AppListPage
+      title="Employees"
+      description="Manage employees, groups, and reporting lines"
+      breadcrumbs={[
+        { label: 'HR' },
+        { label: 'Employees' },
+      ]}
+      showBack={false}
+      totalCount={filtered.length}
+      createAction={
+        <Link href="/hr/employees/new">
+          <Button variant="primary" size="sm">+ New Employee</Button>
+        </Link>
+      }
+      filterFields={filterFields}
+      columns={columns}
+      data={filtered}
+      isLoading={isLoading}
+      error={error}
+      emptyTitle="No employees match your filters."
+      tableState={tableState}
+      selectable
+      bulkActions={bulkActionsBar}
+      onRowClick={emp => router.push(`/hr/employees/${emp.id}`)}
+      rowStyle={emp => resolveIsActive(emp) ? undefined : { opacity: 0.6 }}
+      searchPlaceholder="Search name or ID…"
+    >
+      {/* Warning banner */}
+      {!isLoading && noLoginCount > 0 && (
+        <div className="proc-status-banner proc-status-banner--warning">
+          <strong>{noLoginCount} employee{noLoginCount !== 1 ? 's' : ''}</strong>{' '}
+          {noLoginCount === 1 ? 'has' : 'have'} no login account — approvals will not route to them.
         </div>
-      </PageShell>
+      )}
 
       {/* Single-employee modals */}
       <AssignGroupModal
@@ -607,18 +524,18 @@ export default function EmployeesPage() {
       {/* Bulk modals */}
       <AssignGroupModal
         isOpen={bulkModal === 'group'} onClose={() => setBulkModal(null)}
-        employee={null} label={`${selectedIds.size} employees`} groups={groups} currentId={null}
-        onAssign={id => bulkGrpMutation.mutate({ groupId: id, ids: [...selectedIds] })}
-        onClear={() => bulkGrpMutation.mutate({ groupId: null, ids: [...selectedIds] })}
+        employee={null} label={`${selectedItems.size} employees`} groups={groups} currentId={null}
+        onAssign={id => bulkGrpMutation.mutate({ groupId: id, ids: [...selectedItems] })}
+        onClear={() => bulkGrpMutation.mutate({ groupId: null, ids: [...selectedItems] })}
         isLoading={bulkGrpMutation.isPending}
       />
       <AssignManagerModal
         isOpen={bulkModal === 'manager'} onClose={() => setBulkModal(null)}
-        employee={null} label={`${selectedIds.size} employees`} candidates={managerCandidates} currentMgrId={null}
-        onAssign={id => bulkMgrMutation.mutate({ managerId: id, ids: [...selectedIds] })}
-        onClear={() => bulkMgrMutation.mutate({ managerId: null, ids: [...selectedIds] })}
+        employee={null} label={`${selectedItems.size} employees`} candidates={managerCandidates} currentMgrId={null}
+        onAssign={id => bulkMgrMutation.mutate({ managerId: id, ids: [...selectedItems] })}
+        onClear={() => bulkMgrMutation.mutate({ managerId: null, ids: [...selectedItems] })}
         isLoading={bulkMgrMutation.isPending}
       />
-    </MainLayout>
+    </AppListPage>
   );
 }

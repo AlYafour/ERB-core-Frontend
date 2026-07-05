@@ -139,7 +139,7 @@ function AttendanceEditModal({
               notes,
             })}
             disabled={isLoading}
-            style={{ padding: '7px 20px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--brand)', color: '#fff', cursor: isLoading ? 'default' : 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', opacity: isLoading ? 0.7 : 1 }}
+            style={{ padding: '7px 20px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--brand)', color: 'var(--primary-foreground)', cursor: isLoading ? 'default' : 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', opacity: isLoading ? 0.7 : 1 }}
           >
             {isLoading ? 'Saving…' : 'Save Changes'}
           </button>

@@ -73,8 +73,15 @@ export default function HRRequestsPage() {
     onError: (e: unknown) => toast(getApiError(e, 'Failed to reject request'), 'error'),
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: (id: number) => hrRequestsApi.cancel(id),
+    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['hr-requests'] }); toast('Request cancelled', 'info'); },
+    onError:    () => toast('Failed to cancel request', 'error'),
+  });
+
   const handleApprove = async (id: number) => { if (await confirm('Approve this request?')) approveMutation.mutate(id); };
   const handleReject  = (id: number) => { setRejectingId(id); setRejectDialogOpen(true); };
+  const handleCancel  = async (id: number) => { if (await confirm('Cancel this request?')) cancelMutation.mutate(id); };
 
   const requests   = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
@@ -102,6 +109,7 @@ export default function HRRequestsPage() {
         <RowActions actions={[
           { label: 'Approve', onClick: () => handleApprove(r.id), hidden: !isAdmin || r.status !== 'pending' },
           { label: 'Reject',  onClick: () => handleReject(r.id),  hidden: !isAdmin || r.status !== 'pending', variant: 'danger' },
+          { label: 'Cancel',  onClick: () => handleCancel(r.id),  hidden: !isAdmin || r.status !== 'pending', variant: 'danger' },
         ]} />
       ),
     },

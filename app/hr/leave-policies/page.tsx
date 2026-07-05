@@ -3,14 +3,16 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import MainLayout from '@/components/layout/MainLayout';
 import { hrLeavePoliciesApi, hrEmployeeGroupsApi, type AccrualResult } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
-import { Button, Badge, PageHeader, PageShell, TableShell, type Column } from '@/components/ui';
+import { Button, Badge } from '@/components/ui';
 import { useTableState } from '@/lib/hooks/use-table-state';
+import { AppListPage } from '@/components/app/AppListPage';
+import { type Column } from '@/components/ui/DataTable';
+import { RowActions } from '@/components/ui/RowActions';
 import { BaseModal } from '@/components/ui/base/BaseModal';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import type { LeavePolicy, EmployeeGroup } from '@/types';
@@ -432,7 +434,7 @@ export default function LeavePoliciesPage() {
   const [showModal,  setShowModal]  = useState(false);
   const [editTarget, setEditTarget] = useState<LeavePolicy | null>(null);
 
-  const { data: policyData, isLoading } = useQuery({
+  const { data: policyData, isLoading, error } = useQuery({
     queryKey: ['leave-policies'],
     queryFn:  () => hrLeavePoliciesApi.getAll(),
   });
@@ -443,8 +445,18 @@ export default function LeavePoliciesPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const groups = groupData?.results ?? [];
-  const policies = policyData?.results ?? [];
+  const groups  = groupData?.results ?? [];
+  const all     = policyData?.results ?? [];
+  const { search } = tableState;
+
+  const filtered = useMemo(() => {
+    if (!search) return all;
+    const q = search.toLowerCase();
+    return all.filter(p =>
+      (p.employee_group_name ?? 'any group').toLowerCase().includes(q) ||
+      (LEAVE_TYPE_LABELS[p.leave_type] ?? p.leave_type).toLowerCase().includes(q)
+    );
+  }, [all, search]);
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => hrLeavePoliciesApi.delete(id),
@@ -512,7 +524,7 @@ export default function LeavePoliciesPage() {
     },
     {
       key:    'is_active',
-      header: 'Active',
+      header: 'Status',
       render: (p) => (
         <Badge variant={p.is_active ? 'success' : 'default'}>{p.is_active ? 'Active' : 'Inactive'}</Badge>
       ),
@@ -521,49 +533,47 @@ export default function LeavePoliciesPage() {
       key:    'actions',
       header: '',
       render: (p) => isAdmin ? (
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <Button variant="ghost" size="sm" onClick={() => handleEdit(p)}>Edit</Button>
-          <Button variant="ghost" size="sm" onClick={() => handleDelete(p)} style={{ color: 'var(--color-error)' }}>Delete</Button>
-        </div>
+        <RowActions
+          actions={[
+            { label: 'Edit', onClick: () => handleEdit(p) },
+            { separator: true },
+            { label: 'Delete', variant: 'danger', onClick: () => handleDelete(p) },
+          ]}
+        />
       ) : null,
     },
   ];
 
   return (
-    <MainLayout>
-      <PageShell>
-        <PageHeader
-          title="Leave Policies"
-          description="Configure annual entitlements, monthly accrual rates, and encashment rules per employee group."
-          breadcrumbs={[{ label: 'HR' }, { label: 'Leave Policies' }]}
-          actions={
-            isAdmin ? (
-              <Button variant="primary" size="sm" onClick={() => { setEditTarget(null); setShowModal(true); }}>
-                + New Policy
-              </Button>
-            ) : undefined
-          }
-        />
+    <AppListPage
+      title="Leave Policies"
+      description="Configure annual entitlements, monthly accrual rates, and encashment rules per employee group."
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Leave Policies' }]}
+      totalCount={all.length}
+      createAction={
+        isAdmin ? (
+          <Button variant="primary" size="sm" onClick={() => { setEditTarget(null); setShowModal(true); }}>
+            + New Policy
+          </Button>
+        ) : undefined
+      }
+      columns={columns}
+      data={filtered}
+      isLoading={isLoading}
+      error={error}
+      emptyTitle="No leave policies configured. Create one to enable accrual."
+      searchPlaceholder="Search by group or leave type..."
+      tableState={tableState}
+    >
+      {isAdmin && <AccrualPanel />}
 
-        {isAdmin && <AccrualPanel />}
-
-        <TableShell
-          tableState={tableState}
-          columns={columns}
-          data={policies}
-          isLoading={isLoading}
-          emptyMessage="No leave policies configured. Create one to enable accrual."
-          totalCount={policyData?.count ?? 0}
-        />
-
-        <PolicyModal
-          isOpen={showModal}
-          onClose={() => setShowModal(false)}
-          onSuccess={() => queryClient.invalidateQueries({ queryKey: ['leave-policies'] })}
-          editing={editTarget}
-          groups={groups}
-        />
-      </PageShell>
-    </MainLayout>
+      <PolicyModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['leave-policies'] })}
+        editing={editTarget}
+        groups={groups}
+      />
+    </AppListPage>
   );
 }

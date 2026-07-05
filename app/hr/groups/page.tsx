@@ -3,12 +3,15 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import MainLayout from '@/components/layout/MainLayout';
+import { AppListPage } from '@/components/app/AppListPage';
+import { useTableState } from '@/lib/hooks/use-table-state';
+import { type Column } from '@/components/ui/DataTable';
+import { RowActions } from '@/components/ui/RowActions';
+import { Badge, Button } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { hrEmployeeGroupsApi, hrShiftsApi, hrEmployeesApi } from '@/lib/api/hr';
-import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
-import { toast } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import type { EmployeeGroup, HRShift, HREmployee } from '@/types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -97,7 +100,7 @@ function ManagerPicker({
             <>
               <span style={{
                 width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                background: selected ? (selected.user?.id ? 'var(--brand)' : '#E05C5C') : 'var(--text-tertiary)',
+                background: selected ? (selected.user?.id ? 'var(--brand)' : 'var(--color-error)') : 'var(--text-tertiary)',
               }} />
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
             </>
@@ -153,7 +156,7 @@ function ManagerPicker({
               const hasUser  = !!emp.user?.id;
               const inactive = !emp.is_active;
               const isSel    = emp.id === value;
-              const dotColor = !hasUser ? '#E05C5C' : inactive ? 'var(--text-tertiary)' : 'var(--brand)';
+              const dotColor = !hasUser ? 'var(--color-error)' : inactive ? 'var(--text-tertiary)' : 'var(--brand)';
               return (
                 <div
                   key={emp.id}
@@ -167,10 +170,7 @@ function ManagerPicker({
                   onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = 'var(--surface-subtle)'; }}
                   onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = 'transparent'; }}
                 >
-                  {/* green=active+account, grey=inactive employee, amber=no login account */}
                   <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: dotColor }} />
-
-                  {/* Name + ID */}
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <span style={{
                       fontSize: 'var(--text-sm)',
@@ -188,7 +188,7 @@ function ManagerPicker({
                       {emp.employee_id}
                       {inactive && <span style={{ color: 'var(--text-tertiary)' }}>· inactive</span>}
                       {!hasUser && !inactive && (
-                        <span style={{ color: '#E05C5C', fontWeight: 'var(--weight-medium)' }}>
+                        <span style={{ color: 'var(--color-error)', fontWeight: 'var(--weight-medium)' }}>
                           · won&apos;t route approvals
                         </span>
                       )}
@@ -360,7 +360,7 @@ function GroupModal({
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
               Approval fallback when an employee has no direct manager.{' '}
               <span style={{ color: 'var(--brand)', fontWeight: 'var(--weight-semibold)' }}>●</span> Has login · routes approvals.{' '}
-              <span style={{ color: '#E05C5C', fontWeight: 'var(--weight-semibold)' }}>●</span> No account · approvals won&apos;t deliver.
+              <span style={{ color: 'var(--color-error)', fontWeight: 'var(--weight-semibold)' }}>●</span> No account · approvals won&apos;t deliver.
             </p>
           </div>
 
@@ -376,7 +376,7 @@ function GroupModal({
             >
               <div style={{
                 position: 'absolute', top: 3, left: form.is_active ? 21 : 3,
-                width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                width: 16, height: 16, borderRadius: '50%', background: 'var(--primary-foreground)',
                 transition: 'left 200ms', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
               }} />
             </div>
@@ -404,14 +404,14 @@ function GroupModal({
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function EmployeeGroupsPage() {
-  const { user: me } = useAuth();
   const { hasPermission } = useMyPermissions();
   const admin = hasPermission('hr.hr_employee.view');
   const queryClient = useQueryClient();
 
+  const tableState = useTableState();
+  const { search } = tableState;
+
   const [modalGroup, setModalGroup] = useState<EmployeeGroup | null | 'new'>(null);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [search, setSearch] = useState('');
 
   const { data: raw, isLoading } = useQuery({
     queryKey: ['hr-employee-groups'],
@@ -435,13 +435,13 @@ export default function EmployeeGroupsPage() {
   const shifts: HRShift[]          = shiftsRaw?.results ?? [];
   const employees: HREmployee[]    = employeesRaw?.results ?? [];
 
-  const groups = search
-    ? allGroups.filter(g =>
+  const filtered = !search
+    ? allGroups
+    : allGroups.filter(g =>
         g.name.toLowerCase().includes(search.toLowerCase()) ||
         g.code.toLowerCase().includes(search.toLowerCase()) ||
         (g.name_ar && g.name_ar.includes(search))
-      )
-    : allGroups;
+      );
 
   const shiftById = new Map(shifts.map(s => [s.id, s]));
 
@@ -461,7 +461,7 @@ export default function EmployeeGroupsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => hrEmployeeGroupsApi.delete(id),
-    onSuccess: () => { invalidate(); setDeletingId(null); toast('Group deleted', 'success'); },
+    onSuccess: () => { invalidate(); toast('Group deleted', 'success'); },
     onError: () => toast('Failed to delete group', 'error'),
   });
 
@@ -475,257 +475,173 @@ export default function EmployeeGroupsPage() {
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
-  if (!admin) {
-    return (
-      <MainLayout>
-        <div className="card" style={{ padding: 'var(--space-8)', textAlign: 'center' }}>
-          <p style={{ color: 'var(--color-error)', margin: 0, fontSize: 'var(--text-sm)' }}>
-            Admin access required.
+  const columns: Column<EmployeeGroup>[] = [
+    {
+      key: 'code',
+      header: 'Code',
+      width: '90px',
+      render: (group) => (
+        <span style={{
+          fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-bold)',
+          color: 'var(--card-bg)', background: 'var(--brand)',
+          padding: '2px 8px', borderRadius: 'var(--radius-sm)', display: 'inline-block',
+          opacity: group.is_active ? 1 : 0.5,
+        }}>
+          {group.code}
+        </span>
+      ),
+    },
+    {
+      key: 'name',
+      header: 'Name',
+      render: (group) => (
+        <div style={{ minWidth: 0 }}>
+          <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {group.name}
           </p>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  // Code | Name | Name_AR | Members | Default Shift | Default Manager | Status | Actions
-  const GRID = '90px 1fr 1fr 70px 130px 160px 70px 90px';
-
-  return (
-    <MainLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-4)' }}>
-          <div>
-            <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-bold)', margin: '0 0 var(--space-1)' }}>
-              Employee Groups
-              {!isLoading && (
-                <span style={{ marginLeft: 'var(--space-2)', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-normal)', color: 'var(--text-secondary)' }}>
-                  {groups.length}{search ? ` / ${allGroups.length}` : ''} {allGroups.length === 1 ? 'group' : 'groups'}
-                </span>
-              )}
-            </h1>
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
-              Workforce categories that carry a default shift, approval policy, and reporting line.
+          {group.description && (
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {group.description}
             </p>
-          </div>
-          <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', flexShrink: 0 }}>
-            <input
-              type="search"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search groups…"
-              style={{
-                padding: '7px 12px', borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-default)', background: 'var(--input-bg)',
-                fontSize: 'var(--text-sm)', color: 'var(--text-primary)',
-                outline: 'none', width: 200,
-              }}
-            />
-            <button
-              onClick={() => setModalGroup('new')}
-            style={{
-              padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-md)',
-              background: 'var(--brand)', color: 'var(--card-bg)',
-              border: 'none', cursor: 'pointer', fontSize: 'var(--text-sm)',
-              fontWeight: 'var(--weight-semibold)', whiteSpace: 'nowrap', flexShrink: 0,
-            }}
-          >
-            + Create Group
-          </button>
-          </div>
-        </div>
-
-        {/* Table */}
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          {/* Header row */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: GRID,
-            gap: 'var(--space-3)', padding: 'var(--space-3) var(--space-5)',
-            borderBottom: '1px solid var(--border-subtle)', background: 'var(--surface-subtle)',
-          }}>
-            {['Code', 'Name', 'Name (Arabic)', 'Members', 'Default Shift', 'Default Manager', 'Status', ''].map(h => (
-              <span key={h} style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {h}
-              </span>
-            ))}
-          </div>
-
-          {isLoading ? (
-            <div style={{ padding: 'var(--space-12)', textAlign: 'center' }}>
-              <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: 'var(--text-sm)' }}>Loading…</p>
-            </div>
-          ) : groups.length === 0 ? (
-            <div style={{ padding: 'var(--space-12)', textAlign: 'center' }}>
-              <p style={{ fontSize: 'var(--text-2xl)', margin: '0 0 var(--space-3)' }}>🗂</p>
-              <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', margin: '0 0 var(--space-1)' }}>No groups yet</p>
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
-                Create your first group to start organising employees by workforce category.
-              </p>
-            </div>
-          ) : (
-            groups.map((group, idx) => {
-              const isLast      = idx === groups.length - 1;
-              const isDeleting  = deletingId === group.id;
-              const shiftDetail = group.default_shift ? shiftById.get(group.default_shift) : null;
-              const mgrEmp      = group.default_manager ? employees.find(e => e.id === group.default_manager) : null;
-              const mgrHasUser  = mgrEmp ? !!mgrEmp.user?.id : null;
-
-              return (
-                <div key={group.id} style={{ borderBottom: !isLast ? '1px solid var(--border-subtle)' : 'none' }}>
-                  <div style={{
-                    display: 'grid', gridTemplateColumns: GRID,
-                    gap: 'var(--space-3)', padding: 'var(--space-4) var(--space-5)', alignItems: 'center',
-                  }}>
-                    {/* Code */}
-                    <span style={{
-                      fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-bold)',
-                      color: 'var(--card-bg)', background: 'var(--brand)',
-                      padding: '2px 8px', borderRadius: 'var(--radius-sm)', display: 'inline-block',
-                      opacity: group.is_active ? 1 : 0.5,
-                    }}>
-                      {group.code}
-                    </span>
-
-                    {/* Name */}
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {group.name}
-                      </p>
-                      {group.description && (
-                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {group.description}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Name AR */}
-                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', direction: 'rtl', textAlign: 'right' }}>
-                      {group.name_ar || '—'}
-                    </p>
-
-                    {/* Members */}
-                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
-                      {group.member_count} active
-                    </p>
-
-                    {/* Default Shift */}
-                    <div style={{ minWidth: 0 }}>
-                      {group.default_shift_name ? (
-                        <>
-                          <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {group.default_shift_name}
-                          </p>
-                          {shiftDetail && (
-                            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '2px 0 0', whiteSpace: 'nowrap' }}>
-                              {fmtTime(shiftDetail.start_time)} – {fmtTime(shiftDetail.end_time)}
-                            </p>
-                          )}
-                        </>
-                      ) : (
-                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic' }}>None</p>
-                      )}
-                    </div>
-
-                    {/* Default Manager */}
-                    <div style={{ minWidth: 0 }}>
-                      {group.default_manager_name ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                          <span style={{
-                            width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                            background: mgrHasUser === false ? '#E05C5C' : 'var(--brand)',
-                          }} />
-                          <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {group.default_manager_name}
-                          </p>
-                        </div>
-                      ) : (
-                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic' }}>None</p>
-                      )}
-                    </div>
-
-                    {/* Status */}
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 5,
-                      padding: '3px 8px', borderRadius: 99, fontSize: 'var(--text-xs)',
-                      fontWeight: 'var(--weight-semibold)',
-                      background: group.is_active ? 'var(--brand-muted)' : 'var(--surface-subtle)',
-                      color: group.is_active ? 'var(--brand)' : 'var(--text-secondary)',
-                    }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: group.is_active ? 'var(--brand)' : 'var(--text-tertiary)' }} />
-                      {group.is_active ? 'Active' : 'Inactive'}
-                    </span>
-
-                    {/* Actions */}
-                    <div style={{ display: 'flex', gap: 'var(--space-1)', justifyContent: 'flex-end' }}>
-                      <button
-                        onClick={() => setModalGroup(group)}
-                        style={{ padding: '6px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => setDeletingId(isDeleting ? null : group.id)}
-                        style={{ padding: '6px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)', color: isDeleting ? '#dc2626' : 'var(--text-secondary)' }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Inline delete confirmation */}
-                  {isDeleting && (
-                    <div style={{
-                      padding: 'var(--space-3) var(--space-5)',
-                      borderTop: '1px solid var(--border-subtle)', background: '#fef2f2',
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-4)',
-                    }}>
-                      <div>
-                        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: '#7f1d1d', margin: 0 }}>
-                          Delete {group.code}?
-                        </p>
-                        {group.member_count > 0 && (
-                          <p style={{ fontSize: 'var(--text-xs)', color: '#991b1b', margin: '2px 0 0' }}>
-                            {group.member_count} active {group.member_count === 1 ? 'employee' : 'employees'} will have their group cleared.
-                          </p>
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', gap: 'var(--space-2)', flexShrink: 0 }}>
-                        <button
-                          onClick={() => setDeletingId(null)}
-                          style={{ padding: 'var(--space-1-5) var(--space-3)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)', background: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)' }}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => deleteMutation.mutate(group.id)}
-                          disabled={deleteMutation.isPending}
-                          style={{ padding: 'var(--space-1-5) var(--space-3)', borderRadius: 'var(--radius-sm)', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', opacity: deleteMutation.isPending ? 0.6 : 1 }}
-                        >
-                          {deleteMutation.isPending ? 'Deleting…' : 'Confirm Delete'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })
           )}
         </div>
-
-        {/* Context note */}
-        {!isLoading && groups.length > 0 && (
-          <div style={{ padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)' }}>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
-              <strong>G4 active.</strong> Set a default manager per group — used as approval fallback when employees have no direct manager assigned. Default shift (G3) is also live. Assign employees to groups from the{' '}
-              <Link href="/hr/employees" style={{ color: 'var(--brand)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>Employees page</Link>.
+      ),
+    },
+    {
+      key: 'name_ar',
+      header: 'Name (Arabic)',
+      render: (group) => (
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', direction: 'rtl', textAlign: 'right' }}>
+          {group.name_ar || '—'}
+        </p>
+      ),
+    },
+    {
+      key: 'member_count',
+      header: 'Members',
+      width: '80px',
+      render: (group) => (
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
+          {group.member_count} active
+        </p>
+      ),
+    },
+    {
+      key: 'default_shift_name',
+      header: 'Default Shift',
+      width: '140px',
+      render: (group) => {
+        const shiftDetail = group.default_shift ? shiftById.get(group.default_shift) : null;
+        return group.default_shift_name ? (
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {group.default_shift_name}
+            </p>
+            {shiftDetail && (
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '2px 0 0', whiteSpace: 'nowrap' }}>
+                {fmtTime(shiftDetail.start_time)} – {fmtTime(shiftDetail.end_time)}
+              </p>
+            )}
+          </div>
+        ) : (
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic' }}>None</p>
+        );
+      },
+    },
+    {
+      key: 'default_manager_name',
+      header: 'Default Manager',
+      width: '160px',
+      render: (group) => {
+        const mgrEmp     = group.default_manager ? employees.find(e => e.id === group.default_manager) : null;
+        const mgrHasUser = mgrEmp ? !!mgrEmp.user?.id : null;
+        return group.default_manager_name ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+            <span style={{
+              width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+              background: mgrHasUser === false ? 'var(--color-error)' : 'var(--brand)',
+            }} />
+            <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {group.default_manager_name}
             </p>
           </div>
-        )}
+        ) : (
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic' }}>None</p>
+        );
+      },
+    },
+    {
+      key: 'is_active',
+      header: 'Status',
+      width: '90px',
+      render: (group) => (
+        <Badge variant={group.is_active ? 'active' : 'inactive'} size="sm">
+          {group.is_active ? 'Active' : 'Inactive'}
+        </Badge>
+      ),
+    },
+    {
+      key: 'actions',
+      header: '',
+      width: '48px',
+      render: (group) => (
+        <RowActions
+          actions={[
+            {
+              label: 'Edit',
+              onClick: () => setModalGroup(group),
+            },
+            { separator: true },
+            {
+              label: 'Delete',
+              variant: 'danger',
+              onClick: async () => {
+                if (await confirm(`Delete group "${group.name}" (${group.code})?`)) {
+                  deleteMutation.mutate(group.id);
+                }
+              },
+            },
+          ]}
+        />
+      ),
+    },
+  ];
 
-      </div>
+  return (
+    <AppListPage
+      title="Employee Groups"
+      description="Workforce categories that carry a default shift, approval policy, and reporting line."
+      breadcrumbs={[
+        { label: 'Home', href: '/' },
+        { label: 'HR' },
+        { label: 'Employee Groups' },
+      ]}
+      totalCount={allGroups.length}
+      createAction={
+        admin ? (
+          <Button variant="primary" size="sm" onClick={() => setModalGroup('new')}>
+            + Create Group
+          </Button>
+        ) : undefined
+      }
+      columns={columns}
+      data={filtered}
+      isLoading={isLoading}
+      emptyTitle="No groups yet. Create your first group to start organising employees by workforce category."
+      tableState={tableState}
+      searchPlaceholder="Search groups…"
+    >
+      {/* Context note */}
+      {!isLoading && allGroups.length > 0 && (
+        <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)' }}>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
+            <strong>G4 active.</strong> Set a default manager per group — used as approval fallback when employees have no direct manager assigned. Default shift (G3) is also live. Assign employees to groups from the{' '}
+            <Link href="/hr/employees" style={{ color: 'var(--brand)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>Employees page</Link>.
+          </p>
+        </div>
+      )}
 
-      {/* Modal */}
+      {/* Group Modal */}
       {modalGroup !== null && (
         <GroupModal
           group={modalGroup === 'new' ? null : modalGroup}
@@ -736,6 +652,6 @@ export default function EmployeeGroupsPage() {
           isSaving={isSaving}
         />
       )}
-    </MainLayout>
+    </AppListPage>
   );
 }

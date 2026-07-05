@@ -2,12 +2,16 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import MainLayout from '@/components/layout/MainLayout';
-import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { hrApprovalsApi, hrEmployeeGroupsApi, hrEmployeesApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
+import { useTableState } from '@/lib/hooks/use-table-state';
+import { AppListPage } from '@/components/app/AppListPage';
+import { type Column } from '@/components/ui/DataTable';
+import { type FilterField } from '@/components/ui/FilterPanel';
+import { RowActions } from '@/components/ui/RowActions';
+import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { ROLES } from '@/lib/constants/roles';
 import type { ApprovalPolicy, ApprovalStep, ApproverStrategy, ConditionOperator, EmployeeGroup, HREmployee } from '@/types';
 
@@ -246,7 +250,7 @@ function StageRowUI({
       {/* Ordinal badge */}
       <span style={{
         minWidth: 22, height: 22, borderRadius: '50%',
-        background: 'var(--color-primary)', color: '#fff',
+        background: 'var(--color-primary)', color: 'var(--primary-foreground)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 11, fontWeight: 700, flexShrink: 0,
       }}>
@@ -329,9 +333,9 @@ function StageRowUI({
           onClick={onRemove}
           title="Remove stage"
           style={{
-            width: 26, height: 26, border: '1px solid #FECACA',
-            borderRadius: 'var(--radius-sm)', background: '#FEF2F2',
-            cursor: 'pointer', color: '#dc2626',
+            width: 26, height: 26, border: '1px solid var(--status-error-border)',
+            borderRadius: 'var(--radius-sm)', background: 'var(--color-error-light)',
+            cursor: 'pointer', color: 'var(--color-error)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
@@ -566,7 +570,7 @@ function ChainBuilder({
                   position: 'absolute', top: 3,
                   left: form.is_active ? 22 : 3,
                   width: 18, height: 18, borderRadius: '50%',
-                  background: '#fff', transition: 'left 0.15s',
+                  background: 'var(--primary-foreground)', transition: 'left 0.15s',
                 }} />
               </button>
             </div>
@@ -724,7 +728,7 @@ function ChainBuilder({
               padding: '8px 20px', border: 'none',
               borderRadius: 'var(--radius-md)',
               background: saving ? 'var(--text-tertiary)' : 'var(--color-primary)',
-              color: '#fff', cursor: saving ? 'not-allowed' : 'pointer',
+              color: 'var(--primary-foreground)', cursor: saving ? 'not-allowed' : 'pointer',
               fontSize: 'var(--text-sm)', fontWeight: 600,
             }}
           >
@@ -744,10 +748,11 @@ export default function ApprovalChainsPage() {
   const qc = useQueryClient();
   const admin = hasPermission('hr.hr_approval.view');
 
-  const [filterGroup, setFilterGroup]   = useState<string>('');
-  const [filterType,  setFilterType]    = useState<string>('');
-  const [modalOpen,   setModalOpen]     = useState(false);
-  const [editing,     setEditing]       = useState<ApprovalPolicy | null>(null);
+  const tableState = useTableState();
+  const { search, filters } = tableState;
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing,   setEditing]   = useState<ApprovalPolicy | null>(null);
 
   const { data: policies = [], isLoading } = useQuery({
     queryKey: ['approval-chains'],
@@ -792,8 +797,8 @@ export default function ApprovalChainsPage() {
     onError: () => toast('Delete failed', 'error'),
   });
 
-  const openNew  = () => { setEditing(null); setModalOpen(true); };
-  const openEdit = (p: ApprovalPolicy) => { setEditing(p); setModalOpen(true); };
+  const openNew    = () => { setEditing(null); setModalOpen(true); };
+  const openEdit   = (p: ApprovalPolicy) => { setEditing(p); setModalOpen(true); };
   const closeModal = () => { setModalOpen(false); setEditing(null); };
 
   const handleDelete = useCallback(async (p: ApprovalPolicy) => {
@@ -802,228 +807,199 @@ export default function ApprovalChainsPage() {
     if (ok) deleteChain.mutate(p.id);
   }, [deleteChain]);
 
-  // Client-side filters
-  const filtered = policies.filter(p => {
-    if (filterGroup) {
-      if (filterGroup === '__null__' && p.employee_group !== null) return false;
-      if (filterGroup !== '__null__' && String(p.employee_group) !== filterGroup) return false;
+  // Client-side filtering (data is loaded all at once, not paginated)
+  const filtered = useMemo(() => policies.filter(p => {
+    if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filters.employee_group) {
+      if (filters.employee_group === '__null__' && p.employee_group !== null) return false;
+      if (filters.employee_group !== '__null__' && String(p.employee_group) !== String(filters.employee_group)) return false;
     }
-    if (filterType && String(p.request_type) !== filterType) return false;
+    if (filters.request_type && String(p.request_type) !== String(filters.request_type)) return false;
     return true;
-  });
+  }), [policies, search, filters]);
 
   const rtName = (id: number | null) =>
     requestTypes.find(rt => rt.id === id)?.name ?? String(id);
 
-  const GRID = '2fr 140px 140px 50px 50px 60px 90px';
+  // ── Filter fields ────────────────────────────────────────────────────────────
 
-  return (
-    <MainLayout>
-      {/* Page header */}
-      <div style={{ marginBottom: 'var(--space-6)' }}>
-        <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', margin: 0 }}>
-          Approval Chains
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: '4px 0 0' }}>
-          Configure multi-stage approval chains per employee group and request type.
-        </p>
-      </div>
+  const filterFields: FilterField[] = useMemo(() => [
+    {
+      name: 'employee_group',
+      label: 'Group',
+      type: 'select',
+      group: 'Filters',
+      options: [
+        { value: '__null__', label: 'Any (catch-all)' },
+        ...groups.map(g => ({ value: String(g.id), label: g.name })),
+      ],
+    },
+    {
+      name: 'request_type',
+      label: 'Request Type',
+      type: 'select',
+      group: 'Filters',
+      options: requestTypes.map(rt => ({ value: String(rt.id), label: rt.name })),
+    },
+  ], [groups, requestTypes]);
 
-      {/* Toolbar */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        marginBottom: 'var(--space-4)', flexWrap: 'wrap',
-      }}>
-        <select
-          value={filterGroup}
-          onChange={e => setFilterGroup(e.target.value)}
-          style={{ ...SELECT, width: 'auto', minWidth: 160 }}
-        >
-          <option value="">All Groups</option>
-          <option value="__null__">Any (catch-all)</option>
-          {groups.map(g => <option key={g.id} value={String(g.id)}>{g.name}</option>)}
-        </select>
+  // ── Columns ──────────────────────────────────────────────────────────────────
 
-        <select
-          value={filterType}
-          onChange={e => setFilterType(e.target.value)}
-          style={{ ...SELECT, width: 'auto', minWidth: 180 }}
-        >
-          <option value="">All Request Types</option>
-          {requestTypes.map(rt => <option key={rt.id} value={String(rt.id)}>{rt.name}</option>)}
-        </select>
-
-        <div style={{ marginLeft: 'auto' }}>
-          {admin && (
-            <button
-              onClick={openNew}
-              style={{
-                padding: '8px 18px', border: 'none',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--color-primary)', color: '#fff',
-                cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 600,
-              }}
-            >
-              + New Chain
-            </button>
+  const columns: Column<ApprovalPolicy>[] = useMemo(() => [
+    {
+      key: 'name',
+      header: 'Chain Name',
+      width: '2fr',
+      render: (p) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{
+            fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)',
+            color: p.is_active ? 'var(--text-primary)' : 'var(--text-tertiary)',
+          }}>
+            {p.name}
+          </span>
+          {p.condition_field && (
+            <span style={{
+              fontSize: 10, padding: '1px 6px',
+              background: 'var(--surface-subtle)', color: 'var(--text-secondary)',
+              borderRadius: 10, fontWeight: 500,
+            }}>
+              if {p.condition_field} {p.condition_operator} {p.condition_value}
+            </span>
           )}
         </div>
-      </div>
-
-      {/* Table */}
-      <div style={{
-        background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)',
-        border: '1px solid var(--border-subtle)', overflow: 'hidden',
-      }}>
-        {/* Header row */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: GRID,
-          padding: '10px 16px', borderBottom: '1px solid var(--border-subtle)',
-          background: 'var(--bg-subtle)',
+      ),
+    },
+    {
+      key: 'group',
+      header: 'Group',
+      width: 140,
+      render: (p) => (
+        <span style={{
+          fontSize: 'var(--text-xs)',
+          color: p.employee_group ? 'var(--text-primary)' : 'var(--text-tertiary)',
+          fontStyle: p.employee_group ? 'normal' : 'italic',
         }}>
-          {['Chain Name', 'Group', 'Request Type', 'Stages', 'Pri', 'Active', ''].map(h => (
-            <span key={h} style={{
-              fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)',
-              color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em',
-            }}>
-              {h}
-            </span>
-          ))}
-        </div>
+          {p.employee_group_name ?? 'Any (catch-all)'}
+        </span>
+      ),
+    },
+    {
+      key: 'request_type',
+      header: 'Request Type',
+      width: 140,
+      render: (p) => (
+        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+          {rtName(p.request_type)}
+        </span>
+      ),
+    },
+    {
+      key: 'stages',
+      header: 'Stages',
+      width: 60,
+      render: (p) => (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          minWidth: 24, height: 24, borderRadius: '50%',
+          background: 'var(--color-primary)', color: 'var(--primary-foreground)',
+          fontSize: 11, fontWeight: 700,
+        }}>
+          {p.steps?.length ?? 0}
+        </span>
+      ),
+    },
+    {
+      key: 'priority',
+      header: 'Priority',
+      width: 60,
+      render: (p) => (
+        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textAlign: 'center', display: 'block' }}>
+          {p.priority}
+        </span>
+      ),
+    },
+    {
+      key: 'active',
+      header: 'Active',
+      width: 70,
+      render: (p) => admin ? (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); toggleActive.mutate({ id: p.id, val: !p.is_active }); }}
+          title={p.is_active ? 'Click to deactivate' : 'Click to activate'}
+          style={{
+            width: 36, height: 20, borderRadius: 10, border: 'none',
+            background: p.is_active ? 'var(--color-primary)' : 'var(--border-default)',
+            cursor: 'pointer', position: 'relative',
+          }}
+        >
+          <span style={{
+            position: 'absolute', top: 2,
+            left: p.is_active ? 18 : 2,
+            width: 16, height: 16, borderRadius: '50%',
+            background: 'var(--primary-foreground)', transition: 'left 0.15s',
+          }} />
+        </button>
+      ) : (
+        <span style={{
+          width: 8, height: 8, borderRadius: '50%',
+          background: p.is_active ? 'var(--brand)' : 'var(--border-default)',
+          display: 'inline-block',
+        }} />
+      ),
+    },
+    {
+      key: 'actions',
+      header: '',
+      width: 50,
+      render: (p) => admin ? (
+        <RowActions
+          actions={[
+            { label: 'Edit', onClick: () => openEdit(p) },
+            { label: 'Delete', variant: 'danger', onClick: () => handleDelete(p) },
+          ]}
+        />
+      ) : null,
+    },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [admin, requestTypes, toggleActive, handleDelete]);
 
-        {isLoading && (
-          <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-tertiary)' }}>
-            Loading…
-          </div>
-        )}
+  // ── Create action button ─────────────────────────────────────────────────────
 
-        {!isLoading && filtered.length === 0 && (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-tertiary)' }}>
-            {policies.length === 0
-              ? 'No chains yet. Click "+ New Chain" to create the first one.'
-              : 'No chains match the current filters.'}
-          </div>
-        )}
+  const createAction = admin ? (
+    <button
+      onClick={openNew}
+      style={{
+        padding: '8px 18px', border: 'none',
+        borderRadius: 'var(--radius-md)',
+        background: 'var(--color-primary)', color: 'var(--primary-foreground)',
+        cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 600,
+      }}
+    >
+      + New Chain
+    </button>
+  ) : undefined;
 
-        {filtered.map((p, idx) => (
-          <div
-            key={p.id}
-            style={{
-              display: 'grid', gridTemplateColumns: GRID,
-              padding: '10px 16px', alignItems: 'center',
-              borderBottom: idx < filtered.length - 1 ? '1px solid var(--border-subtle)' : 'none',
-              background: p.is_active ? 'transparent' : 'var(--bg-subtle)',
-            }}
-          >
-            {/* Name */}
-            <div>
-              <span style={{
-                fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)',
-                color: p.is_active ? 'var(--text-primary)' : 'var(--text-tertiary)',
-              }}>
-                {p.name}
-              </span>
-              {p.condition_field && (
-                <span style={{
-                  marginLeft: 8, fontSize: 10, padding: '1px 6px',
-                  background: '#E2E8F0', color: '#64748B',
-                  borderRadius: 10, fontWeight: 500,
-                }}>
-                  if {p.condition_field} {p.condition_operator} {p.condition_value}
-                </span>
-              )}
-            </div>
-
-            {/* Group */}
-            <span style={{
-              fontSize: 'var(--text-xs)',
-              color: p.employee_group ? 'var(--text-primary)' : 'var(--text-tertiary)',
-              fontStyle: p.employee_group ? 'normal' : 'italic',
-            }}>
-              {p.employee_group_name ?? 'Any (catch-all)'}
-            </span>
-
-            {/* Request Type */}
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-              {rtName(p.request_type)}
-            </span>
-
-            {/* Stage count */}
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              minWidth: 24, height: 24, borderRadius: '50%',
-              background: 'var(--color-primary)', color: '#fff',
-              fontSize: 11, fontWeight: 700,
-            }}>
-              {p.steps?.length ?? 0}
-            </span>
-
-            {/* Priority */}
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textAlign: 'center' }}>
-              {p.priority}
-            </span>
-
-            {/* Active toggle */}
-            {admin ? (
-              <button
-                type="button"
-                onClick={() => toggleActive.mutate({ id: p.id, val: !p.is_active })}
-                title={p.is_active ? 'Click to deactivate' : 'Click to activate'}
-                style={{
-                  width: 36, height: 20, borderRadius: 10, border: 'none',
-                  background: p.is_active ? 'var(--color-primary)' : 'var(--border-default)',
-                  cursor: 'pointer', position: 'relative',
-                }}
-              >
-                <span style={{
-                  position: 'absolute', top: 2,
-                  left: p.is_active ? 18 : 2,
-                  width: 16, height: 16, borderRadius: '50%',
-                  background: '#fff', transition: 'left 0.15s',
-                }} />
-              </button>
-            ) : (
-              <span style={{
-                width: 8, height: 8, borderRadius: '50%',
-                background: p.is_active ? 'var(--brand)' : 'var(--border-default)',
-                display: 'inline-block',
-              }} />
-            )}
-
-            {/* Actions */}
-            {admin ? (
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  onClick={() => openEdit(p)}
-                  style={{
-                    padding: '4px 10px', fontSize: 11,
-                    border: '1px solid var(--border-default)',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'var(--bg-surface)', cursor: 'pointer',
-                  }}
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(p)}
-                  style={{
-                    padding: '4px 10px', fontSize: 11,
-                    border: '1px solid #FECACA',
-                    borderRadius: 'var(--radius-sm)',
-                    background: '#FEF2F2', color: '#dc2626', cursor: 'pointer',
-                  }}
-                >
-                  Del
-                </button>
-              </div>
-            ) : (
-              <span />
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Builder modal */}
+  return (
+    <AppListPage
+      title="Approval Chains"
+      description="Configure multi-stage approval chains per employee group and request type."
+      showBack={false}
+      totalCount={filtered.length}
+      createAction={createAction}
+      filterFields={filterFields}
+      searchPlaceholder="Search chains…"
+      columns={columns}
+      data={filtered}
+      isLoading={isLoading}
+      tableState={tableState}
+      emptyTitle={
+        policies.length === 0
+          ? 'No chains yet. Click "+ New Chain" to create the first one.'
+          : 'No chains match the current filters.'
+      }
+    >
       {modalOpen && (
         <ChainBuilder
           editing={editing}
@@ -1033,6 +1009,6 @@ export default function ApprovalChainsPage() {
           onClose={closeModal}
         />
       )}
-    </MainLayout>
+    </AppListPage>
   );
 }

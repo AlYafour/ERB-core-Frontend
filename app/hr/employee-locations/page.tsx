@@ -2,16 +2,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
-import MainLayout from '@/components/layout/MainLayout';
 import {
   Button,
   Drawer,
   Loader,
-  PageHeader,
-  PageShell,
-  SearchInput,
 } from '@/components/ui';
 import {
   hrEmployeesApi,
@@ -22,25 +17,12 @@ import {
 } from '@/lib/api/hr';
 import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
-
-const th: React.CSSProperties = {
-  textAlign: 'left',
-  padding: 'var(--space-3) var(--space-4)',
-  fontSize: 'var(--text-xs)',
-  fontWeight: 600,
-  color: 'var(--text-secondary)',
-  whiteSpace: 'nowrap',
-  borderBottom: '1px solid var(--border-subtle)',
-  textTransform: 'uppercase',
-  letterSpacing: '0.04em',
-};
-const td: React.CSSProperties = {
-  padding: 'var(--space-3) var(--space-4)',
-  verticalAlign: 'top',
-  fontSize: 'var(--text-sm)',
-};
+import { AppListPage } from '@/components/app/AppListPage';
+import { useTableState } from '@/lib/hooks/use-table-state';
+import { type Column } from '@/components/ui/DataTable';
 
 interface GroupedRow {
+  id:               number; // employee_pk — required by DataTable selection
   employee_pk:      number;
   employee_name:    string;
   employee_id_code: string;
@@ -49,12 +31,12 @@ interface GroupedRow {
 
 export default function EmployeeLocationsPage() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
   const { hasPermission } = useMyPermissions();
   const isAdmin = hasPermission('hr.hr_attendance.view');
 
   // ── Table state ──────────────────────────────────────────────────────────
-  const [tableSearch, setTableSearch] = useState('');
+  const tableState = useTableState();
+  const { search } = tableState;
 
   // ── Drawer state ─────────────────────────────────────────────────────────
   const [drawerOpen, setDrawerOpen]         = useState(false);
@@ -69,7 +51,7 @@ export default function EmployeeLocationsPage() {
   }, [empSearchTerm]);
 
   // ── Single flat assignments query ─────────────────────────────────────────
-  const { data: assignments = [], isLoading } = useQuery({
+  const { data: assignments = [], isLoading, error } = useQuery({
     queryKey: ['hr-emp-assignments'],
     queryFn:  hrAllAssignmentsApi.getAll,
     enabled:  isAdmin,
@@ -162,13 +144,13 @@ export default function EmployeeLocationsPage() {
     });
   };
 
-  // ── Derived: group assignments by employee, filter client-side ────────────
-  // Must be declared before early returns to satisfy rules-of-hooks.
+  // ── Derived: group assignments by employee ────────────────────────────────
   const grouped = useMemo<GroupedRow[]>(() => {
     const map = new Map<number, GroupedRow>();
     for (const a of assignments) {
       if (!map.has(a.employee_pk)) {
         map.set(a.employee_pk, {
+          id:               a.employee_pk,
           employee_pk:      a.employee_pk,
           employee_name:    a.employee_name,
           employee_id_code: a.employee_id_code,
@@ -180,356 +162,317 @@ export default function EmployeeLocationsPage() {
     return Array.from(map.values());
   }, [assignments]);
 
-  const filteredRows = useMemo<GroupedRow[]>(() => {
-    if (!tableSearch) return grouped;
-    const q = tableSearch.toLowerCase();
+  const filtered = useMemo<GroupedRow[]>(() => {
+    if (!search) return grouped;
+    const q = search.toLowerCase();
     return grouped.filter(r =>
       r.employee_name.toLowerCase().includes(q) ||
       r.employee_id_code.toLowerCase().includes(q)
     );
-  }, [grouped, tableSearch]);
+  }, [grouped, search]);
 
-  // ── Guards ────────────────────────────────────────────────────────────────
-  if (!user) return <MainLayout><div className="card empty-state"><Loader /></div></MainLayout>;
-  if (!isAdmin) return (
-    <MainLayout>
-      <div className="card empty-state">
-        <p style={{ color: 'var(--color-error)', margin: 0 }}>
-          Access denied. This page is for administrators only.
-        </p>
-      </div>
-    </MainLayout>
-  );
-
-  const alreadyAssignedIds = new Set<number>(
+  // ── Already assigned location IDs for the selected employee ──────────────
+  const alreadyAssignedIds = useMemo(() => new Set<number>(
     selectedEmp
       ? assignments
           .filter(a => a.employee_pk === selectedEmp.id)
           .map(a => a.office_location)
       : []
-  );
+  ), [selectedEmp, assignments]);
 
-  const showTrueEmpty = !isLoading && grouped.length === 0;
-  const showNoMatch   = !isLoading && grouped.length > 0 && filteredRows.length === 0;
+  // ── Columns ───────────────────────────────────────────────────────────────
+  const columns: Column<GroupedRow>[] = [
+    {
+      key:    'employee_id_code',
+      header: 'Employee No.',
+      render: r => (
+        <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)', whiteSpace: 'nowrap', fontSize: 'var(--text-sm)' }}>
+          {r.employee_id_code}
+        </span>
+      ),
+    },
+    {
+      key:    'employee_name',
+      header: 'Employee Name',
+      render: r => (
+        <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>
+          {r.employee_name || '—'}
+        </span>
+      ),
+    },
+    {
+      key:    'assignments',
+      header: 'Assigned Locations',
+      render: r => (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-1-5)' }}>
+          {r.assignments.map(a => (
+            <span
+              key={a.id}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                background: 'var(--brand)',
+                color: 'var(--card-bg)',
+                borderRadius: 'var(--radius-full)',
+                padding: '2px 6px 2px 10px',
+                fontSize: 'var(--text-xs)',
+                fontWeight: 500,
+              }}
+            >
+              {a.office_location_name}
+              <button
+                onClick={e => { e.stopPropagation(); removeMutation.mutate({ empId: r.employee_pk, assignId: a.id }); }}
+                title={`Remove ${a.office_location_name}`}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  padding: '0 2px', lineHeight: 1,
+                  color: 'currentColor', opacity: 0.55,
+                  fontSize: '1rem', transition: 'opacity 100ms',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '0.55')}
+              >×</button>
+            </span>
+          ))}
+        </div>
+      ),
+    },
+    {
+      key:    'actions',
+      header: '',
+      render: r => (
+        <button
+          onClick={e => {
+            e.stopPropagation();
+            openDrawer({ id: r.employee_pk, full_name: r.employee_name, employee_id: r.employee_id_code });
+          }}
+          style={{
+            fontSize: 'var(--text-xs)', fontWeight: 500,
+            color: 'var(--brand)',
+            background: 'none', border: 'none', cursor: 'pointer',
+          }}
+        >
+          + Add
+        </button>
+      ),
+    },
+  ];
 
   return (
-    <MainLayout>
-      <PageShell>
-        <PageHeader
-          title="Employee Work Locations"
-          breadcrumbs={[{ label: 'HR' }, { label: 'Employee Locations' }]}
-          actions={
-            <Button variant="primary" size="sm" onClick={() => openDrawer()}>
-              + Add Assignment
+    <AppListPage
+      title="Employee Work Locations"
+      description="Assign and manage approved check-in geofences per employee."
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Employee Locations' }]}
+      totalCount={grouped.length}
+      createAction={
+        isAdmin ? (
+          <Button variant="primary" size="sm" onClick={() => openDrawer()}>
+            + Add Assignment
+          </Button>
+        ) : undefined
+      }
+      columns={columns}
+      data={filtered}
+      isLoading={isLoading}
+      error={error}
+      emptyTitle="No employee geolocations assigned yet."
+      searchPlaceholder="Search by employee name or number..."
+      tableState={tableState}
+    >
+      {/* ── Assign Drawer ───────────────────────────────────────────────── */}
+      <Drawer
+        isOpen={drawerOpen}
+        onClose={closeDrawer}
+        title="Assign Check-in Location"
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onClick={closeDrawer}>Cancel</Button>
+            <Button
+              variant="primary"
+              isLoading={assignMutation.isPending}
+              disabled={!selectedEmp || selectedLocIds.size === 0 || assignMutation.isPending}
+              onClick={() => {
+                if (selectedEmp && selectedLocIds.size > 0)
+                  assignMutation.mutate({ empId: selectedEmp.id, locIds: Array.from(selectedLocIds) });
+              }}
+            >
+              Assign {selectedLocIds.size > 0 ? `(${selectedLocIds.size})` : ''}
             </Button>
-          }
-        />
+          </>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
 
-        <div style={{ marginBottom: 'var(--space-4)' }}>
-          <SearchInput
-            value={tableSearch}
-            onChange={setTableSearch}
-            placeholder="Search by employee name or number..."
-            width={360}
-          />
-        </div>
+          {/* Employee picker — search-as-you-type */}
+          <div className="form-field">
+            <label className="form-label">Employee</label>
 
-        {isLoading ? (
-          <div className="card empty-state"><Loader /></div>
-
-        ) : showTrueEmpty ? (
-          <div className="card empty-state">
-            <p className="empty-state-title">No employee geolocations assigned yet</p>
-            <p className="empty-state-desc">
-              Use {'"'}+ Add Assignment{'"'} to link employees to their approved check-in sites.
-            </p>
-          </div>
-
-        ) : showNoMatch ? (
-          <div className="card empty-state">
-            <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: 'var(--text-sm)' }}>
-              No assigned employees match &quot;{tableSearch}&quot;.
-            </p>
-          </div>
-
-        ) : (
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th style={th}>Employee No.</th>
-                    <th style={th}>Employee Name</th>
-                    <th style={th}>Assigned Locations</th>
-                    <th style={{ ...th, textAlign: 'right' }} />
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRows.map(row => (
-                    <tr
-                      key={row.employee_pk}
-                      style={{ borderBottom: '1px solid var(--border-subtle)' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-subtle)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <td style={{ ...td, fontFamily: 'monospace', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                        {row.employee_id_code}
-                      </td>
-                      <td style={{ ...td, fontWeight: 600 }}>
-                        {row.employee_name || '—'}
-                      </td>
-                      <td style={td}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-1-5)' }}>
-                          {row.assignments.map(a => (
-                            <span
-                              key={a.id}
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 4,
-                                background: 'var(--brand)',
-                                color: 'var(--card-bg)',
-                                borderRadius: 'var(--radius-full)',
-                                padding: '2px 6px 2px 10px',
-                                fontSize: 'var(--text-xs)',
-                                fontWeight: 500,
-                              }}
-                            >
-                              {a.office_location_name}
-                              <button
-                                onClick={() => removeMutation.mutate({ empId: row.employee_pk, assignId: a.id })}
-                                title={`Remove ${a.office_location_name}`}
-                                style={{
-                                  background: 'none', border: 'none', cursor: 'pointer',
-                                  padding: '0 2px', lineHeight: 1,
-                                  color: 'currentColor', opacity: 0.55,
-                                  fontSize: '1rem', transition: 'opacity 100ms',
-                                }}
-                                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                                onMouseLeave={e => (e.currentTarget.style.opacity = '0.55')}
-                              >×</button>
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td style={{ ...td, textAlign: 'right', whiteSpace: 'nowrap' }}>
-                        <button
-                          onClick={() => openDrawer({
-                            id:          row.employee_pk,
-                            full_name:   row.employee_name,
-                            employee_id: row.employee_id_code,
-                          })}
-                          style={{
-                            fontSize: 'var(--text-xs)', fontWeight: 500,
-                            color: 'var(--brand)',
-                            background: 'none', border: 'none', cursor: 'pointer',
-                          }}
-                        >
-                          + Add
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* ── Assign Drawer ───────────────────────────────────────────────── */}
-        <Drawer
-          isOpen={drawerOpen}
-          onClose={closeDrawer}
-          title="Assign Check-in Location"
-          size="md"
-          footer={
-            <>
-              <Button variant="secondary" onClick={closeDrawer}>Cancel</Button>
-              <Button
-                variant="primary"
-                isLoading={assignMutation.isPending}
-                disabled={!selectedEmp || selectedLocIds.size === 0 || assignMutation.isPending}
-                onClick={() => {
-                  if (selectedEmp && selectedLocIds.size > 0)
-                    assignMutation.mutate({ empId: selectedEmp.id, locIds: Array.from(selectedLocIds) });
-                }}
-              >
-                Assign {selectedLocIds.size > 0 ? `(${selectedLocIds.size})` : ''}
-              </Button>
-            </>
-          }
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-
-            {/* Employee picker — search-as-you-type */}
-            <div className="form-field">
-              <label className="form-label">Employee</label>
-
-              {selectedEmp ? (
-                <div style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: 'var(--space-2) var(--space-3)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-subtle)',
-                  background: 'var(--surface-subtle)',
-                }}>
-                  <div>
-                    <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{selectedEmp.full_name}</span>
-                    <span style={{ marginLeft: 'var(--space-2)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
-                      {selectedEmp.employee_id}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setSelectedEmp(null)}
-                    title="Change employee"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--text-lg)', color: 'var(--text-secondary)', lineHeight: 1, padding: '0 var(--space-1)' }}
-                  >×</button>
-                </div>
-              ) : (
+            {selectedEmp ? (
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: 'var(--space-2) var(--space-3)',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-subtle)',
+                background: 'var(--surface-subtle)',
+              }}>
                 <div>
-                  <input
-                    className="form-input"
-                    autoFocus
-                    value={empSearchTerm}
-                    onChange={e => setEmpSearchTerm(e.target.value)}
-                    placeholder="Type name or employee number…"
-                  />
-
-                  {empSearchTerm.length > 0 && empSearchTerm.length < 2 && (
-                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
-                      Type at least 2 characters to search
-                    </p>
-                  )}
-
-                  {debouncedEmpSearch.length >= 2 && (
-                    <div style={{
-                      marginTop: 'var(--space-1)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-md)',
-                      background: 'var(--card-bg)',
-                      boxShadow: 'var(--shadow-md)',
-                      overflow: 'hidden',
-                      maxHeight: 240,
-                      overflowY: 'auto',
-                    }}>
-                      {searchingEmps ? (
-                        <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--space-4)' }}>
-                          <Loader />
-                        </div>
-                      ) : (empSearchData?.results ?? []).length === 0 ? (
-                        <p style={{ padding: 'var(--space-3) var(--space-4)', color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: 0 }}>
-                          No employees found for &quot;{debouncedEmpSearch}&quot;
-                        </p>
-                      ) : (
-                        empSearchData!.results.map(emp => (
-                          <button
-                            key={emp.id}
-                            onClick={() => { setSelectedEmp(emp); setEmpSearchTerm(''); }}
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
-                              width: '100%', padding: 'var(--space-2-5) var(--space-4)',
-                              background: 'none', border: 'none', cursor: 'pointer',
-                              textAlign: 'left',
-                              borderBottom: '1px solid var(--border-subtle)',
-                              transition: 'background 80ms',
-                            }}
-                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-subtle)')}
-                            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                          >
-                            <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', flexShrink: 0, minWidth: 72 }}>
-                              {emp.employee_id}
-                            </span>
-                            <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>
-                              {emp.full_name}
-                            </span>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Location multi-select */}
-            <div className="form-field">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 'var(--space-2)' }}>
-                <label className="form-label" style={{ margin: 0 }}>Check-in Locations</label>
-                {selectedLocIds.size > 0 && (
-                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', fontWeight: 600 }}>
-                    {selectedLocIds.size} selected
+                  <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{selectedEmp.full_name}</span>
+                  <span style={{ marginLeft: 'var(--space-2)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
+                    {selectedEmp.employee_id}
                   </span>
+                </div>
+                <button
+                  onClick={() => setSelectedEmp(null)}
+                  title="Change employee"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--text-lg)', color: 'var(--text-secondary)', lineHeight: 1, padding: '0 var(--space-1)' }}
+                >×</button>
+              </div>
+            ) : (
+              <div>
+                <input
+                  className="form-input"
+                  autoFocus
+                  value={empSearchTerm}
+                  onChange={e => setEmpSearchTerm(e.target.value)}
+                  placeholder="Type name or employee number…"
+                />
+
+                {empSearchTerm.length > 0 && empSearchTerm.length < 2 && (
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
+                    Type at least 2 characters to search
+                  </p>
+                )}
+
+                {debouncedEmpSearch.length >= 2 && (
+                  <div style={{
+                    marginTop: 'var(--space-1)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--card-bg)',
+                    boxShadow: 'var(--shadow-md)',
+                    overflow: 'hidden',
+                    maxHeight: 240,
+                    overflowY: 'auto',
+                  }}>
+                    {searchingEmps ? (
+                      <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--space-4)' }}>
+                        <Loader />
+                      </div>
+                    ) : (empSearchData?.results ?? []).length === 0 ? (
+                      <p style={{ padding: 'var(--space-3) var(--space-4)', color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: 0 }}>
+                        No employees found for &quot;{debouncedEmpSearch}&quot;
+                      </p>
+                    ) : (
+                      empSearchData!.results.map(emp => (
+                        <button
+                          key={emp.id}
+                          onClick={() => { setSelectedEmp(emp); setEmpSearchTerm(''); }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                            width: '100%', padding: 'var(--space-2-5) var(--space-4)',
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            textAlign: 'left',
+                            borderBottom: '1px solid var(--border-subtle)',
+                            transition: 'background 80ms',
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-subtle)')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                        >
+                          <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', flexShrink: 0, minWidth: 72 }}>
+                            {emp.employee_id}
+                          </span>
+                          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+                            {emp.full_name}
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
                 )}
               </div>
+            )}
+          </div>
 
-              {officeLocs.length === 0 ? (
-                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
-                  No active geofences configured. Add check-in points in HR Settings first.
-                </p>
-              ) : (
-                <div style={{
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-md)',
-                  overflow: 'hidden',
-                  maxHeight: 280,
-                  overflowY: 'auto',
-                }}>
-                  {officeLocs.map((loc, idx) => {
-                    const checked    = selectedLocIds.has(loc.id);
-                    const alreadyHas = alreadyAssignedIds.has(loc.id);
-                    return (
-                      <label
-                        key={loc.id}
-                        style={{
-                          display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
-                          padding: 'var(--space-2-5) var(--space-3)',
-                          cursor: 'pointer',
-                          borderBottom: idx < officeLocs.length - 1 ? '1px solid var(--border-subtle)' : 'none',
-                          background: checked ? 'var(--brand)' : 'transparent',
-                          transition: 'background 80ms',
-                          opacity: alreadyHas ? 0.5 : 1,
-                        }}
-                        onMouseEnter={e => { if (!checked) e.currentTarget.style.background = 'var(--surface-subtle)'; }}
-                        onMouseLeave={e => { if (!checked) e.currentTarget.style.background = 'transparent'; }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleLoc(loc.id)}
-                          style={{ marginTop: 2, flexShrink: 0, cursor: 'pointer' }}
-                        />
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{
-                            fontSize: 'var(--text-sm)',
-                            fontWeight: checked ? 600 : 400,
-                            color: checked ? 'var(--card-bg)' : 'var(--text-primary)',
-                          }}>
-                            {loc.name}
-                            {alreadyHas && (
-                              <span style={{ marginLeft: 'var(--space-2)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontWeight: 400 }}>
-                                (already assigned)
-                              </span>
-                            )}
-                          </div>
-                          {loc.address && (
-                            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>
-                              {loc.address}
-                            </div>
-                          )}
-                          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 1 }}>
-                            {loc.radius_m} m radius
-                          </div>
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
+          {/* Location multi-select */}
+          <div className="form-field">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 'var(--space-2)' }}>
+              <label className="form-label" style={{ margin: 0 }}>Check-in Locations</label>
+              {selectedLocIds.size > 0 && (
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', fontWeight: 600 }}>
+                  {selectedLocIds.size} selected
+                </span>
               )}
             </div>
 
+            {officeLocs.length === 0 ? (
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
+                No active geofences configured. Add check-in points in HR Settings first.
+              </p>
+            ) : (
+              <div style={{
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-md)',
+                overflow: 'hidden',
+                maxHeight: 280,
+                overflowY: 'auto',
+              }}>
+                {officeLocs.map((loc, idx) => {
+                  const checked    = selectedLocIds.has(loc.id);
+                  const alreadyHas = alreadyAssignedIds.has(loc.id);
+                  return (
+                    <label
+                      key={loc.id}
+                      style={{
+                        display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
+                        padding: 'var(--space-2-5) var(--space-3)',
+                        cursor: 'pointer',
+                        borderBottom: idx < officeLocs.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+                        background: checked ? 'var(--brand)' : 'transparent',
+                        transition: 'background 80ms',
+                        opacity: alreadyHas ? 0.5 : 1,
+                      }}
+                      onMouseEnter={e => { if (!checked) e.currentTarget.style.background = 'var(--surface-subtle)'; }}
+                      onMouseLeave={e => { if (!checked) e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleLoc(loc.id)}
+                        style={{ marginTop: 2, flexShrink: 0, cursor: 'pointer' }}
+                      />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{
+                          fontSize: 'var(--text-sm)',
+                          fontWeight: checked ? 600 : 400,
+                          color: checked ? 'var(--card-bg)' : 'var(--text-primary)',
+                        }}>
+                          {loc.name}
+                          {alreadyHas && (
+                            <span style={{ marginLeft: 'var(--space-2)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontWeight: 400 }}>
+                              (already assigned)
+                            </span>
+                          )}
+                        </div>
+                        {loc.address && (
+                          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>
+                            {loc.address}
+                          </div>
+                        )}
+                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 1 }}>
+                          {loc.radius_m} m radius
+                        </div>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        </Drawer>
-      </PageShell>
-    </MainLayout>
+
+        </div>
+      </Drawer>
+    </AppListPage>
   );
 }

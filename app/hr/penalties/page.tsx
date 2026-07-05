@@ -3,20 +3,25 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import MainLayout from '@/components/layout/MainLayout';
+import { AppListPage } from '@/components/app/AppListPage';
+import { useTableState } from '@/lib/hooks/use-table-state';
+import { type Column } from '@/components/ui/DataTable';
+import { RowActions } from '@/components/ui/RowActions';
+import { Button } from '@/components/ui';
+import { type FilterField } from '@/components/ui/FilterPanel';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { hrPenaltyRulesApi, hrEmployeeGroupsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
-import { toast } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import type { PenaltyRule, PenaltyTier, PenaltyRuleType, PenaltyPenaltyType, EmployeeGroup } from '@/types';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const RULE_TYPES: { value: PenaltyRuleType; label: string; color: string; bg: string }[] = [
-  { value: 'LATENESS',    label: 'Lateness',    color: 'var(--brand)', bg: 'var(--brand-muted)' },
+  { value: 'LATENESS',    label: 'Lateness',    color: 'var(--brand)',        bg: 'var(--brand-muted)' },
   { value: 'EARLY_LEAVE', label: 'Early Leave', color: 'var(--text-secondary)', bg: 'var(--border-subtle)' },
-  { value: 'ABSENCE',     label: 'Absence',     color: '#E05C5C', bg: '#FEF2F2' },
+  { value: 'ABSENCE',     label: 'Absence',     color: 'var(--color-error)',  bg: 'var(--color-error-light)' },
 ];
 
 const PENALTY_TYPES: { value: PenaltyPenaltyType; label: string }[] = [
@@ -87,6 +92,8 @@ const INPUT: React.CSSProperties = {
 
 const SELECT: React.CSSProperties = { ...INPUT, cursor: 'pointer' };
 
+// ── Sub-components ────────────────────────────────────────────────────────────
+
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
@@ -103,7 +110,7 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
         position: 'absolute', top: 3,
         left: value ? 22 : 3,
         width: 18, height: 18, borderRadius: '50%',
-        background: '#fff', transition: 'left 0.15s',
+        background: 'var(--primary-foreground)', transition: 'left 0.15s',
       }} />
     </button>
   );
@@ -149,7 +156,7 @@ function TierRowUI({
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{
           minWidth: 22, height: 22, borderRadius: '50%',
-          background: 'var(--color-primary)', color: '#fff',
+          background: 'var(--color-primary)', color: 'var(--primary-foreground)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 11, fontWeight: 700, flexShrink: 0,
         }}>
@@ -202,9 +209,9 @@ function TierRowUI({
             type="button"
             onClick={onRemove}
             style={{
-              width: 26, height: 26, border: '1px solid #FECACA',
-              borderRadius: 'var(--radius-sm)', background: '#FEF2F2',
-              cursor: 'pointer', color: '#dc2626',
+              width: 26, height: 26, border: '1px solid var(--status-error-border)',
+              borderRadius: 'var(--radius-sm)', background: 'var(--color-error-light)',
+              cursor: 'pointer', color: 'var(--color-error)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
@@ -592,7 +599,7 @@ function RuleBuilder({
               padding: '8px 20px', border: 'none',
               borderRadius: 'var(--radius-md)',
               background: saving ? 'var(--text-tertiary)' : 'var(--color-primary)',
-              color: '#fff', cursor: saving ? 'not-allowed' : 'pointer',
+              color: 'var(--primary-foreground)', cursor: saving ? 'not-allowed' : 'pointer',
               fontSize: 'var(--text-sm)', fontWeight: 600,
             }}
           >
@@ -613,10 +620,11 @@ export default function PenaltyRulesPage() {
   const qc = useQueryClient();
   const admin = hasPermission('hr.hr_penalty.view');
 
-  const [filterGroup,    setFilterGroup]   = useState('');
-  const [filterType,     setFilterType]    = useState('');
-  const [modalOpen,      setModalOpen]     = useState(false);
-  const [editing,        setEditing]       = useState<PenaltyRule | null>(null);
+  const tableState = useTableState();
+  const { search, filters } = tableState;
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing,   setEditing]   = useState<PenaltyRule | null>(null);
 
   const { data: rules = [], isLoading } = useQuery({
     queryKey: ['penalty-rules'],
@@ -644,12 +652,11 @@ export default function PenaltyRulesPage() {
     onError: () => toast('Delete failed', 'error'),
   });
 
-  const openNew  = () => { setEditing(null); setModalOpen(true); };
-  const openEdit = (r: PenaltyRule) => { setEditing(r); setModalOpen(true); };
+  const openNew   = () => { setEditing(null); setModalOpen(true); };
+  const openEdit  = (r: PenaltyRule) => { setEditing(r); setModalOpen(true); };
   const closeModal = () => { setModalOpen(false); setEditing(null); };
 
   const handleDelete = useCallback(async (r: PenaltyRule) => {
-    const { confirm } = await import('@/lib/hooks/use-toast');
     const ok = await confirm(`Delete rule "${r.name}"? This cannot be undone.`);
     if (ok) deleteRule.mutate(r.id);
   }, [deleteRule]);
@@ -659,224 +666,173 @@ export default function PenaltyRulesPage() {
   }, [user, admin, router]);
   if (user && !admin) return null;
 
-  // Client-side filters
+  // Client-side filtering (search + is_active filter)
   const filtered = rules.filter(r => {
-    if (filterGroup) {
-      if (filterGroup === '__null__' && r.employee_group !== null) return false;
-      if (filterGroup !== '__null__' && String(r.employee_group) !== filterGroup) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      if (
+        !r.name.toLowerCase().includes(q) &&
+        !(r.employee_group_name ?? '').toLowerCase().includes(q)
+      ) return false;
     }
-    if (filterType && r.rule_type !== filterType) return false;
+    const isActiveFilter = filters.is_active as string | undefined;
+    if (isActiveFilter === 'true'  && !r.is_active) return false;
+    if (isActiveFilter === 'false' &&  r.is_active) return false;
     return true;
   });
 
-  const GRID = '2fr 110px 140px 55px 70px 60px 90px';
+  // ── Column definitions ──────────────────────────────────────────────────────
 
-  return (
-    <MainLayout>
-      {/* Page header */}
-      <div style={{ marginBottom: 'var(--space-6)' }}>
-        <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', margin: 0 }}>
-          Penalty Rules
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: '4px 0 0' }}>
-          Configure tiered penalty rules per employee group and event type (lateness, early leave, absence).
-        </p>
-      </div>
-
-      {/* Toolbar */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        marginBottom: 'var(--space-4)', flexWrap: 'wrap',
-      }}>
-        <select
-          value={filterGroup}
-          onChange={e => setFilterGroup(e.target.value)}
-          style={{ ...SELECT, width: 'auto', minWidth: 160 }}
-        >
-          <option value="">All Groups</option>
-          <option value="__null__">Any (catch-all)</option>
-          {groups.map(g => <option key={g.id} value={String(g.id)}>{g.name}</option>)}
-        </select>
-
-        <select
-          value={filterType}
-          onChange={e => setFilterType(e.target.value)}
-          style={{ ...SELECT, width: 'auto', minWidth: 160 }}
-        >
-          <option value="">All Types</option>
-          {RULE_TYPES.map(rt => <option key={rt.value} value={rt.value}>{rt.label}</option>)}
-        </select>
-
-        <div style={{ marginLeft: 'auto' }}>
-          {admin && (
-            <button
-              onClick={openNew}
-              style={{
-                padding: '8px 18px', border: 'none',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--color-primary)', color: '#fff',
-                cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 600,
-              }}
-            >
-              + New Rule
-            </button>
+  const columns: Column<PenaltyRule>[] = [
+    {
+      key: 'name',
+      header: 'Rule Name',
+      render: (r) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{
+            fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)',
+            color: r.is_active ? 'var(--text-primary)' : 'var(--text-tertiary)',
+          }}>
+            {r.name}
+          </span>
+          {r.priority > 0 && (
+            <span style={{
+              fontSize: 10, padding: '1px 5px',
+              background: 'var(--surface-subtle)', color: 'var(--text-tertiary)',
+              borderRadius: 8, border: '1px solid var(--border-subtle)',
+            }}>
+              P{r.priority}
+            </span>
           )}
         </div>
-      </div>
-
-      {/* Table */}
-      <div style={{
-        background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)',
-        border: '1px solid var(--border-subtle)', overflow: 'hidden',
-      }}>
-        {/* Header */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: GRID,
-          padding: '10px 16px', borderBottom: '1px solid var(--border-subtle)',
-          background: 'var(--bg-subtle)',
+      ),
+    },
+    {
+      key: 'rule_type',
+      header: 'Type',
+      render: (r) => <RuleTypeBadge type={r.rule_type} />,
+    },
+    {
+      key: 'employee_group_name',
+      header: 'Group',
+      render: (r) => (
+        <span style={{
+          fontSize: 'var(--text-xs)',
+          color: r.employee_group ? 'var(--text-primary)' : 'var(--text-tertiary)',
+          fontStyle: r.employee_group ? 'normal' : 'italic',
         }}>
-          {['Rule Name', 'Type', 'Group', 'Tiers', 'Grace', 'Active', ''].map(h => (
-            <span key={h} style={{
-              fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)',
-              color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em',
-            }}>
-              {h}
-            </span>
-          ))}
-        </div>
+          {r.employee_group_name ?? 'Any (catch-all)'}
+        </span>
+      ),
+    },
+    {
+      key: 'tiers',
+      header: 'Tiers',
+      render: (r) => (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          minWidth: 24, height: 24, borderRadius: '50%',
+          background: r.tiers?.length ? 'var(--color-primary)' : 'var(--border-default)',
+          color: r.tiers?.length ? 'var(--primary-foreground)' : 'var(--text-tertiary)',
+          fontSize: 11, fontWeight: 700,
+        }}>
+          {r.tiers?.length ?? 0}
+        </span>
+      ),
+    },
+    {
+      key: 'grace_minutes',
+      header: 'Grace',
+      render: (r) => (
+        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+          {r.grace_minutes > 0 ? `${r.grace_minutes} min` : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'is_active',
+      header: 'Active',
+      render: (r) => admin ? (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); toggleActive.mutate({ id: r.id, val: !r.is_active }); }}
+          title={r.is_active ? 'Click to deactivate' : 'Click to activate'}
+          style={{
+            width: 36, height: 20, borderRadius: 10, border: 'none',
+            background: r.is_active ? 'var(--color-primary)' : 'var(--border-default)',
+            cursor: 'pointer', position: 'relative',
+          }}
+        >
+          <span style={{
+            position: 'absolute', top: 2,
+            left: r.is_active ? 18 : 2,
+            width: 16, height: 16, borderRadius: '50%',
+            background: 'var(--primary-foreground)', transition: 'left 0.15s',
+          }} />
+        </button>
+      ) : (
+        <span style={{
+          width: 8, height: 8, borderRadius: '50%',
+          background: r.is_active ? 'var(--brand)' : 'var(--border-default)',
+          display: 'inline-block',
+        }} />
+      ),
+    },
+    {
+      key: 'actions' as any,
+      header: '',
+      render: (r) => admin ? (
+        <RowActions
+          actions={[
+            { label: 'Edit', onClick: () => openEdit(r) },
+            { separator: true },
+            { label: 'Delete', variant: 'danger', onClick: () => handleDelete(r) },
+          ]}
+        />
+      ) : null,
+    },
+  ];
 
-        {isLoading && (
-          <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-tertiary)' }}>
-            Loading…
-          </div>
-        )}
+  // ── Filter fields ───────────────────────────────────────────────────────────
 
-        {!isLoading && filtered.length === 0 && (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-tertiary)' }}>
-            {rules.length === 0
-              ? 'No rules yet. Click "+ New Rule" to create the first one.'
-              : 'No rules match the current filters.'}
-          </div>
-        )}
+  const filterFields: FilterField[] = [
+    {
+      name: 'is_active',
+      label: 'Status',
+      type: 'select',
+      group: 'Filters',
+      options: [
+        { value: 'true',  label: 'Active' },
+        { value: 'false', label: 'Inactive' },
+      ],
+    },
+  ];
 
-        {filtered.map((r, idx) => (
-          <div
-            key={r.id}
-            style={{
-              display: 'grid', gridTemplateColumns: GRID,
-              padding: '10px 16px', alignItems: 'center',
-              borderBottom: idx < filtered.length - 1 ? '1px solid var(--border-subtle)' : 'none',
-              background: r.is_active ? 'transparent' : 'var(--bg-subtle)',
-            }}
-          >
-            {/* Name */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{
-                fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)',
-                color: r.is_active ? 'var(--text-primary)' : 'var(--text-tertiary)',
-              }}>
-                {r.name}
-              </span>
-              {r.priority > 0 && (
-                <span style={{
-                  fontSize: 10, padding: '1px 5px',
-                  background: 'var(--bg-subtle)', color: 'var(--text-tertiary)',
-                  borderRadius: 8, border: '1px solid var(--border-subtle)',
-                }}>
-                  P{r.priority}
-                </span>
-              )}
-            </div>
-
-            {/* Type badge */}
-            <div><RuleTypeBadge type={r.rule_type} /></div>
-
-            {/* Group */}
-            <span style={{
-              fontSize: 'var(--text-xs)',
-              color: r.employee_group ? 'var(--text-primary)' : 'var(--text-tertiary)',
-              fontStyle: r.employee_group ? 'normal' : 'italic',
-            }}>
-              {r.employee_group_name ?? 'Any (catch-all)'}
-            </span>
-
-            {/* Tier count */}
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              minWidth: 24, height: 24, borderRadius: '50%',
-              background: r.tiers?.length ? 'var(--color-primary)' : 'var(--border-default)',
-              color: r.tiers?.length ? '#fff' : 'var(--text-tertiary)',
-              fontSize: 11, fontWeight: 700,
-            }}>
-              {r.tiers?.length ?? 0}
-            </span>
-
-            {/* Grace */}
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-              {r.grace_minutes > 0 ? `${r.grace_minutes} min` : '—'}
-            </span>
-
-            {/* Active toggle */}
-            {admin ? (
-              <button
-                type="button"
-                onClick={() => toggleActive.mutate({ id: r.id, val: !r.is_active })}
-                title={r.is_active ? 'Click to deactivate' : 'Click to activate'}
-                style={{
-                  width: 36, height: 20, borderRadius: 10, border: 'none',
-                  background: r.is_active ? 'var(--color-primary)' : 'var(--border-default)',
-                  cursor: 'pointer', position: 'relative',
-                }}
-              >
-                <span style={{
-                  position: 'absolute', top: 2,
-                  left: r.is_active ? 18 : 2,
-                  width: 16, height: 16, borderRadius: '50%',
-                  background: '#fff', transition: 'left 0.15s',
-                }} />
-              </button>
-            ) : (
-              <span style={{
-                width: 8, height: 8, borderRadius: '50%',
-                background: r.is_active ? 'var(--brand)' : 'var(--border-default)',
-                display: 'inline-block',
-              }} />
-            )}
-
-            {/* Actions */}
-            {admin ? (
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  onClick={() => openEdit(r)}
-                  style={{
-                    padding: '4px 10px', fontSize: 11,
-                    border: '1px solid var(--border-default)',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'var(--bg-surface)', cursor: 'pointer',
-                  }}
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(r)}
-                  style={{
-                    padding: '4px 10px', fontSize: 11,
-                    border: '1px solid #FECACA',
-                    borderRadius: 'var(--radius-sm)',
-                    background: '#FEF2F2', color: '#dc2626', cursor: 'pointer',
-                  }}
-                >
-                  Del
-                </button>
-              </div>
-            ) : (
-              <span />
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Builder modal */}
+  return (
+    <AppListPage
+      title="Penalty Rules"
+      description="Configure tiered penalty rules per employee group and event type (lateness, early leave, absence)."
+      showBack={false}
+      totalCount={filtered.length}
+      createAction={
+        admin ? (
+          <Button onClick={openNew} variant="primary" size="sm">
+            + New Rule
+          </Button>
+        ) : undefined
+      }
+      filterFields={filterFields}
+      searchPlaceholder="Search rules…"
+      columns={columns}
+      data={filtered}
+      isLoading={isLoading}
+      tableState={tableState}
+      emptyTitle={
+        rules.length === 0
+          ? 'No rules yet. Click "+ New Rule" to create the first one.'
+          : 'No rules match the current filters.'
+      }
+    >
       {modalOpen && (
         <RuleBuilder
           editing={editing}
@@ -884,6 +840,6 @@ export default function PenaltyRulesPage() {
           onClose={closeModal}
         />
       )}
-    </MainLayout>
+    </AppListPage>
   );
 }
