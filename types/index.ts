@@ -761,6 +761,8 @@ export interface ShiftDaySchedule {
   day: number;
   start_time: string;
   end_time: string;
+  break_start: string | null;
+  break_end: string | null;
   break_mins: number;
 }
 
@@ -771,6 +773,8 @@ export interface HRShift {
   shift_type: 'morning' | 'evening' | 'night' | 'flexible';
   start_time: string;
   end_time: string;
+  break_start: string | null;
+  break_end: string | null;
   break_mins: number;
   work_days: number[];
   is_active: boolean;

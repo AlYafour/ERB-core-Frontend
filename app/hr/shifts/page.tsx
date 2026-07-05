@@ -44,7 +44,7 @@ function fmtTime(t: string): string {
 
 // ── FormState ─────────────────────────────────────────────────────────────────
 
-type DayRow = { day: number; start_time: string; end_time: string; break_mins: number };
+type DayRow = { day: number; start_time: string; end_time: string; break_start: string; break_end: string; break_mins: number };
 
 const EMPTY_FORM = {
   name:          '',
@@ -52,6 +52,8 @@ const EMPTY_FORM = {
   shift_type:    'morning' as HRShift['shift_type'],
   start_time:    '08:00',
   end_time:      '17:00',
+  break_start:   '12:00',
+  break_end:     '13:00',
   break_mins:    60,
   work_days:     [0, 1, 2, 3, 4] as number[],
   is_active:     true,
@@ -60,14 +62,21 @@ const EMPTY_FORM = {
 };
 type FormState = typeof EMPTY_FORM;
 
+function calcBreakMins(start: string, end: string): number {
+  if (!start || !end) return 0;
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  return Math.max(0, (eh * 60 + em) - (sh * 60 + sm));
+}
+
 function shiftToForm(s: HRShift): FormState {
   const hasPerDay = s.day_schedules?.length > 0;
   const daySchedules: DayRow[] = hasPerDay
     ? s.work_days.map(d => {
         const found = s.day_schedules.find(ds => ds.day === d);
         return found
-          ? { day: d, start_time: found.start_time.slice(0, 5), end_time: found.end_time.slice(0, 5), break_mins: found.break_mins }
-          : { day: d, start_time: s.start_time.slice(0, 5), end_time: s.end_time.slice(0, 5), break_mins: s.break_mins };
+          ? { day: d, start_time: found.start_time.slice(0, 5), end_time: found.end_time.slice(0, 5), break_start: found.break_start?.slice(0, 5) ?? '', break_end: found.break_end?.slice(0, 5) ?? '', break_mins: found.break_mins }
+          : { day: d, start_time: s.start_time.slice(0, 5), end_time: s.end_time.slice(0, 5), break_start: s.break_start?.slice(0, 5) ?? '', break_end: s.break_end?.slice(0, 5) ?? '', break_mins: s.break_mins };
       })
     : [];
   return {
@@ -76,6 +85,8 @@ function shiftToForm(s: HRShift): FormState {
     shift_type:    s.shift_type,
     start_time:    s.start_time.slice(0, 5),
     end_time:      s.end_time.slice(0, 5),
+    break_start:   s.break_start?.slice(0, 5) ?? '',
+    break_end:     s.break_end?.slice(0, 5) ?? '',
     break_mins:    s.break_mins,
     work_days:     [...s.work_days],
     is_active:     s.is_active,
@@ -88,7 +99,11 @@ function buildDaySchedules(form: FormState): DayRow[] {
   if (!form.per_day_times) return [];
   return form.work_days.map(d => {
     const found = form.day_schedules.find(ds => ds.day === d);
-    return found ?? { day: d, start_time: form.start_time, end_time: form.end_time, break_mins: form.break_mins };
+    return found ?? {
+      day: d, start_time: form.start_time, end_time: form.end_time,
+      break_start: form.break_start, break_end: form.break_end,
+      break_mins: calcBreakMins(form.break_start, form.break_end) || form.break_mins,
+    };
   });
 }
 
@@ -124,7 +139,11 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
     setForm(p => {
       const on = !p.per_day_times;
       const ds = on
-        ? p.work_days.map(d => ({ day: d, start_time: p.start_time, end_time: p.end_time, break_mins: p.break_mins }))
+        ? p.work_days.map(d => ({
+            day: d, start_time: p.start_time, end_time: p.end_time,
+            break_start: p.break_start, break_end: p.break_end,
+            break_mins: calcBreakMins(p.break_start, p.break_end) || p.break_mins,
+          }))
         : [];
       return { ...p, per_day_times: on, day_schedules: ds };
     });
@@ -221,7 +240,7 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
           {/* Default times — hidden when per-day is on */}
           <div style={{ display: form.per_day_times ? 'none' : undefined }}>
             <label style={LABEL}>Schedule</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 90px', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10 }}>
               <div>
                 <span style={{ ...LABEL, marginBottom: 4, fontSize: 10 }}>Start</span>
                 <input type="time" value={form.start_time} onChange={e => set('start_time', e.target.value)}
@@ -233,12 +252,21 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
                   className="form-input" style={{ width: '100%', fontSize: 'var(--text-sm)' }} />
               </div>
               <div>
-                <span style={{ ...LABEL, marginBottom: 4, fontSize: 10 }}>Break (min)</span>
-                <input type="number" min={0} max={480} value={form.break_mins}
-                  onChange={e => set('break_mins', parseInt(e.target.value) || 0)}
+                <span style={{ ...LABEL, marginBottom: 4, fontSize: 10 }}>Break Start</span>
+                <input type="time" value={form.break_start} onChange={e => set('break_start', e.target.value)}
+                  className="form-input" style={{ width: '100%', fontSize: 'var(--text-sm)' }} />
+              </div>
+              <div>
+                <span style={{ ...LABEL, marginBottom: 4, fontSize: 10 }}>Break End</span>
+                <input type="time" value={form.break_end} onChange={e => set('break_end', e.target.value)}
                   className="form-input" style={{ width: '100%', fontSize: 'var(--text-sm)' }} />
               </div>
             </div>
+            {form.break_start && form.break_end && (
+              <p style={{ margin: '6px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                Break duration: {calcBreakMins(form.break_start, form.break_end)} min
+              </p>
+            )}
           </div>
 
           {/* Per-day toggle */}
@@ -257,35 +285,40 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
           {form.per_day_times && form.work_days.length > 0 && (
             <div style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', overflow: 'hidden' }}>
               {/* Table header */}
-              <div style={{ display: 'grid', gridTemplateColumns: '52px 1fr 1fr 80px', gap: 0, background: 'var(--surface-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
-                {['Day', 'Start', 'End', 'Break'].map(h => (
-                  <div key={h} style={{ padding: '6px 10px', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '52px 1fr 1fr 1fr 1fr', gap: 0, background: 'var(--surface-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
+                {['Day', 'Start', 'End', 'Brk Start', 'Brk End'].map(h => (
+                  <div key={h} style={{ padding: '6px 8px', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
                 ))}
               </div>
               {/* Rows */}
               {form.work_days.map((day, i) => {
                 const row = form.day_schedules.find(ds => ds.day === day) ??
-                  { day, start_time: form.start_time, end_time: form.end_time, break_mins: form.break_mins };
+                  { day, start_time: form.start_time, end_time: form.end_time, break_start: form.break_start, break_end: form.break_end, break_mins: form.break_mins };
                 const isLast = i === form.work_days.length - 1;
                 return (
-                  <div key={day} style={{ display: 'grid', gridTemplateColumns: '52px 1fr 1fr 80px', gap: 0, borderBottom: isLast ? 'none' : '1px solid var(--border-subtle)', alignItems: 'center' }}>
+                  <div key={day} style={{ display: 'grid', gridTemplateColumns: '52px 1fr 1fr 1fr 1fr', gap: 0, borderBottom: isLast ? 'none' : '1px solid var(--border-subtle)', alignItems: 'center' }}>
                     <div style={{ padding: '8px 10px', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-primary)' }}>
                       {WEEKDAYS[day]?.label}
                     </div>
-                    <div style={{ padding: '6px 8px 6px 0' }}>
+                    <div style={{ padding: '6px 6px 6px 0' }}>
                       <input type="time" value={row.start_time}
                         onChange={e => updateDayRow(day, { start_time: e.target.value })}
-                        className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 8px' }} />
+                        className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
                     </div>
-                    <div style={{ padding: '6px 8px 6px 0' }}>
+                    <div style={{ padding: '6px 6px 6px 0' }}>
                       <input type="time" value={row.end_time}
                         onChange={e => updateDayRow(day, { end_time: e.target.value })}
-                        className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 8px' }} />
+                        className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
                     </div>
-                    <div style={{ padding: '6px 10px 6px 0' }}>
-                      <input type="number" min={0} max={480} value={row.break_mins}
-                        onChange={e => updateDayRow(day, { break_mins: parseInt(e.target.value) || 0 })}
-                        className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 8px' }} />
+                    <div style={{ padding: '6px 6px 6px 0' }}>
+                      <input type="time" value={row.break_start}
+                        onChange={e => updateDayRow(day, { break_start: e.target.value })}
+                        className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
+                    </div>
+                    <div style={{ padding: '6px 8px 6px 0' }}>
+                      <input type="time" value={row.break_end}
+                        onChange={e => updateDayRow(day, { break_end: e.target.value })}
+                        className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
                     </div>
                   </div>
                 );
@@ -396,8 +429,16 @@ export default function ShiftsPage() {
   });
 
   const handleSave = (data: FormState) => {
-    if (modalShift === 'new') createMutation.mutate(data);
-    else if (modalShift) updateMutation.mutate({ id: modalShift.id, data });
+    const enriched = {
+      ...data,
+      break_mins: calcBreakMins(data.break_start, data.break_end) || data.break_mins,
+      day_schedules: data.day_schedules.map(ds => ({
+        ...ds,
+        break_mins: calcBreakMins(ds.break_start, ds.break_end) || ds.break_mins,
+      })),
+    };
+    if (modalShift === 'new') createMutation.mutate(enriched);
+    else if (modalShift) updateMutation.mutate({ id: modalShift.id, data: enriched });
   };
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
