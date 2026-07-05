@@ -10,6 +10,7 @@ import { useListState } from '@/lib/hooks/use-list-state';
 import { CONTRACT_STATUS } from '@/lib/utils/status-colors';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
+import { useRouter } from 'next/navigation';
 import { EnterpriseListPage, type EnterpriseColumn, type BulkAction } from '@/components/ui/enterprise';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -38,6 +39,7 @@ function ContractsContent() {
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const isPrivileged = isTenantAdmin || isPlatformAdmin;
 
+  const router = useRouter();
   const [rejectDialog, setRejectDialog] = useState<RejectDialog | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -219,6 +221,7 @@ function ContractsContent() {
         error={error}
         onRefetch={refetch}
         paginatedData={data}
+        onRowClick={(r) => router.push('/subcontractors/contracts/' + r.id)}
         selectable={isPrivileged}
         bulkActions={bulkActions}
         emptyMessage="No contracts found."

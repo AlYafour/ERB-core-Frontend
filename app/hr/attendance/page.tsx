@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { hrAttendanceApi } from '@/lib/api/hr';
 import { HRAttendance } from '@/types';
@@ -203,6 +204,7 @@ function QuickActions({
 
 // ── Page ──────────────────────────────────────────────────────
 export default function HRAttendancePage() {
+  const router = useRouter();
   const tableState = useTableState();
   const { page, search, filters, handleFilterChange } = tableState;
   const t = useT();
@@ -388,6 +390,8 @@ export default function HRAttendancePage() {
       tableState={tableState}
       paginatedData={data}
       pageSize={50}
+      selectable={true}
+      onRowClick={(r) => router.push('/hr/attendance/' + r.id)}
     >
       {editRecord && (
         <AttendanceEditModal

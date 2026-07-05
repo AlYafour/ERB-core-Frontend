@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { violationsApi } from '@/lib/api/violations';
@@ -258,6 +259,7 @@ function ViolationDetailPanel({
 
 /* ─── Main Page ──────────────────────────────────────────────────────────── */
 export default function ViolationsPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const queryClient = useQueryClient();
@@ -564,7 +566,7 @@ export default function ViolationsPage() {
                       return (
                         <tr
                           key={v.id}
-                          onClick={() => setSelectedId(isActive ? null : v.id)}
+                          onClick={() => router.push('/violations/resolve/' + v.id)}
                           style={{
                             background: isActive ? 'var(--brand-muted, rgba(201,148,58,0.08))' : isSel ? 'var(--surface-subtle)' : noProj ? 'var(--status-warning-bg, #FBF4E8)' : isEven ? 'var(--surface-base)' : 'var(--surface-subtle)',
                             borderBottom: '1px solid var(--border-subtle)',

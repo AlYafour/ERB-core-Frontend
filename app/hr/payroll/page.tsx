@@ -198,6 +198,8 @@ export default function HRPayrollPage() {
       tableState={tableState}
       paginatedData={data}
       pageSize={50}
+      selectable={true}
+      onRowClick={(r) => router.push('/hr/payroll/' + r.id)}
     >
       <GeneratePayrollModal
         isOpen={showGenerate}

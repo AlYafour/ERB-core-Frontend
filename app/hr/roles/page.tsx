@@ -192,6 +192,8 @@ export default function TenantRolesPage() {
       createAction={isAdmin
         ? <Button variant="primary" size="sm" onClick={openCreate}>+ New Role</Button>
         : undefined}
+      onRowClick={(r) => openEdit(r)}
+      selectable={true}
       columns={columns}
       data={filtered}
       isLoading={isLoading}

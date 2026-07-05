@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { hrRequestsApi } from '@/lib/api/hr';
 import { HRRequest } from '@/types';
@@ -40,6 +41,7 @@ const filterFields: FilterField[] = [
 const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
 
 export default function HRRequestsPage() {
+  const router = useRouter();
   const tableState = useTableState();
   const { page, search, filters } = tableState;
 
@@ -142,6 +144,8 @@ export default function HRRequestsPage() {
       tableState={tableState}
       paginatedData={data}
       pageSize={50}
+      selectable={true}
+      onRowClick={(r) => router.push('/hr/requests/' + r.id)}
     >
       <RejectionReasonDialog
         isOpen={rejectDialogOpen}

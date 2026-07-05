@@ -485,6 +485,8 @@ export default function ShiftsPage() {
       createAction={admin ? (
         <Button variant="primary" size="sm" onClick={() => setModalShift('new')}>+ Create Shift</Button>
       ) : undefined}
+      onRowClick={(r) => setModalShift(r)}
+      selectable={true}
       columns={columns}
       data={filtered}
       isLoading={isLoading}

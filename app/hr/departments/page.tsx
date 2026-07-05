@@ -147,6 +147,8 @@ export default function DepartmentsPage() {
       createAction={isAdmin
         ? <Button variant="primary" size="sm" onClick={openCreate}>+ New Department</Button>
         : undefined}
+      onRowClick={(r) => openEdit(r)}
+      selectable={true}
       columns={columns}
       data={filtered}
       isLoading={isLoading}

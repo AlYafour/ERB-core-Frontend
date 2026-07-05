@@ -369,6 +369,7 @@ export default function BOQLibraryPage() {
                             return (
                               <React.Fragment key={item.id}>
                                 <tr
+                                  onClick={() => { if (!isEditing) startEdit(item); }}
                                   style={{
                                     borderTop: '1px solid var(--border-subtle)',
                                     background: isEditing
@@ -376,6 +377,7 @@ export default function BOQLibraryPage() {
                                       : isEditingLocs
                                       ? 'rgba(var(--brand-rgb, 59,130,246),0.04)'
                                       : item.is_active ? 'transparent' : 'rgba(0,0,0,0.02)',
+                                    cursor: isEditing ? 'default' : 'pointer',
                                   }}
                                 >
                                   {isEditing ? (

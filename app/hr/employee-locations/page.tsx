@@ -273,6 +273,8 @@ export default function EmployeeLocationsPage() {
           </Button>
         ) : undefined
       }
+      onRowClick={(r) => openDrawer({ id: r.employee_pk, full_name: r.employee_name, employee_id: r.employee_id_code })}
+      selectable={true}
       columns={columns}
       data={filtered}
       isLoading={isLoading}

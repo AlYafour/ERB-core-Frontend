@@ -10,6 +10,7 @@ import { useListState } from '@/lib/hooks/use-list-state';
 import { PAYMENT_STATUS } from '@/lib/utils/status-colors';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
+import { useRouter } from 'next/navigation';
 import { EnterpriseListPage, type EnterpriseColumn, type BulkAction } from '@/components/ui/enterprise';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -29,6 +30,7 @@ function PaymentsContent() {
   const listState = useListState('subcon-payments');
   const { page, search, filters, pageSize, selectedItems, clearSelection } = listState;
   const queryClient = useQueryClient();
+  const router = useRouter();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const isPrivileged = isTenantAdmin || isPlatformAdmin;
 
@@ -219,6 +221,7 @@ function PaymentsContent() {
       onRefetch={refetch}
       paginatedData={data}
       selectable
+      onRowClick={(r) => router.push('/subcontractors/payments/' + r.id)}
       bulkActions={bulkActions}
       emptyMessage="No payments found."
     />
