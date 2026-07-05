@@ -213,7 +213,7 @@ export default function EmployeeLocationsPage() {
                 alignItems: 'center',
                 gap: 4,
                 background: 'var(--brand)',
-                color: '#fff',
+                color: 'var(--primary-foreground)',
                 borderRadius: 'var(--radius-full)',
                 padding: '2px 6px 2px 10px',
                 fontSize: 'var(--text-xs)',

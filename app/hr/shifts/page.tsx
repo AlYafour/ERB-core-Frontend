@@ -294,7 +294,7 @@ function ShiftModal({
               disabled={isSaving || !form.name.trim() || form.work_days.length === 0}
               style={{
                 padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-md)',
-                border: 'none', background: 'var(--brand)', color: '#fff',
+                border: 'none', background: 'var(--brand)', color: 'var(--primary-foreground)',
                 cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)',
                 opacity: isSaving ? 0.6 : 1,
               }}

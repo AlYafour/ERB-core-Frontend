@@ -392,7 +392,7 @@ function GroupModal({
               Cancel
             </button>
             <button type="submit" disabled={isSaving || !form.name.trim() || !form.code.trim()}
-              style={{ padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--brand)', color: '#fff', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', opacity: isSaving ? 0.6 : 1 }}>
+              style={{ padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--brand)', color: 'var(--primary-foreground)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', opacity: isSaving ? 0.6 : 1 }}>
               {isSaving ? 'Saving…' : group ? 'Save Changes' : 'Create Group'}
             </button>
           </div>
@@ -483,7 +483,7 @@ export default function EmployeeGroupsPage() {
       render: (group) => (
         <span style={{
           fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-bold)',
-          color: '#fff', background: 'var(--brand)',
+          color: 'var(--primary-foreground)', background: 'var(--brand)',
           padding: '2px 8px', borderRadius: 'var(--radius-sm)', display: 'inline-block',
           opacity: group.is_active ? 1 : 0.5,
         }}>

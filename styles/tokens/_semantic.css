@@ -122,8 +122,11 @@
 
   /* Card */
   --card-bg:                var(--gray-0);
+  --surface-card:           var(--card-bg);   /* alias — use either */
   --card-border:            var(--gray-200);
   --card-shadow:            0 1px 2px 0 rgb(28 20 20 / 0.04);
+  --color-wine-50:          var(--wine-50);
+  --color-wine-500:         var(--wine-500);
 
   /* Table */
   --table-header-bg:        var(--gray-100);
