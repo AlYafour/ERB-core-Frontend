@@ -58,7 +58,7 @@ const SETTINGS_SECTIONS = [
   {
     href:        '/hr/approvals/chains',
     title:       'Approval Chains',
-    description: 'Define multi-stage approval policies per group and request type with role-based routing.',
+    description: 'Define multi-stage approval policies per category and request type with role-based routing.',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
@@ -68,7 +68,7 @@ const SETTINGS_SECTIONS = [
   {
     href:        '/hr/penalties',
     title:       'Penalty Rules',
-    description: 'Configure tiered lateness, early-leave, and absence penalties per employee group.',
+    description: 'Configure tiered lateness, early-leave, and absence penalties per employee category.',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
@@ -78,7 +78,7 @@ const SETTINGS_SECTIONS = [
   {
     href:        '/hr/leave-policies',
     title:       'Leave Policies',
-    description: 'Define leave entitlements, accrual rules, encashment rates, and caps per employee group.',
+    description: 'Define leave entitlements, accrual rules, encashment rates, and caps per employee category.',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
@@ -93,7 +93,7 @@ export default function HRSettingsPage() {
       <PageShell compact>
         <PageHeader
           title="HR Settings"
-          description="Configure the HR module — locations, shifts, departments, groups, policies, and rules."
+          description="Configure the HR module — locations, shifts, departments, categories, policies, and rules."
           breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Settings' }]}
         />
 

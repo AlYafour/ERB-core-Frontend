@@ -57,7 +57,7 @@ export function AssignGroupModal({ isOpen, onClose, employee, label, groups, cur
           onClick={onClear}
           disabled={isLoading}
         >
-          Remove group assignment
+          Remove category assignment
         </button>
       )}
     </BaseModal>

@@ -579,7 +579,7 @@ function ChainBuilder({
   const setField = (patch: Partial<FormState>) => setForm(f => ({ ...f, ...patch }));
 
   const groupOptions = useMemo(() => [
-    { value: '__catchall__', label: 'Any group (catch-all)', searchText: 'any catch-all' },
+    { value: '__catchall__', label: 'Any category (catch-all)', searchText: 'any catch-all' },
     ...groups.map(g => ({ value: g.id, label: `${g.name} (${g.code})`, searchText: `${g.name} ${g.code}` })),
   ], [groups]);
 
@@ -760,13 +760,13 @@ function ChainBuilder({
           {/* Row 2: Group + Priority */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: 12 }}>
             <div>
-              <label style={LABEL}>Group</label>
+              <label style={LABEL}>Category</label>
               <SearchableDropdown
                 options={groupOptions}
                 value={form.employee_group ?? '__catchall__'}
                 onChange={v => setField({ employee_group: v === '__catchall__' ? null : v as number })}
                 allowClear={false}
-                placeholder="Any group (catch-all)"
+                placeholder="Any category (catch-all)"
                 onCreateOption={async (label) => {
                   const code = label.toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 20);
                   const g = await hrEmployeeGroupsApi.create({ name: label, name_ar: '', code, description: '', is_active: true });
@@ -1034,7 +1034,7 @@ export default function ApprovalChainsPage() {
   const filterFields: FilterField[] = useMemo(() => [
     {
       name: 'employee_group',
-      label: 'Group',
+      label: 'Category',
       type: 'select',
       group: 'Filters',
       options: [
@@ -1083,7 +1083,7 @@ export default function ApprovalChainsPage() {
     },
     {
       key: 'group',
-      header: 'Group',
+      header: 'Category',
       width: 140,
       render: (p) => (
         <span style={{
@@ -1207,7 +1207,7 @@ export default function ApprovalChainsPage() {
   return (
     <AppListPage
       title="Approval Chains"
-      description="Configure multi-stage approval chains per employee group and request type."
+      description="Configure multi-stage approval chains per employee category and request type."
       showBack={false}
       totalCount={filtered.length}
       createAction={createAction}

@@ -119,7 +119,7 @@ function TeamModal({
               placeholder="— No group —"
             />
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
-              Which operational group this team belongs to (e.g. SITE).
+              Which operational category this team belongs to (e.g. SITE).
             </p>
           </div>
 
@@ -330,7 +330,7 @@ export default function WorkTeamsPage() {
     },
     {
       key: 'employee_group_name',
-      header: 'Group',
+      header: 'Category',
       width: '110px',
       render: t => t.employee_group_name ? (
         <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)', color: 'var(--primary-foreground)', background: 'var(--brand)', padding: '2px 7px', borderRadius: 'var(--radius-sm)' }}>
@@ -388,7 +388,7 @@ export default function WorkTeamsPage() {
   return (
     <AppListPage
       title="Work Teams"
-      description="Named sub-units within a group. Membership is derived from the Direct Manager field on each employee."
+      description="Named sub-units within a category. Membership is derived from the Direct Manager field on each employee."
       breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Work Teams' }]}
       totalCount={allTeams.length}
       createAction={admin ? (

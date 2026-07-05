@@ -128,9 +128,9 @@ export default function EmployeesPage() {
       const g = vars.groupId !== null ? groups.find(x => x.id === vars.groupId) : null;
       setGrpOverrides(p => ({ ...p, [vars.empId]: g ? { id: g.id, code: g.code, name: g.name } : null }));
       setActiveModal(null);
-      toast(vars.groupId !== null ? 'Group assigned' : 'Group removed', 'success');
+      toast(vars.groupId !== null ? 'Category assigned' : 'Category removed', 'success');
     },
-    onError: () => toast('Failed to update group', 'error'),
+    onError: () => toast('Failed to update category', 'error'),
   });
 
   const mgrMutation = useMutation({
@@ -183,7 +183,7 @@ export default function EmployeesPage() {
         return n;
       });
       setBulkModal(null); clearSelection();
-      toast(`Group ${vars.groupId ? 'assigned' : 'removed'} for ${vars.ids.length} employees`, 'success');
+      toast(`Category ${vars.groupId ? 'assigned' : 'removed'} for ${vars.ids.length} employees`, 'success');
     },
     onError: () => toast('Failed to update some employees', 'error'),
   });
@@ -289,7 +289,7 @@ export default function EmployeesPage() {
     },
     {
       key: 'employee_group',
-      header: 'Group',
+      header: 'Category',
       render: emp => {
         const grp = resolveGroup(emp);
         return grp
@@ -320,7 +320,7 @@ export default function EmployeesPage() {
             <RowActions actions={[
               { label: 'Open Employee File', href: `/hr/employees/${emp.id}` },
               { separator: true, hidden: !canEdit },
-              { label: 'Assign Group',   onClick: () => setActiveModal({ type: 'group',   emp }), hidden: !canEdit },
+              { label: 'Assign Category',   onClick: () => setActiveModal({ type: 'group',   emp }), hidden: !canEdit },
               { label: 'Assign Manager', onClick: () => setActiveModal({ type: 'manager', emp }), hidden: !canEdit },
               { separator: true, hidden: !canEdit && !canDelete },
               {
@@ -354,7 +354,7 @@ export default function EmployeesPage() {
       options: positions.map(p => ({ value: p, label: p })),
     },
     {
-      name: 'group', label: 'Group', type: 'select', group: 'Filters',
+      name: 'group', label: 'Category', type: 'select', group: 'Filters',
       options: groups.filter(g => g.is_active).map(g => ({ value: String(g.id), label: g.name })),
     },
     {
@@ -368,7 +368,7 @@ export default function EmployeesPage() {
     <div className="emp-bulk-actions">
       {canEdit && (
         <button className="emp-bulk-btn" onClick={() => setBulkModal('group')} disabled={isBulkPending}>
-          Assign Group
+          Assign Category
         </button>
       )}
       {canEdit && (

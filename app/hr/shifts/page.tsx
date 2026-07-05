@@ -479,7 +479,7 @@ export default function ShiftsPage() {
   return (
     <AppListPage
       title="Work Shifts"
-      description="Define named work schedules and assign them to employee groups."
+      description="Define named work schedules and assign them to employee categories."
       breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Work Shifts' }]}
       totalCount={allShifts.length}
       createAction={admin ? (

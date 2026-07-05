@@ -160,7 +160,7 @@ function GroupModal({
             <textarea
               value={form.description}
               onChange={e => set('description', e.target.value)}
-              placeholder="Optional — describe what this group covers"
+              placeholder="Optional — describe what this category covers"
               className="form-input"
               rows={2}
               style={{ width: '100%', fontSize: 'var(--text-sm)', resize: 'vertical' }}
@@ -178,7 +178,7 @@ function GroupModal({
               placeholder="— No default shift —"
             />
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
-              Group members inherit this shift. Individual overrides apply in a later phase.
+              Category members inherit this shift. Individual overrides apply in a later phase.
             </p>
           </div>
 
@@ -199,7 +199,7 @@ function GroupModal({
               }} />
             </div>
             <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)' }}>
-              {form.is_active ? 'Active — employees can be assigned to this group' : 'Inactive — hidden from assignment pickers'}
+              {form.is_active ? 'Active — employees can be assigned to this category' : 'Inactive — hidden from assignment pickers'}
             </span>
           </label>
 
@@ -211,7 +211,7 @@ function GroupModal({
             </button>
             <button type="submit" disabled={isSaving || !form.name.trim() || !form.code.trim()}
               style={{ padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--brand)', color: 'var(--primary-foreground)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', opacity: isSaving ? 0.6 : 1 }}>
-              {isSaving ? 'Saving…' : group ? 'Save Changes' : 'Create Group'}
+              {isSaving ? 'Saving…' : group ? 'Save Changes' : 'Create Category'}
             </button>
           </div>
         </form>
@@ -260,20 +260,20 @@ export default function EmployeeGroupsPage() {
 
   const createMutation = useMutation({
     mutationFn: (data: FormState) => hrEmployeeGroupsApi.create(data),
-    onSuccess: () => { invalidate(); setModalGroup(null); toast('Group created', 'success'); },
-    onError: (err: unknown) => toast((err as { response?: { data?: { code?: string[] } } })?.response?.data?.code?.[0] ?? 'Failed to create group', 'error'),
+    onSuccess: () => { invalidate(); setModalGroup(null); toast('Category created', 'success'); },
+    onError: (err: unknown) => toast((err as { response?: { data?: { code?: string[] } } })?.response?.data?.code?.[0] ?? 'Failed to create category', 'error'),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: FormState }) => hrEmployeeGroupsApi.update(id, data),
-    onSuccess: () => { invalidate(); setModalGroup(null); toast('Group updated', 'success'); },
-    onError: (err: unknown) => toast((err as { response?: { data?: { code?: string[] } } })?.response?.data?.code?.[0] ?? 'Failed to update group', 'error'),
+    onSuccess: () => { invalidate(); setModalGroup(null); toast('Category updated', 'success'); },
+    onError: (err: unknown) => toast((err as { response?: { data?: { code?: string[] } } })?.response?.data?.code?.[0] ?? 'Failed to update category', 'error'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => hrEmployeeGroupsApi.delete(id),
-    onSuccess: () => { invalidate(); toast('Group deleted', 'success'); },
-    onError: () => toast('Failed to delete group', 'error'),
+    onSuccess: () => { invalidate(); toast('Category deleted', 'success'); },
+    onError: () => toast('Failed to delete category', 'error'),
   });
 
   const handleSave = (data: FormState) => {
@@ -378,7 +378,7 @@ export default function EmployeeGroupsPage() {
               label: 'Delete',
               variant: 'danger',
               onClick: async () => {
-                if (await confirm(`Delete group "${group.name}" (${group.code})?`)) {
+                if (await confirm(`Delete category "${group.name}" (${group.code})?`)) {
                   deleteMutation.mutate(group.id);
                 }
               },
@@ -402,7 +402,7 @@ export default function EmployeeGroupsPage() {
       createAction={
         admin ? (
           <Button variant="primary" size="sm" onClick={() => setModalGroup('new')}>
-            + Create Group
+            + Create Category
           </Button>
         ) : undefined
       }
@@ -410,9 +410,9 @@ export default function EmployeeGroupsPage() {
       columns={columns}
       data={filtered}
       isLoading={isLoading}
-      emptyTitle="No groups yet. Create your first group to start organising employees by workforce category."
+      emptyTitle="No categories yet. Create your first category to start organising employees by workforce category."
       tableState={tableState}
-      searchPlaceholder="Search groups…"
+      searchPlaceholder="Search categories…"
     >
       {!isLoading && allGroups.length > 0 && (
         <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)' }}>

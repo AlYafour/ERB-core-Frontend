@@ -123,7 +123,7 @@ function PolicyModal({
       setForm(f => ({ ...f, [key]: parseInt(e.target.value) }));
 
   const groupOptions = useMemo(() => [
-    { value: '__catchall__', label: 'Any group (catch-all)', searchText: 'any catch-all' },
+    { value: '__catchall__', label: 'Any category (catch-all)', searchText: 'any catch-all' },
     ...groups.map(g => ({ value: g.id, label: `${g.name} (${g.code})`, searchText: `${g.name} ${g.code}` })),
   ], [groups]);
 
@@ -190,7 +190,7 @@ function PolicyModal({
                 options={groupOptions}
                 value={form.employee_group ?? '__catchall__'}
                 onChange={v => setForm(f => ({ ...f, employee_group: v === '__catchall__' ? null : v as number }))}
-                placeholder="Any group (catch-all)"
+                placeholder="Any category (catch-all)"
                 allowClear={false}
                 onCreateOption={async (label) => {
                   const code = label.toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 20);
@@ -200,7 +200,7 @@ function PolicyModal({
                 }}
               />
               <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-                {'"'}Any group{'"'} is the catch-all fallback used when no group-specific policy matches.
+                {'"'}Any category{'"'} is the catch-all fallback used when no category-specific policy matches.
               </p>
             </div>
             <div>
@@ -470,7 +470,7 @@ export default function LeavePoliciesPage() {
   if (user && !isAdmin) return null;
 
   const handleDelete = async (policy: LeavePolicy) => {
-    const ok = await confirm(`Delete policy for ${LEAVE_TYPE_LABELS[policy.leave_type]} — ${policy.employee_group_name ?? 'Any group'}?`);
+    const ok = await confirm(`Delete policy for ${LEAVE_TYPE_LABELS[policy.leave_type]} — ${policy.employee_group_name ?? 'Any category'}?`);
     if (ok) deleteMut.mutate(policy.id);
   };
 
@@ -482,10 +482,10 @@ export default function LeavePoliciesPage() {
   const columns: Column<LeavePolicy>[] = [
     {
       key:    'employee_group_name',
-      header: 'Group',
+      header: 'Category',
       render: (p) => (
         <span style={{ fontSize: 'var(--text-sm)', color: p.employee_group_name ? 'var(--text-primary)' : 'var(--text-tertiary)', fontStyle: p.employee_group_name ? 'normal' : 'italic' }}>
-          {p.employee_group_name ?? 'Any group (catch-all)'}
+          {p.employee_group_name ?? 'Any category (catch-all)'}
         </span>
       ),
     },
@@ -547,7 +547,7 @@ export default function LeavePoliciesPage() {
   return (
     <AppListPage
       title="Leave Policies"
-      description="Configure annual entitlements, monthly accrual rates, and encashment rules per employee group."
+      description="Configure annual entitlements, monthly accrual rates, and encashment rules per employee category."
       breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Leave Policies' }]}
       totalCount={all.length}
       createAction={
@@ -563,7 +563,7 @@ export default function LeavePoliciesPage() {
       isLoading={isLoading}
       error={error}
       emptyTitle="No leave policies configured. Create one to enable accrual."
-      searchPlaceholder="Search by group or leave type..."
+      searchPlaceholder="Search by category or leave type..."
       tableState={tableState}
     >
       {isAdmin && <AccrualPanel />}

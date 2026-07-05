@@ -311,7 +311,7 @@ function RuleBuilder({
   const setField = (patch: Partial<FormState>) => setForm(f => ({ ...f, ...patch }));
 
   const groupOptions = useMemo(() => [
-    { value: '__catchall__', label: 'Any group (catch-all)', searchText: 'any catch-all' },
+    { value: '__catchall__', label: 'Any category (catch-all)', searchText: 'any catch-all' },
     ...groups.map(g => ({ value: g.id, label: `${g.name} (${g.code})`, searchText: `${g.name} ${g.code}` })),
   ], [groups]);
 
@@ -772,7 +772,7 @@ export default function PenaltyRulesPage() {
     },
     {
       key: 'employee_group_name',
-      header: 'Group',
+      header: 'Category',
       render: (r) => (
         <span style={{
           fontSize: 'var(--text-xs)',
@@ -870,7 +870,7 @@ export default function PenaltyRulesPage() {
   return (
     <AppListPage
       title="Penalty Rules"
-      description="Configure tiered penalty rules per employee group and event type (lateness, early leave, absence)."
+      description="Configure tiered penalty rules per employee category and event type (lateness, early leave, absence)."
       showBack={false}
       totalCount={filtered.length}
       createAction={
