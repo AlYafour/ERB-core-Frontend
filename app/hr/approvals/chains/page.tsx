@@ -46,6 +46,9 @@ type StageRow = {
   strategy: ApproverStrategy;
   role_name: string;
   specific_user: number | null;
+  sod_fallback_strategy: ApproverStrategy | '';
+  sod_fallback_role: string;
+  sod_fallback_user: number | null;
 };
 
 const EMPTY_STAGE = (): StageRow => ({
@@ -54,6 +57,9 @@ const EMPTY_STAGE = (): StageRow => ({
   strategy: 'DIRECT_MANAGER',
   role_name: '',
   specific_user: null,
+  sod_fallback_strategy: '',
+  sod_fallback_role: '',
+  sod_fallback_user: null,
 });
 
 type FormState = {
@@ -89,7 +95,7 @@ const LABEL: React.CSSProperties = {
 const INPUT: React.CSSProperties = {
   width: '100%', padding: '6px 10px',
   border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)',
-  background: 'var(--bg-input)', color: 'var(--text-primary)',
+  background: 'var(--input-bg)', color: 'var(--text-primary)',
   fontSize: 'var(--text-sm)',
 };
 
@@ -118,7 +124,7 @@ function PersonPicker({
     return () => document.removeEventListener('mousedown', h);
   }, [open]);
 
-  const selected = value ? employees.find(e => e.id === value) : null;
+  const selected = value ? employees.find(e => e.user_id === value) : null;
   const filtered = employees.filter(e =>
     !search ||
     e.full_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -161,7 +167,7 @@ function PersonPicker({
       {open && (
         <div style={{
           position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
-          background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
+          background: 'var(--surface-raised)', border: '1px solid var(--border-default)',
           borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-lg)',
           maxHeight: 220, overflow: 'hidden', display: 'flex', flexDirection: 'column',
         }}>
@@ -193,7 +199,7 @@ function PersonPicker({
                 <button
                   key={e.id}
                   type="button"
-                  onClick={() => { onChange(e.id); setOpen(false); setSearch(''); }}
+                  onClick={() => { onChange(e.user_id ?? null); setOpen(false); setSearch(''); }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 8, width: '100%',
                     textAlign: 'left', padding: '6px 12px', background: 'none',
@@ -239,109 +245,164 @@ function StageRowUI({
   onMove: (dir: -1 | 1) => void;
   onRemove: () => void;
 }) {
+  const managerStrategy = stage.strategy === 'DIRECT_MANAGER' || stage.strategy === 'INDIRECT_MANAGER';
+
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 8,
       padding: '8px 10px',
-      background: 'var(--bg-subtle)',
+      background: 'var(--surface-subtle)',
       border: '1px solid var(--border-subtle)',
       borderRadius: 'var(--radius-md)',
     }}>
-      {/* Ordinal badge */}
-      <span style={{
-        minWidth: 22, height: 22, borderRadius: '50%',
-        background: 'var(--color-primary)', color: 'var(--primary-foreground)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 11, fontWeight: 700, flexShrink: 0,
-      }}>
-        {index + 1}
-      </span>
+      {/* Main row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* Ordinal badge */}
+        <span style={{
+          minWidth: 22, height: 22, borderRadius: '50%',
+          background: 'var(--brand)', color: 'var(--primary-foreground)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 11, fontWeight: 700, flexShrink: 0,
+        }}>
+          {index + 1}
+        </span>
 
-      {/* Strategy selector */}
-      <select
-        value={stage.strategy}
-        onChange={e => onChange({ strategy: e.target.value as ApproverStrategy, role_name: '', specific_user: null })}
-        style={{ ...SELECT, minWidth: 160, flex: '0 0 auto' }}
-      >
-        {STRATEGIES.map(s => (
-          <option key={s.value} value={s.value}>{s.label}</option>
-        ))}
-      </select>
-
-      {/* Conditional target input */}
-      {stage.strategy === 'ROLE' && (
+        {/* Strategy selector */}
         <select
-          value={stage.role_name}
-          onChange={e => onChange({ role_name: e.target.value })}
-          style={{ ...SELECT, flex: 1 }}
+          value={stage.strategy}
+          onChange={e => onChange({ strategy: e.target.value as ApproverStrategy, role_name: '', specific_user: null })}
+          style={{ ...SELECT, minWidth: 160, flex: '0 0 auto' }}
         >
-          <option value="">— select role —</option>
-          {ROLES.map(r => (
-            <option key={r.value} value={r.value}>{r.label}</option>
+          {STRATEGIES.map(s => (
+            <option key={s.value} value={s.value}>{s.label}</option>
           ))}
         </select>
-      )}
 
-      {stage.strategy === 'SPECIFIC_USER' && (
-        <PersonPicker
-          value={stage.specific_user}
-          onChange={id => onChange({ specific_user: id })}
-          employees={employees}
-        />
-      )}
+        {/* Conditional target input */}
+        {stage.strategy === 'ROLE' && (
+          <select
+            value={stage.role_name}
+            onChange={e => onChange({ role_name: e.target.value })}
+            style={{ ...SELECT, flex: 1 }}
+          >
+            <option value="">— select role —</option>
+            {ROLES.map(r => (
+              <option key={r.value} value={r.value}>{r.label}</option>
+            ))}
+          </select>
+        )}
 
-      {(stage.strategy === 'DIRECT_MANAGER' || stage.strategy === 'INDIRECT_MANAGER') && (
-        <span style={{ flex: 1, fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', paddingLeft: 4 }}>
-          resolved from employee&apos;s org chart at submission
-        </span>
-      )}
+        {stage.strategy === 'SPECIFIC_USER' && (
+          <PersonPicker
+            value={stage.specific_user}
+            onChange={id => onChange({ specific_user: id })}
+            employees={employees}
+          />
+        )}
 
-      {/* Reorder + remove */}
-      <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
-        <button
-          type="button"
-          onClick={() => onMove(-1)}
-          disabled={index === 0}
-          title="Move up"
-          style={{
-            width: 26, height: 26, border: '1px solid var(--border-default)',
-            borderRadius: 'var(--radius-sm)', background: 'var(--bg-surface)',
-            cursor: index === 0 ? 'not-allowed' : 'pointer',
-            opacity: index === 0 ? 0.35 : 1,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >
-          ↑
-        </button>
-        <button
-          type="button"
-          onClick={() => onMove(1)}
-          disabled={index === total - 1}
-          title="Move down"
-          style={{
-            width: 26, height: 26, border: '1px solid var(--border-default)',
-            borderRadius: 'var(--radius-sm)', background: 'var(--bg-surface)',
-            cursor: index === total - 1 ? 'not-allowed' : 'pointer',
-            opacity: index === total - 1 ? 0.35 : 1,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >
-          ↓
-        </button>
-        <button
-          type="button"
-          onClick={onRemove}
-          title="Remove stage"
-          style={{
-            width: 26, height: 26, border: '1px solid var(--status-error-border)',
-            borderRadius: 'var(--radius-sm)', background: 'var(--color-error-light)',
-            cursor: 'pointer', color: 'var(--color-error)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >
-          ×
-        </button>
+        {managerStrategy && (
+          <span style={{ flex: 1, fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', paddingLeft: 4 }}>
+            resolved from employee&apos;s org chart at submission
+          </span>
+        )}
+
+        {/* Reorder + remove */}
+        <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+          <button
+            type="button"
+            onClick={() => onMove(-1)}
+            disabled={index === 0}
+            title="Move up"
+            style={{
+              width: 26, height: 26, border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-sm)', background: 'var(--surface-raised)',
+              cursor: index === 0 ? 'not-allowed' : 'pointer',
+              opacity: index === 0 ? 0.35 : 1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            ↑
+          </button>
+          <button
+            type="button"
+            onClick={() => onMove(1)}
+            disabled={index === total - 1}
+            title="Move down"
+            style={{
+              width: 26, height: 26, border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-sm)', background: 'var(--surface-raised)',
+              cursor: index === total - 1 ? 'not-allowed' : 'pointer',
+              opacity: index === total - 1 ? 0.35 : 1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            ↓
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            title="Remove stage"
+            style={{
+              width: 26, height: 26, border: '1px solid var(--status-error-border)',
+              borderRadius: 'var(--radius-sm)', background: 'var(--color-error-light)',
+              cursor: 'pointer', color: 'var(--color-error)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            ×
+          </button>
+        </div>
       </div>
+
+      {/* SoD fallback row — shown when manager strategy risks self-approval */}
+      {managerStrategy && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 6, marginTop: 6,
+          paddingLeft: 30,
+        }}>
+          <span style={{ fontSize: 11, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
+            If approver = requester →
+          </span>
+          <select
+            value={stage.sod_fallback_strategy}
+            onChange={e => onChange({
+              sod_fallback_strategy: e.target.value as ApproverStrategy | '',
+              sod_fallback_role: '',
+              sod_fallback_user: null,
+            })}
+            style={{ ...SELECT, flex: '0 0 auto', minWidth: 150, padding: '3px 8px' }}
+          >
+            <option value="">— stay pending —</option>
+            {STRATEGIES.map(s => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+          {stage.sod_fallback_strategy === 'ROLE' && (
+            <select
+              value={stage.sod_fallback_role}
+              onChange={e => onChange({ sod_fallback_role: e.target.value })}
+              style={{ ...SELECT, flex: 1, padding: '3px 8px' }}
+            >
+              <option value="">— select role —</option>
+              {ROLES.map(r => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+          )}
+          {stage.sod_fallback_strategy === 'SPECIFIC_USER' && (
+            <PersonPicker
+              value={stage.sod_fallback_user}
+              onChange={id => onChange({ sod_fallback_user: id })}
+              employees={employees}
+              placeholder="— pick fallback person —"
+            />
+          )}
+          {(stage.sod_fallback_strategy === 'DIRECT_MANAGER' || stage.sod_fallback_strategy === 'INDIRECT_MANAGER') && (
+            <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+              escalates up the chain
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -389,6 +450,9 @@ function ChainBuilder({
             strategy: s.approver_strategy,
             role_name: s.role_name,
             specific_user: s.specific_user,
+            sod_fallback_strategy: s.sod_fallback_strategy ?? '',
+            sod_fallback_role: s.sod_fallback_role ?? '',
+            sod_fallback_user: s.sod_fallback_user ?? null,
           }))
       : [EMPTY_STAGE()]
   );
@@ -443,6 +507,9 @@ function ChainBuilder({
         approver_strategy: stage.strategy,
         role_name: stage.role_name || '',
         specific_user: stage.specific_user ?? null,
+        sod_fallback_strategy: (stage.sod_fallback_strategy || '') as ApproverStrategy | '',
+        sod_fallback_role: stage.sod_fallback_role || '',
+        sod_fallback_user: stage.sod_fallback_user,
       };
       if (stage.id !== null && remaining.has(stage.id)) {
         await hrApprovalsApi.updateStep(stage.id, payload);
@@ -519,7 +586,7 @@ function ChainBuilder({
       alignItems: 'center', justifyContent: 'center', padding: 24,
     }}>
       <div style={{
-        background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)',
+        background: 'var(--surface-raised)', borderRadius: 'var(--radius-lg)',
         boxShadow: 'var(--shadow-xl)', width: '100%', maxWidth: 640,
         maxHeight: '90vh', display: 'flex', flexDirection: 'column',
         overflow: 'hidden',
@@ -562,7 +629,7 @@ function ChainBuilder({
                 onClick={() => setField({ is_active: !form.is_active })}
                 style={{
                   width: 44, height: 24, borderRadius: 12, border: 'none',
-                  background: form.is_active ? 'var(--color-primary)' : 'var(--border-default)',
+                  background: form.is_active ? 'var(--brand)' : 'var(--border-default)',
                   cursor: 'pointer', position: 'relative', transition: 'background 0.15s',
                 }}
               >
@@ -695,7 +762,7 @@ function ChainBuilder({
                 border: '1px dashed var(--border-default)',
                 borderRadius: 'var(--radius-md)',
                 background: 'none', cursor: 'pointer',
-                color: 'var(--color-primary)',
+                color: 'var(--brand)',
                 fontSize: 'var(--text-sm)', fontWeight: 500,
               }}
             >
@@ -714,7 +781,7 @@ function ChainBuilder({
             onClick={onClose}
             style={{
               padding: '8px 18px', border: '1px solid var(--border-default)',
-              borderRadius: 'var(--radius-md)', background: 'var(--bg-surface)',
+              borderRadius: 'var(--radius-md)', background: 'var(--surface-raised)',
               cursor: 'pointer', fontSize: 'var(--text-sm)',
             }}
           >
@@ -727,7 +794,7 @@ function ChainBuilder({
             style={{
               padding: '8px 20px', border: 'none',
               borderRadius: 'var(--radius-md)',
-              background: saving ? 'var(--text-tertiary)' : 'var(--color-primary)',
+              background: saving ? 'var(--text-tertiary)' : 'var(--brand)',
               color: 'var(--primary-foreground)', cursor: saving ? 'not-allowed' : 'pointer',
               fontSize: 'var(--text-sm)', fontWeight: 600,
             }}
@@ -902,7 +969,7 @@ export default function ApprovalChainsPage() {
         <span style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           minWidth: 24, height: 24, borderRadius: '50%',
-          background: 'var(--color-primary)', color: 'var(--primary-foreground)',
+          background: 'var(--brand)', color: 'var(--primary-foreground)',
           fontSize: 11, fontWeight: 700,
         }}>
           {p.steps?.length ?? 0}
@@ -930,7 +997,7 @@ export default function ApprovalChainsPage() {
           title={p.is_active ? 'Click to deactivate' : 'Click to activate'}
           style={{
             width: 36, height: 20, borderRadius: 10, border: 'none',
-            background: p.is_active ? 'var(--color-primary)' : 'var(--border-default)',
+            background: p.is_active ? 'var(--brand)' : 'var(--border-default)',
             cursor: 'pointer', position: 'relative',
           }}
         >
@@ -973,7 +1040,7 @@ export default function ApprovalChainsPage() {
       style={{
         padding: '8px 18px', border: 'none',
         borderRadius: 'var(--radius-md)',
-        background: 'var(--color-primary)', color: 'var(--primary-foreground)',
+        background: 'var(--brand)', color: 'var(--primary-foreground)',
         cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 600,
       }}
     >

@@ -956,6 +956,9 @@ export interface ApprovalStep {
   approver_strategy: ApproverStrategy;
   role_name: string;
   specific_user: number | null;
+  sod_fallback_strategy: ApproverStrategy | '';
+  sod_fallback_role: string;
+  sod_fallback_user: number | null;
   escalation_after_hours: number | null;
   created_at: string;
   updated_at: string;
