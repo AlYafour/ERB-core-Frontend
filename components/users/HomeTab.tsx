@@ -80,7 +80,7 @@ function LeaveArc({ remaining, total, warn }: { remaining: number; total: number
 
 // ── Shared card style — uses CSS vars so it adapts to light/dark + tenant theme
 const CARD: React.CSSProperties = {
-  background:   'var(--card-bg)',
+  background:   'var(--surface-card)',
   border:       '1px solid var(--border-subtle)',
   borderRadius: 24,
   boxShadow:    '0 2px 8px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.04)',
@@ -125,9 +125,9 @@ export default function HomeTab({ user, emp, isSelf }: UserTabProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-      {/* Welcome banner — always uses wine-700/800 (rich dark shade of brand) so white text reads clearly */}
+      {/* Welcome banner */}
       <div style={{
-        background: 'linear-gradient(135deg, var(--wine-800), var(--wine-700))',
+        background: 'linear-gradient(135deg, var(--brand) 0%, var(--brand-muted) 100%)',
         borderRadius: 24,
         padding: '28px 32px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
@@ -165,15 +165,21 @@ export default function HomeTab({ user, emp, isSelf }: UserTabProps) {
         <div style={{ ...CARD, padding: '22px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Quick Actions</p>
           {([
-            { label: 'Requests & Approvals', sub: 'Leave, overtime & more', icon: '📋', href: '/hr/requests'    },
-            { label: 'My Schedule',           sub: 'Attendance & shifts',    icon: '📅', href: '/hr/attendance' },
+            {
+              label: 'Requests & Approvals', sub: 'Leave, overtime & more', href: '/hr/requests',
+              icon: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+            },
+            {
+              label: 'My Schedule', sub: 'Attendance & shifts', href: '/hr/attendance',
+              icon: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+            },
           ] as const).map(({ label, sub, icon, href }) => (
             <button key={href} onClick={() => router.push(href)}
               style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', borderRadius: 14, background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', cursor: 'pointer', textAlign: 'left', width: '100%' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--table-row-hover)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-default)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-subtle)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-subtle)'; }}
             >
-              <div style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--card-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.04)' }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--surface-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand)', flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.04)' }}>
                 {icon}
               </div>
               <div>
