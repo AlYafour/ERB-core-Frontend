@@ -18,7 +18,7 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
 
   // Allow access if: admin, has explicit permission, OR is a regular employee (self-service)
   const hasAccess = isTenantAdmin || isPlatformAdmin
-    || hasPermission('hr_employee.view')
+    || hasPermission('hr.hr_employee.view')
     || !!emp;
 
   useEffect(() => {

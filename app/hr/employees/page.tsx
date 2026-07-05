@@ -30,7 +30,10 @@ export default function EmployeesPage() {
   const router = useRouter();
   const qc = useQueryClient();
 
-  const admin = hasPermission('hr.hr_employee.view');
+  const admin     = hasPermission('hr.hr_employee.view');
+  const canEdit   = hasPermission('hr.hr_employee.change');
+  const canDelete = hasPermission('hr.hr_employee.delete');
+  const canAdd    = hasPermission('hr.hr_employee.add');
 
   // ── Table state (search + filters + selection via useTableState) ──
   const tableState = useTableState();
@@ -296,6 +299,15 @@ export default function EmployeesPage() {
       header: 'Mgr',
       render: emp => {
         const isManager = resolveIsManager(emp);
+        if (!canEdit) {
+          return (
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              {isManager
+                ? <Badge variant="default">Mgr</Badge>
+                : <span style={{ color: 'var(--text-tertiary)' }}>—</span>}
+            </div>
+          );
+        }
         return (
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <button
@@ -315,6 +327,11 @@ export default function EmployeesPage() {
       header: 'Group',
       render: emp => {
         const grp = resolveGroup(emp);
+        if (!canEdit) {
+          return grp
+            ? <span className="emp-meta">{grp.name || grp.code}</span>
+            : <span style={{ color: 'var(--text-tertiary)' }}>—</span>;
+        }
         return grp ? (
           <div className="emp-group-tag">
             <button
@@ -346,6 +363,11 @@ export default function EmployeesPage() {
       header: 'Direct Manager',
       render: emp => {
         const mgrName = resolveMgrName(emp);
+        if (!canEdit) {
+          return mgrName
+            ? <span className="emp-meta">{mgrName}</span>
+            : <span style={{ color: 'var(--text-tertiary)' }}>—</span>;
+        }
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
             {mgrName ? (
@@ -385,15 +407,16 @@ export default function EmployeesPage() {
           <div onClick={e => e.stopPropagation()}>
             <RowActions actions={[
               { label: 'Open Employee File', href: `/hr/employees/${emp.id}` },
-              { separator: true },
+              { separator: true, hidden: !canEdit && !canDelete },
               {
                 label: isActive ? 'Deactivate' : 'Activate',
                 onClick: () => isActive
                   ? deactivateMutation.mutate(emp.id)
                   : activateMutation.mutate(emp.id),
+                hidden: !canEdit,
               },
-              { separator: true },
-              { label: 'Delete Employee', onClick: () => handleDelete(emp), variant: 'danger' },
+              { separator: true, hidden: !canDelete },
+              { label: 'Delete Employee', onClick: () => handleDelete(emp), variant: 'danger', hidden: !canDelete },
             ]} />
           </div>
         );
@@ -447,20 +470,22 @@ export default function EmployeesPage() {
   ];
 
   // ── Bulk actions bar ───────────────────────────────────────
-  const bulkActionsBar = selectedItems.size > 0 ? (
+  const bulkActionsBar = selectedItems.size > 0 && (canEdit || canDelete) ? (
     <div className="emp-bulk-actions">
-      <button className="emp-bulk-btn" onClick={() => setBulkModal('group')}   disabled={isBulkPending}>Assign Group</button>
-      <button className="emp-bulk-btn" onClick={() => setBulkModal('manager')} disabled={isBulkPending}>Assign Manager</button>
-      <button className="emp-bulk-btn" onClick={() => bulkActivateMutation.mutate([...selectedItems])}   disabled={isBulkPending}>Activate</button>
-      <button className="emp-bulk-btn" onClick={() => bulkDeactivateMutation.mutate([...selectedItems])} disabled={isBulkPending}>Deactivate</button>
-      <button
-        className="emp-bulk-btn"
-        onClick={handleBulkDelete}
-        disabled={isBulkPending}
-        style={{ borderColor: 'var(--status-error)', color: 'var(--status-error)' }}
-      >
-        Delete
-      </button>
+      {canEdit && <button className="emp-bulk-btn" onClick={() => setBulkModal('group')}   disabled={isBulkPending}>Assign Group</button>}
+      {canEdit && <button className="emp-bulk-btn" onClick={() => setBulkModal('manager')} disabled={isBulkPending}>Assign Manager</button>}
+      {canEdit && <button className="emp-bulk-btn" onClick={() => bulkActivateMutation.mutate([...selectedItems])}   disabled={isBulkPending}>Activate</button>}
+      {canEdit && <button className="emp-bulk-btn" onClick={() => bulkDeactivateMutation.mutate([...selectedItems])} disabled={isBulkPending}>Deactivate</button>}
+      {canDelete && (
+        <button
+          className="emp-bulk-btn"
+          onClick={handleBulkDelete}
+          disabled={isBulkPending}
+          style={{ borderColor: 'var(--status-error)', color: 'var(--status-error)' }}
+        >
+          Delete
+        </button>
+      )}
       <button className="emp-bulk-btn emp-bulk-btn--clear" onClick={clearSelection}>Clear</button>
     </div>
   ) : undefined;
@@ -477,11 +502,11 @@ export default function EmployeesPage() {
       ]}
       showBack={false}
       totalCount={filtered.length}
-      createAction={
+      createAction={canAdd ? (
         <Link href="/hr/employees/new">
           <Button variant="primary" size="sm">+ New Employee</Button>
         </Link>
-      }
+      ) : undefined}
       filterFields={filterFields}
       columns={columns}
       data={filtered}
@@ -489,7 +514,7 @@ export default function EmployeesPage() {
       error={error}
       emptyTitle="No employees match your filters."
       tableState={tableState}
-      selectable
+      selectable={canEdit || canDelete}
       bulkActions={bulkActionsBar}
       onRowClick={emp => router.push(`/hr/employees/${emp.id}`)}
       rowStyle={emp => resolveIsActive(emp) ? undefined : { opacity: 0.6 }}
