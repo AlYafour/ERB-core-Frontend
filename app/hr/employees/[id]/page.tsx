@@ -13,7 +13,7 @@ import DocumentsTab from '@/components/users/DocumentsTab';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
-import { Button, Badge, PageShell, PageHeader, Drawer, Loader } from '@/components/ui';
+import { Button, Badge, PageShell, Drawer, Loader } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { rolesApi, Role, UserRoles, AdditionalRoleAssignment } from '@/lib/api/roles';
 import { HREmployee, User } from '@/types';
@@ -487,18 +487,21 @@ export default function EmployeeDetailPage() {
     <MainLayout>
       <PageShell>
 
-        <PageHeader
-          title={emp.full_name}
-          description={`${emp.employee_id} · ${empTypeLabel[emp.employment_type] || emp.employment_type}`}
-          backHref={isAdmin ? '/hr/employees' : '/dashboard'}
-          breadcrumbs={isAdmin ? [
-            { label: 'HR' },
-            { label: 'Employees', href: '/hr/employees' },
-            { label: emp.full_name },
-          ] : [
-            { label: emp.full_name },
-          ]}
-        />
+        {/* ── Back link ── */}
+        <div style={{ marginBottom: 'var(--space-3)' }}>
+          <a href={isAdmin ? '/hr/employees' : '/dashboard'} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            fontSize: 13, color: 'var(--text-tertiary)', textDecoration: 'none',
+            fontWeight: 500,
+          }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)'; }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            {isAdmin ? 'Employees' : 'Dashboard'}
+          </a>
+        </div>
 
         {/* ── Employee Profile Hero ── */}
         <div style={{
