@@ -226,6 +226,15 @@ export default function HRAttendancePage() {
     onError: () => toast('Failed to update record', 'error'),
   });
 
+  const recalcMutation = useMutation({
+    mutationFn: (id: number) => hrAttendanceApi.recalculate(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['hr-attendance'] });
+      toast('Metrics recalculated', 'success');
+    },
+    onError: (err: any) => toast(err?.response?.data?.detail ?? 'Recalculation failed', 'error'),
+  });
+
   const exportCSV = () => {
     if (!records.length) return;
     const header = ['Employee', 'ID', 'Date', 'Check In', 'Check Out', 'Work Hours', 'Overtime', 'Status', 'Notes'];
@@ -297,7 +306,10 @@ export default function HRAttendancePage() {
     ...(canEdit ? [{
       key: 'actions', header: '' as React.ReactNode,
       render: (r: HRAttendance) => (
-        <RowActions actions={[{ label: 'Edit Record', onClick: () => setEditRecord(r) }]} />
+        <RowActions actions={[
+          { label: 'Edit Record', onClick: () => setEditRecord(r) },
+          { label: 'Recalculate Metrics', onClick: () => recalcMutation.mutate(r.id) },
+        ]} />
       ),
     }] : []),
   ], [t, admin]);

@@ -236,6 +236,10 @@ export const hrAttendanceApi = {
     const response = await apiClient.post('/hr/attendance/check-out/', data);
     return response.data;
   },
+  recalculate: async (id: number): Promise<HRAttendance> => {
+    const response = await apiClient.post(`/hr/attendance/${id}/recalculate/`);
+    return response.data;
+  },
   getShifts: async (): Promise<PaginatedResponse<HRShift>> => {
     const response = await apiClient.get('/hr/attendance/shifts/');
     return response.data;
