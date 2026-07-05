@@ -183,10 +183,10 @@ function MembersDrawer({ team, onClose }: { team: WorkTeam; onClose: () => void 
   });
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex' }}
+    <div style={{ position: 'fixed', top: 'var(--navbar-height)', right: 0, bottom: 0, left: 0, zIndex: 45, display: 'flex' }}
       onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={{ flex: 1, background: 'rgba(0,0,0,0.35)' }} onMouseDown={onClose} />
-      <div style={{ width: 380, background: 'var(--surface-default)', boxShadow: '-4px 0 24px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ width: 380, background: 'var(--surface-base)', boxShadow: '-4px 0 24px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Header */}
         <div style={{ padding: 'var(--space-5) var(--space-5) var(--space-4)', borderBottom: '1px solid var(--border-subtle)' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
