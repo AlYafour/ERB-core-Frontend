@@ -749,6 +749,14 @@ export interface HRAttendance {
   updated_at: string;
 }
 
+export interface ShiftDaySchedule {
+  id?: number;
+  day: number;
+  start_time: string;
+  end_time: string;
+  break_mins: number;
+}
+
 export interface HRShift {
   id: number;
   name: string;
@@ -759,6 +767,7 @@ export interface HRShift {
   break_mins: number;
   work_days: number[];
   is_active: boolean;
+  day_schedules: ShiftDaySchedule[];
   created_at: string;
   updated_at: string;
 }
