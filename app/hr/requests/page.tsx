@@ -8,6 +8,7 @@ import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
+import { useMyEmployeeRecord } from '@/lib/hooks/use-my-employee-record';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
 import { Badge, type Column } from '@/components/ui';
@@ -48,8 +49,12 @@ export default function HRRequestsPage() {
   const queryClient = useQueryClient();
   const { user }    = useAuth();
   const { hasPermission } = useMyPermissions();
+  const { emp: myEmp } = useMyEmployeeRecord();
   const t           = useT();
   const isAdmin     = hasPermission('hr.hr_request.view');
+  const canApprove  = hasPermission('hr.hr_request.approve');
+  const canReject   = hasPermission('hr.hr_request.reject');
+  const canCancel   = hasPermission('hr.hr_request.cancel');
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['hr-requests', page, search, filters],
@@ -107,9 +112,15 @@ export default function HRRequestsPage() {
       key: 'actions', header: '',
       render: r => (
         <RowActions actions={[
-          { label: 'Approve', onClick: () => handleApprove(r.id), hidden: !isAdmin || r.status !== 'pending' },
-          { label: 'Reject',  onClick: () => handleReject(r.id),  hidden: !isAdmin || r.status !== 'pending', variant: 'danger' },
-          { label: 'Cancel',  onClick: () => handleCancel(r.id),  hidden: !isAdmin || r.status !== 'pending', variant: 'danger' },
+          { label: 'Approve', onClick: () => handleApprove(r.id), hidden: !canApprove || r.status !== 'pending' },
+          { label: 'Reject',  onClick: () => handleReject(r.id),  hidden: !canReject  || r.status !== 'pending', variant: 'danger' },
+          {
+            label: 'Cancel',
+            onClick: () => handleCancel(r.id),
+            // Admin with cancel perm OR the employee cancelling their own request
+            hidden: r.status !== 'pending' || (!canCancel && r.employee !== myEmp?.id),
+            variant: 'danger',
+          },
         ]} />
       ),
     },

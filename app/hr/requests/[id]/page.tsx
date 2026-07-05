@@ -6,6 +6,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { hrRequestsApi } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
+import { useMyEmployeeRecord } from '@/lib/hooks/use-my-employee-record';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { Button, Badge, Loader, PageHeader, PageShell } from '@/components/ui';
 import { useState } from 'react';
@@ -27,7 +28,11 @@ export default function HRRequestDetailPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { hasPermission } = useMyPermissions();
-  const isAdmin = hasPermission('hr.hr_request.view');
+  const { emp: myEmp } = useMyEmployeeRecord();
+  const isAdmin    = hasPermission('hr.hr_request.view');
+  const canApprove = hasPermission('hr.hr_request.approve');
+  const canReject  = hasPermission('hr.hr_request.reject');
+  const canCancel  = hasPermission('hr.hr_request.cancel');
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectInput, setShowRejectInput] = useState(false);
 
@@ -77,11 +82,13 @@ export default function HRRequestDetailPage() {
           actions={
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
               <Badge variant={(STATUS_VARIANT[req.status] as string | undefined) || 'default'}>{req.status.toUpperCase()}</Badge>
-              {isAdmin && req.status === 'pending' && (
+              {req.status === 'pending' && (
                 <>
-                  <Button variant="success" size="sm" onClick={handleApprove} isLoading={approveMutation.isPending}>Approve</Button>
-                  <Button variant="destructive" size="sm" onClick={() => setShowRejectInput(!showRejectInput)}>Reject</Button>
-                  <Button variant="secondary" size="sm" onClick={handleCancel} isLoading={cancelMutation.isPending}>Cancel</Button>
+                  {canApprove && <Button variant="success" size="sm" onClick={handleApprove} isLoading={approveMutation.isPending}>Approve</Button>}
+                  {canReject  && <Button variant="destructive" size="sm" onClick={() => setShowRejectInput(!showRejectInput)}>Reject</Button>}
+                  {(canCancel || req.employee === myEmp?.id) && (
+                    <Button variant="secondary" size="sm" onClick={handleCancel} isLoading={cancelMutation.isPending}>Cancel</Button>
+                  )}
                 </>
               )}
             </div>

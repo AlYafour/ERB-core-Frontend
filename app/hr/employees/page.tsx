@@ -31,9 +31,9 @@ export default function EmployeesPage() {
   const qc = useQueryClient();
 
   const admin     = hasPermission('hr.hr_employee.view');
-  const canEdit   = hasPermission('hr.hr_employee.change');
+  const canEdit   = hasPermission('hr.hr_employee.update');
   const canDelete = hasPermission('hr.hr_employee.delete');
-  const canAdd    = hasPermission('hr.hr_employee.add');
+  const canAdd    = hasPermission('hr.hr_employee.create');
 
   // ── Table state (search + filters + selection via useTableState) ──
   const tableState = useTableState();

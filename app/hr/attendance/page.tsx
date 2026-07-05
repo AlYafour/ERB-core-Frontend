@@ -199,7 +199,8 @@ export default function HRAttendancePage() {
   const { hasPermission } = useMyPermissions();
   const qc = useQueryClient();
 
-  const admin = hasPermission('hr.hr_attendance.view');
+  const admin   = hasPermission('hr.hr_attendance.view');
+  const canEdit = hasPermission('hr.hr_attendance.update');
 
   const [editRecord, setEditRecord] = useState<HRAttendance | null>(null);
 
@@ -293,7 +294,7 @@ export default function HRAttendancePage() {
         </span>
       ),
     },
-    ...(admin ? [{
+    ...(canEdit ? [{
       key: 'actions', header: '' as React.ReactNode,
       render: (r: HRAttendance) => (
         <RowActions actions={[{ label: 'Edit Record', onClick: () => setEditRecord(r) }]} />
