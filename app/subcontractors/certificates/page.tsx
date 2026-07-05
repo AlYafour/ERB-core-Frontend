@@ -1,6 +1,7 @@
-'use client';
+﻿'use client';
 
 import { Suspense, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subcontractorsApi, ProgressCertificate } from '@/lib/api/subcontractors';
 import Link from 'next/link';
@@ -30,6 +31,7 @@ const DELETABLE_STATUSES = new Set(['draft', 'submitted', 'under_review', 'revie
 interface RejectDialog { id: number; reason: string }
 
 function CertificatesContent() {
+  const router = useRouter();
   const listState = useListState('subcon-certificates');
   const { page, search, filters, pageSize, selectedItems, clearSelection } = listState;
   const queryClient = useQueryClient();
@@ -229,6 +231,7 @@ function CertificatesContent() {
         paginatedData={data}
         selectable
         bulkActions={bulkActions}
+        onRowClick={c => router.push('/subcontractors/certificates/' + c.id)}
         emptyMessage="No certificates found."
       />
 

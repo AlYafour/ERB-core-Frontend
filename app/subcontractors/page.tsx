@@ -1,6 +1,7 @@
-'use client';
+﻿'use client';
 
 import { Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { subcontractorsApi, Subcontractor } from '@/lib/api/subcontractors';
 import Link from 'next/link';
@@ -76,6 +77,7 @@ const columns: EnterpriseColumn<Subcontractor>[] = [
 ];
 
 function SubcontractorsContent() {
+  const router = useRouter();
   const listState = useListState('subcontractors');
   const { page, search, filters, pageSize } = listState;
 
@@ -121,6 +123,7 @@ function SubcontractorsContent() {
       error={error}
       onRefetch={refetch}
       paginatedData={data}
+      onRowClick={s => router.push('/subcontractors/' + s.id)}
       emptyMessage="No subcontractors found."
       emptyAction={
         <Link href="/subcontractors/new">

@@ -1,6 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customersApi, Customer } from '@/lib/api/customers';
@@ -28,6 +29,7 @@ const filterFields: FilterField[] = [
 ];
 
 export default function CustomersPage() {
+  const router = useRouter();
   const tableState = useTableState();
   const { page, search, filters } = tableState;
 
@@ -118,6 +120,7 @@ export default function CustomersPage() {
           onRetry={refetch}
           emptyMessage="No customers found."
           emptyAction={canCreate ? <Link href="/customers/new"><Button variant="primary">{t('btn', 'addCustomer')}</Button></Link> : undefined}
+          onRowClick={c => router.push('/customers/' + c.id)}
           selectable={isAdmin}
           totalCount={totalCount}
           paginatedData={data}
