@@ -295,11 +295,21 @@ export default function HRAttendancePage() {
     },
     {
       key: 'break', header: 'Break',
-      render: r => r.break_start
-        ? <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--brand)' }}>
-            {formatTime(r.break_start)}{r.break_end ? `–${formatTime(r.break_end)}` : '…'}
-          </span>
-        : <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>—</span>,
+      render: r => {
+        if (!r.break_start) return <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>—</span>;
+        const range = `${formatTime(r.break_start)}${r.break_end ? `–${formatTime(r.break_end)}` : '…'}`;
+        let total = '';
+        if (r.break_start && r.break_end) {
+          const mins = Math.round((new Date(r.break_end).getTime() - new Date(r.break_start).getTime()) / 60000);
+          total = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60 ? `${mins % 60}m` : ''}`.trim() : `${mins}m`;
+        }
+        return (
+          <div style={{ minWidth: 0 }}>
+            <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: '#B45309', whiteSpace: 'nowrap' }}>{range}</span>
+            {total && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '1px 0 0', fontFamily: 'monospace' }}>{total} break</p>}
+          </div>
+        );
+      },
     },
     {
       key: 'shift', header: 'Shift',
