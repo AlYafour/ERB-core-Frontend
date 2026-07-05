@@ -346,7 +346,9 @@ export default function EmployeeGroupsPage() {
             </p>
             {shiftDetail && (
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '2px 0 0', whiteSpace: 'nowrap' }}>
-                {fmtTime(shiftDetail.start_time)} – {fmtTime(shiftDetail.end_time)}
+                {shiftDetail.day_schedules?.length > 0
+                  ? 'Varies per day'
+                  : `${fmtTime(shiftDetail.start_time)} – ${fmtTime(shiftDetail.end_time)}`}
               </p>
             )}
           </div>
