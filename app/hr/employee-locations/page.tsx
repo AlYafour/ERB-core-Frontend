@@ -20,6 +20,7 @@ import { getApiError } from '@/lib/utils/error';
 import { AppListPage } from '@/components/app/AppListPage';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { type Column } from '@/components/ui/DataTable';
+import { PersonCell } from '@/components/ui/PersonCell';
 
 interface GroupedRow {
   id:               number; // employee_pk — required by DataTable selection
@@ -183,58 +184,52 @@ export default function EmployeeLocationsPage() {
   // ── Columns ───────────────────────────────────────────────────────────────
   const columns: Column<GroupedRow>[] = [
     {
-      key:    'employee_id_code',
-      header: 'Employee No.',
-      render: r => (
-        <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)', whiteSpace: 'nowrap', fontSize: 'var(--text-sm)' }}>
-          {r.employee_id_code}
-        </span>
-      ),
-    },
-    {
       key:    'employee_name',
-      header: 'Employee Name',
-      render: r => (
-        <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>
-          {r.employee_name || '—'}
-        </span>
-      ),
+      header: 'Employee',
+      render: r => <PersonCell name={r.employee_name || '—'} secondary={r.employee_id_code} avatarUrl={null} />,
     },
     {
       key:    'assignments',
       header: 'Assigned Locations',
       render: r => (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-1-5)' }}>
-          {r.assignments.map(a => (
-            <span
-              key={a.id}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                background: 'var(--brand)',
-                color: 'var(--primary-foreground)',
-                borderRadius: 'var(--radius-full)',
-                padding: '2px 6px 2px 10px',
-                fontSize: 'var(--text-xs)',
-                fontWeight: 500,
-              }}
-            >
-              {a.office_location_name}
-              <button
-                onClick={e => { e.stopPropagation(); removeMutation.mutate({ empId: r.employee_pk, assignId: a.id }); }}
-                title={`Remove ${a.office_location_name}`}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', alignItems: 'center' }}>
+          {r.assignments.length === 0
+            ? <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>No locations assigned</span>
+            : r.assignments.map(a => (
+              <span
+                key={a.id}
                 style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  padding: '0 2px', lineHeight: 1,
-                  color: 'currentColor', opacity: 0.55,
-                  fontSize: '1rem', transition: 'opacity 100ms',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: 'var(--surface-subtle)',
+                  border: '1px solid var(--border-default)',
+                  color: 'var(--text-primary)',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '3px 8px 3px 12px',
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: 500,
                 }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '0.55')}
-              >×</button>
-            </span>
-          ))}
+              >
+                <span style={{
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: 'var(--brand)', flexShrink: 0,
+                }} />
+                {a.office_location_name}
+                <button
+                  onClick={e => { e.stopPropagation(); removeMutation.mutate({ empId: r.employee_pk, assignId: a.id }); }}
+                  title={`Remove ${a.office_location_name}`}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    width: 16, height: 16, borderRadius: '50%',
+                    background: 'var(--border-default)', border: 'none', cursor: 'pointer',
+                    color: 'var(--text-secondary)', fontSize: 10, lineHeight: 1,
+                    transition: 'background 100ms, color 100ms', flexShrink: 0,
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.color = '#dc2626'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--border-default)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                >×</button>
+              </span>
+            ))
+          }
         </div>
       ),
     },
@@ -248,10 +243,16 @@ export default function EmployeeLocationsPage() {
             openDrawer({ id: r.employee_pk, full_name: r.employee_name, employee_id: r.employee_id_code });
           }}
           style={{
-            fontSize: 'var(--text-xs)', fontWeight: 500,
-            color: 'var(--brand)',
-            background: 'none', border: 'none', cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            fontSize: 'var(--text-xs)', fontWeight: 600,
+            color: 'var(--brand)', background: 'none',
+            border: '1px solid var(--brand)',
+            borderRadius: 'var(--radius-md)',
+            padding: '4px 10px', cursor: 'pointer',
+            whiteSpace: 'nowrap', transition: 'background 100ms',
           }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'var(--brand-subtle)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'none')}
         >
           + Add
         </button>
