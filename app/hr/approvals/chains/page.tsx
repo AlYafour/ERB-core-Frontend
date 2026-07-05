@@ -99,7 +99,15 @@ const INPUT: React.CSSProperties = {
   fontSize: 'var(--text-sm)',
 };
 
-const SELECT: React.CSSProperties = { ...INPUT, cursor: 'pointer' };
+const SELECT: React.CSSProperties = {
+  ...INPUT,
+  cursor: 'pointer',
+  appearance: 'none' as React.CSSProperties['appearance'],
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23999' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E")`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right 10px center',
+  paddingRight: 28,
+};
 
 // ── Specific-person picker (reuses ManagerPicker pattern from groups page) ────
 
@@ -233,6 +241,13 @@ function PersonPicker({
 
 // ── Stage row ─────────────────────────────────────────────────────────────────
 
+const BTN_ICON: React.CSSProperties = {
+  width: 26, height: 26, border: '1px solid var(--border-default)',
+  borderRadius: 'var(--radius-sm)', background: 'transparent',
+  fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center',
+  color: 'var(--text-secondary)',
+};
+
 function StageRowUI({
   stage, index, total, employees,
   onChange, onMove, onRemove,
@@ -245,20 +260,19 @@ function StageRowUI({
   onMove: (dir: -1 | 1) => void;
   onRemove: () => void;
 }) {
-  const managerStrategy = stage.strategy === 'DIRECT_MANAGER' || stage.strategy === 'INDIRECT_MANAGER';
+  const isManager = stage.strategy === 'DIRECT_MANAGER' || stage.strategy === 'INDIRECT_MANAGER';
 
   return (
     <div style={{
-      padding: '8px 10px',
-      background: 'var(--surface-subtle)',
-      border: '1px solid var(--border-subtle)',
+      border: '1px solid var(--border-default)',
       borderRadius: 'var(--radius-md)',
+      background: 'var(--surface-raised)',
+      overflow: 'hidden',
     }}>
-      {/* Main row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        {/* Ordinal badge */}
+      {/* Primary approver row */}
+      <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{
-          minWidth: 22, height: 22, borderRadius: '50%',
+          width: 24, height: 24, borderRadius: '50%',
           background: 'var(--brand)', color: 'var(--primary-foreground)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 11, fontWeight: 700, flexShrink: 0,
@@ -266,18 +280,14 @@ function StageRowUI({
           {index + 1}
         </span>
 
-        {/* Strategy selector */}
         <select
           value={stage.strategy}
           onChange={e => onChange({ strategy: e.target.value as ApproverStrategy, role_name: '', specific_user: null })}
           style={{ ...SELECT, minWidth: 160, flex: '0 0 auto' }}
         >
-          {STRATEGIES.map(s => (
-            <option key={s.value} value={s.value}>{s.label}</option>
-          ))}
+          {STRATEGIES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
 
-        {/* Conditional target input */}
         {stage.strategy === 'ROLE' && (
           <select
             value={stage.role_name}
@@ -285,9 +295,7 @@ function StageRowUI({
             style={{ ...SELECT, flex: 1 }}
           >
             <option value="">— select role —</option>
-            {ROLES.map(r => (
-              <option key={r.value} value={r.value}>{r.label}</option>
-            ))}
+            {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
           </select>
         )}
 
@@ -299,65 +307,35 @@ function StageRowUI({
           />
         )}
 
-        {managerStrategy && (
-          <span style={{ flex: 1, fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', paddingLeft: 4 }}>
+        {isManager && (
+          <span style={{ flex: 1, fontSize: 11, color: 'var(--text-tertiary)', fontStyle: 'italic', paddingLeft: 4 }}>
             resolved from employee&apos;s org chart at submission
           </span>
         )}
 
-        {/* Reorder + remove */}
-        <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
-          <button
-            type="button"
-            onClick={() => onMove(-1)}
-            disabled={index === 0}
-            title="Move up"
-            style={{
-              width: 26, height: 26, border: '1px solid var(--border-default)',
-              borderRadius: 'var(--radius-sm)', background: 'var(--surface-raised)',
-              cursor: index === 0 ? 'not-allowed' : 'pointer',
-              opacity: index === 0 ? 0.35 : 1,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
+        <div style={{ display: 'flex', gap: 3, flexShrink: 0, marginLeft: 4 }}>
+          <button type="button" onClick={() => onMove(-1)} disabled={index === 0} title="Move up"
+            style={{ ...BTN_ICON, cursor: index === 0 ? 'not-allowed' : 'pointer', opacity: index === 0 ? 0.3 : 1 }}>
             ↑
           </button>
-          <button
-            type="button"
-            onClick={() => onMove(1)}
-            disabled={index === total - 1}
-            title="Move down"
-            style={{
-              width: 26, height: 26, border: '1px solid var(--border-default)',
-              borderRadius: 'var(--radius-sm)', background: 'var(--surface-raised)',
-              cursor: index === total - 1 ? 'not-allowed' : 'pointer',
-              opacity: index === total - 1 ? 0.35 : 1,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
+          <button type="button" onClick={() => onMove(1)} disabled={index === total - 1} title="Move down"
+            style={{ ...BTN_ICON, cursor: index === total - 1 ? 'not-allowed' : 'pointer', opacity: index === total - 1 ? 0.3 : 1 }}>
             ↓
           </button>
-          <button
-            type="button"
-            onClick={onRemove}
-            title="Remove stage"
-            style={{
-              width: 26, height: 26, border: '1px solid var(--status-error-border)',
-              borderRadius: 'var(--radius-sm)', background: 'var(--color-error-light)',
-              cursor: 'pointer', color: 'var(--color-error)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
+          <button type="button" onClick={onRemove} title="Remove stage"
+            style={{ ...BTN_ICON, border: '1px solid var(--status-error-border, #fca5a5)', color: 'var(--color-error)', cursor: 'pointer' }}>
             ×
           </button>
         </div>
       </div>
 
-      {/* SoD fallback row — shown when manager strategy risks self-approval */}
-      {managerStrategy && (
+      {/* SoD fallback band — only for manager strategies */}
+      {isManager && (
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 6, marginTop: 6,
-          paddingLeft: 30,
+          borderTop: '1px solid var(--border-subtle)',
+          background: 'var(--surface-subtle)',
+          padding: '6px 12px 6px 44px',
+          display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
         }}>
           <span style={{ fontSize: 11, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
             If approver = requester →
@@ -366,26 +344,21 @@ function StageRowUI({
             value={stage.sod_fallback_strategy}
             onChange={e => onChange({
               sod_fallback_strategy: e.target.value as ApproverStrategy | '',
-              sod_fallback_role: '',
-              sod_fallback_user: null,
+              sod_fallback_role: '', sod_fallback_user: null,
             })}
-            style={{ ...SELECT, flex: '0 0 auto', minWidth: 150, padding: '3px 8px' }}
+            style={{ ...SELECT, flex: '0 0 auto', minWidth: 150, padding: '3px 28px 3px 8px', fontSize: 12 }}
           >
             <option value="">— stay pending —</option>
-            {STRATEGIES.map(s => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
+            {STRATEGIES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
           {stage.sod_fallback_strategy === 'ROLE' && (
             <select
               value={stage.sod_fallback_role}
               onChange={e => onChange({ sod_fallback_role: e.target.value })}
-              style={{ ...SELECT, flex: 1, padding: '3px 8px' }}
+              style={{ ...SELECT, flex: 1, padding: '3px 28px 3px 8px', fontSize: 12 }}
             >
               <option value="">— select role —</option>
-              {ROLES.map(r => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
+              {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
             </select>
           )}
           {stage.sod_fallback_strategy === 'SPECIFIC_USER' && (
@@ -397,9 +370,7 @@ function StageRowUI({
             />
           )}
           {(stage.sod_fallback_strategy === 'DIRECT_MANAGER' || stage.sod_fallback_strategy === 'INDIRECT_MANAGER') && (
-            <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-              escalates up the chain
-            </span>
+            <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>escalates up the chain</span>
           )}
         </div>
       )}
@@ -740,30 +711,40 @@ function ChainBuilder({
           {/* Stages */}
           <div>
             <label style={LABEL}>Stages — approvers in order</label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               {stages.map((stage, i) => (
-                <StageRowUI
-                  key={stage._key}
-                  stage={stage}
-                  index={i}
-                  total={stages.length}
-                  employees={employees}
-                  onChange={patch => updateStage(i, patch)}
-                  onMove={dir => moveStage(i, dir)}
-                  onRemove={() => removeStage(i)}
-                />
+                <div key={stage._key}>
+                  <StageRowUI
+                    stage={stage}
+                    index={i}
+                    total={stages.length}
+                    employees={employees}
+                    onChange={patch => updateStage(i, patch)}
+                    onMove={dir => moveStage(i, dir)}
+                    onRemove={() => removeStage(i)}
+                  />
+                  {i < stages.length - 1 && (
+                    <div style={{
+                      height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'var(--text-tertiary)', fontSize: 12, userSelect: 'none',
+                    }}>
+                      ↓
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
             <button
               type="button"
               onClick={addStage}
               style={{
-                marginTop: 8, padding: '6px 14px',
+                marginTop: 8, padding: '7px 14px',
                 border: '1px dashed var(--border-default)',
                 borderRadius: 'var(--radius-md)',
                 background: 'none', cursor: 'pointer',
                 color: 'var(--brand)',
                 fontSize: 'var(--text-sm)', fontWeight: 500,
+                width: '100%',
               }}
             >
               + Add Stage
