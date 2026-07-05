@@ -241,11 +241,24 @@ function PersonPicker({
 
 // ── Stage row ─────────────────────────────────────────────────────────────────
 
+const STRATEGY_META: Record<ApproverStrategy, { hint: string }> = {
+  DIRECT_MANAGER:   { hint: 'Resolved automatically — the employee\'s direct manager from their profile' },
+  INDIRECT_MANAGER: { hint: 'One level up — the manager\'s manager in the org chart' },
+  ROLE:             { hint: 'Sent to any active user who holds the selected system role' },
+  SPECIFIC_USER:    { hint: 'Always sent to the chosen person, regardless of org structure' },
+};
+
+const INLINE_SELECT: React.CSSProperties = {
+  ...SELECT,
+  width: 'auto',
+  minWidth: 0,
+};
+
 const BTN_ICON: React.CSSProperties = {
   width: 26, height: 26, border: '1px solid var(--border-default)',
   borderRadius: 'var(--radius-sm)', background: 'transparent',
   fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center',
-  color: 'var(--text-secondary)',
+  color: 'var(--text-secondary)', cursor: 'pointer', flexShrink: 0,
 };
 
 function StageRowUI({
@@ -261,6 +274,8 @@ function StageRowUI({
   onRemove: () => void;
 }) {
   const isManager = stage.strategy === 'DIRECT_MANAGER' || stage.strategy === 'INDIRECT_MANAGER';
+  const needsTarget = stage.strategy === 'ROLE' || stage.strategy === 'SPECIFIC_USER';
+  const hint = STRATEGY_META[stage.strategy]?.hint ?? '';
 
   return (
     <div style={{
@@ -269,30 +284,34 @@ function StageRowUI({
       background: 'var(--surface-raised)',
       overflow: 'hidden',
     }}>
-      {/* Primary approver row */}
+      {/* ── Top row: badge + type + target + actions ── */}
       <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+
+        {/* Ordinal badge */}
         <span style={{
-          width: 24, height: 24, borderRadius: '50%',
+          width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
           background: 'var(--brand)', color: 'var(--primary-foreground)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 11, fontWeight: 700, flexShrink: 0,
+          fontSize: 11, fontWeight: 700,
         }}>
           {index + 1}
         </span>
 
+        {/* Strategy type — fixed-width, does NOT grow */}
         <select
           value={stage.strategy}
           onChange={e => onChange({ strategy: e.target.value as ApproverStrategy, role_name: '', specific_user: null })}
-          style={{ ...SELECT, minWidth: 160, flex: '0 0 auto' }}
+          style={{ ...INLINE_SELECT, minWidth: 155 }}
         >
           {STRATEGIES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
 
+        {/* Target field — grows to fill remaining space */}
         {stage.strategy === 'ROLE' && (
           <select
             value={stage.role_name}
             onChange={e => onChange({ role_name: e.target.value })}
-            style={{ ...SELECT, flex: 1 }}
+            style={{ ...INLINE_SELECT, flex: 1, minWidth: 120 }}
           >
             <option value="">— select role —</option>
             {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
@@ -300,45 +319,57 @@ function StageRowUI({
         )}
 
         {stage.strategy === 'SPECIFIC_USER' && (
-          <PersonPicker
-            value={stage.specific_user}
-            onChange={id => onChange({ specific_user: id })}
-            employees={employees}
-          />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <PersonPicker
+              value={stage.specific_user}
+              onChange={id => onChange({ specific_user: id })}
+              employees={employees}
+            />
+          </div>
         )}
 
-        {isManager && (
-          <span style={{ flex: 1, fontSize: 11, color: 'var(--text-tertiary)', fontStyle: 'italic', paddingLeft: 4 }}>
-            resolved from employee&apos;s org chart at submission
-          </span>
-        )}
+        {/* Spacer for manager strategies (no target) */}
+        {isManager && <span style={{ flex: 1 }} />}
 
-        <div style={{ display: 'flex', gap: 3, flexShrink: 0, marginLeft: 4 }}>
+        {/* Reorder + remove */}
+        <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
           <button type="button" onClick={() => onMove(-1)} disabled={index === 0} title="Move up"
-            style={{ ...BTN_ICON, cursor: index === 0 ? 'not-allowed' : 'pointer', opacity: index === 0 ? 0.3 : 1 }}>
+            style={{ ...BTN_ICON, opacity: index === 0 ? 0.3 : 1, cursor: index === 0 ? 'not-allowed' : 'pointer' }}>
             ↑
           </button>
           <button type="button" onClick={() => onMove(1)} disabled={index === total - 1} title="Move down"
-            style={{ ...BTN_ICON, cursor: index === total - 1 ? 'not-allowed' : 'pointer', opacity: index === total - 1 ? 0.3 : 1 }}>
+            style={{ ...BTN_ICON, opacity: index === total - 1 ? 0.3 : 1, cursor: index === total - 1 ? 'not-allowed' : 'pointer' }}>
             ↓
           </button>
           <button type="button" onClick={onRemove} title="Remove stage"
-            style={{ ...BTN_ICON, border: '1px solid var(--status-error-border, #fca5a5)', color: 'var(--color-error)', cursor: 'pointer' }}>
+            style={{ ...BTN_ICON, border: '1px solid var(--status-error-border, #fca5a5)', color: 'var(--color-error)' }}>
             ×
           </button>
         </div>
       </div>
 
-      {/* SoD fallback band — only for manager strategies */}
+      {/* ── Hint line ── */}
+      <div style={{
+        padding: needsTarget ? '0 12px 8px 44px' : '0 12px 8px 44px',
+        fontSize: 11, color: 'var(--text-tertiary)', fontStyle: 'italic',
+        lineHeight: 1.4,
+      }}>
+        {hint}
+      </div>
+
+      {/* ── SoD fallback band (manager strategies only) ── */}
       {isManager && (
         <div style={{
           borderTop: '1px solid var(--border-subtle)',
           background: 'var(--surface-subtle)',
-          padding: '6px 12px 6px 44px',
+          padding: '7px 12px',
           display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
         }}>
-          <span style={{ fontSize: 11, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
-            If approver = requester →
+          <span style={{
+            fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500,
+            whiteSpace: 'nowrap', flexShrink: 0,
+          }}>
+            If this person would approve their own request:
           </span>
           <select
             value={stage.sod_fallback_strategy}
@@ -346,31 +377,35 @@ function StageRowUI({
               sod_fallback_strategy: e.target.value as ApproverStrategy | '',
               sod_fallback_role: '', sod_fallback_user: null,
             })}
-            style={{ ...SELECT, flex: '0 0 auto', minWidth: 150, padding: '3px 28px 3px 8px', fontSize: 12 }}
+            style={{ ...INLINE_SELECT, minWidth: 155, padding: '3px 28px 3px 8px', fontSize: 12 }}
           >
-            <option value="">— stay pending —</option>
+            <option value="">— leave pending for manual review —</option>
             {STRATEGIES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
           {stage.sod_fallback_strategy === 'ROLE' && (
             <select
               value={stage.sod_fallback_role}
               onChange={e => onChange({ sod_fallback_role: e.target.value })}
-              style={{ ...SELECT, flex: 1, padding: '3px 28px 3px 8px', fontSize: 12 }}
+              style={{ ...INLINE_SELECT, minWidth: 140, padding: '3px 28px 3px 8px', fontSize: 12 }}
             >
               <option value="">— select role —</option>
               {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
             </select>
           )}
           {stage.sod_fallback_strategy === 'SPECIFIC_USER' && (
-            <PersonPicker
-              value={stage.sod_fallback_user}
-              onChange={id => onChange({ sod_fallback_user: id })}
-              employees={employees}
-              placeholder="— pick fallback person —"
-            />
+            <div style={{ minWidth: 180, flex: 1 }}>
+              <PersonPicker
+                value={stage.sod_fallback_user}
+                onChange={id => onChange({ sod_fallback_user: id })}
+                employees={employees}
+                placeholder="— pick fallback person —"
+              />
+            </div>
           )}
           {(stage.sod_fallback_strategy === 'DIRECT_MANAGER' || stage.sod_fallback_strategy === 'INDIRECT_MANAGER') && (
-            <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>escalates up the chain</span>
+            <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+              escalates up the chain
+            </span>
           )}
         </div>
       )}
