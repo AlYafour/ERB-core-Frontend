@@ -745,6 +745,13 @@ export interface HRAttendance {
   overtime_hours: number | null;
   duration_hours: number | null;
   notes: string;
+  effective_shift: number | null;
+  shift_name: string | null;
+  shift_start_time: string | null;
+  shift_end_time: string | null;
+  scheduled_hours: number | null;
+  late_minutes: number | null;
+  early_leave_minutes: number | null;
   created_at: string;
   updated_at: string;
 }

@@ -16,6 +16,13 @@ import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { ATTENDANCE_STATUS } from '@/lib/utils/status-colors';
 
+function fmtShiftTime(t: string): string {
+  if (!t) return '';
+  const [h, m] = t.split(':');
+  const hour = parseInt(h, 10);
+  return `${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+}
+
 const STATUS_LABEL: Record<string, string> = {
   present: 'Present', absent: 'Absent', late: 'Late',
   half_day: 'Half Day', holiday: 'Holiday', on_leave: 'On Leave',
@@ -293,6 +300,22 @@ export default function HRAttendancePage() {
             {formatTime(r.break_start)}{r.break_end ? `–${formatTime(r.break_end)}` : '…'}
           </span>
         : <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>—</span>,
+    },
+    {
+      key: 'shift', header: 'Shift',
+      render: r => {
+        if (!r.shift_name) return <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>—</span>;
+        const start = r.shift_start_time ? fmtShiftTime(r.shift_start_time) : '';
+        const end   = r.shift_end_time   ? fmtShiftTime(r.shift_end_time)   : '';
+        return (
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', margin: 0, whiteSpace: 'nowrap' }}>{r.shift_name}</p>
+            {start && end && (
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '1px 0 0', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>{start} – {end}</p>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: 'work', header: 'Work Hrs',
