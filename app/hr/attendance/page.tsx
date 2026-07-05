@@ -151,11 +151,12 @@ function AttendanceEditModal({
 
 // ── Today + Export buttons ────────────────────────────────────
 function QuickActions({
-  isToday, onToday, onExport, hasRecords,
+  isToday, onToday, onExport, onRecalcAll, hasRecords,
 }: {
   isToday: boolean;
   onToday: () => void;
   onExport: () => void;
+  onRecalcAll: () => void;
   hasRecords: boolean;
 }) {
   const btnStyle: React.CSSProperties = {
@@ -177,6 +178,9 @@ function QuickActions({
             Today
           </>
         )}
+      </button>
+      <button style={{ ...btnStyle, borderColor: 'var(--brand)', color: 'var(--brand)' }} onClick={onRecalcAll}>
+        ↻ Recalculate Overtime
       </button>
       {hasRecords && (
         <button style={btnStyle} onClick={onExport}>
@@ -233,6 +237,15 @@ export default function HRAttendancePage() {
       toast('Metrics recalculated', 'success');
     },
     onError: (err: any) => toast(err?.response?.data?.detail ?? 'Recalculation failed', 'error'),
+  });
+
+  const bulkRecalcMutation = useMutation({
+    mutationFn: () => hrAttendanceApi.bulkRecalculate(),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['hr-attendance'] });
+      toast(`Updated ${res.updated} records${res.skipped_no_shift ? ` (${res.skipped_no_shift} skipped — no shift)` : ''}`, 'success');
+    },
+    onError: () => toast('Bulk recalculation failed', 'error'),
   });
 
   const exportCSV = () => {
@@ -328,6 +341,7 @@ export default function HRAttendancePage() {
             : handleFilterChange({ ...filters, date: todayStr })
           }
           onExport={exportCSV}
+          onRecalcAll={() => bulkRecalcMutation.mutate()}
           hasRecords={records.length > 0}
         />
       }

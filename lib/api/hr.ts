@@ -240,6 +240,10 @@ export const hrAttendanceApi = {
     const response = await apiClient.post(`/hr/attendance/${id}/recalculate/`);
     return response.data;
   },
+  bulkRecalculate: async (): Promise<{ updated: number; skipped_no_shift: number }> => {
+    const response = await apiClient.post('/hr/attendance/bulk-recalculate/');
+    return response.data;
+  },
   getShifts: async (): Promise<PaginatedResponse<HRShift>> => {
     const response = await apiClient.get('/hr/attendance/shifts/');
     return response.data;
