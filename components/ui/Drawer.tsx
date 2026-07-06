@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { ReactNode, useEffect } from 'react';
 import { XIcon } from '@/components/icons';
@@ -45,7 +45,7 @@ export default function Drawer({
         style={{
           position: 'fixed',
           inset: 0,
-          zIndex: 49,
+          zIndex: 9099,
           background: 'rgba(0,0,0,0.44)',
           backdropFilter: 'blur(2px)',
           opacity: isOpen ? 1 : 0,
@@ -63,7 +63,7 @@ export default function Drawer({
           width,
           maxWidth: '100vw',
           height: '100vh',
-          zIndex: 50,
+          zIndex: 9100,
           display: 'flex',
           flexDirection: 'column',
           background: 'var(--card-bg)',
