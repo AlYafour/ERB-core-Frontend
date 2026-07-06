@@ -4,13 +4,14 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
-import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi, hrEmployeeGroupsApi, hrLocationsApi, hrLegalEntitiesApi } from '@/lib/api/hr';
+import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi, hrEmployeeGroupsApi, hrOfficeLocationsApi, hrLegalEntitiesApi } from '@/lib/api/hr';
 import { usersApi } from '@/lib/api/users';
 import type { User } from '@/types';
 import { toast } from '@/lib/hooks/use-toast';
 import { Button, PageHeader, PageShell } from '@/components/ui';
 import SearchableDropdown, { DropdownOption } from '@/components/ui/SearchableDropdown';
 import DateInput from '@/components/ui/DateInput';
+import PhoneInput from '@/components/ui/PhoneInput';
 import { HRPosition } from '@/types';
 
 // ── Static option lists ────────────────────────────────────────────────────────
@@ -48,6 +49,21 @@ const RELIGION_OPTS: DropdownOption[] = [
   { value: 'Buddhism',     label: 'Buddhism' },
   { value: 'Other',        label: 'Other' },
 ];
+
+const EMPLOYMENT_TYPE_OPTS: DropdownOption[] = [
+  { value: 'full_time', label: 'Full Time' },
+  { value: 'part_time', label: 'Part Time' },
+  { value: 'contract',  label: 'Contract'  },
+  { value: 'intern',    label: 'Intern'    },
+];
+
+function formatEmiratesId(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 15);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  if (digits.length <= 14) return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7, 14)}-${digits.slice(14)}`;
+}
 
 export default function NewEmployeePage() {
   return (
@@ -123,16 +139,16 @@ function NewEmployeeForm() {
   const { data: depts }         = useQuery({ queryKey: ['hr-depts'],             queryFn: () => hrDepartmentsApi.getAll({ page: 1 }),       staleTime: 300_000 });
   const { data: positions }     = useQuery({ queryKey: ['hr-positions'],          queryFn: () => hrPositionsApi.getAll({ page: 1 }),          staleTime: 300_000 });
   const { data: groups }        = useQuery({ queryKey: ['hr-employee-groups-all'], queryFn: () => hrEmployeeGroupsApi.getAll(),              staleTime: 300_000 });
-  const { data: locations }     = useQuery({ queryKey: ['hr-locations'],          queryFn: () => hrLocationsApi.getAll({ is_active: true }),  staleTime: 300_000 });
-  const { data: legalEntities } = useQuery({ queryKey: ['hr-legal-entities'],     queryFn: () => hrLegalEntitiesApi.getAll(),                 staleTime: 300_000 });
-  const { data: managers }      = useQuery({ queryKey: ['hr-employees-minimal'],  queryFn: () => hrEmployeesApi.getMinimal(),                 staleTime: 60_000 });
+  const { data: officeLocations } = useQuery({ queryKey: ['hr-office-locations'],  queryFn: () => hrOfficeLocationsApi.getAll({ is_active: true }), staleTime: 300_000 });
+  const { data: legalEntities }   = useQuery({ queryKey: ['hr-legal-entities'],   queryFn: () => hrLegalEntitiesApi.getAll(),                      staleTime: 300_000 });
+  const { data: managers }        = useQuery({ queryKey: ['hr-managers'],         queryFn: () => hrEmployeesApi.getAll({ is_manager: true, is_active: true, page_size: 200 }), staleTime: 60_000 });
 
-  const deptOptions        = (depts?.results         ?? []).map((d)  => ({ value: d.id,  label: d.name }));
-  const positionOptions    = (positions?.results     ?? []).map((p)  => ({ value: p.id,  label: p.title }));
-  const groupOptions       = (groups?.results        ?? []).map((g)  => ({ value: g.id,  label: g.name }));
-  const locationOptions    = (locations?.results     ?? []).map((l)  => ({ value: l.id,  label: l.name }));
-  const legalEntityOptions = (legalEntities?.results ?? []).map((le) => ({ value: le.id, label: le.name }));
-  const managerOptions     = (managers               ?? []).map((m)  => ({ value: m.id,  label: `${m.full_name} (${m.employee_id})` }));
+  const deptOptions           = (depts?.results          ?? []).map((d)  => ({ value: d.id,  label: d.name }));
+  const positionOptions       = (positions?.results      ?? []).map((p)  => ({ value: p.id,  label: p.title }));
+  const groupOptions          = (groups?.results         ?? []).map((g)  => ({ value: g.id,  label: g.name }));
+  const officeLocationOptions = (officeLocations?.results ?? []).map((l) => ({ value: l.id,  label: l.name }));
+  const legalEntityOptions    = (legalEntities?.results  ?? []).map((le) => ({ value: le.id, label: le.name }));
+  const managerOptions        = (managers?.results       ?? []).map((m)  => ({ value: m.id,  label: `${m.full_name} (${m.employee_id})` }));
 
   const selectedPosition: HRPosition | undefined = positions?.results?.find(
     (pos: HRPosition) => pos.id === employment.position
@@ -199,7 +215,7 @@ function NewEmployeeForm() {
             email:       account.email,
             phone:       account.phone,
             password:    account.password,
-            role:        account.role,
+            role:        account.role as User['role'],
             is_active:   account.is_active,
           });
         } catch (userErr: unknown) {
@@ -228,7 +244,7 @@ function NewEmployeeForm() {
         userId = createdUser.id;
       }
 
-      await createEmpMutation.mutateAsync(buildEmpPayload(userId));
+      await createEmpMutation.mutateAsync(buildEmpPayload(userId) as Partial<import('@/types').HREmployee>);
       toast('Employee created successfully', 'success');
       router.push('/hr/employees');
     } catch (err: unknown) {
@@ -322,7 +338,16 @@ function NewEmployeeForm() {
                 <SearchableDropdown options={religionOpts} value={personal.religion} onChange={(v) => setPersonal(prev => ({ ...prev, religion: String(v ?? '') }))} placeholder="" allowClear
                   onCreateOption={async (label) => { const opt: DropdownOption = { value: label, label }; setReligionOpts(prev => [...prev, opt]); return opt; }} createLabel="Add" />
               </div>
-              <div className="form-field"><label className="form-label">National ID</label><input className="form-input" value={personal.national_id} onChange={p('national_id')} /></div>
+              <div className="form-field">
+                <label className="form-label">National ID</label>
+                <input
+                  className="form-input"
+                  value={personal.national_id}
+                  onChange={(e) => setPersonal(prev => ({ ...prev, national_id: formatEmiratesId(e.target.value) }))}
+                  inputMode="numeric"
+                  maxLength={18}
+                />
+              </div>
               <div className="form-field"><label className="form-label">Personal Email</label><input className="form-input" type="email" value={personal.personal_email} onChange={p('personal_email')} /></div>
               <div className="form-field"><label className="form-label">Passport Number</label><input className="form-input" value={personal.passport_number} onChange={p('passport_number')} /></div>
               <div className="form-field"><label className="form-label">Passport Issue Date</label><DateInput className="form-input" value={personal.passport_issue_date} onChange={(v) => setPersonal(prev => ({ ...prev, passport_issue_date: v }))} /></div>
@@ -342,13 +367,14 @@ function NewEmployeeForm() {
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
             <h2 style={{ fontWeight: 'var(--weight-semibold)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-3)', margin: 0 }}>Employment Details</h2>
             <div className="form-grid">
-              <div className="form-field"><label className="form-label">Employment Type</label>
-                <select className="form-select" value={employment.employment_type} onChange={em('employment_type')}>
-                  <option value="full_time">Full Time</option>
-                  <option value="part_time">Part Time</option>
-                  <option value="contract">Contract</option>
-                  <option value="intern">Intern</option>
-                </select>
+              <div className="form-field">
+                <label className="form-label">Employment Type</label>
+                <SearchableDropdown
+                  options={EMPLOYMENT_TYPE_OPTS}
+                  value={employment.employment_type}
+                  onChange={(v) => setEmployment((p) => ({ ...p, employment_type: String(v ?? 'full_time') }))}
+                  placeholder=""
+                />
               </div>
               <div className="form-field">
                 <label className="form-label">Employee Category</label>
@@ -431,7 +457,7 @@ function NewEmployeeForm() {
               <div className="form-field">
                 <label className="form-label">Work Location</label>
                 <SearchableDropdown
-                  options={locationOptions}
+                  options={officeLocationOptions}
                   value={employment.location}
                   onChange={(v) => setEmployment((p) => ({ ...p, location: v as number | null }))}
                   placeholder=""
@@ -450,7 +476,7 @@ function NewEmployeeForm() {
               </div>
               <div className="form-field">
                 <label className="form-label">Mobile Number</label>
-                <input className="form-input" type="tel" value={employment.mobile_number} onChange={em('mobile_number')} />
+                <PhoneInput value={employment.mobile_number} onChange={(v) => setEmployment((p) => ({ ...p, mobile_number: v }))} />
               </div>
               <div className="form-field"><label className="form-label">Hiring Date *</label><DateInput className="form-input" value={employment.join_date} onChange={(v) => setEmployment(prev => ({ ...prev, join_date: v }))} /></div>
               <div className="form-field"><label className="form-label">End of Probation</label><DateInput className="form-input" value={employment.probation_end_date} onChange={(v) => setEmployment(prev => ({ ...prev, probation_end_date: v }))} /></div>

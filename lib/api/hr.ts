@@ -113,7 +113,7 @@ export const hrLocationsApi = {
 // ── Employees ──────────────────────────────────────────────────────────────────
 
 export const hrEmployeesApi = {
-  getAll: async (params?: { page?: number; search?: string; department?: number; position?: number; is_active?: boolean; employment_type?: string; user?: number }): Promise<PaginatedResponse<HREmployee>> => {
+  getAll: async (params?: { page?: number; search?: string; department?: number; position?: number; is_active?: boolean; employment_type?: string; user?: number; is_manager?: boolean; page_size?: number }): Promise<PaginatedResponse<HREmployee>> => {
     const response = await apiClient.get('/hr/employees/', { params });
     return toPage(response.data);
   },

@@ -30,7 +30,7 @@ export const usersApi = {
     return response.data;
   },
 
-  create: async (data: Partial<User>): Promise<User> => {
+  create: async (data: Partial<User> & { password?: string }): Promise<User> => {
     // Check if avatar is a File object (for upload)
     const formData = new FormData();
     let hasFile = false;
