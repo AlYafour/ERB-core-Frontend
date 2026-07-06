@@ -145,7 +145,9 @@ function NewEmployeeForm() {
   const { data: managers }        = useQuery({ queryKey: ['hr-managers'],         queryFn: () => hrEmployeesApi.getAll({ is_manager: true, is_active: true, page_size: 200 }), staleTime: 60_000 });
 
   const deptOptions           = (depts?.results          ?? []).map((d)  => ({ value: d.id,  label: d.name }));
-  const positionOptions       = (positions?.results      ?? []).map((p)  => ({ value: p.id,  label: p.title }));
+  const positionOptions       = (positions?.results      ?? [])
+    .filter((p) => !employment.department || p.department === employment.department)
+    .map((p)  => ({ value: p.id, label: p.title }));
   const groupOptions          = (groups?.results         ?? []).map((g)  => ({ value: g.id,  label: g.name }));
   const officeLocationOptions = (officeLocations?.results ?? []).map((l) => ({ value: l.id,  label: l.name }));
   const legalEntityOptions    = (legalEntities?.results  ?? []).map((le) => ({ value: le.id, label: le.name }));
@@ -406,7 +408,12 @@ function NewEmployeeForm() {
                 <SearchableDropdown
                   options={deptOptions}
                   value={employment.department}
-                  onChange={(v) => setEmployment((p) => ({ ...p, department: v as number | null }))}
+                  onChange={(v) => setEmployment((p) => {
+                    const newDept = v as number | null;
+                    const currentPos = positions?.results?.find(pos => pos.id === p.position);
+                    const positionStillValid = !newDept || currentPos?.department === newDept;
+                    return { ...p, department: newDept, position: positionStillValid ? p.position : null };
+                  })}
                   placeholder=""
                   allowClear
                   onCreateOption={async (name) => {
