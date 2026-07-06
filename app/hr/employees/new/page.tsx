@@ -322,7 +322,8 @@ function NewEmployeeForm() {
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
             <h2 style={{ fontWeight: 'var(--weight-semibold)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-3)', margin: 0 }}>Personal Information</h2>
             <div className="form-grid">
-              <div className="form-field"><label className="form-label">English Name *</label><input className="form-input" value={personal.first_name} onChange={p('first_name')} /></div>
+              <div className="form-field"><label className="form-label">First Name *</label><input className="form-input" value={personal.first_name} onChange={p('first_name')} /></div>
+              <div className="form-field"><label className="form-label">Last Name</label><input className="form-input" value={personal.last_name} onChange={p('last_name')} /></div>
               <div className="form-field"><label className="form-label">Arabic Name</label><input className="form-input" value={personal.full_name_ar} onChange={p('full_name_ar')} dir="rtl" /></div>
               <div className="form-field">
                 <label className="form-label">Gender</label>
