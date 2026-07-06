@@ -295,89 +295,37 @@ function NewEmployeeForm() {
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
             <h2 style={{ fontWeight: 'var(--weight-semibold)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-3)', margin: 0 }}>Personal Information</h2>
             <div className="form-grid">
-              {/* Name — English */}
-              <div className="form-field"><label className="form-label">First Name — الاسم الأول *</label><input className="form-input" value={personal.first_name} onChange={p('first_name')} /></div>
-              <div className="form-field"><label className="form-label">Last Name — الاسم الأخير</label><input className="form-input" value={personal.last_name} onChange={p('last_name')} /></div>
-              {/* Name — Arabic */}
-              <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-                <label className="form-label">الاسم الكامل بالعربي — Full Arabic Name</label>
-                <input className="form-input" value={personal.full_name_ar} onChange={p('full_name_ar')} placeholder="مثال: نورهان أحمد كامل" dir="rtl" />
-              </div>
-              {/* Personal */}
+              <div className="form-field"><label className="form-label">English Name *</label><input className="form-input" value={personal.first_name} onChange={p('first_name')} placeholder="e.g. Nourhan Ahmed" /></div>
+              <div className="form-field"><label className="form-label">Arabic Name</label><input className="form-input" value={personal.full_name_ar} onChange={p('full_name_ar')} placeholder="مثال: نورهان أحمد كامل" dir="rtl" /></div>
               <div className="form-field">
-                <label className="form-label">Gender — الجنس</label>
-                <SearchableDropdown
-                  options={GENDER_OPTS}
-                  value={personal.gender}
-                  onChange={(v) => setPersonal(prev => ({ ...prev, gender: String(v ?? '') }))}
-                  placeholder="— Select —"
-                  allowClear
-                />
+                <label className="form-label">Gender</label>
+                <SearchableDropdown options={GENDER_OPTS} value={personal.gender} onChange={(v) => setPersonal(prev => ({ ...prev, gender: String(v ?? '') }))} placeholder="— Select —" allowClear />
               </div>
               <div className="form-field">
-                <label className="form-label">Marital Status — الحالة الاجتماعية</label>
-                <SearchableDropdown
-                  options={MARITAL_OPTS}
-                  value={personal.marital_status}
-                  onChange={(v) => setPersonal(prev => ({ ...prev, marital_status: String(v ?? '') }))}
-                  placeholder="— Select —"
-                  allowClear
-                />
+                <label className="form-label">Marital Status</label>
+                <SearchableDropdown options={MARITAL_OPTS} value={personal.marital_status} onChange={(v) => setPersonal(prev => ({ ...prev, marital_status: String(v ?? '') }))} placeholder="— Select —" allowClear />
               </div>
-              <div className="form-field"><label className="form-label">Date of Birth — تاريخ الميلاد</label><input className="form-input" type="date" value={personal.date_of_birth} onChange={p('date_of_birth')} /></div>
+              <div className="form-field"><label className="form-label">Date of Birth</label><input className="form-input" type="date" value={personal.date_of_birth} onChange={p('date_of_birth')} /></div>
               <div className="form-field">
-                <label className="form-label">Nationality — الجنسية</label>
-                <SearchableDropdown
-                  options={nationalityOpts}
-                  value={personal.nationality}
-                  onChange={(v) => setPersonal(prev => ({ ...prev, nationality: String(v ?? '') }))}
-                  placeholder="— Select or add —"
-                  allowClear
-                  onCreateOption={async (label) => {
-                    const opt: DropdownOption = { value: label, label };
-                    setNationalityOpts(prev => [...prev, opt]);
-                    return opt;
-                  }}
-                  createLabel="Add nationality"
-                />
+                <label className="form-label">Nationality</label>
+                <SearchableDropdown options={nationalityOpts} value={personal.nationality} onChange={(v) => setPersonal(prev => ({ ...prev, nationality: String(v ?? '') }))} placeholder="— Select or add —" allowClear
+                  onCreateOption={async (label) => { const opt: DropdownOption = { value: label, label }; setNationalityOpts(prev => [...prev, opt]); return opt; }} createLabel="Add" />
               </div>
               <div className="form-field">
-                <label className="form-label">Home Country — بلد الإقامة</label>
-                <SearchableDropdown
-                  options={homeCountryOpts}
-                  value={personal.home_country}
-                  onChange={(v) => setPersonal(prev => ({ ...prev, home_country: String(v ?? '') }))}
-                  placeholder="— Select or add —"
-                  allowClear
-                  onCreateOption={async (label) => {
-                    const opt: DropdownOption = { value: label, label };
-                    setHomeCountryOpts(prev => [...prev, opt]);
-                    return opt;
-                  }}
-                  createLabel="Add country"
-                />
+                <label className="form-label">Home Country</label>
+                <SearchableDropdown options={homeCountryOpts} value={personal.home_country} onChange={(v) => setPersonal(prev => ({ ...prev, home_country: String(v ?? '') }))} placeholder="— Select or add —" allowClear
+                  onCreateOption={async (label) => { const opt: DropdownOption = { value: label, label }; setHomeCountryOpts(prev => [...prev, opt]); return opt; }} createLabel="Add" />
               </div>
               <div className="form-field">
-                <label className="form-label">Religion — الديانة</label>
-                <SearchableDropdown
-                  options={religionOpts}
-                  value={personal.religion}
-                  onChange={(v) => setPersonal(prev => ({ ...prev, religion: String(v ?? '') }))}
-                  placeholder="— Select or add —"
-                  allowClear
-                  onCreateOption={async (label) => {
-                    const opt: DropdownOption = { value: label, label };
-                    setReligionOpts(prev => [...prev, opt]);
-                    return opt;
-                  }}
-                  createLabel="Add religion"
-                />
+                <label className="form-label">Religion</label>
+                <SearchableDropdown options={religionOpts} value={personal.religion} onChange={(v) => setPersonal(prev => ({ ...prev, religion: String(v ?? '') }))} placeholder="— Select or add —" allowClear
+                  onCreateOption={async (label) => { const opt: DropdownOption = { value: label, label }; setReligionOpts(prev => [...prev, opt]); return opt; }} createLabel="Add" />
               </div>
-              <div className="form-field"><label className="form-label">National ID — الهوية</label><input className="form-input" value={personal.national_id} onChange={p('national_id')} /></div>
-              <div className="form-field"><label className="form-label">Personal Email — البريد الشخصي</label><input className="form-input" type="email" value={personal.personal_email} onChange={p('personal_email')} /></div>
-              <div className="form-field"><label className="form-label">Passport Number — رقم الجواز</label><input className="form-input" value={personal.passport_number} onChange={p('passport_number')} /></div>
-              <div className="form-field"><label className="form-label">Passport Issue Date — تاريخ الإصدار</label><input className="form-input" type="date" value={personal.passport_issue_date} onChange={p('passport_issue_date')} /></div>
-              <div className="form-field"><label className="form-label">Passport Expiry Date — تاريخ الانتهاء</label><input className="form-input" type="date" value={personal.passport_expiry_date} onChange={p('passport_expiry_date')} /></div>
+              <div className="form-field"><label className="form-label">National ID</label><input className="form-input" value={personal.national_id} onChange={p('national_id')} /></div>
+              <div className="form-field"><label className="form-label">Personal Email</label><input className="form-input" type="email" value={personal.personal_email} onChange={p('personal_email')} /></div>
+              <div className="form-field"><label className="form-label">Passport Number</label><input className="form-input" value={personal.passport_number} onChange={p('passport_number')} /></div>
+              <div className="form-field"><label className="form-label">Passport Issue Date</label><input className="form-input" type="date" value={personal.passport_issue_date} onChange={p('passport_issue_date')} /></div>
+              <div className="form-field"><label className="form-label">Passport Expiry Date</label><input className="form-input" type="date" value={personal.passport_expiry_date} onChange={p('passport_expiry_date')} /></div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 'var(--space-2)' }}>
               <Button variant="primary" onClick={() => {
