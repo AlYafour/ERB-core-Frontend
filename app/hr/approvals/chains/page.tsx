@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { hrApprovalsApi, hrEmployeeGroupsApi, hrEmployeesApi, hrRolesApi } from '@/lib/api/hr';
+import { hrApprovalsApi, hrEmployeeGroupsApi, hrEmployeesApi } from '@/lib/api/hr';
+import { rolesApi, type Role } from '@/lib/api/roles';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
@@ -12,7 +13,7 @@ import { type Column } from '@/components/ui/DataTable';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { RowActions } from '@/components/ui/RowActions';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
-import type { ApprovalPolicy, ApprovalStep, ApproverStrategy, ConditionOperator, EmployeeGroup, HREmployee, HRTenantRole } from '@/types';
+import type { ApprovalPolicy, ApprovalStep, ApproverStrategy, ConditionOperator, EmployeeGroup, HREmployee } from '@/types';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -376,7 +377,7 @@ function StageRowUI({
   index: number;
   total: number;
   employees: HREmployee[];
-  tenantRoles: HRTenantRole[];
+  tenantRoles: Role[];
   onChange: (patch: Partial<StageRow>) => void;
   onMove: (dir: -1 | 1) => void;
   onRemove: () => void;
@@ -536,7 +537,7 @@ function ChainBuilder({
   groups: EmployeeGroup[];
   requestTypes: import('@/lib/api/hr').HRRequestType[];
   employees: HREmployee[];
-  tenantRoles: HRTenantRole[];
+  tenantRoles: Role[];
   onClose: () => void;
 }) {
   const qc = useQueryClient();
@@ -981,11 +982,8 @@ export default function ApprovalChainsPage() {
   });
 
   const { data: tenantRoles = [] } = useQuery({
-    queryKey: ['tenant-roles'],
-    queryFn: async (): Promise<HRTenantRole[]> => {
-      const res = await hrRolesApi.getAll();
-      return res.results ?? [];
-    },
+    queryKey: ['permission-roles'],
+    queryFn: (): Promise<Role[]> => rolesApi.getAll(),
     staleTime: 300_000,
   });
 
