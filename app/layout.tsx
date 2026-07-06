@@ -39,7 +39,7 @@ export default function RootLayout({
           }
         `}} />
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <Providers>
           <TenantThemeInjector />
           {children}

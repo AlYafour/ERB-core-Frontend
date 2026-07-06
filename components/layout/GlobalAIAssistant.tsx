@@ -76,6 +76,7 @@ export default function GlobalAIAssistant() {
   const [isLoading, setIsLoading] = useState(false);
   const [liveTools, setLiveTools] = useState<ToolCallRecord[]>([]);
   const [isListening, setIsListening] = useState(false);
+  const [hasSR, setHasSR] = useState(false);
 
   const bottomRef  = useRef<HTMLDivElement>(null);
   const inputRef   = useRef<HTMLTextAreaElement>(null);
@@ -89,6 +90,7 @@ export default function GlobalAIAssistant() {
   const companyName = tenantData?.branding?.company_legal_name || tenantData?.name || undefined;
 
   useEffect(() => {
+    setHasSR(!!getSpeechRecognition());
     try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) setMessages(JSON.parse(raw)); } catch {}
   }, []);
 
@@ -192,8 +194,6 @@ export default function GlobalAIAssistant() {
     setMessages([]);
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
   };
-
-  const hasSR = typeof window !== 'undefined' && !!getSpeechRecognition();
 
   return (
     <>
