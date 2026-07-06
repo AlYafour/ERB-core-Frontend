@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
@@ -120,6 +120,10 @@ function NewEmployeeForm() {
     role: 'employee', is_active: false,
   });
 
+  const [avatarFile,    setAvatarFile]    = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const { data: existingUser } = useQuery({
     queryKey: ['user-for-employee', existingUserId],
     queryFn: () => usersApi.getById(existingUserId!),
@@ -227,6 +231,7 @@ function NewEmployeeForm() {
             password:    account.password,
             role:        account.role as User['role'],
             is_active:   account.is_active,
+            ...(avatarFile ? { avatar: avatarFile } : {}),
           });
         } catch (userErr: unknown) {
           // Username conflict: user was created before but employee record failed.
@@ -544,6 +549,47 @@ function NewEmployeeForm() {
         {step === 2 && !existingUserId && (
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
             <h2 style={{ fontWeight: 'var(--weight-semibold)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-3)', margin: 0 }}>System Account & Access</h2>
+
+            {/* Profile Picture */}
+            <div className="form-field">
+              <label className="form-label">Profile Picture</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+                <div style={{
+                  width: 64, height: 64, borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+                  background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: '1.5rem', color: 'var(--text-tertiary)' }}>
+                      {personal.first_name ? personal.first_name[0].toUpperCase() : '?'}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 5 * 1024 * 1024) { toast('Max 5MB', 'error'); return; }
+                      setAvatarFile(file);
+                      const reader = new FileReader();
+                      reader.onloadend = () => setAvatarPreview(reader.result as string);
+                      reader.readAsDataURL(file);
+                    }} />
+                  <button type="button" className="btn btn-secondary"
+                    style={{ fontSize: 'var(--text-xs)', padding: '4px 12px' }}
+                    onClick={() => fileInputRef.current?.click()}>
+                    {avatarPreview ? 'Change Photo' : 'Upload Photo'}
+                  </button>
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 'var(--space-1)', margin: '4px 0 0' }}>
+                    JPG, PNG — max 5 MB
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="form-grid">
               <div className="form-field"><label className="form-label">Username *</label><input className="form-input" value={account.username} onChange={ac('username')} /></div>
               <div className="form-field"><label className="form-label">Work Email *</label><input className="form-input" type="email" value={account.email} onChange={ac('email')} /></div>
