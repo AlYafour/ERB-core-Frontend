@@ -99,7 +99,7 @@ function NewEmployeeForm() {
   const [religionOpts,    setReligionOpts]    = useState<DropdownOption[]>(RELIGION_OPTS);
 
   const [employment, setEmployment] = useState({
-    employment_type: 'full_time',
+    employment_type: '',
     join_date: new Date().toISOString().split('T')[0],
     probation_end_date: '', end_date: '',
     department:     null as number | null,
@@ -371,9 +371,10 @@ function NewEmployeeForm() {
                 <label className="form-label">Employment Type</label>
                 <SearchableDropdown
                   options={EMPLOYMENT_TYPE_OPTS}
-                  value={employment.employment_type}
-                  onChange={(v) => setEmployment((p) => ({ ...p, employment_type: String(v ?? 'full_time') }))}
+                  value={employment.employment_type || null}
+                  onChange={(v) => setEmployment((p) => ({ ...p, employment_type: String(v ?? '') }))}
                   placeholder=""
+                  allowClear
                 />
               </div>
               <div className="form-field">
