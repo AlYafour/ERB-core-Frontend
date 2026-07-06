@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment, EmployeeBankAccount, HRCompanySettings } from '@/types';
 
 function toPage<T>(data: T[] | PaginatedResponse<T>): PaginatedResponse<T> {
   if (Array.isArray(data)) return { results: data, count: data.length, next: null, previous: null };
@@ -146,6 +146,21 @@ export const hrEmployeesApi = {
   getMinimal: async (search?: string): Promise<EmployeeMinimal[]> => {
     const response = await apiClient.get('/hr/employees/minimal/', { params: search ? { search } : undefined });
     return response.data;
+  },
+  getBankAccounts: async (empId: number): Promise<EmployeeBankAccount[]> => {
+    const response = await apiClient.get(`/hr/employees/${empId}/bank-accounts/`);
+    return response.data;
+  },
+  addBankAccount: async (empId: number, data: Partial<EmployeeBankAccount>): Promise<EmployeeBankAccount> => {
+    const response = await apiClient.post(`/hr/employees/${empId}/bank-accounts/`, data);
+    return response.data;
+  },
+  updateBankAccount: async (empId: number, accId: number, data: Partial<EmployeeBankAccount>): Promise<EmployeeBankAccount> => {
+    const response = await apiClient.patch(`/hr/employees/${empId}/bank-accounts/${accId}/`, data);
+    return response.data;
+  },
+  deleteBankAccount: async (empId: number, accId: number): Promise<void> => {
+    await apiClient.delete(`/hr/employees/${empId}/bank-accounts/${accId}/`);
   },
 };
 
@@ -760,6 +775,19 @@ export const hrPenaltyRulesApi = {
   },
   seedUaeRules: async (): Promise<{ created_rules: number; created_tiers: number; skipped_existing: number }> => {
     const response = await apiClient.post('/hr/attendance/penalty-rules/seed-uae-rules/');
+    return response.data;
+  },
+};
+
+// ── Company Settings ──────────────────────────────────────────────────────────
+
+export const hrCompanySettingsApi = {
+  get: async (): Promise<HRCompanySettings> => {
+    const response = await apiClient.get('/hr/settings/company/');
+    return response.data;
+  },
+  update: async (data: Partial<HRCompanySettings>): Promise<HRCompanySettings> => {
+    const response = await apiClient.patch('/hr/settings/company/', data);
     return response.data;
   },
 };

@@ -783,7 +783,6 @@ export interface HRRequest {
   end_date: string | null;
   days: string | null;
   reason: string;
-  attachments: string[];
   approver: number | null;
   approver_name: string | null;
   approved_at: string | null;
@@ -797,6 +796,34 @@ export interface HRRequest {
     resolved_approver_id: number | null;
   } | null;
   created_at: string;
+  updated_at: string;
+}
+
+export interface EmployeeBankAccount {
+  id: number;
+  employee: number;
+  bank_name: string;
+  account_holder_name: string;
+  iban: string;
+  account_number: string;
+  swift_code: string;
+  is_primary: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HRCompanySettings {
+  id: number;
+  timezone: string;
+  working_days: number[];
+  work_start_time: string;
+  work_end_time: string;
+  late_threshold_mins: number;
+  office_address: string;
+  geofence_enforcement: 'enforce' | 'warn' | 'off';
+  currency: string;
+  annual_leave_days: number;
+  sick_leave_days: number;
   updated_at: string;
 }
 

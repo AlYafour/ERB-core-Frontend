@@ -16,7 +16,7 @@ import { toast } from '@/lib/hooks/use-toast';
 import { Button, Badge, PageShell, Drawer, Loader } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { rolesApi, Role, UserRoles, AdditionalRoleAssignment } from '@/lib/api/roles';
-import { HREmployee, User } from '@/types';
+import { HREmployee, User, EmployeeBankAccount } from '@/types';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -110,6 +110,122 @@ function SectionHead({ title, onEdit, isAdmin }: { title: string; onEdit?: () =>
       <h3 className="section-head-title">{title}</h3>
       {isAdmin && onEdit && (
         <button onClick={onEdit} className="section-edit-btn">Edit</button>
+      )}
+    </div>
+  );
+}
+
+// ── Bank Accounts Section ──────────────────────────────────────────────────────
+
+const INPUT_S: React.CSSProperties = {
+  width: '100%', padding: '6px 10px', borderRadius: 'var(--radius-md)',
+  border: '1px solid var(--input-border)', background: 'var(--input-bg)',
+  color: 'var(--text-primary)', fontSize: 'var(--text-sm)', outline: 'none', boxSizing: 'border-box',
+};
+const LBL_S: React.CSSProperties = {
+  display: 'block', fontSize: 'var(--text-xs)', fontWeight: 600,
+  color: 'var(--text-secondary)', marginBottom: 3,
+};
+
+function BankAccountsSection({ empId, isAdmin }: { empId: number; isAdmin: boolean }) {
+  const qc = useQueryClient();
+  const [adding, setAdding] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
+  const blank = { bank_name: '', account_holder_name: '', iban: '', account_number: '', swift_code: '', is_primary: false };
+  const [form, setForm] = useState<Partial<EmployeeBankAccount>>(blank);
+
+  const { data: accounts = [], isLoading } = useQuery({
+    queryKey: ['emp-bank-accounts', empId],
+    queryFn:  () => hrEmployeesApi.getBankAccounts(empId),
+    staleTime: 60_000,
+  });
+
+  const saveMut = useMutation({
+    mutationFn: () => editId
+      ? hrEmployeesApi.updateBankAccount(empId, editId, form)
+      : hrEmployeesApi.addBankAccount(empId, form),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['emp-bank-accounts', empId] }); setAdding(false); setEditId(null); setForm(blank); toast('Saved', 'success'); },
+    onError:   () => toast('Failed to save bank account', 'error'),
+  });
+
+  const delMut = useMutation({
+    mutationFn: (accId: number) => hrEmployeesApi.deleteBankAccount(empId, accId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['emp-bank-accounts', empId] }); toast('Deleted', 'success'); },
+    onError:   () => toast('Failed to delete', 'error'),
+  });
+
+  const openEdit = (acc: EmployeeBankAccount) => {
+    setEditId(acc.id);
+    setForm({ bank_name: acc.bank_name, account_holder_name: acc.account_holder_name, iban: acc.iban, account_number: acc.account_number, swift_code: acc.swift_code, is_primary: acc.is_primary });
+    setAdding(true);
+  };
+
+  return (
+    <div className="card">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+        <h3 className="section-head-title" style={{ margin: 0 }}>Bank Accounts</h3>
+        {isAdmin && !adding && (
+          <button onClick={() => { setEditId(null); setForm(blank); setAdding(true); }} style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+            + Add Account
+          </button>
+        )}
+      </div>
+
+      {adding && (
+        <div style={{ background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', marginBottom: 'var(--space-3)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+            {([
+              ['Bank Name', 'bank_name'],
+              ['Account Holder Name', 'account_holder_name'],
+              ['IBAN', 'iban'],
+              ['Account Number', 'account_number'],
+              ['SWIFT / BIC Code', 'swift_code'],
+            ] as [string, keyof EmployeeBankAccount][]).map(([label, key]) => (
+              <div key={key}>
+                <label style={LBL_S}>{label}</label>
+                <input style={INPUT_S} value={(form[key] as string) ?? ''} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
+              </div>
+            ))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 20 }}>
+              <input type="checkbox" id="is_primary" checked={!!form.is_primary} onChange={e => setForm(f => ({ ...f, is_primary: e.target.checked }))} />
+              <label htmlFor="is_primary" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', cursor: 'pointer' }}>Primary (used for WPS)</label>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button size="sm" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>{saveMut.isPending ? 'Saving…' : editId ? 'Update' : 'Add'}</Button>
+            <Button size="sm" variant="ghost" onClick={() => { setAdding(false); setEditId(null); setForm(blank); }}>Cancel</Button>
+          </div>
+        </div>
+      )}
+
+      {isLoading ? (
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>Loading…</p>
+      ) : accounts.length === 0 ? (
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>No bank accounts on file.</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          {accounts.map(acc => (
+            <div key={acc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-3) var(--space-3)', background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>{acc.bank_name}</span>
+                  {acc.is_primary && <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--brand)', background: 'var(--brand-subtle)', borderRadius: 4, padding: '1px 6px' }}>WPS Primary</span>}
+                </div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>
+                  {acc.account_holder_name}
+                  {acc.iban && <span style={{ fontFamily: 'monospace', marginLeft: 8 }}>{acc.iban}</span>}
+                  {!acc.iban && acc.account_number && <span style={{ fontFamily: 'monospace', marginLeft: 8 }}>{acc.account_number}</span>}
+                </div>
+              </div>
+              {isAdmin && (
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button onClick={() => openEdit(acc)} style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
+                  <button onClick={() => delMut.mutate(acc.id)} style={{ fontSize: 'var(--text-xs)', color: 'var(--color-error)', background: 'none', border: 'none', cursor: 'pointer' }}>Delete</button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -912,6 +1028,9 @@ export default function EmployeeDetailPage() {
 
               </div>
             </div>
+
+            {/* Bank Accounts — full width below columns */}
+            <BankAccountsSection empId={emp.id} isAdmin={isAdmin} />
             </div>
           );
         })()}

@@ -1,8 +1,13 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
-import { PageShell, PageHeader } from '@/components/ui';
+import { PageShell, PageHeader, Button } from '@/components/ui';
+import { hrCompanySettingsApi } from '@/lib/api/hr';
+import { toast } from '@/lib/hooks/use-toast';
+import type { HRCompanySettings } from '@/types';
 
 const SETTINGS_SECTIONS = [
   {
@@ -77,6 +82,125 @@ const SETTINGS_SECTIONS = [
   },
 ];
 
+const DAYS_MAP = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const ENFORCEMENT_OPTS = [
+  { value: 'enforce', label: 'Enforce — reject out-of-range check-ins' },
+  { value: 'warn',    label: 'Warn — allow but flag for review' },
+  { value: 'off',     label: 'Off — no geofence check' },
+];
+const INPUT_CS: React.CSSProperties = {
+  width: '100%', padding: '7px 10px', borderRadius: 'var(--radius-md)',
+  border: '1px solid var(--input-border)', background: 'var(--input-bg)',
+  color: 'var(--text-primary)', fontSize: 'var(--text-sm)', outline: 'none', boxSizing: 'border-box',
+};
+const LBL_CS: React.CSSProperties = {
+  display: 'block', fontSize: 'var(--text-xs)', fontWeight: 600,
+  color: 'var(--text-secondary)', marginBottom: 4,
+};
+
+function CompanySettingsPanel() {
+  const qc = useQueryClient();
+  const [dirty, setDirty] = useState(false);
+  const [form, setForm] = useState<Partial<HRCompanySettings>>({});
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['hr-company-settings'],
+    queryFn:  hrCompanySettingsApi.get,
+    staleTime: 300_000,
+  });
+
+  useEffect(() => {
+    if (data && !dirty) setForm(data);
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const mut = useMutation({
+    mutationFn: () => hrCompanySettingsApi.update(form),
+    onSuccess: (updated) => {
+      qc.setQueryData(['hr-company-settings'], updated);
+      setForm(updated);
+      setDirty(false);
+      toast('Settings saved', 'success');
+    },
+    onError: () => toast('Failed to save settings', 'error'),
+  });
+
+  const set = (k: keyof HRCompanySettings, v: unknown) => { setForm(f => ({ ...f, [k]: v })); setDirty(true); };
+  const toggleDay = (d: number) => {
+    const days = Array.isArray(form.working_days) ? form.working_days : (data?.working_days ?? []);
+    const next = days.includes(d) ? days.filter(x => x !== d) : [...days, d].sort();
+    set('working_days', next);
+  };
+
+  if (isLoading) return null;
+
+  const wd = Array.isArray(form.working_days) ? form.working_days : (data?.working_days ?? []);
+
+  return (
+    <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
+        <div>
+          <p style={{ margin: 0, fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}>General HR Settings</p>
+          <p style={{ margin: '2px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Timezone, working week, attendance rules, and geofence enforcement.</p>
+        </div>
+        {dirty && <Button size="sm" onClick={() => mut.mutate()} disabled={mut.isPending}>{mut.isPending ? 'Saving…' : 'Save Changes'}</Button>}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
+        <div>
+          <label style={LBL_CS}>Timezone</label>
+          <input style={INPUT_CS} value={form.timezone ?? data?.timezone ?? ''} onChange={e => set('timezone', e.target.value)} placeholder="e.g. Asia/Dubai" />
+        </div>
+        <div>
+          <label style={LBL_CS}>Work Start Time</label>
+          <input style={INPUT_CS} type="time" value={form.work_start_time ?? data?.work_start_time ?? ''} onChange={e => set('work_start_time', e.target.value)} />
+        </div>
+        <div>
+          <label style={LBL_CS}>Work End Time</label>
+          <input style={INPUT_CS} type="time" value={form.work_end_time ?? data?.work_end_time ?? ''} onChange={e => set('work_end_time', e.target.value)} />
+        </div>
+        <div>
+          <label style={LBL_CS}>Late Threshold (minutes)</label>
+          <input style={INPUT_CS} type="number" min={0} value={form.late_threshold_mins ?? data?.late_threshold_mins ?? 0} onChange={e => set('late_threshold_mins', Number(e.target.value))} />
+        </div>
+        <div>
+          <label style={LBL_CS}>Currency</label>
+          <input style={INPUT_CS} value={form.currency ?? data?.currency ?? ''} onChange={e => set('currency', e.target.value)} placeholder="AED" />
+        </div>
+        <div>
+          <label style={LBL_CS}>Geofence Enforcement</label>
+          <select style={INPUT_CS} value={form.geofence_enforcement ?? data?.geofence_enforcement ?? 'warn'} onChange={e => set('geofence_enforcement', e.target.value)}>
+            {ENFORCEMENT_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={LBL_CS}>Default Annual Leave Days</label>
+          <input style={INPUT_CS} type="number" min={0} value={form.annual_leave_days ?? data?.annual_leave_days ?? 30} onChange={e => set('annual_leave_days', Number(e.target.value))} />
+        </div>
+        <div>
+          <label style={LBL_CS}>Default Sick Leave Days</label>
+          <input style={INPUT_CS} type="number" min={0} value={form.sick_leave_days ?? data?.sick_leave_days ?? 15} onChange={e => set('sick_leave_days', Number(e.target.value))} />
+        </div>
+      </div>
+
+      <div style={{ marginTop: 'var(--space-4)' }}>
+        <label style={LBL_CS}>Working Days</label>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {DAYS_MAP.map((d, i) => (
+            <button key={i} onClick={() => toggleDay(i)} style={{
+              padding: '4px 12px', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-xs)', fontWeight: 600,
+              cursor: 'pointer', border: '1px solid',
+              background: wd.includes(i) ? 'var(--brand)' : 'var(--surface-subtle)',
+              color:      wd.includes(i) ? '#fff'         : 'var(--text-secondary)',
+              borderColor: wd.includes(i) ? 'var(--brand)' : 'var(--border-subtle)',
+              transition: 'all 0.15s',
+            }}>{d}</button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function HRSettingsPage() {
   return (
     <MainLayout>
@@ -87,11 +211,12 @@ export default function HRSettingsPage() {
           breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Settings' }]}
         />
 
+        <CompanySettingsPanel />
+
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
           gap: 'var(--space-4)',
-          marginTop: 'var(--space-5)',
         }}>
           {SETTINGS_SECTIONS.map(s => (
             <Link key={s.href} href={s.href} style={{ textDecoration: 'none' }}>
