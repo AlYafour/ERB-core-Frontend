@@ -9,8 +9,44 @@ import { usersApi } from '@/lib/api/users';
 import type { User } from '@/types';
 import { toast } from '@/lib/hooks/use-toast';
 import { Button, PageHeader, PageShell } from '@/components/ui';
-import SearchableDropdown from '@/components/ui/SearchableDropdown';
+import SearchableDropdown, { DropdownOption } from '@/components/ui/SearchableDropdown';
 import { HRPosition } from '@/types';
+
+// ── Static option lists ────────────────────────────────────────────────────────
+
+const GENDER_OPTS: DropdownOption[] = [
+  { value: 'male',   label: 'Male — ذكر' },
+  { value: 'female', label: 'Female — أنثى' },
+];
+
+const MARITAL_OPTS: DropdownOption[] = [
+  { value: 'single',   label: 'Single — أعزب / عزباء' },
+  { value: 'married',  label: 'Married — متزوج / ة' },
+  { value: 'divorced', label: 'Divorced — مطلق / ة' },
+  { value: 'widowed',  label: 'Widowed — أرمل / ة' },
+];
+
+const NATIONALITY_OPTS: DropdownOption[] = [
+  'Emirati','Egyptian','Indian','Pakistani','Filipino','Bangladeshi',
+  'Sri Lankan','Nepali','Jordanian','Syrian','Lebanese','Yemeni',
+  'Saudi','Omani','Kuwaiti','Bahraini','Qatari','Moroccan','Sudanese',
+  'Ethiopian','Kenyan','British','American','Canadian','Other',
+].map(n => ({ value: n, label: n }));
+
+const HOME_COUNTRY_OPTS: DropdownOption[] = [
+  'UAE','Egypt','India','Pakistan','Philippines','Bangladesh',
+  'Sri Lanka','Nepal','Jordan','Syria','Lebanon','Yemen',
+  'Saudi Arabia','Oman','Kuwait','Bahrain','Qatar','Morocco','Sudan',
+  'Ethiopia','Kenya','UK','USA','Canada','Other',
+].map(c => ({ value: c, label: c }));
+
+const RELIGION_OPTS: DropdownOption[] = [
+  { value: 'Islam',        label: 'Islam — الإسلام' },
+  { value: 'Christianity', label: 'Christianity — المسيحية' },
+  { value: 'Hinduism',     label: 'Hinduism — الهندوسية' },
+  { value: 'Buddhism',     label: 'Buddhism — البوذية' },
+  { value: 'Other',        label: 'Other — أخرى' },
+];
 
 export default function NewEmployeePage() {
   return (
@@ -32,12 +68,18 @@ function NewEmployeeForm() {
   const [step, setStep] = useState(0);
 
   const [personal, setPersonal] = useState({
-    first_name: '', second_name: '', third_name: '', last_name: '',
-    gender: '', date_of_birth: '', nationality: '', home_country: '',
-    religion: '', national_id: '', passport_number: '',
+    first_name: '', last_name: '', full_name_ar: '',
+    gender: '', marital_status: '', date_of_birth: '',
+    nationality: '', home_country: '', religion: '',
+    national_id: '', passport_number: '',
     passport_issue_date: '', passport_expiry_date: '',
-    personal_email: '', marital_status: '',
+    personal_email: '',
   });
+
+  // Extendable option lists for free-text fields (user can add custom values)
+  const [nationalityOpts, setNationalityOpts] = useState<DropdownOption[]>(NATIONALITY_OPTS);
+  const [homeCountryOpts, setHomeCountryOpts] = useState<DropdownOption[]>(HOME_COUNTRY_OPTS);
+  const [religionOpts,    setReligionOpts]    = useState<DropdownOption[]>(RELIGION_OPTS);
 
   const [employment, setEmployment] = useState({
     employment_type: 'full_time',
@@ -149,11 +191,10 @@ function NewEmployeeForm() {
         let createdUser: User;
         try {
           createdUser = await createUserMutation.mutateAsync({
-            first_name:  personal.first_name,
-            last_name:   personal.last_name,
-            second_name: personal.second_name,
-            third_name:  personal.third_name,
-            username:    account.username,
+            first_name:   personal.first_name,
+            last_name:    personal.last_name,
+            full_name_ar: personal.full_name_ar,
+            username:     account.username,
             email:       account.email,
             phone:       account.phone,
             password:    account.password,
@@ -254,86 +295,89 @@ function NewEmployeeForm() {
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
             <h2 style={{ fontWeight: 'var(--weight-semibold)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-3)', margin: 0 }}>Personal Information</h2>
             <div className="form-grid">
-              <div className="form-field"><label className="form-label">First Name *</label><input className="form-input" value={personal.first_name} onChange={p('first_name')} /></div>
-              <div className="form-field"><label className="form-label">Second Name</label><input className="form-input" value={personal.second_name} onChange={p('second_name')} /></div>
-              <div className="form-field"><label className="form-label">Third Name</label><input className="form-input" value={personal.third_name} onChange={p('third_name')} /></div>
-              <div className="form-field"><label className="form-label">Last Name</label><input className="form-input" value={personal.last_name} onChange={p('last_name')} /></div>
-              <div className="form-field"><label className="form-label">Gender</label>
-                <select className="form-select" value={personal.gender} onChange={p('gender')}>
-                  <option value="">—</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                </select>
+              {/* Name — English */}
+              <div className="form-field"><label className="form-label">First Name — الاسم الأول *</label><input className="form-input" value={personal.first_name} onChange={p('first_name')} /></div>
+              <div className="form-field"><label className="form-label">Last Name — الاسم الأخير</label><input className="form-input" value={personal.last_name} onChange={p('last_name')} /></div>
+              {/* Name — Arabic */}
+              <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+                <label className="form-label">الاسم الكامل بالعربي — Full Arabic Name</label>
+                <input className="form-input" value={personal.full_name_ar} onChange={p('full_name_ar')} placeholder="مثال: نورهان أحمد كامل" dir="rtl" />
               </div>
-              <div className="form-field"><label className="form-label">Marital Status</label>
-                <select className="form-select" value={personal.marital_status} onChange={p('marital_status')}>
-                  <option value="">—</option>
-                  <option value="single">Single</option>
-                  <option value="married">Married</option>
-                  <option value="divorced">Divorced</option>
-                  <option value="widowed">Widowed</option>
-                </select>
+              {/* Personal */}
+              <div className="form-field">
+                <label className="form-label">Gender — الجنس</label>
+                <SearchableDropdown
+                  options={GENDER_OPTS}
+                  value={personal.gender}
+                  onChange={(v) => setPersonal(prev => ({ ...prev, gender: String(v ?? '') }))}
+                  placeholder="— Select —"
+                  allowClear
+                />
               </div>
-              <div className="form-field"><label className="form-label">Date of Birth</label><input className="form-input" type="date" value={personal.date_of_birth} onChange={p('date_of_birth')} /></div>
-              <div className="form-field"><label className="form-label">Nationality</label>
-                <select className="form-select" value={personal.nationality} onChange={p('nationality')}>
-                  <option value="">—</option>
-                  <option value="Emirati">Emirati</option>
-                  <option value="Egyptian">Egyptian</option>
-                  <option value="Indian">Indian</option>
-                  <option value="Pakistani">Pakistani</option>
-                  <option value="Filipino">Filipino</option>
-                  <option value="Bangladeshi">Bangladeshi</option>
-                  <option value="Sri Lankan">Sri Lankan</option>
-                  <option value="Nepali">Nepali</option>
-                  <option value="Jordanian">Jordanian</option>
-                  <option value="Syrian">Syrian</option>
-                  <option value="Lebanese">Lebanese</option>
-                  <option value="Yemeni">Yemeni</option>
-                  <option value="Saudi">Saudi</option>
-                  <option value="Omani">Omani</option>
-                  <option value="British">British</option>
-                  <option value="American">American</option>
-                  <option value="Other">Other</option>
-                </select>
+              <div className="form-field">
+                <label className="form-label">Marital Status — الحالة الاجتماعية</label>
+                <SearchableDropdown
+                  options={MARITAL_OPTS}
+                  value={personal.marital_status}
+                  onChange={(v) => setPersonal(prev => ({ ...prev, marital_status: String(v ?? '') }))}
+                  placeholder="— Select —"
+                  allowClear
+                />
               </div>
-              <div className="form-field"><label className="form-label">Home Country</label>
-                <select className="form-select" value={personal.home_country} onChange={p('home_country')}>
-                  <option value="">—</option>
-                  <option value="UAE">UAE</option>
-                  <option value="Egypt">Egypt</option>
-                  <option value="India">India</option>
-                  <option value="Pakistan">Pakistan</option>
-                  <option value="Philippines">Philippines</option>
-                  <option value="Bangladesh">Bangladesh</option>
-                  <option value="Sri Lanka">Sri Lanka</option>
-                  <option value="Nepal">Nepal</option>
-                  <option value="Jordan">Jordan</option>
-                  <option value="Syria">Syria</option>
-                  <option value="Lebanon">Lebanon</option>
-                  <option value="Yemen">Yemen</option>
-                  <option value="Saudi Arabia">Saudi Arabia</option>
-                  <option value="Oman">Oman</option>
-                  <option value="UK">UK</option>
-                  <option value="USA">USA</option>
-                  <option value="Other">Other</option>
-                </select>
+              <div className="form-field"><label className="form-label">Date of Birth — تاريخ الميلاد</label><input className="form-input" type="date" value={personal.date_of_birth} onChange={p('date_of_birth')} /></div>
+              <div className="form-field">
+                <label className="form-label">Nationality — الجنسية</label>
+                <SearchableDropdown
+                  options={nationalityOpts}
+                  value={personal.nationality}
+                  onChange={(v) => setPersonal(prev => ({ ...prev, nationality: String(v ?? '') }))}
+                  placeholder="— Select or add —"
+                  allowClear
+                  onCreateOption={async (label) => {
+                    const opt: DropdownOption = { value: label, label };
+                    setNationalityOpts(prev => [...prev, opt]);
+                    return opt;
+                  }}
+                  createLabel="Add nationality"
+                />
               </div>
-              <div className="form-field"><label className="form-label">Religion</label>
-                <select className="form-select" value={personal.religion} onChange={p('religion')}>
-                  <option value="">—</option>
-                  <option value="Islam">Islam</option>
-                  <option value="Christianity">Christianity</option>
-                  <option value="Hinduism">Hinduism</option>
-                  <option value="Buddhism">Buddhism</option>
-                  <option value="Other">Other</option>
-                </select>
+              <div className="form-field">
+                <label className="form-label">Home Country — بلد الإقامة</label>
+                <SearchableDropdown
+                  options={homeCountryOpts}
+                  value={personal.home_country}
+                  onChange={(v) => setPersonal(prev => ({ ...prev, home_country: String(v ?? '') }))}
+                  placeholder="— Select or add —"
+                  allowClear
+                  onCreateOption={async (label) => {
+                    const opt: DropdownOption = { value: label, label };
+                    setHomeCountryOpts(prev => [...prev, opt]);
+                    return opt;
+                  }}
+                  createLabel="Add country"
+                />
               </div>
-              <div className="form-field"><label className="form-label">National ID</label><input className="form-input" value={personal.national_id} onChange={p('national_id')} /></div>
-              <div className="form-field"><label className="form-label">Personal Email</label><input className="form-input" type="email" value={personal.personal_email} onChange={p('personal_email')} /></div>
-              <div className="form-field"><label className="form-label">Passport Number</label><input className="form-input" value={personal.passport_number} onChange={p('passport_number')} /></div>
-              <div className="form-field"><label className="form-label">Passport Issue Date</label><input className="form-input" type="date" value={personal.passport_issue_date} onChange={p('passport_issue_date')} /></div>
-              <div className="form-field"><label className="form-label">Passport Expiry Date</label><input className="form-input" type="date" value={personal.passport_expiry_date} onChange={p('passport_expiry_date')} /></div>
+              <div className="form-field">
+                <label className="form-label">Religion — الديانة</label>
+                <SearchableDropdown
+                  options={religionOpts}
+                  value={personal.religion}
+                  onChange={(v) => setPersonal(prev => ({ ...prev, religion: String(v ?? '') }))}
+                  placeholder="— Select or add —"
+                  allowClear
+                  onCreateOption={async (label) => {
+                    const opt: DropdownOption = { value: label, label };
+                    setReligionOpts(prev => [...prev, opt]);
+                    return opt;
+                  }}
+                  createLabel="Add religion"
+                />
+              </div>
+              <div className="form-field"><label className="form-label">National ID — الهوية</label><input className="form-input" value={personal.national_id} onChange={p('national_id')} /></div>
+              <div className="form-field"><label className="form-label">Personal Email — البريد الشخصي</label><input className="form-input" type="email" value={personal.personal_email} onChange={p('personal_email')} /></div>
+              <div className="form-field"><label className="form-label">Passport Number — رقم الجواز</label><input className="form-input" value={personal.passport_number} onChange={p('passport_number')} /></div>
+              <div className="form-field"><label className="form-label">Passport Issue Date — تاريخ الإصدار</label><input className="form-input" type="date" value={personal.passport_issue_date} onChange={p('passport_issue_date')} /></div>
+              <div className="form-field"><label className="form-label">Passport Expiry Date — تاريخ الانتهاء</label><input className="form-input" type="date" value={personal.passport_expiry_date} onChange={p('passport_expiry_date')} /></div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 'var(--space-2)' }}>
               <Button variant="primary" onClick={() => {
@@ -553,7 +597,7 @@ function NewEmployeeForm() {
               <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', marginBottom: 'var(--space-2)', marginTop: 0 }}>Summary</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 'var(--space-4)', rowGap: 'var(--space-1-5)', fontSize: 'var(--text-sm)' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>Name</span>
-                <span style={{ fontWeight: 'var(--weight-medium)' }}>{[personal.first_name, personal.second_name, personal.third_name, personal.last_name].filter(Boolean).join(' ')}</span>
+                <span style={{ fontWeight: 'var(--weight-medium)' }}>{[personal.first_name, personal.last_name].filter(Boolean).join(' ')}{personal.full_name_ar && <span style={{ color: 'var(--text-secondary)', marginRight: 6 }}> — {personal.full_name_ar}</span>}</span>
                 <span style={{ color: 'var(--text-secondary)' }}>Position</span>
                 <span style={{ fontWeight: 'var(--weight-medium)' }}>{selectedPosition?.title || '—'}</span>
                 <span style={{ color: 'var(--text-secondary)' }}>Access</span>
