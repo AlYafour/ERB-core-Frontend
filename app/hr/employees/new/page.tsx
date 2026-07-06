@@ -113,6 +113,17 @@ function NewEmployeeForm() {
     salary_display_name: '',
     basic_salary: '0', housing_allowance: '0',
     transport_allowance: '0', other_allowances: '0',
+    // Contact
+    extension_number: '',
+    address: '',
+    // UAE Legal
+    resident_id: '',
+    is_citizen: false,
+    labor_card: '',
+    labor_card_expiry: '',
+    mol_number: '',
+    sponsor_name: '',
+    sponsor_id: '',
   });
 
   const [account, setAccount] = useState({
@@ -207,6 +218,15 @@ function NewEmployeeForm() {
     passport_expiry_date: personal.passport_expiry_date  || null,
     personal_email:       personal.personal_email,
     marital_status:       personal.marital_status,
+    extension_number:     employment.extension_number    || null,
+    address:              employment.address             || null,
+    resident_id:          employment.resident_id         || null,
+    is_citizen:           employment.is_citizen,
+    labor_card:           employment.labor_card          || null,
+    labor_card_expiry:    employment.labor_card_expiry   || null,
+    mol_number:           employment.mol_number          || null,
+    sponsor_name:         employment.sponsor_name        || null,
+    sponsor_id:           employment.sponsor_id          || null,
   });
 
   const handleFinalSubmit = async () => {
@@ -526,6 +546,34 @@ function NewEmployeeForm() {
                 <span style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', color: 'var(--primary-foreground)' }}>
                   {totalSalary.toLocaleString('en-US', { minimumFractionDigits: 2 })} AED
                 </span>
+              </div>
+            </div>
+
+            {/* Contact Details */}
+            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-4)' }}>
+              <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', marginBottom: 'var(--space-3)', marginTop: 0 }}>Contact Details</p>
+              <div className="form-grid">
+                <div className="form-field"><label className="form-label">Extension Number</label><input className="form-input" value={employment.extension_number} onChange={em('extension_number')} placeholder="e.g. 101" /></div>
+                <div className="form-field" style={{ gridColumn: '1 / -1' }}><label className="form-label">Address</label><input className="form-input" value={employment.address} onChange={em('address')} placeholder="Residential address" /></div>
+              </div>
+            </div>
+
+            {/* UAE Legal & Immigration */}
+            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-4)' }}>
+              <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', marginBottom: 'var(--space-3)', marginTop: 0 }}>UAE Legal & Immigration</p>
+              <div className="form-grid">
+                <div className="form-field"><label className="form-label">Resident ID</label><input className="form-input" value={employment.resident_id} onChange={em('resident_id')} /></div>
+                <div className="form-field"><label className="form-label">Labor Card</label><input className="form-input" value={employment.labor_card} onChange={em('labor_card')} /></div>
+                <div className="form-field"><label className="form-label">Labor Card Expiry</label><DateInput className="form-input" value={employment.labor_card_expiry} onChange={(v) => setEmployment(p => ({ ...p, labor_card_expiry: v }))} /></div>
+                <div className="form-field"><label className="form-label">MOL Number</label><input className="form-input" value={employment.mol_number} onChange={em('mol_number')} /></div>
+                <div className="form-field"><label className="form-label">Sponsor Name</label><input className="form-input" value={employment.sponsor_name} onChange={em('sponsor_name')} /></div>
+                <div className="form-field"><label className="form-label">Sponsor ID</label><input className="form-input" value={employment.sponsor_id} onChange={em('sponsor_id')} /></div>
+                <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={employment.is_citizen} onChange={(e) => setEmployment(p => ({ ...p, is_citizen: e.target.checked }))} />
+                    <span className="form-label" style={{ margin: 0 }}>UAE Citizen</span>
+                  </label>
+                </div>
               </div>
             </div>
 

@@ -885,7 +885,7 @@ export default function EmployeeDetailPage() {
                   textAlign: 'center',
                 }}>
                   <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: s.color, margin: 0, lineHeight: 1, letterSpacing: '-0.03em' }}>
-                    {(summary?.summary as Record<string, number> | undefined)?.[s.key] ?? '—'}
+                    {(summary?.summary as Record<string, number> | undefined)?.[s.key] ?? 0}
                   </p>
                   <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '6px 0 0', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {s.label}
@@ -963,7 +963,7 @@ export default function EmployeeDetailPage() {
                 <div className="card">
                   <SectionHead title="Professional Info" onEdit={() => openEdit('professional')} isAdmin={isAdmin} />
                   <div className="info-grid">
-                    <InfoRow label="Job Title"           value={emp.position_title} />
+                    <InfoRow label="Position"            value={emp.position_title} />
                     <InfoRow label="Department"          value={emp.department_name} />
                     <InfoRow label="Employee Category"      value={emp.employee_group_name} />
                     <InfoRow label="Work Type"           value={empTypeLabel[emp.employment_type] || emp.employment_type} />
