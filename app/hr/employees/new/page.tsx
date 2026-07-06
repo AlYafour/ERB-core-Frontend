@@ -490,7 +490,6 @@ function NewEmployeeForm() {
               <div className="form-field"><label className="form-label">Hiring Date *</label><DateInput className="form-input" value={employment.join_date} onChange={(v) => setEmployment(prev => ({ ...prev, join_date: v }))} /></div>
               <div className="form-field"><label className="form-label">End of Probation</label><DateInput className="form-input" value={employment.probation_end_date} onChange={(v) => setEmployment(prev => ({ ...prev, probation_end_date: v }))} /></div>
               <div className="form-field"><label className="form-label">Contract End Date</label><DateInput className="form-input" value={employment.end_date} onChange={(v) => setEmployment(prev => ({ ...prev, end_date: v }))} /></div>
-              <div className="form-field" style={{ gridColumn: '1 / -1' }}><label className="form-label">Salary Display Name</label><input className="form-input" value={employment.salary_display_name} onChange={em('salary_display_name')} /></div>
             </div>
 
             <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-4)' }}>
@@ -533,7 +532,6 @@ function NewEmployeeForm() {
             <div className="form-grid">
               <div className="form-field"><label className="form-label">Username *</label><input className="form-input" value={account.username} onChange={ac('username')} /></div>
               <div className="form-field"><label className="form-label">Work Email *</label><input className="form-input" type="email" value={account.email} onChange={ac('email')} /></div>
-              <div className="form-field"><label className="form-label">Phone</label><input className="form-input" type="tel" value={account.phone} onChange={ac('phone')} /></div>
               <div className="form-field"><label className="form-label">Password *</label>
                 <input className="form-input" type="password" value={account.password} onChange={ac('password')} minLength={8} />
                 <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Min 8 characters</span>
