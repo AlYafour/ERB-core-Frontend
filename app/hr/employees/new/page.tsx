@@ -251,7 +251,7 @@ function NewEmployeeForm() {
     } catch (err: unknown) {
       const e = err as { response?: { data?: Record<string, unknown[]> } };
       const msg = e?.response?.data
-        ? Object.values(e.response.data).flat().join(' — ')
+        ? Object.entries(e.response.data).map(([k, v]) => `${k}: ${(v as unknown[]).flat().join(', ')}`).join(' | ')
         : 'Failed to create employee';
       toast(msg as string, 'error');
     }
