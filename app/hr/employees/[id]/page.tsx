@@ -530,9 +530,8 @@ export default function EmployeeDetailPage() {
       other_allowances:     emp.other_allowances || '0',
       username:             emp.user?.username || '',
       email:                emp.user?.email || '',
-      phone:                emp.user?.phone || '',
-      first_name:           (emp.full_name || '').split(' ')[0] || '',
-      last_name:            (emp.full_name || '').split(' ').slice(-1)[0] || '',
+      first_name:           emp.user?.first_name || '',
+      last_name:            emp.user?.last_name || '',
       password:             '',
       password2:            '',
     });
@@ -546,7 +545,7 @@ export default function EmployeeDetailPage() {
         if (form.password !== form.password2) { toast('Passwords do not match', 'error'); return; }
       }
       const accountData: Record<string, unknown> = {
-        username: form.username, email: form.email, phone: form.phone,
+        username: form.username, email: form.email,
         first_name: form.first_name, last_name: form.last_name,
       };
       if (changePassword && form.password) accountData.password = form.password;
@@ -1129,7 +1128,6 @@ export default function EmployeeDetailPage() {
               <div className={fld}><label className={lbl}>Last Name</label><input className={inp} value={form.last_name} onChange={f('last_name')} /></div>
               <div className={fld}><label className={lbl}>Username</label><input className={inp} value={form.username} onChange={f('username')} /></div>
               <div className={fld}><label className={lbl}>Email</label><input className={inp} type="email" value={form.email} onChange={f('email')} /></div>
-              <div className={fld}><label className={lbl}>Phone</label><input className={inp} type="tel" value={form.phone} onChange={f('phone')} /></div>
             </div>
 
             <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-4)', marginTop: 'var(--space-4)' }}>
