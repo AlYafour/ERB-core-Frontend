@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'next/navigation';
@@ -1100,7 +1100,14 @@ export default function EmployeeDetailPage() {
               <SearchableDropdown
                 options={positionOptions}
                 value={form.position ? Number(form.position) : null}
-                onChange={(v) => setForm((p) => ({ ...p, position: v ? String(v) : '' }))}
+                onChange={(v) => {
+                  const selPos = v ? (positions?.results ?? []).find(p => p.id === Number(v)) : null;
+                  setForm((p) => ({
+                    ...p,
+                    position: v ? String(v) : '',
+                    ...(selPos?.department != null ? { department: String(selPos.department) } : {}),
+                  }));
+                }}
                 placeholder="— None —"
                 allowClear
                 onCreateOption={async (title) => {
