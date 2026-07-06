@@ -9,10 +9,10 @@ import { type Column } from '@/components/ui/DataTable';
 import { RowActions } from '@/components/ui/RowActions';
 import { Badge, Button } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
-import { hrEmployeeGroupsApi, hrShiftsApi } from '@/lib/api/hr';
+import { hrEmployeeGroupsApi, hrShiftsApi, hrEmployeesApi } from '@/lib/api/hr';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast, confirm } from '@/lib/hooks/use-toast';
-import type { EmployeeGroup, HRShift } from '@/types';
+import type { EmployeeGroup, HREmployee, HRShift } from '@/types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -32,6 +32,7 @@ const EMPTY_FORM = {
   description: '',
   is_active: true,
   default_shift: null as number | null,
+  default_manager: null as number | null,
 };
 type FormState = typeof EMPTY_FORM;
 
@@ -45,12 +46,14 @@ const LABEL_STYLE: React.CSSProperties = {
 function GroupModal({
   group,
   shifts,
+  employees,
   onClose,
   onSave,
   isSaving,
 }: {
   group: EmployeeGroup | null;
   shifts: HRShift[];
+  employees: HREmployee[];
   onClose: () => void;
   onSave: (data: FormState) => void;
   isSaving: boolean;
@@ -58,12 +61,13 @@ function GroupModal({
   const [form, setForm] = useState<FormState>(
     group
       ? {
-          name:          group.name,
-          name_ar:       group.name_ar,
-          code:          group.code,
-          description:   group.description,
-          is_active:     group.is_active,
-          default_shift: group.default_shift ?? null,
+          name:            group.name,
+          name_ar:         group.name_ar,
+          code:            group.code,
+          description:     group.description,
+          is_active:       group.is_active,
+          default_shift:   group.default_shift ?? null,
+          default_manager: group.default_manager ?? null,
         }
       : EMPTY_FORM,
   );
@@ -78,6 +82,7 @@ function GroupModal({
   };
 
   const activeShifts = shifts.filter(s => s.is_active);
+  const activeEmployees = employees.filter(e => e.is_active !== false);
 
   const shiftOptions = useMemo(() => [
     { value: '__none__', label: '— No default shift —', searchText: 'none' },
@@ -87,6 +92,15 @@ function GroupModal({
       searchText: s.name,
     })),
   ], [activeShifts]);
+
+  const managerOptions = useMemo(() => [
+    { value: '__none__', label: '— No default manager —', searchText: 'none' },
+    ...activeEmployees.map(e => ({
+      value: e.id,
+      label: e.full_name ?? `${e.first_name} ${e.last_name}`,
+      searchText: `${e.full_name ?? ''} ${e.employee_id ?? ''}`,
+    })),
+  ], [activeEmployees]);
 
   return (
     <div
@@ -182,6 +196,21 @@ function GroupModal({
             </p>
           </div>
 
+          {/* Default Manager */}
+          <div>
+            <label style={LABEL_STYLE}>Default Manager (Fallback)</label>
+            <SearchableDropdown
+              options={managerOptions}
+              value={form.default_manager ?? '__none__'}
+              onChange={v => set('default_manager', v === '__none__' ? null : v as number)}
+              allowClear={false}
+              placeholder="— No default manager —"
+            />
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
+              Used for approval routing when a member has no individual Direct Manager assigned.
+            </p>
+          </div>
+
           {/* Active toggle */}
           <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', cursor: 'pointer', userSelect: 'none' }}>
             <div
@@ -243,8 +272,15 @@ export default function EmployeeGroupsPage() {
     staleTime: 120_000,
   });
 
+  const { data: employeesRaw } = useQuery({
+    queryKey: ['hr-employees-list'],
+    queryFn: () => hrEmployeesApi.getAll(),
+    staleTime: 120_000,
+  });
+
   const allGroups: EmployeeGroup[] = raw?.results ?? [];
   const shifts: HRShift[]          = shiftsRaw?.results ?? [];
+  const employees: HREmployee[]    = employeesRaw?.results ?? [];
 
   const filtered = !search
     ? allGroups
@@ -353,6 +389,18 @@ export default function EmployeeGroupsPage() {
       },
     },
     {
+      key: 'default_manager_name',
+      header: 'Default Manager',
+      width: '160px',
+      render: (group) => group.default_manager_name ? (
+        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {group.default_manager_name}
+        </p>
+      ) : (
+        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic' }}>None</p>
+      ),
+    },
+    {
       key: 'is_active',
       header: 'Status',
       width: '90px',
@@ -417,8 +465,9 @@ export default function EmployeeGroupsPage() {
       {!isLoading && allGroups.length > 0 && (
         <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)' }}>
           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
-            Approval routing uses the <strong>Direct Manager</strong> field on each employee — assign it from the{' '}
-            <Link href="/hr/employees" style={{ color: 'var(--brand)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>Employees page</Link>.
+            Approval routing priority: <strong>Employee's Direct Manager</strong> → <strong>Category Default Manager</strong>.
+            Set a Default Manager on each category above, then override per-employee from the{' '}
+            <Link href="/hr/employees" style={{ color: 'var(--brand)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>Employees page</Link> when needed.
           </p>
         </div>
       )}
@@ -427,6 +476,7 @@ export default function EmployeeGroupsPage() {
         <GroupModal
           group={modalGroup === 'new' ? null : modalGroup}
           shifts={shifts}
+          employees={employees}
           onClose={() => setModalGroup(null)}
           onSave={handleSave}
           isSaving={isSaving}
