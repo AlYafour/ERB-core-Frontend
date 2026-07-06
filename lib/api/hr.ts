@@ -378,19 +378,32 @@ export const hrPayrollApi = {
 
 export interface PenaltyApplicationPreview {
   id: number;
+  attendance: number;
   attendance_date: string;
+  employee_name: string;
+  employee_id_code: string;
   penalty_amount: string;
-  status: string;
+  status: 'pending_review' | 'confirmed' | 'waived';
   rule_name: string | null;
   tier_label: string | null;
+  tier_order: number | null;
   rule_type: string;
   minutes_evaluated: number;
   was_compensated: boolean;
+  created_at: string;
 }
 
 export const hrPenaltyApplicationsApi = {
-  getAll: async (params?: { employee?: number; year?: number; month?: number; status?: string; page?: number }): Promise<PaginatedResponse<PenaltyApplicationPreview>> => {
+  getAll: async (params?: { employee?: number; year?: number; month?: number; status?: string; page?: number; page_size?: number }): Promise<PaginatedResponse<PenaltyApplicationPreview>> => {
     const response = await apiClient.get('/hr/attendance/penalty-applications/', { params });
+    return response.data;
+  },
+  confirm: async (id: number): Promise<PenaltyApplicationPreview> => {
+    const response = await apiClient.post(`/hr/attendance/penalty-applications/${id}/confirm/`);
+    return response.data;
+  },
+  waive: async (id: number): Promise<PenaltyApplicationPreview> => {
+    const response = await apiClient.post(`/hr/attendance/penalty-applications/${id}/waive/`);
     return response.data;
   },
 };

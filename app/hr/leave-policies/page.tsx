@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { hrLeavePoliciesApi, hrEmployeeGroupsApi, type AccrualResult } from '@/lib/api/hr';
+import { hrLeavePoliciesApi, hrEmployeeGroupsApi, hrRequestsApi, type AccrualResult } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
@@ -15,7 +15,7 @@ import { type Column } from '@/components/ui/DataTable';
 import { RowActions } from '@/components/ui/RowActions';
 import { BaseModal } from '@/components/ui/base/BaseModal';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
-import type { LeavePolicy, EmployeeGroup } from '@/types';
+import type { LeavePolicy, EmployeeGroup, HRLeaveBalance } from '@/types';
 import { MONTH_NAMES } from '@/lib/utils/hr';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -25,8 +25,10 @@ const NOW_YEAR  = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 5 }, (_, i) => NOW_YEAR - i);
 
 const LEAVE_TYPE_LABELS: Record<string, string> = {
-  annual_leave: 'Annual Leave',
-  sick_leave:   'Sick Leave',
+  annual_leave:    'Annual Leave',
+  sick_leave:      'Sick Leave',
+  emergency_leave: 'Emergency Leave',
+  unpaid_leave:    'Unpaid Leave',
 };
 
 const LEAVE_TYPE_VARIANT: Record<string, 'success' | 'info'> = {
@@ -421,6 +423,112 @@ function AccrualPanel() {
   );
 }
 
+// ── Leave Balances Panel ──────────────────────────────────────────────────────
+
+const LEAVE_TYPE_COLOR: Record<string, { color: string; bg: string }> = {
+  annual_leave:    { color: 'var(--color-success)',           bg: 'var(--status-success-bg)' },
+  sick_leave:      { color: 'var(--color-info, var(--brand))', bg: 'var(--brand-subtle)' },
+  emergency_leave: { color: 'var(--color-warning, #b45309)',  bg: 'var(--status-warning-bg)' },
+  unpaid_leave:    { color: 'var(--text-tertiary)',           bg: 'var(--surface-subtle)' },
+};
+
+function LeaveBalancesPanel() {
+  const currentYear = new Date().getFullYear();
+  const [year, setYear] = useState(currentYear);
+  const YEARS = Array.from({ length: 3 }, (_, i) => currentYear - i);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['leave-balances', year],
+    queryFn:  () => hrRequestsApi.getLeaveBalances({ year }),
+    staleTime: 60_000,
+  });
+
+  const balances = data?.results ?? [];
+
+  // Group by employee_name
+  const grouped = useMemo(() => {
+    const map = new Map<number, { name: string; balances: HRLeaveBalance[] }>();
+    for (const b of balances) {
+      if (!map.has(b.employee)) map.set(b.employee, { name: b.employee_name, balances: [] });
+      map.get(b.employee)!.balances.push(b);
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [balances]);
+
+  return (
+    <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
+        <div>
+          <p style={{ margin: 0, fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}>Leave Balances</p>
+          <p style={{ margin: '2px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+            Current balances per employee — updated by the accrual engine and approved requests.
+          </p>
+        </div>
+        <select value={year} onChange={e => setYear(Number(e.target.value))} style={{ ...INPUT, width: 'auto', minWidth: 80, height: 32 }}>
+          {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
+      </div>
+
+      {isLoading ? (
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', textAlign: 'center', padding: 'var(--space-4)' }}>Loading…</p>
+      ) : grouped.length === 0 ? (
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', textAlign: 'center', padding: 'var(--space-4)' }}>
+          No leave balances recorded for {year}. Run the accrual engine to generate them.
+        </p>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-xs)' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                {['Employee', 'Leave Type', 'Total', 'Used', 'Pending', 'Remaining'].map(h => (
+                  <th key={h} style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--text-tertiary)', fontWeight: 700 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {grouped.flatMap(g =>
+                g.balances.map((b, bi) => {
+                  const remaining = parseFloat(b.remaining_days);
+                  const total     = parseFloat(b.total_days);
+                  const pct       = total > 0 ? Math.min(100, Math.round((remaining / total) * 100)) : 0;
+                  const lc        = LEAVE_TYPE_COLOR[b.leave_type] ?? LEAVE_TYPE_COLOR.unpaid_leave;
+                  return (
+                    <tr key={b.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                      {bi === 0 && (
+                        <td rowSpan={g.balances.length} style={{ padding: '6px 8px', verticalAlign: 'top', fontWeight: 600, color: 'var(--text-primary)', borderRight: '1px solid var(--border-subtle)' }}>
+                          {g.name}
+                        </td>
+                      )}
+                      <td style={{ padding: '6px 8px' }}>
+                        <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600, color: lc.color, background: lc.bg }}>
+                          {LEAVE_TYPE_LABELS[b.leave_type] ?? b.leave_type}
+                        </span>
+                      </td>
+                      <td style={{ padding: '6px 8px', fontFamily: 'monospace' }}>{b.total_days}</td>
+                      <td style={{ padding: '6px 8px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{b.used_days}</td>
+                      <td style={{ padding: '6px 8px', fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>{b.pending_days}</td>
+                      <td style={{ padding: '6px 8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 700, color: remaining > 0 ? 'var(--color-success)' : 'var(--color-error)' }}>
+                            {b.remaining_days}
+                          </span>
+                          <div style={{ flex: 1, minWidth: 48, height: 5, background: 'var(--border-subtle)', borderRadius: 3, overflow: 'hidden' }}>
+                            <div style={{ width: `${pct}%`, height: '100%', background: remaining > 5 ? 'var(--color-success)' : remaining > 0 ? 'var(--color-warning, #f59e0b)' : 'var(--color-error)', borderRadius: 3, transition: 'width 0.3s' }} />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function LeavePoliciesPage() {
@@ -567,6 +675,7 @@ export default function LeavePoliciesPage() {
       tableState={tableState}
     >
       {isAdmin && <AccrualPanel />}
+      {isAdmin && <LeaveBalancesPanel />}
 
       <PolicyModal
         isOpen={showModal}

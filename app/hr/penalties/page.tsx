@@ -10,7 +10,7 @@ import { RowActions } from '@/components/ui/RowActions';
 import { Button } from '@/components/ui';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
-import { hrPenaltyRulesApi, hrEmployeeGroupsApi } from '@/lib/api/hr';
+import { hrPenaltyRulesApi, hrEmployeeGroupsApi, hrPenaltyApplicationsApi, type PenaltyApplicationPreview } from '@/lib/api/hr';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast, confirm } from '@/lib/hooks/use-toast';
@@ -660,6 +660,158 @@ function RuleBuilder({
   );
 }
 
+// ── Pending Applications Panel ────────────────────────────────────────────────
+
+const RULE_TYPE_LABEL: Record<string, string> = {
+  LATENESS: 'Lateness', EARLY_LEAVE: 'Early Leave', ABSENCE: 'Absence',
+};
+
+const STATUS_STYLES: Record<string, { color: string; bg: string; label: string }> = {
+  pending_review: { color: 'var(--color-warning, #b45309)', bg: 'var(--status-warning-bg, #fef3c7)', label: 'Pending' },
+  confirmed:      { color: 'var(--color-error)',  bg: 'var(--status-error-bg)',   label: 'Confirmed' },
+  waived:         { color: 'var(--color-success)', bg: 'var(--status-success-bg)', label: 'Waived' },
+};
+
+function PendingApplicationsPanel({ isAdmin }: { isAdmin: boolean }) {
+  const qc = useQueryClient();
+  const currentYear  = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+  const [year,   setYear]   = useState(currentYear);
+  const [month,  setMonth]  = useState(currentMonth);
+  const [status, setStatus] = useState<string>('pending_review');
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['penalty-applications', year, month, status],
+    queryFn:  () => hrPenaltyApplicationsApi.getAll({ year, month, status: status || undefined, page_size: 100 }),
+    staleTime: 30_000,
+  });
+
+  const applications = data?.results ?? [];
+
+  const confirmMut = useMutation({
+    mutationFn: (id: number) => hrPenaltyApplicationsApi.confirm(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['penalty-applications'] }); toast('Penalty confirmed', 'success'); },
+    onError:   () => toast('Failed to confirm', 'error'),
+  });
+
+  const waiveMut = useMutation({
+    mutationFn: (id: number) => hrPenaltyApplicationsApi.waive(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['penalty-applications'] }); toast('Penalty waived', 'success'); },
+    onError:   () => toast('Failed to waive', 'error'),
+  });
+
+  const MONTHS = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const YEARS  = Array.from({ length: 3 }, (_, i) => currentYear - i);
+
+  return (
+    <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+        <div>
+          <p style={{ margin: 0, fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}>Penalty Applications</p>
+          <p style={{ margin: '2px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+            Review auto-generated penalties — confirm to deduct from payroll or waive.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+          <select value={month} onChange={e => setMonth(Number(e.target.value))} style={{ ...INPUT, width: 'auto', minWidth: 72, height: 32 }}>
+            {MONTHS.slice(1).map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
+          </select>
+          <select value={year} onChange={e => setYear(Number(e.target.value))} style={{ ...INPUT, width: 'auto', minWidth: 72, height: 32 }}>
+            {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <select value={status} onChange={e => setStatus(e.target.value)} style={{ ...INPUT, width: 'auto', minWidth: 120, height: 32 }}>
+            <option value="pending_review">Pending Review</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="waived">Waived</option>
+            <option value="">All</option>
+          </select>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', textAlign: 'center', padding: 'var(--space-4)' }}>Loading…</p>
+      ) : applications.length === 0 ? (
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', textAlign: 'center', padding: 'var(--space-4)' }}>
+          No {status === 'pending_review' ? 'pending' : status} applications for {MONTHS[month]} {year}.
+        </p>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-xs)' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                {['Employee', 'Date', 'Type', 'Rule / Tier', 'Minutes', 'Amount (AED)', 'Status', ...(isAdmin && status === 'pending_review' ? ['Actions'] : [])].map(h => (
+                  <th key={h} style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--text-tertiary)', fontWeight: 700, whiteSpace: 'nowrap' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {applications.map(app => {
+                const st = STATUS_STYLES[app.status] ?? STATUS_STYLES.pending_review;
+                return (
+                  <tr key={app.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                    <td style={{ padding: '6px 8px' }}>
+                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{app.employee_name}</div>
+                      <div style={{ color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{app.employee_id_code}</div>
+                    </td>
+                    <td style={{ padding: '6px 8px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{app.attendance_date}</td>
+                    <td style={{ padding: '6px 8px' }}>
+                      <span style={{ padding: '2px 6px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: 'var(--surface-subtle)', color: 'var(--text-secondary)' }}>
+                        {RULE_TYPE_LABEL[app.rule_type] ?? app.rule_type}
+                      </span>
+                    </td>
+                    <td style={{ padding: '6px 8px', color: 'var(--text-secondary)' }}>
+                      {app.rule_name ?? '—'}
+                      {app.tier_label && <span style={{ marginLeft: 4, color: 'var(--text-tertiary)' }}>· {app.tier_label}</span>}
+                    </td>
+                    <td style={{ padding: '6px 8px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{app.minutes_evaluated}</td>
+                    <td style={{ padding: '6px 8px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {app.was_compensated ? <s style={{ color: 'var(--text-tertiary)' }}>{app.penalty_amount}</s> : app.penalty_amount}
+                    </td>
+                    <td style={{ padding: '6px 8px' }}>
+                      <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600, color: st.color, background: st.bg }}>
+                        {st.label}
+                      </span>
+                    </td>
+                    {isAdmin && status === 'pending_review' && (
+                      <td style={{ padding: '6px 8px' }}>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button
+                            onClick={() => confirmMut.mutate(app.id)}
+                            disabled={confirmMut.isPending}
+                            style={{
+                              padding: '3px 10px', border: 'none', borderRadius: 'var(--radius-sm)',
+                              background: 'var(--color-error)', color: '#fff', cursor: 'pointer',
+                              fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
+                            }}
+                          >
+                            Confirm
+                          </button>
+                          <button
+                            onClick={() => waiveMut.mutate(app.id)}
+                            disabled={waiveMut.isPending}
+                            style={{
+                              padding: '3px 10px', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-sm)',
+                              background: 'var(--surface-raised)', color: 'var(--text-secondary)', cursor: 'pointer',
+                              fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
+                            }}
+                          >
+                            Waive
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function PenaltyRulesPage() {
@@ -903,6 +1055,8 @@ export default function PenaltyRulesPage() {
           : 'No rules match the current filters.'
       }
     >
+      <PendingApplicationsPanel isAdmin={admin} />
+
       {modalOpen && (
         <RuleBuilder
           editing={editing}
