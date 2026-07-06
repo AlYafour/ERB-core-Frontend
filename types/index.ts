@@ -650,7 +650,6 @@ export interface HREmployee {
   end_date: string | null;
   is_active: boolean;
   is_manager: boolean;
-  work_location?: string;
   location: number | null;
   location_name: string | null;
   department: number | null;
@@ -659,8 +658,6 @@ export interface HREmployee {
   position: number | null;
   position_title: string | null;
   position_detail?: HRPosition;
-  manager: number | null;
-  manager_detail?: HREmployee;
   direct_manager?: number | null;
   direct_manager_name?: string | null;
   indirect_manager?: number | null;

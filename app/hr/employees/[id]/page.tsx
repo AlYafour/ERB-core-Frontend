@@ -395,8 +395,6 @@ export default function EmployeeDetailPage() {
       end_date:             emp.end_date || '',
       department:           emp.department ?? '',
       position:             emp.position ?? '',
-      manager:              emp.manager ?? '',
-      work_location:        emp.work_location || '',
       employee_group:       emp.employee_group ?? '',
       is_active:            emp.is_active,
       mobile_number:        emp.mobile_number || '',
@@ -442,7 +440,6 @@ export default function EmployeeDetailPage() {
         ...form,
         department:           form.department     || null,
         position:             form.position       || null,
-        manager:              form.manager        || null,
         employee_group:       form.employee_group || null,
         date_of_birth:        d(form.date_of_birth),
         join_date:            d(form.join_date),
@@ -619,7 +616,7 @@ export default function EmployeeDetailPage() {
                 emp.join_date ? { label: 'Hire Date',  value: fmtDate(emp.join_date),        mono: false } : null,
                 emp.join_date ? { label: 'Tenure',     value: calcPeriod(emp.join_date),     mono: false } : null,
                 emp.user?.email                ? { label: 'Work Email',  value: emp.user.email,                   mono: false } : null,
-                emp.manager_detail?.full_name  ? { label: 'Reports To',  value: emp.manager_detail.full_name,     mono: false } : null,
+                (emp.direct_manager_name || emp.direct_manager_detail?.full_name) ? { label: 'Reports To', value: emp.direct_manager_name || emp.direct_manager_detail!.full_name, mono: false } : null,
                 emp.employee_group_name        ? { label: 'Group',       value: emp.employee_group_name,          mono: false } : null,
                 emp.mobile_number              ? { label: 'Mobile',      value: emp.mobile_number,                mono: false } : null,
               ] as ({ label: string; value: string; mono: boolean } | null)[]).filter(Boolean).map((item) => (
@@ -854,7 +851,7 @@ export default function EmployeeDetailPage() {
                     <InfoRow label="Department"          value={emp.department_name} />
                     <InfoRow label="Employee Category"      value={emp.employee_group_name} />
                     <InfoRow label="Work Type"           value={empTypeLabel[emp.employment_type] || emp.employment_type} />
-                    <InfoRow label="Direct Manager"      value={emp.manager_detail?.full_name} />
+                    <InfoRow label="Direct Manager"      value={emp.direct_manager_detail?.full_name ?? emp.direct_manager_name ?? undefined} />
                     <InfoRow label="Hiring Date"         value={fmtDate(emp.join_date)} />
                     <InfoRow label="Employment Period"   value={calcPeriod(emp.join_date)} />
                     <InfoRow label="End of Probation"    value={fmtDate(emp.probation_end_date)} />
