@@ -523,6 +523,14 @@ export interface PurchaseInvoice {
 
 // ── HR Module Types ────────────────────────────────────────────────────────────
 
+export interface HRLegalEntity {
+  id: number;
+  name: string;
+  employee_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface HRLocationType {
   id: number;
   name: string;

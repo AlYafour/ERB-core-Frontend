@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment, EmployeeBankAccount, HRCompanySettings } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRLegalEntity, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment, EmployeeBankAccount, HRCompanySettings } from '@/types';
 
 function toPage<T>(data: T[] | PaginatedResponse<T>): PaginatedResponse<T> {
   if (Array.isArray(data)) return { results: data, count: data.length, next: null, previous: null };
@@ -45,6 +45,26 @@ export interface EmployeeDocument {
   created_at: string;
   updated_at: string;
 }
+
+// ── Legal Entities ─────────────────────────────────────────────────────────────
+
+export const hrLegalEntitiesApi = {
+  getAll: async (params?: { page?: number; search?: string }): Promise<PaginatedResponse<HRLegalEntity>> => {
+    const response = await apiClient.get('/hr/employees/legal-entities/', { params });
+    return response.data;
+  },
+  create: async (data: Partial<HRLegalEntity>): Promise<HRLegalEntity> => {
+    const response = await apiClient.post('/hr/employees/legal-entities/', data);
+    return response.data;
+  },
+  update: async (id: number, data: Partial<HRLegalEntity>): Promise<HRLegalEntity> => {
+    const response = await apiClient.patch(`/hr/employees/legal-entities/${id}/`, data);
+    return response.data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/employees/legal-entities/${id}/`);
+  },
+};
 
 // ── Location Types ─────────────────────────────────────────────────────────────
 

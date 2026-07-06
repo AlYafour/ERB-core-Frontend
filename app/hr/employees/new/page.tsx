@@ -4,8 +4,9 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
-import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi, hrEmployeeGroupsApi } from '@/lib/api/hr';
+import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi, hrEmployeeGroupsApi, hrLocationsApi, hrLegalEntitiesApi } from '@/lib/api/hr';
 import { usersApi } from '@/lib/api/users';
+import type { User } from '@/types';
 import { toast } from '@/lib/hooks/use-toast';
 import { Button, PageHeader, PageShell } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
@@ -42,15 +43,21 @@ function NewEmployeeForm() {
     employment_type: 'full_time',
     join_date: new Date().toISOString().split('T')[0],
     probation_end_date: '', end_date: '',
-    department: '', position: '',
-    employee_group: null as number | null, salary_display_name: '',
+    department:     null as number | null,
+    position:       null as number | null,
+    legal_entity:   null as number | null,
+    location:       null as number | null,
+    direct_manager: null as number | null,
+    mobile_number:  '',
+    employee_group: null as number | null,
+    salary_display_name: '',
     basic_salary: '0', housing_allowance: '0',
     transport_allowance: '0', other_allowances: '0',
   });
 
   const [account, setAccount] = useState({
     username: '', email: '', phone: '', password: '',
-    role: 'site_engineer', is_active: false,
+    role: 'employee', is_active: false,
   });
 
   const { data: existingUser } = useQuery({
@@ -70,16 +77,22 @@ function NewEmployeeForm() {
   }, [existingUser]);
 
   const queryClient = useQueryClient();
-  const { data: depts }     = useQuery({ queryKey: ['hr-depts'],     queryFn: () => hrDepartmentsApi.getAll({ page: 1 }), staleTime: 300_000 });
-  const { data: positions } = useQuery({ queryKey: ['hr-positions'], queryFn: () => hrPositionsApi.getAll({ page: 1 }), staleTime: 300_000 });
-  const { data: groups }    = useQuery({ queryKey: ['hr-employee-groups-all'], queryFn: () => hrEmployeeGroupsApi.getAll(), staleTime: 300_000 });
+  const { data: depts }         = useQuery({ queryKey: ['hr-depts'],             queryFn: () => hrDepartmentsApi.getAll({ page: 1 }),       staleTime: 300_000 });
+  const { data: positions }     = useQuery({ queryKey: ['hr-positions'],          queryFn: () => hrPositionsApi.getAll({ page: 1 }),          staleTime: 300_000 });
+  const { data: groups }        = useQuery({ queryKey: ['hr-employee-groups-all'], queryFn: () => hrEmployeeGroupsApi.getAll(),              staleTime: 300_000 });
+  const { data: locations }     = useQuery({ queryKey: ['hr-locations'],          queryFn: () => hrLocationsApi.getAll({ is_active: true }),  staleTime: 300_000 });
+  const { data: legalEntities } = useQuery({ queryKey: ['hr-legal-entities'],     queryFn: () => hrLegalEntitiesApi.getAll(),                 staleTime: 300_000 });
+  const { data: managers }      = useQuery({ queryKey: ['hr-employees-minimal'],  queryFn: () => hrEmployeesApi.getMinimal(),                 staleTime: 60_000 });
 
-  const deptOptions     = (depts?.results     ?? []).map((d) => ({ value: d.id,    label: d.name }));
-  const positionOptions = (positions?.results ?? []).map((p) => ({ value: p.id,    label: p.title }));
-  const groupOptions    = (groups?.results    ?? []).map((g) => ({ value: g.id,    label: g.name }));
+  const deptOptions        = (depts?.results         ?? []).map((d)  => ({ value: d.id,  label: d.name }));
+  const positionOptions    = (positions?.results     ?? []).map((p)  => ({ value: p.id,  label: p.title }));
+  const groupOptions       = (groups?.results        ?? []).map((g)  => ({ value: g.id,  label: g.name }));
+  const locationOptions    = (locations?.results     ?? []).map((l)  => ({ value: l.id,  label: l.name }));
+  const legalEntityOptions = (legalEntities?.results ?? []).map((le) => ({ value: le.id, label: le.name }));
+  const managerOptions     = (managers               ?? []).map((m)  => ({ value: m.id,  label: `${m.full_name} (${m.employee_id})` }));
 
   const selectedPosition: HRPosition | undefined = positions?.results?.find(
-    (pos: HRPosition) => String(pos.id) === String(employment.position)
+    (pos: HRPosition) => pos.id === employment.position
   );
 
   const totalSalary =
@@ -98,9 +111,13 @@ function NewEmployeeForm() {
     join_date:            employment.join_date,
     probation_end_date:   employment.probation_end_date   || null,
     end_date:             employment.end_date             || null,
-    department:           employment.department           || null,
-    position:             employment.position             || null,
-    employee_group:       employment.employee_group || null,
+    department:           employment.department,
+    position:             employment.position,
+    legal_entity:         employment.legal_entity,
+    location:             employment.location,
+    direct_manager:       employment.direct_manager,
+    mobile_number:        employment.mobile_number,
+    employee_group:       employment.employee_group,
     salary_display_name:  employment.salary_display_name,
     basic_salary:         employment.basic_salary,
     housing_allowance:    employment.housing_allowance,
@@ -121,26 +138,55 @@ function NewEmployeeForm() {
 
   const handleFinalSubmit = async () => {
     try {
+      let userId: number;
+
       if (existingUserId) {
-        await createEmpMutation.mutateAsync(buildEmpPayload(existingUserId));
+        userId = existingUserId;
       } else {
         if (!account.username || !account.email || !account.password) {
           toast('Username, email and password are required', 'error'); return;
         }
-        const user = await createUserMutation.mutateAsync({
-          first_name:  personal.first_name,
-          last_name:   personal.last_name,
-          second_name: personal.second_name,
-          third_name:  personal.third_name,
-          username:    account.username,
-          email:       account.email,
-          phone:       account.phone,
-          password:    account.password,
-          role:        account.role,
-          is_active:   account.is_active,
-        });
-        await createEmpMutation.mutateAsync(buildEmpPayload(user.id));
+        let createdUser: User;
+        try {
+          createdUser = await createUserMutation.mutateAsync({
+            first_name:  personal.first_name,
+            last_name:   personal.last_name,
+            second_name: personal.second_name,
+            third_name:  personal.third_name,
+            username:    account.username,
+            email:       account.email,
+            phone:       account.phone,
+            password:    account.password,
+            role:        account.role,
+            is_active:   account.is_active,
+          });
+        } catch (userErr: unknown) {
+          // Username conflict: user was created before but employee record failed.
+          // Find the orphaned user and resume from there.
+          const ue = userErr as { response?: { data?: Record<string, string[]> } };
+          const isConflict = ue?.response?.data?.username?.some(
+            (m) => m.toLowerCase().includes('already exists')
+          );
+          if (!isConflict) throw userErr;
+
+          const found = await usersApi.getAll({ username: account.username, page_size: 1 });
+          const orphan = found.results?.[0];
+          if (!orphan) throw userErr;
+
+          // Check if this user already has an employee record.
+          const existing = await hrEmployeesApi.getAll({ user: orphan.id });
+          if ((existing.results?.length ?? 0) > 0) {
+            const emp = existing.results![0];
+            toast(`Employee record already exists — redirecting to their profile`, 'error');
+            router.push(`/hr/employees/${emp.id}`);
+            return;
+          }
+          createdUser = orphan;
+        }
+        userId = createdUser.id;
       }
+
+      await createEmpMutation.mutateAsync(buildEmpPayload(userId));
       toast('Employee created successfully', 'success');
       router.push('/hr/employees');
     } catch (err: unknown) {
@@ -189,7 +235,7 @@ function NewEmployeeForm() {
                   width: 32, height: 32, borderRadius: '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)', cursor: 'pointer',
-                  backgroundColor: i < step ? 'var(--brand)' : i === step ? 'var(--brand)' : 'var(--surface-subtle)',
+                  backgroundColor: i <= step ? 'var(--brand)' : 'var(--surface-subtle)',
                   color: i <= step ? 'white' : 'var(--text-secondary)',
                 }}
                 onClick={() => { if (i < step) setStep(i); }}>
@@ -214,24 +260,80 @@ function NewEmployeeForm() {
               <div className="form-field"><label className="form-label">Last Name</label><input className="form-input" value={personal.last_name} onChange={p('last_name')} /></div>
               <div className="form-field"><label className="form-label">Gender</label>
                 <select className="form-select" value={personal.gender} onChange={p('gender')}>
-                  <option value="">—</option><option value="male">Male</option><option value="female">Female</option>
+                  <option value="">—</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
                 </select>
               </div>
               <div className="form-field"><label className="form-label">Marital Status</label>
                 <select className="form-select" value={personal.marital_status} onChange={p('marital_status')}>
-                  <option value="">—</option><option value="single">Single</option>
-                  <option value="married">Married</option><option value="divorced">Divorced</option><option value="widowed">Widowed</option>
+                  <option value="">—</option>
+                  <option value="single">Single</option>
+                  <option value="married">Married</option>
+                  <option value="divorced">Divorced</option>
+                  <option value="widowed">Widowed</option>
                 </select>
               </div>
               <div className="form-field"><label className="form-label">Date of Birth</label><input className="form-input" type="date" value={personal.date_of_birth} onChange={p('date_of_birth')} /></div>
-              <div className="form-field"><label className="form-label">Nationality</label><input className="form-input" value={personal.nationality} onChange={p('nationality')} /></div>
-              <div className="form-field"><label className="form-label">Home Country</label><input className="form-input" value={personal.home_country} onChange={p('home_country')} /></div>
-              <div className="form-field"><label className="form-label">Religion</label><input className="form-input" value={personal.religion} onChange={p('religion')} /></div>
+              <div className="form-field"><label className="form-label">Nationality</label>
+                <select className="form-select" value={personal.nationality} onChange={p('nationality')}>
+                  <option value="">—</option>
+                  <option value="Emirati">Emirati</option>
+                  <option value="Egyptian">Egyptian</option>
+                  <option value="Indian">Indian</option>
+                  <option value="Pakistani">Pakistani</option>
+                  <option value="Filipino">Filipino</option>
+                  <option value="Bangladeshi">Bangladeshi</option>
+                  <option value="Sri Lankan">Sri Lankan</option>
+                  <option value="Nepali">Nepali</option>
+                  <option value="Jordanian">Jordanian</option>
+                  <option value="Syrian">Syrian</option>
+                  <option value="Lebanese">Lebanese</option>
+                  <option value="Yemeni">Yemeni</option>
+                  <option value="Saudi">Saudi</option>
+                  <option value="Omani">Omani</option>
+                  <option value="British">British</option>
+                  <option value="American">American</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div className="form-field"><label className="form-label">Home Country</label>
+                <select className="form-select" value={personal.home_country} onChange={p('home_country')}>
+                  <option value="">—</option>
+                  <option value="UAE">UAE</option>
+                  <option value="Egypt">Egypt</option>
+                  <option value="India">India</option>
+                  <option value="Pakistan">Pakistan</option>
+                  <option value="Philippines">Philippines</option>
+                  <option value="Bangladesh">Bangladesh</option>
+                  <option value="Sri Lanka">Sri Lanka</option>
+                  <option value="Nepal">Nepal</option>
+                  <option value="Jordan">Jordan</option>
+                  <option value="Syria">Syria</option>
+                  <option value="Lebanon">Lebanon</option>
+                  <option value="Yemen">Yemen</option>
+                  <option value="Saudi Arabia">Saudi Arabia</option>
+                  <option value="Oman">Oman</option>
+                  <option value="UK">UK</option>
+                  <option value="USA">USA</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div className="form-field"><label className="form-label">Religion</label>
+                <select className="form-select" value={personal.religion} onChange={p('religion')}>
+                  <option value="">—</option>
+                  <option value="Islam">Islam</option>
+                  <option value="Christianity">Christianity</option>
+                  <option value="Hinduism">Hinduism</option>
+                  <option value="Buddhism">Buddhism</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
               <div className="form-field"><label className="form-label">National ID</label><input className="form-input" value={personal.national_id} onChange={p('national_id')} /></div>
               <div className="form-field"><label className="form-label">Personal Email</label><input className="form-input" type="email" value={personal.personal_email} onChange={p('personal_email')} /></div>
               <div className="form-field"><label className="form-label">Passport Number</label><input className="form-input" value={personal.passport_number} onChange={p('passport_number')} /></div>
               <div className="form-field"><label className="form-label">Passport Issue Date</label><input className="form-input" type="date" value={personal.passport_issue_date} onChange={p('passport_issue_date')} /></div>
-              <div className="form-field" style={{ gridColumn: '1 / -1' }}><label className="form-label">Passport Expiry Date</label><input className="form-input" type="date" value={personal.passport_expiry_date} onChange={p('passport_expiry_date')} /></div>
+              <div className="form-field"><label className="form-label">Passport Expiry Date</label><input className="form-input" type="date" value={personal.passport_expiry_date} onChange={p('passport_expiry_date')} /></div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 'var(--space-2)' }}>
               <Button variant="primary" onClick={() => {
@@ -249,8 +351,10 @@ function NewEmployeeForm() {
             <div className="form-grid">
               <div className="form-field"><label className="form-label">Employment Type</label>
                 <select className="form-select" value={employment.employment_type} onChange={em('employment_type')}>
-                  <option value="full_time">Full Time</option><option value="part_time">Part Time</option>
-                  <option value="contract">Contract</option><option value="intern">Intern</option>
+                  <option value="full_time">Full Time</option>
+                  <option value="part_time">Part Time</option>
+                  <option value="contract">Contract</option>
+                  <option value="intern">Intern</option>
                 </select>
               </div>
               <div className="form-field">
@@ -273,8 +377,8 @@ function NewEmployeeForm() {
                 <label className="form-label">Department</label>
                 <SearchableDropdown
                   options={deptOptions}
-                  value={employment.department ? Number(employment.department) : null}
-                  onChange={(v) => setEmployment((p) => ({ ...p, department: v ? String(v) : '' }))}
+                  value={employment.department}
+                  onChange={(v) => setEmployment((p) => ({ ...p, department: v as number | null }))}
                   placeholder="— None —"
                   allowClear
                   onCreateOption={async (name) => {
@@ -289,8 +393,8 @@ function NewEmployeeForm() {
                 <label className="form-label">Position</label>
                 <SearchableDropdown
                   options={positionOptions}
-                  value={employment.position ? Number(employment.position) : null}
-                  onChange={(v) => setEmployment((p) => ({ ...p, position: v ? String(v) : '' }))}
+                  value={employment.position}
+                  onChange={(v) => setEmployment((p) => ({ ...p, position: v as number | null }))}
                   placeholder="— None —"
                   allowClear
                   onCreateOption={async (title) => {
@@ -302,7 +406,7 @@ function NewEmployeeForm() {
                 />
               </div>
 
-              {selectedPosition?.permission_set_name && (
+              {selectedPosition?.default_permission_set_name && (
                 <div style={{ gridColumn: '1 / -1', borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)', background: 'var(--brand-muted)' }}>
                   <span>🔑</span>
                   <div>
@@ -310,14 +414,54 @@ function NewEmployeeForm() {
                       Access auto-assigned from position
                     </p>
                     <p style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', opacity: 0.8, margin: 0 }}>
-                      {'"'}{selectedPosition.title}{'"'} → <strong>{selectedPosition.permission_set_name}</strong>
+                      {'"'}{selectedPosition.title}{'"'} → <strong>{selectedPosition.default_permission_set_name}</strong>
                     </p>
                   </div>
                 </div>
               )}
 
+              <div className="form-field">
+                <label className="form-label">Legal Entity</label>
+                <SearchableDropdown
+                  options={legalEntityOptions}
+                  value={employment.legal_entity}
+                  onChange={(v) => setEmployment((p) => ({ ...p, legal_entity: v as number | null }))}
+                  placeholder="— None —"
+                  allowClear
+                  onCreateOption={async (name) => {
+                    const le = await hrLegalEntitiesApi.create({ name });
+                    queryClient.invalidateQueries({ queryKey: ['hr-legal-entities'] });
+                    return { value: le.id, label: le.name };
+                  }}
+                />
+              </div>
+              <div className="form-field">
+                <label className="form-label">Work Location</label>
+                <SearchableDropdown
+                  options={locationOptions}
+                  value={employment.location}
+                  onChange={(v) => setEmployment((p) => ({ ...p, location: v as number | null }))}
+                  placeholder="— None —"
+                  allowClear
+                />
+              </div>
+              <div className="form-field">
+                <label className="form-label">Direct Manager</label>
+                <SearchableDropdown
+                  options={managerOptions}
+                  value={employment.direct_manager}
+                  onChange={(v) => setEmployment((p) => ({ ...p, direct_manager: v as number | null }))}
+                  placeholder="— None —"
+                  allowClear
+                />
+              </div>
+              <div className="form-field">
+                <label className="form-label">Mobile Number</label>
+                <input className="form-input" type="tel" value={employment.mobile_number} onChange={em('mobile_number')} placeholder="+971 50 xxx xxxx" />
+              </div>
               <div className="form-field"><label className="form-label">Hiring Date *</label><input className="form-input" type="date" value={employment.join_date} onChange={em('join_date')} /></div>
               <div className="form-field"><label className="form-label">End of Probation</label><input className="form-input" type="date" value={employment.probation_end_date} onChange={em('probation_end_date')} /></div>
+              <div className="form-field"><label className="form-label">Contract End Date</label><input className="form-input" type="date" value={employment.end_date} onChange={em('end_date')} /></div>
               <div className="form-field" style={{ gridColumn: '1 / -1' }}><label className="form-label">Salary Display Name</label><input className="form-input" value={employment.salary_display_name} onChange={em('salary_display_name')} placeholder="Name on payslip" /></div>
             </div>
 
@@ -367,12 +511,19 @@ function NewEmployeeForm() {
                 <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Min 8 characters</span>
               </div>
 
-              {!selectedPosition?.permission_set_name && (
+              {!selectedPosition?.default_permission_set_name && (
                 <div className="form-field" style={{ gridColumn: '1 / -1' }}><label className="form-label">Role</label>
                   <select className="form-select" value={account.role} onChange={ac('role')}>
+                    <option value="employee">Employee</option>
                     <option value="site_engineer">Site Engineer</option>
+                    <option value="site_manager">Site Manager</option>
+                    <option value="supervisor">Supervisor</option>
+                    <option value="hr_manager">HR Manager</option>
+                    <option value="hr_secretary">HR Secretary</option>
                     <option value="procurement_officer">Procurement Officer</option>
                     <option value="procurement_manager">Procurement Manager</option>
+                    <option value="admin">Admin</option>
+                    <option value="company_director">Company Director</option>
                     <option value="super_admin">Super Admin</option>
                   </select>
                 </div>
@@ -407,7 +558,7 @@ function NewEmployeeForm() {
                 <span style={{ fontWeight: 'var(--weight-medium)' }}>{selectedPosition?.title || '—'}</span>
                 <span style={{ color: 'var(--text-secondary)' }}>Access</span>
                 <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--brand)' }}>
-                  {selectedPosition?.permission_set_name || account.role.replace(/_/g, ' ')}
+                  {selectedPosition?.default_permission_set_name || account.role.replace(/_/g, ' ')}
                 </span>
                 <span style={{ color: 'var(--text-secondary)' }}>Total Salary</span>
                 <span style={{ fontWeight: 'var(--weight-bold)' }}>{totalSalary.toLocaleString()} AED</span>
