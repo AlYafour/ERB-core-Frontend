@@ -137,7 +137,7 @@ function NewEmployeeForm() {
 
   const queryClient = useQueryClient();
   const { data: depts }         = useQuery({ queryKey: ['hr-depts'],             queryFn: () => hrDepartmentsApi.getAll({ page: 1 }),       staleTime: 300_000 });
-  const { data: positions }     = useQuery({ queryKey: ['hr-positions'],          queryFn: () => hrPositionsApi.getAll({ page: 1 }),          staleTime: 300_000 });
+  const { data: positions }     = useQuery({ queryKey: ['hr-positions'],          queryFn: () => hrPositionsApi.getAll({ page_size: 200 }),   staleTime: 300_000 });
   const { data: groups }        = useQuery({ queryKey: ['hr-employee-groups-all'], queryFn: () => hrEmployeeGroupsApi.getAll(),              staleTime: 300_000 });
   const { data: officeLocations } = useQuery({ queryKey: ['hr-office-locations'],  queryFn: () => hrOfficeLocationsApi.getAll({ is_active: true }), staleTime: 300_000 });
   const { data: legalEntities }   = useQuery({ queryKey: ['hr-legal-entities'],   queryFn: () => hrLegalEntitiesApi.getAll(),                      staleTime: 300_000 });

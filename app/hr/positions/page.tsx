@@ -44,7 +44,6 @@ export default function PositionsPage() {
   const [drawerOpen, setDrawerOpen]           = useState(false);
   const [editing, setEditing]                 = useState<HRPosition | null>(null);
   const [form, setForm]                       = useState<FormState>(EMPTY_FORM);
-  const [deptFilter, setDeptFilter]           = useState<number | null>(null);
   const [viewingPosition, setViewingPosition] = useState<HRPosition | null>(null);
 
   const { data: raw, isLoading, error } = useQuery({
@@ -74,14 +73,12 @@ export default function PositionsPage() {
 
   const all = raw?.results ?? [];
 
-  const filtered = all.filter((p: HRPosition) => {
-    const matchesDept = deptFilter === null || p.department === deptFilter;
-    const matchesSearch = !search
-      || p.title.toLowerCase().includes(search.toLowerCase())
-      || (p.title_ar ?? '').toLowerCase().includes(search.toLowerCase())
-      || (p.department_name ?? '').toLowerCase().includes(search.toLowerCase());
-    return matchesDept && matchesSearch;
-  });
+  const filtered = all.filter((p: HRPosition) =>
+    !search
+    || p.title.toLowerCase().includes(search.toLowerCase())
+    || (p.title_ar ?? '').toLowerCase().includes(search.toLowerCase())
+    || (p.department_name ?? '').toLowerCase().includes(search.toLowerCase())
+  );
 
   const deptOptions   = (deptsData?.results ?? []).map(d => ({ value: d.id, label: d.name }));
   const roleOptions   = (rolesData?.results ?? []).map(r => ({ value: r.id, label: r.name }));
@@ -247,39 +244,6 @@ export default function PositionsPage() {
 
   const empList: HREmployee[] = positionEmployees?.results ?? [];
 
-  // Department filter chips
-  const deptChips = (
-    <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-3)' }}>
-      <button
-        onClick={() => setDeptFilter(null)}
-        style={{
-          padding: '3px 12px', borderRadius: 'var(--radius-full)', border: '1px solid',
-          fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', cursor: 'pointer',
-          background: deptFilter === null ? 'var(--color-primary-600, #2563eb)' : 'transparent',
-          color: deptFilter === null ? '#fff' : 'var(--text-secondary)',
-          borderColor: deptFilter === null ? 'var(--color-primary-600, #2563eb)' : 'var(--border-default)',
-        }}
-      >
-        All departments
-      </button>
-      {(deptsData?.results ?? []).map(d => (
-        <button
-          key={d.id}
-          onClick={() => setDeptFilter(deptFilter === d.id ? null : d.id)}
-          style={{
-            padding: '3px 12px', borderRadius: 'var(--radius-full)', border: '1px solid',
-            fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', cursor: 'pointer',
-            background: deptFilter === d.id ? 'var(--color-primary-600, #2563eb)' : 'transparent',
-            color: deptFilter === d.id ? '#fff' : 'var(--text-secondary)',
-            borderColor: deptFilter === d.id ? 'var(--color-primary-600, #2563eb)' : 'var(--border-default)',
-          }}
-        >
-          {d.name}
-        </button>
-      ))}
-    </div>
-  );
-
   return (
     <AppListPage
       title="Positions"
@@ -297,7 +261,6 @@ export default function PositionsPage() {
       emptyTitle="No positions found."
       tableState={tableState}
       searchPlaceholder="Search positions..."
-      headerExtra={deptChips}
     >
       {/* ── Edit / Create Drawer ─────────────────────────────────── */}
       <Drawer
