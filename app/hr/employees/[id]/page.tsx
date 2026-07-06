@@ -1115,14 +1115,27 @@ export default function EmployeeDetailPage() {
                   ? (positions?.results ?? []).find(p => p.id === Number(form.position))
                   : null;
                 if (!selPos) return null;
-                return (
-                  <p style={{ margin: 'var(--space-1) 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    Auto role:
-                    {selPos.default_permission_set_name
-                      ? <span style={{ padding: '1px 8px', borderRadius: 'var(--radius-full)', background: 'var(--color-primary-50, #eff6ff)', color: 'var(--color-primary-700, #1d4ed8)', fontWeight: 'var(--weight-medium)' }}>{selPos.default_permission_set_name}</span>
-                      : <span style={{ fontStyle: 'italic' }}>No default — set one in <a href="/hr/positions" style={{ color: 'var(--color-primary-600)', textDecoration: 'underline' }}>Positions</a></span>
-                    }
+                const hasDept = !!selPos.department_name;
+                const hasRole = !!selPos.default_permission_set_name;
+                if (!hasDept && !hasRole) return (
+                  <p style={{ margin: 'var(--space-1) 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                    No department or role configured — <a href="/hr/positions" style={{ color: 'var(--color-primary-600)', textDecoration: 'underline' }}>set them in Positions</a>
                   </p>
+                );
+                return (
+                  <div style={{ marginTop: 'var(--space-1)', display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>Will auto-assign →</span>
+                    {hasDept && (
+                      <span style={{ padding: '1px 8px', borderRadius: 'var(--radius-full)', background: 'var(--color-neutral-100, #f3f4f6)', color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)' }}>
+                        Dept: {selPos.department_name}
+                      </span>
+                    )}
+                    {hasRole && (
+                      <span style={{ padding: '1px 8px', borderRadius: 'var(--radius-full)', background: 'var(--color-primary-50, #eff6ff)', color: 'var(--color-primary-700, #1d4ed8)', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)' }}>
+                        Role: {selPos.default_permission_set_name}
+                      </span>
+                    )}
+                  </div>
                 );
               })()}
             </div>

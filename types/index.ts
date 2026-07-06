@@ -571,6 +571,8 @@ export interface HRPosition {
   title_ar: string;
   level: number;
   base_salary: string | null;
+  department: number | null;
+  department_name: string | null;
   default_permission_set: number | null;
   default_permission_set_name: string | null;
   employee_count: number;
