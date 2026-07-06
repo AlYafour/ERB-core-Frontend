@@ -174,7 +174,7 @@ function NewEmployeeForm() {
     department:           employment.department,
     position:             employment.position,
     legal_entity:         employment.legal_entity,
-    location:             employment.location,
+    office_location:      employment.location,
     direct_manager:       employment.direct_manager,
     mobile_number:        employment.mobile_number,
     employee_group:       employment.employee_group,
