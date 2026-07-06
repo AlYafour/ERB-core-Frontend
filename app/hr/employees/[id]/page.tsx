@@ -307,7 +307,7 @@ export default function EmployeeDetailPage() {
 
   const isSelf = !!emp && currentUser?.id === emp.user?.id;
   const { data: depts }     = useQuery({ queryKey: ['hr-departments-all'], queryFn: () => hrDepartmentsApi.getAll({ page: 1 }), staleTime: 300_000 });
-  const { data: positions } = useQuery({ queryKey: ['hr-positions-all'],   queryFn: () => hrPositionsApi.getAll({ page: 1 }), staleTime: 300_000 });
+  const { data: positions } = useQuery({ queryKey: ['hr-positions-all'],   queryFn: () => hrPositionsApi.getAll({ page_size: 200 }), staleTime: 300_000 });
   const { data: groups }    = useQuery({ queryKey: ['hr-employee-groups-all'], queryFn: () => hrEmployeeGroupsApi.getAll(), staleTime: 300_000 });
 
   const deptOptions     = (depts?.results     ?? []).map((d) => ({ value: d.id, label: d.name }));
@@ -1110,6 +1110,21 @@ export default function EmployeeDetailPage() {
                   return { value: pos.id, label: pos.title };
                 }}
               />
+              {(() => {
+                const selPos = form.position
+                  ? (positions?.results ?? []).find(p => p.id === Number(form.position))
+                  : null;
+                if (!selPos) return null;
+                return (
+                  <p style={{ margin: 'var(--space-1) 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    Auto role:
+                    {selPos.default_permission_set_name
+                      ? <span style={{ padding: '1px 8px', borderRadius: 'var(--radius-full)', background: 'var(--color-primary-50, #eff6ff)', color: 'var(--color-primary-700, #1d4ed8)', fontWeight: 'var(--weight-medium)' }}>{selPos.default_permission_set_name}</span>
+                      : <span style={{ fontStyle: 'italic' }}>No default — set one in <a href="/hr/positions" style={{ color: 'var(--color-primary-600)', textDecoration: 'underline' }}>Positions</a></span>
+                    }
+                  </p>
+                );
+              })()}
             </div>
             <div className={fld}>
               <label className={lbl}>Employee Category</label>

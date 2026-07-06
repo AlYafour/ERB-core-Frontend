@@ -10,9 +10,10 @@ import { Button, Drawer } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
-import { hrPositionsApi } from '@/lib/api/hr';
+import { hrPositionsApi, hrEmployeesApi } from '@/lib/api/hr';
 import { permissionsApi } from '@/lib/api/permissions';
-import { HRPosition } from '@/types';
+import { HRPosition, HREmployee } from '@/types';
+import Link from 'next/link';
 
 type FormState = {
   title: string;
@@ -38,9 +39,10 @@ export default function PositionsPage() {
   const tableState = useTableState();
   const { search } = tableState;
 
-  const [drawerOpen, setDrawerOpen]     = useState(false);
-  const [editing, setEditing]           = useState<HRPosition | null>(null);
-  const [form, setForm]                 = useState<FormState>(EMPTY_FORM);
+  const [drawerOpen, setDrawerOpen]         = useState(false);
+  const [editing, setEditing]               = useState<HRPosition | null>(null);
+  const [form, setForm]                     = useState<FormState>(EMPTY_FORM);
+  const [viewingPosition, setViewingPosition] = useState<HRPosition | null>(null);
 
   const { data: raw, isLoading, error } = useQuery({
     queryKey: ['hr-positions-all'],
@@ -52,6 +54,13 @@ export default function PositionsPage() {
     queryKey: ['permission-sets-all'],
     queryFn: () => permissionsApi.getAllPermissionSets({ page_size: 200 }),
     staleTime: 120_000,
+  });
+
+  const { data: positionEmployees, isLoading: loadingEmp } = useQuery({
+    queryKey: ['position-employees', viewingPosition?.id],
+    queryFn: () => hrEmployeesApi.getAll({ position: viewingPosition!.id }),
+    enabled: !!viewingPosition,
+    staleTime: 30_000,
   });
 
   const all      = raw?.results ?? [];
@@ -142,11 +151,6 @@ export default function PositionsPage() {
         : <span style={{ color: 'var(--text-tertiary)' }}>—</span>,
     },
     {
-      key: 'level',
-      header: 'Level',
-      render: r => <span style={{ color: 'var(--text-secondary)' }}>{r.level}</span>,
-    },
-    {
       key: 'default_permission_set_name',
       header: 'Default Role',
       render: r => r.default_permission_set_name
@@ -154,8 +158,7 @@ export default function PositionsPage() {
           <span style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 'var(--space-1)',
-            padding: '2px 8px',
+            padding: '2px 10px',
             borderRadius: 'var(--radius-full)',
             background: 'var(--color-primary-50, #eff6ff)',
             color: 'var(--color-primary-700, #1d4ed8)',
@@ -165,16 +168,27 @@ export default function PositionsPage() {
             {r.default_permission_set_name}
           </span>
         )
-        : <span style={{ color: 'var(--text-tertiary)' }}>No default</span>,
+        : <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>No default</span>,
     },
     {
       key: 'employee_count',
       header: 'Members',
-      render: r => (
-        <span style={{ color: 'var(--text-secondary)' }}>
-          {r.employee_count} {r.employee_count === 1 ? 'employee' : 'employees'}
-        </span>
-      ),
+      render: r => r.employee_count > 0
+        ? (
+          <button
+            onClick={() => setViewingPosition(r)}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+              color: 'var(--color-primary-600, #2563eb)',
+              fontSize: 'var(--text-sm)',
+              fontWeight: 'var(--weight-medium)',
+              textDecoration: 'underline',
+            }}
+          >
+            {r.employee_count} {r.employee_count === 1 ? 'employee' : 'employees'}
+          </button>
+        )
+        : <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>—</span>,
     },
     {
       key: 'actions',
@@ -182,6 +196,7 @@ export default function PositionsPage() {
       render: r => (
         <RowActions actions={[
           { label: 'Edit', onClick: () => openEdit(r), hidden: !isAdmin },
+          { label: 'View Employees', onClick: () => setViewingPosition(r) },
           { label: 'Delete', variant: 'danger', hidden: !isAdmin, onClick: async () => {
             if (await confirm(`Delete position "${r.title}"?`)) deleteMutation.mutate(r.id);
           }},
@@ -189,6 +204,8 @@ export default function PositionsPage() {
       ),
     },
   ];
+
+  const empList: HREmployee[] = positionEmployees?.results ?? [];
 
   return (
     <AppListPage
@@ -208,6 +225,7 @@ export default function PositionsPage() {
       tableState={tableState}
       searchPlaceholder="Search positions..."
     >
+      {/* ── Edit / Create Drawer ─────────────────────────────────── */}
       <Drawer
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
@@ -252,7 +270,6 @@ export default function PositionsPage() {
             min={1}
             value={form.level}
             onChange={e => setForm(p => ({ ...p, level: Number(e.target.value) || 1 }))}
-            placeholder="1"
           />
         </div>
 
@@ -265,7 +282,7 @@ export default function PositionsPage() {
             step="0.01"
             value={form.base_salary}
             onChange={e => setForm(p => ({ ...p, base_salary: e.target.value }))}
-            placeholder="Optional salary template"
+            placeholder="Optional"
           />
         </div>
 
@@ -282,6 +299,62 @@ export default function PositionsPage() {
             allowClear
           />
         </div>
+      </Drawer>
+
+      {/* ── View Employees Drawer ────────────────────────────────── */}
+      <Drawer
+        isOpen={!!viewingPosition}
+        onClose={() => setViewingPosition(null)}
+        title={viewingPosition ? `${viewingPosition.title} — Employees` : ''}
+        footer={
+          <Button variant="secondary" onClick={() => setViewingPosition(null)}>Close</Button>
+        }
+      >
+        {loadingEmp && (
+          <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>Loading…</p>
+        )}
+        {!loadingEmp && empList.length === 0 && (
+          <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>
+            No employees in this position.
+          </p>
+        )}
+        {!loadingEmp && empList.map(emp => (
+          <Link
+            key={emp.id}
+            href={`/hr/employees/${emp.id}`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-3)',
+              padding: 'var(--space-3) 0',
+              borderBottom: '1px solid var(--border-subtle)',
+              textDecoration: 'none',
+              color: 'inherit',
+            }}
+          >
+            <div style={{
+              width: 36, height: 36, borderRadius: '50%',
+              background: 'var(--color-primary-100, #dbeafe)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)',
+              color: 'var(--color-primary-700, #1d4ed8)',
+              flexShrink: 0,
+            }}>
+              {(emp.full_name ?? emp.user?.username ?? '?')[0].toUpperCase()}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ margin: 0, fontWeight: 'var(--weight-medium)', fontSize: 'var(--text-sm)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {emp.full_name ?? emp.user?.username}
+              </p>
+              <p style={{ margin: 0, fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                {emp.employee_id} {emp.department_name ? `· ${emp.department_name}` : ''}
+              </p>
+            </div>
+            <span style={{ marginLeft: 'auto', fontSize: 'var(--text-xs)', color: 'var(--color-primary-600, #2563eb)' }}>
+              View →
+            </span>
+          </Link>
+        ))}
       </Drawer>
     </AppListPage>
   );
