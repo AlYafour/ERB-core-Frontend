@@ -172,7 +172,7 @@ export const hrDepartmentsApi = {
 // ── Positions ──────────────────────────────────────────────────────────────────
 
 export const hrPositionsApi = {
-  getAll: async (params?: { page?: number; search?: string }): Promise<PaginatedResponse<HRPosition>> => {
+  getAll: async (params?: { page?: number; search?: string; page_size?: number }): Promise<PaginatedResponse<HRPosition>> => {
     const response = await apiClient.get('/hr/employees/positions/', { params });
     return response.data;
   },
