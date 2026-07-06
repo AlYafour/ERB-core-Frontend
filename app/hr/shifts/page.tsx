@@ -137,9 +137,6 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
     });
   };
 
-  const setDays = (days: number[]) =>
-    setForm(p => ({ ...p, work_days: days, day_schedules: p.day_schedules.filter(ds => days.includes(ds.day)) }));
-
   const togglePerDay = () => {
     setForm(p => {
       const on = !p.per_day_times;
@@ -221,21 +218,7 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
 
           {/* Work days */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <label style={{ ...LABEL, marginBottom: 0 }}>Work Days</label>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {[
-                  { label: 'Mon–Fri', days: [0,1,2,3,4] },
-                  { label: 'Mon–Thu', days: [0,1,2,3] },
-                  { label: 'All 7', days: [0,1,2,3,4,5,6] },
-                ].map(({ label, days }) => (
-                  <button key={label} type="button" onClick={() => setDays(days)}
-                    style={{ padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 600, cursor: 'pointer', border: '1px solid var(--border-default)', background: 'transparent', color: 'var(--text-secondary)' }}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <label style={LABEL}>Work Days</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
               {WEEKDAYS.map(({ label, value }) => {
                 const on = form.work_days.includes(value);
