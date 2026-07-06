@@ -983,7 +983,7 @@ export default function ApprovalChainsPage() {
   const { data: tenantRoles = [] } = useQuery({
     queryKey: ['tenant-roles'],
     queryFn: async (): Promise<HRTenantRole[]> => {
-      const res = await hrRolesApi.getAll({ is_active: true });
+      const res = await hrRolesApi.getAll();
       return res.results ?? [];
     },
     staleTime: 300_000,
