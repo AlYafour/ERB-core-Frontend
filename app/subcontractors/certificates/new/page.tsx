@@ -7,6 +7,7 @@ import { subcontractorsApi } from '@/lib/api/subcontractors';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
+import DateInput from '@/components/ui/DateInput';
 import FormField from '@/components/ui/FormField';
 import { PageShell, PageHeader, Button } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
@@ -199,26 +200,23 @@ function NewCertificateForm() {
           </FormField>
 
           <FormField label="Certificate Date" required>
-            <input
-              type="date" required className="form-input"
+            <DateInput className="form-input"
               value={form.certificate_date}
-              onChange={e => set('certificate_date', e.target.value)}
+              onChange={(v) => set('certificate_date', v)}
             />
           </FormField>
 
           <FormField label="Period From">
-            <input
-              type="date" className="form-input"
+            <DateInput className="form-input"
               value={form.period_from}
-              onChange={e => set('period_from', e.target.value)}
+              onChange={(v) => set('period_from', v)}
             />
           </FormField>
 
           <FormField label="Period To">
-            <input
-              type="date" className="form-input"
+            <DateInput className="form-input"
               value={form.period_to}
-              onChange={e => set('period_to', e.target.value)}
+              onChange={(v) => set('period_to', v)}
             />
           </FormField>
 

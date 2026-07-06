@@ -13,6 +13,7 @@ import { Product, PurchaseQuotationItem } from '@/types';
 import { PurchaseQuotationFormData, toPurchaseQuotationCreateData } from '@/lib/types/form-data';
 import { toast } from '@/lib/hooks/use-toast';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
+import DateInput from '@/components/ui/DateInput';
 import FormField from '@/components/ui/FormField';
 import { Button, PageShell } from '@/components/ui';
 import { formatBackendError, validatePositiveNumber, validateDateAfter } from '@/lib/utils/validation';
@@ -355,14 +356,14 @@ function NewPurchaseQuotationPageContent() {
                 </FormField>
 
                 <FormField label="Quotation Date" required error={errors.quotation_date} fieldName="quotation_date">
-                  <input type="date" name="quotation_date" value={formData.quotation_date}
-                    onChange={(e) => { setFormData({ ...formData, quotation_date: e.target.value }); if (errors.quotation_date) setErrors({ ...errors, quotation_date: '' }); }}
+                  <DateInput name="quotation_date" value={formData.quotation_date}
+                    onChange={(v) => { setFormData({ ...formData, quotation_date: v }); if (errors.quotation_date) setErrors({ ...errors, quotation_date: '' }); }}
                     className="form-input" />
                 </FormField>
 
                 <FormField label="Valid Until" error={errors.valid_until} fieldName="valid_until">
-                  <input type="date" name="valid_until" value={formData.valid_until}
-                    onChange={(e) => { setFormData({ ...formData, valid_until: e.target.value }); if (errors.valid_until) setErrors({ ...errors, valid_until: '' }); }}
+                  <DateInput name="valid_until" value={formData.valid_until}
+                    onChange={(v) => { setFormData({ ...formData, valid_until: v }); if (errors.valid_until) setErrors({ ...errors, valid_until: '' }); }}
                     className="form-input" />
                 </FormField>
 

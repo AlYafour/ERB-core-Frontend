@@ -15,6 +15,7 @@ import { type Column } from '@/components/ui/DataTable';
 import { RowActions } from '@/components/ui/RowActions';
 import { BaseModal } from '@/components/ui/base/BaseModal';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
+import DateInput from '@/components/ui/DateInput';
 import type { LeavePolicy, EmployeeGroup, HRLeaveBalance } from '@/types';
 import { MONTH_NAMES } from '@/lib/utils/hr';
 
@@ -214,7 +215,7 @@ function PolicyModal({
             </div>
             <div>
               <label style={LABEL}>Effective From <span style={{ color: 'var(--color-error)' }}>*</span></label>
-              <input type="date" value={form.effective_from} onChange={set('effective_from')} style={INPUT} />
+              <DateInput value={form.effective_from} onChange={(v) => setForm(f => ({ ...f, effective_from: v }))} style={INPUT} />
             </div>
           </div>
         </div>

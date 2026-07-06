@@ -7,6 +7,7 @@ import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
 import { goodsReceivingApi, GRNItem } from '@/lib/api/goods-receiving';
 import { GRNFormData, toGRNCreateData } from '@/lib/types/form-data';
 import { Button, PageHeader, PageShell } from '@/components/ui';
+import DateInput from '@/components/ui/DateInput';
 import MainLayout from '@/components/layout/MainLayout';
 import { formatPrice } from '@/lib/utils/format';
 import { toast } from '@/lib/hooks/use-toast';
@@ -298,12 +299,10 @@ function NewGRNPageContent() {
                 <label className="form-label">
                   Receipt Date <span style={{ color: 'var(--color-error)' }}>*</span>
                 </label>
-                <input
-                  type="date"
+                <DateInput
                   value={formData.receipt_date}
-                  onChange={(e) => setFormData({ ...formData, receipt_date: e.target.value })}
+                  onChange={(v) => setFormData({ ...formData, receipt_date: v })}
                   className="form-input"
-                  required
                 />
               </div>
               <div>

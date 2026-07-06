@@ -16,6 +16,7 @@ import type { CostCode, PurchaseOrderItem, Product } from '@/types';
 import { PurchaseOrderFormData, toPurchaseOrderCreateData } from '@/lib/types/form-data';
 import { toast } from '@/lib/hooks/use-toast';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
+import DateInput from '@/components/ui/DateInput';
 import CostCodePicker from '@/components/domain/CostCodePicker';
 import FormField from '@/components/ui/FormField';
 import { formatPrice } from '@/lib/utils/format';
@@ -246,13 +247,13 @@ function NewPOContent() {
               <div className="form-grid form-grid--3col" style={{ marginBottom: 12 }}>
                 <div>
                   <label className="form-label">{t('col', 'orderDate')} <span style={{ color: 'var(--color-error)' }}>*</span></label>
-                  <input type="date" required className="form-input" value={formData.order_date}
-                    onChange={(e) => setForm({ order_date: e.target.value })} />
+                  <DateInput className="form-input" value={formData.order_date}
+                    onChange={(v) => setForm({ order_date: v })} />
                 </div>
 
                 <FormField label={t('field', 'deliveryDate')} error={errors.delivery_date} fieldName="delivery_date">
-                  <input type="date" name="delivery_date" className="form-input" value={formData.delivery_date}
-                    onChange={(e) => setForm({ delivery_date: e.target.value })} />
+                  <DateInput name="delivery_date" className="form-input" value={formData.delivery_date}
+                    onChange={(v) => setForm({ delivery_date: v })} />
                 </FormField>
 
                 <FormField label={t('col', 'deliveryMethod')} fieldName="delivery_method">

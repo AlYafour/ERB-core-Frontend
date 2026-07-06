@@ -15,6 +15,7 @@ import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import { Button, Badge, PageShell, Drawer, Loader } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
+import DateInput from '@/components/ui/DateInput';
 import { rolesApi, Role, UserRoles, AdditionalRoleAssignment } from '@/lib/api/roles';
 import { HREmployee, User, EmployeeBankAccount } from '@/types';
 
@@ -1164,7 +1165,7 @@ export default function EmployeeDetailPage() {
                 <option value="female">Female</option>
               </select>
             </div>
-            <div className={fld}><label className={lbl}>Date of Birth</label><input className={inp} type="date" value={form.date_of_birth} onChange={f('date_of_birth')} /></div>
+            <div className={fld}><label className={lbl}>Date of Birth</label><DateInput className={inp} value={(form.date_of_birth as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, date_of_birth: v }))} /></div>
             <div className={fld}>
               <label className={lbl}>Marital Status</label>
               <select className={sel} value={form.marital_status} onChange={f('marital_status')}>
@@ -1180,8 +1181,8 @@ export default function EmployeeDetailPage() {
             <div className={fld}><label className={lbl}>Religion</label><input className={inp} value={form.religion} onChange={f('religion')} /></div>
             <div className={fld}><label className={lbl}>National ID</label><input className={inp} value={form.national_id} onChange={f('national_id')} /></div>
             <div className={fld}><label className={lbl}>Passport Number</label><input className={inp} value={form.passport_number} onChange={f('passport_number')} /></div>
-            <div className={fld}><label className={lbl}>Passport Issue Date</label><input className={inp} type="date" value={form.passport_issue_date} onChange={f('passport_issue_date')} /></div>
-            <div className={fld}><label className={lbl}>Passport Expiry Date</label><input className={inp} type="date" value={form.passport_expiry_date} onChange={f('passport_expiry_date')} /></div>
+            <div className={fld}><label className={lbl}>Passport Issue Date</label><DateInput className={inp} value={(form.passport_issue_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, passport_issue_date: v }))} /></div>
+            <div className={fld}><label className={lbl}>Passport Expiry Date</label><DateInput className={inp} value={(form.passport_expiry_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, passport_expiry_date: v }))} /></div>
             <div className={fld}><label className={lbl}>Personal Email</label><input className={inp} type="email" value={form.personal_email} onChange={f('personal_email')} /></div>
           </div>
         )}
@@ -1290,9 +1291,9 @@ export default function EmployeeDetailPage() {
               />
             </div>
             <div className={fld}><label className={lbl}>Salary Display Name</label><input className={inp} value={form.salary_display_name} onChange={f('salary_display_name')} /></div>
-            <div className={fld}><label className={lbl}>Hiring Date</label><input className={inp} type="date" value={form.join_date} onChange={f('join_date')} /></div>
-            <div className={fld}><label className={lbl}>End of Probation</label><input className={inp} type="date" value={form.probation_end_date} onChange={f('probation_end_date')} /></div>
-            <div className={fld}><label className={lbl}>End Date</label><input className={inp} type="date" value={form.end_date} onChange={f('end_date')} /></div>
+            <div className={fld}><label className={lbl}>Hiring Date</label><DateInput className={inp} value={(form.join_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, join_date: v }))} /></div>
+            <div className={fld}><label className={lbl}>End of Probation</label><DateInput className={inp} value={(form.probation_end_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, probation_end_date: v }))} /></div>
+            <div className={fld}><label className={lbl}>End Date</label><DateInput className={inp} value={(form.end_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, end_date: v }))} /></div>
           </div>
         )}
 
@@ -1314,7 +1315,7 @@ export default function EmployeeDetailPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
             <div className={fld}><label className={lbl}>Resident ID</label><input className={inp} value={form.resident_id} onChange={f('resident_id')} /></div>
             <div className={fld}><label className={lbl}>Labor Card</label><input className={inp} value={form.labor_card} onChange={f('labor_card')} /></div>
-            <div className={fld}><label className={lbl}>Labor Card Expiry</label><input className={inp} type="date" value={form.labor_card_expiry} onChange={f('labor_card_expiry')} /></div>
+            <div className={fld}><label className={lbl}>Labor Card Expiry</label><DateInput className={inp} value={(form.labor_card_expiry as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, labor_card_expiry: v }))} /></div>
             <div className={fld}><label className={lbl}>MOL Number</label><input className={inp} value={form.mol_number} onChange={f('mol_number')} /></div>
             <div className={fld}><label className={lbl}>Sponsor Name</label><input className={inp} value={form.sponsor_name} onChange={f('sponsor_name')} /></div>
             <div className={fld}><label className={lbl}>Sponsor ID</label><input className={inp} value={form.sponsor_id} onChange={f('sponsor_id')} /></div>

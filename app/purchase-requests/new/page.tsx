@@ -15,6 +15,7 @@ import { getApiError } from '@/lib/utils/error';
 import ProductSelector from '@/components/features/ProductSelector';
 import QuantityInput from '@/components/ui/QuantityInput';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
+import DateInput from '@/components/ui/DateInput';
 import { EditablePRItemsTable } from '@/components/procurement/EditablePRItemsTable';
 import { UNIT_OPTIONS } from '@/lib/constants/unit-options';
 import FormField from '@/components/ui/FormField';
@@ -252,19 +253,17 @@ function NewPurchaseRequestPageContent() {
                 </FormField>
 
                 <FormField label={t('field', 'requestDate')} required>
-                  <input
-                    type="date" required
+                  <DateInput
                     value={formData.request_date}
-                    onChange={(e) => setFormData({ ...formData, request_date: e.target.value })}
+                    onChange={(v) => setFormData({ ...formData, request_date: v })}
                     className="form-input"
                   />
                 </FormField>
 
                 <FormField label={t('field', 'requiredBy')} required>
-                  <input
-                    type="date" required
+                  <DateInput
                     value={formData.required_by}
-                    onChange={(e) => setFormData({ ...formData, required_by: e.target.value })}
+                    onChange={(v) => setFormData({ ...formData, required_by: v })}
                     className="form-input"
                   />
                 </FormField>

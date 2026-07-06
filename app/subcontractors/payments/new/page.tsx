@@ -7,6 +7,7 @@ import { subcontractorsApi } from '@/lib/api/subcontractors';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
+import DateInput from '@/components/ui/DateInput';
 import FormField from '@/components/ui/FormField';
 import { PageShell, PageHeader, Button } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
@@ -115,10 +116,9 @@ function NewPaymentForm() {
         </div>
         <div className="form-grid">
           <FormField label="Payment Date" required>
-            <input
-              type="date" required className="form-input"
+            <DateInput className="form-input"
               value={form.payment_date}
-              onChange={e => set('payment_date', e.target.value)}
+              onChange={(v) => set('payment_date', v)}
             />
           </FormField>
 

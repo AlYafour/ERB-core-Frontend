@@ -15,6 +15,7 @@ import CostCodePicker from '@/components/domain/CostCodePicker';
 import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
+import DateInput from '@/components/ui/DateInput';
 import { formatPrice } from '@/lib/utils/format';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
@@ -214,14 +215,14 @@ function EditPOContent() {
 
               <div>
                 <label className="form-label">{t('col', 'orderDate')} <span style={{ color: 'var(--color-error)' }}>*</span></label>
-                <input type="date" required className="form-input" value={formData.order_date}
-                  onChange={(e) => setForm({ order_date: e.target.value })} />
+                <DateInput className="form-input" value={formData.order_date}
+                  onChange={(v) => setForm({ order_date: v })} />
               </div>
 
               <div>
                 <label className="form-label">{t('field', 'deliveryDate')}</label>
-                <input type="date" className="form-input" value={formData.delivery_date}
-                  onChange={(e) => setForm({ delivery_date: e.target.value })} />
+                <DateInput className="form-input" value={formData.delivery_date}
+                  onChange={(v) => setForm({ delivery_date: v })} />
               </div>
 
               <div>

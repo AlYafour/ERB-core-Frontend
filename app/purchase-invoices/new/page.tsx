@@ -12,6 +12,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { formatPrice } from '@/lib/utils/format';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
+import DateInput from '@/components/ui/DateInput';
 import FormField from '@/components/ui/FormField';
 import { formatBackendError, validateRequired, validatePositiveNumber, validateDateAfter } from '@/lib/utils/validation';
 import { canCreateInvoice } from '@/lib/utils/workflow-guards';
@@ -328,20 +329,17 @@ function NewPurchaseInvoicePageContent() {
                 <label className="form-label">
                   {t('field', 'invoiceDate')} <span style={{ color: 'var(--color-error)' }}>*</span>
                 </label>
-                <input
-                  type="date"
+                <DateInput
                   value={formData.invoice_date}
-                  onChange={(e) => setFormData({ ...formData, invoice_date: e.target.value })}
+                  onChange={(v) => setFormData({ ...formData, invoice_date: v })}
                   className="form-input"
-                  required
                 />
               </div>
               <div>
                 <label className="form-label">{t('field', 'dueDate')}</label>
-                <input
-                  type="date"
+                <DateInput
                   value={formData.due_date}
-                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                  onChange={(v) => setFormData({ ...formData, due_date: v })}
                   className="form-input"
                 />
               </div>

@@ -104,6 +104,7 @@ export { default as FormField }    from './FormField';
 // Inputs (extended)
 export { default as QuantityInput }      from './QuantityInput';
 export { default as SearchableDropdown } from './SearchableDropdown';
+export { default as DateInput }          from './DateInput';
 export { default as FilterPanel }        from './FilterPanel';
 export { default as FilterTags }         from './FilterTags';
 

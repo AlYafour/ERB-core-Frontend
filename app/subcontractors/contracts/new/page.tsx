@@ -7,6 +7,7 @@ import { subcontractorsApi } from '@/lib/api/subcontractors';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
+import DateInput from '@/components/ui/DateInput';
 import FormField from '@/components/ui/FormField';
 import { PageShell, PageHeader, Button } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
@@ -187,18 +188,16 @@ function NewContractForm() {
           </FormField>
 
           <FormField label="Start Date">
-            <input
-              type="date" className="form-input"
+            <DateInput className="form-input"
               value={form.start_date}
-              onChange={e => set('start_date', e.target.value)}
+              onChange={(v) => set('start_date', v)}
             />
           </FormField>
 
           <FormField label="End Date" helperText="Optional">
-            <input
-              type="date" className="form-input"
+            <DateInput className="form-input"
               value={form.end_date}
-              onChange={e => set('end_date', e.target.value)}
+              onChange={(v) => set('end_date', v)}
             />
           </FormField>
 

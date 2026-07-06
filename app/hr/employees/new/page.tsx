@@ -10,6 +10,7 @@ import type { User } from '@/types';
 import { toast } from '@/lib/hooks/use-toast';
 import { Button, PageHeader, PageShell } from '@/components/ui';
 import SearchableDropdown, { DropdownOption } from '@/components/ui/SearchableDropdown';
+import DateInput from '@/components/ui/DateInput';
 import { HRPosition } from '@/types';
 
 // ── Static option lists ────────────────────────────────────────────────────────
@@ -305,7 +306,7 @@ function NewEmployeeForm() {
                 <label className="form-label">Marital Status</label>
                 <SearchableDropdown options={MARITAL_OPTS} value={personal.marital_status} onChange={(v) => setPersonal(prev => ({ ...prev, marital_status: String(v ?? '') }))} placeholder="" allowClear />
               </div>
-              <div className="form-field"><label className="form-label">Date of Birth</label><input className="form-input" type="date" value={personal.date_of_birth} onChange={p('date_of_birth')} /></div>
+              <div className="form-field"><label className="form-label">Date of Birth</label><DateInput className="form-input" value={personal.date_of_birth} onChange={(v) => setPersonal(prev => ({ ...prev, date_of_birth: v }))} /></div>
               <div className="form-field">
                 <label className="form-label">Nationality</label>
                 <SearchableDropdown options={nationalityOpts} value={personal.nationality} onChange={(v) => setPersonal(prev => ({ ...prev, nationality: String(v ?? '') }))} placeholder="" allowClear
@@ -324,8 +325,8 @@ function NewEmployeeForm() {
               <div className="form-field"><label className="form-label">National ID</label><input className="form-input" value={personal.national_id} onChange={p('national_id')} /></div>
               <div className="form-field"><label className="form-label">Personal Email</label><input className="form-input" type="email" value={personal.personal_email} onChange={p('personal_email')} /></div>
               <div className="form-field"><label className="form-label">Passport Number</label><input className="form-input" value={personal.passport_number} onChange={p('passport_number')} /></div>
-              <div className="form-field"><label className="form-label">Passport Issue Date</label><input className="form-input" type="date" value={personal.passport_issue_date} onChange={p('passport_issue_date')} /></div>
-              <div className="form-field"><label className="form-label">Passport Expiry Date</label><input className="form-input" type="date" value={personal.passport_expiry_date} onChange={p('passport_expiry_date')} /></div>
+              <div className="form-field"><label className="form-label">Passport Issue Date</label><DateInput className="form-input" value={personal.passport_issue_date} onChange={(v) => setPersonal(prev => ({ ...prev, passport_issue_date: v }))} /></div>
+              <div className="form-field"><label className="form-label">Passport Expiry Date</label><DateInput className="form-input" value={personal.passport_expiry_date} onChange={(v) => setPersonal(prev => ({ ...prev, passport_expiry_date: v }))} /></div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 'var(--space-2)' }}>
               <Button variant="primary" onClick={() => {
@@ -451,9 +452,9 @@ function NewEmployeeForm() {
                 <label className="form-label">Mobile Number</label>
                 <input className="form-input" type="tel" value={employment.mobile_number} onChange={em('mobile_number')} />
               </div>
-              <div className="form-field"><label className="form-label">Hiring Date *</label><input className="form-input" type="date" value={employment.join_date} onChange={em('join_date')} /></div>
-              <div className="form-field"><label className="form-label">End of Probation</label><input className="form-input" type="date" value={employment.probation_end_date} onChange={em('probation_end_date')} /></div>
-              <div className="form-field"><label className="form-label">Contract End Date</label><input className="form-input" type="date" value={employment.end_date} onChange={em('end_date')} /></div>
+              <div className="form-field"><label className="form-label">Hiring Date *</label><DateInput className="form-input" value={employment.join_date} onChange={(v) => setEmployment(prev => ({ ...prev, join_date: v }))} /></div>
+              <div className="form-field"><label className="form-label">End of Probation</label><DateInput className="form-input" value={employment.probation_end_date} onChange={(v) => setEmployment(prev => ({ ...prev, probation_end_date: v }))} /></div>
+              <div className="form-field"><label className="form-label">Contract End Date</label><DateInput className="form-input" value={employment.end_date} onChange={(v) => setEmployment(prev => ({ ...prev, end_date: v }))} /></div>
               <div className="form-field" style={{ gridColumn: '1 / -1' }}><label className="form-label">Salary Display Name</label><input className="form-input" value={employment.salary_display_name} onChange={em('salary_display_name')} /></div>
             </div>
 

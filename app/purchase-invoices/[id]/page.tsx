@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { formatPrice, fmtDate } from '@/lib/utils/format';
 import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
 import { Button, PageShell } from '@/components/ui';
+import DateInput from '@/components/ui/DateInput';
 import { INVOICE_STATUS } from '@/lib/utils/status-colors';
 import { INVOICE_LABEL } from '@/lib/constants/status-labels';
 import { toast } from '@/lib/hooks/use-toast';
@@ -217,10 +218,9 @@ export default function PurchaseInvoiceDetailPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div>
                   <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Payment Date</label>
-                  <input
-                    type="date"
+                  <DateInput
                     value={paymentDate}
-                    onChange={e => setPaymentDate(e.target.value)}
+                    onChange={(v) => setPaymentDate(v)}
                     style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 'var(--text-sm)', background: 'var(--surface)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
                   />
                 </div>
