@@ -1057,11 +1057,17 @@ export default function EmployeeDetailPage() {
             <div className={fld}>
               <label className={lbl}>Profile Picture</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-                {avatarSrc ? (
-                  <img src={avatarSrc} alt="" className="av" style={{ width: 56, height: 56 }} />
-                ) : (
-                  <div className="av-initials" style={{ width: 56, height: 56, fontSize: '1.25rem' }}>{avatarLetter}</div>
-                )}
+                <div style={{
+                  width: 64, height: 64, borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+                  background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {avatarPreview || avatarSrc ? (
+                    <img src={avatarPreview || avatarSrc || ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: '1.5rem', color: 'var(--text-tertiary)' }}>{avatarLetter}</span>
+                  )}
+                </div>
                 <div>
                   <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
                     onChange={e => {
@@ -1076,9 +1082,9 @@ export default function EmployeeDetailPage() {
                   <button type="button" className="btn btn-secondary"
                     style={{ fontSize: 'var(--text-xs)', padding: '4px 12px' }}
                     onClick={() => fileInputRef.current?.click()}>
-                    {avatarSrc ? 'Change Photo' : 'Upload Photo'}
+                    {avatarPreview || avatarSrc ? 'Change Photo' : 'Upload Photo'}
                   </button>
-                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 'var(--space-1)' }}>
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '4px 0 0' }}>
                     JPG, PNG — max 5 MB
                   </p>
                 </div>
