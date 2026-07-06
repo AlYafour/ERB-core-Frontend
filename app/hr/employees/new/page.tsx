@@ -101,7 +101,7 @@ function NewEmployeeForm() {
 
   const [employment, setEmployment] = useState({
     employment_type: '',
-    join_date: new Date().toISOString().split('T')[0],
+    join_date: '',
     probation_end_date: '', end_date: '',
     department:     null as number | null,
     position:       null as number | null,
@@ -125,6 +125,13 @@ function NewEmployeeForm() {
     queryFn: () => usersApi.getById(existingUserId!),
     enabled: !!existingUserId,
   });
+
+  useEffect(() => {
+    setEmployment(prev => ({
+      ...prev,
+      join_date: prev.join_date || new Date().toISOString().split('T')[0],
+    }));
+  }, []);
 
   useEffect(() => {
     if (existingUser) {
