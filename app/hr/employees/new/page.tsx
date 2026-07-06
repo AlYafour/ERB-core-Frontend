@@ -15,15 +15,15 @@ import { HRPosition } from '@/types';
 // ── Static option lists ────────────────────────────────────────────────────────
 
 const GENDER_OPTS: DropdownOption[] = [
-  { value: 'male',   label: 'Male — ذكر' },
-  { value: 'female', label: 'Female — أنثى' },
+  { value: 'male',   label: 'Male' },
+  { value: 'female', label: 'Female' },
 ];
 
 const MARITAL_OPTS: DropdownOption[] = [
-  { value: 'single',   label: 'Single — أعزب / عزباء' },
-  { value: 'married',  label: 'Married — متزوج / ة' },
-  { value: 'divorced', label: 'Divorced — مطلق / ة' },
-  { value: 'widowed',  label: 'Widowed — أرمل / ة' },
+  { value: 'single',   label: 'Single' },
+  { value: 'married',  label: 'Married' },
+  { value: 'divorced', label: 'Divorced' },
+  { value: 'widowed',  label: 'Widowed' },
 ];
 
 const NATIONALITY_OPTS: DropdownOption[] = [
@@ -41,11 +41,11 @@ const HOME_COUNTRY_OPTS: DropdownOption[] = [
 ].map(c => ({ value: c, label: c }));
 
 const RELIGION_OPTS: DropdownOption[] = [
-  { value: 'Islam',        label: 'Islam — الإسلام' },
-  { value: 'Christianity', label: 'Christianity — المسيحية' },
-  { value: 'Hinduism',     label: 'Hinduism — الهندوسية' },
-  { value: 'Buddhism',     label: 'Buddhism — البوذية' },
-  { value: 'Other',        label: 'Other — أخرى' },
+  { value: 'Islam',        label: 'Islam' },
+  { value: 'Christianity', label: 'Christianity' },
+  { value: 'Hinduism',     label: 'Hinduism' },
+  { value: 'Buddhism',     label: 'Buddhism' },
+  { value: 'Other',        label: 'Other' },
 ];
 
 export default function NewEmployeePage() {
