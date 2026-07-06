@@ -295,30 +295,30 @@ function NewEmployeeForm() {
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
             <h2 style={{ fontWeight: 'var(--weight-semibold)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-3)', margin: 0 }}>Personal Information</h2>
             <div className="form-grid">
-              <div className="form-field"><label className="form-label">English Name *</label><input className="form-input" value={personal.first_name} onChange={p('first_name')} placeholder="e.g. Nourhan Ahmed" /></div>
-              <div className="form-field"><label className="form-label">Arabic Name</label><input className="form-input" value={personal.full_name_ar} onChange={p('full_name_ar')} placeholder="مثال: نورهان أحمد كامل" dir="rtl" /></div>
+              <div className="form-field"><label className="form-label">English Name *</label><input className="form-input" value={personal.first_name} onChange={p('first_name')} /></div>
+              <div className="form-field"><label className="form-label">Arabic Name</label><input className="form-input" value={personal.full_name_ar} onChange={p('full_name_ar')} dir="rtl" /></div>
               <div className="form-field">
                 <label className="form-label">Gender</label>
-                <SearchableDropdown options={GENDER_OPTS} value={personal.gender} onChange={(v) => setPersonal(prev => ({ ...prev, gender: String(v ?? '') }))} placeholder="— Select —" allowClear />
+                <SearchableDropdown options={GENDER_OPTS} value={personal.gender} onChange={(v) => setPersonal(prev => ({ ...prev, gender: String(v ?? '') }))} placeholder="" allowClear />
               </div>
               <div className="form-field">
                 <label className="form-label">Marital Status</label>
-                <SearchableDropdown options={MARITAL_OPTS} value={personal.marital_status} onChange={(v) => setPersonal(prev => ({ ...prev, marital_status: String(v ?? '') }))} placeholder="— Select —" allowClear />
+                <SearchableDropdown options={MARITAL_OPTS} value={personal.marital_status} onChange={(v) => setPersonal(prev => ({ ...prev, marital_status: String(v ?? '') }))} placeholder="" allowClear />
               </div>
               <div className="form-field"><label className="form-label">Date of Birth</label><input className="form-input" type="date" value={personal.date_of_birth} onChange={p('date_of_birth')} /></div>
               <div className="form-field">
                 <label className="form-label">Nationality</label>
-                <SearchableDropdown options={nationalityOpts} value={personal.nationality} onChange={(v) => setPersonal(prev => ({ ...prev, nationality: String(v ?? '') }))} placeholder="— Select or add —" allowClear
+                <SearchableDropdown options={nationalityOpts} value={personal.nationality} onChange={(v) => setPersonal(prev => ({ ...prev, nationality: String(v ?? '') }))} placeholder="" allowClear
                   onCreateOption={async (label) => { const opt: DropdownOption = { value: label, label }; setNationalityOpts(prev => [...prev, opt]); return opt; }} createLabel="Add" />
               </div>
               <div className="form-field">
                 <label className="form-label">Home Country</label>
-                <SearchableDropdown options={homeCountryOpts} value={personal.home_country} onChange={(v) => setPersonal(prev => ({ ...prev, home_country: String(v ?? '') }))} placeholder="— Select or add —" allowClear
+                <SearchableDropdown options={homeCountryOpts} value={personal.home_country} onChange={(v) => setPersonal(prev => ({ ...prev, home_country: String(v ?? '') }))} placeholder="" allowClear
                   onCreateOption={async (label) => { const opt: DropdownOption = { value: label, label }; setHomeCountryOpts(prev => [...prev, opt]); return opt; }} createLabel="Add" />
               </div>
               <div className="form-field">
                 <label className="form-label">Religion</label>
-                <SearchableDropdown options={religionOpts} value={personal.religion} onChange={(v) => setPersonal(prev => ({ ...prev, religion: String(v ?? '') }))} placeholder="— Select or add —" allowClear
+                <SearchableDropdown options={religionOpts} value={personal.religion} onChange={(v) => setPersonal(prev => ({ ...prev, religion: String(v ?? '') }))} placeholder="" allowClear
                   onCreateOption={async (label) => { const opt: DropdownOption = { value: label, label }; setReligionOpts(prev => [...prev, opt]); return opt; }} createLabel="Add" />
               </div>
               <div className="form-field"><label className="form-label">National ID</label><input className="form-input" value={personal.national_id} onChange={p('national_id')} /></div>
@@ -355,7 +355,7 @@ function NewEmployeeForm() {
                   options={groupOptions}
                   value={employment.employee_group}
                   onChange={(v) => setEmployment((p) => ({ ...p, employee_group: v as number | null }))}
-                  placeholder="— None —"
+                  placeholder=""
                   allowClear
                   onCreateOption={async (label) => {
                     const code = label.toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 20);
@@ -371,7 +371,7 @@ function NewEmployeeForm() {
                   options={deptOptions}
                   value={employment.department}
                   onChange={(v) => setEmployment((p) => ({ ...p, department: v as number | null }))}
-                  placeholder="— None —"
+                  placeholder=""
                   allowClear
                   onCreateOption={async (name) => {
                     const dept = await hrDepartmentsApi.create({ name });
@@ -387,7 +387,7 @@ function NewEmployeeForm() {
                   options={positionOptions}
                   value={employment.position}
                   onChange={(v) => setEmployment((p) => ({ ...p, position: v as number | null }))}
-                  placeholder="— None —"
+                  placeholder=""
                   allowClear
                   onCreateOption={async (title) => {
                     const pos = await hrPositionsApi.create({ title });
@@ -418,7 +418,7 @@ function NewEmployeeForm() {
                   options={legalEntityOptions}
                   value={employment.legal_entity}
                   onChange={(v) => setEmployment((p) => ({ ...p, legal_entity: v as number | null }))}
-                  placeholder="— None —"
+                  placeholder=""
                   allowClear
                   onCreateOption={async (name) => {
                     const le = await hrLegalEntitiesApi.create({ name });
@@ -433,7 +433,7 @@ function NewEmployeeForm() {
                   options={locationOptions}
                   value={employment.location}
                   onChange={(v) => setEmployment((p) => ({ ...p, location: v as number | null }))}
-                  placeholder="— None —"
+                  placeholder=""
                   allowClear
                 />
               </div>
@@ -443,18 +443,18 @@ function NewEmployeeForm() {
                   options={managerOptions}
                   value={employment.direct_manager}
                   onChange={(v) => setEmployment((p) => ({ ...p, direct_manager: v as number | null }))}
-                  placeholder="— None —"
+                  placeholder=""
                   allowClear
                 />
               </div>
               <div className="form-field">
                 <label className="form-label">Mobile Number</label>
-                <input className="form-input" type="tel" value={employment.mobile_number} onChange={em('mobile_number')} placeholder="+971 50 xxx xxxx" />
+                <input className="form-input" type="tel" value={employment.mobile_number} onChange={em('mobile_number')} />
               </div>
               <div className="form-field"><label className="form-label">Hiring Date *</label><input className="form-input" type="date" value={employment.join_date} onChange={em('join_date')} /></div>
               <div className="form-field"><label className="form-label">End of Probation</label><input className="form-input" type="date" value={employment.probation_end_date} onChange={em('probation_end_date')} /></div>
               <div className="form-field"><label className="form-label">Contract End Date</label><input className="form-input" type="date" value={employment.end_date} onChange={em('end_date')} /></div>
-              <div className="form-field" style={{ gridColumn: '1 / -1' }}><label className="form-label">Salary Display Name</label><input className="form-input" value={employment.salary_display_name} onChange={em('salary_display_name')} placeholder="Name on payslip" /></div>
+              <div className="form-field" style={{ gridColumn: '1 / -1' }}><label className="form-label">Salary Display Name</label><input className="form-input" value={employment.salary_display_name} onChange={em('salary_display_name')} /></div>
             </div>
 
             <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-4)' }}>
@@ -495,7 +495,7 @@ function NewEmployeeForm() {
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
             <h2 style={{ fontWeight: 'var(--weight-semibold)', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-3)', margin: 0 }}>System Account & Access</h2>
             <div className="form-grid">
-              <div className="form-field"><label className="form-label">Username *</label><input className="form-input" value={account.username} onChange={ac('username')} placeholder="e.g. 1009-004" /></div>
+              <div className="form-field"><label className="form-label">Username *</label><input className="form-input" value={account.username} onChange={ac('username')} /></div>
               <div className="form-field"><label className="form-label">Work Email *</label><input className="form-input" type="email" value={account.email} onChange={ac('email')} /></div>
               <div className="form-field"><label className="form-label">Phone</label><input className="form-input" type="tel" value={account.phone} onChange={ac('phone')} /></div>
               <div className="form-field"><label className="form-label">Password *</label>
