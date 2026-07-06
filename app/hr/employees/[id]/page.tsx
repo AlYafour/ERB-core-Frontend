@@ -437,12 +437,20 @@ export default function EmployeeDetailPage() {
       if (changePassword && form.password) accountData.password = form.password;
       userUpdateMutation.mutate(accountData as Partial<User & { password?: string }>);
     } else {
+      const d = (v: unknown) => (typeof v === 'string' && !v) ? null : v;
       updateMutation.mutate({
         ...form,
-        department:     form.department     || null,
-        position:       form.position       || null,
-        manager:        form.manager        || null,
-        employee_group: form.employee_group || null,
+        department:           form.department     || null,
+        position:             form.position       || null,
+        manager:              form.manager        || null,
+        employee_group:       form.employee_group || null,
+        date_of_birth:        d(form.date_of_birth),
+        join_date:            d(form.join_date),
+        probation_end_date:   d(form.probation_end_date),
+        end_date:             d(form.end_date),
+        passport_issue_date:  d(form.passport_issue_date),
+        passport_expiry_date: d(form.passport_expiry_date),
+        labor_card_expiry:    d(form.labor_card_expiry),
       } as Partial<HREmployee>);
     }
   };
