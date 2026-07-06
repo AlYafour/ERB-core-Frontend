@@ -1,6 +1,11 @@
 import apiClient from './client';
 import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment } from '@/types';
 
+function toPage<T>(data: T[] | PaginatedResponse<T>): PaginatedResponse<T> {
+  if (Array.isArray(data)) return { results: data, count: data.length, next: null, previous: null };
+  return data as PaginatedResponse<T>;
+}
+
 export interface WhosOffEntry {
   employee_name: string;
   employee_id:   string;
@@ -90,12 +95,7 @@ export const hrLocationsApi = {
 export const hrEmployeesApi = {
   getAll: async (params?: { page?: number; search?: string; department?: number; position?: number; is_active?: boolean; employment_type?: string; user?: number }): Promise<PaginatedResponse<HREmployee>> => {
     const response = await apiClient.get('/hr/employees/', { params });
-    const data = response.data;
-    // EmployeeViewSet sets pagination_class=None → returns a bare array instead of {results,[]}
-    if (Array.isArray(data)) {
-      return { results: data, count: data.length, next: null, previous: null };
-    }
-    return data;
+    return toPage(response.data);
   },
   getById: async (id: number): Promise<HREmployee> => {
     const response = await apiClient.get(`/hr/employees/${id}/`);
@@ -527,9 +527,7 @@ export const hrShiftAssignmentsApi = {
 export const hrShiftsApi = {
   getAll: async (): Promise<PaginatedResponse<HRShift>> => {
     const response = await apiClient.get('/hr/attendance/shifts/', { params: { page_size: 200 } });
-    const data = response.data;
-    if (Array.isArray(data)) return { results: data, count: data.length, next: null, previous: null };
-    return data;
+    return toPage(response.data);
   },
   create: async (data: Partial<HRShift>): Promise<HRShift> => {
     const response = await apiClient.post('/hr/attendance/shifts/', data);
@@ -549,9 +547,7 @@ export const hrShiftsApi = {
 export const hrEmployeeGroupsApi = {
   getAll: async (): Promise<PaginatedResponse<EmployeeGroup>> => {
     const response = await apiClient.get('/hr/employees/groups/', { params: { page_size: 200 } });
-    const data = response.data;
-    if (Array.isArray(data)) return { results: data, count: data.length, next: null, previous: null };
-    return data;
+    return toPage(response.data);
   },
   create: async (data: Partial<EmployeeGroup>): Promise<EmployeeGroup> => {
     const response = await apiClient.post('/hr/employees/groups/', data);
@@ -571,9 +567,7 @@ export const hrEmployeeGroupsApi = {
 export const hrWorkTeamsApi = {
   getAll: async (params?: Record<string, unknown>): Promise<PaginatedResponse<WorkTeam>> => {
     const response = await apiClient.get('/hr/employees/work-teams/', { params: { page_size: 200, ...params } });
-    const data = response.data;
-    if (Array.isArray(data)) return { results: data, count: data.length, next: null, previous: null };
-    return data;
+    return toPage(response.data);
   },
   getMembers: async (id: number): Promise<HREmployee[]> => {
     const response = await apiClient.get(`/hr/employees/work-teams/${id}/members/`);
@@ -664,8 +658,6 @@ export const hrLoansApi = {
   },
 };
 
-// ── Penalty Rules (P2) ────────────────────────────────────────────────────────
-
 // ── Leave Policies ─────────────────────────────────────────────────────────────
 
 export interface AccrualResult {
@@ -687,9 +679,7 @@ export interface AccrualResult {
 export const hrLeavePoliciesApi = {
   getAll: async (params?: { leave_type?: string; is_active?: boolean; employee_group?: number | null }): Promise<PaginatedResponse<LeavePolicy>> => {
     const response = await apiClient.get('/hr/requests/leave-policies/', { params: { page_size: 200, ...params } });
-    const data = response.data;
-    if (Array.isArray(data)) return { results: data, count: data.length, next: null, previous: null };
-    return data;
+    return toPage(response.data);
   },
   create: async (data: Partial<LeavePolicy>): Promise<LeavePolicy> => {
     const response = await apiClient.post('/hr/requests/leave-policies/', data);

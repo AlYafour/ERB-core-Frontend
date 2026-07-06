@@ -7,7 +7,6 @@ import { hrRequestsApi } from '@/lib/api/hr';
 import { HRRequest } from '@/types';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
-import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { useMyEmployeeRecord } from '@/lib/hooks/use-my-employee-record';
 import { type FilterField } from '@/components/ui/FilterPanel';
@@ -49,7 +48,6 @@ export default function HRRequestsPage() {
   const [rejectingId, setRejectingId]           = useState<number | null>(null);
 
   const queryClient = useQueryClient();
-  const { user }    = useAuth();
   const { hasPermission } = useMyPermissions();
   const { emp: myEmp } = useMyEmployeeRecord();
   const t           = useT();
