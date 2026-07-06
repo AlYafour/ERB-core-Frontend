@@ -44,10 +44,10 @@ type StageRow = {
   _key: string;
   id: number | null;
   strategy: ApproverStrategy;
-  role: number | null;           // TenantRole FK (preferred)
+  role: number | null;
   specific_user: number | null;
   sod_fallback_strategy: ApproverStrategy | '';
-  sod_fallback_role: number | null;  // TenantRole FK
+  sod_fallback_role: number | null;
   sod_fallback_user: number | null;
 };
 
