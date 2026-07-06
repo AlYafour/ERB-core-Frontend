@@ -336,7 +336,10 @@ export default function EmployeeDetailPage() {
       toast('Saved successfully', 'success');
       setEditSection(null);
     },
-    onError: () => toast('Failed to save', 'error'),
+    onError: (err: unknown) => {
+      const detail = (err as { response?: { data?: Record<string, unknown> } })?.response?.data;
+      toast(detail ? JSON.stringify(detail) : 'Failed to save', 'error');
+    },
   });
 
   const userUpdateMutation = useMutation({
