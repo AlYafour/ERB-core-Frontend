@@ -50,7 +50,7 @@ const RELIGION_OPTS: DropdownOption[] = [
   { value: 'Other',        label: 'Other' },
 ];
 
-const EMPLOYMENT_TYPE_OPTS: DropdownOption[] = [
+const DEFAULT_EMPLOYMENT_TYPES: DropdownOption[] = [
   { value: 'full_time', label: 'Full Time' },
   { value: 'part_time', label: 'Part Time' },
   { value: 'contract',  label: 'Contract'  },
@@ -94,9 +94,10 @@ function NewEmployeeForm() {
   });
 
   // Extendable option lists for free-text fields (user can add custom values)
-  const [nationalityOpts, setNationalityOpts] = useState<DropdownOption[]>(NATIONALITY_OPTS);
-  const [homeCountryOpts, setHomeCountryOpts] = useState<DropdownOption[]>(HOME_COUNTRY_OPTS);
-  const [religionOpts,    setReligionOpts]    = useState<DropdownOption[]>(RELIGION_OPTS);
+  const [nationalityOpts,     setNationalityOpts]     = useState<DropdownOption[]>(NATIONALITY_OPTS);
+  const [homeCountryOpts,     setHomeCountryOpts]     = useState<DropdownOption[]>(HOME_COUNTRY_OPTS);
+  const [religionOpts,        setReligionOpts]        = useState<DropdownOption[]>(RELIGION_OPTS);
+  const [employmentTypeOpts,  setEmploymentTypeOpts]  = useState<DropdownOption[]>(DEFAULT_EMPLOYMENT_TYPES);
 
   const [employment, setEmployment] = useState({
     employment_type: '',
@@ -370,11 +371,18 @@ function NewEmployeeForm() {
               <div className="form-field">
                 <label className="form-label">Employment Type</label>
                 <SearchableDropdown
-                  options={EMPLOYMENT_TYPE_OPTS}
+                  options={employmentTypeOpts}
                   value={employment.employment_type || null}
                   onChange={(v) => setEmployment((p) => ({ ...p, employment_type: String(v ?? '') }))}
                   placeholder=""
                   allowClear
+                  onCreateOption={async (label) => {
+                    const opt: DropdownOption = { value: label, label };
+                    setEmploymentTypeOpts(prev => [...prev, opt]);
+                    setEmployment(p => ({ ...p, employment_type: label }));
+                    return opt;
+                  }}
+                  createLabel="Add"
                 />
               </div>
               <div className="form-field">
