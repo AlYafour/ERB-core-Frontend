@@ -1067,7 +1067,7 @@ export default function EmployeeDetailPage() {
                     <InfoRow label="Position"          value={emp.position_title} />
                     <InfoRow label="Department"        value={emp.department_name} />
                     <InfoRow label="Employee Category" value={emp.employee_group_name} />
-                    <InfoRow label="Work Type"         value={empTypeLabel[emp.employment_type] || emp.employment_type} />
+                    <InfoRow label="Employment Type"   value={empTypeLabel[emp.employment_type] || emp.employment_type} />
                     <InfoRow label="Legal Entity"      value={emp.legal_entity_name ?? undefined} />
                     <InfoRow label="Work Location"     value={emp.office_location_name} />
                     <InfoRow label="Direct Manager"    value={emp.direct_manager_detail?.full_name ?? emp.direct_manager_name ?? undefined} />
