@@ -570,23 +570,66 @@ export default function EmployeeDetailPage() {
       if (changePassword && form.password) accountData.password = form.password;
       userUpdateMutation.mutate(accountData as Partial<User & { password?: string }>);
     } else {
-      const d = (v: unknown) => (typeof v === 'string' && !v) ? null : v;
-      updateMutation.mutate({
-        ...form,
-        department:           form.department      || null,
-        position:             form.position        || null,
-        employee_group:       form.employee_group  || null,
-        office_location:      form.office_location || null,
-        legal_entity:         form.legal_entity    || null,
-        direct_manager:       form.direct_manager  || null,
-        date_of_birth:        d(form.date_of_birth),
-        join_date:            d(form.join_date),
-        probation_end_date:   d(form.probation_end_date),
-        end_date:             d(form.end_date),
-        passport_issue_date:  d(form.passport_issue_date),
-        passport_expiry_date: d(form.passport_expiry_date),
-        labor_card_expiry:    d(form.labor_card_expiry),
-      } as Partial<HREmployee>);
+      const str  = (v: unknown) => (v as string) || null;
+      const fk   = (v: unknown) => v ? Number(v) : null;
+
+      let payload: Partial<HREmployee> = {};
+
+      if (editSection === 'personal') {
+        payload = {
+          gender:               str(form.gender),
+          date_of_birth:        str(form.date_of_birth),
+          marital_status:       str(form.marital_status),
+          nationality:          str(form.nationality),
+          home_country:         str(form.home_country),
+          religion:             str(form.religion),
+          national_id:          str(form.national_id),
+          personal_email:       str(form.personal_email),
+          passport_number:      str(form.passport_number),
+          passport_issue_date:  str(form.passport_issue_date),
+          passport_expiry_date: str(form.passport_expiry_date),
+        };
+      } else if (editSection === 'professional') {
+        payload = {
+          employment_type:    str(form.employment_type),
+          is_active:          form.is_active as boolean,
+          employee_group:     fk(form.employee_group),
+          department:         fk(form.department),
+          position:           fk(form.position),
+          legal_entity:       fk(form.legal_entity),
+          office_location:    fk(form.office_location),
+          direct_manager:     fk(form.direct_manager),
+          join_date:          str(form.join_date),
+          probation_end_date: str(form.probation_end_date),
+          end_date:           str(form.end_date),
+        };
+      } else if (editSection === 'contact') {
+        payload = {
+          mobile_number:    str(form.mobile_number),
+          extension_number: str(form.extension_number),
+          address:          str(form.address),
+          personal_email:   str(form.personal_email),
+        };
+      } else if (editSection === 'legal') {
+        payload = {
+          resident_id:        str(form.resident_id),
+          is_citizen:         form.is_citizen as boolean,
+          labor_card:         str(form.labor_card),
+          labor_card_expiry:  str(form.labor_card_expiry),
+          mol_number:         str(form.mol_number),
+          sponsor_name:       str(form.sponsor_name),
+          sponsor_id:         str(form.sponsor_id),
+        };
+      } else if (editSection === 'salary') {
+        payload = {
+          basic_salary:        form.basic_salary        as string,
+          housing_allowance:   form.housing_allowance   as string,
+          transport_allowance: form.transport_allowance as string,
+          other_allowances:    form.other_allowances    as string,
+        };
+      }
+
+      updateMutation.mutate(payload);
     }
   };
 
@@ -1158,6 +1201,7 @@ export default function EmployeeDetailPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', marginTop: 'var(--space-4)' }}>
               <div className={fld}><label className={lbl}>First Name</label><input className={inp} value={form.first_name} onChange={f('first_name')} /></div>
               <div className={fld}><label className={lbl}>Last Name</label><input className={inp} value={form.last_name} onChange={f('last_name')} /></div>
+              <div className={fld} style={{ gridColumn: '1 / -1' }}><label className={lbl}>Arabic Name</label><input className={inp} dir="rtl" value={form.full_name_ar as string} onChange={f('full_name_ar')} /></div>
               <div className={fld}><label className={lbl}>Username</label><input className={inp} value={form.username} onChange={f('username')} /></div>
               <div className={fld}><label className={lbl}>Email</label><input className={inp} type="email" value={form.email} onChange={f('email')} /></div>
             </div>
@@ -1186,9 +1230,6 @@ export default function EmployeeDetailPage() {
         {/* ─ Personal ─ */}
         {editSection === 'personal' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
-            <div className={fld}><label className={lbl}>First Name</label><input className={inp} value={form.first_name as string} onChange={f('first_name')} /></div>
-            <div className={fld}><label className={lbl}>Last Name</label><input className={inp} value={form.last_name as string} onChange={f('last_name')} /></div>
-            <div className={fld} style={{ gridColumn: '1 / -1' }}><label className={lbl}>Arabic Name</label><input className={inp} dir="rtl" value={form.full_name_ar as string} onChange={f('full_name_ar')} /></div>
             <div className={fld}>
               <label className={lbl}>Gender</label>
               <select className={sel} value={form.gender as string} onChange={f('gender')}>
