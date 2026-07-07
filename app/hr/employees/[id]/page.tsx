@@ -522,7 +522,7 @@ export default function EmployeeDetailPage() {
       department:           emp.department ?? '',
       position:             emp.position ?? '',
       office_location:      emp.office_location ?? '',
-      legal_entity:         (emp as Record<string, unknown>).legal_entity ?? '',
+      legal_entity:         emp.legal_entity ?? '',
       direct_manager:       emp.direct_manager ?? '',
       join_date:            emp.join_date || '',
       probation_end_date:   emp.probation_end_date || '',
@@ -1035,7 +1035,7 @@ export default function EmployeeDetailPage() {
                     <InfoRow label="Department"        value={emp.department_name} />
                     <InfoRow label="Employee Category" value={emp.employee_group_name} />
                     <InfoRow label="Work Type"         value={empTypeLabel[emp.employment_type] || emp.employment_type} />
-                    <InfoRow label="Legal Entity"      value={(emp as Record<string, unknown>).legal_entity_name as string | undefined} />
+                    <InfoRow label="Legal Entity"      value={emp.legal_entity_name ?? undefined} />
                     <InfoRow label="Work Location"     value={emp.office_location_name} />
                     <InfoRow label="Direct Manager"    value={emp.direct_manager_detail?.full_name ?? emp.direct_manager_name ?? undefined} />
                     <InfoRow label="Hiring Date"       value={fmtDate(emp.join_date)} />

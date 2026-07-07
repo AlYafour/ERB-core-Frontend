@@ -660,6 +660,8 @@ export interface HREmployee {
   is_manager: boolean;
   location: number | null;
   location_name: string | null;
+  legal_entity?: number | null;
+  legal_entity_name?: string | null;
   office_location: number | null;
   office_location_name: string | null;
   department: number | null;
