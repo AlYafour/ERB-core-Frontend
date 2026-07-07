@@ -958,3 +958,130 @@ export const hrSalaryHistoryApi = {
     return Array.isArray(data) ? data : (data.results ?? []);
   },
 };
+
+// ─────────────────────────── Policy Engine ───────────────────────────────────
+
+export interface PolicyRule {
+  id: number;
+  rule_type: string;
+  rule_type_display: string;
+  value_type: string;
+  value_type_display: string;
+  value: unknown;
+  display_value: string;
+  effective_from: string;
+  effective_to: string | null;
+  version: number;
+  is_active: boolean;
+  description: string;
+  source_reference: string;
+  created_by: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PolicyPreset {
+  id: number;
+  code: string;
+  name: string;
+  country_code: string;
+  description: string;
+  legal_reference: string;
+  rules: unknown[];
+  rules_count: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface CalculationSnapshot {
+  id: number;
+  source_type: string;
+  source_type_display: string;
+  source_id: number;
+  employee: number | null;
+  employee_name: string | null;
+  rules_snapshot: Record<string, { value: unknown; value_type: string; version: number; effective_from: string; rule_id: number } | null>;
+  inputs: Record<string, unknown>;
+  outputs: Record<string, unknown>;
+  calculated_at: string;
+  calculated_by: number | null;
+}
+
+export interface PolicyAuditLog {
+  id: number;
+  rule: number | null;
+  rule_type: string;
+  action: string;
+  action_display: string;
+  old_value: unknown;
+  new_value: unknown;
+  changed_by: number | null;
+  changed_by_name: string | null;
+  changed_at: string;
+  change_reason: string;
+  extra: Record<string, unknown>;
+}
+
+export const hrPolicyRulesApi = {
+  getAll: async (params?: Record<string, string>): Promise<PolicyRule[]> => {
+    const response = await apiClient.get('/hr/policy/rules/', { params });
+    const data = response.data;
+    return Array.isArray(data) ? data : (data.results ?? []);
+  },
+  getEffective: async (): Promise<PolicyRule[]> => {
+    const response = await apiClient.get('/hr/policy/rules/effective/');
+    const data = response.data;
+    return Array.isArray(data) ? data : (data.results ?? []);
+  },
+  getHistory: async (rule_type: string): Promise<PolicyRule[]> => {
+    const response = await apiClient.get('/hr/policy/rules/history/', { params: { rule_type } });
+    const data = response.data;
+    return Array.isArray(data) ? data : (data.results ?? []);
+  },
+  getById: async (id: number): Promise<PolicyRule> => {
+    const response = await apiClient.get(`/hr/policy/rules/${id}/`);
+    return response.data;
+  },
+  create: async (data: Partial<PolicyRule>): Promise<PolicyRule> => {
+    const response = await apiClient.post('/hr/policy/rules/', data);
+    return response.data;
+  },
+  update: async (id: number, data: Partial<PolicyRule>): Promise<PolicyRule> => {
+    const response = await apiClient.patch(`/hr/policy/rules/${id}/`, data);
+    return response.data;
+  },
+  deactivate: async (id: number, change_reason?: string): Promise<void> => {
+    await apiClient.post(`/hr/policy/rules/${id}/deactivate/`, { change_reason });
+  },
+};
+
+export const hrPolicyPresetsApi = {
+  getAll: async (): Promise<PolicyPreset[]> => {
+    const response = await apiClient.get('/hr/policy/presets/');
+    const data = response.data;
+    return Array.isArray(data) ? data : (data.results ?? []);
+  },
+  getById: async (id: number): Promise<PolicyPreset> => {
+    const response = await apiClient.get(`/hr/policy/presets/${id}/`);
+    return response.data;
+  },
+  apply: async (id: number, effective_from?: string): Promise<void> => {
+    await apiClient.post(`/hr/policy/presets/${id}/apply/`, { effective_from });
+  },
+};
+
+export const hrPolicySnapshotsApi = {
+  getAll: async (params?: Record<string, string>): Promise<CalculationSnapshot[]> => {
+    const response = await apiClient.get('/hr/policy/snapshots/', { params });
+    const data = response.data;
+    return Array.isArray(data) ? data : (data.results ?? []);
+  },
+};
+
+export const hrPolicyAuditApi = {
+  getAll: async (params?: Record<string, string>): Promise<PolicyAuditLog[]> => {
+    const response = await apiClient.get('/hr/policy/audit-log/', { params });
+    const data = response.data;
+    return Array.isArray(data) ? data : (data.results ?? []);
+  },
+};
