@@ -52,6 +52,18 @@ const empTypeLabel: Record<string, string> = {
   full_time: 'Full Time', part_time: 'Part Time', contract: 'Contract', intern: 'Intern',
 };
 
+const roleLabel: Record<string, string> = {
+  super_admin:           'Super Admin',
+  admin:                 'Admin',
+  company_director:      'Company Director',
+  hr_manager:            'HR Manager',
+  hr_secretary:          'HR Secretary',
+  procurement_manager:   'Procurement Manager',
+  procurement_officer:   'Procurement Officer',
+  site_engineer:         'Site Engineer',
+  employee:              'Employee',
+};
+
 
 const TABS = ['Home', 'Profile', 'Account', 'Attendance', 'Requests', 'Documents'];
 
@@ -205,26 +217,38 @@ function BankAccountsSection({ empId, isAdmin }: { empId: number; isAdmin: boole
       ) : accounts.length === 0 ? (
         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>No bank accounts on file.</p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           {accounts.map(acc => (
-            <div key={acc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-3) var(--space-3)', background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)' }}>
-              <div>
+            <div key={acc.id} style={{ background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)' }}>
+              {/* Header row */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>{acc.bank_name}</span>
-                  {acc.is_primary && <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--brand)', background: 'var(--brand-subtle)', borderRadius: 4, padding: '1px 6px' }}>WPS Primary</span>}
+                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>{acc.bank_name || '—'}</span>
+                  {acc.is_primary && (
+                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--brand)', background: 'var(--brand-subtle)', borderRadius: 4, padding: '1px 7px', letterSpacing: '0.03em' }}>WPS Primary</span>
+                  )}
                 </div>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>
-                  {acc.account_holder_name}
-                  {acc.iban && <span style={{ fontFamily: 'monospace', marginLeft: 8 }}>{acc.iban}</span>}
-                  {!acc.iban && acc.account_number && <span style={{ fontFamily: 'monospace', marginLeft: 8 }}>{acc.account_number}</span>}
-                </div>
+                {isAdmin && (
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={() => openEdit(acc)} style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Edit</button>
+                    <button onClick={() => delMut.mutate(acc.id)} style={{ fontSize: 'var(--text-xs)', color: 'var(--color-error)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Delete</button>
+                  </div>
+                )}
               </div>
-              {isAdmin && (
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button onClick={() => openEdit(acc)} style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
-                  <button onClick={() => delMut.mutate(acc.id)} style={{ fontSize: 'var(--text-xs)', color: 'var(--color-error)', background: 'none', border: 'none', cursor: 'pointer' }}>Delete</button>
-                </div>
-              )}
+              {/* Fields grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-2) var(--space-5)' }}>
+                {[
+                  ['Account Holder', acc.account_holder_name],
+                  ['IBAN',           acc.iban],
+                  ['Account No.',    acc.account_number],
+                  ['SWIFT / BIC',    acc.swift_code],
+                ].map(([lbl, val]) => val ? (
+                  <div key={lbl as string}>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontWeight: 600, marginBottom: 1 }}>{lbl}</div>
+                    <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)', fontFamily: lbl !== 'Account Holder' ? 'monospace' : undefined }}>{val}</div>
+                  </div>
+                ) : null)}
+              </div>
             </div>
           ))}
         </div>
@@ -968,6 +992,8 @@ export default function EmployeeDetailPage() {
                 <div className="card">
                   <SectionHead title="Personal Info" onEdit={() => openEdit('personal')} isAdmin={isAdmin} />
                   <div className="info-grid">
+                    <InfoRow label="First Name"      value={emp.user?.first_name || undefined} />
+                    <InfoRow label="Last Name"       value={emp.user?.last_name  || undefined} />
                     {(emp.user as Record<string, unknown>)?.full_name_ar && (
                       <InfoRow label="Arabic Name"     value={(emp.user as Record<string, unknown>).full_name_ar as string} />
                     )}
@@ -1044,6 +1070,18 @@ export default function EmployeeDetailPage() {
                     <InfoRow label="End Date"          value={fmtDate(emp.end_date)} />
                   </div>
                 </div>
+
+                {/* Account & Access */}
+                {isAdmin && (
+                  <div className="card">
+                    <SectionHead title="Account & Access" onEdit={() => openEdit('account')} isAdmin={isAdmin} />
+                    <div className="info-grid">
+                      <InfoRow label="Username"  value={emp.user?.username} />
+                      <InfoRow label="Work Email" value={emp.user?.email} />
+                      <InfoRow label="Role"       value={emp.user?.role ? (roleLabel[emp.user.role] || emp.user.role) : undefined} />
+                    </div>
+                  </div>
+                )}
 
                 {/* Salary Package — admin only */}
                 {isAdmin && (
