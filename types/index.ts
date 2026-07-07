@@ -1264,3 +1264,100 @@ export interface TaskTemplate {
   created_by_detail?: { id: number; full_name: string; avatar_url: string | null };
   created_at: string;
 }
+
+// ── Payroll Run ────────────────────────────────────────────────────────────────
+export type PayrollRunStatus = 'draft' | 'processing' | 'processed' | 'paid' | 'cancelled';
+
+export interface PayrollRun {
+  id: number;
+  month: number;
+  year: number;
+  month_name: string;
+  status: PayrollRunStatus;
+  status_display: string;
+  total_employees: number;
+  total_net: string;
+  notes: string;
+  paid_at: string | null;
+  created_by: number | null;
+  created_by_name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── End of Service ─────────────────────────────────────────────────────────────
+export type EOSStatus = 'draft' | 'approved' | 'paid' | 'cancelled';
+export type EOSTerminationReason =
+  | 'resignation' | 'termination' | 'mutual_agreement'
+  | 'contract_expiry' | 'death' | 'disability' | 'retirement';
+
+export interface EOSCalculation {
+  id: number;
+  employee: number;
+  employee_name: string;
+  employee_id_code: string;
+  hire_date: string;
+  termination_date: string;
+  termination_reason: EOSTerminationReason;
+  termination_reason_display: string;
+  years_of_service: string;
+  basic_salary_snapshot: string;
+  gratuity_days: string;
+  gratuity_amount: string;
+  leave_balance_days: string;
+  leave_encashment_amount: string;
+  other_deductions: string;
+  other_additions: string;
+  total_settlement: string;
+  status: EOSStatus;
+  status_display: string;
+  notes: string;
+  paid_at: string | null;
+  calculated_by: number | null;
+  calculated_by_name: string | null;
+  approved_by: number | null;
+  approved_by_name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EOSPreview {
+  employee_id: number;
+  employee_name: string;
+  hire_date: string;
+  termination_date: string;
+  years_of_service: string;
+  basic_salary: string;
+  daily_rate: string;
+  gratuity_days: string;
+  gratuity_amount: string;
+  leave_balance_days: string;
+  leave_encashment: string;
+  other_additions: string;
+  other_deductions: string;
+  total_settlement: string;
+  law_reference: string;
+}
+
+// ── Salary History ─────────────────────────────────────────────────────────────
+export type SalaryChangeReason =
+  | 'hire' | 'annual_review' | 'promotion' | 'correction' | 'backfill' | 'other';
+
+export interface SalaryHistory {
+  id: number;
+  employee: number;
+  employee_name: string;
+  employee_id_code: string;
+  effective_date: string;
+  basic_salary: string;
+  housing_allowance: string;
+  transport_allowance: string;
+  other_allowances: string;
+  gross_salary: string;
+  change_reason: SalaryChangeReason;
+  change_reason_display: string;
+  notes: string;
+  changed_by: number | null;
+  changed_by_name: string | null;
+  created_at: string;
+}

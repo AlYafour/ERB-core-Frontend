@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRLegalEntity, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment, EmployeeBankAccount, HRCompanySettings } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRLegalEntity, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment, EmployeeBankAccount, HRCompanySettings, PayrollRun, EOSCalculation, EOSPreview, SalaryHistory } from '@/types';
 
 function toPage<T>(data: T[] | PaginatedResponse<T>): PaginatedResponse<T> {
   if (Array.isArray(data)) return { results: data, count: data.length, next: null, previous: null };
@@ -409,6 +409,39 @@ export const hrPayrollApi = {
   },
 };
 
+// ── Payroll Runs (batch payroll) ──────────────────────────────────────────────
+
+export const hrPayrollRunsApi = {
+  getAll: async (params?: { page?: number; search?: string; status?: string; year?: number }): Promise<PaginatedResponse<PayrollRun>> => {
+    const response = await apiClient.get('/hr/payroll-runs/', { params });
+    return response.data;
+  },
+  getById: async (id: number): Promise<PayrollRun> => {
+    const response = await apiClient.get(`/hr/payroll-runs/${id}/`);
+    return response.data;
+  },
+  create: async (data: { month: number; year: number; notes?: string }): Promise<PayrollRun> => {
+    const response = await apiClient.post('/hr/payroll-runs/', data);
+    return response.data;
+  },
+  generate: async (id: number): Promise<PayrollRun> => {
+    const response = await apiClient.post(`/hr/payroll-runs/${id}/generate/`);
+    return response.data;
+  },
+  processAll: async (id: number): Promise<PayrollRun> => {
+    const response = await apiClient.post(`/hr/payroll-runs/${id}/process-all/`);
+    return response.data;
+  },
+  markPaidAll: async (id: number): Promise<PayrollRun> => {
+    const response = await apiClient.post(`/hr/payroll-runs/${id}/mark-paid-all/`);
+    return response.data;
+  },
+  cancel: async (id: number): Promise<PayrollRun> => {
+    const response = await apiClient.post(`/hr/payroll-runs/${id}/cancel/`);
+    return response.data;
+  },
+};
+
 // ── Penalty Applications (preview for payroll generation) ─────────────────────
 
 export interface PenaltyApplicationPreview {
@@ -809,5 +842,82 @@ export const hrCompanySettingsApi = {
   update: async (data: Partial<HRCompanySettings>): Promise<HRCompanySettings> => {
     const response = await apiClient.patch('/hr/settings/company/', data);
     return response.data;
+  },
+};
+
+// ── Payroll Runs ──────────────────────────────────────────────────────────────
+export const hrPayrollRunsApi = {
+  getAll: async (params?: { page?: number; status?: string; month?: number; year?: number }): Promise<PaginatedResponse<PayrollRun>> => {
+    const response = await apiClient.get('/hr/payroll/runs/', { params });
+    return response.data;
+  },
+  getById: async (id: number): Promise<PayrollRun> => {
+    const response = await apiClient.get(`/hr/payroll/runs/${id}/`);
+    return response.data;
+  },
+  create: async (data: { month: number; year: number; notes?: string }): Promise<PayrollRun> => {
+    const response = await apiClient.post('/hr/payroll/runs/', data);
+    return response.data;
+  },
+  generate: async (id: number): Promise<{ detail: string; total: number; run: PayrollRun }> => {
+    const response = await apiClient.post(`/hr/payroll/runs/${id}/generate/`);
+    return response.data;
+  },
+  processAll: async (id: number): Promise<{ processed: number; errors: any[]; run: PayrollRun }> => {
+    const response = await apiClient.post(`/hr/payroll/runs/${id}/process-all/`);
+    return response.data;
+  },
+  markPaidAll: async (id: number): Promise<{ paid: number; run: PayrollRun }> => {
+    const response = await apiClient.post(`/hr/payroll/runs/${id}/mark-paid-all/`);
+    return response.data;
+  },
+  cancel: async (id: number): Promise<PayrollRun> => {
+    const response = await apiClient.post(`/hr/payroll/runs/${id}/cancel/`);
+    return response.data;
+  },
+};
+
+// ── End of Service ─────────────────────────────────────────────────────────────
+export const hrEosApi = {
+  getAll: async (params?: { page?: number; status?: string; termination_reason?: string; search?: string }): Promise<PaginatedResponse<EOSCalculation>> => {
+    const response = await apiClient.get('/hr/eos/', { params });
+    return response.data;
+  },
+  getById: async (id: number): Promise<EOSCalculation> => {
+    const response = await apiClient.get(`/hr/eos/${id}/`);
+    return response.data;
+  },
+  preview: async (data: { employee_id: number; termination_date: string; termination_reason: string; leave_balance_days?: number; other_deductions?: number; other_additions?: number }): Promise<EOSPreview> => {
+    const response = await apiClient.post('/hr/eos/preview/', data);
+    return response.data;
+  },
+  create: async (data: { employee: number; hire_date: string; termination_date: string; termination_reason: string; leave_balance_days?: string; other_deductions?: string; other_additions?: string; notes?: string }): Promise<EOSCalculation> => {
+    const response = await apiClient.post('/hr/eos/', data);
+    return response.data;
+  },
+  approve: async (id: number): Promise<EOSCalculation> => {
+    const response = await apiClient.post(`/hr/eos/${id}/approve/`);
+    return response.data;
+  },
+  markPaid: async (id: number): Promise<EOSCalculation> => {
+    const response = await apiClient.post(`/hr/eos/${id}/mark-paid/`);
+    return response.data;
+  },
+  cancel: async (id: number): Promise<EOSCalculation> => {
+    const response = await apiClient.post(`/hr/eos/${id}/cancel/`);
+    return response.data;
+  },
+};
+
+// ── Salary History ─────────────────────────────────────────────────────────────
+export const hrSalaryHistoryApi = {
+  getAll: async (params?: { page?: number; employee?: number; change_reason?: string }): Promise<PaginatedResponse<SalaryHistory>> => {
+    const response = await apiClient.get('/hr/employees/salary-history/', { params });
+    return response.data;
+  },
+  getByEmployee: async (employeeId: number): Promise<SalaryHistory[]> => {
+    const response = await apiClient.get('/hr/employees/salary-history/', { params: { employee: employeeId, page_size: 50 } });
+    const data = response.data;
+    return Array.isArray(data) ? data : (data.results ?? []);
   },
 };
