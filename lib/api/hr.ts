@@ -890,6 +890,62 @@ export const hrEosApi = {
   },
 };
 
+// ── EOS Final Settlements ─────────────────────────────────────────────────────
+export interface FinalSettlement {
+  id: number;
+  eos_calculation: number;
+  eos_status: string;
+  employee: number;
+  employee_name: string;
+  employee_id_code: string;
+  payment_method: string;
+  payment_method_display: string;
+  bank_account: number | null;
+  total_amount: string;
+  settlement_date: string;
+  receipt_reference: string;
+  status: 'pending' | 'paid' | 'voided';
+  status_display: string;
+  paid_at: string | null;
+  paid_by: number | null;
+  paid_by_name: string | null;
+  notes: string;
+  created_by: number | null;
+  created_by_name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const hrFinalSettlementsApi = {
+  getAll: async (params?: { page?: number; status?: string; search?: string }): Promise<PaginatedResponse<FinalSettlement>> => {
+    const response = await apiClient.get('/hr/eos/settlements/', { params });
+    return response.data;
+  },
+  getById: async (id: number): Promise<FinalSettlement> => {
+    const response = await apiClient.get(`/hr/eos/settlements/${id}/`);
+    return response.data;
+  },
+  create: async (data: {
+    eos_calculation: number;
+    payment_method: string;
+    bank_account?: number | null;
+    settlement_date: string;
+    receipt_reference?: string;
+    notes?: string;
+  }): Promise<FinalSettlement> => {
+    const response = await apiClient.post('/hr/eos/settlements/', data);
+    return response.data;
+  },
+  markPaid: async (id: number, receipt_reference?: string): Promise<FinalSettlement> => {
+    const response = await apiClient.post(`/hr/eos/settlements/${id}/mark-paid/`, { receipt_reference });
+    return response.data;
+  },
+  void: async (id: number): Promise<FinalSettlement> => {
+    const response = await apiClient.post(`/hr/eos/settlements/${id}/void/`);
+    return response.data;
+  },
+};
+
 // ── Salary History ─────────────────────────────────────────────────────────────
 export const hrSalaryHistoryApi = {
   getAll: async (params?: { page?: number; employee?: number; change_reason?: string }): Promise<PaginatedResponse<SalaryHistory>> => {
