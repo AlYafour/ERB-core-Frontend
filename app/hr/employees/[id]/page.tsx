@@ -478,36 +478,15 @@ export default function EmployeeDetailPage() {
   // ── Mutations ──────────────────────────────────────────────────────────────
   const updateMutation = useMutation({
     mutationFn: (data: Partial<HREmployee>) => hrEmployeesApi.update(Number(id), data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['hr-employee', id] });
-      queryClient.invalidateQueries({ queryKey: ['hr-employees'] });
-      toast('Saved successfully', 'success');
-      setEditSection(null);
-    },
-    onError: (err: unknown) => {
-      const detail = (err as { response?: { data?: Record<string, unknown> } })?.response?.data;
-      toast(detail ? JSON.stringify(detail) : 'Failed to save', 'error');
-    },
   });
 
   const userUpdateMutation = useMutation({
-    mutationFn: (data: Partial<User & { password?: string; avatar?: File; stamp?: File }>) =>
+    mutationFn: (data: Record<string, unknown>) =>
       usersApi.update(emp!.user!.id, {
         ...data,
         ...(avatarFile ? { avatar: avatarFile } : {}),
         ...(stampFile  ? { stamp:  stampFile  } : {}),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['hr-employee', id] });
-      toast('Account updated', 'success');
-      setEditSection(null);
-      setAvatarFile(null);
-      setAvatarPreview(null);
-      setStampFile(null);
-      setStampPreview(null);
-      setChangePassword(false);
-    },
-    onError: () => toast('Failed to update account', 'error'),
+      } as Partial<User> & { password?: string; avatar?: File; stamp?: File }),
   });
 
   const isSaving = updateMutation.isPending || userUpdateMutation.isPending;
@@ -525,10 +504,10 @@ export default function EmployeeDetailPage() {
     setStampPreview(null);
     setChangePassword(false);
     setForm({
-      // Personal
+      // Personal (incl. User name fields)
       first_name:           emp.user?.first_name || '',
       last_name:            emp.user?.last_name  || '',
-      full_name_ar:         (emp.user as Record<string, unknown>)?.full_name_ar as string || '',
+      full_name_ar:         emp.user?.full_name_ar || '',
       gender:               emp.gender || '',
       date_of_birth:        emp.date_of_birth || '',
       marital_status:       emp.marital_status || '',
@@ -536,7 +515,6 @@ export default function EmployeeDetailPage() {
       home_country:         emp.home_country || '',
       religion:             emp.religion || '',
       national_id:          emp.national_id || '',
-      personal_email:       emp.personal_email || '',
       passport_number:      emp.passport_number || '',
       passport_issue_date:  emp.passport_issue_date || '',
       passport_expiry_date: emp.passport_expiry_date || '',
@@ -551,7 +529,6 @@ export default function EmployeeDetailPage() {
       join_date:            emp.join_date || '',
       probation_end_date:   emp.probation_end_date || '',
       end_date:             emp.end_date || '',
-      is_active:            emp.is_active,
       // Salary
       basic_salary:         emp.basic_salary || '0',
       housing_allowance:    emp.housing_allowance || '0',
@@ -561,6 +538,7 @@ export default function EmployeeDetailPage() {
       mobile_number:        emp.mobile_number || '',
       extension_number:     emp.extension_number || '',
       address:              emp.address || '',
+      personal_email:       emp.personal_email || '',
       // UAE Legal
       resident_id:          emp.resident_id || '',
       is_citizen:           emp.is_citizen ?? false,
@@ -572,88 +550,117 @@ export default function EmployeeDetailPage() {
       // Account
       username:             emp.user?.username || '',
       email:                emp.user?.email || '',
+      role:                 emp.user?.role || '',
+      is_active:            emp.is_active,
       password:             '',
       password2:            '',
     });
     setEditSection(section);
   };
 
-  const handleSave = () => {
-    if (editSection === 'account') {
-      if (changePassword) {
-        if (!form.password || form.password.length < 8) { toast('Password must be at least 8 characters', 'error'); return; }
-        if (form.password !== form.password2) { toast('Passwords do not match', 'error'); return; }
+  const handleSave = async () => {
+    if (!emp) return;
+    try {
+      const str = (v: unknown): string | undefined => (v as string) || undefined;
+      const fk  = (v: unknown): number | undefined => v ? Number(v) : undefined;
+
+      if (editSection === 'account') {
+        if (changePassword) {
+          if (!(form.password as string) || (form.password as string).length < 8) { toast('Password must be at least 8 characters', 'error'); return; }
+          if (form.password !== form.password2) { toast('Passwords do not match', 'error'); return; }
+        }
+        const accountData: Record<string, unknown> = {
+          username: form.username,
+          email:    form.email,
+          role:     form.role,
+        };
+        if (changePassword && form.password) accountData.password = form.password;
+        await userUpdateMutation.mutateAsync(accountData);
+        await updateMutation.mutateAsync({ is_active: form.is_active as boolean });
+
+      } else {
+        let payload: Partial<HREmployee> = {};
+
+        if (editSection === 'personal') {
+          if (emp.user?.id) {
+            await usersApi.update(emp.user.id, {
+              first_name:   form.first_name   as string || '',
+              last_name:    form.last_name    as string || '',
+              full_name_ar: form.full_name_ar as string || '',
+            } as Partial<User> & { password?: string; avatar?: File; stamp?: File });
+          }
+          payload = {
+            gender:               str(form.gender),
+            date_of_birth:        str(form.date_of_birth),
+            marital_status:       str(form.marital_status),
+            nationality:          str(form.nationality),
+            home_country:         str(form.home_country),
+            religion:             str(form.religion),
+            national_id:          str(form.national_id),
+            passport_number:      str(form.passport_number),
+            passport_issue_date:  str(form.passport_issue_date),
+            passport_expiry_date: str(form.passport_expiry_date),
+          };
+        } else if (editSection === 'professional') {
+          payload = {
+            employment_type:    str(form.employment_type) as HREmployee['employment_type'],
+            employee_group:     fk(form.employee_group),
+            department:         fk(form.department),
+            position:           fk(form.position),
+            legal_entity:       fk(form.legal_entity),
+            office_location:    fk(form.office_location),
+            direct_manager:     fk(form.direct_manager),
+            join_date:          str(form.join_date),
+            probation_end_date: str(form.probation_end_date),
+            end_date:           str(form.end_date),
+          };
+        } else if (editSection === 'contact') {
+          payload = {
+            mobile_number:    str(form.mobile_number),
+            extension_number: str(form.extension_number),
+            address:          str(form.address),
+            personal_email:   str(form.personal_email),
+          };
+        } else if (editSection === 'legal') {
+          payload = {
+            resident_id:       str(form.resident_id),
+            is_citizen:        form.is_citizen as boolean,
+            labor_card:        str(form.labor_card),
+            labor_card_expiry: str(form.labor_card_expiry),
+            mol_number:        str(form.mol_number),
+            sponsor_name:      str(form.sponsor_name),
+            sponsor_id:        str(form.sponsor_id),
+          };
+        } else if (editSection === 'salary') {
+          payload = {
+            basic_salary:        form.basic_salary        as string,
+            housing_allowance:   form.housing_allowance   as string,
+            transport_allowance: form.transport_allowance as string,
+            other_allowances:    form.other_allowances    as string,
+          };
+        }
+
+        await updateMutation.mutateAsync(payload);
       }
-      const accountData: Record<string, unknown> = {
-        username:     form.username,
-        email:        form.email,
-        first_name:   form.first_name,
-        last_name:    form.last_name,
-        full_name_ar: form.full_name_ar,
-      };
-      if (changePassword && form.password) accountData.password = form.password;
-      userUpdateMutation.mutate(accountData as Partial<User & { password?: string }>);
-    } else {
-      const str  = (v: unknown) => (v as string) || null;
-      const fk   = (v: unknown) => v ? Number(v) : null;
 
-      let payload: Partial<HREmployee> = {};
+      queryClient.invalidateQueries({ queryKey: ['hr-employee', id] });
+      queryClient.invalidateQueries({ queryKey: ['hr-employees'] });
+      toast('Saved successfully', 'success');
+      setEditSection(null);
+      setAvatarFile(null); setAvatarPreview(null);
+      setStampFile(null);  setStampPreview(null);
+      setChangePassword(false);
 
-      if (editSection === 'personal') {
-        payload = {
-          gender:               str(form.gender),
-          date_of_birth:        str(form.date_of_birth),
-          marital_status:       str(form.marital_status),
-          nationality:          str(form.nationality),
-          home_country:         str(form.home_country),
-          religion:             str(form.religion),
-          national_id:          str(form.national_id),
-          personal_email:       str(form.personal_email),
-          passport_number:      str(form.passport_number),
-          passport_issue_date:  str(form.passport_issue_date),
-          passport_expiry_date: str(form.passport_expiry_date),
-        };
-      } else if (editSection === 'professional') {
-        payload = {
-          employment_type:    str(form.employment_type),
-          is_active:          form.is_active as boolean,
-          employee_group:     fk(form.employee_group),
-          department:         fk(form.department),
-          position:           fk(form.position),
-          legal_entity:       fk(form.legal_entity),
-          office_location:    fk(form.office_location),
-          direct_manager:     fk(form.direct_manager),
-          join_date:          str(form.join_date),
-          probation_end_date: str(form.probation_end_date),
-          end_date:           str(form.end_date),
-        };
-      } else if (editSection === 'contact') {
-        payload = {
-          mobile_number:    str(form.mobile_number),
-          extension_number: str(form.extension_number),
-          address:          str(form.address),
-          personal_email:   str(form.personal_email),
-        };
-      } else if (editSection === 'legal') {
-        payload = {
-          resident_id:        str(form.resident_id),
-          is_citizen:         form.is_citizen as boolean,
-          labor_card:         str(form.labor_card),
-          labor_card_expiry:  str(form.labor_card_expiry),
-          mol_number:         str(form.mol_number),
-          sponsor_name:       str(form.sponsor_name),
-          sponsor_id:         str(form.sponsor_id),
-        };
-      } else if (editSection === 'salary') {
-        payload = {
-          basic_salary:        form.basic_salary        as string,
-          housing_allowance:   form.housing_allowance   as string,
-          transport_allowance: form.transport_allowance as string,
-          other_allowances:    form.other_allowances    as string,
-        };
+    } catch (err: unknown) {
+      const raw = (err as { response?: { data?: unknown } })?.response?.data;
+      if (raw && typeof raw === 'object') {
+        const msg = Object.entries(raw as Record<string, unknown>)
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v[0] : v}`)
+          .join(' | ');
+        toast(msg, 'error');
+      } else {
+        toast('Failed to save', 'error');
       }
-
-      updateMutation.mutate(payload);
     }
   };
 
@@ -994,8 +1001,8 @@ export default function EmployeeDetailPage() {
                   <div className="info-grid">
                     <InfoRow label="First Name"      value={emp.user?.first_name || undefined} />
                     <InfoRow label="Last Name"       value={emp.user?.last_name  || undefined} />
-                    {(emp.user as Record<string, unknown>)?.full_name_ar && (
-                      <InfoRow label="Arabic Name"     value={(emp.user as Record<string, unknown>).full_name_ar as string} />
+                    {emp.user?.full_name_ar && (
+                      <InfoRow label="Arabic Name" value={emp.user.full_name_ar} />
                     )}
                     <InfoRow label="Gender"          value={emp.gender ? emp.gender.charAt(0).toUpperCase() + emp.gender.slice(1) : undefined} />
                     <InfoRow label="Nationality"     value={emp.nationality} />
@@ -1028,7 +1035,7 @@ export default function EmployeeDetailPage() {
                   <div className="info-grid">
                     <InfoRow label="Resident ID"       value={emp.resident_id} />
                     <InfoRow label="UAE Citizen"       value={emp.is_citizen ? 'Yes' : 'No'} />
-                    <InfoRow label="Labor Card"        value={emp.labor_card} />
+                    <InfoRow label="Labor Card No."    value={emp.labor_card} />
                     <InfoRow label="Labor Card Expiry" value={fmtDate(emp.labor_card_expiry)} />
                     <InfoRow label="MOL Number"        value={emp.mol_number} />
                     <InfoRow label="Sponsor Name"      value={emp.sponsor_name} />
@@ -1067,7 +1074,7 @@ export default function EmployeeDetailPage() {
                     <InfoRow label="Hiring Date"       value={fmtDate(emp.join_date)} />
                     <InfoRow label="Employment Period" value={calcPeriod(emp.join_date)} />
                     <InfoRow label="End of Probation"  value={fmtDate(emp.probation_end_date)} />
-                    <InfoRow label="End Date"          value={fmtDate(emp.end_date)} />
+                    <InfoRow label="Contract End Date" value={fmtDate(emp.end_date)} />
                   </div>
                 </div>
 
@@ -1237,11 +1244,31 @@ export default function EmployeeDetailPage() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', marginTop: 'var(--space-4)' }}>
-              <div className={fld}><label className={lbl}>First Name</label><input className={inp} value={form.first_name} onChange={f('first_name')} /></div>
-              <div className={fld}><label className={lbl}>Last Name</label><input className={inp} value={form.last_name} onChange={f('last_name')} /></div>
-              <div className={fld} style={{ gridColumn: '1 / -1' }}><label className={lbl}>Arabic Name</label><input className={inp} dir="rtl" value={form.full_name_ar as string} onChange={f('full_name_ar')} /></div>
-              <div className={fld}><label className={lbl}>Username</label><input className={inp} value={form.username} onChange={f('username')} /></div>
-              <div className={fld}><label className={lbl}>Email</label><input className={inp} type="email" value={form.email} onChange={f('email')} /></div>
+              <div className={fld}><label className={lbl}>Username</label><input className={inp} value={form.username as string} onChange={f('username')} /></div>
+              <div className={fld}><label className={lbl}>Work Email</label><input className={inp} type="email" value={form.email as string} onChange={f('email')} /></div>
+              <div className={fld}>
+                <label className={lbl}>Role</label>
+                <select className={sel} value={form.role as string} onChange={f('role')}>
+                  <option value="">— Select Role —</option>
+                  <option value="employee">Employee</option>
+                  <option value="hr_secretary">HR Secretary</option>
+                  <option value="hr_manager">HR Manager</option>
+                  <option value="procurement_officer">Procurement Officer</option>
+                  <option value="procurement_manager">Procurement Manager</option>
+                  <option value="site_engineer">Site Engineer</option>
+                  <option value="company_director">Company Director</option>
+                  <option value="admin">Admin</option>
+                  <option value="super_admin">Super Admin</option>
+                </select>
+              </div>
+              <div className={fld}>
+                <label className={lbl}>Account Status</label>
+                <select className={sel} value={form.is_active ? 'true' : 'false'}
+                  onChange={e => setForm(p => ({ ...p, is_active: e.target.value === 'true' }))}>
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
+                </select>
+              </div>
             </div>
 
             <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-4)', marginTop: 'var(--space-4)' }}>
@@ -1257,8 +1284,8 @@ export default function EmployeeDetailPage() {
               </label>
               {changePassword && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
-                  <div className={fld}><label className={lbl}>New Password</label><input className={inp} type="password" placeholder="Min 8 characters" value={form.password} onChange={f('password')} /></div>
-                  <div className={fld}><label className={lbl}>Confirm Password</label><input className={inp} type="password" placeholder="Repeat password" value={form.password2} onChange={f('password2')} /></div>
+                  <div className={fld}><label className={lbl}>New Password</label><input className={inp} type="password" placeholder="Min 8 characters" value={form.password as string} onChange={f('password')} /></div>
+                  <div className={fld}><label className={lbl}>Confirm Password</label><input className={inp} type="password" placeholder="Repeat password" value={form.password2 as string} onChange={f('password2')} /></div>
                 </div>
               )}
             </div>
@@ -1268,6 +1295,9 @@ export default function EmployeeDetailPage() {
         {/* ─ Personal ─ */}
         {editSection === 'personal' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+            <div className={fld}><label className={lbl}>First Name</label><input className={inp} value={form.first_name as string} onChange={f('first_name')} /></div>
+            <div className={fld}><label className={lbl}>Last Name</label><input className={inp} value={form.last_name as string} onChange={f('last_name')} /></div>
+            <div className={fld} style={{ gridColumn: '1 / -1' }}><label className={lbl}>Arabic Name</label><input className={inp} dir="rtl" value={form.full_name_ar as string} onChange={f('full_name_ar')} /></div>
             <div className={fld}>
               <label className={lbl}>Gender</label>
               <select className={sel} value={form.gender as string} onChange={f('gender')}>
@@ -1291,7 +1321,6 @@ export default function EmployeeDetailPage() {
             <div className={fld}><label className={lbl}>Home Country</label><input className={inp} value={form.home_country as string} onChange={f('home_country')} /></div>
             <div className={fld}><label className={lbl}>Religion</label><input className={inp} value={form.religion as string} onChange={f('religion')} /></div>
             <div className={fld}><label className={lbl}>National ID (Emirates ID)</label><input className={inp} value={form.national_id as string} onChange={f('national_id')} placeholder="XXX-XXXX-XXXXXXX-X" /></div>
-            <div className={fld}><label className={lbl}>Personal Email</label><input className={inp} type="email" value={form.personal_email as string} onChange={f('personal_email')} /></div>
             <div className={fld}><label className={lbl}>Passport Number</label><input className={inp} value={form.passport_number as string} onChange={f('passport_number')} /></div>
             <div className={fld}><label className={lbl}>Passport Issue Date</label><DateInput className={inp} value={(form.passport_issue_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, passport_issue_date: v }))} /></div>
             <div className={fld}><label className={lbl}>Passport Expiry Date</label><DateInput className={inp} value={(form.passport_expiry_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, passport_expiry_date: v }))} /></div>
@@ -1310,15 +1339,6 @@ export default function EmployeeDetailPage() {
                 <option value="intern">Intern</option>
               </select>
             </div>
-            <div className={fld}>
-              <label className={lbl}>Status</label>
-              <select className={sel} value={form.is_active ? 'true' : 'false'}
-                onChange={e => setForm(p => ({ ...p, is_active: e.target.value === 'true' }))}>
-                <option value="true">Active</option>
-                <option value="false">Inactive</option>
-              </select>
-            </div>
-
             <div className={fld}>
               <label className={lbl}>Employee Category</label>
               <SearchableDropdown options={groupOptions} value={form.employee_group ? Number(form.employee_group) : null}
@@ -1384,7 +1404,7 @@ export default function EmployeeDetailPage() {
 
             <div className={fld}><label className={lbl}>Hiring Date</label><DateInput className={inp} value={(form.join_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, join_date: v }))} /></div>
             <div className={fld}><label className={lbl}>End of Probation</label><DateInput className={inp} value={(form.probation_end_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, probation_end_date: v }))} /></div>
-            <div className={fld}><label className={lbl}>End Date</label><DateInput className={inp} value={(form.end_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, end_date: v }))} /></div>
+            <div className={fld}><label className={lbl}>Contract End Date</label><DateInput className={inp} value={(form.end_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, end_date: v }))} /></div>
           </div>
         )}
 
@@ -1407,19 +1427,18 @@ export default function EmployeeDetailPage() {
         {/* ─ UAE Legal ─ */}
         {editSection === 'legal' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
-            <div className={fld}><label className={lbl}>Resident ID</label><input className={inp} value={form.resident_id} onChange={f('resident_id')} /></div>
-            <div className={fld}><label className={lbl}>Labor Card</label><input className={inp} value={form.labor_card} onChange={f('labor_card')} /></div>
+            <div className={fld}><label className={lbl}>Resident ID</label><input className={inp} value={form.resident_id as string} onChange={f('resident_id')} /></div>
+            <div className={fld}><label className={lbl}>Labor Card Number</label><input className={inp} value={form.labor_card as string} onChange={f('labor_card')} /></div>
             <div className={fld}><label className={lbl}>Labor Card Expiry</label><DateInput className={inp} value={(form.labor_card_expiry as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, labor_card_expiry: v }))} /></div>
-            <div className={fld}><label className={lbl}>MOL Number</label><input className={inp} value={form.mol_number} onChange={f('mol_number')} /></div>
-            <div className={fld}><label className={lbl}>Sponsor Name</label><input className={inp} value={form.sponsor_name} onChange={f('sponsor_name')} /></div>
-            <div className={fld}><label className={lbl}>Sponsor ID</label><input className={inp} value={form.sponsor_id} onChange={f('sponsor_id')} /></div>
+            <div className={fld}><label className={lbl}>MOL Number</label><input className={inp} value={form.mol_number as string} onChange={f('mol_number')} /></div>
+            <div className={fld}><label className={lbl}>Sponsor Name</label><input className={inp} value={form.sponsor_name as string} onChange={f('sponsor_name')} /></div>
+            <div className={fld}><label className={lbl}>Sponsor ID</label><input className={inp} value={form.sponsor_id as string} onChange={f('sponsor_id')} /></div>
             <div className={fld} style={{ gridColumn: '1 / -1' }}>
-              <label className={lbl}>UAE Citizen?</label>
-              <select className={sel} value={form.is_citizen ? 'true' : 'false'}
-                onChange={e => setForm(p => ({ ...p, is_citizen: e.target.value === 'true' }))}>
-                <option value="false">No</option>
-                <option value="true">Yes</option>
-              </select>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.is_citizen as boolean}
+                  onChange={e => setForm(p => ({ ...p, is_citizen: e.target.checked }))} />
+                <span className={lbl} style={{ margin: 0 }}>UAE Citizen / GCC National</span>
+              </label>
             </div>
           </div>
         )}
@@ -1435,9 +1454,34 @@ export default function EmployeeDetailPage() {
             ] as [string, string][]).map(([key, label]) => (
               <div key={key} className={fld}>
                 <label className={lbl}>{label} (AED)</label>
-                <input className={inp} type="number" min="0" value={form[key]} onChange={f(key)} />
+                <input className={inp} type="number" min="0" value={form[key] as string} onChange={f(key)} />
               </div>
             ))}
+            {/* Calculated totals — read-only */}
+            {(() => {
+              const monthly = (
+                Number(form.basic_salary        || 0) +
+                Number(form.housing_allowance   || 0) +
+                Number(form.transport_allowance || 0) +
+                Number(form.other_allowances    || 0)
+              );
+              return (
+                <div style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-4)', marginTop: 'var(--space-2)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+                  <div style={{ background: 'var(--brand-subtle)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-3)', textAlign: 'center' }}>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 4, fontWeight: 600 }}>Total Monthly Package</div>
+                    <div style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-brand)' }}>
+                      {monthly.toLocaleString('en-US', { minimumFractionDigits: 2 })} <span style={{ fontSize: 'var(--text-xs)', fontWeight: 500 }}>AED</span>
+                    </div>
+                  </div>
+                  <div style={{ background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-3)', textAlign: 'center' }}>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 4, fontWeight: 600 }}>Annual Package</div>
+                    <div style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {(monthly * 12).toLocaleString('en-US', { minimumFractionDigits: 0 })} <span style={{ fontSize: 'var(--text-xs)', fontWeight: 500 }}>AED</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
       </Drawer>

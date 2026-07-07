@@ -624,10 +624,13 @@ export interface HREmployeeUser {
   id: number;
   username: string;
   email: string;
+  first_name: string;
+  last_name: string;
   full_name: string;
   full_name_ar: string;
   phone: string;
   avatar: string | null;
+  stamp_url?: string | null;
   role: string;
 }
 
@@ -672,6 +675,7 @@ export interface HREmployee {
   position_detail?: HRPosition;
   direct_manager?: number | null;
   direct_manager_name?: string | null;
+  direct_manager_detail?: HREmployee;
   indirect_manager?: number | null;
   indirect_manager_name?: string | null;
   employee_group?: number | null;
