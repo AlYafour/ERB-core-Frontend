@@ -409,39 +409,6 @@ export const hrPayrollApi = {
   },
 };
 
-// ── Payroll Runs (batch payroll) ──────────────────────────────────────────────
-
-export const hrPayrollRunsApi = {
-  getAll: async (params?: { page?: number; search?: string; status?: string; year?: number }): Promise<PaginatedResponse<PayrollRun>> => {
-    const response = await apiClient.get('/hr/payroll-runs/', { params });
-    return response.data;
-  },
-  getById: async (id: number): Promise<PayrollRun> => {
-    const response = await apiClient.get(`/hr/payroll-runs/${id}/`);
-    return response.data;
-  },
-  create: async (data: { month: number; year: number; notes?: string }): Promise<PayrollRun> => {
-    const response = await apiClient.post('/hr/payroll-runs/', data);
-    return response.data;
-  },
-  generate: async (id: number): Promise<PayrollRun> => {
-    const response = await apiClient.post(`/hr/payroll-runs/${id}/generate/`);
-    return response.data;
-  },
-  processAll: async (id: number): Promise<PayrollRun> => {
-    const response = await apiClient.post(`/hr/payroll-runs/${id}/process-all/`);
-    return response.data;
-  },
-  markPaidAll: async (id: number): Promise<PayrollRun> => {
-    const response = await apiClient.post(`/hr/payroll-runs/${id}/mark-paid-all/`);
-    return response.data;
-  },
-  cancel: async (id: number): Promise<PayrollRun> => {
-    const response = await apiClient.post(`/hr/payroll-runs/${id}/cancel/`);
-    return response.data;
-  },
-};
-
 // ── Penalty Applications (preview for payroll generation) ─────────────────────
 
 export interface PenaltyApplicationPreview {
