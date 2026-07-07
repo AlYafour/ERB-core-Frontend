@@ -4,8 +4,9 @@ import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
-import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi, hrEmployeeGroupsApi } from '@/lib/api/hr';
+import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi, hrEmployeeGroupsApi, hrOfficeLocationsApi, hrLegalEntitiesApi } from '@/lib/api/hr';
 import { usersApi } from '@/lib/api/users';
+import PhoneInput from '@/components/ui/PhoneInput';
 import HomeTab       from '@/components/users/HomeTab';
 import AttendanceTab from '@/components/users/AttendanceTab';
 import RequestsTab  from '@/components/users/RequestsTab';
@@ -423,13 +424,19 @@ export default function EmployeeDetailPage() {
   });
 
   const isSelf = !!emp && currentUser?.id === emp.user?.id;
-  const { data: depts }     = useQuery({ queryKey: ['hr-departments-all'], queryFn: () => hrDepartmentsApi.getAll({ page: 1 }), staleTime: 300_000 });
-  const { data: positions } = useQuery({ queryKey: ['hr-positions-all'],   queryFn: () => hrPositionsApi.getAll({ page_size: 200 }), staleTime: 300_000 });
-  const { data: groups }    = useQuery({ queryKey: ['hr-employee-groups-all'], queryFn: () => hrEmployeeGroupsApi.getAll(), staleTime: 300_000 });
+  const { data: depts }           = useQuery({ queryKey: ['hr-departments-all'],    queryFn: () => hrDepartmentsApi.getAll({ page: 1 }),                                         staleTime: 300_000 });
+  const { data: positions }       = useQuery({ queryKey: ['hr-positions-all'],      queryFn: () => hrPositionsApi.getAll({ page_size: 200 }),                                      staleTime: 300_000 });
+  const { data: groups }          = useQuery({ queryKey: ['hr-employee-groups-all'],queryFn: () => hrEmployeeGroupsApi.getAll(),                                                   staleTime: 300_000 });
+  const { data: officeLocations } = useQuery({ queryKey: ['hr-office-locations'],   queryFn: () => hrOfficeLocationsApi.getAll({ is_active: true }),                               staleTime: 300_000 });
+  const { data: legalEntities }   = useQuery({ queryKey: ['hr-legal-entities'],     queryFn: () => hrLegalEntitiesApi.getAll(),                                                    staleTime: 300_000 });
+  const { data: managers }        = useQuery({ queryKey: ['hr-managers'],           queryFn: () => hrEmployeesApi.getAll({ is_manager: true, is_active: true, page_size: 200 }),   staleTime: 60_000  });
 
-  const deptOptions     = (depts?.results     ?? []).map((d) => ({ value: d.id, label: d.name }));
-  const positionOptions = (positions?.results ?? []).map((p) => ({ value: p.id, label: p.title }));
-  const groupOptions    = (groups?.results    ?? []).map((g) => ({ value: g.id, label: g.name }));
+  const deptOptions     = (depts?.results          ?? []).map((d)  => ({ value: d.id,  label: d.name }));
+  const positionOptions = (positions?.results      ?? []).map((p)  => ({ value: p.id,  label: p.title }));
+  const groupOptions    = (groups?.results         ?? []).map((g)  => ({ value: g.id,  label: g.name }));
+  const locationOpts    = (officeLocations?.results ?? []).map((l)  => ({ value: l.id,  label: l.name }));
+  const legalEntOpts    = (legalEntities?.results  ?? []).map((le) => ({ value: le.id, label: le.name }));
+  const managerOpts     = (managers?.results       ?? []).map((m)  => ({ value: m.id,  label: `${m.full_name} (${m.employee_id})` }));
   const { data: summary }   = useQuery({
     queryKey: ['hr-emp-summary', id],
     queryFn:  () => hrEmployeesApi.getAttendanceSummary(Number(id)),
@@ -494,44 +501,53 @@ export default function EmployeeDetailPage() {
     setStampPreview(null);
     setChangePassword(false);
     setForm({
-      salary_display_name:  emp.salary_display_name || '',
+      // Personal
+      first_name:           emp.user?.first_name || '',
+      last_name:            emp.user?.last_name  || '',
+      full_name_ar:         (emp.user as Record<string, unknown>)?.full_name_ar as string || '',
       gender:               emp.gender || '',
       date_of_birth:        emp.date_of_birth || '',
+      marital_status:       emp.marital_status || '',
       nationality:          emp.nationality || '',
       home_country:         emp.home_country || '',
       religion:             emp.religion || '',
       national_id:          emp.national_id || '',
+      personal_email:       emp.personal_email || '',
       passport_number:      emp.passport_number || '',
       passport_issue_date:  emp.passport_issue_date || '',
       passport_expiry_date: emp.passport_expiry_date || '',
-      personal_email:       emp.personal_email || '',
-      marital_status:       emp.marital_status || '',
+      // Professional
       employment_type:      emp.employment_type || 'full_time',
+      employee_group:       emp.employee_group ?? '',
+      department:           emp.department ?? '',
+      position:             emp.position ?? '',
+      office_location:      emp.office_location ?? '',
+      legal_entity:         (emp as Record<string, unknown>).legal_entity ?? '',
+      direct_manager:       emp.direct_manager ?? '',
       join_date:            emp.join_date || '',
       probation_end_date:   emp.probation_end_date || '',
       end_date:             emp.end_date || '',
-      department:           emp.department ?? '',
-      position:             emp.position ?? '',
-      employee_group:       emp.employee_group ?? '',
       is_active:            emp.is_active,
-      mobile_number:        emp.mobile_number || '',
-      extension_number:     emp.extension_number || '',
-      address:              emp.address || '',
-      sponsor_name:         emp.sponsor_name || '',
-      sponsor_id:           emp.sponsor_id || '',
-      labor_card:           emp.labor_card || '',
-      labor_card_expiry:    emp.labor_card_expiry || '',
-      mol_number:           emp.mol_number || '',
-      resident_id:          emp.resident_id || '',
-      is_citizen:           emp.is_citizen ?? false,
+      // Salary
       basic_salary:         emp.basic_salary || '0',
       housing_allowance:    emp.housing_allowance || '0',
       transport_allowance:  emp.transport_allowance || '0',
       other_allowances:     emp.other_allowances || '0',
+      // Contact
+      mobile_number:        emp.mobile_number || '',
+      extension_number:     emp.extension_number || '',
+      address:              emp.address || '',
+      // UAE Legal
+      resident_id:          emp.resident_id || '',
+      is_citizen:           emp.is_citizen ?? false,
+      labor_card:           emp.labor_card || '',
+      labor_card_expiry:    emp.labor_card_expiry || '',
+      mol_number:           emp.mol_number || '',
+      sponsor_name:         emp.sponsor_name || '',
+      sponsor_id:           emp.sponsor_id || '',
+      // Account
       username:             emp.user?.username || '',
       email:                emp.user?.email || '',
-      first_name:           emp.user?.first_name || '',
-      last_name:            emp.user?.last_name || '',
       password:             '',
       password2:            '',
     });
@@ -545,8 +561,11 @@ export default function EmployeeDetailPage() {
         if (form.password !== form.password2) { toast('Passwords do not match', 'error'); return; }
       }
       const accountData: Record<string, unknown> = {
-        username: form.username, email: form.email,
-        first_name: form.first_name, last_name: form.last_name,
+        username:     form.username,
+        email:        form.email,
+        first_name:   form.first_name,
+        last_name:    form.last_name,
+        full_name_ar: form.full_name_ar,
       };
       if (changePassword && form.password) accountData.password = form.password;
       userUpdateMutation.mutate(accountData as Partial<User & { password?: string }>);
@@ -554,9 +573,12 @@ export default function EmployeeDetailPage() {
       const d = (v: unknown) => (typeof v === 'string' && !v) ? null : v;
       updateMutation.mutate({
         ...form,
-        department:           form.department     || null,
-        position:             form.position       || null,
-        employee_group:       form.employee_group || null,
+        department:           form.department      || null,
+        position:             form.position        || null,
+        employee_group:       form.employee_group  || null,
+        office_location:      form.office_location || null,
+        legal_entity:         form.legal_entity    || null,
+        direct_manager:       form.direct_manager  || null,
         date_of_birth:        d(form.date_of_birth),
         join_date:            d(form.join_date),
         probation_end_date:   d(form.probation_end_date),
@@ -824,10 +846,10 @@ export default function EmployeeDetailPage() {
                     )}
                   </div>
                   <div className="info-grid">
-                    <InfoRow label="Username"    value={emp.user?.username} />
-                    <InfoRow label="Work Email"  value={emp.user?.email} />
-                    <InfoRow label="Phone"       value={emp.user?.phone} />
-                    <InfoRow label="Status"      value={emp.is_active ? 'Active' : 'Inactive'} />
+                    <InfoRow label="Username"   value={emp.user?.username} />
+                    <InfoRow label="Work Email" value={emp.user?.email} />
+                    <InfoRow label="Role"       value={emp.user?.role?.replace(/_/g, ' ')} />
+                    <InfoRow label="Status"     value={emp.is_active ? 'Active' : 'Inactive'} />
                   </div>
                 </div>
 
@@ -903,6 +925,9 @@ export default function EmployeeDetailPage() {
                 <div className="card">
                   <SectionHead title="Personal Info" onEdit={() => openEdit('personal')} isAdmin={isAdmin} />
                   <div className="info-grid">
+                    {(emp.user as Record<string, unknown>)?.full_name_ar && (
+                      <InfoRow label="Arabic Name"     value={(emp.user as Record<string, unknown>).full_name_ar as string} />
+                    )}
                     <InfoRow label="Gender"          value={emp.gender ? emp.gender.charAt(0).toUpperCase() + emp.gender.slice(1) : undefined} />
                     <InfoRow label="Nationality"     value={emp.nationality} />
                     <InfoRow label="Birth Date"      value={fmtDate(emp.date_of_birth)} />
@@ -963,16 +988,17 @@ export default function EmployeeDetailPage() {
                 <div className="card">
                   <SectionHead title="Professional Info" onEdit={() => openEdit('professional')} isAdmin={isAdmin} />
                   <div className="info-grid">
-                    <InfoRow label="Position"            value={emp.position_title} />
-                    <InfoRow label="Department"          value={emp.department_name} />
-                    <InfoRow label="Employee Category"      value={emp.employee_group_name} />
-                    <InfoRow label="Work Type"           value={empTypeLabel[emp.employment_type] || emp.employment_type} />
-                    <InfoRow label="Direct Manager"      value={emp.direct_manager_detail?.full_name ?? emp.direct_manager_name ?? undefined} />
-                    <InfoRow label="Hiring Date"         value={fmtDate(emp.join_date)} />
-                    <InfoRow label="Employment Period"   value={calcPeriod(emp.join_date)} />
-                    <InfoRow label="End of Probation"    value={fmtDate(emp.probation_end_date)} />
-                    <InfoRow label="End Date"            value={fmtDate(emp.end_date)} />
-                    <InfoRow label="Salary Display Name" value={emp.salary_display_name} />
+                    <InfoRow label="Position"          value={emp.position_title} />
+                    <InfoRow label="Department"        value={emp.department_name} />
+                    <InfoRow label="Employee Category" value={emp.employee_group_name} />
+                    <InfoRow label="Work Type"         value={empTypeLabel[emp.employment_type] || emp.employment_type} />
+                    <InfoRow label="Legal Entity"      value={(emp as Record<string, unknown>).legal_entity_name as string | undefined} />
+                    <InfoRow label="Work Location"     value={emp.office_location_name} />
+                    <InfoRow label="Direct Manager"    value={emp.direct_manager_detail?.full_name ?? emp.direct_manager_name ?? undefined} />
+                    <InfoRow label="Hiring Date"       value={fmtDate(emp.join_date)} />
+                    <InfoRow label="Employment Period" value={calcPeriod(emp.join_date)} />
+                    <InfoRow label="End of Probation"  value={fmtDate(emp.probation_end_date)} />
+                    <InfoRow label="End Date"          value={fmtDate(emp.end_date)} />
                   </div>
                 </div>
 
@@ -1160,10 +1186,12 @@ export default function EmployeeDetailPage() {
         {/* ─ Personal ─ */}
         {editSection === 'personal' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
-            <div className={fld}><label className={lbl}>Salary Display Name</label><input className={inp} value={form.salary_display_name} onChange={f('salary_display_name')} /></div>
+            <div className={fld}><label className={lbl}>First Name</label><input className={inp} value={form.first_name as string} onChange={f('first_name')} /></div>
+            <div className={fld}><label className={lbl}>Last Name</label><input className={inp} value={form.last_name as string} onChange={f('last_name')} /></div>
+            <div className={fld} style={{ gridColumn: '1 / -1' }}><label className={lbl}>Arabic Name</label><input className={inp} dir="rtl" value={form.full_name_ar as string} onChange={f('full_name_ar')} /></div>
             <div className={fld}>
               <label className={lbl}>Gender</label>
-              <select className={sel} value={form.gender} onChange={f('gender')}>
+              <select className={sel} value={form.gender as string} onChange={f('gender')}>
                 <option value="">—</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
@@ -1172,7 +1200,7 @@ export default function EmployeeDetailPage() {
             <div className={fld}><label className={lbl}>Date of Birth</label><DateInput className={inp} value={(form.date_of_birth as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, date_of_birth: v }))} /></div>
             <div className={fld}>
               <label className={lbl}>Marital Status</label>
-              <select className={sel} value={form.marital_status} onChange={f('marital_status')}>
+              <select className={sel} value={form.marital_status as string} onChange={f('marital_status')}>
                 <option value="">—</option>
                 <option value="single">Single</option>
                 <option value="married">Married</option>
@@ -1180,14 +1208,14 @@ export default function EmployeeDetailPage() {
                 <option value="widowed">Widowed</option>
               </select>
             </div>
-            <div className={fld}><label className={lbl}>Nationality</label><input className={inp} value={form.nationality} onChange={f('nationality')} /></div>
-            <div className={fld}><label className={lbl}>Home Country</label><input className={inp} value={form.home_country} onChange={f('home_country')} /></div>
-            <div className={fld}><label className={lbl}>Religion</label><input className={inp} value={form.religion} onChange={f('religion')} /></div>
-            <div className={fld}><label className={lbl}>National ID</label><input className={inp} value={form.national_id} onChange={f('national_id')} /></div>
-            <div className={fld}><label className={lbl}>Passport Number</label><input className={inp} value={form.passport_number} onChange={f('passport_number')} /></div>
+            <div className={fld}><label className={lbl}>Nationality</label><input className={inp} value={form.nationality as string} onChange={f('nationality')} /></div>
+            <div className={fld}><label className={lbl}>Home Country</label><input className={inp} value={form.home_country as string} onChange={f('home_country')} /></div>
+            <div className={fld}><label className={lbl}>Religion</label><input className={inp} value={form.religion as string} onChange={f('religion')} /></div>
+            <div className={fld}><label className={lbl}>National ID (Emirates ID)</label><input className={inp} value={form.national_id as string} onChange={f('national_id')} placeholder="XXX-XXXX-XXXXXXX-X" /></div>
+            <div className={fld}><label className={lbl}>Personal Email</label><input className={inp} type="email" value={form.personal_email as string} onChange={f('personal_email')} /></div>
+            <div className={fld}><label className={lbl}>Passport Number</label><input className={inp} value={form.passport_number as string} onChange={f('passport_number')} /></div>
             <div className={fld}><label className={lbl}>Passport Issue Date</label><DateInput className={inp} value={(form.passport_issue_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, passport_issue_date: v }))} /></div>
             <div className={fld}><label className={lbl}>Passport Expiry Date</label><DateInput className={inp} value={(form.passport_expiry_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, passport_expiry_date: v }))} /></div>
-            <div className={fld}><label className={lbl}>Personal Email</label><input className={inp} type="email" value={form.personal_email} onChange={f('personal_email')} /></div>
           </div>
         )}
 
@@ -1196,7 +1224,7 @@ export default function EmployeeDetailPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
             <div className={fld}>
               <label className={lbl}>Employment Type</label>
-              <select className={sel} value={form.employment_type} onChange={f('employment_type')}>
+              <select className={sel} value={form.employment_type as string} onChange={f('employment_type')}>
                 <option value="full_time">Full Time</option>
                 <option value="part_time">Part Time</option>
                 <option value="contract">Contract</option>
@@ -1211,90 +1239,70 @@ export default function EmployeeDetailPage() {
                 <option value="false">Inactive</option>
               </select>
             </div>
-            <div className={fld}>
-              <label className={lbl}>Department</label>
-              <SearchableDropdown
-                options={deptOptions}
-                value={form.department ? Number(form.department) : null}
-                onChange={(v) => setForm((p) => ({ ...p, department: v ? String(v) : '' }))}
-                placeholder="— None —"
-                allowClear
-                onCreateOption={async (name) => {
-                  const dept = await hrDepartmentsApi.create({ name });
-                  queryClient.invalidateQueries({ queryKey: ['hr-departments-all'] });
-                  toast(`Department "${name}" created`, 'success');
-                  return { value: dept.id, label: dept.name };
-                }}
-              />
-            </div>
-            <div className={fld}>
-              <label className={lbl}>Position</label>
-              <SearchableDropdown
-                options={positionOptions}
-                value={form.position ? Number(form.position) : null}
-                onChange={(v) => {
-                  const selPos = v ? (positions?.results ?? []).find(p => p.id === Number(v)) : null;
-                  setForm((p) => ({
-                    ...p,
-                    position: v ? String(v) : '',
-                    ...(selPos?.department != null ? { department: String(selPos.department) } : {}),
-                  }));
-                }}
-                placeholder="— None —"
-                allowClear
-                onCreateOption={async (title) => {
-                  const pos = await hrPositionsApi.create({ title });
-                  queryClient.invalidateQueries({ queryKey: ['hr-positions-all'] });
-                  toast(`Position "${title}" created`, 'success');
-                  return { value: pos.id, label: pos.title };
-                }}
-              />
-              {(() => {
-                const selPos = form.position
-                  ? (positions?.results ?? []).find(p => p.id === Number(form.position))
-                  : null;
-                if (!selPos) return null;
-                const hasDept = !!selPos.department_name;
-                const hasRole = !!selPos.default_permission_set_name;
-                if (!hasDept && !hasRole) return (
-                  <p style={{ margin: 'var(--space-1) 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
-                    No department or role configured — <a href="/hr/positions" style={{ color: 'var(--color-primary-600)', textDecoration: 'underline' }}>set them in Positions</a>
-                  </p>
-                );
-                return (
-                  <div style={{ marginTop: 'var(--space-1)', display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>Will auto-assign →</span>
-                    {hasDept && (
-                      <span style={{ padding: '1px 8px', borderRadius: 'var(--radius-full)', background: 'var(--color-neutral-100, #f3f4f6)', color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)' }}>
-                        Dept: {selPos.department_name}
-                      </span>
-                    )}
-                    {hasRole && (
-                      <span style={{ padding: '1px 8px', borderRadius: 'var(--radius-full)', background: 'var(--color-primary-50, #eff6ff)', color: 'var(--color-primary-700, #1d4ed8)', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)' }}>
-                        Role: {selPos.default_permission_set_name}
-                      </span>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
+
             <div className={fld}>
               <label className={lbl}>Employee Category</label>
-              <SearchableDropdown
-                options={groupOptions}
-                value={form.employee_group ? Number(form.employee_group) : null}
+              <SearchableDropdown options={groupOptions} value={form.employee_group ? Number(form.employee_group) : null}
                 onChange={(v) => setForm((p) => ({ ...p, employee_group: v ? String(v) : '' }))}
-                placeholder="— None —"
-                allowClear
+                placeholder="— None —" allowClear
                 onCreateOption={async (label) => {
                   const code = label.toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 20);
                   const g = await hrEmployeeGroupsApi.create({ name: label, name_ar: '', code, description: '', is_active: true });
                   queryClient.invalidateQueries({ queryKey: ['hr-employee-groups-all'] });
                   return { value: g.id, label: g.name };
-                }}
-              />
+                }} />
             </div>
-            <div className={fld}><label className={lbl}>Salary Display Name</label><input className={inp} value={form.salary_display_name} onChange={f('salary_display_name')} /></div>
+            <div className={fld}>
+              <label className={lbl}>Department</label>
+              <SearchableDropdown options={deptOptions} value={form.department ? Number(form.department) : null}
+                onChange={(v) => setForm((p) => ({ ...p, department: v ? String(v) : '' }))}
+                placeholder="— None —" allowClear
+                onCreateOption={async (name) => {
+                  const dept = await hrDepartmentsApi.create({ name });
+                  queryClient.invalidateQueries({ queryKey: ['hr-departments-all'] });
+                  toast(`Department "${name}" created`, 'success');
+                  return { value: dept.id, label: dept.name };
+                }} />
+            </div>
+            <div className={fld}>
+              <label className={lbl}>Position</label>
+              <SearchableDropdown options={positionOptions} value={form.position ? Number(form.position) : null}
+                onChange={(v) => {
+                  const selPos = v ? (positions?.results ?? []).find(p => p.id === Number(v)) : null;
+                  setForm((p) => ({ ...p, position: v ? String(v) : '', ...(selPos?.department != null ? { department: String(selPos.department) } : {}) }));
+                }}
+                placeholder="— None —" allowClear
+                onCreateOption={async (title) => {
+                  const pos = await hrPositionsApi.create({ title });
+                  queryClient.invalidateQueries({ queryKey: ['hr-positions-all'] });
+                  toast(`Position "${title}" created`, 'success');
+                  return { value: pos.id, label: pos.title };
+                }} />
+            </div>
+            <div className={fld}>
+              <label className={lbl}>Legal Entity</label>
+              <SearchableDropdown options={legalEntOpts} value={form.legal_entity ? Number(form.legal_entity) : null}
+                onChange={(v) => setForm((p) => ({ ...p, legal_entity: v ? String(v) : '' }))}
+                placeholder="— None —" allowClear
+                onCreateOption={async (name) => {
+                  const le = await hrLegalEntitiesApi.create({ name });
+                  queryClient.invalidateQueries({ queryKey: ['hr-legal-entities'] });
+                  return { value: le.id, label: le.name };
+                }} />
+            </div>
+            <div className={fld}>
+              <label className={lbl}>Work Location</label>
+              <SearchableDropdown options={locationOpts} value={form.office_location ? Number(form.office_location) : null}
+                onChange={(v) => setForm((p) => ({ ...p, office_location: v ? String(v) : '' }))}
+                placeholder="— None —" allowClear />
+            </div>
+            <div className={fld}>
+              <label className={lbl}>Direct Manager</label>
+              <SearchableDropdown options={managerOpts} value={form.direct_manager ? Number(form.direct_manager) : null}
+                onChange={(v) => setForm((p) => ({ ...p, direct_manager: v ? String(v) : '' }))}
+                placeholder="— None —" allowClear />
+            </div>
+
             <div className={fld}><label className={lbl}>Hiring Date</label><DateInput className={inp} value={(form.join_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, join_date: v }))} /></div>
             <div className={fld}><label className={lbl}>End of Probation</label><DateInput className={inp} value={(form.probation_end_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, probation_end_date: v }))} /></div>
             <div className={fld}><label className={lbl}>End Date</label><DateInput className={inp} value={(form.end_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, end_date: v }))} /></div>
@@ -1304,13 +1312,16 @@ export default function EmployeeDetailPage() {
         {/* ─ Contact ─ */}
         {editSection === 'contact' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
-            <div className={fld}><label className={lbl}>Mobile Number</label><input className={inp} value={form.mobile_number} onChange={f('mobile_number')} /></div>
-            <div className={fld}><label className={lbl}>Extension Number</label><input className={inp} value={form.extension_number} onChange={f('extension_number')} /></div>
-            <div className={fld} style={{ gridColumn: '1 / -1' }}>
-              <label className={lbl}>Address</label>
-              <textarea className={ta} rows={3} value={form.address} onChange={f('address')} />
+            <div className={fld}>
+              <label className={lbl}>Mobile Number</label>
+              <PhoneInput value={form.mobile_number as string} onChange={v => setForm(p => ({ ...p, mobile_number: v }))} />
             </div>
-            <div className={fld}><label className={lbl}>Personal Email</label><input className={inp} type="email" value={form.personal_email} onChange={f('personal_email')} /></div>
+            <div className={fld}><label className={lbl}>Extension Number</label><input className={inp} value={form.extension_number as string} onChange={f('extension_number')} /></div>
+            <div className={fld}><label className={lbl}>Personal Email</label><input className={inp} type="email" value={form.personal_email as string} onChange={f('personal_email')} /></div>
+            <div className={fld} style={{ gridColumn: '1 / -1' }}>
+              <label className={lbl}>Residential Address</label>
+              <textarea className={ta} rows={3} value={form.address as string} onChange={f('address')} />
+            </div>
           </div>
         )}
 
