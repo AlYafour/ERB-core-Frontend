@@ -284,6 +284,20 @@ export default function PayrollRunsPage() {
     }
   };
 
+  const handleWpsExport = async (run: PayrollRun) => {
+    try {
+      const blob = await hrPayrollRunsApi.wpsExportByRun(run.id);
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `WPS_${run.year}_${String(run.month).padStart(2, '0')}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast('WPS export failed', 'error');
+    }
+  };
+
   // ── Auth guard ───────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -376,6 +390,11 @@ export default function PayrollRunsPage() {
                 label: busy ? 'Working…' : 'Mark All Paid',
                 onClick: () => handleMarkPaidAll(r),
                 hidden: !isAdmin || s !== 'processed',
+              },
+              {
+                label: 'WPS Export (Excel)',
+                onClick: () => handleWpsExport(r),
+                hidden: s !== 'processed' && s !== 'paid',
               },
               {
                 separator: true,

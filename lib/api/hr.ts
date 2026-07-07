@@ -407,6 +407,10 @@ export const hrPayrollApi = {
     const base = (apiClient.defaults.baseURL ?? '').replace(/\/$/, '');
     return `${base}/hr/payroll/${id}/salary-certificate/`;
   },
+  payslipUrl: (id: number): string => {
+    const base = (apiClient.defaults.baseURL ?? '').replace(/\/$/, '');
+    return `${base}/hr/payroll/${id}/payslip/`;
+  },
 };
 
 // ── Penalty Applications (preview for payroll generation) ─────────────────────
@@ -842,6 +846,12 @@ export const hrPayrollRunsApi = {
     const response = await apiClient.post(`/hr/payroll/runs/${id}/cancel/`);
     return response.data;
   },
+  wpsExportByRun: async (id: number): Promise<Blob> => {
+    const response = await apiClient.get(`/hr/payroll/runs/${id}/wps-export/`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
 };
 
 // ── End of Service ─────────────────────────────────────────────────────────────
@@ -873,6 +883,10 @@ export const hrEosApi = {
   cancel: async (id: number): Promise<EOSCalculation> => {
     const response = await apiClient.post(`/hr/eos/${id}/cancel/`);
     return response.data;
+  },
+  settlementLetterUrl: (id: number): string => {
+    const base = (apiClient.defaults.baseURL ?? '').replace(/\/$/, '');
+    return `${base}/hr/eos/${id}/settlement-letter/`;
   },
 };
 

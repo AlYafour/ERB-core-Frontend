@@ -528,6 +528,14 @@ export default function HREosPage() {
             hidden: !canCreate || (r.status !== 'draft' && r.status !== 'approved'),
           },
           {
+            label:   'Settlement Letter',
+            onClick: () => {
+              const url = hrEosApi.settlementLetterUrl(r.id);
+              window.open(url, '_blank', 'noopener,noreferrer');
+            },
+            hidden: r.status !== 'approved' && r.status !== 'paid',
+          },
+          {
             label:   'Cancel',
             onClick:  () => handleCancel(r),
             variant: 'danger',

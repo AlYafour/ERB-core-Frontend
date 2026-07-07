@@ -60,6 +60,16 @@ export default function PayrollDetailPage() {
                 variant="secondary"
                 size="sm"
                 onClick={() => {
+                  const url = hrPayrollApi.payslipUrl(payroll.id);
+                  window.open(url, '_blank', 'noopener,noreferrer');
+                }}
+              >
+                Download Payslip
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
                   const url = hrPayrollApi.salaryCertificateUrl(payroll.id);
                   window.open(url, '_blank', 'noopener,noreferrer');
                 }}
