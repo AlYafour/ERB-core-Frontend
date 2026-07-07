@@ -64,6 +64,14 @@ const roleLabel: Record<string, string> = {
   employee:              'Employee',
 };
 
+function maskIban(iban: string): string {
+  if (!iban) return '—';
+  return `${iban.slice(0, 2)}•• •••• ${iban.slice(-4)}`;
+}
+function maskAccount(acc: string): string {
+  if (!acc) return '—';
+  return `•••• ${acc.slice(-4)}`;
+}
 
 const TABS = ['Home', 'Profile', 'Account', 'Attendance', 'Requests', 'Documents'];
 
@@ -118,12 +126,38 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-function SectionHead({ title, onEdit, isAdmin }: { title: string; onEdit?: () => void; isAdmin?: boolean }) {
+function InfoField({ label, value, mono }: { label: string; value?: string | null; mono?: boolean }) {
+  const isEmpty = !value || value === '—';
+  return (
+    <div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 3 }}>
+        {label}
+      </div>
+      <div style={{
+        fontSize: 13,
+        fontWeight: isEmpty ? 400 : 600,
+        color: isEmpty ? 'var(--text-tertiary)' : 'var(--text-primary)',
+        fontFamily: mono ? 'ui-monospace, monospace' : undefined,
+        wordBreak: 'break-word',
+      }}>
+        {value || '—'}
+      </div>
+    </div>
+  );
+}
+
+function SectionHead({ title, onEdit, isAdmin, hovered }: { title: string; onEdit?: () => void; isAdmin?: boolean; hovered?: boolean }) {
   return (
     <div className="section-head">
       <h3 className="section-head-title">{title}</h3>
       {isAdmin && onEdit && (
-        <button onClick={onEdit} className="section-edit-btn">Edit</button>
+        <button
+          onClick={onEdit}
+          className="section-edit-btn"
+          style={hovered !== undefined ? { opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' } : undefined}
+        >
+          Edit
+        </button>
       )}
     </div>
   );
@@ -237,15 +271,15 @@ function BankAccountsSection({ empId, isAdmin }: { empId: number; isAdmin: boole
               </div>
               {/* Fields grid */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-2) var(--space-5)' }}>
-                {[
-                  ['Account Holder', acc.account_holder_name],
-                  ['IBAN',           acc.iban],
-                  ['Account No.',    acc.account_number],
-                  ['SWIFT / BIC',    acc.swift_code],
-                ].map(([lbl, val]) => val ? (
-                  <div key={lbl as string}>
+                {([
+                  ['Account Holder', acc.account_holder_name,              false],
+                  ['IBAN',           maskIban(acc.iban || ''),              true ],
+                  ['Account No.',    maskAccount(acc.account_number || ''), true ],
+                  ['SWIFT / BIC',    acc.swift_code,                        true ],
+                ] as [string, string, boolean][]).map(([lbl, val, mono]) => val && val !== '—' ? (
+                  <div key={lbl}>
                     <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontWeight: 600, marginBottom: 1 }}>{lbl}</div>
-                    <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)', fontFamily: lbl !== 'Account Holder' ? 'monospace' : undefined }}>{val}</div>
+                    <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)', fontFamily: mono ? 'ui-monospace, monospace' : undefined }}>{val}</div>
                   </div>
                 ) : null)}
               </div>
@@ -438,6 +472,8 @@ export default function EmployeeDetailPage() {
   const [stampFile,     setStampFile]     = useState<File | null>(null);
   const [stampPreview,  setStampPreview]  = useState<string | null>(null);
   const [changePassword, setChangePassword] = useState(false);
+  const [salaryRevealed, setSalaryRevealed] = useState(false);
+  const [hoveredCard,    setHoveredCard]    = useState<string | null>(null);
   const fileInputRef  = useRef<HTMLInputElement>(null);
   const stampInputRef = useRef<HTMLInputElement>(null);
 
@@ -963,83 +999,92 @@ export default function EmployeeDetailPage() {
 
           // ── Profile Tab ────────────────────────────────────────────────
           return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
-            {/* ── Stat snapshot ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+            {/* Compact attendance strip */}
+            <div style={{
+              display: 'flex',
+              background: 'var(--surface-card)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-lg)',
+              overflow: 'hidden',
+            }}>
               {([
-                { key: 'present',  label: 'Present Days', color: 'var(--status-success)', bg: 'var(--status-success-bg)' },
-                { key: 'absent',   label: 'Absent Days',  color: 'var(--status-error)',   bg: 'var(--status-error-bg)'   },
-                { key: 'late',     label: 'Late Days',    color: 'var(--status-warning)', bg: 'var(--status-warning-bg)' },
-                { key: 'on_leave', label: 'Leave Days',   color: 'var(--status-info)',    bg: 'var(--status-info-bg)'    },
-              ] as { key: string; label: string; color: string; bg: string }[]).map(s => (
+                { key: 'present',  label: 'Present', color: 'var(--status-success)' },
+                { key: 'absent',   label: 'Absent',  color: 'var(--status-error)'   },
+                { key: 'late',     label: 'Late',    color: 'var(--status-warning)' },
+                { key: 'on_leave', label: 'Leave',   color: 'var(--status-info)'    },
+              ] as { key: string; label: string; color: string }[]).map((s, i) => (
                 <div key={s.key} style={{
-                  padding: 'var(--space-4)',
-                  borderRadius: 'var(--radius-lg)',
-                  background: s.bg,
-                  border: `1px solid ${s.color}33`,
-                  textAlign: 'center',
+                  flex: 1, display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '12px 20px',
+                  borderLeft: i > 0 ? '1px solid var(--border-subtle)' : 'none',
                 }}>
-                  <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: s.color, margin: 0, lineHeight: 1, letterSpacing: '-0.03em' }}>
+                  <span style={{ fontSize: 28, fontWeight: 800, color: s.color, lineHeight: 1, letterSpacing: '-0.03em' }}>
                     {(summary?.summary as Record<string, number> | undefined)?.[s.key] ?? 0}
-                  </p>
-                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '6px 0 0', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  </span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1.3 }}>
                     {s.label}
-                  </p>
+                  </span>
                 </div>
               ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 'var(--space-5)', alignItems: 'start' }}>
+            {/* Two-column: left 40% / right 60% */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 3fr', gap: 'var(--space-5)', alignItems: 'start' }}>
 
-              {/* ── LEFT COLUMN ── */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+              {/* LEFT COLUMN — Personal, Contact, UAE Legal, Emergency, Bank */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
                 {/* Personal Info */}
-                <div className="card">
-                  <SectionHead title="Personal Info" onEdit={() => openEdit('personal')} isAdmin={isAdmin} />
-                  <div className="info-grid">
-                    <InfoRow label="First Name"      value={emp.user?.first_name || undefined} />
-                    <InfoRow label="Last Name"       value={emp.user?.last_name  || undefined} />
-                    {emp.user?.full_name_ar && (
-                      <InfoRow label="Arabic Name" value={emp.user.full_name_ar} />
-                    )}
-                    <InfoRow label="Gender"          value={emp.gender ? emp.gender.charAt(0).toUpperCase() + emp.gender.slice(1) : undefined} />
-                    <InfoRow label="Nationality"     value={emp.nationality} />
-                    <InfoRow label="Birth Date"      value={fmtDate(emp.date_of_birth)} />
-                    <InfoRow label="Age"             value={calcAge(emp.date_of_birth)} />
-                    <InfoRow label="Marital Status"  value={emp.marital_status ? emp.marital_status.charAt(0).toUpperCase() + emp.marital_status.slice(1) : undefined} />
-                    <InfoRow label="National ID"     value={emp.national_id} />
-                    <InfoRow label="Home Country"    value={emp.home_country} />
-                    <InfoRow label="Religion"        value={emp.religion} />
-                    <InfoRow label="Passport No."    value={emp.passport_number} />
-                    <InfoRow label="Passport Issue"  value={fmtDate(emp.passport_issue_date)} />
-                    <InfoRow label="Passport Expiry" value={fmtDate(emp.passport_expiry_date)} />
+                <div className="card"
+                  onMouseEnter={() => setHoveredCard('personal')}
+                  onMouseLeave={() => setHoveredCard(null)}>
+                  <SectionHead title="Personal Info" onEdit={() => openEdit('personal')} isAdmin={isAdmin} hovered={hoveredCard === 'personal'} />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: 'var(--space-3)' }}>
+                    <InfoField label="First Name"      value={emp.user?.first_name || undefined} />
+                    <InfoField label="Last Name"       value={emp.user?.last_name  || undefined} />
+                    <InfoField label="Arabic Name"     value={emp.user?.full_name_ar || undefined} />
+                    <InfoField label="Gender"          value={emp.gender ? emp.gender.charAt(0).toUpperCase() + emp.gender.slice(1) : undefined} />
+                    <InfoField label="Nationality"     value={emp.nationality} />
+                    <InfoField label="Birth Date"      value={fmtDate(emp.date_of_birth)} />
+                    <InfoField label="Age"             value={calcAge(emp.date_of_birth)} />
+                    <InfoField label="Marital Status"  value={emp.marital_status ? emp.marital_status.charAt(0).toUpperCase() + emp.marital_status.slice(1) : undefined} />
+                    <InfoField label="National ID"     value={emp.national_id} />
+                    <InfoField label="Home Country"    value={emp.home_country} />
+                    <InfoField label="Religion"        value={emp.religion} />
+                    <InfoField label="Passport No."    value={emp.passport_number} />
+                    <InfoField label="Passport Issue"  value={fmtDate(emp.passport_issue_date)} />
+                    <InfoField label="Passport Expiry" value={fmtDate(emp.passport_expiry_date)} />
                   </div>
                 </div>
 
                 {/* Contact Info */}
-                <div className="card">
-                  <SectionHead title="Contact Info" onEdit={() => openEdit('contact')} isAdmin={isAdmin} />
-                  <div className="info-grid">
-                    <InfoRow label="Mobile"         value={emp.mobile_number} />
-                    <InfoRow label="Extension"      value={emp.extension_number} />
-                    <InfoRow label="Personal Email" value={emp.personal_email} />
-                    <InfoRow label="Address"        value={emp.address} />
+                <div className="card"
+                  onMouseEnter={() => setHoveredCard('contact')}
+                  onMouseLeave={() => setHoveredCard(null)}>
+                  <SectionHead title="Contact Info" onEdit={() => openEdit('contact')} isAdmin={isAdmin} hovered={hoveredCard === 'contact'} />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginTop: 'var(--space-3)' }}>
+                    <InfoField label="Mobile"         value={emp.mobile_number} />
+                    <InfoField label="Extension"      value={emp.extension_number} />
+                    <InfoField label="Personal Email" value={emp.personal_email} />
+                    <InfoField label="Address"        value={emp.address} />
                   </div>
                 </div>
 
                 {/* UAE Legal */}
-                <div className="card">
-                  <SectionHead title="UAE Legal" onEdit={() => openEdit('legal')} isAdmin={isAdmin} />
-                  <div className="info-grid">
-                    <InfoRow label="Resident ID"       value={emp.resident_id} />
-                    <InfoRow label="UAE Citizen"       value={emp.is_citizen ? 'Yes' : 'No'} />
-                    <InfoRow label="Labor Card No."    value={emp.labor_card} />
-                    <InfoRow label="Labor Card Expiry" value={fmtDate(emp.labor_card_expiry)} />
-                    <InfoRow label="MOL Number"        value={emp.mol_number} />
-                    <InfoRow label="Sponsor Name"      value={emp.sponsor_name} />
-                    <InfoRow label="Sponsor ID"        value={emp.sponsor_id} />
+                <div className="card"
+                  onMouseEnter={() => setHoveredCard('legal')}
+                  onMouseLeave={() => setHoveredCard(null)}>
+                  <SectionHead title="UAE Legal" onEdit={() => openEdit('legal')} isAdmin={isAdmin} hovered={hoveredCard === 'legal'} />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: 'var(--space-3)' }}>
+                    <InfoField label="Resident ID"       value={emp.resident_id} />
+                    <InfoField label="UAE Citizen"       value={emp.is_citizen ? 'Yes' : 'No'} />
+                    <InfoField label="Labor Card No."    value={emp.labor_card} />
+                    <InfoField label="Labor Card Expiry" value={fmtDate(emp.labor_card_expiry)} />
+                    <InfoField label="MOL Number"        value={emp.mol_number} />
+                    <InfoField label="Sponsor Name"      value={emp.sponsor_name} />
+                    <InfoField label="Sponsor ID"        value={emp.sponsor_id} />
                   </div>
                 </div>
 
@@ -1047,53 +1092,84 @@ export default function EmployeeDetailPage() {
                 {emp.emergency_contact && (
                   <div className="card">
                     <SectionHead title="Emergency Contact" />
-                    <div className="info-grid">
-                      <InfoRow label="Name"         value={emp.emergency_contact.name} />
-                      <InfoRow label="Relationship" value={emp.emergency_contact.relationship} />
-                      <InfoRow label="Phone"        value={emp.emergency_contact.phone} />
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: 'var(--space-3)' }}>
+                      <InfoField label="Name"         value={emp.emergency_contact.name} />
+                      <InfoField label="Relationship" value={emp.emergency_contact.relationship} />
+                      <InfoField label="Phone"        value={emp.emergency_contact.phone} />
                     </div>
                   </div>
                 )}
 
+                {/* Bank Accounts */}
+                <BankAccountsSection empId={emp.id} isAdmin={isAdmin} />
+
               </div>
 
-              {/* ── RIGHT COLUMN ── */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+              {/* RIGHT COLUMN — Professional, Account, Salary */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
                 {/* Professional Info */}
-                <div className="card">
-                  <SectionHead title="Professional Info" onEdit={() => openEdit('professional')} isAdmin={isAdmin} />
-                  <div className="info-grid">
-                    <InfoRow label="Position"          value={emp.position_title} />
-                    <InfoRow label="Department"        value={emp.department_name} />
-                    <InfoRow label="Employee Category" value={emp.employee_group_name} />
-                    <InfoRow label="Employment Type"   value={empTypeLabel[emp.employment_type] || emp.employment_type} />
-                    <InfoRow label="Legal Entity"      value={emp.legal_entity_name ?? undefined} />
-                    <InfoRow label="Work Location"     value={emp.office_location_name} />
-                    <InfoRow label="Direct Manager"    value={emp.direct_manager_detail?.full_name ?? emp.direct_manager_name ?? undefined} />
-                    <InfoRow label="Hiring Date"       value={fmtDate(emp.join_date)} />
-                    <InfoRow label="Employment Period" value={calcPeriod(emp.join_date)} />
-                    <InfoRow label="End of Probation"  value={fmtDate(emp.probation_end_date)} />
-                    <InfoRow label="Contract End Date" value={fmtDate(emp.end_date)} />
+                <div className="card"
+                  onMouseEnter={() => setHoveredCard('professional')}
+                  onMouseLeave={() => setHoveredCard(null)}>
+                  <SectionHead title="Professional Info" onEdit={() => openEdit('professional')} isAdmin={isAdmin} hovered={hoveredCard === 'professional'} />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: 'var(--space-3)' }}>
+                    <InfoField label="Position"          value={emp.position_title} />
+                    <InfoField label="Department"        value={emp.department_name} />
+                    <InfoField label="Employee Category" value={emp.employee_group_name} />
+                    <InfoField label="Employment Type"   value={empTypeLabel[emp.employment_type] || emp.employment_type} />
+                    <InfoField label="Legal Entity"      value={emp.legal_entity_name ?? undefined} />
+                    <InfoField label="Work Location"     value={emp.office_location_name} />
+                    <InfoField label="Direct Manager"    value={emp.direct_manager_detail?.full_name ?? emp.direct_manager_name ?? undefined} />
+                    <InfoField label="Hiring Date"       value={fmtDate(emp.join_date)} />
+                    <InfoField label="Employment Period" value={emp.join_date ? calcPeriod(emp.join_date) : undefined} />
+                    <InfoField label="End of Probation"  value={fmtDate(emp.probation_end_date)} />
+                    <InfoField label="Contract End Date" value={fmtDate(emp.end_date)} />
                   </div>
                 </div>
 
                 {/* Account & Access */}
                 {isAdmin && (
-                  <div className="card">
-                    <SectionHead title="Account & Access" onEdit={() => openEdit('account')} isAdmin={isAdmin} />
-                    <div className="info-grid">
-                      <InfoRow label="Username"  value={emp.user?.username} />
-                      <InfoRow label="Work Email" value={emp.user?.email} />
-                      <InfoRow label="Role"       value={emp.user?.role ? (roleLabel[emp.user.role] || emp.user.role) : undefined} />
+                  <div className="card"
+                    onMouseEnter={() => setHoveredCard('account')}
+                    onMouseLeave={() => setHoveredCard(null)}>
+                    <SectionHead title="Account & Access" onEdit={() => openEdit('account')} isAdmin={isAdmin} hovered={hoveredCard === 'account'} />
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: 'var(--space-3)' }}>
+                      <InfoField label="Username"   value={emp.user?.username} />
+                      <InfoField label="Work Email" value={emp.user?.email} />
+                      <InfoField label="Role"       value={emp.user?.role ? (roleLabel[emp.user.role] || emp.user.role) : undefined} />
                     </div>
                   </div>
                 )}
 
-                {/* Salary Package — admin only */}
+                {/* Salary Package — blurred until hovered or revealed */}
                 {isAdmin && (
-                  <div className="card">
-                    <SectionHead title="Salary Package" onEdit={() => openEdit('salary')} isAdmin={isAdmin} />
+                  <div className="card"
+                    onMouseEnter={() => { setHoveredCard('salary'); setSalaryRevealed(true); }}
+                    onMouseLeave={() => { setHoveredCard(null); setSalaryRevealed(false); }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+                      <h3 className="section-head-title" style={{ margin: 0 }}>Salary Package</h3>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <button
+                          onClick={e => { e.stopPropagation(); setSalaryRevealed(v => !v); }}
+                          style={{
+                            fontSize: 11, fontWeight: 600, padding: '3px 10px',
+                            borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)',
+                            background: 'var(--surface-subtle)', color: 'var(--text-secondary)',
+                            cursor: 'pointer', lineHeight: 1.5,
+                          }}
+                        >
+                          {salaryRevealed ? 'Hide' : 'Show'}
+                        </button>
+                        <button
+                          onClick={() => openEdit('salary')}
+                          className="section-edit-btn"
+                          style={{ opacity: hoveredCard === 'salary' ? 1 : 0, transition: 'opacity 0.15s' }}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-3)' }}>
                       {([
                         ['Basic Salary', emp.basic_salary],
@@ -1102,37 +1178,47 @@ export default function EmployeeDetailPage() {
                         ['Other',        emp.other_allowances],
                       ] as [string, string | undefined][]).map(([label, val]) => (
                         <div key={label} style={{ background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-3)', textAlign: 'center' }}>
-                          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 'var(--space-1)' }}>{label}</p>
-                          <p style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', color: 'var(--text-primary)', lineHeight: 1 }}>
+                          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '0 0 4px' }}>{label}</p>
+                          <p style={{
+                            fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', color: 'var(--text-primary)',
+                            lineHeight: 1, margin: '0 0 2px',
+                            filter: salaryRevealed ? 'none' : 'blur(5px)',
+                            transition: 'filter 0.2s ease',
+                            userSelect: salaryRevealed ? 'auto' : 'none',
+                          }}>
                             {Number(val).toLocaleString('en-US', { minimumFractionDigits: 0 })}
                           </p>
-                          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>AED</p>
+                          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: 0 }}>AED</p>
                         </div>
                       ))}
                     </div>
-                    {/* Total Package */}
                     <div style={{
-                      marginTop: 'var(--space-4)',
-                      padding: 'var(--space-4)',
-                      background: 'var(--brand-subtle)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-lg)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
+                      marginTop: 'var(--space-4)', padding: 'var(--space-4)',
+                      background: 'var(--brand-subtle)', border: '1px solid var(--border-subtle)',
+                      borderRadius: 'var(--radius-lg)', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     }}>
                       <div>
-                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'var(--weight-semibold)', marginBottom: 4 }}>
+                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>
                           Total Monthly Package
                         </div>
-                        <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-bold)', color: 'var(--text-brand)', lineHeight: 1 }}>
+                        <div style={{
+                          fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-bold)', color: 'var(--text-brand)', lineHeight: 1,
+                          filter: salaryRevealed ? 'none' : 'blur(8px)',
+                          transition: 'filter 0.2s ease',
+                          userSelect: salaryRevealed ? 'auto' : 'none',
+                        }}>
                           {Number(emp.total_salary).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                           <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-secondary)', marginLeft: 6 }}>AED</span>
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>Annual</div>
-                        <div style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)' }}>
+                        <div style={{
+                          fontSize: 'var(--text-base)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)',
+                          filter: salaryRevealed ? 'none' : 'blur(5px)',
+                          transition: 'filter 0.2s ease',
+                          userSelect: salaryRevealed ? 'auto' : 'none',
+                        }}>
                           {(Number(emp.total_salary) * 12).toLocaleString('en-US', { minimumFractionDigits: 0 })} AED
                         </div>
                       </div>
@@ -1143,8 +1229,6 @@ export default function EmployeeDetailPage() {
               </div>
             </div>
 
-            {/* Bank Accounts — full width below columns */}
-            <BankAccountsSection empId={emp.id} isAdmin={isAdmin} />
             </div>
           );
         })()}
