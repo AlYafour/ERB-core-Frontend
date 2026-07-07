@@ -163,6 +163,38 @@ function SectionHead({ title, onEdit, isAdmin, hovered }: { title: string; onEdi
   );
 }
 
+function CardHead({ title, isAdmin, editVisible, onEdit }: {
+  title: string;
+  isAdmin?: boolean;
+  editVisible?: boolean;
+  onEdit?: () => void;
+}) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+      <span style={{
+        fontSize: 11, fontWeight: 700, letterSpacing: '0.07em',
+        textTransform: 'uppercase', color: 'var(--text-secondary)',
+      }}>
+        {title}
+      </span>
+      {isAdmin && onEdit && (
+        <button
+          onClick={onEdit}
+          style={{
+            opacity: editVisible ? 1 : 0, transition: 'opacity 0.15s',
+            fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)',
+            background: 'none', border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-sm)', padding: '2px 10px',
+            cursor: 'pointer', lineHeight: 1.6,
+          }}
+        >
+          Edit
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ── Bank Accounts Section ──────────────────────────────────────────────────────
 
 const INPUT_S: React.CSSProperties = {
@@ -760,128 +792,111 @@ export default function EmployeeDetailPage() {
           </a>
         </div>
 
-        {/* ── Employee Profile Hero ── */}
+        {/* ── Executive Header ── */}
         <div style={{
+          background: 'var(--surface-card)',
           border: '1px solid var(--border-subtle)',
           borderRadius: 'var(--radius-xl)',
-          overflow: 'hidden',
-          marginBottom: 'var(--space-4)',
-          background: 'var(--surface-card)',
+          padding: '20px 24px',
+          marginBottom: 12,
         }}>
-          {/* Cover band */}
-          <div style={{
-            height: 56,
-            background: 'linear-gradient(135deg, var(--brand) 0%, var(--brand-muted) 100%)',
-            position: 'relative',
-          }}>
-            <div style={{ position: 'absolute', top: 10, right: 16, display: 'flex', gap: 6 }}>
-              <Badge variant={emp.is_active ? 'success' : 'error'}>{emp.is_active ? 'Active' : 'Inactive'}</Badge>
-              <Badge variant="default">{empTypeLabel[emp.employment_type] || emp.employment_type}</Badge>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+
+            {/* Avatar */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              {avatarSrc ? (
+                <img src={avatarSrc} alt={emp.full_name} style={{
+                  width: 72, height: 72, borderRadius: '50%', objectFit: 'cover',
+                  border: '2px solid var(--border-subtle)',
+                }} />
+              ) : (
+                <div style={{
+                  width: 72, height: 72, borderRadius: '50%',
+                  background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1.75rem', fontWeight: 700, color: '#fff',
+                  border: '2px solid var(--border-subtle)',
+                }}>{avatarLetter}</div>
+              )}
+              <span style={{
+                position: 'absolute', bottom: 2, right: 2,
+                width: 13, height: 13, borderRadius: '50%',
+                border: '2px solid var(--surface-card)',
+                background: emp.is_active ? 'var(--status-success)' : 'var(--status-error)',
+              }} />
             </div>
+
+            {/* Identity */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+                <h1 style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.025em', margin: 0, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                  {emp.full_name}
+                </h1>
+                {emp.user?.full_name_ar && (
+                  <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 400, direction: 'rtl' }}>
+                    {emp.user.full_name_ar}
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '4px 0 10px', fontWeight: 400 }}>
+                {[emp.position_title, emp.department_name, emp.legal_entity_name].filter(Boolean).join(' · ') || 'No position assigned'}
+              </p>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <Badge variant={emp.is_active ? 'success' : 'error'}>{emp.is_active ? 'Active' : 'Inactive'}</Badge>
+                {emp.employment_type && <Badge variant="default">{empTypeLabel[emp.employment_type] || emp.employment_type}</Badge>}
+                {emp.employee_group_name && <Badge variant="default">{emp.employee_group_name}</Badge>}
+              </div>
+            </div>
+
+            {/* Actions */}
+            {isAdmin && (
+              <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignSelf: 'flex-start' }}>
+                <Button variant="secondary" size="sm" onClick={() => openEdit('account')}>Edit Account</Button>
+                <Button
+                  variant={emp.is_active ? 'delete' : 'primary'} size="sm"
+                  isLoading={updateMutation.isPending}
+                  onClick={() => updateMutation.mutate({ is_active: !emp.is_active })}
+                >
+                  {emp.is_active ? 'Deactivate' : 'Activate'}
+                </Button>
+              </div>
+            )}
           </div>
 
-          {/* Content */}
-          <div style={{ padding: 'var(--space-3) var(--space-5) var(--space-4)' }}>
-
-            {/* Main row: [avatar overlapping] [identity] [actions] — fills full width */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'auto 1fr auto',
-              alignItems: 'flex-end',
-              gap: 'var(--space-3)',
-              marginTop: -36,
-            }}>
-              {/* Avatar */}
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                {avatarSrc ? (
-                  <img src={avatarSrc} alt={emp.full_name} style={{
-                    width: 80, height: 80, borderRadius: '50%', objectFit: 'cover',
-                    border: '3px solid var(--surface-card)',
-                    boxShadow: '0 0 0 2px var(--border-subtle), 0 4px 16px rgba(0,0,0,0.12)',
-                  }} />
-                ) : (
-                  <div style={{
-                    width: 80, height: 80, borderRadius: '50%',
-                    background: 'var(--brand)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '1.875rem', fontWeight: 700, color: 'var(--primary-foreground)',
-                    border: '3px solid var(--surface-card)',
-                    boxShadow: '0 0 0 2px var(--border-subtle), 0 4px 16px rgba(0,0,0,0.12)',
-                  }}>{avatarLetter}</div>
-                )}
+          {/* Quick info strip */}
+          <div style={{
+            display: 'flex', gap: 0, marginTop: 16,
+            paddingTop: 14, borderTop: '1px solid var(--border-subtle)',
+            overflowX: 'auto',
+          }}>
+            {([
+              { label: 'Employee ID', value: emp.employee_id, mono: true },
+              emp.join_date ? { label: 'Hire Date', value: fmtDate(emp.join_date), mono: false } : null,
+              emp.join_date ? { label: 'Tenure', value: calcPeriod(emp.join_date), mono: false } : null,
+              emp.user?.email ? { label: 'Work Email', value: emp.user.email, mono: false } : null,
+              (emp.direct_manager_name || emp.direct_manager_detail?.full_name) ? {
+                label: 'Reports To',
+                value: emp.direct_manager_name || emp.direct_manager_detail!.full_name, mono: false,
+              } : null,
+              emp.mobile_number ? { label: 'Mobile', value: emp.mobile_number, mono: false } : null,
+              emp.office_location_name ? { label: 'Work Location', value: emp.office_location_name, mono: false } : null,
+            ] as ({ label: string; value: string; mono: boolean } | null)[]).filter(Boolean).map((item, i) => (
+              <div key={item!.label} style={{
+                display: 'flex', flexDirection: 'column', gap: 2,
+                padding: '0 20px', flexShrink: 0,
+                borderLeft: i > 0 ? '1px solid var(--border-subtle)' : 'none',
+              }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  {item!.label}
+                </span>
                 <span style={{
-                  position: 'absolute', bottom: 3, right: 3,
-                  width: 14, height: 14, borderRadius: '50%',
-                  border: '2.5px solid var(--surface-card)',
-                  background: emp.is_active ? 'var(--status-success)' : 'var(--status-error)',
-                }} />
-              </div>
-
-              {/* Identity */}
-              <div style={{ paddingBottom: 4, minWidth: 0 }}>
-                <h2 style={{
-                  fontSize: 'var(--text-xl)', fontWeight: 800,
-                  margin: 0, color: 'var(--text-primary)', lineHeight: 1.2,
-                  letterSpacing: '-0.02em',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  fontSize: 13, fontWeight: 500, color: 'var(--text-primary)',
+                  fontFamily: item!.mono ? 'ui-monospace, monospace' : undefined,
+                  whiteSpace: 'nowrap',
                 }}>
-                  {emp.full_name}
-                </h2>
-                {(emp.position_title || emp.department_name) && (
-                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: '3px 0 0' }}>
-                    {[emp.position_title, emp.department_name].filter(Boolean).join(' · ')}
-                  </p>
-                )}
+                  {item!.value}
+                </span>
               </div>
-
-              {/* Admin actions */}
-              {isAdmin && (
-                <div style={{ display: 'flex', gap: 8, paddingBottom: 4 }}>
-                  <Button variant="secondary" size="sm" onClick={() => openEdit('account')}>Edit Account</Button>
-                  <Button
-                    variant={emp.is_active ? 'delete' : 'primary'}
-                    size="sm"
-                    isLoading={updateMutation.isPending}
-                    onClick={() => updateMutation.mutate({ is_active: !emp.is_active })}
-                  >
-                    {emp.is_active ? 'Deactivate' : 'Activate'}
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {/* Meta grid — auto-fill to spread across full width */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-              gap: '6px 16px',
-              marginTop: 'var(--space-3)',
-              paddingTop: 'var(--space-3)',
-              borderTop: '1px solid var(--border-subtle)',
-            }}>
-              {([
-                { label: 'Employee ID', value: emp.employee_id, mono: true },
-                emp.join_date ? { label: 'Hire Date',  value: fmtDate(emp.join_date),        mono: false } : null,
-                emp.join_date ? { label: 'Tenure',     value: calcPeriod(emp.join_date),     mono: false } : null,
-                emp.user?.email                ? { label: 'Work Email',  value: emp.user.email,                   mono: false } : null,
-                (emp.direct_manager_name || emp.direct_manager_detail?.full_name) ? { label: 'Reports To', value: emp.direct_manager_name || emp.direct_manager_detail!.full_name, mono: false } : null,
-                emp.employee_group_name        ? { label: 'Group',       value: emp.employee_group_name,          mono: false } : null,
-                emp.mobile_number              ? { label: 'Mobile',      value: emp.mobile_number,                mono: false } : null,
-              ] as ({ label: string; value: string; mono: boolean } | null)[]).filter(Boolean).map((item) => (
-                <div key={item!.label} style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <span style={{ fontSize: 10, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>
-                    {item!.label}
-                  </span>
-                  <span style={{
-                    fontSize: 'var(--text-sm)', color: 'var(--text-primary)', fontWeight: 500,
-                    fontFamily: item!.mono ? 'ui-monospace, monospace' : 'inherit',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>
-                    {item!.value}
-                  </span>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
         </div>
 
@@ -1001,7 +1016,7 @@ export default function EmployeeDetailPage() {
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
-            {/* Compact attendance strip */}
+            {/* Attendance snapshot */}
             <div style={{
               display: 'flex',
               background: 'var(--surface-card)',
@@ -1010,89 +1025,106 @@ export default function EmployeeDetailPage() {
               overflow: 'hidden',
             }}>
               {([
-                { key: 'present',  label: 'Present', color: 'var(--status-success)' },
-                { key: 'absent',   label: 'Absent',  color: 'var(--status-error)'   },
-                { key: 'late',     label: 'Late',    color: 'var(--status-warning)' },
-                { key: 'on_leave', label: 'Leave',   color: 'var(--status-info)'    },
+                { key: 'present',  label: 'Present Days', color: 'var(--status-success)' },
+                { key: 'absent',   label: 'Absent Days',  color: 'var(--status-error)'   },
+                { key: 'late',     label: 'Late Days',    color: 'var(--status-warning)' },
+                { key: 'on_leave', label: 'Leave Days',   color: 'var(--status-info)'    },
               ] as { key: string; label: string; color: string }[]).map((s, i) => (
                 <div key={s.key} style={{
                   flex: 1, display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '12px 20px',
+                  padding: '10px 18px',
                   borderLeft: i > 0 ? '1px solid var(--border-subtle)' : 'none',
                 }}>
-                  <span style={{ fontSize: 28, fontWeight: 800, color: s.color, lineHeight: 1, letterSpacing: '-0.03em' }}>
+                  <span style={{ fontSize: 24, fontWeight: 800, color: s.color, lineHeight: 1, letterSpacing: '-0.04em' }}>
                     {(summary?.summary as Record<string, number> | undefined)?.[s.key] ?? 0}
                   </span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1.3 }}>
+                  <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1.3 }}>
                     {s.label}
                   </span>
                 </div>
               ))}
             </div>
 
-            {/* Two-column: left 40% / right 60% */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 3fr', gap: 'var(--space-5)', alignItems: 'start' }}>
+            {/* Identity rail (left) + Main content (right) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 3fr', gap: 'var(--space-4)', alignItems: 'start' }}>
 
-              {/* LEFT COLUMN — Personal, Contact, UAE Legal, Emergency, Bank */}
+              {/* ── LEFT: Identity Rail ── */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
-                {/* Personal Info */}
+                {/* Personal Identity */}
                 <div className="card"
                   onMouseEnter={() => setHoveredCard('personal')}
                   onMouseLeave={() => setHoveredCard(null)}>
-                  <SectionHead title="Personal Info" onEdit={() => openEdit('personal')} isAdmin={isAdmin} hovered={hoveredCard === 'personal'} />
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: 'var(--space-3)' }}>
-                    <InfoField label="First Name"      value={emp.user?.first_name || undefined} />
-                    <InfoField label="Last Name"       value={emp.user?.last_name  || undefined} />
-                    <InfoField label="Arabic Name"     value={emp.user?.full_name_ar || undefined} />
-                    <InfoField label="Gender"          value={emp.gender ? emp.gender.charAt(0).toUpperCase() + emp.gender.slice(1) : undefined} />
-                    <InfoField label="Nationality"     value={emp.nationality} />
-                    <InfoField label="Birth Date"      value={fmtDate(emp.date_of_birth)} />
-                    <InfoField label="Age"             value={calcAge(emp.date_of_birth)} />
-                    <InfoField label="Marital Status"  value={emp.marital_status ? emp.marital_status.charAt(0).toUpperCase() + emp.marital_status.slice(1) : undefined} />
-                    <InfoField label="National ID"     value={emp.national_id} />
-                    <InfoField label="Home Country"    value={emp.home_country} />
-                    <InfoField label="Religion"        value={emp.religion} />
-                    <InfoField label="Passport No."    value={emp.passport_number} />
-                    <InfoField label="Passport Issue"  value={fmtDate(emp.passport_issue_date)} />
-                    <InfoField label="Passport Expiry" value={fmtDate(emp.passport_expiry_date)} />
+                  <CardHead title="Personal Information" isAdmin={isAdmin} editVisible={hoveredCard === 'personal'} onEdit={() => openEdit('personal')} />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px' }}>
+                    <InfoField label="First Name"     value={emp.user?.first_name || undefined} />
+                    <InfoField label="Last Name"      value={emp.user?.last_name  || undefined} />
+                    {emp.user?.full_name_ar && (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <InfoField label="Arabic Full Name" value={emp.user.full_name_ar} />
+                      </div>
+                    )}
+                    <InfoField label="Gender"         value={emp.gender ? emp.gender.charAt(0).toUpperCase() + emp.gender.slice(1) : undefined} />
+                    <InfoField label="Marital Status" value={emp.marital_status ? emp.marital_status.charAt(0).toUpperCase() + emp.marital_status.slice(1) : undefined} />
+                    <InfoField label="Date of Birth"  value={fmtDate(emp.date_of_birth)} />
+                    <InfoField label="Age"            value={calcAge(emp.date_of_birth)} />
+                    <InfoField label="Nationality"    value={emp.nationality} />
+                    <InfoField label="Home Country"   value={emp.home_country} />
+                    <InfoField label="Religion"       value={emp.religion} />
+                    <InfoField label="National ID"    value={emp.national_id} />
                   </div>
+                  {/* Travel documents sub-section */}
+                  {(emp.passport_number || emp.passport_issue_date || emp.passport_expiry_date) && (<>
+                    <div style={{ margin: '14px 0 12px', borderTop: '1px solid var(--border-subtle)' }} />
+                    <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>Travel Documents</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 16px' }}>
+                      <InfoField label="Passport No."    value={emp.passport_number} />
+                      <InfoField label="Issue Date"      value={fmtDate(emp.passport_issue_date)} />
+                      <InfoField label="Expiry Date"     value={fmtDate(emp.passport_expiry_date)} />
+                    </div>
+                  </>)}
                 </div>
 
-                {/* Contact Info */}
+                {/* Contact Details */}
                 <div className="card"
                   onMouseEnter={() => setHoveredCard('contact')}
                   onMouseLeave={() => setHoveredCard(null)}>
-                  <SectionHead title="Contact Info" onEdit={() => openEdit('contact')} isAdmin={isAdmin} hovered={hoveredCard === 'contact'} />
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginTop: 'var(--space-3)' }}>
-                    <InfoField label="Mobile"         value={emp.mobile_number} />
+                  <CardHead title="Contact Details" isAdmin={isAdmin} editVisible={hoveredCard === 'contact'} onEdit={() => openEdit('contact')} />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px' }}>
+                    <InfoField label="Mobile Number"  value={emp.mobile_number} />
                     <InfoField label="Extension"      value={emp.extension_number} />
                     <InfoField label="Personal Email" value={emp.personal_email} />
                     <InfoField label="Address"        value={emp.address} />
                   </div>
                 </div>
 
-                {/* UAE Legal */}
+                {/* UAE Legal & Visa */}
                 <div className="card"
                   onMouseEnter={() => setHoveredCard('legal')}
                   onMouseLeave={() => setHoveredCard(null)}>
-                  <SectionHead title="UAE Legal" onEdit={() => openEdit('legal')} isAdmin={isAdmin} hovered={hoveredCard === 'legal'} />
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: 'var(--space-3)' }}>
+                  <CardHead title="UAE Legal & Visa" isAdmin={isAdmin} editVisible={hoveredCard === 'legal'} onEdit={() => openEdit('legal')} />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px' }}>
                     <InfoField label="Resident ID"       value={emp.resident_id} />
                     <InfoField label="UAE Citizen"       value={emp.is_citizen ? 'Yes' : 'No'} />
                     <InfoField label="Labor Card No."    value={emp.labor_card} />
                     <InfoField label="Labor Card Expiry" value={fmtDate(emp.labor_card_expiry)} />
                     <InfoField label="MOL Number"        value={emp.mol_number} />
-                    <InfoField label="Sponsor Name"      value={emp.sponsor_name} />
-                    <InfoField label="Sponsor ID"        value={emp.sponsor_id} />
                   </div>
+                  {(emp.sponsor_name || emp.sponsor_id) && (<>
+                    <div style={{ margin: '14px 0 12px', borderTop: '1px solid var(--border-subtle)' }} />
+                    <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>Sponsorship</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 16px' }}>
+                      <InfoField label="Sponsor Name" value={emp.sponsor_name} />
+                      <InfoField label="Sponsor ID"   value={emp.sponsor_id} />
+                    </div>
+                  </>)}
                 </div>
 
                 {/* Emergency Contact */}
                 {emp.emergency_contact && (
                   <div className="card">
-                    <SectionHead title="Emergency Contact" />
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: 'var(--space-3)' }}>
+                    <CardHead title="Emergency Contact" isAdmin={false} />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px' }}>
                       <InfoField label="Name"         value={emp.emergency_contact.name} />
                       <InfoField label="Relationship" value={emp.emergency_contact.relationship} />
                       <InfoField label="Phone"        value={emp.emergency_contact.phone} />
@@ -1105,15 +1137,15 @@ export default function EmployeeDetailPage() {
 
               </div>
 
-              {/* RIGHT COLUMN — Professional, Account, Salary */}
+              {/* ── RIGHT: Main Content ── */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
-                {/* Professional Info */}
+                {/* Employment Details */}
                 <div className="card"
                   onMouseEnter={() => setHoveredCard('professional')}
                   onMouseLeave={() => setHoveredCard(null)}>
-                  <SectionHead title="Professional Info" onEdit={() => openEdit('professional')} isAdmin={isAdmin} hovered={hoveredCard === 'professional'} />
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: 'var(--space-3)' }}>
+                  <CardHead title="Employment Details" isAdmin={isAdmin} editVisible={hoveredCard === 'professional'} onEdit={() => openEdit('professional')} />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px 16px' }}>
                     <InfoField label="Position"          value={emp.position_title} />
                     <InfoField label="Department"        value={emp.department_name} />
                     <InfoField label="Employee Category" value={emp.employee_group_name} />
@@ -1123,103 +1155,109 @@ export default function EmployeeDetailPage() {
                     <InfoField label="Direct Manager"    value={emp.direct_manager_detail?.full_name ?? emp.direct_manager_name ?? undefined} />
                     <InfoField label="Hiring Date"       value={fmtDate(emp.join_date)} />
                     <InfoField label="Employment Period" value={emp.join_date ? calcPeriod(emp.join_date) : undefined} />
-                    <InfoField label="End of Probation"  value={fmtDate(emp.probation_end_date)} />
+                    <InfoField label="Probation End"     value={fmtDate(emp.probation_end_date)} />
                     <InfoField label="Contract End Date" value={fmtDate(emp.end_date)} />
                   </div>
                 </div>
 
-                {/* Account & Access */}
+                {/* Account & Access — admin only */}
                 {isAdmin && (
                   <div className="card"
                     onMouseEnter={() => setHoveredCard('account')}
                     onMouseLeave={() => setHoveredCard(null)}>
-                    <SectionHead title="Account & Access" onEdit={() => openEdit('account')} isAdmin={isAdmin} hovered={hoveredCard === 'account'} />
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: 'var(--space-3)' }}>
+                    <CardHead title="Account & Access" isAdmin={isAdmin} editVisible={hoveredCard === 'account'} onEdit={() => openEdit('account')} />
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px 16px' }}>
                       <InfoField label="Username"   value={emp.user?.username} />
                       <InfoField label="Work Email" value={emp.user?.email} />
-                      <InfoField label="Role"       value={emp.user?.role ? (roleLabel[emp.user.role] || emp.user.role) : undefined} />
+                      <InfoField label="System Role" value={emp.user?.role ? (roleLabel[emp.user.role] || emp.user.role) : undefined} />
                     </div>
                   </div>
                 )}
 
-                {/* Salary Package — blurred until hovered or revealed */}
+                {/* Compensation — admin only, hidden until hovered or revealed */}
                 {isAdmin && (
                   <div className="card"
                     onMouseEnter={() => { setHoveredCard('salary'); setSalaryRevealed(true); }}
                     onMouseLeave={() => { setHoveredCard(null); setSalaryRevealed(false); }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
-                      <h3 className="section-head-title" style={{ margin: 0 }}>Salary Package</h3>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+                          Compensation
+                        </span>
+                        {!salaryRevealed && (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-tertiary)' }}>
+                            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                          </svg>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <button
                           onClick={e => { e.stopPropagation(); setSalaryRevealed(v => !v); }}
                           style={{
-                            fontSize: 11, fontWeight: 600, padding: '3px 10px',
+                            fontSize: 11, fontWeight: 600, padding: '2px 10px',
                             borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)',
                             background: 'var(--surface-subtle)', color: 'var(--text-secondary)',
-                            cursor: 'pointer', lineHeight: 1.5,
+                            cursor: 'pointer', lineHeight: 1.6,
                           }}
-                        >
-                          {salaryRevealed ? 'Hide' : 'Show'}
-                        </button>
+                        >{salaryRevealed ? 'Hide' : 'Show'}</button>
                         <button
                           onClick={() => openEdit('salary')}
-                          className="section-edit-btn"
-                          style={{ opacity: hoveredCard === 'salary' ? 1 : 0, transition: 'opacity 0.15s' }}
-                        >
-                          Edit
-                        </button>
+                          style={{
+                            opacity: hoveredCard === 'salary' ? 1 : 0, transition: 'opacity 0.15s',
+                            fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', background: 'none',
+                            border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)',
+                            padding: '2px 10px', cursor: 'pointer', lineHeight: 1.6,
+                          }}
+                        >Edit</button>
                       </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-3)' }}>
+
+                    {/* Breakdown tiles */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
                       {([
                         ['Basic Salary', emp.basic_salary],
                         ['Housing',      emp.housing_allowance],
                         ['Transport',    emp.transport_allowance],
                         ['Other',        emp.other_allowances],
                       ] as [string, string | undefined][]).map(([label, val]) => (
-                        <div key={label} style={{ background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-3)', textAlign: 'center' }}>
-                          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '0 0 4px' }}>{label}</p>
-                          <p style={{
-                            fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', color: 'var(--text-primary)',
-                            lineHeight: 1, margin: '0 0 2px',
-                            filter: salaryRevealed ? 'none' : 'blur(5px)',
-                            transition: 'filter 0.2s ease',
-                            userSelect: salaryRevealed ? 'auto' : 'none',
-                          }}>
-                            {Number(val).toLocaleString('en-US', { minimumFractionDigits: 0 })}
-                          </p>
-                          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: 0 }}>AED</p>
+                        <div key={label} style={{
+                          background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)',
+                          borderRadius: 'var(--radius-md)', padding: '10px 12px',
+                        }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{label}</div>
+                          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1, marginBottom: 3 }}>
+                            {salaryRevealed
+                              ? Number(val).toLocaleString('en-US', { minimumFractionDigits: 0 })
+                              : <span style={{ letterSpacing: 2, color: 'var(--text-tertiary)', fontSize: 14 }}>••••</span>}
+                          </div>
+                          <div style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 500 }}>AED / month</div>
                         </div>
                       ))}
                     </div>
+
+                    {/* Total package */}
                     <div style={{
-                      marginTop: 'var(--space-4)', padding: 'var(--space-4)',
+                      marginTop: 12, padding: '12px 16px',
                       background: 'var(--brand-subtle)', border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-lg)', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     }}>
                       <div>
-                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>
                           Total Monthly Package
                         </div>
-                        <div style={{
-                          fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-bold)', color: 'var(--text-brand)', lineHeight: 1,
-                          filter: salaryRevealed ? 'none' : 'blur(8px)',
-                          transition: 'filter 0.2s ease',
-                          userSelect: salaryRevealed ? 'auto' : 'none',
-                        }}>
-                          {Number(emp.total_salary).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-secondary)', marginLeft: 6 }}>AED</span>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-brand)', lineHeight: 1, letterSpacing: '-0.03em' }}>
+                          {salaryRevealed
+                            ? <>{Number(emp.total_salary).toLocaleString('en-US', { minimumFractionDigits: 2 })} <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>AED</span></>
+                            : <span style={{ fontSize: 18, letterSpacing: 3, color: 'var(--text-tertiary)', fontWeight: 400 }}>•••••••</span>}
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>Annual</div>
-                        <div style={{
-                          fontSize: 'var(--text-base)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)',
-                          filter: salaryRevealed ? 'none' : 'blur(5px)',
-                          transition: 'filter 0.2s ease',
-                          userSelect: salaryRevealed ? 'auto' : 'none',
-                        }}>
-                          {(Number(emp.total_salary) * 12).toLocaleString('en-US', { minimumFractionDigits: 0 })} AED
+                        <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 4 }}>Annual</div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-secondary)' }}>
+                          {salaryRevealed
+                            ? <>{(Number(emp.total_salary) * 12).toLocaleString('en-US', { minimumFractionDigits: 0 })} AED</>
+                            : <span style={{ letterSpacing: 2 }}>••••••• AED</span>}
                         </div>
                       </div>
                     </div>
