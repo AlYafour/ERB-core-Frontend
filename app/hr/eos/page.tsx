@@ -157,7 +157,7 @@ function PreviewModal({
   };
 
   const buildPayload = () => ({
-    employee:           form.employeeId!,
+    employee_id:        form.employeeId!,
     termination_date:   form.termination_date,
     termination_reason: form.termination_reason as EOSTerminationReason,
     ...(form.leave_balance_days !== '' ? { leave_balance_days: toNum(form.leave_balance_days) } : {}),
