@@ -2,11 +2,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hrPerformanceApi, PerformanceCycle, PerformanceReview } from '@/lib/api/hr'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import BaseModal from '@/components/shared/BaseModal'
-import { useConfirm, toast } from '@/hooks/use-toast'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
+import { BaseModal } from '@/components/ui/base/BaseModal'
+import { confirm, toast } from '@/lib/hooks/use-toast'
 import HasPermission from '@/components/shared/HasPermission'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -33,7 +33,6 @@ function ProgressRing({ pct }: { pct: number }) {
 
 export default function PerformancePage() {
   const qc = useQueryClient()
-  const confirm = useConfirm()
   const [selectedCycle, setSelectedCycle] = useState<PerformanceCycle | null>(null)
   const [selfModal, setSelfModal] = useState<PerformanceReview | null>(null)
   const [managerModal, setManagerModal] = useState<PerformanceReview | null>(null)
@@ -54,25 +53,25 @@ export default function PerformancePage() {
 
   const activateMutation = useMutation({
     mutationFn: (id: number) => hrPerformanceApi.activateCycle(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['perf-cycles'] }); toast({ title: 'Cycle activated' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['perf-cycles'] }); toast('Cycle activated', 'success') },
   })
   const generateMutation = useMutation({
     mutationFn: (id: number) => hrPerformanceApi.generateReviews(id),
-    onSuccess: (r) => { qc.invalidateQueries({ queryKey: ['perf-reviews'] }); toast({ title: `${r.data.created} review(s) created` }) },
+    onSuccess: (r) => { qc.invalidateQueries({ queryKey: ['perf-reviews'] }); toast(`${r.data.created} review(s) created`, 'success') },
   })
   const selfMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: { self_rating: number; self_comments: string } }) =>
       hrPerformanceApi.submitSelf(id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['perf-reviews'] }); setSelfModal(null); toast({ title: 'Self evaluation submitted' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['perf-reviews'] }); setSelfModal(null); toast('Self evaluation submitted', 'success') },
   })
   const managerMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: { manager_rating: number; manager_comments: string } }) =>
       hrPerformanceApi.submitManager(id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['perf-reviews'] }); setManagerModal(null); toast({ title: 'Manager evaluation submitted' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['perf-reviews'] }); setManagerModal(null); toast('Manager evaluation submitted', 'success') },
   })
   const acknowledgeMutation = useMutation({
     mutationFn: (id: number) => hrPerformanceApi.acknowledge(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['perf-reviews'] }); toast({ title: 'Review acknowledged' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['perf-reviews'] }); toast('Review acknowledged', 'success') },
   })
 
   return (
@@ -109,10 +108,10 @@ export default function PerformancePage() {
                   {c.reviews_count} reviews · Self deadline: {c.self_eval_deadline}
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <Button size="sm" variant="outline" onClick={() => setSelectedCycle(c)}>View Reviews</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setSelectedCycle(c)}>View Reviews</Button>
                   <HasPermission permission="hr_performance:manage">
-                    {c.status === 'draft' && <Button size="sm" variant="outline" style={{ color: '#22c55e' }} onClick={() => activateMutation.mutate(c.id)}>Activate</Button>}
-                    {c.status === 'active' && <Button size="sm" variant="outline" onClick={() => generateMutation.mutate(c.id)}>Generate Reviews</Button>}
+                    {c.status === 'draft' && <Button size="sm" variant="ghost" style={{ color: '#22c55e' }} onClick={() => activateMutation.mutate(c.id)}>Activate</Button>}
+                    {c.status === 'active' && <Button size="sm" variant="ghost" onClick={() => generateMutation.mutate(c.id)}>Generate Reviews</Button>}
                   </HasPermission>
                 </div>
               </div>
@@ -155,17 +154,17 @@ export default function PerformancePage() {
                         <td style={{ padding: '10px 16px', display: 'flex', gap: 4 }}>
                           {rv.status === 'pending_self' && (
                             <HasPermission permission="hr_performance:self_evaluate">
-                              <Button size="sm" variant="outline" onClick={() => { setSelfModal(rv); setSelfRating(3); setSelfComments('') }}>Self Eval</Button>
+                              <Button size="sm" variant="ghost" onClick={() => { setSelfModal(rv); setSelfRating(3); setSelfComments('') }}>Self Eval</Button>
                             </HasPermission>
                           )}
                           {rv.status === 'pending_manager' && (
                             <HasPermission permission="hr_performance:manage">
-                              <Button size="sm" variant="outline" onClick={() => { setManagerModal(rv); setManagerRating(3); setManagerComments('') }}>Review</Button>
+                              <Button size="sm" variant="ghost" onClick={() => { setManagerModal(rv); setManagerRating(3); setManagerComments('') }}>Review</Button>
                             </HasPermission>
                           )}
                           {rv.final_rating && rv.status !== 'acknowledged' && (
                             <HasPermission permission="hr_performance:self_evaluate">
-                              <Button size="sm" variant="outline" style={{ color: '#22c55e' }} onClick={() => acknowledgeMutation.mutate(rv.id)}>Acknowledge</Button>
+                              <Button size="sm" variant="ghost" style={{ color: '#22c55e' }} onClick={() => acknowledgeMutation.mutate(rv.id)}>Acknowledge</Button>
                             </HasPermission>
                           )}
                         </td>
@@ -182,7 +181,7 @@ export default function PerformancePage() {
 
       {/* Self Eval Modal */}
       {selfModal && (
-        <BaseModal open title={`Self Evaluation — ${selfModal.employee_name}`} onClose={() => setSelfModal(null)}
+        <BaseModal isOpen title={`Self Evaluation — ${selfModal.employee_name}`} onClose={() => setSelfModal(null)}
           footer={<Button onClick={() => selfMutation.mutate({ id: selfModal.id, data: { self_rating: selfRating, self_comments: selfComments } })} disabled={selfMutation.isPending}>Submit</Button>}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             <div>
@@ -206,7 +205,7 @@ export default function PerformancePage() {
 
       {/* Manager Eval Modal */}
       {managerModal && (
-        <BaseModal open title={`Manager Evaluation — ${managerModal.employee_name}`} onClose={() => setManagerModal(null)}
+        <BaseModal isOpen title={`Manager Evaluation — ${managerModal.employee_name}`} onClose={() => setManagerModal(null)}
           footer={<Button onClick={() => managerMutation.mutate({ id: managerModal.id, data: { manager_rating: managerRating, manager_comments: managerComments } })} disabled={managerMutation.isPending}>Submit</Button>}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             <div>

@@ -2,11 +2,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hrDocumentTemplatesApi, hrGeneratedDocsApi, DocumentTemplate, GeneratedDocument } from '@/lib/api/hr'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import BaseModal from '@/components/shared/BaseModal'
-import { useConfirm, toast } from '@/hooks/use-toast'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
+import { BaseModal } from '@/components/ui/base/BaseModal'
+import { confirm, toast } from '@/lib/hooks/use-toast'
 import HasPermission from '@/components/shared/HasPermission'
 
 const TYPE_ICONS: Record<string, string> = {
@@ -21,8 +21,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function DocumentsPage() {
   const qc = useQueryClient()
-  const confirm = useConfirm()
-  const [editTemplate, setEditTemplate] = useState<Partial<DocumentTemplate> | null>(null)
+const [editTemplate, setEditTemplate] = useState<Partial<DocumentTemplate> | null>(null)
   const [previewHtml, setPreviewHtml] = useState('')
   const [showPreview, setShowPreview] = useState(false)
 
@@ -38,11 +37,11 @@ export default function DocumentsPage() {
   const saveMutation = useMutation({
     mutationFn: (data: Partial<DocumentTemplate>) =>
       data.id ? hrDocumentTemplatesApi.update(data.id, data) : hrDocumentTemplatesApi.create(data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['doc-templates'] }); setEditTemplate(null); toast({ title: 'Template saved' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['doc-templates'] }); setEditTemplate(null); toast('Template saved', 'success') },
   })
   const voidMutation = useMutation({
     mutationFn: (id: number) => hrGeneratedDocsApi.void(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['doc-generated'] }); toast({ title: 'Document voided' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['doc-generated'] }); toast('Document voided', 'success') },
   })
 
   async function handlePreview(t: DocumentTemplate) {
@@ -56,7 +55,7 @@ export default function DocumentsPage() {
   }
 
   async function handleVoid(doc: GeneratedDocument) {
-    const ok = await confirm({ title: 'Void document?', description: 'This cannot be undone.' })
+    const ok = await confirm('Void document?')
     if (ok) voidMutation.mutate(doc.id)
   }
 
@@ -99,9 +98,9 @@ export default function DocumentsPage() {
                 </div>
                 <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginBottom: 12 }}>{t.variables_count} variables</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <Button size="sm" variant="outline" onClick={() => handlePreview(t)}>Preview</Button>
+                  <Button size="sm" variant="ghost" onClick={() => handlePreview(t)}>Preview</Button>
                   <HasPermission permission="hr_documents:manage">
-                    <Button size="sm" variant="outline" onClick={() => setEditTemplate(t)}>Edit</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditTemplate(t)}>Edit</Button>
                   </HasPermission>
                 </div>
               </div>
@@ -133,10 +132,10 @@ export default function DocumentsPage() {
                     </td>
                     <td style={{ padding: '10px 16px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>{new Date(doc.generated_at).toLocaleDateString()}</td>
                     <td style={{ padding: '10px 16px', display: 'flex', gap: 6 }}>
-                      {doc.pdf_url && <Button size="sm" variant="outline" onClick={() => window.open(doc.pdf_url!, '_blank')}>PDF</Button>}
+                      {doc.pdf_url && <Button size="sm" variant="ghost" onClick={() => window.open(doc.pdf_url!, '_blank')}>PDF</Button>}
                       {doc.status !== 'voided' && (
                         <HasPermission permission="hr_documents:manage">
-                          <Button size="sm" variant="outline" style={{ color: '#ef4444' }} onClick={() => handleVoid(doc)}>Void</Button>
+                          <Button size="sm" variant="ghost" style={{ color: '#ef4444' }} onClick={() => handleVoid(doc)}>Void</Button>
                         </HasPermission>
                       )}
                     </td>
@@ -151,7 +150,7 @@ export default function DocumentsPage() {
 
       {/* Template Edit Modal */}
       {editTemplate !== null && (
-        <BaseModal open title={editTemplate.id ? 'Edit Template' : 'New Template'} onClose={() => setEditTemplate(null)}
+        <BaseModal isOpen title={editTemplate.id ? 'Edit Template' : 'New Template'} onClose={() => setEditTemplate(null)}
           footer={<Button onClick={() => saveMutation.mutate(editTemplate)} disabled={saveMutation.isPending}>Save</Button>}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             <div>
@@ -178,7 +177,7 @@ export default function DocumentsPage() {
 
       {/* Preview Modal */}
       {showPreview && (
-        <BaseModal open title="Template Preview" onClose={() => setShowPreview(false)}>
+        <BaseModal isOpen title="Template Preview" onClose={() => setShowPreview(false)}>
           <div style={{ maxHeight: 600, overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: 6 }}>
             <iframe srcDoc={previewHtml} style={{ width: '100%', height: 580, border: 'none' }} title="preview" />
           </div>

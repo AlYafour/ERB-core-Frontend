@@ -3,11 +3,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hrPolicySetsApi, hrPolicyPresetsApi, hrPolicyAuditApi, PolicySet, PolicyPreset, PolicyPreviewResult } from '@/lib/api/hr'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import BaseModal from '@/components/shared/BaseModal'
-import { useConfirm, toast } from '@/hooks/use-toast'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
+import { BaseModal } from '@/components/ui/base/BaseModal'
+import { confirm, toast } from '@/lib/hooks/use-toast'
 import HasPermission from '@/components/shared/HasPermission'
 
 const MODULE_ICONS: Record<string, string> = {
@@ -70,14 +70,14 @@ function SetCard({ ps, onClone, onActivate, onArchive, onPreview }: {
       )}
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <Button size="sm" variant="outline" onClick={onPreview}>Preview / Test</Button>
+        <Button size="sm" variant="ghost" onClick={onPreview}>Preview / Test</Button>
         <HasPermission permission="hr_policy:manage">
           {!ps.is_locked && (
-            <Button size="sm" variant="outline" style={{ color: '#22c55e' }} onClick={onActivate}>Activate</Button>
+            <Button size="sm" variant="ghost" style={{ color: '#22c55e' }} onClick={onActivate}>Activate</Button>
           )}
-          <Button size="sm" variant="outline" onClick={onClone}>Clone → New Version</Button>
+          <Button size="sm" variant="ghost" onClick={onClone}>Clone → New Version</Button>
           {ps.status !== 'archived' && (
-            <Button size="sm" variant="outline" style={{ color: '#ef4444' }} onClick={onArchive}>Archive</Button>
+            <Button size="sm" variant="ghost" style={{ color: '#ef4444' }} onClick={onArchive}>Archive</Button>
           )}
         </HasPermission>
       </div>
@@ -87,7 +87,6 @@ function SetCard({ ps, onClone, onActivate, onArchive, onPreview }: {
 
 export default function PolicyPage() {
   const qc = useQueryClient()
-  const confirm = useConfirm()
 
   const { data: sets = [] } = useQuery({
     queryKey: ['policy-sets'],
@@ -109,33 +108,33 @@ export default function PolicyPage() {
 
   const cloneMutation = useMutation({
     mutationFn: (id: number) => hrPolicySetsApi.clone(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['policy-sets'] }); toast({ title: 'Cloned to new draft version' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['policy-sets'] }); toast('Cloned to new draft version', 'success') },
   })
   const activateMutation = useMutation({
     mutationFn: (id: number) => hrPolicySetsApi.activate(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['policy-sets'] }); toast({ title: 'Policy Set activated' }) },
-    onError: (e: unknown) => toast({ title: 'Error', description: (e as Error).message, variant: 'destructive' }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['policy-sets'] }); toast('Policy Set activated', 'success') },
+    onError: (e: unknown) => toast((e as Error).message, 'error'),
   })
   const archiveMutation = useMutation({
     mutationFn: (id: number) => hrPolicySetsApi.archive(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['policy-sets'] }); toast({ title: 'Archived' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['policy-sets'] }); toast('Archived', 'success') },
   })
   const applyPresetMutation = useMutation({
     mutationFn: ({ id, effective_from }: { id: number; effective_from: string }) => hrPolicyPresetsApi.apply(id, effective_from),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['policy-sets'] }); toast({ title: 'Preset applied — review draft sets then activate each one' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['policy-sets'] }); toast('Preset applied — review draft sets then activate each one', 'success') },
   })
 
   async function handleActivate(ps: PolicySet) {
-    const ok = await confirm({ title: 'Activate policy set?', description: 'The current active set for this module will be archived.' })
+    const ok = await confirm('Activate policy set?')
     if (ok) activateMutation.mutate(ps.id)
   }
   async function handleArchive(ps: PolicySet) {
-    const ok = await confirm({ title: 'Archive this set?', description: 'It will no longer be used in calculations.' })
+    const ok = await confirm('Archive this set?')
     if (ok) archiveMutation.mutate(ps.id)
   }
   async function handleApplyPreset(preset: PolicyPreset) {
     const today = new Date().toISOString().slice(0, 10)
-    const ok = await confirm({ title: `Apply: ${preset.name}`, description: `Creates ${preset.sets_count} draft policy set(s) effective today. Review and activate each module separately.` })
+    const ok = await confirm(`Apply: ${preset.name}`)
     if (ok) applyPresetMutation.mutate({ id: preset.id, effective_from: today })
   }
 
@@ -261,7 +260,7 @@ export default function PolicyPage() {
 
       {previewSet && (
         <BaseModal
-          open={!!previewSet}
+          isOpen={!!previewSet}
           onClose={() => setPreviewSet(null)}
           title={`Preview: ${previewSet.name}`}
           footer={<Button onClick={runPreview}>Run Preview</Button>}

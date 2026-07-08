@@ -2,10 +2,10 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hrSkillsApi, hrTrainingApi, Skill, TrainingRecord } from '@/lib/api/hr'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { toast } from '@/hooks/use-toast'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
+import { toast } from '@/lib/hooks/use-toast'
 import HasPermission from '@/components/shared/HasPermission'
 
 const LEVEL_COLORS: Record<number, string> = { 1: '#94a3b8', 2: '#3b82f6', 3: '#22c55e', 4: '#f59e0b' }
@@ -75,7 +75,7 @@ export default function SkillsPage() {
                       </div>
                     </td>
                     <td style={{ padding: '10px 16px' }}>
-                      {t.certificate_url ? <Button size="sm" variant="outline" onClick={() => window.open(t.certificate_url!, '_blank')}>View</Button> : '—'}
+                      {t.certificate_url ? <Button size="sm" variant="ghost" onClick={() => window.open(t.certificate_url!, '_blank')}>View</Button> : '—'}
                     </td>
                   </tr>
                 ))}

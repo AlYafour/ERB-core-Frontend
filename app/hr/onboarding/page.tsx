@@ -1,9 +1,9 @@
 'use client'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hrOnboardingApi, OnboardingProcess } from '@/lib/api/hr'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { toast } from '@/hooks/use-toast'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { toast } from '@/lib/hooks/use-toast'
 import HasPermission from '@/components/shared/HasPermission'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -31,7 +31,7 @@ export default function OnboardingPage() {
   const completeTaskMutation = useMutation({
     mutationFn: ({ processId, taskId }: { processId: number; taskId: number }) =>
       hrOnboardingApi.completeTask(processId, taskId),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['onboarding-processes'] }); toast({ title: 'Task completed' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['onboarding-processes'] }); toast('Task completed', 'success') },
   })
 
   return (
@@ -67,7 +67,7 @@ export default function OnboardingPage() {
                   </div>
                   {task.status === 'pending' && (
                     <HasPermission permission="hr_onboarding:manage">
-                      <Button size="sm" variant="outline" onClick={() => completeTaskMutation.mutate({ processId: proc.id, taskId: task.id })}>
+                      <Button size="sm" variant="ghost" onClick={() => completeTaskMutation.mutate({ processId: proc.id, taskId: task.id })}>
                         Complete
                       </Button>
                     </HasPermission>

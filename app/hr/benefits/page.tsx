@@ -2,10 +2,10 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hrBenefitsApi, BenefitPlan, TravelRequest, ExpenseClaim, Grievance, Asset } from '@/lib/api/hr'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useConfirm, toast } from '@/hooks/use-toast'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
+import { confirm, toast } from '@/lib/hooks/use-toast'
 import HasPermission from '@/components/shared/HasPermission'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -86,17 +86,16 @@ function BenefitPlansTab() {
 // ─── Assets ───────────────────────────────────────────────────────────────────
 function AssetsTab() {
   const qc = useQueryClient()
-  const confirm = useConfirm()
   const { data: assets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => hrBenefitsApi.getAssets().then(r => r.data) })
   const { data: assignments = [] } = useQuery({ queryKey: ['assignments'], queryFn: () => hrBenefitsApi.getAssignments().then(r => r.data) })
 
   const returnMutation = useMutation({
     mutationFn: (id: number) => hrBenefitsApi.returnAsset(id, { returned_at: new Date().toISOString().slice(0, 10) }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['assets'] }); qc.invalidateQueries({ queryKey: ['assignments'] }); toast({ title: 'Asset returned' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['assets'] }); qc.invalidateQueries({ queryKey: ['assignments'] }); toast('Asset returned', 'success') },
   })
 
   async function handleReturn(id: number) {
-    const ok = await confirm({ title: 'Return asset?', description: 'Mark this asset as returned.' })
+    const ok = await confirm('Return asset?')
     if (ok) returnMutation.mutate(id)
   }
 
@@ -123,7 +122,7 @@ function AssetsTab() {
                   <Badge key="s" style={{ background: '#3b82f620', color: '#3b82f6', fontSize: 10 }}>Assigned</Badge>,
                 ]} actions={
                   <HasPermission permission="hr_benefits:manage">
-                    <Button size="sm" variant="outline" style={{ fontSize: 11 }} onClick={() => handleReturn(a.id)}>Return</Button>
+                    <Button size="sm" variant="ghost" style={{ fontSize: 11 }} onClick={() => handleReturn(a.id)}>Return</Button>
                   </HasPermission>
                 } />
               ))}
@@ -141,18 +140,17 @@ function AssetsTab() {
 // ─── Travel Requests ──────────────────────────────────────────────────────────
 function TravelTab() {
   const qc = useQueryClient()
-  const confirm = useConfirm()
   const [filter, setFilter] = useState('submitted')
   const { data: travels = [] } = useQuery({ queryKey: ['travel', filter], queryFn: () => hrBenefitsApi.getTravelRequests(filter !== 'all' ? { status: filter } : {}).then(r => r.data) })
 
   const reviewMutation = useMutation({
     mutationFn: ({ id, approved }: { id: number; approved: boolean }) => hrBenefitsApi.reviewTravel(id, { approved }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['travel'] }); toast({ title: 'Travel request updated' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['travel'] }); toast('Travel request updated', 'success') },
   })
 
   async function handleReview(id: number, approved: boolean) {
     const label = approved ? 'approve' : 'reject'
-    const ok = await confirm({ title: `${approved ? 'Approve' : 'Reject'} travel request?`, description: `This will ${label} the request.` })
+    const ok = await confirm(`${approved ? 'Approve' : 'Reject'} travel request?`)
     if (ok) reviewMutation.mutate({ id, approved })
   }
 
@@ -180,7 +178,7 @@ function TravelTab() {
                 <HasPermission permission="hr_benefits:manage">
                   <div style={{ display: 'flex', gap: 4 }}>
                     <Button size="sm" style={{ fontSize: 10, padding: '2px 8px', background: '#22c55e', color: '#fff' }} onClick={() => handleReview(t.id, true)}>Approve</Button>
-                    <Button size="sm" variant="outline" style={{ fontSize: 10, padding: '2px 8px', color: '#ef4444' }} onClick={() => handleReview(t.id, false)}>Reject</Button>
+                    <Button size="sm" variant="ghost" style={{ fontSize: 10, padding: '2px 8px', color: '#ef4444' }} onClick={() => handleReview(t.id, false)}>Reject</Button>
                   </div>
                 </HasPermission>
               ) : undefined} />
@@ -196,17 +194,16 @@ function TravelTab() {
 // ─── Expenses ─────────────────────────────────────────────────────────────────
 function ExpensesTab() {
   const qc = useQueryClient()
-  const confirm = useConfirm()
   const [filter, setFilter] = useState('submitted')
   const { data: expenses = [] } = useQuery({ queryKey: ['expenses', filter], queryFn: () => hrBenefitsApi.getExpenses(filter !== 'all' ? { status: filter } : {}).then(r => r.data) })
 
   const approveMutation = useMutation({
     mutationFn: ({ id, approved }: { id: number; approved: boolean }) => hrBenefitsApi.approveExpense(id, { approved }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expenses'] }); toast({ title: 'Expense updated' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expenses'] }); toast('Expense updated', 'success') },
   })
   const paidMutation = useMutation({
     mutationFn: (id: number) => hrBenefitsApi.markPaid(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expenses'] }); toast({ title: 'Marked as paid' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expenses'] }); toast('Marked as paid', 'success') },
   })
 
   const totalSubmitted = expenses.filter(e => e.status === 'submitted').reduce((s, e) => s + Number(e.amount), 0)
@@ -240,7 +237,7 @@ function ExpensesTab() {
                   <div style={{ display: 'flex', gap: 4 }}>
                     {e.status === 'submitted' && <>
                       <Button size="sm" style={{ fontSize: 10, padding: '2px 8px', background: '#22c55e', color: '#fff' }} onClick={() => approveMutation.mutate({ id: e.id, approved: true })}>Approve</Button>
-                      <Button size="sm" variant="outline" style={{ fontSize: 10, padding: '2px 8px', color: '#ef4444' }} onClick={() => approveMutation.mutate({ id: e.id, approved: false })}>Reject</Button>
+                      <Button size="sm" variant="ghost" style={{ fontSize: 10, padding: '2px 8px', color: '#ef4444' }} onClick={() => approveMutation.mutate({ id: e.id, approved: false })}>Reject</Button>
                     </>}
                     {e.status === 'approved' && <Button size="sm" style={{ fontSize: 10, padding: '2px 8px', background: '#3b82f6', color: '#fff' }} onClick={() => paidMutation.mutate(e.id)}>Mark Paid</Button>}
                   </div>
@@ -258,25 +255,24 @@ function ExpensesTab() {
 // ─── Grievances ───────────────────────────────────────────────────────────────
 function GrievancesTab() {
   const qc = useQueryClient()
-  const confirm = useConfirm()
   const [filter, setFilter] = useState('open')
   const { data: grievances = [] } = useQuery({ queryKey: ['grievances', filter], queryFn: () => hrBenefitsApi.getGrievances(filter !== 'all' ? { status: filter } : {}).then(r => r.data) })
 
   const assignMutation = useMutation({
     mutationFn: (id: number) => hrBenefitsApi.assignGrievance(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['grievances'] }); toast({ title: 'Grievance assigned to you' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['grievances'] }); toast('Grievance assigned to you', 'success') },
   })
   const escalateMutation = useMutation({
     mutationFn: (id: number) => hrBenefitsApi.escalateGrievance(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['grievances'] }); toast({ title: 'Escalated to critical' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['grievances'] }); toast('Escalated to critical', 'success') },
   })
   const resolveMutation = useMutation({
     mutationFn: ({ id, resolution }: { id: number; resolution: string }) => hrBenefitsApi.resolveGrievance(id, { resolution }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['grievances'] }); toast({ title: 'Grievance resolved' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['grievances'] }); toast('Grievance resolved', 'success') },
   })
 
   async function handleEscalate(id: number) {
-    const ok = await confirm({ title: 'Escalate grievance?', description: 'Priority will be set to Critical.' })
+    const ok = await confirm('Escalate grievance?')
     if (ok) escalateMutation.mutate(id)
   }
 
@@ -305,10 +301,10 @@ function GrievancesTab() {
               </div>
               <HasPermission permission="hr_benefits:manage">
                 <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                  {g.status === 'open' && <Button size="sm" variant="outline" style={{ fontSize: 10 }} onClick={() => assignMutation.mutate(g.id)}>Assign to me</Button>}
+                  {g.status === 'open' && <Button size="sm" variant="ghost" style={{ fontSize: 10 }} onClick={() => assignMutation.mutate(g.id)}>Assign to me</Button>}
                   {g.status === 'in_review' && <>
                     <Button size="sm" style={{ fontSize: 10, background: '#22c55e', color: '#fff' }} onClick={() => resolveMutation.mutate({ id: g.id, resolution: 'Resolved by HR' })}>Resolve</Button>
-                    <Button size="sm" variant="outline" style={{ fontSize: 10, color: '#7c3aed' }} onClick={() => handleEscalate(g.id)}>Escalate</Button>
+                    <Button size="sm" variant="ghost" style={{ fontSize: 10, color: '#7c3aed' }} onClick={() => handleEscalate(g.id)}>Escalate</Button>
                   </>}
                 </div>
               </HasPermission>

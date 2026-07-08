@@ -2,11 +2,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hrRecruitmentApi, JobRequisition, RequisitionPipeline } from '@/lib/api/hr'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import HasPermission from '@/components/shared/HasPermission'
-import { useConfirm, toast } from '@/hooks/use-toast'
+import { confirm, toast } from '@/lib/hooks/use-toast'
 
 const REQ_STATUS_COLORS: Record<string, string> = {
   draft: '#94a3b8', open: '#22c55e', on_hold: '#f59e0b', filled: '#3b82f6', cancelled: '#ef4444',
@@ -46,27 +46,25 @@ function RequisitionCard({ req, onClick }: { req: JobRequisition; onClick: () =>
 
 function KanbanBoard({ pipeline }: { pipeline: RequisitionPipeline }) {
   const qc = useQueryClient()
-  const confirm = useConfirm()
-
   const advanceMutation = useMutation({
     mutationFn: (id: number) => hrRecruitmentApi.advanceCandidate(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['pipeline'] }); toast({ title: 'Candidate advanced' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['pipeline'] }); toast('Candidate advanced', 'success') },
   })
   const rejectMutation = useMutation({
     mutationFn: (id: number) => hrRecruitmentApi.rejectCandidate(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['pipeline'] }); toast({ title: 'Candidate rejected' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['pipeline'] }); toast('Candidate rejected', 'success') },
   })
   const hireMutation = useMutation({
     mutationFn: (id: number) => hrRecruitmentApi.hireCandidate(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['pipeline'] }); toast({ title: 'Candidate hired!' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['pipeline'] }); toast('Candidate hired!', 'success') },
   })
 
   async function handleReject(id: number) {
-    const ok = await confirm({ title: 'Reject candidate?', description: 'This will mark the candidate as rejected.' })
+    const ok = await confirm('Reject candidate?')
     if (ok) rejectMutation.mutate(id)
   }
   async function handleHire(id: number) {
-    const ok = await confirm({ title: 'Confirm hire?', description: 'Candidate will be marked as hired.' })
+    const ok = await confirm('Confirm hire?')
     if (ok) hireMutation.mutate(id)
   }
 
@@ -90,13 +88,13 @@ function KanbanBoard({ pipeline }: { pipeline: RequisitionPipeline }) {
                     <HasPermission permission="hr_recruitment:manage">
                       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                         {stage !== 'hired' && stage !== 'offer_accepted' && (
-                          <Button size="sm" variant="outline" style={{ fontSize: 10, padding: '2px 8px' }} onClick={() => advanceMutation.mutate(c.id)}>Next</Button>
+                          <Button size="sm" variant="ghost" style={{ fontSize: 10, padding: '2px 8px' }} onClick={() => advanceMutation.mutate(c.id)}>Next</Button>
                         )}
                         {stage === 'offer_accepted' && (
                           <Button size="sm" style={{ fontSize: 10, padding: '2px 8px', background: '#22c55e', color: '#fff' }} onClick={() => handleHire(c.id)}>Hire</Button>
                         )}
                         {stage !== 'hired' && (
-                          <Button size="sm" variant="outline" style={{ fontSize: 10, padding: '2px 8px', color: '#ef4444' }} onClick={() => handleReject(c.id)}>Reject</Button>
+                          <Button size="sm" variant="ghost" style={{ fontSize: 10, padding: '2px 8px', color: '#ef4444' }} onClick={() => handleReject(c.id)}>Reject</Button>
                         )}
                       </div>
                     </HasPermission>
@@ -131,7 +129,7 @@ export default function RecruitmentPage() {
 
   const openMutation = useMutation({
     mutationFn: (id: number) => hrRecruitmentApi.openRequisition(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['requisitions'] }); toast({ title: 'Requisition opened' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['requisitions'] }); toast('Requisition opened', 'success') },
   })
 
   const totalOpen = requisitions.filter(r => r.status === 'open').length
@@ -183,7 +181,7 @@ export default function RecruitmentPage() {
                 {req.status === 'draft' && (
                   <HasPermission permission="hr_recruitment:manage">
                     <div style={{ marginTop: 6, display: 'flex', gap: 6 }}>
-                      <Button size="sm" variant="outline" style={{ fontSize: 12, color: '#22c55e' }} onClick={() => openMutation.mutate(req.id)}>Open Position</Button>
+                      <Button size="sm" variant="ghost" style={{ fontSize: 12, color: '#22c55e' }} onClick={() => openMutation.mutate(req.id)}>Open Position</Button>
                     </div>
                   </HasPermission>
                 )}

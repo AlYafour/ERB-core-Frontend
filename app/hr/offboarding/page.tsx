@@ -1,9 +1,9 @@
 'use client'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hrOffboardingApi, OffboardingProcess } from '@/lib/api/hr'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { useConfirm, toast } from '@/hooks/use-toast'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { confirm, toast } from '@/lib/hooks/use-toast'
 import HasPermission from '@/components/shared/HasPermission'
 
 function ClearanceItem({ label, done }: { label: string; done: boolean }) {
@@ -17,7 +17,6 @@ function ClearanceItem({ label, done }: { label: string; done: boolean }) {
 
 export default function OffboardingPage() {
   const qc = useQueryClient()
-  const confirm = useConfirm()
   const { data: processes = [] } = useQuery({
     queryKey: ['offboarding'],
     queryFn: () => hrOffboardingApi.getAll({ status: 'active' }).then(r => r.data),
@@ -25,18 +24,18 @@ export default function OffboardingPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<OffboardingProcess> }) => hrOffboardingApi.update(id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['offboarding'] }); toast({ title: 'Updated' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['offboarding'] }); toast('Updated', 'success') },
   })
   const completeMutation = useMutation({
     mutationFn: (id: number) => hrOffboardingApi.complete(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['offboarding'] }); toast({ title: 'Offboarding completed' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['offboarding'] }); toast('Offboarding completed', 'success') },
   })
 
   async function toggle(proc: OffboardingProcess, field: keyof OffboardingProcess) {
     updateMutation.mutate({ id: proc.id, data: { [field]: !proc[field] } })
   }
   async function handleComplete(proc: OffboardingProcess) {
-    const ok = await confirm({ title: 'Mark as completed?', description: 'Employee will be marked as fully offboarded.' })
+    const ok = await confirm('Mark as completed?')
     if (ok) completeMutation.mutate(proc.id)
   }
 

@@ -2,9 +2,9 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { hrAnalyticsApi } from '@/lib/api/hr'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/Button'
 import HasPermission from '@/components/shared/HasPermission'
-import { toast } from '@/hooks/use-toast'
+import { toast } from '@/lib/hooks/use-toast'
 
 // ── Mini chart helpers (inline SVG bar charts — no external deps) ─────────────
 
@@ -81,7 +81,7 @@ async function downloadExcel(report: string, params?: Record<string, unknown>) {
     a.click()
     URL.revokeObjectURL(url)
   } catch {
-    toast({ title: 'Export failed', variant: 'destructive' })
+    toast('Export failed', 'error')
   }
 }
 
@@ -126,7 +126,7 @@ export default function AnalyticsPage() {
           <p style={{ color: 'var(--color-text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>Live workforce metrics — cached, updated hourly</p>
         </div>
         <HasPermission permission="hr_analytics:export">
-          <Button variant="outline" size="sm" onClick={() => hrAnalyticsApi.invalidateCache().then(() => toast({ title: 'Cache cleared — data will refresh' }))}>
+          <Button variant="ghost" size="sm" onClick={() => hrAnalyticsApi.invalidateCache().then(() => toast('Cache cleared — data will refresh', 'success'))}>
             Refresh Cache
           </Button>
         </HasPermission>
@@ -153,7 +153,7 @@ export default function AnalyticsPage() {
               {['department', 'location', 'group', 'nationality', 'gender'].map(g => <option key={g} value={g}>{g}</option>)}
             </select>
             <HasPermission permission="hr_analytics:export">
-              <Button size="sm" variant="outline" onClick={() => downloadExcel('headcount')}>Export</Button>
+              <Button size="sm" variant="ghost" onClick={() => downloadExcel('headcount')}>Export</Button>
             </HasPermission>
           </div>
         }>
@@ -176,7 +176,7 @@ export default function AnalyticsPage() {
         {/* Payroll cost */}
         <Section title="Monthly Payroll Cost" action={
           <HasPermission permission="hr_analytics:export">
-            <Button size="sm" variant="outline" onClick={() => downloadExcel('payroll_cost', { months: 6 })}>Export</Button>
+            <Button size="sm" variant="ghost" onClick={() => downloadExcel('payroll_cost', { months: 6 })}>Export</Button>
           </HasPermission>
         }>
           <BarChart data={payrollCost} valueKey="net" labelKey="label" color="#22c55e" />
@@ -202,7 +202,7 @@ export default function AnalyticsPage() {
         {/* Turnover */}
         <Section title={`Employee Turnover ${currentYear}`} action={
           <HasPermission permission="hr_analytics:export">
-            <Button size="sm" variant="outline" onClick={() => downloadExcel('turnover', { year: currentYear })}>Export</Button>
+            <Button size="sm" variant="ghost" onClick={() => downloadExcel('turnover', { year: currentYear })}>Export</Button>
           </HasPermission>
         }>
           <BarChart data={turnover?.monthly ?? []} valueKey="departed" labelKey="label" color="#ef4444" />
@@ -218,7 +218,7 @@ export default function AnalyticsPage() {
       {liability && liability.rows.length > 0 && (
         <Section title="Leave Liability by Employee" action={
           <HasPermission permission="hr_analytics:export">
-            <Button size="sm" variant="outline" onClick={() => downloadExcel('leave_liability')}>Export</Button>
+            <Button size="sm" variant="ghost" onClick={() => downloadExcel('leave_liability')}>Export</Button>
           </HasPermission>
         }>
           <div style={{ overflowX: 'auto', maxHeight: 300 }}>

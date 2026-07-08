@@ -2,10 +2,10 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hrContractsApi, EmployeeContract } from '@/lib/api/hr'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import BaseModal from '@/components/shared/BaseModal'
-import { useConfirm, toast } from '@/hooks/use-toast'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { BaseModal } from '@/components/ui/base/BaseModal'
+import { confirm, toast } from '@/lib/hooks/use-toast'
 import HasPermission from '@/components/shared/HasPermission'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -14,7 +14,6 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function ContractsPage() {
   const qc = useQueryClient()
-  const confirm = useConfirm()
   const [terminateTarget, setTerminateTarget] = useState<EmployeeContract | null>(null)
   const [terminationDate, setTerminationDate] = useState('')
   const [terminationReason, setTerminationReason] = useState('')
@@ -31,7 +30,7 @@ export default function ContractsPage() {
 
   const terminateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: { termination_date: string; termination_reason: string } }) => hrContractsApi.terminate(id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['contracts'] }); setTerminateTarget(null); toast({ title: 'Contract terminated' }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['contracts'] }); setTerminateTarget(null); toast('Contract terminated', 'success') },
   })
 
   return (
@@ -82,10 +81,10 @@ export default function ContractsPage() {
                 <td style={{ padding: '10px 16px' }}>{c.job_title_snapshot}</td>
                 <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontSize: 12 }}>{parseFloat(c.basic_salary_snapshot).toLocaleString()}</td>
                 <td style={{ padding: '10px 16px' }}>
-                  {c.document_url && <Button size="sm" variant="outline" onClick={() => window.open(c.document_url!, '_blank')}>📄</Button>}
+                  {c.document_url && <Button size="sm" variant="ghost" onClick={() => window.open(c.document_url!, '_blank')}>📄</Button>}
                   {c.status === 'active' && (
                     <HasPermission permission="hr_contracts:manage">
-                      <Button size="sm" variant="outline" style={{ color: '#ef4444', marginLeft: 4 }} onClick={() => { setTerminateTarget(c); setTerminationDate(''); setTerminationReason('') }}>Terminate</Button>
+                      <Button size="sm" variant="ghost" style={{ color: '#ef4444', marginLeft: 4 }} onClick={() => { setTerminateTarget(c); setTerminationDate(''); setTerminationReason('') }}>Terminate</Button>
                     </HasPermission>
                   )}
                 </td>
@@ -97,7 +96,7 @@ export default function ContractsPage() {
       </div>
 
       {terminateTarget && (
-        <BaseModal open title={`Terminate Contract — ${terminateTarget.employee_name}`} onClose={() => setTerminateTarget(null)}
+        <BaseModal isOpen title={`Terminate Contract — ${terminateTarget.employee_name}`} onClose={() => setTerminateTarget(null)}
           footer={<Button style={{ background: '#ef4444', color: '#fff' }} disabled={!terminationDate || terminateMutation.isPending}
             onClick={() => terminateMutation.mutate({ id: terminateTarget.id, data: { termination_date: terminationDate, termination_reason: terminationReason } })}>
             Confirm Termination
