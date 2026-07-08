@@ -1251,12 +1251,20 @@ export const hrContractsApi = {
   expiringSoon: (days?: number) => apiClient.get<EmployeeContract[]>('/hr/contracts/expiring-soon/', { params: days ? { days: String(days) } : undefined }),
 }
 
+// Normalises paginated {count, results:[...]} responses to plain arrays so pages can .then(r => r.data) safely.
+async function _paged<T>(url: string, params?: Record<string, string>) {
+  const r = await apiClient.get<any>(url, { params: { page_size: 1000, ...params } })
+  const d = r.data
+  const data = (Array.isArray(d) ? d : d?.results ?? []) as T[]
+  return { ...r, data }
+}
+
 export const hrOnboardingApi = {
-  getTemplates: () => apiClient.get<OnboardingTemplate[]>('/hr/onboarding/templates/'),
+  getTemplates: () => _paged<OnboardingTemplate>('/hr/onboarding/templates/'),
   createTemplate: (data: Partial<OnboardingTemplate>) => apiClient.post<OnboardingTemplate>('/hr/onboarding/templates/', data),
   addTask: (templateId: number, task: Partial<OnboardingTemplateTask>) =>
     apiClient.post<OnboardingTemplateTask>(`/hr/onboarding/templates/${templateId}/add-task/`, task),
-  getProcesses: (params?: Record<string, string>) => apiClient.get<OnboardingProcess[]>('/hr/onboarding/processes/', { params }),
+  getProcesses: (params?: Record<string, string>) => _paged<OnboardingProcess>('/hr/onboarding/processes/', params),
   getProcess: (id: number) => apiClient.get<OnboardingProcess>(`/hr/onboarding/processes/${id}/`),
   createProcess: (data: Partial<OnboardingProcess>) => apiClient.post<OnboardingProcess>('/hr/onboarding/processes/', data),
   completeTask: (processId: number, taskId: number, data?: { notes?: string; skip?: boolean }) =>
@@ -1264,7 +1272,7 @@ export const hrOnboardingApi = {
 }
 
 export const hrOffboardingApi = {
-  getAll: (params?: Record<string, string>) => apiClient.get<OffboardingProcess[]>('/hr/offboarding/', { params }),
+  getAll: (params?: Record<string, string>) => _paged<OffboardingProcess>('/hr/offboarding/', params),
   getById: (id: number) => apiClient.get<OffboardingProcess>(`/hr/offboarding/${id}/`),
   create: (data: Partial<OffboardingProcess>) => apiClient.post<OffboardingProcess>('/hr/offboarding/', data),
   update: (id: number, data: Partial<OffboardingProcess>) => apiClient.patch<OffboardingProcess>(`/hr/offboarding/${id}/`, data),
@@ -1447,13 +1455,13 @@ export interface TrainingRecord {
 }
 
 export const hrPerformanceApi = {
-  getCycles: (params?: Record<string, string>) => apiClient.get<PerformanceCycle[]>('/hr/performance/cycles/', { params }),
+  getCycles: (params?: Record<string, string>) => _paged<PerformanceCycle>('/hr/performance/cycles/', params),
   createCycle: (data: Partial<PerformanceCycle>) => apiClient.post<PerformanceCycle>('/hr/performance/cycles/', data),
   updateCycle: (id: number, data: Partial<PerformanceCycle>) => apiClient.patch<PerformanceCycle>(`/hr/performance/cycles/${id}/`, data),
   activateCycle: (id: number) => apiClient.post<PerformanceCycle>(`/hr/performance/cycles/${id}/activate/`),
   closeCycle: (id: number) => apiClient.post(`/hr/performance/cycles/${id}/close/`),
   generateReviews: (id: number) => apiClient.post(`/hr/performance/cycles/${id}/generate-reviews/`),
-  getReviews: (params?: Record<string, string>) => apiClient.get<PerformanceReview[]>('/hr/performance/reviews/', { params }),
+  getReviews: (params?: Record<string, string>) => _paged<PerformanceReview>('/hr/performance/reviews/', params),
   submitSelf: (id: number, data: { self_rating: number; self_comments?: string }) =>
     apiClient.post<PerformanceReview>(`/hr/performance/reviews/${id}/submit-self/`, data),
   submitManager: (id: number, data: { manager_rating: number; manager_comments?: string; manager_strengths?: string; manager_improvements?: string }) =>
@@ -1461,23 +1469,23 @@ export const hrPerformanceApi = {
   calibrate: (id: number, data: { final_rating: number; hr_notes?: string; promotion_recommended?: boolean; salary_increase_pct?: number }) =>
     apiClient.post<PerformanceReview>(`/hr/performance/reviews/${id}/calibrate/`, data),
   acknowledge: (id: number) => apiClient.post<PerformanceReview>(`/hr/performance/reviews/${id}/acknowledge/`),
-  getGoals: (params?: Record<string, string>) => apiClient.get<EmployeeGoal[]>('/hr/performance/goals/', { params }),
+  getGoals: (params?: Record<string, string>) => _paged<EmployeeGoal>('/hr/performance/goals/', params),
   createGoal: (data: Partial<EmployeeGoal>) => apiClient.post<EmployeeGoal>('/hr/performance/goals/', data),
   updateGoal: (id: number, data: Partial<EmployeeGoal>) => apiClient.patch<EmployeeGoal>(`/hr/performance/goals/${id}/`, data),
 }
 
 export const hrSkillsApi = {
-  getAll: (params?: Record<string, string>) => apiClient.get<Skill[]>('/hr/skills/', { params }),
+  getAll: (params?: Record<string, string>) => _paged<Skill>('/hr/skills/', params),
   create: (data: Partial<Skill>) => apiClient.post<Skill>('/hr/skills/', data),
   getEmployeeSkills: (employeeId?: number) =>
-    apiClient.get<EmployeeSkill[]>('/hr/skills/employee-skills/', { params: employeeId ? { employee: String(employeeId) } : {} }),
+    _paged<EmployeeSkill>('/hr/skills/employee-skills/', employeeId ? { employee: String(employeeId) } : {}),
   addEmployeeSkill: (data: { employee: number; skill: number; level: number; notes?: string }) =>
     apiClient.post<EmployeeSkill>('/hr/skills/employee-skills/', data),
   removeEmployeeSkill: (id: number) => apiClient.delete(`/hr/skills/employee-skills/${id}/`),
 }
 
 export const hrTrainingApi = {
-  getAll: (params?: Record<string, string>) => apiClient.get<TrainingRecord[]>('/hr/training/', { params }),
+  getAll: (params?: Record<string, string>) => _paged<TrainingRecord>('/hr/training/', params),
   create: (data: FormData | Partial<TrainingRecord>) => apiClient.post<TrainingRecord>('/hr/training/', data),
   update: (id: number, data: Partial<TrainingRecord>) => apiClient.patch<TrainingRecord>(`/hr/training/${id}/`, data),
   delete: (id: number) => apiClient.delete(`/hr/training/${id}/`),
@@ -1578,13 +1586,13 @@ export interface RequisitionPipeline {
 }
 
 export const hrRecruitmentApi = {
-  getRequisitions: (params?: Record<string, string>) => apiClient.get<JobRequisition[]>('/hr/recruitment/requisitions/', { params }),
+  getRequisitions: (params?: Record<string, string>) => _paged<JobRequisition>('/hr/recruitment/requisitions/', params),
   createRequisition: (data: Partial<JobRequisition>) => apiClient.post<JobRequisition>('/hr/recruitment/requisitions/', data),
   updateRequisition: (id: number, data: Partial<JobRequisition>) => apiClient.patch<JobRequisition>(`/hr/recruitment/requisitions/${id}/`, data),
   openRequisition: (id: number) => apiClient.post<JobRequisition>(`/hr/recruitment/requisitions/${id}/open/`),
   closeRequisition: (id: number, action: 'filled' | 'cancel') => apiClient.post(`/hr/recruitment/requisitions/${id}/close/`, { action }),
   getPipeline: (id: number) => apiClient.get<RequisitionPipeline>(`/hr/recruitment/requisitions/${id}/pipeline/`),
-  getCandidates: (params?: Record<string, string>) => apiClient.get<Candidate[]>('/hr/recruitment/candidates/', { params }),
+  getCandidates: (params?: Record<string, string>) => _paged<Candidate>('/hr/recruitment/candidates/', params),
   createCandidate: (data: FormData | Partial<Candidate>) => apiClient.post<Candidate>('/hr/recruitment/candidates/', data),
   advanceCandidate: (id: number) => apiClient.post<Candidate>(`/hr/recruitment/candidates/${id}/advance/`),
   rejectCandidate: (id: number, reason?: string) => apiClient.post(`/hr/recruitment/candidates/${id}/reject/`, { reason }),
@@ -1715,26 +1723,26 @@ export interface Grievance {
 }
 
 export const hrBenefitsApi = {
-  getPlans: (params?: Record<string, string>) => apiClient.get<BenefitPlan[]>('/hr/benefits/plans/', { params }),
+  getPlans: (params?: Record<string, string>) => _paged<BenefitPlan>('/hr/benefits/plans/', params),
   createPlan: (data: Partial<BenefitPlan>) => apiClient.post<BenefitPlan>('/hr/benefits/plans/', data),
-  getEnrollments: (params?: Record<string, string>) => apiClient.get<EmployeeBenefit[]>('/hr/benefits/enrollments/', { params }),
+  getEnrollments: (params?: Record<string, string>) => _paged<EmployeeBenefit>('/hr/benefits/enrollments/', params),
   createEnrollment: (data: Partial<EmployeeBenefit>) => apiClient.post<EmployeeBenefit>('/hr/benefits/enrollments/', data),
   terminateEnrollment: (id: number, data?: { terminated_at?: string }) => apiClient.post<EmployeeBenefit>(`/hr/benefits/enrollments/${id}/terminate/`, data),
-  getAssets: (params?: Record<string, string>) => apiClient.get<Asset[]>('/hr/benefits/assets/', { params }),
+  getAssets: (params?: Record<string, string>) => _paged<Asset>('/hr/benefits/assets/', params),
   createAsset: (data: Partial<Asset>) => apiClient.post<Asset>('/hr/benefits/assets/', data),
-  getAssignments: (params?: Record<string, string>) => apiClient.get<AssetAssignment[]>('/hr/benefits/assignments/', { params }),
+  getAssignments: (params?: Record<string, string>) => _paged<AssetAssignment>('/hr/benefits/assignments/', params),
   createAssignment: (data: Partial<AssetAssignment>) => apiClient.post<AssetAssignment>('/hr/benefits/assignments/', data),
   returnAsset: (id: number, data: { returned_at?: string; condition_in?: string }) => apiClient.post<AssetAssignment>(`/hr/benefits/assignments/${id}/return/`, data),
-  getTravelRequests: (params?: Record<string, string>) => apiClient.get<TravelRequest[]>('/hr/benefits/travel/', { params }),
+  getTravelRequests: (params?: Record<string, string>) => _paged<TravelRequest>('/hr/benefits/travel/', params),
   createTravelRequest: (data: Partial<TravelRequest>) => apiClient.post<TravelRequest>('/hr/benefits/travel/', data),
   submitTravel: (id: number) => apiClient.post<TravelRequest>(`/hr/benefits/travel/${id}/submit/`),
   reviewTravel: (id: number, data: { approved: boolean; notes?: string }) => apiClient.post<TravelRequest>(`/hr/benefits/travel/${id}/review/`, data),
-  getExpenses: (params?: Record<string, string>) => apiClient.get<ExpenseClaim[]>('/hr/benefits/expenses/', { params }),
+  getExpenses: (params?: Record<string, string>) => _paged<ExpenseClaim>('/hr/benefits/expenses/', params),
   createExpense: (data: FormData | Partial<ExpenseClaim>) => apiClient.post<ExpenseClaim>('/hr/benefits/expenses/', data),
   submitExpense: (id: number) => apiClient.post<ExpenseClaim>(`/hr/benefits/expenses/${id}/submit/`),
   approveExpense: (id: number, data: { approved: boolean; approved_amount?: number; notes?: string }) => apiClient.post<ExpenseClaim>(`/hr/benefits/expenses/${id}/approve/`, data),
   markPaid: (id: number) => apiClient.post<ExpenseClaim>(`/hr/benefits/expenses/${id}/mark_paid/`),
-  getGrievances: (params?: Record<string, string>) => apiClient.get<Grievance[]>('/hr/benefits/grievances/', { params }),
+  getGrievances: (params?: Record<string, string>) => _paged<Grievance>('/hr/benefits/grievances/', params),
   createGrievance: (data: Partial<Grievance>) => apiClient.post<Grievance>('/hr/benefits/grievances/', data),
   assignGrievance: (id: number) => apiClient.post<Grievance>(`/hr/benefits/grievances/${id}/assign/`),
   resolveGrievance: (id: number, data: { resolution: string }) => apiClient.post<Grievance>(`/hr/benefits/grievances/${id}/resolve/`, data),

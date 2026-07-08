@@ -71,7 +71,7 @@ export default function SkillsPage() {
                     <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontSize: 12 }}>{t.cost ? `${t.currency} ${parseFloat(t.cost).toLocaleString()}` : '—'}</td>
                     <td style={{ padding: '10px 16px' }}>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                        {t.skills_list.map(s => <Badge key={s.id} style={{ fontSize: 10, background: 'var(--status-warning-bg)', color: 'var(--brand)' }}>{s.name}</Badge>)}
+                        {(t.skills_list ?? []).map(s => <Badge key={s.id} style={{ fontSize: 10, background: 'var(--status-warning-bg)', color: 'var(--brand)' }}>{s.name}</Badge>)}
                       </div>
                     </td>
                     <td style={{ padding: '10px 16px' }}>

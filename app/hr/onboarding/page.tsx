@@ -56,7 +56,7 @@ export default function OnboardingPage() {
             </div>
             <ProgressBar pct={proc.completion_pct} />
             <div style={{ marginTop: 'var(--space-3)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {proc.task_instances.map(task => (
+              {(proc.task_instances ?? []).map(task => (
                 <div key={task.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 6, background: task.status === 'completed' ? 'var(--status-success-bg)' : 'var(--surface-subtle)', border: '1px solid var(--card-border)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ fontSize: 16 }}>{task.status === 'completed' ? '✅' : task.status === 'skipped' ? '⏭️' : '🔲'}</span>
