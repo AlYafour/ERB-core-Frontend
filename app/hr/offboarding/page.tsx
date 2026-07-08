@@ -10,7 +10,7 @@ function ClearanceItem({ label, done }: { label: string; done: boolean }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--text-sm)' }}>
       <span style={{ fontSize: 16 }}>{done ? '✅' : '🔲'}</span>
-      <span style={{ color: done ? 'var(--color-text-muted)' : 'var(--color-text-primary)', textDecoration: done ? 'line-through' : 'none' }}>{label}</span>
+      <span style={{ color: done ? 'var(--text-tertiary)' : 'var(--text-primary)', textDecoration: done ? 'line-through' : 'none' }}>{label}</span>
     </div>
   )
 }
@@ -42,20 +42,20 @@ export default function OffboardingPage() {
   return (
     <div style={{ padding: 'var(--space-6)', maxWidth: 1280, margin: '0 auto' }}>
       <div style={{ marginBottom: 'var(--space-6)' }}>
-        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-text-primary)' }}>Employee Offboarding</h1>
-        <p style={{ color: 'var(--color-text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>Exit management and clearance tracking</p>
+        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Employee Offboarding</h1>
+        <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>Exit management and clearance tracking</p>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 'var(--space-4)' }}>
         {processes.map(proc => (
-          <div key={proc.id} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, padding: 'var(--space-5)' }}>
+          <div key={proc.id} style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-5)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
               <div>
                 <div style={{ fontWeight: 700 }}>{proc.employee_name}</div>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>Last day: {proc.last_working_day}</div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>Last day: {proc.last_working_day}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: 700, fontSize: 'var(--text-lg)', color: proc.clearance_pct === 100 ? '#22c55e' : '#f59e0b' }}>{proc.clearance_pct}%</div>
-                <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>clearance</div>
+                <div style={{ fontWeight: 700, fontSize: 'var(--text-lg)', color: proc.clearance_pct === 100 ? 'var(--status-success)' : 'var(--status-warning)' }}>{proc.clearance_pct}%</div>
+                <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>clearance</div>
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 'var(--space-4)' }}>
@@ -74,14 +74,14 @@ export default function OffboardingPage() {
             </div>
             {proc.clearance_pct === 100 && (
               <HasPermission permission="hr_onboarding:manage">
-                <Button style={{ width: '100%', background: '#22c55e', color: '#fff' }} onClick={() => handleComplete(proc)}>
+                <Button style={{ width: '100%', background: 'var(--status-success)', color: '#fff' }} onClick={() => handleComplete(proc)}>
                   Mark Offboarding Complete
                 </Button>
               </HasPermission>
             )}
           </div>
         ))}
-        {processes.length === 0 && <div style={{ padding: 48, textAlign: 'center', color: 'var(--color-text-muted)', gridColumn: '1/-1' }}>No active offboarding processes.</div>}
+        {processes.length === 0 && <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-tertiary)', gridColumn: '1/-1' }}>No active offboarding processes.</div>}
       </div>
     </div>
   )

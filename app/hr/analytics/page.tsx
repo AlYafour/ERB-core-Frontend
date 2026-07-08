@@ -8,14 +8,14 @@ import { toast } from '@/lib/hooks/use-toast'
 
 // ── Mini chart helpers (inline SVG bar charts — no external deps) ─────────────
 
-function BarChart({ data, valueKey, labelKey, color = '#3b82f6', height = 120 }: {
+function BarChart({ data, valueKey, labelKey, color = 'var(--brand)', height = 120 }: {
   data: Record<string, unknown>[]
   valueKey: string
   labelKey: string
   color?: string
   height?: number
 }) {
-  if (!data.length) return <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>No data</div>
+  if (!data.length) return <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>No data</div>
   const values = data.map(d => Number(d[valueKey]) || 0)
   const max = Math.max(...values, 1)
   const barW = Math.max(8, Math.floor(400 / data.length) - 4)
@@ -32,7 +32,7 @@ function BarChart({ data, valueKey, labelKey, color = '#3b82f6', height = 120 }:
               <rect x={x} y={height - barH} width={barW} height={barH} fill={color} rx={2} opacity={0.85} />
               <title>{String(d[labelKey])}: {val.toLocaleString()}</title>
               {data.length <= 12 && (
-                <text x={x + barW / 2} y={height + 14} textAnchor="middle" fontSize={9} fill="var(--color-text-muted)">
+                <text x={x + barW / 2} y={height + 14} textAnchor="middle" fontSize={9} fill="var(--text-tertiary)">
                   {String(d[labelKey]).slice(0, 6)}
                 </text>
               )}
@@ -44,16 +44,16 @@ function BarChart({ data, valueKey, labelKey, color = '#3b82f6', height = 120 }:
   )
 }
 
-function StatCard({ icon, label, value, sub, color = '#3b82f6' }: {
+function StatCard({ icon, label, value, sub, color = 'var(--brand)' }: {
   icon: string; label: string; value: string | number; sub?: string; color?: string
 }) {
   return (
-    <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, padding: 'var(--space-4)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-4)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
       <div style={{ fontSize: 28, lineHeight: 1 }}>{icon}</div>
       <div>
-        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginBottom: 2 }}>{label}</div>
+        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 2 }}>{label}</div>
         <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-        {sub && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginTop: 2 }}>{sub}</div>}
+        {sub && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>{sub}</div>}
       </div>
     </div>
   )
@@ -61,9 +61,9 @@ function StatCard({ icon, label, value, sub, color = '#3b82f6' }: {
 
 function Section({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, padding: 'var(--space-5)', marginBottom: 'var(--space-4)' }}>
+    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-5)', marginBottom: 'var(--space-4)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
-        <h2 style={{ fontWeight: 700, fontSize: 'var(--text-base)', color: 'var(--color-text-primary)' }}>{title}</h2>
+        <h2 style={{ fontWeight: 700, fontSize: 'var(--text-base)', color: 'var(--text-primary)' }}>{title}</h2>
         {action}
       </div>
       {children}
@@ -122,8 +122,8 @@ export default function AnalyticsPage() {
     <div style={{ padding: 'var(--space-6)', maxWidth: 1440, margin: '0 auto' }}>
       <div style={{ marginBottom: 'var(--space-6)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-text-primary)' }}>HR Analytics</h1>
-          <p style={{ color: 'var(--color-text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>Live workforce metrics — cached, updated hourly</p>
+          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)' }}>HR Analytics</h1>
+          <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>Live workforce metrics — cached, updated hourly</p>
         </div>
         <HasPermission permission="hr_analytics:export">
           <Button variant="ghost" size="sm" onClick={() => hrAnalyticsApi.invalidateCache().then(() => toast('Cache cleared — data will refresh', 'success'))}>
@@ -134,12 +134,12 @@ export default function AnalyticsPage() {
 
       {/* KPI Strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
-        <StatCard icon="👥" label="Total Headcount" value={headcount?.total ?? '—'} color="#3b82f6" />
-        <StatCard icon="✅" label="Attendance Rate" value={attendance ? `${attendance.attendance_rate}%` : '—'} color="#22c55e" />
-        <StatCard icon="📅" label="Absence Rate" value={attendance ? `${attendance.absence_rate}%` : '—'} color="#f59e0b" />
-        <StatCard icon="⏰" label="Overtime Hours" value={overtime ? overtime.total_overtime_hours.toLocaleString() : '—'} sub="this period" color="#8b5cf6" />
-        <StatCard icon="📉" label="Annual Turnover" value={turnover ? `${turnover.annual_turnover_rate}%` : '—'} sub={`${currentYear}`} color="#ef4444" />
-        <StatCard icon="💸" label="Leave Liability" value={liability ? `AED ${liability.total_liability.toLocaleString()}` : '—'} color="#f59e0b" />
+        <StatCard icon="👥" label="Total Headcount" value={headcount?.total ?? '—'} color="var(--brand)" />
+        <StatCard icon="✅" label="Attendance Rate" value={attendance ? `${attendance.attendance_rate}%` : '—'} color="var(--status-success)" />
+        <StatCard icon="📅" label="Absence Rate" value={attendance ? `${attendance.absence_rate}%` : '—'} color="var(--status-warning)" />
+        <StatCard icon="⏰" label="Overtime Hours" value={overtime ? overtime.total_overtime_hours.toLocaleString() : '—'} sub="this period" color="var(--brand)" />
+        <StatCard icon="📉" label="Annual Turnover" value={turnover ? `${turnover.annual_turnover_rate}%` : '—'} sub={`${currentYear}`} color="var(--status-error)" />
+        <StatCard icon="💸" label="Leave Liability" value={liability ? `AED ${liability.total_liability.toLocaleString()}` : '—'} color="var(--status-warning)" />
       </div>
 
       {/* Charts grid */}
@@ -149,7 +149,7 @@ export default function AnalyticsPage() {
         <Section title="Headcount" action={
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <select value={headcountGroup} onChange={e => setHeadcountGroup(e.target.value)}
-              style={{ fontSize: 12, padding: '4px 8px', border: '1px solid var(--color-border)', borderRadius: 4 }}>
+              style={{ fontSize: 12, padding: '4px 8px', border: '1px solid var(--card-border)', borderRadius: 4 }}>
               {['department', 'location', 'group', 'nationality', 'gender'].map(g => <option key={g} value={g}>{g}</option>)}
             </select>
             <HasPermission permission="hr_analytics:export">
@@ -157,12 +157,12 @@ export default function AnalyticsPage() {
             </HasPermission>
           </div>
         }>
-          <BarChart data={headcount?.rows ?? []} valueKey="count" labelKey="label" color="#3b82f6" />
+          <BarChart data={headcount?.rows ?? []} valueKey="count" labelKey="label" color="var(--brand)" />
           <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
             {(headcount?.rows ?? []).slice(0, 8).map(r => (
-              <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', padding: '3px 0', borderBottom: '1px solid var(--color-border)' }}>
-                <span style={{ color: 'var(--color-text-secondary)' }}>{r.label}</span>
-                <strong style={{ color: 'var(--color-text-primary)' }}>{r.count}</strong>
+              <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', padding: '3px 0', borderBottom: '1px solid var(--card-border)' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>{r.label}</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{r.count}</strong>
               </div>
             ))}
           </div>
@@ -170,7 +170,7 @@ export default function AnalyticsPage() {
 
         {/* 12-month trend */}
         <Section title="Headcount Trend (12 months)">
-          <BarChart data={trend} valueKey="count" labelKey="label" color="#8b5cf6" />
+          <BarChart data={trend} valueKey="count" labelKey="label" color="var(--brand)" />
         </Section>
 
         {/* Payroll cost */}
@@ -179,19 +179,19 @@ export default function AnalyticsPage() {
             <Button size="sm" variant="ghost" onClick={() => downloadExcel('payroll_cost', { months: 6 })}>Export</Button>
           </HasPermission>
         }>
-          <BarChart data={payrollCost} valueKey="net" labelKey="label" color="#22c55e" />
+          <BarChart data={payrollCost} valueKey="net" labelKey="label" color="var(--status-success)" />
           <div style={{ marginTop: 8, overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
               <thead>
-                <tr>{['Period', 'Employees', 'Gross', 'Net'].map(h => <th key={h} style={{ padding: '4px 8px', textAlign: 'left', color: 'var(--color-text-muted)', fontWeight: 600 }}>{h}</th>)}</tr>
+                <tr>{['Period', 'Employees', 'Gross', 'Net'].map(h => <th key={h} style={{ padding: '4px 8px', textAlign: 'left', color: 'var(--text-tertiary)', fontWeight: 600 }}>{h}</th>)}</tr>
               </thead>
               <tbody>
                 {payrollCost.slice(-4).map(r => (
-                  <tr key={r.label} style={{ borderTop: '1px solid var(--color-border)' }}>
+                  <tr key={r.label} style={{ borderTop: '1px solid var(--card-border)' }}>
                     <td style={{ padding: '4px 8px' }}>{r.label}</td>
                     <td style={{ padding: '4px 8px' }}>{r.employees}</td>
                     <td style={{ padding: '4px 8px', fontVariantNumeric: 'tabular-nums' }}>{r.gross.toLocaleString()}</td>
-                    <td style={{ padding: '4px 8px', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: '#22c55e' }}>{r.net.toLocaleString()}</td>
+                    <td style={{ padding: '4px 8px', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: 'var(--status-success)' }}>{r.net.toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
@@ -205,10 +205,10 @@ export default function AnalyticsPage() {
             <Button size="sm" variant="ghost" onClick={() => downloadExcel('turnover', { year: currentYear })}>Export</Button>
           </HasPermission>
         }>
-          <BarChart data={turnover?.monthly ?? []} valueKey="departed" labelKey="label" color="#ef4444" />
+          <BarChart data={turnover?.monthly ?? []} valueKey="departed" labelKey="label" color="var(--status-error)" />
           <div style={{ marginTop: 8, display: 'flex', gap: 24 }}>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>Annual rate: <strong style={{ color: '#ef4444' }}>{turnover?.annual_turnover_rate ?? 0}%</strong></div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>Total departed: <strong>{turnover?.total_departed ?? 0}</strong></div>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Annual rate: <strong style={{ color: 'var(--status-error)' }}>{turnover?.annual_turnover_rate ?? 0}%</strong></div>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Total departed: <strong>{turnover?.total_departed ?? 0}</strong></div>
           </div>
         </Section>
 
@@ -223,25 +223,25 @@ export default function AnalyticsPage() {
         }>
           <div style={{ overflowX: 'auto', maxHeight: 300 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-xs)' }}>
-              <thead style={{ position: 'sticky', top: 0, background: 'var(--color-surface)' }}>
+              <thead style={{ position: 'sticky', top: 0, background: 'var(--card-bg)' }}>
                 <tr>{['Employee', 'Department', 'Balance Days', 'Daily Rate', 'Liability (AED)'].map(h => (
-                  <th key={h} style={{ padding: '6px 12px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-secondary)', borderBottom: '1px solid var(--color-border)' }}>{h}</th>
+                  <th key={h} style={{ padding: '6px 12px', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)', borderBottom: '1px solid var(--card-border)' }}>{h}</th>
                 ))}</tr>
               </thead>
               <tbody>
                 {liability.rows.slice(0, 20).map((r, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid var(--color-border)', background: i % 2 ? 'var(--color-surface-hover)' : 'transparent' }}>
+                  <tr key={i} style={{ borderBottom: '1px solid var(--card-border)', background: i % 2 ? 'var(--surface-subtle)' : 'transparent' }}>
                     <td style={{ padding: '6px 12px', fontWeight: 500 }}>{r.employee_name}</td>
-                    <td style={{ padding: '6px 12px', color: 'var(--color-text-secondary)' }}>{r.department || '—'}</td>
+                    <td style={{ padding: '6px 12px', color: 'var(--text-secondary)' }}>{r.department || '—'}</td>
                     <td style={{ padding: '6px 12px', fontVariantNumeric: 'tabular-nums' }}>{r.balance_days}</td>
                     <td style={{ padding: '6px 12px', fontVariantNumeric: 'tabular-nums' }}>{r.daily_rate.toLocaleString()}</td>
-                    <td style={{ padding: '6px 12px', fontWeight: 700, color: '#f59e0b', fontVariantNumeric: 'tabular-nums' }}>{r.liability.toLocaleString()}</td>
+                    <td style={{ padding: '6px 12px', fontWeight: 700, color: 'var(--status-warning)', fontVariantNumeric: 'tabular-nums' }}>{r.liability.toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div style={{ marginTop: 12, padding: '8px 12px', background: '#fef3c7', borderRadius: 6, fontSize: 'var(--text-sm)', fontWeight: 600, color: '#92400e' }}>
+          <div style={{ marginTop: 12, padding: '8px 12px', background: 'var(--status-warning-bg)', borderRadius: 6, fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--status-warning)' }}>
             Total Liability: AED {liability.total_liability.toLocaleString()} across {liability.employee_count} employees
           </div>
         </Section>

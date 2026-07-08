@@ -9,24 +9,29 @@ import HasPermission from '@/components/shared/HasPermission'
 import { confirm, toast } from '@/lib/hooks/use-toast'
 
 const REQ_STATUS_COLORS: Record<string, string> = {
-  draft: '#94a3b8', open: '#22c55e', on_hold: '#f59e0b', filled: '#3b82f6', cancelled: '#ef4444',
+  draft: 'var(--text-tertiary)', open: 'var(--status-success)', on_hold: 'var(--status-warning)', filled: 'var(--brand)', cancelled: 'var(--status-error)',
 }
 const CAND_STATUS_COLORS: Record<string, string> = {
-  applied: '#94a3b8', screening: '#f59e0b', interview: '#3b82f6',
-  offer_sent: '#8b5cf6', offer_accepted: '#22c55e', offer_declined: '#ef4444',
-  hired: '#16a34a', rejected: '#dc2626', withdrawn: '#6b7280',
+  applied: 'var(--text-tertiary)', screening: 'var(--status-warning)', interview: 'var(--brand)',
+  offer_sent: 'var(--brand)', offer_accepted: 'var(--status-success)', offer_declined: 'var(--status-error)',
+  hired: 'var(--status-success)', rejected: 'var(--status-error)', withdrawn: 'var(--text-secondary)',
+}
+const CAND_STATUS_BG: Record<string, string> = {
+  applied: 'rgba(0,0,0,0.06)', screening: 'var(--status-warning-bg)', interview: 'var(--status-warning-bg)',
+  offer_sent: 'var(--status-warning-bg)', offer_accepted: 'var(--status-success-bg)', offer_declined: 'var(--status-error-bg)',
+  hired: 'var(--status-success-bg)', rejected: 'var(--status-error-bg)', withdrawn: 'rgba(0,0,0,0.06)',
 }
 
 const PIPELINE_STAGES = ['applied', 'screening', 'interview', 'offer_sent', 'offer_accepted', 'hired']
 
 function RequisitionCard({ req, onClick }: { req: JobRequisition; onClick: () => void }) {
   return (
-    <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, padding: 'var(--space-4)', cursor: 'pointer' }} onClick={onClick}>
+    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-4)', cursor: 'pointer' }} onClick={onClick}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
         <div style={{ fontWeight: 700, fontSize: 'var(--text-base)' }}>{req.title}</div>
         <Badge style={{ background: REQ_STATUS_COLORS[req.status], color: '#fff', fontSize: 11 }}>{req.status_display}</Badge>
       </div>
-      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginBottom: 8 }}>
+      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 8 }}>
         {req.department_name || 'No department'} · {req.location || 'Remote/TBD'} · {req.contract_type_display}
       </div>
       <div style={{ display: 'flex', gap: 16, fontSize: 'var(--text-xs)' }}>
@@ -36,7 +41,7 @@ function RequisitionCard({ req, onClick }: { req: JobRequisition; onClick: () =>
         {req.target_date && <span>📅 {req.target_date}</span>}
       </div>
       {(req.salary_min || req.salary_max) && (
-        <div style={{ marginTop: 8, fontSize: 'var(--text-xs)', color: '#22c55e', fontWeight: 600 }}>
+        <div style={{ marginTop: 8, fontSize: 'var(--text-xs)', color: 'var(--status-success)', fontWeight: 600 }}>
           {req.currency} {req.salary_min ? Number(req.salary_min).toLocaleString() : '?'} — {req.salary_max ? Number(req.salary_max).toLocaleString() : '?'}
         </div>
       )}
@@ -76,32 +81,32 @@ function KanbanBoard({ pipeline }: { pipeline: RequisitionPipeline }) {
           if (!col) return null
           return (
             <div key={stage} style={{ minWidth: 210, flex: '0 0 210px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, padding: '6px 10px', background: CAND_STATUS_COLORS[stage] + '20', borderRadius: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, padding: '6px 10px', background: CAND_STATUS_BG[stage], borderRadius: 6 }}>
                 <span style={{ fontWeight: 600, fontSize: 'var(--text-xs)', color: CAND_STATUS_COLORS[stage] }}>{col.label}</span>
-                <span style={{ fontWeight: 700, fontSize: 'var(--text-xs)', color: CAND_STATUS_COLORS[stage], background: CAND_STATUS_COLORS[stage] + '30', borderRadius: 10, padding: '1px 7px' }}>{col.count}</span>
+                <span style={{ fontWeight: 700, fontSize: 'var(--text-xs)', color: CAND_STATUS_COLORS[stage], background: CAND_STATUS_BG[stage], borderRadius: 10, padding: '1px 7px' }}>{col.count}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {col.candidates.map(c => (
-                  <div key={c.id} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '10px 12px' }}>
+                  <div key={c.id} style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 6, padding: '10px 12px' }}>
                     <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', marginBottom: 2 }}>{c.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 8 }}>{c.source || 'Direct'}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 8 }}>{c.source || 'Direct'}</div>
                     <HasPermission permission="hr_recruitment:manage">
                       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                         {stage !== 'hired' && stage !== 'offer_accepted' && (
                           <Button size="sm" variant="ghost" style={{ fontSize: 10, padding: '2px 8px' }} onClick={() => advanceMutation.mutate(c.id)}>Next</Button>
                         )}
                         {stage === 'offer_accepted' && (
-                          <Button size="sm" style={{ fontSize: 10, padding: '2px 8px', background: '#22c55e', color: '#fff' }} onClick={() => handleHire(c.id)}>Hire</Button>
+                          <Button size="sm" style={{ fontSize: 10, padding: '2px 8px', background: 'var(--status-success)', color: '#fff' }} onClick={() => handleHire(c.id)}>Hire</Button>
                         )}
                         {stage !== 'hired' && (
-                          <Button size="sm" variant="ghost" style={{ fontSize: 10, padding: '2px 8px', color: '#ef4444' }} onClick={() => handleReject(c.id)}>Reject</Button>
+                          <Button size="sm" variant="ghost" style={{ fontSize: 10, padding: '2px 8px', color: 'var(--status-error)' }} onClick={() => handleReject(c.id)}>Reject</Button>
                         )}
                       </div>
                     </HasPermission>
                   </div>
                 ))}
                 {col.candidates.length === 0 && (
-                  <div style={{ padding: '16px 12px', textAlign: 'center', fontSize: 11, color: 'var(--color-text-muted)', border: '1px dashed var(--color-border)', borderRadius: 6 }}>Empty</div>
+                  <div style={{ padding: '16px 12px', textAlign: 'center', fontSize: 11, color: 'var(--text-tertiary)', border: '1px dashed var(--card-border)', borderRadius: 6 }}>Empty</div>
                 )}
               </div>
             </div>
@@ -140,7 +145,7 @@ export default function RecruitmentPage() {
     <div style={{ padding: 'var(--space-6)', maxWidth: 1440, margin: '0 auto' }}>
       <div style={{ marginBottom: 'var(--space-6)' }}>
         <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700 }}>Recruitment</h1>
-        <p style={{ color: 'var(--color-text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>Job requisitions and candidate pipeline management</p>
+        <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>Job requisitions and candidate pipeline management</p>
       </div>
 
       {/* KPI strip */}
@@ -150,8 +155,8 @@ export default function RecruitmentPage() {
           { label: 'Total Applicants', value: totalApplicants },
           { label: 'Active in Pipeline', value: totalActive },
         ].map(({ label, value }) => (
-          <div key={label} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, padding: 'var(--space-4)' }}>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{label}</div>
+          <div key={label} style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-4)' }}>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{label}</div>
             <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
           </div>
         ))}
@@ -169,7 +174,7 @@ export default function RecruitmentPage() {
           <div style={{ display: 'flex', gap: 8, marginTop: 'var(--space-4)', marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
             {['all', 'draft', 'open', 'on_hold', 'filled', 'cancelled'].map(s => (
               <button key={s} onClick={() => setStatusFilter(s)}
-                style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--color-border)', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: statusFilter === s ? 700 : 400, background: statusFilter === s ? 'var(--color-primary)' : 'transparent', color: statusFilter === s ? '#fff' : 'var(--color-text-primary)' }}>
+                style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--card-border)', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: statusFilter === s ? 700 : 400, background: statusFilter === s ? 'var(--brand)' : 'transparent', color: statusFilter === s ? '#fff' : 'var(--text-primary)' }}>
                 {s === 'all' ? 'All' : s.replace('_', ' ')}
               </button>
             ))}
@@ -181,13 +186,13 @@ export default function RecruitmentPage() {
                 {req.status === 'draft' && (
                   <HasPermission permission="hr_recruitment:manage">
                     <div style={{ marginTop: 6, display: 'flex', gap: 6 }}>
-                      <Button size="sm" variant="ghost" style={{ fontSize: 12, color: '#22c55e' }} onClick={() => openMutation.mutate(req.id)}>Open Position</Button>
+                      <Button size="sm" variant="ghost" style={{ fontSize: 12, color: 'var(--status-success)' }} onClick={() => openMutation.mutate(req.id)}>Open Position</Button>
                     </div>
                   </HasPermission>
                 )}
               </div>
             ))}
-            {requisitions.length === 0 && <p style={{ color: 'var(--color-text-muted)', gridColumn: '1/-1', padding: 32 }}>No requisitions found.</p>}
+            {requisitions.length === 0 && <p style={{ color: 'var(--text-tertiary)', gridColumn: '1/-1', padding: 32 }}>No requisitions found.</p>}
           </div>
         </TabsContent>
 
@@ -196,16 +201,16 @@ export default function RecruitmentPage() {
             <div style={{ marginTop: 'var(--space-4)' }}>
               <div style={{ marginBottom: 'var(--space-3)', display: 'flex', alignItems: 'center', gap: 12 }}>
                 <select value={selectedReq.id} onChange={e => setSelectedReq(requisitions.find(r => r.id === +e.target.value) || null)}
-                  style={{ fontSize: 12, padding: '6px 10px', border: '1px solid var(--color-border)', borderRadius: 4 }}>
+                  style={{ fontSize: 12, padding: '6px 10px', border: '1px solid var(--card-border)', borderRadius: 4 }}>
                   {requisitions.filter(r => r.status === 'open').map(r => <option key={r.id} value={r.id}>{r.title}</option>)}
                 </select>
                 <Badge style={{ background: REQ_STATUS_COLORS[selectedReq.status], color: '#fff', fontSize: 11 }}>{selectedReq.status_display}</Badge>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{selectedReq.active_candidates_count} active candidates</span>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{selectedReq.active_candidates_count} active candidates</span>
               </div>
               {pipeline && <KanbanBoard pipeline={pipeline} />}
             </div>
           )}
-          {!selectedReq && <p style={{ marginTop: 'var(--space-4)', color: 'var(--color-text-muted)' }}>Select a requisition to view pipeline.</p>}
+          {!selectedReq && <p style={{ marginTop: 'var(--space-4)', color: 'var(--text-tertiary)' }}>Select a requisition to view pipeline.</p>}
         </TabsContent>
       </Tabs>
     </div>
