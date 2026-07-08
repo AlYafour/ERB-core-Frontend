@@ -227,6 +227,9 @@ export default function Sidebar() {
     { name: 'Employees',               href: '/hr/employees',          perm: 'hr.hr_employee.view',   icon: <UserIcon className="w-4 h-4" /> },
     { name: 'Employee Categories',         href: '/hr/groups',             perm: 'hr.hr_employee.view',   icon: <UsersIcon className="w-4 h-4" /> },
     { name: 'Work Teams',              href: '/hr/teams',              perm: 'hr.hr_employee.view',   icon: <UsersIcon className="w-4 h-4" /> },
+    { name: 'Team Types',              href: '/settings/team-types',   perm: 'hr.hr_employee.view',   icon: <UsersIcon className="w-4 h-4" /> },
+    { name: 'Cost Categories',         href: '/settings/cost-categories', perm: 'hr.hr_employee.view', icon: <DollarIcon className="w-4 h-4" /> },
+    { name: 'Operation Labels',        href: '/settings/labels',       perm: 'hr.hr_settings.view',   icon: <SettingsIcon className="w-4 h-4" /> },
     { name: 'Work Shifts',             href: '/hr/shifts',             perm: 'hr.hr_employee.view',   icon: <ClockIcon className="w-4 h-4" /> },
     { name: t('nav', 'hrDepartments'), href: '/hr/departments',        perm: 'hr.hr_employee.view',   icon: <BuildingIcon className="w-4 h-4" /> },
     { name: 'Positions',               href: '/hr/positions',          perm: 'hr.hr_employee.view',   icon: <UserIcon className="w-4 h-4" /> },
@@ -266,9 +269,6 @@ export default function Sidebar() {
     { name: t('nav', 'settings'), href: '/settings/roles', icon: UsersIcon, adminOnly: true, subItems: [
       { name: 'Roles & Permissions',   href: '/settings/roles'          },
       { name: 'Company & Branding',    href: '/settings/company'        },
-      { name: 'Team Types',            href: '/settings/team-types'     },
-      { name: 'Cost Categories',       href: '/settings/cost-categories'},
-      { name: 'Operation Labels',      href: '/settings/labels'         },
     ]},
   ];
 
