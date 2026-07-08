@@ -44,6 +44,7 @@ export default function EmployeesPage() {
   const [grpOverrides,    setGrpOverrides]    = useState<Record<number, GroupRec>>({});
   const [mgrOverrides,    setMgrOverrides]    = useState<Record<number, ManagerRec>>({});
   const [activeOverrides, setActiveOverrides] = useState<Record<number, boolean>>({});
+  const [isMgrOverrides,  setIsMgrOverrides]  = useState<Record<number, boolean>>({});
   const [deletedIds,      setDeletedIds]      = useState<Set<number>>(new Set());
 
   useEffect(() => { if (me && !admin) router.replace('/dashboard'); }, [me, admin, router]);
@@ -80,9 +81,12 @@ export default function EmployeesPage() {
   const resolveMgrId = useCallback((emp: HREmployee) =>
     emp.id in mgrOverrides ? mgrOverrides[emp.id]?.id ?? null : emp.direct_manager ?? null, [mgrOverrides]);
 
+  const resolveIsManager = useCallback((emp: HREmployee) =>
+    emp.id in isMgrOverrides ? isMgrOverrides[emp.id] : emp.is_manager, [isMgrOverrides]);
+
   const managerCandidates = useMemo(
-    () => employees.filter(e => e.is_manager && resolveIsActive(e)),
-    [employees, resolveIsActive],
+    () => employees.filter(e => resolveIsManager(e) && resolveIsActive(e)),
+    [employees, resolveIsManager, resolveIsActive],
   );
 
   // ── Client-side filter + search ────────────────────────────
@@ -101,12 +105,12 @@ export default function EmployeesPage() {
       if (deptFilter  && e.department_name !== deptFilter) return false;
       if (posFilter   && e.position_title  !== posFilter)  return false;
       if (groupFilter && String(e.employee_group) !== groupFilter) return false;
-      if (mgrFilter === 'yes' && !e.is_manager) return false;
-      if (mgrFilter === 'no'  &&  e.is_manager) return false;
+      if (mgrFilter === 'yes' && !resolveIsManager(e)) return false;
+      if (mgrFilter === 'no'  &&  resolveIsManager(e)) return false;
       const q = search.toLowerCase();
       return !q || e.full_name.toLowerCase().includes(q) || e.employee_id.toLowerCase().includes(q);
     });
-  }, [employees, deletedIds, resolveIsActive, search, deptFilter, posFilter, groupFilter, statusFilter, mgrFilter]);
+  }, [employees, deletedIds, resolveIsActive, resolveIsManager, search, deptFilter, posFilter, groupFilter, statusFilter, mgrFilter]);
 
   const departments = useMemo(
     () => Array.from(new Set(employees.map(e => e.department_name).filter(Boolean))).sort() as string[],
@@ -143,6 +147,16 @@ export default function EmployeesPage() {
       toast(vars.managerId !== null ? 'Manager assigned' : 'Manager removed', 'success');
     },
     onError: () => toast('Failed to update manager', 'error'),
+  });
+
+  const toggleManagerMutation = useMutation({
+    mutationFn: ({ id, value }: { id: number; value: boolean }) =>
+      hrEmployeesApi.update(id, { is_manager: value } as Partial<HREmployee>),
+    onSuccess: (_, vars) => {
+      setIsMgrOverrides(p => ({ ...p, [vars.id]: vars.value }));
+      toast(vars.value ? 'Marked as manager' : 'Manager flag removed', 'success');
+    },
+    onError: () => toast('Failed to update manager flag', 'error'),
   });
 
   const activateMutation = useMutation({
@@ -285,6 +299,29 @@ export default function EmployeesPage() {
       render: emp => {
         const isActive = resolveIsActive(emp);
         return <Badge variant={isActive ? 'success' : 'default'}>{isActive ? 'Active' : 'Inactive'}</Badge>;
+      },
+    },
+    {
+      key: 'is_manager',
+      header: 'Manager',
+      render: emp => {
+        const isMgr = resolveIsManager(emp);
+        return (
+          <button
+            onClick={e => { e.stopPropagation(); if (canEdit) toggleManagerMutation.mutate({ id: emp.id, value: !isMgr }); }}
+            title={canEdit ? (isMgr ? 'Remove manager flag' : 'Mark as manager') : undefined}
+            style={{
+              background: isMgr ? 'var(--status-success-bg, #e6f9f0)' : 'var(--surface-subtle)',
+              color: isMgr ? 'var(--status-success)' : 'var(--text-tertiary)',
+              border: `1px solid ${isMgr ? 'var(--status-success)' : 'var(--card-border)'}`,
+              borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600,
+              cursor: canEdit ? 'pointer' : 'default',
+              whiteSpace: 'nowrap', transition: 'all 0.15s',
+            }}
+          >
+            {isMgr ? 'Manager' : 'Staff'}
+          </button>
+        );
       },
     },
     {

@@ -16,6 +16,10 @@ import type { EmployeeGroup, HREmployee, HRShift } from '@/types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+function slugifyCode(name: string): string {
+  return name.toUpperCase().trim().replace(/\s+/g, '_').replace(/[^A-Z0-9_]/g, '').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+}
+
 function fmtTime(t: string): string {
   if (!t) return '';
   const [h, m] = t.split(':');
@@ -77,7 +81,7 @@ function GroupModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.code.trim()) return;
+    if (!form.name.trim()) return;
     onSave(form);
   };
 
@@ -95,7 +99,7 @@ function GroupModal({
 
   const managerOptions = useMemo(() => [
     { value: '__none__', label: '— No default manager —', searchText: 'none' },
-    ...activeEmployees.map(e => ({
+    ...activeEmployees.filter(e => e.is_manager).map(e => ({
       value: e.id,
       label: e.full_name ?? `${e.user?.first_name ?? ''} ${e.user?.last_name ?? ''}`.trim(),
       searchText: `${e.full_name ?? ''} ${e.employee_id ?? ''}`,
@@ -120,40 +124,26 @@ function GroupModal({
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
-          {/* Code */}
-          <div>
-            <label style={LABEL_STYLE}>
-              Code <span style={{ color: 'var(--color-error)' }}>*</span>
-            </label>
-            <input
-              value={form.code}
-              onChange={e => set('code', e.target.value.toUpperCase())}
-              onBlur={e => set('code', e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '').trim())}
-              placeholder="e.g. SITE, OFFICE, MAINTENANCE"
-              required
-              autoComplete="off"
-              spellCheck={false}
-              className="form-input"
-              style={{ width: '100%', fontFamily: 'monospace', fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}
-              maxLength={30}
-            />
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
-              Uppercase letters, numbers, underscores only. Used by the approval engine — cannot change once assigned.
-            </p>
-          </div>
-
           {/* Name */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
             <div>
               <label style={LABEL_STYLE}>Name <span style={{ color: 'var(--color-error)' }}>*</span></label>
               <input
                 value={form.name}
-                onChange={e => set('name', e.target.value)}
+                onChange={e => {
+                  const v = e.target.value;
+                  setForm(prev => ({ ...prev, name: v, ...(group ? {} : { code: slugifyCode(v) }) }));
+                }}
                 placeholder="e.g. Site Workers"
                 required
                 className="form-input"
                 style={{ width: '100%', fontSize: 'var(--text-sm)' }}
               />
+              {form.code && (
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: 'var(--space-1) 0 0', fontFamily: 'monospace' }}>
+                  Code: <strong>{form.code}</strong>
+                </p>
+              )}
             </div>
             <div>
               <label style={LABEL_STYLE}>Name (Arabic)</label>

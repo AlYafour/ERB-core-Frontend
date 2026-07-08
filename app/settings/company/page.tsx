@@ -12,6 +12,7 @@ import type { TenantBrandingData } from '@/types/saas';
 import type { User } from '@/types';
 import Image from 'next/image';
 import { generateScale, hexToRgba, applyTenantTheme } from '@/lib/utils/tenant-theme';
+import apiClient from '@/lib/api/client';
 
 /* ── color presets ────────────────────────────────────────────────── */
 const PRESETS = [
@@ -325,8 +326,7 @@ export default function CompanySettingsPage() {
     try {
       const fd = new FormData();
       fd.append('stamp', file);
-      const res = await fetch('/api/auth/me/', { method: 'PATCH', body: fd, credentials: 'include' });
-      if (!res.ok) throw new Error();
+      await apiClient.patch('/auth/me/', fd);
       qc.invalidateQueries({ queryKey: ['auth-me'] });
       toast('Stamp uploaded', 'success');
     } catch {
@@ -338,7 +338,7 @@ export default function CompanySettingsPage() {
 
   const { data: me } = useQuery<User>({
     queryKey: ['auth-me'],
-    queryFn: () => fetch('/api/auth/me/', { credentials: 'include' }).then(r => r.json()),
+    queryFn: () => apiClient.get<User>('/auth/me/').then(r => r.data),
   });
 
   const logoUrl = form.logo_url ?? branding?.logo_url ?? '';
