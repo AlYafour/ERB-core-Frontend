@@ -1090,3 +1090,183 @@ export const hrPolicySnapshotsApi = {
     return Array.isArray(data) ? data : (data.results ?? []);
   },
 };
+
+// ─────────────────────── Phase 2: HR Documents ───────────────────────────────
+
+export interface DocumentTemplate {
+  id: number
+  name: string
+  template_type: string
+  template_type_display: string
+  html_content: string
+  variables: string[]
+  variables_count: number
+  is_default: boolean
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface GeneratedDocument {
+  id: number
+  employee: number
+  employee_name: string | null
+  template: number | null
+  template_type: string
+  template_type_display: string
+  reference_number: string
+  status: 'draft' | 'final' | 'sent' | 'voided'
+  status_display: string
+  generated_data: Record<string, unknown>
+  pdf_url: string | null
+  hr_request: number | null
+  notes: string
+  generated_at: string
+  generated_by: number | null
+  voided_at: string | null
+}
+
+export interface EmployeeContract {
+  id: number
+  employee: number
+  employee_name: string | null
+  contract_type: string
+  contract_type_display: string
+  status: 'draft' | 'active' | 'expired' | 'terminated'
+  status_display: string
+  start_date: string
+  end_date: string | null
+  notice_period_days: number
+  probation_end_date: string | null
+  job_title_snapshot: string
+  basic_salary_snapshot: string
+  document_url: string | null
+  signed_at: string | null
+  termination_date: string | null
+  termination_reason: string
+  notes: string
+  is_expiring_soon: boolean
+  created_at: string
+  updated_at: string
+}
+
+// ─────────────────────── Phase 2: HR Lifecycle ───────────────────────────────
+
+export interface OnboardingTemplateTask {
+  id: number
+  title: string
+  description: string
+  assignee_role: string
+  assignee_role_display: string
+  due_days_after: number
+  is_required: boolean
+  order: number
+}
+
+export interface OnboardingTemplate {
+  id: number
+  name: string
+  description: string
+  is_default: boolean
+  is_active: boolean
+  tasks: OnboardingTemplateTask[]
+  tasks_count: number
+  created_at: string
+}
+
+export interface OnboardingTaskInstance {
+  id: number
+  title: string
+  description: string
+  assignee_role: string
+  assigned_to: number | null
+  assignee_name: string | null
+  due_date: string | null
+  status: 'pending' | 'in_progress' | 'completed' | 'skipped'
+  status_display: string
+  completed_at: string | null
+  notes: string
+  order: number
+}
+
+export interface OnboardingProcess {
+  id: number
+  employee: number
+  employee_name: string | null
+  template: number | null
+  status: 'active' | 'completed' | 'cancelled'
+  status_display: string
+  start_date: string
+  target_completion_date: string | null
+  completion_pct: number
+  task_instances: OnboardingTaskInstance[]
+  notes: string
+  created_at: string
+}
+
+export interface OffboardingProcess {
+  id: number
+  employee: number
+  employee_name: string | null
+  status: 'active' | 'completed' | 'cancelled'
+  status_display: string
+  last_working_day: string
+  exit_interview_done: boolean
+  exit_interview_notes: string
+  eos_calculation: number | null
+  asset_clearance_done: boolean
+  system_access_revoked: boolean
+  documents_collected: boolean
+  clearance_pct: number
+  notes: string
+  created_at: string
+  updated_at: string
+}
+
+export const hrDocumentTemplatesApi = {
+  getAll: (params?: Record<string, string>) => apiClient.get<DocumentTemplate[]>('/hr/documents/templates/', { params }),
+  getById: (id: number) => apiClient.get<DocumentTemplate>(`/hr/documents/templates/${id}/`),
+  create: (data: Partial<DocumentTemplate>) => apiClient.post<DocumentTemplate>('/hr/documents/templates/', data),
+  update: (id: number, data: Partial<DocumentTemplate>) => apiClient.patch<DocumentTemplate>(`/hr/documents/templates/${id}/`, data),
+  delete: (id: number) => apiClient.delete(`/hr/documents/templates/${id}/`),
+  preview: (id: number, context: Record<string, unknown>) => apiClient.post<{ html: string }>(`/hr/documents/templates/${id}/preview/`, { context }),
+  setDefault: (id: number) => apiClient.post(`/hr/documents/templates/${id}/set-default/`),
+}
+
+export const hrGeneratedDocsApi = {
+  getAll: (params?: Record<string, string>) => apiClient.get<GeneratedDocument[]>('/hr/documents/generated/', { params }),
+  getById: (id: number) => apiClient.get<GeneratedDocument>(`/hr/documents/generated/${id}/`),
+  generate: (data: { employee_id: number; template_id: number; extra_context?: Record<string, unknown>; hr_request_id?: number }) =>
+    apiClient.post<GeneratedDocument>('/hr/documents/generated/generate/', data),
+  void: (id: number) => apiClient.post(`/hr/documents/generated/${id}/void/`),
+}
+
+export const hrContractsApi = {
+  getAll: (params?: Record<string, string>) => apiClient.get<EmployeeContract[]>('/hr/contracts/', { params }),
+  getById: (id: number) => apiClient.get<EmployeeContract>(`/hr/contracts/${id}/`),
+  create: (data: FormData | Partial<EmployeeContract>) => apiClient.post<EmployeeContract>('/hr/contracts/', data),
+  update: (id: number, data: Partial<EmployeeContract>) => apiClient.patch<EmployeeContract>(`/hr/contracts/${id}/`, data),
+  terminate: (id: number, data: { termination_date: string; termination_reason?: string }) =>
+    apiClient.post<EmployeeContract>(`/hr/contracts/${id}/terminate/`, data),
+  expiringSoon: (days?: number) => apiClient.get<EmployeeContract[]>('/hr/contracts/expiring-soon/', { params: days ? { days: String(days) } : undefined }),
+}
+
+export const hrOnboardingApi = {
+  getTemplates: () => apiClient.get<OnboardingTemplate[]>('/hr/onboarding/templates/'),
+  createTemplate: (data: Partial<OnboardingTemplate>) => apiClient.post<OnboardingTemplate>('/hr/onboarding/templates/', data),
+  addTask: (templateId: number, task: Partial<OnboardingTemplateTask>) =>
+    apiClient.post<OnboardingTemplateTask>(`/hr/onboarding/templates/${templateId}/add-task/`, task),
+  getProcesses: (params?: Record<string, string>) => apiClient.get<OnboardingProcess[]>('/hr/onboarding/processes/', { params }),
+  getProcess: (id: number) => apiClient.get<OnboardingProcess>(`/hr/onboarding/processes/${id}/`),
+  createProcess: (data: Partial<OnboardingProcess>) => apiClient.post<OnboardingProcess>('/hr/onboarding/processes/', data),
+  completeTask: (processId: number, taskId: number, data?: { notes?: string; skip?: boolean }) =>
+    apiClient.post<OnboardingTaskInstance>(`/hr/onboarding/processes/${processId}/complete-task/`, { task_id: taskId, ...data }),
+}
+
+export const hrOffboardingApi = {
+  getAll: (params?: Record<string, string>) => apiClient.get<OffboardingProcess[]>('/hr/offboarding/', { params }),
+  getById: (id: number) => apiClient.get<OffboardingProcess>(`/hr/offboarding/${id}/`),
+  create: (data: Partial<OffboardingProcess>) => apiClient.post<OffboardingProcess>('/hr/offboarding/', data),
+  update: (id: number, data: Partial<OffboardingProcess>) => apiClient.patch<OffboardingProcess>(`/hr/offboarding/${id}/`, data),
+  complete: (id: number) => apiClient.post<OffboardingProcess>(`/hr/offboarding/${id}/complete/`),
+}
