@@ -465,7 +465,7 @@ export default function EmployeeGroupsPage() {
       {!isLoading && allGroups.length > 0 && (
         <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)' }}>
           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
-            Approval routing priority: <strong>Employee's Direct Manager</strong> → <strong>Category Default Manager</strong>.
+            Approval routing priority: <strong>Employee&apos;s Direct Manager</strong> → <strong>Category Default Manager</strong>.
             Set a Default Manager on each category above, then override per-employee from the{' '}
             <Link href="/hr/employees" style={{ color: 'var(--brand)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>Employees page</Link> when needed.
           </p>

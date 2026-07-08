@@ -309,7 +309,7 @@ export default function GlobalAIAssistant() {
                 }}>
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7l5-8v4h4l-5 8z"/></svg>
                 </div>
-                <div style={{ fontWeight: 700, fontSize: 15, color: C.text, marginBottom: 6 }}>Hi, I'm ARIA</div>
+                <div style={{ fontWeight: 700, fontSize: 15, color: C.text, marginBottom: 6 }}>Hi, I&apos;m ARIA</div>
                 <div style={{ fontSize: 12, lineHeight: 1.7, maxWidth: 280, margin: '0 auto', color: C.text2 }}>
                   Ask me about purchase requests, suppliers, projects, or pending approvals.
                 </div>

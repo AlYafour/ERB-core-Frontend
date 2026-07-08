@@ -55,7 +55,7 @@ export function useToast() {
 
 // Confirmation dialog hook
 let confirmResolve: ((value: boolean) => void) | null = null;
-let confirmListeners = new Set<(state: ConfirmState | null) => void>();
+const confirmListeners = new Set<(state: ConfirmState | null) => void>();
 
 export interface ConfirmState {
   isOpen: boolean;

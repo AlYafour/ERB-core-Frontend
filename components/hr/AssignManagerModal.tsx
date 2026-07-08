@@ -73,7 +73,7 @@ export function AssignManagerModal({ isOpen, onClose, employee, label, candidate
                   {c.employee_id}{c.position_title ? ` · ${c.position_title}` : ''}
                 </span>
               </span>
-              {!routes && <span className="emp-no-login-tag">Won't route</span>}
+              {!routes && <span className="emp-no-login-tag">Won&apos;t route</span>}
               {selected  && <span className="emp-mgr-current">Current</span>}
             </button>
           );

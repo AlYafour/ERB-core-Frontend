@@ -85,9 +85,8 @@ export default function SalaryHistoryPage() {
   useEffect(() => {
     if (user && !canView) router.replace('/hr/employees');
   }, [user, canView, router]);
-  if (user && !canView) return null;
 
-  // ── Data ───────────────────────────────────────────────────────────────────
+  // ── Data — hooks always called, gated via `enabled` ───────────────────────
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['salary-history', page, search, filterEmployee, filterReason],
@@ -114,6 +113,8 @@ export default function SalaryHistoryPage() {
     })),
     [empData?.results],
   );
+
+  if (user && !canView) return null;
 
   const records    = data?.results ?? [];
   const totalCount = data?.count   ?? 0;

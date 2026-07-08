@@ -373,7 +373,7 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
             {statusFilter ? 'No requests with this status.' : 'No requests yet.'}
           </p>
           {!statusFilter && (isSelf || isAdmin) && (
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>Use "+ New Request" to submit your first one.</p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>Use &quot;+ New Request&quot; to submit your first one.</p>
           )}
         </div>
       ) : (
@@ -518,7 +518,7 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
 
               {!isDateType && (
                 <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, background: 'var(--surface-subtle)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)' }}>
-                  This request type doesn't require specific dates and will be routed for approval after submission.
+                  This request type doesn&apos;t require specific dates and will be routed for approval after submission.
                 </p>
               )}
             </div>
