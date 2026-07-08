@@ -1270,3 +1270,72 @@ export const hrOffboardingApi = {
   update: (id: number, data: Partial<OffboardingProcess>) => apiClient.patch<OffboardingProcess>(`/hr/offboarding/${id}/`, data),
   complete: (id: number) => apiClient.post<OffboardingProcess>(`/hr/offboarding/${id}/complete/`),
 }
+
+// ─────────────────────── Phase 3: HR Analytics ───────────────────────────────
+
+export interface HeadcountData {
+  total: number
+  group_by: string
+  rows: Array<{ label: string; count: number }>
+}
+
+export interface HeadcountTrendItem {
+  label: string
+  count: number
+}
+
+export interface PayrollCostItem {
+  label: string
+  month: number
+  year: number
+  gross: number
+  net: number
+  deductions: number
+  employees: number
+}
+
+export interface AttendanceStats {
+  period: { from: string; to: string }
+  total_records: number
+  present: number
+  absent: number
+  late: number
+  attendance_rate: number
+  absence_rate: number
+  late_rate: number
+  by_group?: Array<{ label: string; total: number; present: number; absent: number; rate: number }>
+}
+
+export interface OvertimeStats {
+  period: { from: string; to: string }
+  total_overtime_hours: number
+  records_with_overtime: number
+  by_department?: Array<{ label: string; hours: number; employees: number }>
+}
+
+export interface LeaveLiabilityData {
+  total_liability: number
+  employee_count: number
+  rows: Array<{ employee_id: string; employee_name: string; department: string | null; balance_days: number; daily_rate: number; liability: number }>
+}
+
+export interface TurnoverData {
+  year: number
+  annual_turnover_rate: number
+  total_departed: number
+  monthly: Array<{ month: number; label: string; joined: number; departed: number; turnover_rate: number; avg_headcount: number }>
+}
+
+export const hrAnalyticsApi = {
+  headcount: (groupBy?: string) => apiClient.get<HeadcountData>('/hr/analytics/headcount/', { params: groupBy ? { group_by: groupBy } : {} }),
+  headcountTrend: (months?: number) => apiClient.get<HeadcountTrendItem[]>('/hr/analytics/headcount/trend/', { params: months ? { months } : {} }),
+  payrollCost: (months?: number) => apiClient.get<PayrollCostItem[]>('/hr/analytics/payroll-cost/', { params: months ? { months } : {} }),
+  payrollCostByDept: (month?: number, year?: number) => apiClient.get<Array<{ label: string; gross: number; net: number; employees: number }>>('/hr/analytics/payroll-cost/by-department/', { params: { month, year } }),
+  attendance: (params?: Record<string, string>) => apiClient.get<AttendanceStats>('/hr/analytics/attendance/', { params }),
+  overtime: (params?: Record<string, string>) => apiClient.get<OvertimeStats>('/hr/analytics/overtime/', { params }),
+  leaveLiability: () => apiClient.get<LeaveLiabilityData>('/hr/analytics/leave-liability/'),
+  turnover: (year?: number) => apiClient.get<TurnoverData>('/hr/analytics/turnover/', { params: year ? { year } : {} }),
+  export: (report: string, format: string, params?: Record<string, unknown>) =>
+    apiClient.post('/hr/analytics/export/', { report, format: format, params }, { responseType: 'blob' }),
+  invalidateCache: () => apiClient.post('/hr/analytics/invalidate-cache/'),
+}
