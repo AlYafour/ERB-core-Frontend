@@ -244,6 +244,13 @@ export default function Sidebar() {
     { name: 'HR Settings',             href: '/hr/settings',           perm: 'hr.hr_settings.view',   icon: <SettingsIcon className="w-4 h-4" /> },
     { name: 'Approval Chains',         href: '/hr/approvals/chains',   perm: 'hr.hr_approval.view',   icon: <ShieldCheckIcon className="w-4 h-4" /> },
     { name: 'Penalty Rules',           href: '/hr/penalties',          perm: 'hr.hr_penalty.view',    icon: <AlertIcon className="w-4 h-4" /> },
+    { name: 'Onboarding',              href: '/hr/onboarding',         perm: 'hr.hr_lifecycle.view',  icon: <UserIcon className="w-4 h-4" /> },
+    { name: 'Offboarding',             href: '/hr/offboarding',        perm: 'hr.hr_lifecycle.view',  icon: <FileTextIcon className="w-4 h-4" /> },
+    { name: 'Performance',             href: '/hr/performance',        perm: 'hr.hr_performance.view', icon: <CalendarIcon className="w-4 h-4" /> },
+    { name: 'Skills & Training',       href: '/hr/skills',             perm: 'hr.hr_performance.view', icon: <BriefcaseIcon className="w-4 h-4" /> },
+    { name: 'Recruitment',             href: '/hr/recruitment',        perm: 'hr.hr_recruitment.view', icon: <BriefcaseIcon className="w-4 h-4" /> },
+    { name: 'Benefits & Welfare',      href: '/hr/benefits',           perm: 'hr.hr_benefits.view',   icon: <ShieldCheckIcon className="w-4 h-4" /> },
+    { name: 'HR Analytics',            href: '/hr/analytics',          perm: 'hr.hr_analytics.view',  icon: <DashboardIcon className="w-4 h-4" /> },
   ].filter(item => isAdmin || hasPermission(item.perm));
 
   const otherItems = [
