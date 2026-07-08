@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -15,7 +15,7 @@ const MODULE_ICONS: Record<string, string> = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: '#f59e0b', active: '#22c55e', archived: '#6b7280',
+  draft: 'var(--status-warning)', active: 'var(--status-success)', archived: 'var(--text-secondary)',
 }
 
 const STRATEGY_LABELS: Record<string, string> = {
@@ -31,13 +31,13 @@ function SetCard({ ps, onClone, onActivate, onArchive, onPreview }: {
   onPreview: () => void
 }) {
   return (
-    <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 28 }}>{MODULE_ICONS[ps.module] || '⚙️'}</span>
           <div>
-            <div style={{ fontWeight: 700, color: 'var(--color-text-primary)', fontSize: 'var(--text-base)' }}>{ps.name}</div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{ps.module_display} · v{ps.version}</div>
+            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 'var(--text-base)' }}>{ps.name}</div>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{ps.module_display} · v{ps.version}</div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -46,10 +46,10 @@ function SetCard({ ps, onClone, onActivate, onArchive, onPreview }: {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
-        <span>Strategy: <strong style={{ color: 'var(--color-text-primary)' }}>{STRATEGY_LABELS[ps.calculation_strategy] || ps.calculation_strategy}</strong></span>
-        <span>Rules: <strong style={{ color: 'var(--color-text-primary)' }}>{ps.rules_count}</strong></span>
-        <span>From: <strong style={{ color: 'var(--color-text-primary)' }}>{ps.effective_from}</strong></span>
+      <div style={{ display: 'flex', gap: 12, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+        <span>Strategy: <strong style={{ color: 'var(--text-primary)' }}>{STRATEGY_LABELS[ps.calculation_strategy] || ps.calculation_strategy}</strong></span>
+        <span>Rules: <strong style={{ color: 'var(--text-primary)' }}>{ps.rules_count}</strong></span>
+        <span>From: <strong style={{ color: 'var(--text-primary)' }}>{ps.effective_from}</strong></span>
       </div>
 
       {ps.rules.length > 0 && (
@@ -57,11 +57,11 @@ function SetCard({ ps, onClone, onActivate, onArchive, onPreview }: {
           {ps.rules.map(rule => (
             <div key={rule.id} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #e2e8f0', fontSize: 'var(--text-xs)' }}>
               <div>
-                <span style={{ fontFamily: 'monospace', color: '#3b82f6' }}>{rule.rule_key}</span>
+                <span style={{ fontFamily: 'monospace', color: 'var(--brand)' }}>{rule.rule_key}</span>
                 {' — '}
-                <span style={{ color: 'var(--color-text-secondary)' }}>{rule.label}</span>
+                <span style={{ color: 'var(--text-secondary)' }}>{rule.label}</span>
               </div>
-              <span style={{ color: 'var(--color-text-muted)', fontFamily: 'monospace', marginLeft: 8 }}>
+              <span style={{ color: 'var(--text-tertiary)', fontFamily: 'monospace', marginLeft: 8 }}>
                 {rule.formula || String(rule.value ?? '')}
               </span>
             </div>
@@ -73,11 +73,11 @@ function SetCard({ ps, onClone, onActivate, onArchive, onPreview }: {
         <Button size="sm" variant="ghost" onClick={onPreview}>Preview / Test</Button>
         <HasPermission permission="hr_policy:manage">
           {!ps.is_locked && (
-            <Button size="sm" variant="ghost" style={{ color: '#22c55e' }} onClick={onActivate}>Activate</Button>
+            <Button size="sm" variant="ghost" style={{ color: 'var(--status-success)' }} onClick={onActivate}>Activate</Button>
           )}
           <Button size="sm" variant="ghost" onClick={onClone}>Clone → New Version</Button>
           {ps.status !== 'archived' && (
-            <Button size="sm" variant="ghost" style={{ color: '#ef4444' }} onClick={onArchive}>Archive</Button>
+            <Button size="sm" variant="ghost" style={{ color: 'var(--status-error)' }} onClick={onArchive}>Archive</Button>
           )}
         </HasPermission>
       </div>
@@ -160,8 +160,8 @@ export default function PolicyPage() {
   return (
     <div style={{ padding: 'var(--space-6)', maxWidth: 1280, margin: '0 auto' }}>
       <div style={{ marginBottom: 'var(--space-6)' }}>
-        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-text-primary)' }}>Policy Engine</h1>
-        <p style={{ color: 'var(--color-text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>
+        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Policy Engine</h1>
+        <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>
           Configurable rule sets for EOS, payroll, leave, overtime and penalties. Rules support conditions, formulas, and pipeline strategies. All calculations are audited and snapshotted.
         </p>
       </div>
@@ -175,7 +175,7 @@ export default function PolicyPage() {
 
         <TabsContent value="sets">
           {Object.keys(byModule).length === 0 && (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--color-text-muted)' }}>
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-tertiary)' }}>
               No policy sets yet. Apply a preset to get started.
             </div>
           )}
@@ -202,27 +202,27 @@ export default function PolicyPage() {
         </TabsContent>
 
         <TabsContent value="presets">
-          <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-4)', fontSize: 'var(--text-sm)' }}>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-4)', fontSize: 'var(--text-sm)' }}>
             Presets create draft policy sets that you then review and activate per module.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 'var(--space-4)' }}>
             {presets.map(preset => (
-              <div key={preset.id} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, padding: 'var(--space-5)' }}>
+              <div key={preset.id} style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-5)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                   <span style={{ fontSize: 32 }}>{preset.country_code === 'AE' ? '🇦🇪' : '🌐'}</span>
                   <div>
                     <div style={{ fontWeight: 600 }}>{preset.name}</div>
-                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{preset.sets_count} module sets</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{preset.sets_count} module sets</div>
                   </div>
                 </div>
-                {preset.description && <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginBottom: 12 }}>{preset.description}</p>}
+                {preset.description && <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 12 }}>{preset.description}</p>}
                 <HasPermission permission="hr_policy:manage">
                   <Button onClick={() => handleApplyPreset(preset)} disabled={applyPresetMutation.isPending}>Apply to This Company</Button>
                 </HasPermission>
               </div>
             ))}
             {presets.length === 0 && (
-              <p style={{ color: 'var(--color-text-secondary)' }}>
+              <p style={{ color: 'var(--text-secondary)' }}>
                 No presets found. Run: <code>python manage.py seed_policy_presets</code>
               </p>
             )}
@@ -230,28 +230,28 @@ export default function PolicyPage() {
         </TabsContent>
 
         <TabsContent value="audit">
-          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, overflowX: 'auto' }}>
+          <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
               <thead>
-                <tr style={{ background: 'var(--color-surface-hover)' }}>
+                <tr style={{ background: 'var(--surface-subtle)' }}>
                   {['Date', 'Entity', 'Action', 'Changed By', 'Reason'].map(h => (
-                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-secondary)', borderBottom: '1px solid var(--color-border)', whiteSpace: 'nowrap' }}>{h}</th>
+                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)', borderBottom: '1px solid var(--card-border)', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {auditLogs.map((log, i) => (
-                  <tr key={log.id} style={{ borderBottom: '1px solid var(--color-border)', background: i % 2 === 0 ? 'transparent' : 'var(--color-surface-hover)' }}>
-                    <td style={{ padding: '10px 16px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>{new Date(log.changed_at).toLocaleString()}</td>
+                  <tr key={log.id} style={{ borderBottom: '1px solid var(--card-border)', background: i % 2 === 0 ? 'transparent' : 'var(--surface-subtle)' }}>
+                    <td style={{ padding: '10px 16px', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>{new Date(log.changed_at).toLocaleString()}</td>
                     <td style={{ padding: '10px 16px' }}><code style={{ fontSize: 11 }}>{log.entity_type}#{log.entity_id}</code></td>
                     <td style={{ padding: '10px 16px' }}>
-                      <Badge style={{ background: log.action === 'activated' ? '#22c55e' : log.action === 'archived' ? '#6b7280' : '#3b82f6', color: '#fff', fontSize: 11 }}>{log.action_display}</Badge>
+                      <Badge style={{ background: log.action === 'activated' ? 'var(--status-success)' : log.action === 'archived' ? 'var(--text-secondary)' : 'var(--brand)', color: '#fff', fontSize: 11 }}>{log.action_display}</Badge>
                     </td>
-                    <td style={{ padding: '10px 16px', color: 'var(--color-text-secondary)' }}>{log.changed_by_name || '—'}</td>
-                    <td style={{ padding: '10px 16px', color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>{log.change_reason || '—'}</td>
+                    <td style={{ padding: '10px 16px', color: 'var(--text-secondary)' }}>{log.changed_by_name || '—'}</td>
+                    <td style={{ padding: '10px 16px', color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>{log.change_reason || '—'}</td>
                   </tr>
                 ))}
-                {auditLogs.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-muted)' }}>No entries yet.</td></tr>}
+                {auditLogs.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: 'var(--text-tertiary)' }}>No entries yet.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -274,35 +274,35 @@ export default function PolicyPage() {
                 value={previewContext}
                 onChange={e => setPreviewContext(e.target.value)}
                 rows={6}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--color-border)', borderRadius: 6, fontFamily: 'monospace', fontSize: 'var(--text-sm)', resize: 'vertical' }}
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--card-border)', borderRadius: 6, fontFamily: 'monospace', fontSize: 'var(--text-sm)', resize: 'vertical' }}
                 placeholder='{"service_years": 6.5, "basic_salary": 15000, "termination_reason": "resignation"}'
               />
             </div>
-            {previewError && <div style={{ color: '#ef4444', fontSize: 'var(--text-sm)' }}>{previewError}</div>}
+            {previewError && <div style={{ color: 'var(--status-error)', fontSize: 'var(--text-sm)' }}>{previewError}</div>}
             {previewResult && (
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'var(--status-warning-bg)', border: '1px solid #bfdbfe', borderRadius: 8, marginBottom: 12 }}>
                   <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: '#1e40af' }}>
                     {previewResult.final_output?.toLocaleString() ?? '—'}
                   </div>
-                  <div style={{ fontSize: 'var(--text-xs)', color: '#3b82f6' }}>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)' }}>
                     {previewResult.output_type} · {previewResult.calculation_strategy}<br />
                     {previewResult.matched_rules_count} matched · {previewResult.skipped_rules_count} skipped
                   </div>
                 </div>
                 <div style={{ maxHeight: 300, overflowY: 'auto' }}>
                   {previewResult.rule_evaluations.map((ev, i) => (
-                    <div key={i} style={{ padding: '8px 12px', borderRadius: 6, marginBottom: 6, background: ev.applied ? '#f0fdf4' : '#fafafa', border: `1px solid ${ev.applied ? '#bbf7d0' : '#e2e8f0'}`, fontSize: 'var(--text-xs)' }}>
+                    <div key={i} style={{ padding: '8px 12px', borderRadius: 6, marginBottom: 6, background: ev.applied ? 'var(--status-success-bg)' : '#fafafa', border: `1px solid ${ev.applied ? '#bbf7d0' : '#e2e8f0'}`, fontSize: 'var(--text-xs)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                        <span style={{ fontWeight: 600, color: ev.applied ? '#16a34a' : 'var(--color-text-muted)' }}>
+                        <span style={{ fontWeight: 600, color: ev.applied ? 'var(--status-success)' : 'var(--text-tertiary)' }}>
                           {ev.applied ? '✓' : '✗'} [{ev.rule_key}] {ev.label}
                         </span>
                         {ev.formula_result !== null && ev.applied && (
                           <span style={{ fontWeight: 700, color: '#1e40af' }}>= {ev.formula_result}</span>
                         )}
                       </div>
-                      {ev.formula && <div style={{ fontFamily: 'monospace', color: '#6b7280' }}>{ev.formula}</div>}
-                      {ev.skipped_reason && <div style={{ color: '#ef4444' }}>{ev.skipped_reason}</div>}
+                      {ev.formula && <div style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{ev.formula}</div>}
+                      {ev.skipped_reason && <div style={{ color: 'var(--status-error)' }}>{ev.skipped_reason}</div>}
                     </div>
                   ))}
                 </div>

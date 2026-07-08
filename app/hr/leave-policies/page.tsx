@@ -313,7 +313,7 @@ function AccrualPanel() {
 
   const STATUS_COLOR: Record<string, string> = {
     accrued:      'var(--color-success)',
-    would_accrue: 'var(--color-info, var(--color-primary))',
+    would_accrue: 'var(--brand)',
     no_policy:    'var(--color-error)',
     already_run:  'var(--text-tertiary)',
   };
@@ -378,7 +378,7 @@ function AccrualPanel() {
             {result.details.length > 0 && (
               <button
                 onClick={() => setExpanded(o => !o)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)', color: 'var(--color-primary)' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)', color: 'var(--brand)' }}
               >
                 {expanded ? 'Hide details' : 'Show details'}
               </button>
@@ -514,7 +514,7 @@ function LeaveBalancesPanel() {
                             {b.remaining_days}
                           </span>
                           <div style={{ flex: 1, minWidth: 48, height: 5, background: 'var(--border-subtle)', borderRadius: 3, overflow: 'hidden' }}>
-                            <div style={{ width: `${pct}%`, height: '100%', background: remaining > 5 ? 'var(--color-success)' : remaining > 0 ? 'var(--color-warning, #f59e0b)' : 'var(--color-error)', borderRadius: 3, transition: 'width 0.3s' }} />
+                            <div style={{ width: `${pct}%`, height: '100%', background: remaining > 5 ? 'var(--color-success)' : remaining > 0 ? 'var(--status-warning)' : 'var(--color-error)', borderRadius: 3, transition: 'width 0.3s' }} />
                           </div>
                         </div>
                       </td>

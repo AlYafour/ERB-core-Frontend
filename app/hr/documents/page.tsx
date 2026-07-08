@@ -16,7 +16,7 @@ const TYPE_ICONS: Record<string, string> = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: '#f59e0b', final: '#22c55e', sent: '#3b82f6', voided: '#ef4444',
+  draft: 'var(--status-warning)', final: 'var(--status-success)', sent: 'var(--brand)', voided: 'var(--status-error)',
 }
 
 export default function DocumentsPage() {
@@ -68,8 +68,8 @@ const [editTemplate, setEditTemplate] = useState<Partial<DocumentTemplate> | nul
     <div style={{ padding: 'var(--space-6)', maxWidth: 1280, margin: '0 auto' }}>
       <div style={{ marginBottom: 'var(--space-6)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-text-primary)' }}>HR Documents</h1>
-          <p style={{ color: 'var(--color-text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>
+          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)' }}>HR Documents</h1>
+          <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>
             Document templates and generated records
           </p>
         </div>
@@ -87,16 +87,16 @@ const [editTemplate, setEditTemplate] = useState<Partial<DocumentTemplate> | nul
         <TabsContent value="templates">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--space-4)', marginTop: 'var(--space-4)' }}>
             {templates.map(t => (
-              <div key={t.id} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, padding: 'var(--space-4)' }}>
+              <div key={t.id} style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-4)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                   <span style={{ fontSize: 28 }}>{TYPE_ICONS[t.template_type] || '📋'}</span>
                   <div>
                     <div style={{ fontWeight: 600 }}>{t.name}</div>
-                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{t.template_type_display}</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{t.template_type_display}</div>
                   </div>
-                  {t.is_default && <Badge style={{ marginLeft: 'auto', background: '#22c55e', color: '#fff', fontSize: 10 }}>Default</Badge>}
+                  {t.is_default && <Badge style={{ marginLeft: 'auto', background: 'var(--status-success)', color: '#fff', fontSize: 10 }}>Default</Badge>}
                 </div>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginBottom: 12 }}>{t.variables_count} variables</div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 12 }}>{t.variables_count} variables</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   <Button size="sm" variant="ghost" onClick={() => handlePreview(t)}>Preview</Button>
                   <HasPermission permission="hr_documents:manage">
@@ -106,42 +106,42 @@ const [editTemplate, setEditTemplate] = useState<Partial<DocumentTemplate> | nul
               </div>
             ))}
             {templates.length === 0 && (
-              <p style={{ color: 'var(--color-text-muted)', gridColumn: '1/-1', padding: 24 }}>No templates yet. Create one to get started.</p>
+              <p style={{ color: 'var(--text-tertiary)', gridColumn: '1/-1', padding: 24 }}>No templates yet. Create one to get started.</p>
             )}
           </div>
         </TabsContent>
 
         <TabsContent value="generated">
-          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, overflowX: 'auto', marginTop: 'var(--space-4)' }}>
+          <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, overflowX: 'auto', marginTop: 'var(--space-4)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
               <thead>
-                <tr style={{ background: 'var(--color-surface-hover)' }}>
+                <tr style={{ background: 'var(--surface-subtle)' }}>
                   {['Reference', 'Employee', 'Type', 'Status', 'Generated', 'Actions'].map(h => (
-                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-secondary)', borderBottom: '1px solid var(--color-border)', whiteSpace: 'nowrap' }}>{h}</th>
+                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)', borderBottom: '1px solid var(--card-border)', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {generated.map((doc, i) => (
-                  <tr key={doc.id} style={{ borderBottom: '1px solid var(--color-border)', background: i % 2 ? 'var(--color-surface-hover)' : 'transparent' }}>
+                  <tr key={doc.id} style={{ borderBottom: '1px solid var(--card-border)', background: i % 2 ? 'var(--surface-subtle)' : 'transparent' }}>
                     <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontSize: 12 }}>{doc.reference_number}</td>
                     <td style={{ padding: '10px 16px' }}>{doc.employee_name}</td>
                     <td style={{ padding: '10px 16px' }}><span style={{ fontSize: 14 }}>{TYPE_ICONS[doc.template_type]}</span> {doc.template_type_display}</td>
                     <td style={{ padding: '10px 16px' }}>
-                      <Badge style={{ background: STATUS_COLORS[doc.status] || '#6b7280', color: '#fff', fontSize: 11 }}>{doc.status_display}</Badge>
+                      <Badge style={{ background: STATUS_COLORS[doc.status] || 'var(--text-secondary)', color: '#fff', fontSize: 11 }}>{doc.status_display}</Badge>
                     </td>
-                    <td style={{ padding: '10px 16px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>{new Date(doc.generated_at).toLocaleDateString()}</td>
+                    <td style={{ padding: '10px 16px', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>{new Date(doc.generated_at).toLocaleDateString()}</td>
                     <td style={{ padding: '10px 16px', display: 'flex', gap: 6 }}>
                       {doc.pdf_url && <Button size="sm" variant="ghost" onClick={() => window.open(doc.pdf_url!, '_blank')}>PDF</Button>}
                       {doc.status !== 'voided' && (
                         <HasPermission permission="hr_documents:manage">
-                          <Button size="sm" variant="ghost" style={{ color: '#ef4444' }} onClick={() => handleVoid(doc)}>Void</Button>
+                          <Button size="sm" variant="ghost" style={{ color: 'var(--status-error)' }} onClick={() => handleVoid(doc)}>Void</Button>
                         </HasPermission>
                       )}
                     </td>
                   </tr>
                 ))}
-                {generated.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-muted)' }}>No documents generated yet.</td></tr>}
+                {generated.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: 'var(--text-tertiary)' }}>No documents generated yet.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -156,12 +156,12 @@ const [editTemplate, setEditTemplate] = useState<Partial<DocumentTemplate> | nul
             <div>
               <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 500, marginBottom: 4 }}>Name</label>
               <input value={editTemplate.name || ''} onChange={e => setEditTemplate(p => ({ ...p, name: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--color-border)', borderRadius: 6, fontSize: 'var(--text-sm)' }} />
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--card-border)', borderRadius: 6, fontSize: 'var(--text-sm)' }} />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 500, marginBottom: 4 }}>Type</label>
               <select value={editTemplate.template_type || ''} onChange={e => setEditTemplate(p => ({ ...p, template_type: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--color-border)', borderRadius: 6, fontSize: 'var(--text-sm)' }}>
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--card-border)', borderRadius: 6, fontSize: 'var(--text-sm)' }}>
                 <option value="">Select...</option>
                 {TEMPLATE_TYPE_OPTIONS.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
               </select>
@@ -169,7 +169,7 @@ const [editTemplate, setEditTemplate] = useState<Partial<DocumentTemplate> | nul
             <div>
               <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 500, marginBottom: 4 }}>HTML Content (Jinja2/Django templates)</label>
               <textarea value={editTemplate.html_content || ''} onChange={e => setEditTemplate(p => ({ ...p, html_content: e.target.value }))}
-                rows={12} style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--color-border)', borderRadius: 6, fontSize: 12, fontFamily: 'monospace', resize: 'vertical' }} />
+                rows={12} style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--card-border)', borderRadius: 6, fontSize: 12, fontFamily: 'monospace', resize: 'vertical' }} />
             </div>
           </div>
         </BaseModal>
@@ -178,7 +178,7 @@ const [editTemplate, setEditTemplate] = useState<Partial<DocumentTemplate> | nul
       {/* Preview Modal */}
       {showPreview && (
         <BaseModal isOpen title="Template Preview" onClose={() => setShowPreview(false)}>
-          <div style={{ maxHeight: 600, overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: 6 }}>
+          <div style={{ maxHeight: 600, overflowY: 'auto', border: '1px solid var(--card-border)', borderRadius: 6 }}>
             <iframe srcDoc={previewHtml} style={{ width: '100%', height: 580, border: 'none' }} title="preview" />
           </div>
         </BaseModal>
