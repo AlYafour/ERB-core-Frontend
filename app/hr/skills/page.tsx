@@ -1,0 +1,90 @@
+'use client'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { hrSkillsApi, hrTrainingApi, Skill, TrainingRecord } from '@/lib/api/hr'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { toast } from '@/hooks/use-toast'
+import HasPermission from '@/components/shared/HasPermission'
+
+const LEVEL_COLORS: Record<number, string> = { 1: '#94a3b8', 2: '#3b82f6', 3: '#22c55e', 4: '#f59e0b' }
+const LEVEL_LABELS: Record<number, string> = { 1: 'Beginner', 2: 'Intermediate', 3: 'Advanced', 4: 'Expert' }
+
+export default function SkillsPage() {
+  const qc = useQueryClient()
+  const { data: skills = [] } = useQuery({ queryKey: ['skills'], queryFn: () => hrSkillsApi.getAll().then(r => r.data) })
+  const { data: training = [] } = useQuery({ queryKey: ['training'], queryFn: () => hrTrainingApi.getAll().then(r => r.data) })
+
+  const byCategory = skills.reduce<Record<string, Skill[]>>((acc, s) => {
+    const cat = s.category_name || 'Uncategorised'
+    if (!acc[cat]) acc[cat] = []
+    acc[cat].push(s)
+    return acc
+  }, {})
+
+  return (
+    <div style={{ padding: 'var(--space-6)', maxWidth: 1280, margin: '0 auto' }}>
+      <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, marginBottom: 'var(--space-6)' }}>Skills & Training</h1>
+
+      <Tabs defaultValue="skills">
+        <TabsList>
+          <TabsTrigger value="skills">Skills Library ({skills.length})</TabsTrigger>
+          <TabsTrigger value="training">Training Records ({training.length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="skills">
+          <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            {Object.entries(byCategory).map(([cat, catSkills]) => (
+              <div key={cat} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, padding: 'var(--space-4)' }}>
+                <h3 style={{ fontWeight: 700, marginBottom: 12, color: 'var(--color-text-primary)' }}>{cat}</h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {catSkills.map(s => (
+                    <div key={s.id} style={{ padding: '6px 12px', background: '#f8fafc', border: '1px solid var(--color-border)', borderRadius: 6, fontSize: 'var(--text-sm)' }}>
+                      {s.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {skills.length === 0 && <p style={{ color: 'var(--color-text-muted)', padding: 32 }}>No skills defined yet.</p>}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="training">
+          <div style={{ marginTop: 'var(--space-4)', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
+              <thead>
+                <tr style={{ background: 'var(--color-surface-hover)' }}>
+                  {['Employee', 'Course', 'Provider', 'Dates', 'Cost', 'Skills', 'Certificate'].map(h => (
+                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-secondary)', borderBottom: '1px solid var(--color-border)', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {training.map((t, i) => (
+                  <tr key={t.id} style={{ borderBottom: '1px solid var(--color-border)', background: i % 2 ? 'var(--color-surface-hover)' : 'transparent' }}>
+                    <td style={{ padding: '10px 16px', fontWeight: 500 }}>{t.employee_name}</td>
+                    <td style={{ padding: '10px 16px' }}>{t.course_name}</td>
+                    <td style={{ padding: '10px 16px', color: 'var(--color-text-secondary)' }}>{t.provider || '—'}</td>
+                    <td style={{ padding: '10px 16px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>{t.start_date}{t.end_date ? ` → ${t.end_date}` : ''}</td>
+                    <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontSize: 12 }}>{t.cost ? `${t.currency} ${parseFloat(t.cost).toLocaleString()}` : '—'}</td>
+                    <td style={{ padding: '10px 16px' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                        {t.skills_list.map(s => <Badge key={s.id} style={{ fontSize: 10, background: '#eff6ff', color: '#3b82f6' }}>{s.name}</Badge>)}
+                      </div>
+                    </td>
+                    <td style={{ padding: '10px 16px' }}>
+                      {t.certificate_url ? <Button size="sm" variant="outline" onClick={() => window.open(t.certificate_url!, '_blank')}>View</Button> : '—'}
+                    </td>
+                  </tr>
+                ))}
+                {training.length === 0 && <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-muted)' }}>No training records yet.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}

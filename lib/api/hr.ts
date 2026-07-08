@@ -1339,3 +1339,144 @@ export const hrAnalyticsApi = {
     apiClient.post('/hr/analytics/export/', { report, format: format, params }, { responseType: 'blob' }),
   invalidateCache: () => apiClient.post('/hr/analytics/invalidate-cache/'),
 }
+
+// ─────────────────────── Phase 4: HR Performance ────────────────────────────
+
+export interface PerformanceCycle {
+  id: number
+  name: string
+  cycle_type: string
+  cycle_type_display: string
+  status: 'draft' | 'active' | 'review' | 'closed'
+  status_display: string
+  start_date: string
+  end_date: string
+  self_eval_deadline: string
+  manager_eval_deadline: string
+  description: string
+  scope_all: boolean
+  reviews_count: number
+  completion_pct: number
+  created_at: string
+}
+
+export interface PerformanceReview {
+  id: number
+  cycle: number
+  employee: number
+  employee_name: string | null
+  manager: number | null
+  manager_name: string | null
+  status: string
+  status_display: string
+  self_rating: number | null
+  self_rating_display: string | null
+  self_comments: string
+  self_submitted_at: string | null
+  manager_rating: number | null
+  manager_rating_display: string | null
+  manager_comments: string
+  manager_strengths: string
+  manager_improvements: string
+  manager_submitted_at: string | null
+  final_rating: number | null
+  final_rating_display: string | null
+  hr_notes: string
+  promotion_recommended: boolean
+  salary_increase_pct: string | null
+  acknowledged_at: string | null
+}
+
+export interface EmployeeGoal {
+  id: number
+  cycle: number | null
+  employee: number
+  employee_name: string | null
+  title: string
+  description: string
+  target_value: string | null
+  actual_value: string | null
+  unit: string
+  weight: string
+  due_date: string | null
+  status: 'active' | 'completed' | 'cancelled'
+  status_display: string
+  progress_pct: number
+}
+
+export interface Skill {
+  id: number
+  name: string
+  category: number | null
+  category_name: string | null
+  description: string
+  is_active: boolean
+}
+
+export interface EmployeeSkill {
+  id: number
+  employee: number
+  skill: number
+  skill_name: string
+  category_name: string | null
+  level: number
+  level_display: string
+  verified_by: number | null
+  verified_by_name: string | null
+  verified_at: string | null
+  notes: string
+}
+
+export interface TrainingRecord {
+  id: number
+  employee: number
+  employee_name: string | null
+  course_name: string
+  provider: string
+  start_date: string
+  end_date: string | null
+  cost: string | null
+  currency: string
+  certificate_url: string | null
+  skills: number[]
+  skills_list: Skill[]
+  notes: string
+  created_at: string
+}
+
+export const hrPerformanceApi = {
+  getCycles: (params?: Record<string, string>) => apiClient.get<PerformanceCycle[]>('/hr/performance/cycles/', { params }),
+  createCycle: (data: Partial<PerformanceCycle>) => apiClient.post<PerformanceCycle>('/hr/performance/cycles/', data),
+  updateCycle: (id: number, data: Partial<PerformanceCycle>) => apiClient.patch<PerformanceCycle>(`/hr/performance/cycles/${id}/`, data),
+  activateCycle: (id: number) => apiClient.post<PerformanceCycle>(`/hr/performance/cycles/${id}/activate/`),
+  closeCycle: (id: number) => apiClient.post(`/hr/performance/cycles/${id}/close/`),
+  generateReviews: (id: number) => apiClient.post(`/hr/performance/cycles/${id}/generate-reviews/`),
+  getReviews: (params?: Record<string, string>) => apiClient.get<PerformanceReview[]>('/hr/performance/reviews/', { params }),
+  submitSelf: (id: number, data: { self_rating: number; self_comments?: string }) =>
+    apiClient.post<PerformanceReview>(`/hr/performance/reviews/${id}/submit-self/`, data),
+  submitManager: (id: number, data: { manager_rating: number; manager_comments?: string; manager_strengths?: string; manager_improvements?: string }) =>
+    apiClient.post<PerformanceReview>(`/hr/performance/reviews/${id}/submit-manager/`, data),
+  calibrate: (id: number, data: { final_rating: number; hr_notes?: string; promotion_recommended?: boolean; salary_increase_pct?: number }) =>
+    apiClient.post<PerformanceReview>(`/hr/performance/reviews/${id}/calibrate/`, data),
+  acknowledge: (id: number) => apiClient.post<PerformanceReview>(`/hr/performance/reviews/${id}/acknowledge/`),
+  getGoals: (params?: Record<string, string>) => apiClient.get<EmployeeGoal[]>('/hr/performance/goals/', { params }),
+  createGoal: (data: Partial<EmployeeGoal>) => apiClient.post<EmployeeGoal>('/hr/performance/goals/', data),
+  updateGoal: (id: number, data: Partial<EmployeeGoal>) => apiClient.patch<EmployeeGoal>(`/hr/performance/goals/${id}/`, data),
+}
+
+export const hrSkillsApi = {
+  getAll: (params?: Record<string, string>) => apiClient.get<Skill[]>('/hr/skills/', { params }),
+  create: (data: Partial<Skill>) => apiClient.post<Skill>('/hr/skills/', data),
+  getEmployeeSkills: (employeeId?: number) =>
+    apiClient.get<EmployeeSkill[]>('/hr/skills/employee-skills/', { params: employeeId ? { employee: String(employeeId) } : {} }),
+  addEmployeeSkill: (data: { employee: number; skill: number; level: number; notes?: string }) =>
+    apiClient.post<EmployeeSkill>('/hr/skills/employee-skills/', data),
+  removeEmployeeSkill: (id: number) => apiClient.delete(`/hr/skills/employee-skills/${id}/`),
+}
+
+export const hrTrainingApi = {
+  getAll: (params?: Record<string, string>) => apiClient.get<TrainingRecord[]>('/hr/training/', { params }),
+  create: (data: FormData | Partial<TrainingRecord>) => apiClient.post<TrainingRecord>('/hr/training/', data),
+  update: (id: number, data: Partial<TrainingRecord>) => apiClient.patch<TrainingRecord>(`/hr/training/${id}/`, data),
+  delete: (id: number) => apiClient.delete(`/hr/training/${id}/`),
+}
