@@ -1,549 +1,317 @@
-'use client';
+﻿'use client'
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
-import {
-  hrPolicyRulesApi,
-  hrPolicyPresetsApi,
-  hrPolicyAuditApi,
-  type PolicyRule,
-  type PolicyPreset,
-} from '@/lib/api/hr';
-import {
-  Button,
-  Badge,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  BaseModal,
-} from '@/components/ui';
-import { toast, confirm } from '@/lib/hooks/use-toast';
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { hrPolicySetsApi, hrPolicyPresetsApi, hrPolicyAuditApi, PolicySet, PolicyPreset, PolicyPreviewResult } from '@/lib/api/hr'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import BaseModal from '@/components/shared/BaseModal'
+import { useConfirm, toast } from '@/hooks/use-toast'
+import HasPermission from '@/components/shared/HasPermission'
 
-// ── Rule type groups ──────────────────────────────────────────────────────────
-
-const RULE_TYPE_GROUPS: Record<string, string[]> = {
-  'EOS / Gratuity': [
-    'eos.gratuity_days_year_1_5',
-    'eos.gratuity_days_year_5plus',
-    'eos.resignation_prorate_under_1y',
-    'eos.resignation_prorate_1_3y',
-    'eos.resignation_prorate_3_5y',
-    'eos.resignation_prorate_5plus',
-  ],
-  'Annual Leave': [
-    'leave.annual_entitlement_days',
-    'leave.carry_forward_max_days',
-    'leave.accrual_method',
-    'leave.sick_days_paid',
-  ],
-  'Overtime': [
-    'overtime.weekday_rate',
-    'overtime.weekend_rate',
-    'overtime.public_holiday_rate',
-    'overtime.max_daily_hours',
-  ],
-  'Payroll': ['payroll.monthly_days_basis', 'payroll.probation_deduction'],
-  'Penalties': ['penalty.absence_deduction_method'],
-  'Working Hours': [
-    'work.standard_hours_per_day',
-    'work.standard_hours_per_week',
-    'work.ramadan_hours_reduction',
-  ],
-  'General': [
-    'general.currency',
-    'general.fiscal_year_start_month',
-    'general.working_days_per_week',
-  ],
-};
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function statusBadge(rule: PolicyRule) {
-  if (!rule.is_active)
-    return <Badge variant="error">Inactive</Badge>;
-  const today = new Date().toISOString().slice(0, 10);
-  if (rule.effective_to && rule.effective_to < today)
-    return <Badge variant="error">Expired</Badge>;
-  return <Badge variant="success">Active</Badge>;
+const MODULE_ICONS: Record<string, string> = {
+  eos: '📋', payroll: '💰', leave: '🏖️', overtime: '⏰', penalty: '⚠️', attendance: '📅', general: '⚙️',
 }
 
-function actionBadgeVariant(action: string): 'success' | 'error' | 'info' {
-  if (action === 'created') return 'success';
-  if (action === 'deactivated') return 'error';
-  return 'info';
+const STATUS_COLORS: Record<string, string> = {
+  draft: '#f59e0b', active: '#22c55e', archived: '#6b7280',
 }
 
-// ── Shared styles ─────────────────────────────────────────────────────────────
+const STRATEGY_LABELS: Record<string, string> = {
+  first_match: 'First Match', sum_all: 'Sum All',
+  multiply_factors: 'Multiply Factors', pipeline: 'Pipeline',
+}
 
-const INPUT: React.CSSProperties = {
-  width: '100%',
-  padding: '8px 12px',
-  border: '1px solid var(--input-border)',
-  borderRadius: 'var(--radius-md)',
-  background: 'var(--input-bg)',
-  color: 'var(--text-primary)',
-  fontSize: 'var(--text-sm)',
-  outline: 'none',
-  boxSizing: 'border-box',
-};
+function SetCard({ ps, onClone, onActivate, onArchive, onPreview }: {
+  ps: PolicySet
+  onClone: () => void
+  onActivate: () => void
+  onArchive: () => void
+  onPreview: () => void
+}) {
+  return (
+    <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 28 }}>{MODULE_ICONS[ps.module] || '⚙️'}</span>
+          <div>
+            <div style={{ fontWeight: 700, color: 'var(--color-text-primary)', fontSize: 'var(--text-base)' }}>{ps.name}</div>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{ps.module_display} · v{ps.version}</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Badge style={{ background: STATUS_COLORS[ps.status], color: '#fff', fontSize: 11 }}>{ps.status_display}</Badge>
+          {ps.country_code && <Badge style={{ background: '#f1f5f9', color: '#475569', fontSize: 11 }}>{ps.country_code}</Badge>}
+        </div>
+      </div>
 
-const LABEL: React.CSSProperties = {
-  display: 'block',
-  fontSize: 'var(--text-sm)',
-  fontWeight: 500,
-  color: 'var(--text-secondary)',
-  marginBottom: 4,
-};
+      <div style={{ display: 'flex', gap: 12, fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+        <span>Strategy: <strong style={{ color: 'var(--color-text-primary)' }}>{STRATEGY_LABELS[ps.calculation_strategy] || ps.calculation_strategy}</strong></span>
+        <span>Rules: <strong style={{ color: 'var(--color-text-primary)' }}>{ps.rules_count}</strong></span>
+        <span>From: <strong style={{ color: 'var(--color-text-primary)' }}>{ps.effective_from}</strong></span>
+      </div>
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+      {ps.rules.length > 0 && (
+        <div style={{ background: '#f8fafc', borderRadius: 6, padding: '10px 12px', maxHeight: 160, overflowY: 'auto' }}>
+          {ps.rules.map(rule => (
+            <div key={rule.id} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #e2e8f0', fontSize: 'var(--text-xs)' }}>
+              <div>
+                <span style={{ fontFamily: 'monospace', color: '#3b82f6' }}>{rule.rule_key}</span>
+                {' — '}
+                <span style={{ color: 'var(--color-text-secondary)' }}>{rule.label}</span>
+              </div>
+              <span style={{ color: 'var(--color-text-muted)', fontFamily: 'monospace', marginLeft: 8 }}>
+                {rule.formula || String(rule.value ?? '')}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <Button size="sm" variant="outline" onClick={onPreview}>Preview / Test</Button>
+        <HasPermission permission="hr_policy:manage">
+          {!ps.is_locked && (
+            <Button size="sm" variant="outline" style={{ color: '#22c55e' }} onClick={onActivate}>Activate</Button>
+          )}
+          <Button size="sm" variant="outline" onClick={onClone}>Clone → New Version</Button>
+          {ps.status !== 'archived' && (
+            <Button size="sm" variant="outline" style={{ color: '#ef4444' }} onClick={onArchive}>Archive</Button>
+          )}
+        </HasPermission>
+      </div>
+    </div>
+  )
+}
 
 export default function PolicyPage() {
-  const qc = useQueryClient();
-  const { hasPermission, isTenantAdmin } = useMyPermissions();
-  const canManage = hasPermission('hr.hr_payroll.create') || isTenantAdmin;
+  const qc = useQueryClient()
+  const confirm = useConfirm()
 
-  const { data: effective = [], isLoading: loadingRules } = useQuery({
-    queryKey: ['policy-rules-effective'],
-    queryFn: () => hrPolicyRulesApi.getEffective(),
-  });
-
-  const { data: presets = [], isLoading: loadingPresets } = useQuery({
+  const { data: sets = [] } = useQuery({
+    queryKey: ['policy-sets'],
+    queryFn: () => hrPolicySetsApi.getAll().then(r => r.data),
+  })
+  const { data: presets = [] } = useQuery({
     queryKey: ['policy-presets'],
-    queryFn: () => hrPolicyPresetsApi.getAll(),
-  });
-
-  const { data: auditLogs = [], isLoading: loadingAudit } = useQuery({
+    queryFn: () => hrPolicyPresetsApi.getAll().then(r => r.data),
+  })
+  const { data: auditLogs = [] } = useQuery({
     queryKey: ['policy-audit'],
-    queryFn: () => hrPolicyAuditApi.getAll({ page_size: '50' }),
-  });
+    queryFn: () => hrPolicyAuditApi.getAll().then(r => r.data),
+  })
 
-  // ── Edit modal state ──────────────────────────────────────────────────────
+  const [previewSet, setPreviewSet] = useState<PolicySet | null>(null)
+  const [previewContext, setPreviewContext] = useState('{}')
+  const [previewResult, setPreviewResult] = useState<PolicyPreviewResult | null>(null)
+  const [previewError, setPreviewError] = useState('')
 
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingRule, setEditingRule] = useState<PolicyRule | null>(null);
-  const [formValue, setFormValue] = useState('');
-  const [formDesc, setFormDesc] = useState('');
-  const [formEffDate, setFormEffDate] = useState('');
-  const [formRef, setFormRef] = useState('');
-
-  const saveMutation = useMutation({
-    mutationFn: (data: Partial<PolicyRule>) =>
-      editingRule
-        ? hrPolicyRulesApi.update(editingRule.id, data)
-        : hrPolicyRulesApi.create(data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['policy-rules-effective'] });
-      qc.invalidateQueries({ queryKey: ['policy-audit'] });
-      setShowEditModal(false);
-      toast('Policy rule saved successfully.', 'success');
-    },
-    onError: (e: unknown) => {
-      const msg =
-        (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        (e as Error).message ??
-        'Failed to save rule';
-      toast(msg, 'error');
-    },
-  });
-
-  const deactivateMutation = useMutation({
-    mutationFn: (id: number) => hrPolicyRulesApi.deactivate(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['policy-rules-effective'] });
-      qc.invalidateQueries({ queryKey: ['policy-audit'] });
-      toast('Rule deactivated.', 'success');
-    },
-    onError: () => toast('Failed to deactivate rule.', 'error'),
-  });
-
+  const cloneMutation = useMutation({
+    mutationFn: (id: number) => hrPolicySetsApi.clone(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['policy-sets'] }); toast({ title: 'Cloned to new draft version' }) },
+  })
+  const activateMutation = useMutation({
+    mutationFn: (id: number) => hrPolicySetsApi.activate(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['policy-sets'] }); toast({ title: 'Policy Set activated' }) },
+    onError: (e: unknown) => toast({ title: 'Error', description: (e as Error).message, variant: 'destructive' }),
+  })
+  const archiveMutation = useMutation({
+    mutationFn: (id: number) => hrPolicySetsApi.archive(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['policy-sets'] }); toast({ title: 'Archived' }) },
+  })
   const applyPresetMutation = useMutation({
-    mutationFn: ({ id, effective_from }: { id: number; effective_from: string }) =>
-      hrPolicyPresetsApi.apply(id, effective_from),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['policy-rules-effective'] });
-      qc.invalidateQueries({ queryKey: ['policy-audit'] });
-      toast('Preset applied. All rules created.', 'success');
-    },
-    onError: () => toast('Failed to apply preset.', 'error'),
-  });
+    mutationFn: ({ id, effective_from }: { id: number; effective_from: string }) => hrPolicyPresetsApi.apply(id, effective_from),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['policy-sets'] }); toast({ title: 'Preset applied — review draft sets then activate each one' }) },
+  })
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
-
-  function openEdit(rule: PolicyRule) {
-    setEditingRule(rule);
-    setFormValue(String(rule.value));
-    setFormDesc(rule.description);
-    setFormEffDate(new Date().toISOString().slice(0, 10));
-    setFormRef(rule.source_reference);
-    setShowEditModal(true);
+  async function handleActivate(ps: PolicySet) {
+    const ok = await confirm({ title: 'Activate policy set?', description: 'The current active set for this module will be archived.' })
+    if (ok) activateMutation.mutate(ps.id)
   }
-
-  async function handleDeactivate(rule: PolicyRule) {
-    const ok = await confirm(
-      `Deactivate rule "${rule.rule_type_display}"? It will no longer apply to new calculations.`,
-    );
-    if (ok) deactivateMutation.mutate(rule.id);
+  async function handleArchive(ps: PolicySet) {
+    const ok = await confirm({ title: 'Archive this set?', description: 'It will no longer be used in calculations.' })
+    if (ok) archiveMutation.mutate(ps.id)
   }
-
   async function handleApplyPreset(preset: PolicyPreset) {
-    const today = new Date().toISOString().slice(0, 10);
-    const ok = await confirm(
-      `Apply preset "${preset.name}"? This creates ${preset.rules_count} new policy rules effective ${today}. Existing rules are not deleted.`,
-    );
-    if (ok) applyPresetMutation.mutate({ id: preset.id, effective_from: today });
+    const today = new Date().toISOString().slice(0, 10)
+    const ok = await confirm({ title: `Apply: ${preset.name}`, description: `Creates ${preset.sets_count} draft policy set(s) effective today. Review and activate each module separately.` })
+    if (ok) applyPresetMutation.mutate({ id: preset.id, effective_from: today })
   }
 
-  function handleSave() {
-    if (!formValue.trim()) {
-      toast('Value is required.', 'error');
-      return;
+  async function runPreview() {
+    if (!previewSet) return
+    setPreviewError('')
+    setPreviewResult(null)
+    try {
+      const ctx = JSON.parse(previewContext)
+      const r = await hrPolicySetsApi.preview(previewSet.id, ctx)
+      setPreviewResult(r.data)
+    } catch (e: unknown) {
+      setPreviewError((e as Error).message || 'Error running preview')
     }
-    if (!formEffDate) {
-      toast('Effective From date is required.', 'error');
-      return;
-    }
-    saveMutation.mutate({
-      rule_type: editingRule?.rule_type,
-      value_type: editingRule?.value_type,
-      value: formValue,
-      effective_from: formEffDate,
-      description: formDesc,
-      source_reference: formRef,
-    });
   }
 
-  // ── Grouped rules ─────────────────────────────────────────────────────────
-
-  const grouped = Object.entries(RULE_TYPE_GROUPS).map(([group, types]) => ({
-    group,
-    rules: effective.filter(r => types.includes(r.rule_type)),
-  }));
-
-  // ── Render ────────────────────────────────────────────────────────────────
+  const byModule = sets.reduce<Record<string, PolicySet[]>>((acc, ps) => {
+    if (!acc[ps.module]) acc[ps.module] = []
+    acc[ps.module].push(ps)
+    return acc
+  }, {})
 
   return (
-    <div style={{ padding: 'var(--space-6)', maxWidth: 1200, margin: '0 auto' }}>
-
-      {/* Header */}
+    <div style={{ padding: 'var(--space-6)', maxWidth: 1280, margin: '0 auto' }}>
       <div style={{ marginBottom: 'var(--space-6)' }}>
-        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          Policy Engine
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>
-          Configurable rules for EOS, payroll, leave, overtime, and penalties — with full version history and audit trail.
+        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-text-primary)' }}>Policy Engine</h1>
+        <p style={{ color: 'var(--color-text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>
+          Configurable rule sets for EOS, payroll, leave, overtime and penalties. Rules support conditions, formulas, and pipeline strategies. All calculations are audited and snapshotted.
         </p>
       </div>
 
-      <Tabs defaultValue="rules">
+      <Tabs defaultValue="sets">
         <TabsList>
-          <TabsTrigger value="rules">Active Rules</TabsTrigger>
+          <TabsTrigger value="sets">Policy Sets</TabsTrigger>
           <TabsTrigger value="presets">Apply Preset</TabsTrigger>
           <TabsTrigger value="audit">Audit Log</TabsTrigger>
         </TabsList>
 
-        {/* ── Active Rules ──────────────────────────────────────────────── */}
-        <TabsContent value="rules">
-          {loadingRules ? (
-            <p style={{ color: 'var(--text-secondary)', padding: 'var(--space-4)' }}>Loading rules...</p>
-          ) : (
-            grouped.map(({ group, rules }) => (
-              <div key={group} style={{ marginBottom: 'var(--space-6)' }}>
-                <h2 style={{
-                  fontSize: 'var(--text-base)',
-                  fontWeight: 600,
-                  color: 'var(--text-primary)',
-                  marginBottom: 'var(--space-3)',
-                  paddingBottom: 8,
-                  borderBottom: '1px solid var(--border-subtle)',
-                }}>
-                  {group}
-                </h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 'var(--space-3)' }}>
-                  {rules.length === 0 ? (
-                    <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)', gridColumn: '1 / -1' }}>
-                      No rules configured. Apply a preset or add rules manually.
-                    </p>
-                  ) : (
-                    rules.map(rule => (
-                      <div
-                        key={rule.id}
-                        style={{
-                          background: 'var(--surface-card)',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: 'var(--radius-lg)',
-                          padding: 'var(--space-4)',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
-                          <div>
-                            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>
-                              {rule.rule_type}
-                            </div>
-                            <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', marginTop: 2 }}>
-                              {rule.rule_type_display}
-                            </div>
-                          </div>
-                          {statusBadge(rule)}
-                        </div>
-
-                        <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-primary, #1e40af)', marginBottom: 8 }}>
-                          {rule.display_value}
-                        </div>
-
-                        {rule.description && (
-                          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 4 }}>
-                            {rule.description}
-                          </p>
-                        )}
-                        {rule.source_reference && (
-                          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
-                            {rule.source_reference}
-                          </p>
-                        )}
-
-                        {canManage && (
-                          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                            <Button size="sm" variant="secondary" onClick={() => openEdit(rule)}>
-                              Edit
-                            </Button>
-                            {rule.is_active && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleDeactivate(rule)}
-                                isLoading={deactivateMutation.isPending}
-                              >
-                                Deactivate
-                              </Button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            ))
+        <TabsContent value="sets">
+          {Object.keys(byModule).length === 0 && (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--color-text-muted)' }}>
+              No policy sets yet. Apply a preset to get started.
+            </div>
           )}
+          {Object.entries(byModule).map(([module, moduleSets]) => (
+            <div key={module} style={{ marginBottom: 'var(--space-6)' }}>
+              <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: 'var(--space-3)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span>{MODULE_ICONS[module] || '⚙️'}</span>
+                {moduleSets[0]?.module_display || module}
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(460px, 1fr))', gap: 'var(--space-4)' }}>
+                {moduleSets.map(ps => (
+                  <SetCard
+                    key={ps.id}
+                    ps={ps}
+                    onClone={() => cloneMutation.mutate(ps.id)}
+                    onActivate={() => handleActivate(ps)}
+                    onArchive={() => handleArchive(ps)}
+                    onPreview={() => { setPreviewSet(ps); setPreviewResult(null); setPreviewError('') }}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
         </TabsContent>
 
-        {/* ── Presets ───────────────────────────────────────────────────── */}
         <TabsContent value="presets">
-          <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-4)', fontSize: 'var(--text-sm)' }}>
-            Presets are country/region rule templates. Applying a preset creates new versioned rules effective today — existing rules are not deleted.
+          <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-4)', fontSize: 'var(--text-sm)' }}>
+            Presets create draft policy sets that you then review and activate per module.
           </p>
-          {loadingPresets ? (
-            <p style={{ color: 'var(--text-secondary)' }}>Loading presets...</p>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 'var(--space-4)' }}>
-              {presets.length === 0 ? (
-                <p style={{ color: 'var(--text-tertiary)', gridColumn: '1 / -1' }}>
-                  No presets found. Run:{' '}
-                  <code style={{ fontFamily: 'monospace', background: 'var(--surface-subtle)', padding: '2px 6px', borderRadius: 4 }}>
-                    python manage.py seed_policy_presets
-                  </code>
-                </p>
-              ) : (
-                presets.map(preset => (
-                  <div
-                    key={preset.id}
-                    style={{
-                      background: 'var(--surface-card)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-lg)',
-                      padding: 'var(--space-5)',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                      <span style={{ fontSize: 32 }}>{preset.country_code === 'AE' ? '🇦🇪' : '🌐'}</span>
-                      <div>
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{preset.name}</div>
-                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-                          {preset.rules_count} rules &bull; {preset.country_code}
-                        </div>
-                      </div>
-                    </div>
-                    {preset.description && (
-                      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 12 }}>
-                        {preset.description}
-                      </p>
-                    )}
-                    {preset.legal_reference && (
-                      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontStyle: 'italic', marginBottom: 12 }}>
-                        {preset.legal_reference}
-                      </p>
-                    )}
-                    {canManage && (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => handleApplyPreset(preset)}
-                        isLoading={applyPresetMutation.isPending}
-                      >
-                        Apply to This Company
-                      </Button>
-                    )}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 'var(--space-4)' }}>
+            {presets.map(preset => (
+              <div key={preset.id} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, padding: 'var(--space-5)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                  <span style={{ fontSize: 32 }}>{preset.country_code === 'AE' ? '🇦🇪' : '🌐'}</span>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{preset.name}</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{preset.sets_count} module sets</div>
                   </div>
-                ))
-              )}
-            </div>
-          )}
+                </div>
+                {preset.description && <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginBottom: 12 }}>{preset.description}</p>}
+                <HasPermission permission="hr_policy:manage">
+                  <Button onClick={() => handleApplyPreset(preset)} disabled={applyPresetMutation.isPending}>Apply to This Company</Button>
+                </HasPermission>
+              </div>
+            ))}
+            {presets.length === 0 && (
+              <p style={{ color: 'var(--color-text-secondary)' }}>
+                No presets found. Run: <code>python manage.py seed_policy_presets</code>
+              </p>
+            )}
+          </div>
         </TabsContent>
 
-        {/* ── Audit Log ─────────────────────────────────────────────────── */}
         <TabsContent value="audit">
-          {loadingAudit ? (
-            <p style={{ color: 'var(--text-secondary)', padding: 'var(--space-4)' }}>Loading audit log...</p>
-          ) : (
-            <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
-                  <thead>
-                    <tr style={{ background: 'var(--surface-subtle)' }}>
-                      {['Date', 'Rule Type', 'Action', 'Old Value', 'New Value', 'Changed By', 'Reason'].map(h => (
-                        <th
-                          key={h}
-                          style={{
-                            padding: '10px 16px',
-                            textAlign: 'left',
-                            fontWeight: 600,
-                            color: 'var(--text-secondary)',
-                            borderBottom: '1px solid var(--border-subtle)',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {auditLogs.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} style={{ padding: 24, textAlign: 'center', color: 'var(--text-tertiary)' }}>
-                          No audit entries yet.
-                        </td>
-                      </tr>
-                    ) : (
-                      auditLogs.map((log, i) => (
-                        <tr
-                          key={log.id}
-                          style={{
-                            borderBottom: '1px solid var(--border-subtle)',
-                            background: i % 2 === 0 ? 'transparent' : 'var(--surface-subtle)',
-                          }}
-                        >
-                          <td style={{ padding: '10px 16px', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
-                            {new Date(log.changed_at).toLocaleString()}
-                          </td>
-                          <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontSize: 'var(--text-xs)' }}>
-                            {log.rule_type}
-                          </td>
-                          <td style={{ padding: '10px 16px' }}>
-                            <Badge variant={actionBadgeVariant(log.action)}>{log.action_display}</Badge>
-                          </td>
-                          <td style={{ padding: '10px 16px', color: 'var(--text-secondary)' }}>
-                            {log.old_value !== null && log.old_value !== undefined ? String(log.old_value) : '—'}
-                          </td>
-                          <td style={{ padding: '10px 16px', fontWeight: 600 }}>
-                            {log.new_value !== null && log.new_value !== undefined ? String(log.new_value) : '—'}
-                          </td>
-                          <td style={{ padding: '10px 16px', color: 'var(--text-secondary)' }}>
-                            {log.changed_by_name ?? '—'}
-                          </td>
-                          <td style={{ padding: '10px 16px', color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
-                            {log.change_reason || '—'}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
+              <thead>
+                <tr style={{ background: 'var(--color-surface-hover)' }}>
+                  {['Date', 'Entity', 'Action', 'Changed By', 'Reason'].map(h => (
+                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-secondary)', borderBottom: '1px solid var(--color-border)', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {auditLogs.map((log, i) => (
+                  <tr key={log.id} style={{ borderBottom: '1px solid var(--color-border)', background: i % 2 === 0 ? 'transparent' : 'var(--color-surface-hover)' }}>
+                    <td style={{ padding: '10px 16px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>{new Date(log.changed_at).toLocaleString()}</td>
+                    <td style={{ padding: '10px 16px' }}><code style={{ fontSize: 11 }}>{log.entity_type}#{log.entity_id}</code></td>
+                    <td style={{ padding: '10px 16px' }}>
+                      <Badge style={{ background: log.action === 'activated' ? '#22c55e' : log.action === 'archived' ? '#6b7280' : '#3b82f6', color: '#fff', fontSize: 11 }}>{log.action_display}</Badge>
+                    </td>
+                    <td style={{ padding: '10px 16px', color: 'var(--color-text-secondary)' }}>{log.changed_by_name || '—'}</td>
+                    <td style={{ padding: '10px 16px', color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>{log.change_reason || '—'}</td>
+                  </tr>
+                ))}
+                {auditLogs.length === 0 && <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-muted)' }}>No entries yet.</td></tr>}
+              </tbody>
+            </table>
+          </div>
         </TabsContent>
       </Tabs>
 
-      {/* ── Edit Rule Modal ───────────────────────────────────────────────── */}
-      <BaseModal
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        title={editingRule ? `Edit: ${editingRule.rule_type_display}` : 'New Rule'}
-        size="md"
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setShowEditModal(false)} disabled={saveMutation.isPending}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={handleSave} isLoading={saveMutation.isPending}>
-              Save Rule
-            </Button>
-          </>
-        }
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-          {editingRule && (
-            <div style={{
-              background: '#eff6ff',
-              border: '1px solid #bfdbfe',
-              borderRadius: 'var(--radius-md)',
-              padding: 12,
-              fontSize: 'var(--text-sm)',
-              color: '#1e40af',
-            }}>
-              Saving creates a new version. The current rule will be closed with effective_to = today.
+      {previewSet && (
+        <BaseModal
+          open={!!previewSet}
+          onClose={() => setPreviewSet(null)}
+          title={`Preview: ${previewSet.name}`}
+          footer={<Button onClick={runPreview}>Run Preview</Button>}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 500, marginBottom: 4 }}>
+                Context (JSON) — provide all relevant variables
+              </label>
+              <textarea
+                value={previewContext}
+                onChange={e => setPreviewContext(e.target.value)}
+                rows={6}
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--color-border)', borderRadius: 6, fontFamily: 'monospace', fontSize: 'var(--text-sm)', resize: 'vertical' }}
+                placeholder='{"service_years": 6.5, "basic_salary": 15000, "termination_reason": "resignation"}'
+              />
             </div>
-          )}
-
-          <div>
-            <label style={LABEL}>
-              Value{editingRule ? ` (${editingRule.value_type_display})` : ''}
-              <span style={{ color: 'var(--color-error)' }}> *</span>
-            </label>
-            <input
-              value={formValue}
-              onChange={e => setFormValue(e.target.value)}
-              style={INPUT}
-              placeholder="e.g. 21 for decimal, monthly for string"
-            />
+            {previewError && <div style={{ color: '#ef4444', fontSize: 'var(--text-sm)' }}>{previewError}</div>}
+            {previewResult && (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, marginBottom: 12 }}>
+                  <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: '#1e40af' }}>
+                    {previewResult.final_output?.toLocaleString() ?? '—'}
+                  </div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: '#3b82f6' }}>
+                    {previewResult.output_type} · {previewResult.calculation_strategy}<br />
+                    {previewResult.matched_rules_count} matched · {previewResult.skipped_rules_count} skipped
+                  </div>
+                </div>
+                <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+                  {previewResult.rule_evaluations.map((ev, i) => (
+                    <div key={i} style={{ padding: '8px 12px', borderRadius: 6, marginBottom: 6, background: ev.applied ? '#f0fdf4' : '#fafafa', border: `1px solid ${ev.applied ? '#bbf7d0' : '#e2e8f0'}`, fontSize: 'var(--text-xs)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                        <span style={{ fontWeight: 600, color: ev.applied ? '#16a34a' : 'var(--color-text-muted)' }}>
+                          {ev.applied ? '✓' : '✗'} [{ev.rule_key}] {ev.label}
+                        </span>
+                        {ev.formula_result !== null && ev.applied && (
+                          <span style={{ fontWeight: 700, color: '#1e40af' }}>= {ev.formula_result}</span>
+                        )}
+                      </div>
+                      {ev.formula && <div style={{ fontFamily: 'monospace', color: '#6b7280' }}>{ev.formula}</div>}
+                      {ev.skipped_reason && <div style={{ color: '#ef4444' }}>{ev.skipped_reason}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-
-          <div>
-            <label style={LABEL}>
-              Effective From <span style={{ color: 'var(--color-error)' }}>*</span>
-            </label>
-            <input
-              type="date"
-              value={formEffDate}
-              onChange={e => setFormEffDate(e.target.value)}
-              style={INPUT}
-            />
-          </div>
-
-          <div>
-            <label style={LABEL}>Description</label>
-            <textarea
-              value={formDesc}
-              onChange={e => setFormDesc(e.target.value)}
-              rows={2}
-              style={{ ...INPUT, resize: 'vertical' }}
-            />
-          </div>
-
-          <div>
-            <label style={LABEL}>Legal Reference</label>
-            <input
-              value={formRef}
-              onChange={e => setFormRef(e.target.value)}
-              style={INPUT}
-              placeholder="Article number, circular, etc."
-            />
-          </div>
-        </div>
-      </BaseModal>
+        </BaseModal>
+      )}
     </div>
-  );
+  )
 }
