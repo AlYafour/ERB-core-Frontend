@@ -1593,3 +1593,148 @@ export const hrRecruitmentApi = {
   sendOffer: (id: number) => apiClient.post<JobOffer>(`/hr/recruitment/offers/${id}/send/`),
   respondOffer: (id: number, accepted: boolean) => apiClient.post<JobOffer>(`/hr/recruitment/offers/${id}/respond/`, { accepted }),
 }
+
+// ─────────────────────── Phase 6: HR Benefits ────────────────────────────────
+
+export interface BenefitPlan {
+  id: number
+  name: string
+  benefit_type: string
+  benefit_type_display: string
+  provider: string
+  description: string
+  monthly_cost: string
+  employee_contribution: string
+  currency: string
+  is_mandatory: boolean
+  is_active: boolean
+  effective_from: string | null
+  effective_to: string | null
+  enrollments_count: number
+  created_at: string
+}
+
+export interface EmployeeBenefit {
+  id: number
+  employee: number
+  plan: number
+  plan_name: string
+  plan_type: string
+  status: 'active' | 'waived' | 'terminated'
+  status_display: string
+  enrolled_at: string
+  terminated_at: string | null
+  notes: string
+}
+
+export interface Asset {
+  id: number
+  asset_type: string
+  asset_type_display: string
+  name: string
+  asset_tag: string
+  serial_number: string
+  brand: string
+  status: 'available' | 'assigned' | 'maintenance' | 'disposed'
+  status_display: string
+  purchase_cost: string | null
+  currency: string
+  created_at: string
+}
+
+export interface AssetAssignment {
+  id: number
+  asset: number
+  asset_name: string
+  asset_tag: string
+  employee: number
+  employee_name: string
+  assigned_at: string
+  returned_at: string | null
+  condition_out: string
+  condition_in: string
+  notes: string
+}
+
+export interface TravelRequest {
+  id: number
+  employee: number
+  employee_name: string
+  purpose: string
+  purpose_display: string
+  destination: string
+  departure_date: string
+  return_date: string
+  duration_days: number
+  estimated_cost: string | null
+  currency: string
+  description: string
+  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'completed' | 'cancelled'
+  status_display: string
+  review_notes: string
+  created_at: string
+}
+
+export interface ExpenseClaim {
+  id: number
+  employee: number
+  employee_name: string
+  title: string
+  category: string
+  category_display: string
+  amount: string
+  currency: string
+  expense_date: string
+  description: string
+  receipt: string | null
+  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'paid'
+  status_display: string
+  approved_amount: string | null
+  paid_at: string | null
+  created_at: string
+}
+
+export interface Grievance {
+  id: number
+  employee: number
+  employee_name: string
+  grievance_type: string
+  grievance_type_display: string
+  priority: 'low' | 'medium' | 'high' | 'critical'
+  priority_display: string
+  subject: string
+  description: string
+  is_anonymous: boolean
+  status: 'open' | 'in_review' | 'resolved' | 'closed' | 'escalated'
+  status_display: string
+  resolution: string
+  resolved_at: string | null
+  created_at: string
+}
+
+export const hrBenefitsApi = {
+  getPlans: (params?: Record<string, string>) => apiClient.get<BenefitPlan[]>('/hr/benefits/plans/', { params }),
+  createPlan: (data: Partial<BenefitPlan>) => apiClient.post<BenefitPlan>('/hr/benefits/plans/', data),
+  getEnrollments: (params?: Record<string, string>) => apiClient.get<EmployeeBenefit[]>('/hr/benefits/enrollments/', { params }),
+  createEnrollment: (data: Partial<EmployeeBenefit>) => apiClient.post<EmployeeBenefit>('/hr/benefits/enrollments/', data),
+  terminateEnrollment: (id: number, data?: { terminated_at?: string }) => apiClient.post<EmployeeBenefit>(`/hr/benefits/enrollments/${id}/terminate/`, data),
+  getAssets: (params?: Record<string, string>) => apiClient.get<Asset[]>('/hr/benefits/assets/', { params }),
+  createAsset: (data: Partial<Asset>) => apiClient.post<Asset>('/hr/benefits/assets/', data),
+  getAssignments: (params?: Record<string, string>) => apiClient.get<AssetAssignment[]>('/hr/benefits/assignments/', { params }),
+  createAssignment: (data: Partial<AssetAssignment>) => apiClient.post<AssetAssignment>('/hr/benefits/assignments/', data),
+  returnAsset: (id: number, data: { returned_at?: string; condition_in?: string }) => apiClient.post<AssetAssignment>(`/hr/benefits/assignments/${id}/return/`, data),
+  getTravelRequests: (params?: Record<string, string>) => apiClient.get<TravelRequest[]>('/hr/benefits/travel/', { params }),
+  createTravelRequest: (data: Partial<TravelRequest>) => apiClient.post<TravelRequest>('/hr/benefits/travel/', data),
+  submitTravel: (id: number) => apiClient.post<TravelRequest>(`/hr/benefits/travel/${id}/submit/`),
+  reviewTravel: (id: number, data: { approved: boolean; notes?: string }) => apiClient.post<TravelRequest>(`/hr/benefits/travel/${id}/review/`, data),
+  getExpenses: (params?: Record<string, string>) => apiClient.get<ExpenseClaim[]>('/hr/benefits/expenses/', { params }),
+  createExpense: (data: FormData | Partial<ExpenseClaim>) => apiClient.post<ExpenseClaim>('/hr/benefits/expenses/', data),
+  submitExpense: (id: number) => apiClient.post<ExpenseClaim>(`/hr/benefits/expenses/${id}/submit/`),
+  approveExpense: (id: number, data: { approved: boolean; approved_amount?: number; notes?: string }) => apiClient.post<ExpenseClaim>(`/hr/benefits/expenses/${id}/approve/`, data),
+  markPaid: (id: number) => apiClient.post<ExpenseClaim>(`/hr/benefits/expenses/${id}/mark_paid/`),
+  getGrievances: (params?: Record<string, string>) => apiClient.get<Grievance[]>('/hr/benefits/grievances/', { params }),
+  createGrievance: (data: Partial<Grievance>) => apiClient.post<Grievance>('/hr/benefits/grievances/', data),
+  assignGrievance: (id: number) => apiClient.post<Grievance>(`/hr/benefits/grievances/${id}/assign/`),
+  resolveGrievance: (id: number, data: { resolution: string }) => apiClient.post<Grievance>(`/hr/benefits/grievances/${id}/resolve/`, data),
+  escalateGrievance: (id: number) => apiClient.post<Grievance>(`/hr/benefits/grievances/${id}/escalate/`),
+}
