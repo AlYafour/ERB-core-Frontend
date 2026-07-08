@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hrBenefitsApi, BenefitPlan, TravelRequest, ExpenseClaim, Grievance, Asset } from '@/lib/api/hr'
 import { Badge } from '@/components/ui/Badge'
+import MainLayout from '@/components/layout/MainLayout'
 import { Button } from '@/components/ui/Button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { confirm, toast } from '@/lib/hooks/use-toast'
@@ -354,7 +355,8 @@ export default function BenefitsPage() {
   const { data: grievances = [] } = useQuery({ queryKey: ['grievances-open'], queryFn: () => hrBenefitsApi.getGrievances({ status: 'open' }).then(r => r.data) })
 
   return (
-    <div style={{ padding: 'var(--space-6)', maxWidth: 1440, margin: '0 auto' }}>
+    <MainLayout>
+    <div style={{ maxWidth: 1440, margin: '0 auto' }}>
       <div style={{ marginBottom: 'var(--space-6)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--card-border)' }}>
         <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Benefits &amp; Welfare</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: '4px 0 0' }}>Benefit plans, asset management, travel, expenses, and grievances</p>
@@ -382,5 +384,6 @@ export default function BenefitsPage() {
         <TabsContent value="grievances" style={{ marginTop: 'var(--space-4)' }}><GrievancesTab /></TabsContent>
       </Tabs>
     </div>
+    </MainLayout>
   )
 }

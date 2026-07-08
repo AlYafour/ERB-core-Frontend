@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { hrAnalyticsApi } from '@/lib/api/hr'
 import { Button } from '@/components/ui/Button'
+import MainLayout from '@/components/layout/MainLayout'
 import HasPermission from '@/components/shared/HasPermission'
 import { toast } from '@/lib/hooks/use-toast'
 import { UsersIcon, CalendarIcon, ClockIcon, AlertIcon, DollarIcon } from '@/components/icons'
@@ -140,7 +141,8 @@ export default function AnalyticsPage() {
   })
 
   return (
-    <div style={{ padding: 'var(--space-6)', maxWidth: 1440, margin: '0 auto' }}>
+    <MainLayout>
+    <div style={{ maxWidth: 1440, margin: '0 auto' }}>
       <div style={{ marginBottom: 'var(--space-6)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>HR Analytics</h1>
@@ -268,5 +270,6 @@ export default function AnalyticsPage() {
         </Section>
       )}
     </div>
+    </MainLayout>
   )
 }

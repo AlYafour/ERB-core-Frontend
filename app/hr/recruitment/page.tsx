@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hrRecruitmentApi, JobRequisition, RequisitionPipeline } from '@/lib/api/hr'
 import { Button } from '@/components/ui/Button'
+import MainLayout from '@/components/layout/MainLayout'
 import { Badge } from '@/components/ui/Badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import HasPermission from '@/components/shared/HasPermission'
@@ -168,7 +169,8 @@ export default function RecruitmentPage() {
   const totalActive = requisitions.reduce((s, r) => s + r.active_candidates_count, 0)
 
   return (
-    <div style={{ padding: 'var(--space-6)', maxWidth: 1440, margin: '0 auto' }}>
+    <MainLayout>
+    <div style={{ maxWidth: 1440, margin: '0 auto' }}>
       <div style={{ marginBottom: 'var(--space-6)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--card-border)' }}>
         <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Recruitment</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: '4px 0 0' }}>Job requisitions and candidate pipeline management</p>
@@ -233,5 +235,6 @@ export default function RecruitmentPage() {
         </TabsContent>
       </Tabs>
     </div>
+    </MainLayout>
   )
 }

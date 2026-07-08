@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hrPerformanceApi, PerformanceCycle, PerformanceReview } from '@/lib/api/hr'
 import { Button } from '@/components/ui/Button'
+import MainLayout from '@/components/layout/MainLayout'
 import { Badge } from '@/components/ui/Badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { BaseModal } from '@/components/ui/base/BaseModal'
@@ -91,7 +92,8 @@ export default function PerformancePage() {
   })
 
   return (
-    <div style={{ padding: 'var(--space-6)', maxWidth: 1280, margin: '0 auto' }}>
+    <MainLayout>
+    <div style={{ maxWidth: 1280, margin: '0 auto' }}>
       <div style={{ marginBottom: 'var(--space-6)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Performance Management</h1>
@@ -245,5 +247,6 @@ export default function PerformancePage() {
         </BaseModal>
       )}
     </div>
+    </MainLayout>
   )
 }

@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hrOffboardingApi, OffboardingProcess } from '@/lib/api/hr'
 import { Button } from '@/components/ui/Button'
+import MainLayout from '@/components/layout/MainLayout'
 import { Badge } from '@/components/ui/Badge'
 import { confirm, toast } from '@/lib/hooks/use-toast'
 import HasPermission from '@/components/shared/HasPermission'
@@ -55,7 +56,8 @@ export default function OffboardingPage() {
   }
 
   return (
-    <div style={{ padding: 'var(--space-6)', maxWidth: 1280, margin: '0 auto' }}>
+    <MainLayout>
+    <div style={{ maxWidth: 1280, margin: '0 auto' }}>
       <div style={{ marginBottom: 'var(--space-6)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--card-border)' }}>
         <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Employee Offboarding</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: '4px 0 0' }}>Exit management and clearance tracking</p>
@@ -99,5 +101,6 @@ export default function OffboardingPage() {
         {processes.length === 0 && <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-tertiary)', gridColumn: '1/-1' }}>No active offboarding processes.</div>}
       </div>
     </div>
+    </MainLayout>
   )
 }
