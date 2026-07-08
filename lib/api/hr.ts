@@ -1480,3 +1480,116 @@ export const hrTrainingApi = {
   update: (id: number, data: Partial<TrainingRecord>) => apiClient.patch<TrainingRecord>(`/hr/training/${id}/`, data),
   delete: (id: number) => apiClient.delete(`/hr/training/${id}/`),
 }
+
+// ─────────────────────── Phase 5: HR Recruitment ────────────────────────────
+
+export interface JobRequisition {
+  id: number
+  title: string
+  department: number | null
+  department_name: string | null
+  location: string
+  contract_type: string
+  contract_type_display: string
+  headcount: number
+  status: 'draft' | 'open' | 'on_hold' | 'filled' | 'cancelled'
+  status_display: string
+  description: string
+  requirements: string
+  salary_min: string | null
+  salary_max: string | null
+  currency: string
+  target_date: string | null
+  candidates_count: number
+  active_candidates_count: number
+  created_at: string
+}
+
+export interface Candidate {
+  id: number
+  requisition: number
+  first_name: string
+  last_name: string
+  full_name: string
+  email: string
+  phone: string
+  nationality: string
+  current_company: string
+  current_title: string
+  expected_salary: string | null
+  notice_period_days: number | null
+  cv_file: string | null
+  source: string
+  status: string
+  status_display: string
+  rejection_reason: string
+  notes: string
+  applied_at: string
+  interviews_count: number
+  latest_interview: { type: string; scheduled_at: string; result: string } | null
+}
+
+export interface Interview {
+  id: number
+  candidate: number
+  candidate_name: string
+  interview_type: string
+  interview_type_display: string
+  scheduled_at: string
+  duration_minutes: number
+  location: string
+  interviewers: number[]
+  result: 'pending' | 'passed' | 'failed' | 'no_show'
+  result_display: string
+  score: number | null
+  feedback: string
+  strengths: string
+  concerns: string
+  recommend_hire: boolean | null
+  created_at: string
+}
+
+export interface JobOffer {
+  id: number
+  candidate: number
+  status: 'draft' | 'sent' | 'accepted' | 'declined' | 'expired'
+  status_display: string
+  job_title: string
+  basic_salary: string
+  housing_allowance: string
+  transport_allowance: string
+  other_allowances: string
+  total_package: number
+  currency: string
+  contract_type: string
+  joining_date: string | null
+  probation_months: number
+  expiry_date: string | null
+  sent_at: string | null
+  responded_at: string | null
+}
+
+export interface RequisitionPipeline {
+  requisition_id: number
+  title: string
+  pipeline: Record<string, { label: string; count: number; candidates: Array<{ id: number; name: string; email: string; applied_at: string; source: string }> }>
+}
+
+export const hrRecruitmentApi = {
+  getRequisitions: (params?: Record<string, string>) => apiClient.get<JobRequisition[]>('/hr/recruitment/requisitions/', { params }),
+  createRequisition: (data: Partial<JobRequisition>) => apiClient.post<JobRequisition>('/hr/recruitment/requisitions/', data),
+  updateRequisition: (id: number, data: Partial<JobRequisition>) => apiClient.patch<JobRequisition>(`/hr/recruitment/requisitions/${id}/`, data),
+  openRequisition: (id: number) => apiClient.post<JobRequisition>(`/hr/recruitment/requisitions/${id}/open/`),
+  closeRequisition: (id: number, action: 'filled' | 'cancel') => apiClient.post(`/hr/recruitment/requisitions/${id}/close/`, { action }),
+  getPipeline: (id: number) => apiClient.get<RequisitionPipeline>(`/hr/recruitment/requisitions/${id}/pipeline/`),
+  getCandidates: (params?: Record<string, string>) => apiClient.get<Candidate[]>('/hr/recruitment/candidates/', { params }),
+  createCandidate: (data: FormData | Partial<Candidate>) => apiClient.post<Candidate>('/hr/recruitment/candidates/', data),
+  advanceCandidate: (id: number) => apiClient.post<Candidate>(`/hr/recruitment/candidates/${id}/advance/`),
+  rejectCandidate: (id: number, reason?: string) => apiClient.post(`/hr/recruitment/candidates/${id}/reject/`, { reason }),
+  hireCandidate: (id: number) => apiClient.post<Candidate>(`/hr/recruitment/candidates/${id}/hire/`),
+  createInterview: (data: Partial<Interview>) => apiClient.post<Interview>('/hr/recruitment/interviews/', data),
+  updateInterview: (id: number, data: Partial<Interview>) => apiClient.patch<Interview>(`/hr/recruitment/interviews/${id}/`, data),
+  createOffer: (data: Partial<JobOffer>) => apiClient.post<JobOffer>('/hr/recruitment/offers/', data),
+  sendOffer: (id: number) => apiClient.post<JobOffer>(`/hr/recruitment/offers/${id}/send/`),
+  respondOffer: (id: number, accepted: boolean) => apiClient.post<JobOffer>(`/hr/recruitment/offers/${id}/respond/`, { accepted }),
+}
