@@ -110,7 +110,7 @@ function AttendanceEditModal({
 
         <div style={fieldStyle}>
           <label style={labelStyle}>Status</label>
-          <select className="form-input" value={status} onChange={e => setStatus(e.target.value)}>
+          <select className="form-input" value={status} onChange={e => setStatus(e.target.value as typeof status)}>
             {Object.entries(STATUS_LABEL).map(([v, l]) => (
               <option key={v} value={v}>{l}</option>
             ))}

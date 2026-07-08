@@ -47,10 +47,10 @@ export interface PurchaseRequestFormData {
   request_date: string;
   required_by: string;
   notes: string;
-  items?: PurchaseRequestItemFormData[];
+  items?: PurchaseRequestItem[];
 }
 
-export function toPurchaseRequestCreateData(form: PurchaseRequestFormData, items?: PurchaseRequestItemFormData[]) {
+export function toPurchaseRequestCreateData(form: PurchaseRequestFormData, items?: PurchaseRequestItem[]) {
   const allItems = items ?? form.items ?? [];
   return {
     title: form.title,
@@ -148,7 +148,7 @@ export interface PurchaseQuotationFormData {
   tax_rate: number;
   discount: number;
   notes: string;
-  items?: PurchaseQuotationItemFormData[];
+  items?: PurchaseQuotationItem[];
 }
 
 export function toPurchaseQuotationCreateData(form: PurchaseQuotationFormData, items?: Array<any>) {

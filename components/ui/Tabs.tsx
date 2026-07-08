@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState, createContext, useContext } from 'react';
+import React, { ReactNode, useState, createContext, useContext } from 'react';
 import { cn } from '@/lib/utils/cn';
 
 interface TabsContextValue {
@@ -73,6 +73,7 @@ export interface TabsTriggerProps {
   value: string;
   children: ReactNode;
   className?: string;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
 }
 
 export function TabsTrigger({ value, children, className }: TabsTriggerProps) {
@@ -140,13 +141,14 @@ export interface TabsContentProps {
   value: string;
   children: ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export function TabsContent({ value, children, className }: TabsContentProps) {
+export function TabsContent({ value, children, className, style }: TabsContentProps) {
   const { activeTab } = useTabsContext();
   if (activeTab !== value) return null;
   return (
-    <div role="tabpanel" className={cn('mt-4', className)}>
+    <div role="tabpanel" className={cn('mt-4', className)} style={style}>
       {children}
     </div>
   );

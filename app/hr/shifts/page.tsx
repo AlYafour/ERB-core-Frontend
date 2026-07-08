@@ -482,8 +482,8 @@ export default function ShiftsPage() {
         };
       }),
     };
-    if (modalShift === 'new') createMutation.mutate(enriched);
-    else if (modalShift) updateMutation.mutate({ id: modalShift.id, data: enriched });
+    if (modalShift === 'new') createMutation.mutate(enriched as unknown as FormState);
+    else if (modalShift) updateMutation.mutate({ id: modalShift.id, data: enriched as unknown as FormState });
   };
 
   const isSaving = createMutation.isPending || updateMutation.isPending;

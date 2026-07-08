@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface DateInputProps {
   value: string; // YYYY-MM-DD
   onChange: (value: string) => void;
   className?: string;
   disabled?: boolean;
+  name?: string;
+  style?: React.CSSProperties;
 }
 
 function isoToDisplay(iso: string): string {
@@ -22,7 +24,7 @@ function displayToIso(display: string): string {
   return `${digits.slice(4, 8)}-${digits.slice(2, 4)}-${digits.slice(0, 2)}`;
 }
 
-export default function DateInput({ value, onChange, className = 'form-input', disabled }: DateInputProps) {
+export default function DateInput({ value, onChange, className = 'form-input', disabled, name, style }: DateInputProps) {
   const [display, setDisplay] = useState(() => isoToDisplay(value));
 
   useEffect(() => {
@@ -59,6 +61,8 @@ export default function DateInput({ value, onChange, className = 'form-input', d
       onChange={handleChange}
       onBlur={handleBlur}
       disabled={disabled}
+      name={name}
+      style={style}
       maxLength={10}
       inputMode="numeric"
     />

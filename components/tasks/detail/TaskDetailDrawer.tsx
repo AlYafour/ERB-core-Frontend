@@ -48,7 +48,7 @@ export function TaskDetailDrawer({ taskId, onClose }: Props) {
     busy, changingMeta, sendingComment, savingEdit, uploadingFile,
   } = useTaskDetail(taskId);
 
-  const isCreator = task ? task.created_by?.id === (user as { id?: number } | null)?.id : false;
+  const isCreator = task ? ((task.created_by as any)?.id ?? task.created_by) === (user as { id?: number } | null)?.id : false;
   const canManage = isCreator || isTenantAdmin;
 
   const deleteTask = useMutation({

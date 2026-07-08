@@ -214,7 +214,7 @@ export default function PurchaseQuotationDetailPage() {
                   { header: t('col', 'quantity'),  align: 'center', cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{item.quantity}</span> },
                   { header: t('col', 'unitPrice'), align: 'right',  cell: (item) => <span style={{ fontFamily: 'monospace' }}>{formatPrice(Number(item.unit_price))}</span> },
                   { header: 'Disc %',              align: 'center', cell: (item) => item.discount ? <span style={{ color: 'var(--status-error)', fontWeight: 600 }}>{item.discount}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
-                  { header: 'Tax %',               align: 'center', cell: (item) => (item.tax_rate || item.tax) ? <span style={{ color: 'var(--text-secondary)' }}>{item.tax_rate || item.tax}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
+                  { header: 'Tax %',               align: 'center', cell: (item) => (item.tax_rate || (item as any).tax) ? <span style={{ color: 'var(--text-secondary)' }}>{item.tax_rate || (item as any).tax}%</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
                   { header: t('col', 'total'),     align: 'right',  cell: (item) => <span className="col-total">{formatPrice(Number(item.total))}</span> },
                 ]}
               />

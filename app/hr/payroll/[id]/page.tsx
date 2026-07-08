@@ -55,7 +55,7 @@ export default function PayrollDetailPage() {
           breadcrumbs={[{ label: 'HR' }, { label: 'Payroll', href: '/hr/payroll' }, { label: `${payroll.month_name} ${payroll.year}` }]}
           actions={
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-              <Badge variant={(STATUS_VARIANT[payroll.status] as string | undefined) || 'default'}>{payroll.status.toUpperCase()}</Badge>
+              <Badge variant={(STATUS_VARIANT[payroll.status] as import('@/components/ui/Badge').BadgeProps['variant']) || 'default'}>{payroll.status.toUpperCase()}</Badge>
               <Button
                 variant="secondary"
                 size="sm"

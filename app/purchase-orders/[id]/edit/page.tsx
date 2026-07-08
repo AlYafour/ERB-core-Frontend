@@ -148,7 +148,7 @@ function EditPOContent() {
     onError: (err: unknown) => toast(getApiError(err, 'Failed to update purchase order'), 'error'),
   });
 
-  const totals = usePOFormTotals(formData, items, charges as POFormCharge[]);
+  const totals = usePOFormTotals(formData as import('@/lib/hooks/use-po-form-totals').POFormData, items, charges as POFormCharge[]);
   const setForm = (patch: Partial<PurchaseOrderUpdateFormData>) => setFormData((p) => ({ ...p, ...patch }));
   const productOptions = (products?.results || []).map((p) => ({ value: p.id, label: `${p.name} (${p.code})`, searchText: `${p.name} ${p.code}` }));
 
@@ -215,13 +215,13 @@ function EditPOContent() {
 
               <div>
                 <label className="form-label">{t('col', 'orderDate')} <span style={{ color: 'var(--color-error)' }}>*</span></label>
-                <DateInput className="form-input" value={formData.order_date}
+                <DateInput className="form-input" value={formData.order_date ?? ''}
                   onChange={(v) => setForm({ order_date: v })} />
               </div>
 
               <div>
                 <label className="form-label">{t('field', 'deliveryDate')}</label>
-                <DateInput className="form-input" value={formData.delivery_date}
+                <DateInput className="form-input" value={formData.delivery_date ?? ''}
                   onChange={(v) => setForm({ delivery_date: v })} />
               </div>
 

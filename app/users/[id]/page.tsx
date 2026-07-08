@@ -24,7 +24,8 @@ export default function UserProfilePage() {
     enabled:  !!userId,
   });
 
-  const emp = empData?.results?.[0] ?? null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const emp = (empData?.results?.[0] ?? null) as any;
 
   useEffect(() => {
     if (emp) router.replace(`/hr/employees/${emp.id}`);

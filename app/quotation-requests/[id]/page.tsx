@@ -142,30 +142,30 @@ export default function QuotationRequestDetailPage() {
                 columns={[
                   {
                     header: 'Product',
-                    cell: (item: { product?: { name?: string; code?: string }; product_id?: number }) => (
+                    cell: (item) => (
                       <div>
-                        <div className="cell-product-name">{item.product?.name || `Product #${item.product_id}`}</div>
-                        {item.product?.code && <div className="cell-product-code">{item.product.code}</div>}
+                        <div className="cell-product-name">{(item as any).product?.name || `Product #${(item as any).product_id}`}</div>
+                        {(item as any).product?.code && <div className="cell-product-code">{(item as any).product.code}</div>}
                       </div>
                     ),
                   },
                   {
                     header: 'Qty',
                     align: 'center' as const,
-                    cell: (item: { quantity?: number }) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{item.quantity}</span>,
+                    cell: (item) => <span style={{ fontWeight: 'var(--weight-semibold)' }}>{(item as any).quantity}</span>,
                   },
                   {
                     header: 'Unit',
                     align: 'center' as const,
-                    cell: (item: { unit?: string; product?: { unit?: string } }) => (
+                    cell: (item) => (
                       <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 600 }}>
-                        {(item.unit || item.product?.unit || '—').toUpperCase()}
+                        {((item as any).unit || (item as any).product?.unit || '—').toUpperCase()}
                       </span>
                     ),
                   },
                   {
                     header: 'Notes',
-                    cell: (item: { notes?: string }) => <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{item.notes || '—'}</span>,
+                    cell: (item) => <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{(item as any).notes || '—'}</span>,
                   },
                 ]}
               />

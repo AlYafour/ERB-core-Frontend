@@ -169,7 +169,7 @@ export default function GRNDetailPage() {
                 {grn.supplier_invoice_file_url && (
                   grn.supplier_invoice_file_url.endsWith('.pdf') ? (
                     <a href={grn.supplier_invoice_file_url} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" size="sm">View Supplier Invoice PDF</Button>
+                      <Button variant="ghost" size="sm">View Supplier Invoice PDF</Button>
                     </a>
                   ) : (
                     <img src={grn.supplier_invoice_file_url} alt="Supplier Invoice" style={{ maxWidth: '100%', maxHeight: 240, objectFit: 'contain', borderRadius: 8, cursor: 'pointer', border: '1px solid var(--border-subtle)' }}

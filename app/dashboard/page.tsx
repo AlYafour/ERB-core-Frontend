@@ -112,8 +112,8 @@ function DashboardContent() {
 
   /* NEW: monthly volume trend */
   const monthlyData  = chartData?.monthlyProcurement ?? [];
-  const currMo       = monthlyData[monthlyData.length - 1]?.value ?? 0;
-  const prevMo       = monthlyData[monthlyData.length - 2]?.value ?? 0;
+  const currMo       = monthlyData[monthlyData.length - 1]?.volume ?? 0;
+  const prevMo       = monthlyData[monthlyData.length - 2]?.volume ?? 0;
   const volTrendPct  = prevMo > 0 ? Math.round(((currMo - prevMo) / prevMo) * 100) : null;
 
   /* NEW: total project spend */

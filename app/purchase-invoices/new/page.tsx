@@ -108,9 +108,9 @@ function NewPurchaseInvoicePageContent() {
       toast(errorMessage, 'error');
       
       // Set field-specific errors
-      if (error?.response?.data) {
+      if ((error as any)?.response?.data) {
         const backendErrors: Record<string, string> = {};
-        Object.entries(error.response.data).forEach(([key, value]) => {
+        Object.entries((error as any).response.data).forEach(([key, value]) => {
           if (Array.isArray(value)) {
             backendErrors[key] = value[0];
           } else if (typeof value === 'string') {

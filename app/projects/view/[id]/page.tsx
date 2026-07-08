@@ -70,7 +70,7 @@ export default function ProjectDetailPage() {
           imageAlt={project.name}
           entityType="project"
           statusBadge={PROJECT_LABEL[project.project_status] || project.project_status}
-          statusVariant={PROJECT_STATUS[project.project_status] ?? 'info'}
+          statusVariant={(PROJECT_STATUS[project.project_status] ?? 'info') as 'success' | 'error' | 'warning' | 'info'}
           backHref="/projects"
           backLabel="Back to Projects"
           actions={

@@ -372,7 +372,7 @@ function SkipModal({ loan, onClose, onSuccess }: { loan: EmployeeLoan; onClose: 
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>Cancel</Button>
-          <Button variant="warning" onClick={() => mutation.mutate()} isLoading={mutation.isPending}>
+          <Button variant="ghost" onClick={() => mutation.mutate()} isLoading={mutation.isPending}>
             Skip Month
           </Button>
         </>

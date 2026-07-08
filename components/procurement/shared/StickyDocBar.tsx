@@ -5,11 +5,15 @@ import { Badge } from '@/components/ui';
 import type { BadgeProps } from '@/components/ui/Badge';
 
 const BAR_CLASS: Record<NonNullable<BadgeProps['variant']>, string> = {
-  success: 'proc-bar--success',
-  warning: 'proc-bar--warning',
-  error:   'proc-bar--error',
-  info:    'proc-bar--info',
-  default: 'proc-bar--default',
+  success:   'proc-bar--success',
+  warning:   'proc-bar--warning',
+  error:     'proc-bar--error',
+  info:      'proc-bar--info',
+  default:   'proc-bar--default',
+  active:    'proc-bar--success',
+  inactive:  'proc-bar--default',
+  'on-going':'proc-bar--warning',
+  pending:   'proc-bar--warning',
 };
 
 interface Props {

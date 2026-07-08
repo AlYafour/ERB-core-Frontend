@@ -343,7 +343,7 @@ export default function Sidebar() {
             logoUrl={logoUrl}
             collapsed={sidebarCollapsed}
             onToggle={toggleSidebarCollapsed}
-            t={t}
+            t={t as (ns: string, key: string) => string}
           />
 
           {/* Mobile: logo + close button */}
@@ -351,7 +351,7 @@ export default function Sidebar() {
             tenantName={tenantName}
             logoUrl={logoUrl}
             onClose={() => setSidebarOpen(false)}
-            t={t}
+            t={t as (ns: string, key: string) => string}
           />
 
           {/* ── Navigation ── */}

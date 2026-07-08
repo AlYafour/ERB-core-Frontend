@@ -97,7 +97,7 @@ function GroupModal({
     { value: '__none__', label: '— No default manager —', searchText: 'none' },
     ...activeEmployees.map(e => ({
       value: e.id,
-      label: e.full_name ?? `${e.first_name} ${e.last_name}`,
+      label: e.full_name ?? `${e.user?.first_name ?? ''} ${e.user?.last_name ?? ''}`.trim(),
       searchText: `${e.full_name ?? ''} ${e.employee_id ?? ''}`,
     })),
   ], [activeEmployees]);

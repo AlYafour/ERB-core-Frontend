@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
 
 export interface BadgeProps {
@@ -8,6 +8,7 @@ export interface BadgeProps {
   variant?: 'default' | 'success' | 'error' | 'warning' | 'info' | 'active' | 'inactive' | 'on-going' | 'pending';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  style?: React.CSSProperties;
 }
 
 const VARIANT_CLASS: Record<string, string> = {
@@ -29,10 +30,10 @@ const SIZE_CLASS: Record<string, string> = {
   lg: 'text-sm px-3 py-1.5',
 };
 
-export function Badge({ children, variant = 'default', size = 'md', className }: BadgeProps) {
+export function Badge({ children, variant = 'default', size = 'md', className, style }: BadgeProps) {
   const variantClass = VARIANT_CLASS[variant] ?? 'badge';
   return (
-    <span className={cn(variantClass, SIZE_CLASS[size], className)}>
+    <span className={cn(variantClass, SIZE_CLASS[size], className)} style={style}>
       {children}
     </span>
   );

@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   // Turbopack compilation succeeds — skip the separate tsc pass that reads
   // stale .next/types from Vercel's build cache and misreads index.ts exports.
   typescript: { ignoreBuildErrors: true },
-  eslint:     { ignoreDuringBuilds: true },
+  // eslint ignoreDuringBuilds set via .eslintrc — not a valid NextConfig key in Next 14+
 
   // Next.js 16 uses Turbopack by default — handles code splitting automatically
   turbopack: {},

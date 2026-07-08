@@ -187,7 +187,7 @@ export const hrEmployeesApi = {
 // ── Departments ────────────────────────────────────────────────────────────────
 
 export const hrDepartmentsApi = {
-  getAll: async (params?: { page?: number; search?: string }): Promise<PaginatedResponse<HRDepartment>> => {
+  getAll: async (params?: { page?: number; search?: string; page_size?: number }): Promise<PaginatedResponse<HRDepartment>> => {
     const response = await apiClient.get('/hr/employees/departments/', { params });
     return response.data;
   },
@@ -268,7 +268,7 @@ export const hrAttendanceApi = {
 // ── HR Requests ────────────────────────────────────────────────────────────────
 
 export const hrRequestsApi = {
-  getAll: async (params?: { page?: number; search?: string; employee?: number; status?: string; request_type?: string }): Promise<PaginatedResponse<HRRequest>> => {
+  getAll: async (params?: { page?: number; search?: string; employee?: number; status?: string; request_type?: string; page_size?: number }): Promise<PaginatedResponse<HRRequest>> => {
     const response = await apiClient.get('/hr/requests/', { params });
     return response.data;
   },
@@ -818,7 +818,7 @@ export const hrCompanySettingsApi = {
 
 // ── Payroll Runs ──────────────────────────────────────────────────────────────
 export const hrPayrollRunsApi = {
-  getAll: async (params?: { page?: number; status?: string; month?: number; year?: number }): Promise<PaginatedResponse<PayrollRun>> => {
+  getAll: async (params?: { page?: number; status?: string; month?: number; year?: number; search?: string }): Promise<PaginatedResponse<PayrollRun>> => {
     const response = await apiClient.get('/hr/payroll/runs/', { params });
     return response.data;
   },
@@ -868,7 +868,7 @@ export const hrEosApi = {
     const response = await apiClient.post('/hr/eos/preview/', data);
     return response.data;
   },
-  create: async (data: { employee: number; hire_date: string; termination_date: string; termination_reason: string; leave_balance_days?: string; other_deductions?: string; other_additions?: string; notes?: string }): Promise<EOSCalculation> => {
+  create: async (data: { employee_id: number; termination_date: string; termination_reason: string; leave_balance_days?: number; other_deductions?: number; other_additions?: number; notes?: string }): Promise<EOSCalculation> => {
     const response = await apiClient.post('/hr/eos/', data);
     return response.data;
   },
@@ -1282,6 +1282,7 @@ export interface HeadcountData {
 export interface HeadcountTrendItem {
   label: string
   count: number
+  [key: string]: unknown
 }
 
 export interface PayrollCostItem {
@@ -1292,6 +1293,7 @@ export interface PayrollCostItem {
   net: number
   deductions: number
   employees: number
+  [key: string]: unknown
 }
 
 export interface AttendanceStats {
