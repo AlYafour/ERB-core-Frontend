@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { confirm, toast } from '@/lib/hooks/use-toast'
 import HasPermission from '@/components/shared/HasPermission'
+import { ShieldCheckIcon, BriefcaseIcon, DollarIcon, AlertIcon } from '@/components/icons'
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'var(--text-tertiary)', submitted: 'var(--status-warning)', approved: 'var(--status-success)',
@@ -32,10 +33,28 @@ const PRIORITY_BG: Record<string, string> = {
   low: 'rgba(0,0,0,0.06)', medium: 'var(--status-warning-bg)', high: 'var(--status-error-bg)', critical: 'var(--status-warning-bg)',
 }
 
+function StatCard({ icon, label, value, color = 'var(--brand)' }: {
+  icon: React.ReactNode; label: string; value: string | number; color?: string
+}) {
+  return (
+    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-4)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+      <div style={{ width: 40, height: 40, borderRadius: 10, background: color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
+        {icon}
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontWeight: 500, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+        <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{value}</div>
+      </div>
+    </div>
+  )
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 'var(--space-6)' }}>
-      <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-3)', paddingBottom: 8, borderBottom: '1px solid var(--card-border)' }}>{title}</h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)', paddingLeft: 12, borderLeft: '3px solid var(--brand)' }}>
+        <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{title}</h3>
+      </div>
       {children}
     </div>
   )
@@ -160,7 +179,6 @@ function TravelTab() {
   })
 
   async function handleReview(id: number, approved: boolean) {
-    const label = approved ? 'approve' : 'reject'
     const ok = await confirm(`${approved ? 'Approve' : 'Reject'} travel request?`)
     if (ok) reviewMutation.mutate({ id, approved })
   }
@@ -335,30 +353,18 @@ export default function BenefitsPage() {
   const { data: expenses = [] } = useQuery({ queryKey: ['expenses-pending'], queryFn: () => hrBenefitsApi.getExpenses({ status: 'submitted' }).then(r => r.data) })
   const { data: grievances = [] } = useQuery({ queryKey: ['grievances-open'], queryFn: () => hrBenefitsApi.getGrievances({ status: 'open' }).then(r => r.data) })
 
-  const kpis = [
-    { icon: '🏥', label: 'Active Plans', value: plans.length },
-    { icon: '💻', label: 'Assets Available', value: assets.filter(a => a.status === 'available').length },
-    { icon: '🧾', label: 'Pending Expenses', value: expenses.length },
-    { icon: '⚠️', label: 'Open Grievances', value: grievances.length },
-  ]
-
   return (
     <div style={{ padding: 'var(--space-6)', maxWidth: 1440, margin: '0 auto' }}>
-      <div style={{ marginBottom: 'var(--space-6)' }}>
-        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700 }}>Benefits & Welfare</h1>
-        <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>Benefit plans, asset management, travel, expenses, and grievances</p>
+      <div style={{ marginBottom: 'var(--space-6)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--card-border)' }}>
+        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Benefits &amp; Welfare</h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: '4px 0 0' }}>Benefit plans, asset management, travel, expenses, and grievances</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
-        {kpis.map(({ icon, label, value }) => (
-          <div key={label} style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 26 }}>{icon}</span>
-            <div>
-              <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{label}</div>
-              <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-            </div>
-          </div>
-        ))}
+        <StatCard icon={<ShieldCheckIcon className="w-5 h-5" />} label="Active Plans" value={plans.length} color="var(--status-success)" />
+        <StatCard icon={<BriefcaseIcon className="w-5 h-5" />} label="Assets Available" value={assets.filter(a => a.status === 'available').length} color="var(--brand)" />
+        <StatCard icon={<DollarIcon className="w-5 h-5" />} label="Pending Expenses" value={expenses.length} color="var(--status-warning)" />
+        <StatCard icon={<AlertIcon className="w-5 h-5" />} label="Open Grievances" value={grievances.length} color="var(--status-error)" />
       </div>
 
       <Tabs defaultValue="benefits">

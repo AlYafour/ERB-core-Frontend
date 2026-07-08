@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { toast } from '@/lib/hooks/use-toast'
 import HasPermission from '@/components/shared/HasPermission'
+import { BriefcaseIcon } from '@/components/icons'
 
 const LEVEL_COLORS: Record<number, string> = { 1: 'var(--text-tertiary)', 2: 'var(--brand)', 3: 'var(--status-success)', 4: 'var(--status-warning)' }
 const LEVEL_LABELS: Record<number, string> = { 1: 'Beginner', 2: 'Intermediate', 3: 'Advanced', 4: 'Expert' }
@@ -25,7 +26,10 @@ export default function SkillsPage() {
 
   return (
     <div style={{ padding: 'var(--space-6)', maxWidth: 1280, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, marginBottom: 'var(--space-6)' }}>Skills & Training</h1>
+      <div style={{ marginBottom: 'var(--space-6)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--card-border)' }}>
+        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Skills &amp; Training</h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: '4px 0 0' }}>Skills library and employee training records</p>
+      </div>
 
       <Tabs defaultValue="skills">
         <TabsList>
@@ -37,10 +41,14 @@ export default function SkillsPage() {
           <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
             {Object.entries(byCategory).map(([cat, catSkills]) => (
               <div key={cat} style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-4)' }}>
-                <h3 style={{ fontWeight: 700, marginBottom: 12, color: 'var(--text-primary)' }}>{cat}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, paddingLeft: 12, borderLeft: '3px solid var(--brand)' }}>
+                  <span style={{ color: 'var(--brand)', display: 'flex' }}><BriefcaseIcon className="w-4 h-4" /></span>
+                  <h3 style={{ fontWeight: 700, color: 'var(--text-primary)', margin: 0, fontSize: 'var(--text-base)' }}>{cat}</h3>
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginLeft: 4 }}>{catSkills.length} skills</span>
+                </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {catSkills.map(s => (
-                    <div key={s.id} style={{ padding: '6px 12px', background: 'var(--surface-subtle)', border: '1px solid var(--card-border)', borderRadius: 6, fontSize: 'var(--text-sm)' }}>
+                    <div key={s.id} style={{ padding: '6px 12px', background: 'var(--surface-subtle)', border: '1px solid var(--card-border)', borderRadius: 6, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
                       {s.name}
                     </div>
                   ))}

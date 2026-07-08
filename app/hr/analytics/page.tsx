@@ -5,6 +5,20 @@ import { hrAnalyticsApi } from '@/lib/api/hr'
 import { Button } from '@/components/ui/Button'
 import HasPermission from '@/components/shared/HasPermission'
 import { toast } from '@/lib/hooks/use-toast'
+import { UsersIcon, CalendarIcon, ClockIcon, AlertIcon, DollarIcon } from '@/components/icons'
+
+// Inline SVG icons not in @/components/icons
+const TrendingDownIcon = ({ className = 'w-4 h-4' }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" /><polyline points="17 18 23 18 23 12" />
+  </svg>
+)
+
+const ChartBarIcon = ({ className = 'w-4 h-4' }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+  </svg>
+)
 
 // ── Mini chart helpers (inline SVG bar charts — no external deps) ─────────────
 
@@ -15,7 +29,12 @@ function BarChart({ data, valueKey, labelKey, color = 'var(--brand)', height = 1
   color?: string
   height?: number
 }) {
-  if (!data.length) return <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>No data</div>
+  if (!data.length) return (
+    <div style={{ height, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)', gap: 8 }}>
+      <ChartBarIcon className="w-8 h-8" />
+      <span style={{ fontSize: 'var(--text-xs)' }}>No data available</span>
+    </div>
+  )
   const values = data.map(d => Number(d[valueKey]) || 0)
   const max = Math.max(...values, 1)
   const barW = Math.max(8, Math.floor(400 / data.length) - 4)
@@ -45,15 +64,17 @@ function BarChart({ data, valueKey, labelKey, color = 'var(--brand)', height = 1
 }
 
 function StatCard({ icon, label, value, sub, color = 'var(--brand)' }: {
-  icon: string; label: string; value: string | number; sub?: string; color?: string
+  icon: React.ReactNode; label: string; value: string | number; sub?: string; color?: string
 }) {
   return (
     <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-4)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-      <div style={{ fontSize: 28, lineHeight: 1 }}>{icon}</div>
-      <div>
-        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 2 }}>{label}</div>
-        <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-        {sub && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>{sub}</div>}
+      <div style={{ width: 40, height: 40, borderRadius: 10, background: color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
+        {icon}
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontWeight: 500, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+        <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{value}</div>
+        {sub && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 3 }}>{sub}</div>}
       </div>
     </div>
   )
@@ -62,8 +83,8 @@ function StatCard({ icon, label, value, sub, color = 'var(--brand)' }: {
 function Section({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
     <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-5)', marginBottom: 'var(--space-4)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
-        <h2 style={{ fontWeight: 700, fontSize: 'var(--text-base)', color: 'var(--text-primary)' }}>{title}</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)', paddingLeft: 12, borderLeft: '3px solid var(--brand)' }}>
+        <h2 style={{ fontWeight: 700, fontSize: 'var(--text-base)', color: 'var(--text-primary)', margin: 0 }}>{title}</h2>
         {action}
       </div>
       {children}
@@ -120,10 +141,10 @@ export default function AnalyticsPage() {
 
   return (
     <div style={{ padding: 'var(--space-6)', maxWidth: 1440, margin: '0 auto' }}>
-      <div style={{ marginBottom: 'var(--space-6)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ marginBottom: 'var(--space-6)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)' }}>HR Analytics</h1>
-          <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>Live workforce metrics — cached, updated hourly</p>
+          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>HR Analytics</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: '4px 0 0' }}>Live workforce metrics — cached, updated hourly</p>
         </div>
         <HasPermission permission="hr_analytics:export">
           <Button variant="ghost" size="sm" onClick={() => hrAnalyticsApi.invalidateCache().then(() => toast('Cache cleared — data will refresh', 'success'))}>
@@ -134,12 +155,12 @@ export default function AnalyticsPage() {
 
       {/* KPI Strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
-        <StatCard icon="👥" label="Total Headcount" value={headcount?.total ?? '—'} color="var(--brand)" />
-        <StatCard icon="✅" label="Attendance Rate" value={attendance ? `${attendance.attendance_rate}%` : '—'} color="var(--status-success)" />
-        <StatCard icon="📅" label="Absence Rate" value={attendance ? `${attendance.absence_rate}%` : '—'} color="var(--status-warning)" />
-        <StatCard icon="⏰" label="Overtime Hours" value={overtime ? overtime.total_overtime_hours.toLocaleString() : '—'} sub="this period" color="var(--brand)" />
-        <StatCard icon="📉" label="Annual Turnover" value={turnover ? `${turnover.annual_turnover_rate}%` : '—'} sub={`${currentYear}`} color="var(--status-error)" />
-        <StatCard icon="💸" label="Leave Liability" value={liability ? `AED ${liability.total_liability.toLocaleString()}` : '—'} color="var(--status-warning)" />
+        <StatCard icon={<UsersIcon className="w-5 h-5" />} label="Total Headcount" value={headcount?.total ?? '—'} color="var(--brand)" />
+        <StatCard icon={<CalendarIcon className="w-5 h-5" />} label="Attendance Rate" value={attendance ? `${attendance.attendance_rate}%` : '—'} color="var(--status-success)" />
+        <StatCard icon={<AlertIcon className="w-5 h-5" />} label="Absence Rate" value={attendance ? `${attendance.absence_rate}%` : '—'} color="var(--status-warning)" />
+        <StatCard icon={<ClockIcon className="w-5 h-5" />} label="Overtime Hours" value={overtime ? overtime.total_overtime_hours.toLocaleString() : '—'} sub="this period" color="var(--brand)" />
+        <StatCard icon={<TrendingDownIcon className="w-5 h-5" />} label="Annual Turnover" value={turnover ? `${turnover.annual_turnover_rate}%` : '—'} sub={`${currentYear}`} color="var(--status-error)" />
+        <StatCard icon={<DollarIcon className="w-5 h-5" />} label="Leave Liability" value={liability ? `AED ${liability.total_liability.toLocaleString()}` : '—'} color="var(--status-warning)" />
       </div>
 
       {/* Charts grid */}

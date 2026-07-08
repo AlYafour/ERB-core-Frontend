@@ -16,7 +16,23 @@ const REVIEW_STATUS_COLORS: Record<string, string> = {
   pending_self: 'var(--status-warning)', pending_manager: 'var(--brand)', pending_hr: 'var(--brand)',
   acknowledged: 'var(--status-success)', closed: 'var(--text-secondary)',
 }
-const RATING_STARS: Record<number, string> = { 1: '⭐', 2: '⭐⭐', 3: '⭐⭐⭐', 4: '⭐⭐⭐⭐', 5: '⭐⭐⭐⭐⭐' }
+
+// Inline SVG icons
+const StarIcon = ({ className = 'w-3 h-3', filled = false, style }: { className?: string; filled?: boolean; style?: React.CSSProperties }) => (
+  <svg className={className} style={style} fill={filled ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+  </svg>
+)
+
+function StarRating({ value, max = 5 }: { value: number; max?: number }) {
+  return (
+    <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+      {Array.from({ length: max }, (_, i) => (
+        <StarIcon key={i} className="w-3 h-3" filled={i < value} style={{ color: i < value ? 'var(--status-warning)' : 'var(--card-border)' }} />
+      ))}
+    </div>
+  )
+}
 
 function ProgressRing({ pct }: { pct: number }) {
   const r = 20, c = 2 * Math.PI * r
@@ -76,10 +92,10 @@ export default function PerformancePage() {
 
   return (
     <div style={{ padding: 'var(--space-6)', maxWidth: 1280, margin: '0 auto' }}>
-      <div style={{ marginBottom: 'var(--space-6)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ marginBottom: 'var(--space-6)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700 }}>Performance Management</h1>
-          <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>Review cycles, evaluations, and goal tracking</p>
+          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Performance Management</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: '4px 0 0' }}>Review cycles, evaluations, and goal tracking</p>
         </div>
       </div>
 
@@ -148,9 +164,9 @@ export default function PerformancePage() {
                         <td style={{ padding: '10px 16px' }}>
                           <Badge style={{ background: REVIEW_STATUS_COLORS[rv.status] || 'var(--text-secondary)', color: '#fff', fontSize: 10 }}>{rv.status_display}</Badge>
                         </td>
-                        <td style={{ padding: '10px 16px' }}>{rv.self_rating ? RATING_STARS[rv.self_rating] : '—'}</td>
-                        <td style={{ padding: '10px 16px' }}>{rv.manager_rating ? RATING_STARS[rv.manager_rating] : '—'}</td>
-                        <td style={{ padding: '10px 16px', fontWeight: 700 }}>{rv.final_rating ? RATING_STARS[rv.final_rating] : '—'}</td>
+                        <td style={{ padding: '10px 16px' }}>{rv.self_rating ? <StarRating value={rv.self_rating} /> : <span style={{ color: 'var(--text-tertiary)' }}>—</span>}</td>
+                        <td style={{ padding: '10px 16px' }}>{rv.manager_rating ? <StarRating value={rv.manager_rating} /> : <span style={{ color: 'var(--text-tertiary)' }}>—</span>}</td>
+                        <td style={{ padding: '10px 16px', fontWeight: 700 }}>{rv.final_rating ? <StarRating value={rv.final_rating} /> : <span style={{ color: 'var(--text-tertiary)' }}>—</span>}</td>
                         <td style={{ padding: '10px 16px', display: 'flex', gap: 4 }}>
                           {rv.status === 'pending_self' && (
                             <HasPermission permission="hr_performance:self_evaluate">
@@ -188,8 +204,9 @@ export default function PerformancePage() {
               <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 500, marginBottom: 8 }}>Rating</label>
               <div style={{ display: 'flex', gap: 8 }}>
                 {[1,2,3,4,5].map(r => (
-                  <button key={r} onClick={() => setSelfRating(r)} style={{ padding: '6px 14px', borderRadius: 6, border: `2px solid ${selfRating === r ? 'var(--brand)' : 'var(--card-border)'}`, background: selfRating === r ? 'var(--status-warning-bg)' : 'transparent', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: selfRating === r ? 700 : 400 }}>
-                    {r} {RATING_STARS[r]}
+                  <button key={r} onClick={() => setSelfRating(r)} style={{ padding: '6px 14px', borderRadius: 6, border: `2px solid ${selfRating === r ? 'var(--brand)' : 'var(--card-border)'}`, background: selfRating === r ? 'var(--status-warning-bg)' : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: selfRating === r ? 700 : 400, color: 'var(--text-primary)' }}>{r}</span>
+                    <StarIcon className="w-4 h-4" filled={r <= selfRating} style={{ color: r <= selfRating ? 'var(--status-warning)' : 'var(--card-border)' }} />
                   </button>
                 ))}
               </div>
@@ -212,8 +229,9 @@ export default function PerformancePage() {
               <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 500, marginBottom: 8 }}>Rating</label>
               <div style={{ display: 'flex', gap: 8 }}>
                 {[1,2,3,4,5].map(r => (
-                  <button key={r} onClick={() => setManagerRating(r)} style={{ padding: '6px 14px', borderRadius: 6, border: `2px solid ${managerRating === r ? 'var(--brand)' : 'var(--card-border)'}`, background: managerRating === r ? 'var(--status-warning-bg)' : 'transparent', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: managerRating === r ? 700 : 400 }}>
-                    {r} {RATING_STARS[r]}
+                  <button key={r} onClick={() => setManagerRating(r)} style={{ padding: '6px 14px', borderRadius: 6, border: `2px solid ${managerRating === r ? 'var(--brand)' : 'var(--card-border)'}`, background: managerRating === r ? 'var(--status-warning-bg)' : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: managerRating === r ? 700 : 400, color: 'var(--text-primary)' }}>{r}</span>
+                    <StarIcon className="w-4 h-4" filled={r <= managerRating} style={{ color: r <= managerRating ? 'var(--status-warning)' : 'var(--card-border)' }} />
                   </button>
                 ))}
               </div>

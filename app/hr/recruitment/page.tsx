@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import HasPermission from '@/components/shared/HasPermission'
 import { confirm, toast } from '@/lib/hooks/use-toast'
+import { BriefcaseIcon, UsersIcon, UserIcon } from '@/components/icons'
 
 const REQ_STATUS_COLORS: Record<string, string> = {
   draft: 'var(--text-tertiary)', open: 'var(--status-success)', on_hold: 'var(--status-warning)', filled: 'var(--brand)', cancelled: 'var(--status-error)',
@@ -24,6 +25,22 @@ const CAND_STATUS_BG: Record<string, string> = {
 
 const PIPELINE_STAGES = ['applied', 'screening', 'interview', 'offer_sent', 'offer_accepted', 'hired']
 
+function StatCard({ icon, label, value, color = 'var(--brand)' }: {
+  icon: React.ReactNode; label: string; value: string | number; color?: string
+}) {
+  return (
+    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-4)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+      <div style={{ width: 40, height: 40, borderRadius: 10, background: color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
+        {icon}
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', fontWeight: 500, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+        <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{value}</div>
+      </div>
+    </div>
+  )
+}
+
 function RequisitionCard({ req, onClick }: { req: JobRequisition; onClick: () => void }) {
   return (
     <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-4)', cursor: 'pointer' }} onClick={onClick}>
@@ -34,11 +51,20 @@ function RequisitionCard({ req, onClick }: { req: JobRequisition; onClick: () =>
       <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 8 }}>
         {req.department_name || 'No department'} · {req.location || 'Remote/TBD'} · {req.contract_type_display}
       </div>
-      <div style={{ display: 'flex', gap: 16, fontSize: 'var(--text-xs)' }}>
-        <span>👥 {req.candidates_count} applicants</span>
-        <span>🔥 {req.active_candidates_count} active</span>
-        <span>🎯 {req.headcount} position{req.headcount > 1 ? 's' : ''}</span>
-        {req.target_date && <span>📅 {req.target_date}</span>}
+      <div style={{ display: 'flex', gap: 16, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ color: 'var(--brand)', display: 'flex' }}><UsersIcon className="w-3 h-3" /></span>
+          {req.candidates_count} applicants
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ color: 'var(--status-warning)', display: 'flex' }}><UserIcon className="w-3 h-3" /></span>
+          {req.active_candidates_count} active
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ color: 'var(--status-success)', display: 'flex' }}><BriefcaseIcon className="w-3 h-3" /></span>
+          {req.headcount} position{req.headcount > 1 ? 's' : ''}
+        </span>
+        {req.target_date && <span style={{ color: 'var(--text-tertiary)' }}>Target: {req.target_date}</span>}
       </div>
       {(req.salary_min || req.salary_max) && (
         <div style={{ marginTop: 8, fontSize: 'var(--text-xs)', color: 'var(--status-success)', fontWeight: 600 }}>
@@ -143,23 +169,16 @@ export default function RecruitmentPage() {
 
   return (
     <div style={{ padding: 'var(--space-6)', maxWidth: 1440, margin: '0 auto' }}>
-      <div style={{ marginBottom: 'var(--space-6)' }}>
-        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700 }}>Recruitment</h1>
-        <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>Job requisitions and candidate pipeline management</p>
+      <div style={{ marginBottom: 'var(--space-6)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--card-border)' }}>
+        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Recruitment</h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: '4px 0 0' }}>Job requisitions and candidate pipeline management</p>
       </div>
 
       {/* KPI strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
-        {[
-          { label: 'Open Positions', value: totalOpen },
-          { label: 'Total Applicants', value: totalApplicants },
-          { label: 'Active in Pipeline', value: totalActive },
-        ].map(({ label, value }) => (
-          <div key={label} style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-4)' }}>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{label}</div>
-            <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-          </div>
-        ))}
+        <StatCard icon={<BriefcaseIcon className="w-5 h-5" />} label="Open Positions" value={totalOpen} color="var(--status-success)" />
+        <StatCard icon={<UsersIcon className="w-5 h-5" />} label="Total Applicants" value={totalApplicants} color="var(--brand)" />
+        <StatCard icon={<UserIcon className="w-5 h-5" />} label="Active in Pipeline" value={totalActive} color="var(--status-warning)" />
       </div>
 
       <Tabs defaultValue="requisitions">

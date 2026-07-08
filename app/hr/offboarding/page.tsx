@@ -6,10 +6,25 @@ import { Badge } from '@/components/ui/Badge'
 import { confirm, toast } from '@/lib/hooks/use-toast'
 import HasPermission from '@/components/shared/HasPermission'
 
+// Inline SVG icons for clearance status
+const CheckCircleIcon = ({ className = 'w-4 h-4', style }: { className?: string; style?: React.CSSProperties }) => (
+  <svg className={className} style={style} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+  </svg>
+)
+
+const CircleIcon = ({ className = 'w-4 h-4', style }: { className?: string; style?: React.CSSProperties }) => (
+  <svg className={className} style={style} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <circle cx="12" cy="12" r="10"/>
+  </svg>
+)
+
 function ClearanceItem({ label, done }: { label: string; done: boolean }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--text-sm)' }}>
-      <span style={{ fontSize: 16 }}>{done ? '✅' : '🔲'}</span>
+      {done
+        ? <CheckCircleIcon className="w-4 h-4" style={{ color: 'var(--status-success)', flexShrink: 0 }} />
+        : <CircleIcon className="w-4 h-4" style={{ color: 'var(--card-border)', flexShrink: 0 }} />}
       <span style={{ color: done ? 'var(--text-tertiary)' : 'var(--text-primary)', textDecoration: done ? 'line-through' : 'none' }}>{label}</span>
     </div>
   )
@@ -41,9 +56,9 @@ export default function OffboardingPage() {
 
   return (
     <div style={{ padding: 'var(--space-6)', maxWidth: 1280, margin: '0 auto' }}>
-      <div style={{ marginBottom: 'var(--space-6)' }}>
-        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Employee Offboarding</h1>
-        <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>Exit management and clearance tracking</p>
+      <div style={{ marginBottom: 'var(--space-6)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--card-border)' }}>
+        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Employee Offboarding</h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: '4px 0 0' }}>Exit management and clearance tracking</p>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 'var(--space-4)' }}>
         {processes.map(proc => (

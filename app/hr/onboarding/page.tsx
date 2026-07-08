@@ -9,9 +9,25 @@ import HasPermission from '@/components/shared/HasPermission'
 const STATUS_COLORS: Record<string, string> = {
   active: 'var(--brand)', completed: 'var(--status-success)', cancelled: 'var(--text-secondary)',
 }
-const TASK_STATUS_COLORS: Record<string, string> = {
-  pending: 'var(--status-warning)', in_progress: 'var(--brand)', completed: 'var(--status-success)', skipped: 'var(--text-secondary)',
-}
+
+// Inline SVG icons for task status
+const CheckCircleIcon = ({ className = 'w-4 h-4' }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+  </svg>
+)
+
+const CircleIcon = ({ className = 'w-4 h-4' }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <circle cx="12" cy="12" r="10"/>
+  </svg>
+)
+
+const SkipIcon = ({ className = 'w-4 h-4' }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/>
+  </svg>
+)
 
 function ProgressBar({ pct }: { pct: number }) {
   return (
@@ -36,9 +52,9 @@ export default function OnboardingPage() {
 
   return (
     <div style={{ padding: 'var(--space-6)', maxWidth: 1280, margin: '0 auto' }}>
-      <div style={{ marginBottom: 'var(--space-6)' }}>
-        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Employee Onboarding</h1>
-        <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>Active onboarding processes and task checklists</p>
+      <div style={{ marginBottom: 'var(--space-6)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--card-border)' }}>
+        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Employee Onboarding</h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', margin: '4px 0 0' }}>Active onboarding processes and task checklists</p>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
@@ -59,7 +75,13 @@ export default function OnboardingPage() {
               {(proc.task_instances ?? []).map(task => (
                 <div key={task.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 6, background: task.status === 'completed' ? 'var(--status-success-bg)' : 'var(--surface-subtle)', border: '1px solid var(--card-border)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 16 }}>{task.status === 'completed' ? '✅' : task.status === 'skipped' ? '⏭️' : '🔲'}</span>
+                    <span style={{ color: task.status === 'completed' ? 'var(--status-success)' : task.status === 'skipped' ? 'var(--text-tertiary)' : 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
+                      {task.status === 'completed'
+                        ? <CheckCircleIcon className="w-4 h-4" />
+                        : task.status === 'skipped'
+                          ? <SkipIcon className="w-4 h-4" />
+                          : <CircleIcon className="w-4 h-4" />}
+                    </span>
                     <div>
                       <div style={{ fontSize: 'var(--text-sm)', fontWeight: task.status === 'completed' ? 400 : 500, textDecoration: task.status === 'completed' ? 'line-through' : 'none', color: task.status === 'completed' ? 'var(--text-tertiary)' : 'var(--text-primary)' }}>{task.title}</div>
                       {task.due_date && <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Due: {task.due_date} · {task.assignee_role}</div>}
