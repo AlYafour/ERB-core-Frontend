@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRLegalEntity, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment, EmployeeBankAccount, HRCompanySettings, PayrollRun, EOSCalculation, EOSPreview, SalaryHistory } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRLegalEntity, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, TeamType, WorkTeamMember, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment, EmployeeBankAccount, HRCompanySettings, PayrollRun, EOSCalculation, EOSPreview, SalaryHistory } from '@/types';
 
 function toPage<T>(data: T[] | PaginatedResponse<T>): PaginatedResponse<T> {
   if (Array.isArray(data)) return { results: data, count: data.length, next: null, previous: null };
@@ -622,6 +622,15 @@ export const hrWorkTeamsApi = {
   },
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/hr/employees/work-teams/${id}/`);
+  },
+};
+
+// ── Team Types ────────────────────────────────────────────────────────────────
+
+export const hrTeamTypesApi = {
+  getAll: async (params?: Record<string, unknown>): Promise<PaginatedResponse<TeamType>> => {
+    const response = await apiClient.get('/hr/employees/team-types/', { params: { page_size: 200, ...params } });
+    return toPage(response.data);
   },
 };
 
@@ -1748,3 +1757,60 @@ export const hrBenefitsApi = {
   resolveGrievance: (id: number, data: { resolution: string }) => apiClient.post<Grievance>(`/hr/benefits/grievances/${id}/resolve/`, data),
   escalateGrievance: (id: number) => apiClient.post<Grievance>(`/hr/benefits/grievances/${id}/escalate/`),
 }
+
+// ─────────────────────── Work Team Members ───────────────────────────────────
+// WorkTeamMember type is imported from @/types (see line 2).
+
+export const hrWorkTeamMembersApi = {
+  getWorkTeamMembers: async (params?: {
+    work_team_id?: number;
+    employee_id?: number;
+    status?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<WorkTeamMember[]> => {
+    const response = await apiClient.get('/hr/employees/team-members/', { params: { page_size: 200, ...params } });
+    const d = response.data;
+    return Array.isArray(d) ? d : (d?.results ?? []);
+  },
+
+  createWorkTeamMember: async (data: {
+    work_team: number;
+    employee: number;
+    role?: string;
+    status?: string;
+    is_primary?: boolean;
+    start_date?: string | null;
+    end_date?: string | null;
+  }): Promise<WorkTeamMember> => {
+    const response = await apiClient.post('/hr/employees/team-members/', data);
+    return response.data;
+  },
+
+  updateWorkTeamMember: async (id: number, data: Partial<{
+    role: string;
+    status: string;
+    is_primary: boolean;
+    start_date: string | null;
+    end_date: string | null;
+  }>): Promise<WorkTeamMember> => {
+    const response = await apiClient.patch(`/hr/employees/team-members/${id}/`, data);
+    return response.data;
+  },
+
+  /** Soft-delete: sets status=inactive on the backend. */
+  deleteWorkTeamMember: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/employees/team-members/${id}/`);
+  },
+
+  transferTeamMember: async (id: number, payload: { new_team_id: number; effective_date?: string }): Promise<WorkTeamMember> => {
+    const response = await apiClient.post(`/hr/employees/team-members/${id}/transfer/`, payload);
+    return response.data;
+  },
+
+  getTeamMemberHistory: async (employeeId: number): Promise<WorkTeamMember[]> => {
+    const response = await apiClient.get('/hr/employees/team-members/history/', { params: { employee_id: employeeId, page_size: 200 } });
+    const data = response.data;
+    return Array.isArray(data) ? data : (data.results ?? []);
+  },
+};

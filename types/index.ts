@@ -127,6 +127,9 @@ export interface Project {
   responsible_engineer_name?: string | null;
   responsible_engineer_phone?: string | null;
   responsible_engineer_email?: string | null;
+  primary_manager?: number | null;
+  primary_manager_name?: string | null;
+  primary_manager_position?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -616,8 +619,45 @@ export interface WorkTeam {
   supervisor_name: string | null;
   member_count: number;
   is_active: boolean;
+  // Phase 1 additions
+  department?: number | null;
+  department_name?: string | null;
+  project?: number | null;
+  project_name?: string | null;
+  location?: number | null;
+  location_name?: string | null;
+  parent_team?: number | null;
+  parent_team_name?: string | null;
+  main_manager?: number | null;
+  main_manager_name?: string | null;
+  team_type?: number | null;
+  team_type_name?: string | null;
+  status?: 'active' | 'inactive' | 'closed';
   created_at: string;
   updated_at: string;
+}
+
+export interface TeamType {
+  id: number;
+  name: string;
+  code: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface WorkTeamMember {
+  id: number;
+  work_team: number;
+  work_team_name?: string;
+  employee: number;
+  employee_name: string;
+  employee_id?: string;
+  role: string;
+  status: 'active' | 'inactive' | 'suspended';
+  is_primary: boolean;
+  start_date: string;
+  end_date: string | null;
+  created_at: string;
 }
 
 export interface HREmployeeUser {
@@ -757,6 +797,36 @@ export interface HRAttendance {
   scheduled_hours: number | null;
   late_minutes: number | null;
   early_leave_minutes: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkLog {
+  id: number;
+  tenant: number | null;
+  employee: number;
+  employee_name: string | null;
+  employee_id_code: string | null;
+  attendance: number | null;
+  date: string;
+  project: number | null;
+  project_name: string | null;
+  project_code: string | null;
+  work_team: number | null;
+  work_team_name: string | null;
+  location: number | null;
+  location_name: string | null;
+  /** DRF decimal returned as string, e.g. "8.00" */
+  hours: string;
+  overtime_hours: string;
+  cost_amount: string;
+  is_auto: boolean;
+  status: 'draft' | 'pending_review' | 'approved' | 'rejected';
+  status_display: string;
+  notes: string;
+  rejection_reason: string | null;
+  created_by: number | null;
+  created_by_name: string | null;
   created_at: string;
   updated_at: string;
 }

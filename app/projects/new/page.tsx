@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { projectsApi } from '@/lib/api/projects';
 import { usersApi } from '@/lib/api/users';
-import { User } from '@/types';
+import { hrEmployeesApi } from '@/lib/api/hr';
+import { User, HREmployee } from '@/types';
 import { Button, PageShell } from '@/components/ui';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
@@ -39,6 +40,7 @@ export default function NewProjectPage() {
     consultant: '',
     description: '',
     responsible_engineer: null as number | null,
+    primary_manager: null as number | null,
     is_active: true,
   });
 
@@ -47,6 +49,14 @@ export default function NewProjectPage() {
     queryFn: () => usersApi.getAll({ role: 'site_engineer', page_size: 200, is_active: true }),
   });
   const engineers: User[] = engineersData?.results ?? [];
+
+  const { data: employeesData } = useQuery({
+    queryKey: ['hr-employees-minimal'],
+    queryFn: () => hrEmployeesApi.getAll({ page_size: 500, is_active: true }),
+    staleTime: 120_000,
+  });
+  const employees: HREmployee[] = employeesData?.results ?? [];
+  const selectedManager = employees.find(e => e.id === formData.primary_manager);
 
   const handleEngineerChange = (val: string | number | null) => {
     const id = val ? Number(val) : null;
@@ -207,6 +217,54 @@ export default function NewProjectPage() {
                       style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-2)', borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
                     >
                       âœ•
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Primary Manager (Employee) */}
+              <div style={{ gridColumn: '1 / -1' }}>
+                <FormField label={`Primary Manager (${t('misc', 'optional')})`}>
+                  <SearchableDropdown
+                    options={[
+                      { value: '', label: '— Select Employee —' },
+                      ...employees.map(e => ({
+                        value: String(e.id),
+                        label: e.full_name,
+                        sublabel: e.position_title || '',
+                      })),
+                    ]}
+                    value={formData.primary_manager ? String(formData.primary_manager) : ''}
+                    onChange={(val) => setFormData(f => ({ ...f, primary_manager: val ? Number(val) : null }))}
+                    placeholder="Select primary manager..."
+                  />
+                </FormField>
+
+                {selectedManager && (
+                  <div
+                    style={{
+                      marginTop: 'var(--space-2)',
+                      display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                      padding: 'var(--space-2) var(--space-3)',
+                      borderRadius: 'var(--radius-lg)',
+                      background: 'var(--brand-subtle, var(--surface-subtle))',
+                      border: '1px solid var(--brand)',
+                    }}
+                  >
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-bold)', flexShrink: 0, background: 'var(--brand)', color: '#fff' }}>
+                      {selectedManager.full_name[0]?.toUpperCase() ?? '?'}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+                        {selectedManager.full_name}
+                      </div>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                        {selectedManager.position_title || 'Employee'}
+                        {selectedManager.employee_id ? ` · ${selectedManager.employee_id}` : ''}
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => setFormData(f => ({ ...f, primary_manager: null }))} style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-2)', borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                      ✕
                     </button>
                   </div>
                 )}
