@@ -264,8 +264,11 @@ export default function Sidebar() {
       { name: t('nav', 'projects'),      href: '/projects',   icon: BuildingIcon, subItems: [{ name: t('nav', 'projectsList'), href: '/projects'  }] },
     ] : []),
     { name: t('nav', 'settings'), href: '/settings/roles', icon: UsersIcon, adminOnly: true, subItems: [
-      { name: 'Roles & Permissions',   href: '/settings/roles'       },
-      { name: 'Company & Branding',    href: '/settings/company'     },
+      { name: 'Roles & Permissions',   href: '/settings/roles'          },
+      { name: 'Company & Branding',    href: '/settings/company'        },
+      { name: 'Team Types',            href: '/settings/team-types'     },
+      { name: 'Cost Categories',       href: '/settings/cost-categories'},
+      { name: 'Operation Labels',      href: '/settings/labels'         },
     ]},
   ];
 
