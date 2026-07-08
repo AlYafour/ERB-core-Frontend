@@ -79,7 +79,7 @@ export default function QuantityInput({
         min={min}
         step={step}
         placeholder={placeholder}
-        className="w-full px-3 py-2 text-sm border-y border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 focus:border-primary text-center font-semibold"
+        className="input w-full px-3 py-2 text-sm text-center font-semibold"
       />
       <button
         type="button"

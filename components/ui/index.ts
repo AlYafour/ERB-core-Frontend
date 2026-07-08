@@ -68,6 +68,8 @@ export {
   type BadgeProps,
 } from './Badge';
 
+export { Card } from './Card';
+
 // Layout & Page
 export { default as PageHeader }    from './PageHeader';
 export { default as EntityHeader }  from './EntityHeader';
@@ -76,7 +78,6 @@ export { SearchInput }              from './SearchInput';
 export { default as Drawer }        from './Drawer';
 export { PageShell }                from './PageShell';
 export { WorkspaceSurface }         from './WorkspaceSurface';
-export { default as GlobalSearch }  from './GlobalSearch';
 export { default as DarkModeToggle } from './DarkModeToggle';
 export { default as LocaleToggle }  from './LocaleToggle';
 

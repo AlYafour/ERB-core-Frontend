@@ -1,9 +1,10 @@
 'use client';
 
-import { cn } from '@/lib/utils/cn';
+import { Badge } from './Badge';
+import type { BadgeProps } from './Badge';
 
-/* Maps any status string to a semantic color tier */
-const STATUS_VARIANT: Record<string, string> = {
+/* Maps any status string to a Badge variant */
+const STATUS_VARIANT: Record<string, BadgeProps['variant']> = {
   /* generic positive */
   active: 'success', approved: 'success', completed: 'success',
   paid: 'success', received: 'success', awarded: 'success', converted: 'success',
@@ -57,14 +58,13 @@ interface StatusBadgeProps {
 }
 
 export default function StatusBadge({ status, label, className }: StatusBadgeProps) {
-  const variant = STATUS_VARIANT[status] ?? STATUS_VARIANT[status.replace(/-/g, '_')] ?? 'default';
+  const normalizedStatus = status.replace(/-/g, '_');
+  const variant = STATUS_VARIANT[status] ?? STATUS_VARIANT[normalizedStatus] ?? 'default';
   const display = label ?? STATUS_LABEL[status] ?? status.replace(/_/g, ' ').replace(/-/g, ' ');
 
-  const variantClass = `badge badge-${variant === 'default' ? '' : variant}`.trim();
-
   return (
-    <span className={cn(variantClass || 'badge', className)}>
+    <Badge variant={variant} className={className}>
       {display.charAt(0).toUpperCase() + display.slice(1)}
-    </span>
+    </Badge>
   );
 }

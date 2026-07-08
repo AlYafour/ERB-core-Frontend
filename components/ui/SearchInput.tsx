@@ -42,7 +42,6 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
           style={{
             paddingLeft: 32,
             paddingRight: value ? 32 : undefined,
-            height: 36,
             width: '100%',
             ...style,
           }}

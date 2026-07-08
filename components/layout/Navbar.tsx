@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyEmployeeRecord } from '@/lib/hooks/use-my-employee-record';
 import { useUIStore } from '@/lib/store/ui-store';
 import { MenuIcon } from '@/components/icons';
-import GlobalSearch from '@/components/ui/GlobalSearch';
+import GlobalSearch from '@/components/features/GlobalSearch';
 import NotificationsDropdown from '@/components/layout/NotificationsDropdown';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import LocaleToggle from '@/components/ui/LocaleToggle';

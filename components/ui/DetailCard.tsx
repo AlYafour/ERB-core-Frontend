@@ -1,5 +1,7 @@
 'use client';
 
+import { Card } from './Card';
+
 interface DetailCardProps {
   title: string;
   children: React.ReactNode;
@@ -8,8 +10,8 @@ interface DetailCardProps {
 
 export default function DetailCard({ title, children, className = '' }: DetailCardProps) {
   return (
-    <div 
-      className={`card ${className}`}
+    <Card
+      className={className}
       style={{
         backgroundColor: 'var(--card-bg)',
         borderColor: 'var(--card-border)',
@@ -27,7 +29,7 @@ export default function DetailCard({ title, children, className = '' }: DetailCa
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {children}
       </div>
-    </div>
+    </Card>
   );
 }
 
