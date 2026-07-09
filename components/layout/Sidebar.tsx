@@ -268,6 +268,12 @@ export default function Sidebar() {
     ] : []),
     { name: t('nav', 'settings'), href: '/settings/roles', icon: UsersIcon, adminOnly: true, subItems: [
       { name: 'Roles & Permissions',   href: '/settings/roles'          },
+      { name: 'Approval Chains',       href: '/settings/approval-chains', icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </svg>
+      )},
       { name: 'Company & Branding',    href: '/settings/company'        },
     ]},
   ];
@@ -480,6 +486,7 @@ export default function Sidebar() {
                       items={(item.subItems ?? []).map((s) => ({
                         name: s.name,
                         href: s.href,
+                        icon:           (s as any).icon,
                         adminOnly:      (item as any).adminOnly,
                         superAdminOnly: (item as any).superAdminOnly,
                       }))}
