@@ -114,6 +114,15 @@ export default function PurchaseRequestDetailPage() {
     onError: (err: unknown) => toast(getApiError(err, 'Failed to resubmit request'), 'error'),
   });
 
+  const recallMutation = useMutation({
+    mutationFn: () => purchaseRequestsApi.recall(id),
+    onSuccess: () => {
+      invalidate();
+      toast('Request recalled — you can now edit and re-submit it', 'success');
+    },
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to recall request'), 'error'),
+  });
+
   const allowAdditionalOrderMutation = useMutation({
     mutationFn: () => purchaseRequestsApi.allowAdditionalOrder(id),
     onSuccess: () => {
@@ -283,6 +292,11 @@ export default function PurchaseRequestDetailPage() {
           )}
           <Button variant="secondary" size="sm" onClick={() => window.open(`/print/pr/${id}`, '_blank')}>Print</Button>
 
+          {request.status === 'pending' && (isAdmin || request.created_by === user?.id) && (
+            <Button variant="secondary" size="sm" isLoading={recallMutation.isPending} onClick={() => recallMutation.mutate()}>
+              Recall
+            </Button>
+          )}
           {request.status === 'pending' && canApprove && (
             <Button variant="success" size="sm" isLoading={approveMutation.isPending} onClick={() => approveMutation.mutate()}>
               {t('btn', 'approve')}
