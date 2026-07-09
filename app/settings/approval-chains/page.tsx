@@ -40,12 +40,6 @@ const DOC_META: Record<string, { emoji: string; sub: string }> = {
   leave_request:    { emoji: '🏖️', sub: 'Employee leave requests' },
 };
 
-// ─── Static document types — always visible even if API returns nothing ───────
-
-const STATIC_DOC_TYPES: RequestType[] = [
-  { id: -1, code: 'purchase_request', name: 'Purchase Request', name_ar: 'طلب شراء', is_active: true },
-  { id: -2, code: 'purchase_order',   name: 'Purchase Order',   name_ar: 'أمر شراء',  is_active: true },
-];
 
 // ─── Roles hook ───────────────────────────────────────────────────────────────
 
@@ -466,7 +460,7 @@ function ChainEditor({ requestType, realTypeId, policies, roles, onRefresh }: {
 export default function ApprovalChainsPage() {
   const qc = useQueryClient();
   // Start with purchase_request selected (uses static code so it works before API loads)
-  const [selectedCode, setSelectedCode] = useState<string>('purchase_request');
+  const [selectedCode, setSelectedCode] = useState<string | null>(null);
 
   const { data: apiTypes = [], isLoading: rtLoad } = useQuery({
     queryKey: ['approval-request-types'],
@@ -481,34 +475,30 @@ export default function ApprovalChainsPage() {
   const { data: roles = [] } = useRoles();
   const refresh = useCallback(() => qc.invalidateQueries({ queryKey: ['approval-policies'] }), [qc]);
 
-  // Procurement types from API — deduplicated by code (tenant-specific wins over global)
+  // Deduplicate by code — highest ID wins (tenant-specific always has higher ID than global)
   const byCode = new Map<string, RequestType>();
-  [...apiTypes]
-    .filter(rt => ['purchase_request', 'purchase_order'].includes(rt.code))
-    .sort((a, b) => b.id - a.id)           // highest ID first → tenant-specific wins
-    .forEach(rt => byCode.set(rt.code, rt));
-  const apiProcurementTypes = Array.from(byCode.values());
+  [...apiTypes].sort((a, b) => b.id - a.id).forEach(rt => byCode.set(rt.code, rt));
+  const requestTypes = Array.from(byCode.values()).sort((a, b) => a.name.localeCompare(b.name));
 
-  const requestTypes: RequestType[] = apiProcurementTypes.length > 0
-    ? apiProcurementTypes
-    : STATIC_DOC_TYPES;
+  // Auto-select first type once data loads
+  useEffect(() => {
+    if (requestTypes.length > 0 && !selectedCode) {
+      setSelectedCode(requestTypes[0].code);
+    }
+  }, [requestTypes.length]);
 
-  // Map code → real DB ID (populated when API returns data)
-  const realIdByCode: Record<string, number> = Object.fromEntries(
-    apiTypes.map(rt => [rt.code, rt.id])
-  );
+  const selectedType = requestTypes.find(rt => rt.code === selectedCode) ?? null;
+  const realTypeId   = selectedType?.id ?? -1;
 
-  // The displayed type is selected by code so it survives the static→API transition
-  const selectedType = requestTypes.find(rt => rt.code === selectedCode) ?? requestTypes[0] ?? null;
-
-  // Real DB ID for the selected type (-1 if API hasn't returned it yet)
-  const realTypeId = selectedType ? (realIdByCode[selectedType.code] ?? selectedType.id) : -1;
-
-  // Check if a policy exists for each type (for the status dot)
-  function hasActivePolicy(code: string): boolean {
-    const id = realIdByCode[code];
-    if (!id) return false;
-    return allPolicies.some(p => p.request_types.includes(id) && p.is_active);
+  if (rtLoad) {
+    return (
+      <MainLayout>
+        <PageShell>
+          <PageHeader title="Approval Chains" description="Configure who approves each document type and in what order" breadcrumbs={[{ label: 'Settings', href: '/settings' }, { label: 'Approval Chains' }]} />
+          <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</div>
+        </PageShell>
+      </MainLayout>
+    );
   }
 
   return (
@@ -519,6 +509,19 @@ export default function ApprovalChainsPage() {
           description="Configure who approves each document type and in what order"
           breadcrumbs={[{ label: 'Settings', href: '/settings' }, { label: 'Approval Chains' }]}
         />
+
+        {requestTypes.length === 0 ? (
+          <div style={{
+            padding: '60px 24px', textAlign: 'center',
+            background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+            borderRadius: 16,
+          }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>🔗</div>
+            <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>
+              No document types configured
+            </div>
+          </div>
+        ) : (
 
         <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 20, alignItems: 'start' }}>
 
@@ -533,7 +536,7 @@ export default function ApprovalChainsPage() {
             {requestTypes.map(rt => {
               const meta   = DOC_META[rt.code] ?? { emoji: '📄', sub: '' };
               const active = selectedCode === rt.code;
-              const hasPol = hasActivePolicy(rt.code);
+              const hasPol = allPolicies.some(p => p.request_types.includes(rt.id) && p.is_active);
 
               return (
                 <button key={rt.code} onClick={() => setSelectedCode(rt.code)} style={{
@@ -551,21 +554,13 @@ export default function ApprovalChainsPage() {
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{meta.sub}</div>
                   </div>
-                  {/* Status dot: green = has active chain, grey = not configured */}
-                  <span title={hasPol ? 'Chain configured' : 'Not configured'} style={{
+                  <span style={{
                     width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
                     background: hasPol ? '#10b981' : 'var(--border-default)',
                   }} />
                 </button>
               );
             })}
-
-            {/* Loading indicator when API is fetching */}
-            {rtLoad && (
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', padding: '4px 6px' }}>
-                Loading from server...
-              </div>
-            )}
           </div>
 
           {/* ── Right panel ── */}
@@ -601,15 +596,10 @@ export default function ApprovalChainsPage() {
                 onRefresh={refresh}
               />
             </div>
-          ) : (
-            <div style={{
-              background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-              borderRadius: 16, padding: 40, textAlign: 'center', color: 'var(--text-muted)',
-            }}>
-              Select a document type on the left
-            </div>
-          )}
+          ) : null}
         </div>
+
+        )}
       </PageShell>
     </MainLayout>
   );
