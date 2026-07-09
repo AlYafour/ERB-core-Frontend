@@ -481,10 +481,14 @@ export default function ApprovalChainsPage() {
   const { data: roles = [] } = useRoles();
   const refresh = useCallback(() => qc.invalidateQueries({ queryKey: ['approval-policies'] }), [qc]);
 
-  // Procurement types from API (filtered by code); fall back to static list
-  const apiProcurementTypes = apiTypes.filter(rt =>
-    ['purchase_request', 'purchase_order'].includes(rt.code)
-  );
+  // Procurement types from API — deduplicated by code (tenant-specific wins over global)
+  const byCode = new Map<string, RequestType>();
+  [...apiTypes]
+    .filter(rt => ['purchase_request', 'purchase_order'].includes(rt.code))
+    .sort((a, b) => b.id - a.id)           // highest ID first → tenant-specific wins
+    .forEach(rt => byCode.set(rt.code, rt));
+  const apiProcurementTypes = Array.from(byCode.values());
+
   const requestTypes: RequestType[] = apiProcurementTypes.length > 0
     ? apiProcurementTypes
     : STATIC_DOC_TYPES;
