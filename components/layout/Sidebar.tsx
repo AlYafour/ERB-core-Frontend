@@ -270,7 +270,6 @@ export default function Sidebar() {
       { name: 'Roles & Permissions',   href: '/settings/roles'          },
       { name: 'Company & Branding',    href: '/settings/company'        },
     ]},
-    { name: 'Account Security', href: '/security', icon: ShieldCheckIcon },
   ];
 
   const isPurchaseActive  = pathname.startsWith('/purchase-') || pathname.startsWith('/quotation-') || pathname.startsWith('/goods-receiving') || pathname.startsWith('/purchase-invoices');
@@ -381,6 +380,7 @@ export default function Sidebar() {
                 t('nav', 'myProfile'),
                 <UsersIcon className="w-4 h-4" />
               )}
+              {user?.id && navLink('/security', 'Account Security', <ShieldCheckIcon className="w-4 h-4" />)}
             </div>
 
             {/* Procurement */}
@@ -477,7 +477,7 @@ export default function Sidebar() {
                       key={item.href}
                       title={item.name}
                       icon={<Icon className="w-4 h-4" />}
-                      items={item.subItems.map((s) => ({
+                      items={(item.subItems ?? []).map((s) => ({
                         name: s.name,
                         href: s.href,
                         adminOnly:      (item as any).adminOnly,
