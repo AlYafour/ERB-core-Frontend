@@ -146,7 +146,7 @@ export function AppListPage({
     isAllPageSelected, isSomePageSelected,
   } = tableState;
 
-  const currentIds: number[] = data.map((r: any) => r.id);
+  const currentIds: number[] = (data ?? []).map((r: any) => r.id);
 
   const statusValue = (filters.status as string) ?? '';
   const handleStatusChange = (v: string) => {
