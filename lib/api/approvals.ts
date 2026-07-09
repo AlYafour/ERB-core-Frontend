@@ -61,61 +61,61 @@ export interface ApprovalPolicy {
 export const approvalsApi = {
   // ─── Request Types ───────────────────────────────────────────
   getRequestTypes: async (): Promise<RequestType[]> => {
-    const res = await apiClient.get('/approvals/request-types/?page_size=100');
+    const res = await apiClient.get('/hr/approvals/request-types/?page_size=100');
     return res.data?.results ?? res.data;
   },
 
   // ─── Policies ────────────────────────────────────────────────
   getPolicies: async (params?: Record<string, unknown>): Promise<ApprovalPolicy[]> => {
-    const res = await apiClient.get('/approvals/policies/', { params: { page_size: 100, ...params } });
+    const res = await apiClient.get('/hr/approvals/policies/', { params: { page_size: 100, ...params } });
     return res.data?.results ?? res.data;
   },
 
   createPolicy: async (data: Partial<ApprovalPolicy>): Promise<ApprovalPolicy> => {
-    const res = await apiClient.post('/approvals/policies/', data);
+    const res = await apiClient.post('/hr/approvals/policies/', data);
     return res.data;
   },
 
   updatePolicy: async (id: number, data: Partial<ApprovalPolicy>): Promise<ApprovalPolicy> => {
-    const res = await apiClient.patch(`/approvals/policies/${id}/`, data);
+    const res = await apiClient.patch(`/hr/approvals/policies/${id}/`, data);
     return res.data;
   },
 
   deletePolicy: async (id: number): Promise<void> => {
-    await apiClient.delete(`/approvals/policies/${id}/`);
+    await apiClient.delete(`/hr/approvals/policies/${id}/`);
   },
 
   // ─── Steps ───────────────────────────────────────────────────
   createStep: async (data: Omit<ApprovalStep, 'id'>): Promise<ApprovalStep> => {
-    const res = await apiClient.post('/approvals/steps/', data);
+    const res = await apiClient.post('/hr/approvals/steps/', data);
     return res.data;
   },
 
   updateStep: async (id: number, data: Partial<ApprovalStep>): Promise<ApprovalStep> => {
-    const res = await apiClient.patch(`/approvals/steps/${id}/`, data);
+    const res = await apiClient.patch(`/hr/approvals/steps/${id}/`, data);
     return res.data;
   },
 
   deleteStep: async (id: number): Promise<void> => {
-    await apiClient.delete(`/approvals/steps/${id}/`);
+    await apiClient.delete(`/hr/approvals/steps/${id}/`);
   },
 
   // ─── Instances (approve / reject) ────────────────────────────
   approve: async (instanceId: number, comment = ''): Promise<void> => {
-    await apiClient.post(`/approvals/instances/${instanceId}/approve/`, { comment });
+    await apiClient.post(`/hr/approvals/instances/${instanceId}/approve/`, { comment });
   },
 
   reject: async (instanceId: number, comment: string): Promise<void> => {
-    await apiClient.post(`/approvals/instances/${instanceId}/reject/`, { comment });
+    await apiClient.post(`/hr/approvals/instances/${instanceId}/reject/`, { comment });
   },
 
   getInstance: async (instanceId: number) => {
-    const res = await apiClient.get(`/approvals/instances/${instanceId}/`);
+    const res = await apiClient.get(`/hr/approvals/instances/${instanceId}/`);
     return res.data;
   },
 
   getMyPending: async () => {
-    const res = await apiClient.get('/approvals/instances/', { params: { status: 'pending' } });
+    const res = await apiClient.get('/hr/approvals/instances/', { params: { status: 'pending' } });
     return res.data?.results ?? res.data;
   },
 };
