@@ -327,7 +327,7 @@ export default function EnterpriseTable<T extends { id: number }>({
   page, totalCount, pageSize = 25, hasPrev, hasNext, onPageChange, onPageSizeChange,
 }: EnterpriseTableProps<T>) {
   const visibleColumns = columns.filter(c => !hiddenColumns.includes(c.key));
-  const ids = data.map(i => i.id);
+  const ids = (data ?? []).map(i => i.id);
 
   const cellPadding = density === 'compact' ? '6px 14px' : '11px 14px';
 
@@ -439,7 +439,7 @@ export default function EnterpriseTable<T extends { id: number }>({
           </thead>
 
           <tbody>
-            {data.map((item, idx) => {
+            {(data ?? []).map((item, idx) => {
               const id = item.id;
               const isSelected = selectedItems.has(id);
               return (
@@ -510,7 +510,7 @@ export default function EnterpriseTable<T extends { id: number }>({
 
       {/* ── Mobile cards ───────────────────────────────────────────────────── */}
       <div className="md:hidden" style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12 }}>
-        {data.map((item, idx) => (
+        {(data ?? []).map((item, idx) => (
           <MobileCard
             key={item.id}
             item={item}

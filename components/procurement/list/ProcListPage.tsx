@@ -111,7 +111,7 @@ export function ProcListPage({
     isAllPageSelected, isSomePageSelected,
   } = tableState;
 
-  const currentIds: number[] = data.map((r: any) => r.id);
+  const currentIds: number[] = (data ?? []).map((r: any) => r.id);
 
   /* Status tab value lives in filters.status */
   const statusValue = (filters.status as string) ?? '';

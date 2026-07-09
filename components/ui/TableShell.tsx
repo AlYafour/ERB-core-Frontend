@@ -58,7 +58,7 @@ export default function TableShell<T extends { id: number }>({
     isAllPageSelected, isSomePageSelected,
   } = tableState;
 
-  const currentIds = data.map(item => item.id);
+  const currentIds = (data ?? []).map(item => item.id);
 
   return (
     <WorkspaceSurface

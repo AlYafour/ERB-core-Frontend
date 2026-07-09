@@ -282,7 +282,7 @@ export function EnterpriseListPage<T extends { id: number }>({
     isAllPageSelected, isSomePageSelected,
   } = listState;
 
-  const pageIds = data.map(d => d.id);
+  const pageIds = (data ?? []).map(d => d.id);
   const allSelected = isAllPageSelected(pageIds);
   const someSelected = isSomePageSelected(pageIds);
   const hasActiveFilters = Object.keys(filters).some(k => filters[k] !== '' && filters[k] != null);
