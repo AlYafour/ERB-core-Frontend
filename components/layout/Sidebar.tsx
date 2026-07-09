@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUIStore } from '@/lib/store/ui-store';
@@ -200,6 +201,17 @@ export default function Sidebar() {
   const t = useT();
   const pending = usePendingCounts();
   const tasksBadge = useTasksBadge();
+  const { data: myPendingApprovals = [] } = useQuery({
+    queryKey: ['my-pending-approvals'],
+    queryFn: async () => {
+      const { default: apiClient } = await import('@/lib/api/client');
+      const res = await apiClient.get('/hr/approvals/instances/pending-for-me/');
+      return res.data?.results ?? res.data ?? [];
+    },
+    refetchInterval: 60_000,
+    enabled: !!user?.id,
+  });
+  const myApprovalsBadge = (myPendingApprovals as any[]).length || undefined;
   const { data: tenantData } = useTenantInfo();
   const { emp: myEmp } = useMyEmployeeRecord();
   const { hasPermission, isTenantAdmin } = useMyPermissions();
@@ -387,6 +399,7 @@ export default function Sidebar() {
                 <UsersIcon className="w-4 h-4" />
               )}
               {user?.id && navLink('/security', 'Account Security', <ShieldCheckIcon className="w-4 h-4" />)}
+              {user?.id && navLink('/my-approvals', 'My Approvals', <ShieldCheckIcon className="w-4 h-4" />, myApprovalsBadge)}
             </div>
 
             {/* Procurement */}

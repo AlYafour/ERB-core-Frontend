@@ -115,7 +115,7 @@ export const approvalsApi = {
   },
 
   getMyPending: async () => {
-    const res = await apiClient.get('/hr/approvals/instances/', { params: { status: 'pending' } });
+    const res = await apiClient.get('/hr/approvals/instances/pending-for-me/');
     return res.data?.results ?? res.data;
   },
 };
