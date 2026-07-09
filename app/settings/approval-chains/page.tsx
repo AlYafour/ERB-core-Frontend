@@ -40,6 +40,13 @@ const DOC_META: Record<string, { emoji: string; sub: string }> = {
   leave_request:    { emoji: '🏖️', sub: 'Employee leave requests' },
 };
 
+// ─── Static document types — always visible even if API returns nothing ───────
+
+const STATIC_DOC_TYPES: RequestType[] = [
+  { id: -1, code: 'purchase_request', name: 'Purchase Request', name_ar: 'طلب شراء', is_active: true },
+  { id: -2, code: 'purchase_order',   name: 'Purchase Order',   name_ar: 'أمر شراء',  is_active: true },
+];
+
 // ─── Roles hook ───────────────────────────────────────────────────────────────
 
 function useRoles() {
@@ -76,6 +83,30 @@ function blankStep(order: number): StepDraft {
     escalation_after_hours: null,
     sod_fallback_strategy: 'DIRECT_MANAGER',
   };
+}
+
+// ─── Small chip helper ────────────────────────────────────────────────────────
+
+function Chip({ children, brand, success, muted }: {
+  children: React.ReactNode;
+  brand?: boolean; success?: boolean; muted?: boolean;
+}) {
+  return (
+    <span style={{
+      fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20,
+      background: brand   ? 'color-mix(in srgb, var(--brand) 14%, transparent)'
+                : success ? 'rgba(16,185,129,0.12)'
+                :           'var(--surface-subtle)',
+      color:  brand   ? 'var(--brand)'
+            : success ? '#10b981'
+            :           'var(--text-muted)',
+      border: `1px solid ${brand   ? 'color-mix(in srgb, var(--brand) 30%, transparent)'
+                          : success ? 'rgba(16,185,129,0.3)'
+                          :           'var(--border-default)'}`,
+    }}>
+      {children}
+    </span>
+  );
 }
 
 // ─── Single step card ─────────────────────────────────────────────────────────
@@ -209,14 +240,20 @@ function StepCard({
 }
 
 // ─── Chain editor ─────────────────────────────────────────────────────────────
+// realTypeId: the actual DB ID of this RequestType (resolved from API).
+// May be -1 if API didn't return this type yet; we resolve it at save time.
 
-function ChainEditor({ requestType, policies, roles, onRefresh }: {
+function ChainEditor({ requestType, realTypeId, policies, roles, onRefresh }: {
   requestType: RequestType;
+  realTypeId: number;
   policies: ApprovalPolicy[];
   roles: { id: number; name: string }[];
   onRefresh: () => void;
 }) {
-  const policy = policies.find(p => p.request_types.includes(requestType.id) && p.is_active) ?? null;
+  // Find existing active policy for this type (only if we have a real ID)
+  const policy = realTypeId > 0
+    ? (policies.find(p => p.request_types.includes(realTypeId) && p.is_active) ?? null)
+    : null;
 
   const [steps, setSteps] = useState<StepDraft[]>([]);
   const [saving, setSaving] = useState(false);
@@ -255,26 +292,42 @@ function ChainEditor({ requestType, policies, roles, onRefresh }: {
     }
     setSaving(true);
     try {
-      let saved: ApprovalPolicy;
+      // Resolve the real DB ID (may need API call if using static fallback)
+      let finalRtId = realTypeId;
+      if (finalRtId < 0) {
+        const allTypes = await approvalsApi.getRequestTypes();
+        const found = allTypes.find(rt => rt.code === requestType.code);
+        if (found) {
+          finalRtId = found.id;
+        } else {
+          setError('Document type not found on the server. Please contact support.');
+          setSaving(false);
+          return;
+        }
+      }
+
+      let savedPolicy: ApprovalPolicy;
       const base = {
         name: policy?.name ?? `${requestType.name} — Default`,
         is_active: true,
         priority: policy?.priority ?? 10,
-        request_types: policy?.request_types ?? [requestType.id],
+        request_types: policy?.request_types ?? [finalRtId],
         condition_field: '', condition_operator: '', condition_value: '',
       };
+
       if (policy) {
-        saved = await approvalsApi.updatePolicy(policy.id, base);
+        savedPolicy = await approvalsApi.updatePolicy(policy.id, base);
         const keptIds = new Set(steps.filter(s => s.id).map(s => s.id));
         for (const old of policy.steps ?? []) {
           if (old.id && !keptIds.has(old.id)) await approvalsApi.deleteStep(old.id);
         }
       } else {
-        saved = await approvalsApi.createPolicy(base);
+        savedPolicy = await approvalsApi.createPolicy(base);
       }
+
       for (const step of steps) {
         const payload = {
-          policy: saved.id, order: step.order,
+          policy: savedPolicy.id, order: step.order,
           approver_strategy: step.approver_strategy,
           role: step.approver_strategy === 'ROLE' ? step.role : null,
           sod_fallback_role: null, sod_fallback_strategy: step.sod_fallback_strategy || null,
@@ -285,6 +338,7 @@ function ChainEditor({ requestType, policies, roles, onRefresh }: {
         if (step.id) await approvalsApi.updateStep(step.id, payload);
         else await approvalsApi.createStep(payload as Omit<ApprovalStep, 'id'>);
       }
+
       setSaved(true);
       onRefresh();
     } catch (e: any) {
@@ -294,7 +348,7 @@ function ChainEditor({ requestType, policies, roles, onRefresh }: {
     }
   }
 
-  // Active flow preview
+  // Active flow preview (from saved policy)
   const flowSteps = [...(policy?.steps ?? [])].sort((a, b) => a.order - b.order);
 
   return (
@@ -332,7 +386,7 @@ function ChainEditor({ requestType, policies, roles, onRefresh }: {
       {/* Empty state */}
       {steps.length === 0 && (
         <div style={{
-          padding: '36px 24px', textAlign: 'center',
+          padding: '40px 24px', textAlign: 'center',
           border: '2px dashed var(--border-default)', borderRadius: 14,
         }}>
           <div style={{ fontSize: 32, marginBottom: 10 }}>⚡</div>
@@ -343,9 +397,10 @@ function ChainEditor({ requestType, policies, roles, onRefresh }: {
             Add steps to define who must approve {requestType.name} submissions
           </div>
           <button onClick={addStep} style={{
-            padding: '9px 24px', borderRadius: 10, border: 'none',
+            padding: '10px 28px', borderRadius: 10, border: 'none',
             background: 'var(--brand)', color: '#fff',
-            fontWeight: 700, fontSize: 13, cursor: 'pointer',
+            fontWeight: 700, fontSize: 14, cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
           }}>
             + Add First Step
           </button>
@@ -406,37 +461,14 @@ function ChainEditor({ requestType, policies, roles, onRefresh }: {
   );
 }
 
-// ─── Small chip helper ────────────────────────────────────────────────────────
-
-function Chip({ children, brand, success, muted }: {
-  children: React.ReactNode;
-  brand?: boolean; success?: boolean; muted?: boolean;
-}) {
-  return (
-    <span style={{
-      fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20,
-      background: brand   ? 'color-mix(in srgb, var(--brand) 14%, transparent)'
-                : success ? 'rgba(16,185,129,0.12)'
-                :           'var(--surface-subtle)',
-      color:  brand   ? 'var(--brand)'
-            : success ? '#10b981'
-            :           'var(--text-muted)',
-      border: `1px solid ${brand   ? 'color-mix(in srgb, var(--brand) 30%, transparent)'
-                          : success ? 'rgba(16,185,129,0.3)'
-                          :           'var(--border-default)'}`,
-    }}>
-      {children}
-    </span>
-  );
-}
-
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ApprovalChainsPage() {
   const qc = useQueryClient();
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  // Start with purchase_request selected (uses static code so it works before API loads)
+  const [selectedCode, setSelectedCode] = useState<string>('purchase_request');
 
-  const { data: requestTypes = [], isLoading: rtLoad } = useQuery({
+  const { data: apiTypes = [], isLoading: rtLoad } = useQuery({
     queryKey: ['approval-request-types'],
     queryFn: approvalsApi.getRequestTypes,
   });
@@ -447,23 +479,32 @@ export default function ApprovalChainsPage() {
   });
 
   const { data: roles = [] } = useRoles();
+  const refresh = useCallback(() => qc.invalidateQueries({ queryKey: ['approval-policies'] }), [qc]);
 
-  useEffect(() => {
-    if (requestTypes.length > 0 && selectedId === null) setSelectedId(requestTypes[0].id);
-  }, [requestTypes, selectedId]);
+  // Procurement types from API (filtered by code); fall back to static list
+  const apiProcurementTypes = apiTypes.filter(rt =>
+    ['purchase_request', 'purchase_order'].includes(rt.code)
+  );
+  const requestTypes: RequestType[] = apiProcurementTypes.length > 0
+    ? apiProcurementTypes
+    : STATIC_DOC_TYPES;
 
-  const selectedType = requestTypes.find(rt => rt.id === selectedId) ?? null;
-  const refresh      = useCallback(() => qc.invalidateQueries({ queryKey: ['approval-policies'] }), [qc]);
+  // Map code → real DB ID (populated when API returns data)
+  const realIdByCode: Record<string, number> = Object.fromEntries(
+    apiTypes.map(rt => [rt.code, rt.id])
+  );
 
-  if (rtLoad || polLoad) {
-    return (
-      <MainLayout>
-        <PageShell>
-          <PageHeader title="Approval Chains" description="Configure who approves each document type and in what order" breadcrumbs={[{ label: 'Settings', href: '/settings' }, { label: 'Approval Chains' }]} />
-          <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</div>
-        </PageShell>
-      </MainLayout>
-    );
+  // The displayed type is selected by code so it survives the static→API transition
+  const selectedType = requestTypes.find(rt => rt.code === selectedCode) ?? requestTypes[0] ?? null;
+
+  // Real DB ID for the selected type (-1 if API hasn't returned it yet)
+  const realTypeId = selectedType ? (realIdByCode[selectedType.code] ?? selectedType.id) : -1;
+
+  // Check if a policy exists for each type (for the status dot)
+  function hasActivePolicy(code: string): boolean {
+    const id = realIdByCode[code];
+    if (!id) return false;
+    return allPolicies.some(p => p.request_types.includes(id) && p.is_active);
   }
 
   return (
@@ -475,103 +516,96 @@ export default function ApprovalChainsPage() {
           breadcrumbs={[{ label: 'Settings', href: '/settings' }, { label: 'Approval Chains' }]}
         />
 
-        {requestTypes.length === 0 ? (
-          <div style={{
-            padding: '48px 24px', textAlign: 'center',
-            background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-            borderRadius: 16,
-          }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>🔗</div>
-            <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-primary)', marginBottom: 8 }}>
-              No document types found
-            </div>
-            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-              Run <code style={{ background: 'var(--surface-subtle)', padding: '2px 6px', borderRadius: 4 }}>python manage.py migrate</code> on the server to seed document types.
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 20, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 20, alignItems: 'start' }}>
 
-            {/* Left sidebar */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{
-                fontSize: 10, fontWeight: 700, color: 'var(--text-muted)',
-                textTransform: 'uppercase', letterSpacing: '0.08em',
-                padding: '0 4px', marginBottom: 4,
-              }}>Document Type</div>
+          {/* ── Left sidebar ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{
+              fontSize: 10, fontWeight: 700, color: 'var(--text-muted)',
+              textTransform: 'uppercase', letterSpacing: '0.08em',
+              padding: '0 4px', marginBottom: 4,
+            }}>Document Type</div>
 
-              {requestTypes.map(rt => {
-                const meta     = DOC_META[rt.code] ?? { emoji: '📄', sub: '' };
-                const hasChain = allPolicies.some(p => p.request_types.includes(rt.id) && p.is_active);
-                const active   = selectedId === rt.id;
+            {requestTypes.map(rt => {
+              const meta   = DOC_META[rt.code] ?? { emoji: '📄', sub: '' };
+              const active = selectedCode === rt.code;
+              const hasPol = hasActivePolicy(rt.code);
 
-                return (
-                  <button key={rt.id} onClick={() => setSelectedId(rt.id)} style={{
-                    width: '100%', textAlign: 'left', cursor: 'pointer',
-                    padding: '12px 14px', borderRadius: 12,
-                    border: active ? '2px solid var(--brand)' : '1.5px solid var(--border-default)',
-                    background: active ? 'color-mix(in srgb, var(--brand) 7%, var(--card-bg))' : 'var(--card-bg)',
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    transition: 'all 150ms',
-                  }}>
-                    <span style={{ fontSize: 20 }}>{meta.emoji}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {rt.name}
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{meta.sub}</div>
+              return (
+                <button key={rt.code} onClick={() => setSelectedCode(rt.code)} style={{
+                  width: '100%', textAlign: 'left', cursor: 'pointer',
+                  padding: '12px 14px', borderRadius: 12,
+                  border: active ? '2px solid var(--brand)' : '1.5px solid var(--border-default)',
+                  background: active ? 'color-mix(in srgb, var(--brand) 7%, var(--card-bg))' : 'var(--card-bg)',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  transition: 'all 150ms',
+                }}>
+                  <span style={{ fontSize: 20 }}>{meta.emoji}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {rt.name}
                     </div>
-                    <span style={{
-                      width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                      background: hasChain ? '#10b981' : 'var(--border-default)',
-                    }} />
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Right panel */}
-            {selectedType ? (
-              <div style={{
-                background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-                borderRadius: 16, padding: '24px',
-              }}>
-                <div style={{ marginBottom: 24 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                    <span style={{ fontSize: 22 }}>{DOC_META[selectedType.code]?.emoji ?? '📄'}</span>
-                    <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)' }}>
-                      {selectedType.name}
-                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{meta.sub}</div>
                   </div>
-                  <div style={{
-                    fontSize: 13, color: 'var(--text-secondary)',
-                    padding: '10px 14px', borderRadius: 10,
-                    background: 'var(--surface-subtle)',
-                    border: '1px solid var(--border-default)',
-                    lineHeight: 1.6,
-                  }}>
-                    When someone submits a <strong>{selectedType.name}</strong>, it is routed through the steps below for approval in order. If no steps are configured, submissions will be blocked.
-                  </div>
-                </div>
+                  {/* Status dot: green = has active chain, grey = not configured */}
+                  <span title={hasPol ? 'Chain configured' : 'Not configured'} style={{
+                    width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                    background: hasPol ? '#10b981' : 'var(--border-default)',
+                  }} />
+                </button>
+              );
+            })}
 
-                <ChainEditor
-                  key={selectedType.id}
-                  requestType={selectedType}
-                  policies={allPolicies}
-                  roles={roles}
-                  onRefresh={refresh}
-                />
-              </div>
-            ) : (
-              <div style={{
-                background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-                borderRadius: 16, padding: 40, textAlign: 'center', color: 'var(--text-muted)',
-              }}>
-                Select a document type on the left
+            {/* Loading indicator when API is fetching */}
+            {rtLoad && (
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', padding: '4px 6px' }}>
+                Loading from server...
               </div>
             )}
           </div>
-        )}
+
+          {/* ── Right panel ── */}
+          {selectedType ? (
+            <div style={{
+              background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+              borderRadius: 16, padding: '24px',
+            }}>
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                  <span style={{ fontSize: 22 }}>{DOC_META[selectedType.code]?.emoji ?? '📄'}</span>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {selectedType.name}
+                  </div>
+                </div>
+                <div style={{
+                  fontSize: 13, color: 'var(--text-secondary)',
+                  padding: '10px 14px', borderRadius: 10,
+                  background: 'var(--surface-subtle)',
+                  border: '1px solid var(--border-default)',
+                  lineHeight: 1.6,
+                }}>
+                  When someone submits a <strong>{selectedType.name}</strong>, it is routed through the steps below for approval in order. If no steps are configured, submissions will be blocked.
+                </div>
+              </div>
+
+              <ChainEditor
+                key={selectedType.code}
+                requestType={selectedType}
+                realTypeId={realTypeId}
+                policies={allPolicies}
+                roles={roles}
+                onRefresh={refresh}
+              />
+            </div>
+          ) : (
+            <div style={{
+              background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+              borderRadius: 16, padding: 40, textAlign: 'center', color: 'var(--text-muted)',
+            }}>
+              Select a document type on the left
+            </div>
+          )}
+        </div>
       </PageShell>
     </MainLayout>
   );
