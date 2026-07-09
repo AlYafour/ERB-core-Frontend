@@ -118,7 +118,7 @@ function ChangePasswordSection() {
           <button
             type="submit"
             disabled={isPending || !oldPwd || !newPwd || !confirm}
-            style={{ ...BTN, background: 'var(--color-primary)', color: '#fff', opacity: (isPending || !oldPwd || !newPwd || !confirm) ? 0.5 : 1 }}
+            style={{ ...BTN, background: 'var(--brand)', color: '#fff', opacity: (isPending || !oldPwd || !newPwd || !confirm) ? 0.5 : 1 }}
           >
             {isPending ? 'Saving…' : 'Update Password'}
           </button>
@@ -227,7 +227,7 @@ function TwoFASection({ is2FAEnabled, onToggled }: { is2FAEnabled: boolean; onTo
             type="button"
             onClick={() => setupMutation.mutate()}
             disabled={setupMutation.isPending}
-            style={{ ...BTN, background: 'var(--color-primary)', color: '#fff', opacity: setupMutation.isPending ? 0.6 : 1 }}
+            style={{ ...BTN, background: 'var(--brand)', color: '#fff', opacity: setupMutation.isPending ? 0.6 : 1 }}
           >
             {setupMutation.isPending ? 'Generating…' : 'Set Up 2FA'}
           </button>
@@ -266,7 +266,7 @@ function TwoFASection({ is2FAEnabled, onToggled }: { is2FAEnabled: boolean; onTo
               type="button"
               onClick={() => confirmMutation.mutate()}
               disabled={confirmMutation.isPending || code.length < 6}
-              style={{ ...BTN, background: 'var(--color-primary)', color: '#fff', opacity: (confirmMutation.isPending || code.length < 6) ? 0.5 : 1 }}
+              style={{ ...BTN, background: 'var(--brand)', color: '#fff', opacity: (confirmMutation.isPending || code.length < 6) ? 0.5 : 1 }}
             >
               {confirmMutation.isPending ? 'Verifying…' : 'Activate 2FA'}
             </button>
@@ -381,7 +381,7 @@ function PasskeysSection() {
           <button
             type="button"
             onClick={() => setShowRegisterForm(true)}
-            style={{ ...BTN, background: 'var(--color-primary)', color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}
+            style={{ ...BTN, background: 'var(--brand)', color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}
           >
             <span>+ Add Passkey</span>
           </button>
@@ -403,7 +403,7 @@ function PasskeysSection() {
               type="button"
               onClick={handleRegister}
               disabled={isRegistering || !deviceName.trim()}
-              style={{ ...BTN, background: 'var(--color-primary)', color: '#fff', opacity: (isRegistering || !deviceName.trim()) ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 8 }}
+              style={{ ...BTN, background: 'var(--brand)', color: '#fff', opacity: (isRegistering || !deviceName.trim()) ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 8 }}
             >
               {isRegistering ? 'Waiting for biometric…' : 'Register Passkey'}
             </button>
