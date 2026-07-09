@@ -26,6 +26,7 @@ import { ProcField } from '@/components/procurement/shared/ProcField';
 import { PR_STATUS } from '@/lib/utils/status-colors';
 import { PR_LABEL } from '@/lib/constants/status-labels';
 import { fmtDate } from '@/lib/utils/format';
+import { ApprovalStatusWidget } from '@/components/ui/ApprovalStatusWidget';
 
 export default function PurchaseRequestDetailPage() {
   const params = useParams();
@@ -386,6 +387,14 @@ export default function PurchaseRequestDetailPage() {
                 </Link>
               </div>
             </div>
+
+            {/* Approval workflow widget */}
+            {request.approval_status && (
+              <ApprovalStatusWidget
+                approvalStatus={request.approval_status}
+                queryKey={['purchase-requests', id]}
+              />
+            )}
 
             {/* Status banner */}
             {request.status === 'approved' && (request.has_awarded_quotation || request.has_purchase_orders) && (

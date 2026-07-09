@@ -21,6 +21,7 @@ import { FinancialSummary } from '@/components/procurement/shared/FinancialSumma
 import { DocLoadState } from '@/components/procurement/shared/DocLoadState';
 import { StickyDocBar } from '@/components/procurement/shared/StickyDocBar';
 import { ProcField } from '@/components/procurement/shared/ProcField';
+import { ApprovalStatusWidget } from '@/components/ui/ApprovalStatusWidget';
 
 export default function PurchaseOrderDetailPage() {
   const params = useParams();
@@ -283,6 +284,14 @@ export default function PurchaseOrderDetailPage() {
                   </div>
                 )}
               </div>
+
+              {/* Approval workflow widget */}
+              {order.approval_status && (
+                <ApprovalStatusWidget
+                  approvalStatus={order.approval_status}
+                  queryKey={['purchase-orders', id]}
+                />
+              )}
             </div>
 
             {/* RIGHT: Products + Financial */}
