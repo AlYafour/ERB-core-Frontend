@@ -475,9 +475,14 @@ export default function ApprovalChainsPage() {
   const { data: roles = [] } = useRoles();
   const refresh = useCallback(() => qc.invalidateQueries({ queryKey: ['approval-policies'] }), [qc]);
 
-  // Deduplicate by code — highest ID wins (tenant-specific always has higher ID than global)
+  // Only show types that are actually wired to the approval engine
+  const ACTIVE_CODES = new Set(['purchase_request', 'purchase_order']);
+
   const byCode = new Map<string, RequestType>();
-  [...apiTypes].sort((a, b) => b.id - a.id).forEach(rt => byCode.set(rt.code, rt));
+  [...apiTypes]
+    .filter(rt => ACTIVE_CODES.has(rt.code))
+    .sort((a, b) => b.id - a.id)
+    .forEach(rt => byCode.set(rt.code, rt));
   const requestTypes = Array.from(byCode.values()).sort((a, b) => a.name.localeCompare(b.name));
 
   // Auto-select first type once data loads
