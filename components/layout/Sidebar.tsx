@@ -270,6 +270,7 @@ export default function Sidebar() {
       { name: 'Roles & Permissions',   href: '/settings/roles'          },
       { name: 'Company & Branding',    href: '/settings/company'        },
     ]},
+    { name: 'Account Security', href: '/security', icon: ShieldCheckIcon },
   ];
 
   const isPurchaseActive  = pathname.startsWith('/purchase-') || pathname.startsWith('/quotation-') || pathname.startsWith('/goods-receiving') || pathname.startsWith('/purchase-invoices');

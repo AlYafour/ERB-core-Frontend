@@ -13,6 +13,11 @@ import { TextField, PasswordField, Button } from '@/components/ui';
 import AuthParticles from '@/components/layout/AuthParticles';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import { getApiError } from '@/lib/utils/error';
+import {
+  prepareAuthenticationOptions,
+  serializeAuthenticationCredential,
+  isPlatformAuthenticatorAvailable,
+} from '@/lib/utils/webauthn';
 
 const LAST_CODE_KEY     = 'last_company_code';
 const LAST_VALID_KEY    = 'last_company_validated';
@@ -39,7 +44,7 @@ type TenantPreview = { name: string; plan: string; status: string };
 type TenantBranding = { logo_url?: string; login_bg_url?: string; primary_color?: string };
 
 export default function CompanyLoginPage() {
-  const [step, setStep]               = useState<1 | 2>(1);
+  const [step, setStep]               = useState<1 | 2 | 3>(1);
   const [companyCode, setCompanyCode] = useState('');
   const [tenant, setTenant]           = useState<TenantPreview | null>(null);
   const [branding, setBranding]       = useState<TenantBranding | null>(null);
@@ -47,11 +52,19 @@ export default function CompanyLoginPage() {
   const [password, setPassword]       = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError]             = useState('');
+  const [twoFaCode, setTwoFaCode]     = useState('');
+  const [tempToken, setTempToken]     = useState('');
+  const [passkeySupported, setPasskeySupported] = useState(false);
+  const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
   // True while auto-resolving company (Paths A/B/C/D) — never show step 1 during this time
   const [isInitializing, setIsInitializing] = useState(true);
 
   const { setAuth } = useAuthStore();
   const router = useRouter();
+
+  useEffect(() => {
+    isPlatformAuthenticatorAvailable().then(setPasskeySupported);
+  }, []);
 
   // Step 1 — validate company code
   const { mutate: validateCode, isPending: isValidating } = useMutation({
@@ -101,7 +114,7 @@ export default function CompanyLoginPage() {
       // strip ?code= from URL so back-navigation doesn't re-trigger
       window.history.replaceState({}, '', '/company-login');
       validateCode(upper);
-      return; // isInitializing stays true until onSuccess/onError
+      return;
     }
 
     // Path C: returning from logout — already validated, skip step 1 entirely
@@ -125,7 +138,7 @@ export default function CompanyLoginPage() {
     if (savedCode) {
       setCompanyCode(savedCode);
       validateCode(savedCode);
-      return; // isInitializing stays true until onSuccess/onError
+      return;
     }
 
     // Path E: completely fresh — show step 1
@@ -133,19 +146,30 @@ export default function CompanyLoginPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Step 2 — credentials
+  // Step 2 — credentials login
   const { mutate: login, isPending: isLoggingIn } = useMutation({
     mutationFn: () => authApi.login(username, password),
     onSuccess: (data) => {
       setError('');
-      // Reject platform admins — they must use the platform login portal
+
+      // 2FA required — move to step 3
+      if (data.requires_2fa && data.temp_token) {
+        setTempToken(data.temp_token);
+        setStep(3);
+        return;
+      }
+
+      if (!data.tokens) return;
+
+      // Reject platform admins
       try {
         const claims = JSON.parse(atob(data.tokens.access.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
         if (claims.is_platform_admin) {
           setError('Platform administrators must use the Platform Admin Login, not the Company Login.');
           return;
         }
-      } catch { /* ignore decode errors — proceed normally */ }
+      } catch { /* ignore decode errors */ }
+
       setAuth(data.user, data.tokens.access, data.tokens.refresh);
       router.replace('/dashboard');
     },
@@ -153,6 +177,52 @@ export default function CompanyLoginPage() {
       setError(getApiError(err, 'Invalid username or password.'));
     },
   });
+
+  // Step 3 — 2FA verify
+  const { mutate: verify2FA, isPending: isVerifying } = useMutation({
+    mutationFn: () => authApi.twofa.verify(tempToken, twoFaCode),
+    onSuccess: (data) => {
+      setError('');
+      setAuth(data.user, data.tokens.access, data.tokens.refresh);
+      router.replace('/dashboard');
+    },
+    onError: (err: unknown) => {
+      setError(getApiError(err, 'Invalid or expired code. Please try again.'));
+      setTwoFaCode('');
+    },
+  });
+
+  // WebAuthn passkey login
+  const handlePasskeyLogin = async () => {
+    if (!username.trim()) {
+      setError('Enter your username first, then sign in with passkey.');
+      return;
+    }
+    setIsPasskeyLoading(true);
+    setError('');
+    try {
+      const { options, challenge_token } = await authApi.webauthn.loginBegin(username.trim());
+      const browserOptions = prepareAuthenticationOptions(options);
+      const credential = await navigator.credentials.get({ publicKey: browserOptions }) as PublicKeyCredential | null;
+      if (!credential) {
+        setError('Passkey sign-in was cancelled.');
+        return;
+      }
+      const serialized = serializeAuthenticationCredential(credential);
+      const data = await authApi.webauthn.loginComplete(serialized, challenge_token);
+      setAuth(data.user, data.tokens.access, data.tokens.refresh);
+      router.replace('/dashboard');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('NotAllowedError') || msg.includes('cancelled')) {
+        setError('Passkey sign-in was cancelled.');
+      } else {
+        setError(getApiError(err, 'Passkey sign-in failed. Please use your password.'));
+      }
+    } finally {
+      setIsPasskeyLoading(false);
+    }
+  };
 
   const handleCodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,6 +235,11 @@ export default function CompanyLoginPage() {
     login();
   };
 
+  const handle2FASubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    verify2FA();
+  };
+
   const switchCompany = () => {
     lsClear(LAST_CODE_KEY, LAST_VALID_KEY, LAST_NAME_KEY, LAST_BRANDING_KEY);
     setCompanyCode('');
@@ -173,11 +248,13 @@ export default function CompanyLoginPage() {
     setError('');
     setUsername('');
     setPassword('');
+    setTwoFaCode('');
+    setTempToken('');
     setIsInitializing(false);
     setStep(1);
   };
 
-  // ── Initializing: silent spinner, never flash step 1 ───────────────
+  // ── Initializing: silent spinner ────────────────────────────────────
   if (isInitializing) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-app)' }}>
@@ -187,17 +264,16 @@ export default function CompanyLoginPage() {
     );
   }
 
-  // ── STEP 2: Full-screen premium layout ─────────────────────────────
-  if (step === 2 && tenant) {
+  // ── STEP 2 or 3: Full-screen premium layout ─────────────────────────
+  if ((step === 2 || step === 3) && tenant) {
     const accent  = branding?.primary_color || WINE_ACCENT;
     const bgImage = branding?.login_bg_url;
     const logoUrl = branding?.logo_url;
-    const canSubmit = !isLoggingIn && !!username.trim() && !!password;
 
     return (
       <div style={{ minHeight: '100vh', display: 'flex', position: 'relative' }}>
 
-        {/* ── Left panel: background image or gradient (desktop) ──── */}
+        {/* ── Left panel ──────────────────────────────────────────── */}
         <div
           className="hidden lg:block"
           style={{
@@ -213,10 +289,7 @@ export default function CompanyLoginPage() {
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
             />
           )}
-          {/* dark overlay for legibility */}
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.32)' }} />
-
-          {/* Company logo bottom-left — inverted to show on dark bg */}
           {logoUrl && (
             <div style={{ position: 'absolute', bottom: 48, left: 48, zIndex: 2 }}>
               <img
@@ -228,7 +301,7 @@ export default function CompanyLoginPage() {
           )}
         </div>
 
-        {/* ── Right panel: login form ──────────────────────────────── */}
+        {/* ── Right panel ─────────────────────────────────────────── */}
         <div
           style={{
             flex: 1, display: 'flex', flexDirection: 'column',
@@ -244,7 +317,6 @@ export default function CompanyLoginPage() {
 
           <div style={{ width: '100%', maxWidth: 400 }}>
 
-            {/* Company logo — color, no box */}
             {logoUrl ? (
               <div style={{ marginBottom: 28 }}>
                 <img src={logoUrl} alt={tenant.name} style={{ height: 52, objectFit: 'contain', display: 'block' }} />
@@ -253,74 +325,170 @@ export default function CompanyLoginPage() {
               <div style={{ marginBottom: 28 }} />
             )}
 
-            {/* Heading */}
-            <h1 style={{ fontSize: '1.875rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
-              {tenant.name}
-            </h1>
-            <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '0 0 36px', lineHeight: 1.5 }}>
-              Sign in to your account
-            </p>
+            {/* ── STEP 3: 2FA code ──────────────────────────────── */}
+            {step === 3 ? (
+              <>
+                <h1 style={{ fontSize: '1.875rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
+                  Two-Factor Authentication
+                </h1>
+                <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '0 0 36px', lineHeight: 1.5 }}>
+                  Enter the 6-digit code from your authenticator app
+                </p>
 
-            <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {error && <ErrorBanner message={error} />}
+                <form onSubmit={handle2FASubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  {error && <ErrorBanner message={error} />}
 
-              <TextField
-                id="username"
-                name="username"
-                type="text"
-                label="Username"
-                required
-                autoFocus
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => { setUsername(e.target.value); setError(''); }}
-              />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Verification Code
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={6}
+                      autoFocus
+                      placeholder="000 000"
+                      value={twoFaCode}
+                      onChange={(e) => { setTwoFaCode(e.target.value.replace(/\D/g, '')); setError(''); }}
+                      style={{
+                        textAlign: 'center',
+                        fontSize: 28,
+                        fontWeight: 700,
+                        letterSpacing: '0.35em',
+                        padding: '14px 0',
+                        border: '2px solid var(--border-default)',
+                        borderRadius: 10,
+                        background: 'var(--surface-subtle)',
+                        color: 'var(--text-primary)',
+                        outline: 'none',
+                        fontFamily: 'monospace',
+                        width: '100%',
+                        transition: 'border-color 150ms',
+                      }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-default)'; }}
+                    />
+                  </div>
 
-              <PasswordField
-                id="password"
-                name="password"
-                label="Password"
-                required
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                showPassword={showPassword}
-                onTogglePassword={() => setShowPassword(!showPassword)}
-              />
+                  <SubmitButton
+                    accent={accent}
+                    disabled={isVerifying || twoFaCode.length < 6}
+                    isLoading={isVerifying}
+                    label="Verify & Sign In"
+                    loadingLabel="Verifying…"
+                  />
+                </form>
 
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                style={{
-                  width: '100%', padding: '13px 0', borderRadius: 10,
-                  background: canSubmit ? accent : 'var(--surface-subtle)',
-                  color: canSubmit ? '#fff' : 'var(--text-muted)',
-                  fontSize: 15, fontWeight: 700,
-                  border: 'none', cursor: canSubmit ? 'pointer' : 'not-allowed',
-                  transition: 'background 150ms, opacity 150ms',
-                  letterSpacing: '0.01em', marginTop: 4,
-                }}
-                onMouseEnter={(e) => { if (canSubmit) e.currentTarget.style.opacity = '0.88'; }}
-                onMouseLeave={(e) => { if (canSubmit) e.currentTarget.style.opacity = '1'; }}
-              >
-                {isLoggingIn ? 'Signing in…' : 'Sign In'}
-              </button>
-            </form>
+                <button
+                  type="button"
+                  onClick={() => { setStep(2); setTwoFaCode(''); setTempToken(''); setError(''); }}
+                  style={{ marginTop: 20, display: 'block', width: '100%', textAlign: 'center', fontSize: 13, color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                  ← Back to sign in
+                </button>
+              </>
+            ) : (
+              /* ── STEP 2: Username + password ──────────────────── */
+              <>
+                <h1 style={{ fontSize: '1.875rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
+                  {tenant.name}
+                </h1>
+                <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '0 0 36px', lineHeight: 1.5 }}>
+                  Sign in to your account
+                </p>
 
-            <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--text-tertiary)' }}>
-              Platform administrator?{' '}
-              <a href="/platform-login" style={{ color: 'var(--text-secondary)', textDecoration: 'underline' }}>
-                Use Platform Login →
-              </a>
-            </div>
+                <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  {error && <ErrorBanner message={error} />}
 
+                  <TextField
+                    id="username"
+                    name="username"
+                    type="text"
+                    label="Username"
+                    required
+                    autoFocus
+                    placeholder="Enter your username"
+                    value={username}
+                    onChange={(e) => { setUsername(e.target.value); setError(''); }}
+                  />
+
+                  <PasswordField
+                    id="password"
+                    name="password"
+                    label="Password"
+                    required
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                    showPassword={showPassword}
+                    onTogglePassword={() => setShowPassword(!showPassword)}
+                  />
+
+                  <SubmitButton
+                    accent={accent}
+                    disabled={isLoggingIn || !username.trim() || !password}
+                    isLoading={isLoggingIn}
+                    label="Sign In"
+                    loadingLabel="Signing in…"
+                  />
+                </form>
+
+                {/* ── Passkey / Biometric button ─────────────────── */}
+                {passkeySupported && (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 0' }}>
+                      <div style={{ flex: 1, height: 1, background: 'var(--border-default)' }} />
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>or</span>
+                      <div style={{ flex: 1, height: 1, background: 'var(--border-default)' }} />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handlePasskeyLogin}
+                      disabled={isPasskeyLoading}
+                      style={{
+                        marginTop: 14,
+                        width: '100%',
+                        padding: '12px 0',
+                        borderRadius: 10,
+                        border: '1.5px solid var(--border-default)',
+                        background: 'var(--surface-subtle)',
+                        color: 'var(--text-primary)',
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: isPasskeyLoading ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 10,
+                        transition: 'background 150ms, border-color 150ms',
+                        opacity: isPasskeyLoading ? 0.6 : 1,
+                      }}
+                      onMouseEnter={(e) => { if (!isPasskeyLoading) e.currentTarget.style.background = 'var(--surface-hover)'; }}
+                      onMouseLeave={(e) => { if (!isPasskeyLoading) e.currentTarget.style.background = 'var(--surface-subtle)'; }}
+                    >
+                      <FingerprintIcon size={18} color={accent} />
+                      {isPasskeyLoading ? 'Waiting for biometric…' : 'Sign in with Passkey'}
+                    </button>
+                  </>
+                )}
+
+                <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--text-tertiary)' }}>
+                  Platform administrator?{' '}
+                  <a href="/platform-login" style={{ color: 'var(--text-secondary)', textDecoration: 'underline' }}>
+                    Use Platform Login →
+                  </a>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
     );
   }
 
-  // ── STEP 1: Company code entry (centered card, unchanged) ──────────
+  // ── STEP 1: Company code entry ───────────────────────────────────────
   return (
     <div
       className="auth-bg"
@@ -409,6 +577,8 @@ export default function CompanyLoginPage() {
   );
 }
 
+// ── Shared sub-components ────────────────────────────────────────────────────
+
 function ErrorBanner({ message }: { message: string }) {
   return (
     <div
@@ -424,5 +594,46 @@ function ErrorBanner({ message }: { message: string }) {
     >
       {message}
     </div>
+  );
+}
+
+function SubmitButton({ accent, disabled, isLoading, label, loadingLabel }: {
+  accent: string; disabled: boolean; isLoading: boolean; label: string; loadingLabel: string;
+}) {
+  return (
+    <button
+      type="submit"
+      disabled={disabled}
+      style={{
+        width: '100%', padding: '13px 0', borderRadius: 10,
+        background: disabled ? 'var(--surface-subtle)' : accent,
+        color: disabled ? 'var(--text-muted)' : '#fff',
+        fontSize: 15, fontWeight: 700,
+        border: 'none', cursor: disabled ? 'not-allowed' : 'pointer',
+        transition: 'background 150ms, opacity 150ms',
+        letterSpacing: '0.01em', marginTop: 4,
+      }}
+      onMouseEnter={(e) => { if (!disabled) e.currentTarget.style.opacity = '0.88'; }}
+      onMouseLeave={(e) => { if (!disabled) e.currentTarget.style.opacity = '1'; }}
+    >
+      {isLoading ? loadingLabel : label}
+    </button>
+  );
+}
+
+function FingerprintIcon({ size = 20, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4" />
+      <path d="M14 13.12c0 2.38 0 6.38-1 8.88" />
+      <path d="M17.29 21.02c.12-.6.43-2.3.5-3.02" />
+      <path d="M2 12a10 10 0 0 1 18-6" />
+      <path d="M2 16h.01" />
+      <path d="M21.8 16c.2-2 .131-5.354 0-6" />
+      <path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2" />
+      <path d="M17.5 10c.34-1.39.48-2.7.48-4a6 6 0 0 0-2.39-4.8" />
+      <path d="M11 7.99C11 8 10 7 9 7" />
+      <path d="M12 10a2 2 0 0 1 2 2c0 3 2 5 3 6" />
+    </svg>
   );
 }

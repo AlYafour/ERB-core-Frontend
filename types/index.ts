@@ -48,6 +48,9 @@ export interface User {
   /** SaaS multi-tenant fields */
   is_platform_admin?: boolean;
   tenant?: string | null;
+  /** Security fields */
+  is_2fa_enabled?: boolean;
+  webauthn_credentials?: { credential_id: string; device_name: string }[];
 }
 
 export interface MunicipalViolation {
