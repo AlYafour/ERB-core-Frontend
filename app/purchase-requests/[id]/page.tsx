@@ -114,6 +114,16 @@ export default function PurchaseRequestDetailPage() {
     onError: (err: unknown) => toast(getApiError(err, 'Failed to resubmit request'), 'error'),
   });
 
+  const submitMutation = useMutation({
+    mutationFn: () => purchaseRequestsApi.submit(id),
+    onSuccess: () => {
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: ['pending-count'] });
+      toast('Request submitted for approval', 'success');
+    },
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to submit request'), 'error'),
+  });
+
   const recallMutation = useMutation({
     mutationFn: () => purchaseRequestsApi.recall(id),
     onSuccess: () => {
@@ -292,6 +302,11 @@ export default function PurchaseRequestDetailPage() {
           )}
           <Button variant="secondary" size="sm" onClick={() => window.open(`/print/pr/${id}`, '_blank')}>Print</Button>
 
+          {request.status === 'draft' && (isAdmin || request.created_by === user?.id) && (
+            <Button variant="primary" size="sm" isLoading={submitMutation.isPending} onClick={() => submitMutation.mutate()}>
+              Submit for Approval
+            </Button>
+          )}
           {request.status === 'pending' && (isAdmin || request.created_by === user?.id) && (
             <Button variant="secondary" size="sm" isLoading={recallMutation.isPending} onClick={() => recallMutation.mutate()}>
               Recall

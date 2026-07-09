@@ -108,6 +108,11 @@ export const purchaseRequestsApi = {
     return response.data;
   },
 
+  submit: async (id: number): Promise<PurchaseRequest> => {
+    const response = await apiClient.post(`/purchase-requests/${id}/submit/`);
+    return response.data;
+  },
+
   recall: async (id: number): Promise<PurchaseRequest> => {
     const response = await apiClient.post(`/purchase-requests/${id}/recall/`);
     return response.data;
