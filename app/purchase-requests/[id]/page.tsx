@@ -41,8 +41,8 @@ export default function PurchaseRequestDetailPage() {
   const [resubmitDialogOpen, setResubmitDialogOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editingForm, setEditingForm] = useState<{
-    productId: number; quantity: number; unit: string; reason: string; notes: string;
-  }>({ productId: 0, quantity: 1, unit: '', reason: '', notes: '' });
+    productId: number; quantity: number; unit: string; projectSite: string; reason: string; notes: string;
+  }>({ productId: 0, quantity: 1, unit: '', projectSite: '', reason: '', notes: '' });
   const [addingProduct, setAddingProduct] = useState(false);
   const [newProduct, setNewProduct] = useState<Product | null>(null);
   const [newProductCategory, setNewProductCategory] = useState('');
@@ -247,7 +247,12 @@ export default function PurchaseRequestDetailPage() {
         ? <input className="form-input" style={{ width: 100 }} value={editingForm.unit} onChange={(e) => setEditingForm(f => ({ ...f, unit: e.target.value }))} placeholder="Unit" />
         : <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 600 }}>{(item.unit || item.product?.unit || '—').toUpperCase()}</span>,
     },
-    { header: t('col', 'projectSite'), cell: (item) => <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)' }}>{item.project_site || '—'}</span> },
+    {
+      header: t('col', 'projectSite'),
+      cell: (item) => editingItemId === item.id
+        ? <input className="form-input" style={{ minWidth: 120 }} value={editingForm.projectSite} onChange={(e) => setEditingForm(f => ({ ...f, projectSite: e.target.value }))} placeholder="Project / Site…" />
+        : <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)' }}>{item.project_site || '—'}</span>,
+    },
     {
       header: t('col', 'purpose'),
       cell: (item) => editingItemId === item.id
@@ -267,11 +272,11 @@ export default function PurchaseRequestDetailPage() {
       header: '',
       cell: (item) => (
         <div style={{ display: 'flex', gap: 6 }}>
-          {isAdmin && (editingItemId === item.id ? (
+          {editingItemId === item.id ? (
             <>
               <button className="btn btn-primary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
                 disabled={!editingForm.productId || updateItemMutation.isPending}
-                onClick={() => updateItemMutation.mutate({ itemId: item.id!, data: { product_id: editingForm.productId, quantity: editingForm.quantity, unit: editingForm.unit, reason: editingForm.reason, notes: editingForm.notes } })}>
+                onClick={() => updateItemMutation.mutate({ itemId: item.id!, data: { product_id: editingForm.productId, quantity: editingForm.quantity, unit: editingForm.unit, project_site: editingForm.projectSite, reason: editingForm.reason, notes: editingForm.notes } })}>
                 {updateItemMutation.isPending ? '…' : 'Save'}
               </button>
               <button className="btn btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }} onClick={() => setEditingItemId(null)}>
@@ -280,10 +285,10 @@ export default function PurchaseRequestDetailPage() {
             </>
           ) : (
             <button className="btn btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
-              onClick={() => { setEditingItemId(item.id!); setEditingForm({ productId: item.product?.id || 0, quantity: item.quantity, unit: item.unit || item.product?.unit || '', reason: (item as { reason?: string }).reason || '', notes: item.notes || '' }); }}>
+              onClick={() => { setEditingItemId(item.id!); setEditingForm({ productId: item.product?.id || 0, quantity: item.quantity, unit: item.unit || item.product?.unit || '', projectSite: item.project_site || '', reason: (item as { reason?: string }).reason || '', notes: item.notes || '' }); }}>
               Edit
             </button>
-          ))}
+          )}
           <Button variant="delete" size="sm" disabled={deleteItemMutation.isPending} onClick={() => deleteItemMutation.mutate(item.id!)}>
             {t('btn', 'delete')}
           </Button>
