@@ -1,6 +1,18 @@
 import apiClient from './client';
 import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRLegalEntity, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, TeamType, WorkTeamMember, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment, EmployeeBankAccount, HRCompanySettings, PayrollRun, EOSCalculation, EOSPreview, SalaryHistory } from '@/types';
 
+/** Standard page_size values — use these instead of inline numbers for consistency. */
+export const PAGE_SIZES = {
+  /** Single item lookup (e.g. check-in/out existence). */
+  single:  1,
+  /** Paginated data tables (default server page). */
+  default: 50,
+  /** Moderate lookup lists (steps, salary history). */
+  medium:  100,
+  /** Full lookup/dropdown lists (policies, locations, shifts, teams). */
+  lookup:  200,
+} as const;
+
 function toPage<T>(data: T[] | PaginatedResponse<T>): PaginatedResponse<T> {
   if (Array.isArray(data)) return { results: data, count: data.length, next: null, previous: null };
   return data as PaginatedResponse<T>;

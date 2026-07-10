@@ -1,6 +1,6 @@
 'use client';
 
-import { Component, ReactNode, ErrorInfo } from 'react';
+import { Component, ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -22,8 +22,8 @@ export default class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('[ErrorBoundary]', error, info.componentStack);
+  componentDidCatch(_error: Error, _info: ErrorInfo) {
+    // Errors are already shown via render(). Wire this to a monitoring service when available.
   }
 
   reset = () => this.setState({ hasError: false, error: null });

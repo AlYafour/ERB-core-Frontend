@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { MyTask, TaskListItem, TaskPriority } from '@/types';
 import { myTasksApi, tasksApi } from '@/lib/api/tasks';
+import { useAuthStore } from '@/lib/store/auth-store';
 import { PRIORITY_CONFIG, fmtDate, BRAND, BRAND_HEX } from '../shared/constants';
 
 interface Props {
@@ -13,18 +14,19 @@ interface Props {
 
 export function TodoPanel({ onClose, onOpenTask }: Props) {
   const qc = useQueryClient();
+  const userId = useAuthStore((s) => s.user?.id);
   const [text, setText] = useState('');
   const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium');
   const [activeSection, setActiveSection] = useState<'personal' | 'assigned' | 'done'>('personal');
 
   const { data: items = [] } = useQuery<MyTask[]>({
-    queryKey: ['my-tasks'],
+    queryKey: ['my-tasks', userId],
     queryFn: () => myTasksApi.getAll(),
   });
 
   // Tasks assigned to me with pending subtasks — surfaces checklists in To-Do
   const { data: assignedWithSubs = [] } = useQuery<TaskListItem[]>({
-    queryKey: ['todo-assigned-tasks'],
+    queryKey: ['todo-assigned-tasks', userId],
     queryFn: async () => {
       const raw = await tasksApi.getAll({ scope: 'mine', page_size: 100 });
       const list: TaskListItem[] = Array.isArray(raw) ? raw : (raw as { results?: TaskListItem[] }).results ?? [];
@@ -37,7 +39,7 @@ export function TodoPanel({ onClose, onOpenTask }: Props) {
   });
 
   function invalidate() {
-    qc.invalidateQueries({ queryKey: ['my-tasks'] });
+    qc.invalidateQueries({ queryKey: ['my-tasks', userId] });
     qc.invalidateQueries({ queryKey: ['my-tasks-count'] });
   }
 

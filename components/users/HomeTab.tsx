@@ -99,18 +99,21 @@ export default function HomeTab({ user, emp, isSelf }: UserTabProps) {
   });
 
   const { data: rawTasks } = useQuery({
-    queryKey: ['my-tasks-home'],
+    queryKey: ['my-tasks-home', user?.id],
     queryFn:  () => tasksApi.getAll({ scope: 'mine', page_size: 5 } as any),
+    staleTime: 60_000,
   });
 
   const { data: whosOff } = useQuery({
     queryKey: ['whos-off-today'],
     queryFn:  () => hrRequestsApi.getWhosOffToday(),
+    staleTime: 60_000,
   });
 
   const { data: birthdays } = useQuery({
     queryKey: ['upcoming-birthdays'],
     queryFn:  () => hrEmployeesApi.getUpcomingBirthdays(30),
+    staleTime: 60_000,
   });
 
   const firstName = user?.first_name || user?.username || 'there';

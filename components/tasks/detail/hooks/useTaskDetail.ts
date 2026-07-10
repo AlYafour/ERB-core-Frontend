@@ -12,6 +12,7 @@ export function useTaskDetail(taskId: number) {
   const { data: task, isLoading } = useQuery<TaskDetail>({
     queryKey: ['task', taskId],
     queryFn: () => tasksApi.getById(taskId),
+    staleTime: 30_000,
   });
 
   function invalidate() {

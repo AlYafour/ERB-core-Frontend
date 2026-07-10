@@ -25,8 +25,7 @@ export async function getMyPermissions(): Promise<Array<{ category: string; acti
     cachedPermissions = data.permissions;
     permissionsCacheTime = now;
     return cachedPermissions;
-  } catch (error) {
-    console.error('Failed to fetch permissions:', error);
+  } catch {
     return [];
   }
 }
@@ -48,8 +47,7 @@ export async function checkPermissions(
   try {
     const response = await permissionsApi.checkPermissions(checks);
     return response.results;
-  } catch (error) {
-    console.error('Failed to check permissions:', error);
+  } catch {
     // Fallback: check locally
     const permissions = await getMyPermissions();
     return checks.map((check) => ({
