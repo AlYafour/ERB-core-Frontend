@@ -76,15 +76,17 @@ body {
   font-size: inherit !important;
 }
 
+/* ── Page setup (applies to all print pages) ── */
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
 /* ── Print media ── */
 @media print {
-  /* Natural page margins — no double-margin with inner padding */
-  @page {
-    size: A4 portrait;
-    margin: 8mm 10mm;
-  }
-
   html, body {
+    width: 210mm !important;
+    height: 297mm !important;
     background: #fff !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -92,12 +94,10 @@ body {
     print-color-adjust: exact;
   }
 
-  /* Hide the control bar completely */
   .print-controls-bar {
     display: none !important;
   }
 
-  /* Page wrapper: no grey, no padding */
   .print-page-bg {
     background: #fff !important;
     min-height: auto !important;
@@ -105,14 +105,18 @@ body {
     margin: 0 !important;
   }
 
-  /* A4 sheet: natural height, no forced page breaks */
   .print-doc {
-    width: 100% !important;
-    min-height: auto !important;
     margin: 0 !important;
-    padding: 0 8mm !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    padding: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    /* Removed: page-break-after: always — was creating blank trailing page */
+  }
+
+  /* Used by LPO and PQ to constrain scrollable content area */
+  .print-content {
+    height: calc(297mm - 10mm) !important;
   }
 }

@@ -64,23 +64,6 @@ export default function PrintGRNPage() {
   return (
     <div className="print-page-bg" style={{ minHeight: '100vh', background: '#f1f5f9', fontFamily: "'Inter','Cairo','Segoe UI',sans-serif", fontSize: '12px' }}>
 
-      <style>{`
-        @page { size: A4; margin: 0; }
-        @media print {
-          html, body { width: 210mm; height: 297mm; }
-          .print-page-bg { background: white !important; padding: 0 !important; margin: 0 !important; }
-          .print-controls-bar { display: none !important; }
-          .print-doc {
-            margin: 0 !important;
-            width: 210mm !important;
-            box-shadow: none !important;
-            border-radius: 0 !important;
-            height: 297mm !important;
-            min-height: 297mm !important;
-          }
-        }
-      `}</style>
-
       <PrintControlsBar
         backHref={`/goods-receiving/${id}`}
         docType="GRN" docTypeColor="#10b981"
