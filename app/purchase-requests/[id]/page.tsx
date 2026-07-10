@@ -15,8 +15,6 @@ import { canCreateQuotationRequest, canCreatePurchaseOrder } from '@/lib/utils/w
 import { useProcPermissions } from '@/lib/hooks/use-proc-permissions';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useT } from '@/lib/i18n/useT';
-import { productsApi } from '@/lib/api/products';
-import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import ProductSelector from '@/components/features/ProductSelector';
 import { Product } from '@/types';
 import { ReadOnlyItemsTable, ColumnDef } from '@/components/procurement/ReadOnlyItemsTable';
@@ -41,8 +39,8 @@ export default function PurchaseRequestDetailPage() {
   const [resubmitDialogOpen, setResubmitDialogOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editingForm, setEditingForm] = useState<{
-    productId: number; quantity: number; unit: string; projectSite: string; reason: string; notes: string;
-  }>({ productId: 0, quantity: 1, unit: '', projectSite: '', reason: '', notes: '' });
+    quantity: number; unit: string; projectSite: string; reason: string; notes: string;
+  }>({ quantity: 1, unit: '', projectSite: '', reason: '', notes: '' });
   const [addingProduct, setAddingProduct] = useState(false);
   const [newProduct, setNewProduct] = useState<Product | null>(null);
   const [newProductCategory, setNewProductCategory] = useState('');
@@ -63,12 +61,6 @@ export default function PurchaseRequestDetailPage() {
     queryFn: () => purchaseRequestsApi.getById(id),
   });
 
-  const { data: products } = useQuery({
-    queryKey: ['products'],
-    queryFn: () => productsApi.getAll({ page: 1, page_size: 200 }),
-    enabled: isAdmin,
-    staleTime: 10 * 60 * 1000,
-  });
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['purchase-requests', id] });
@@ -216,17 +208,7 @@ export default function PurchaseRequestDetailPage() {
   const cols: ColumnDef<PRItem>[] = [
     {
       header: t('col', 'product'),
-      cell: (item) => editingItemId === item.id ? (
-        <div style={{ minWidth: 220 }}>
-          <SearchableDropdown
-            options={products?.results?.map((p) => ({ value: p.id, label: `${p.name} (${p.code})`, searchText: `${p.name} ${p.code}` })) || []}
-            value={editingForm.productId}
-            onChange={(val) => setEditingForm(f => ({ ...f, productId: val ? Number(val) : 0 }))}
-            placeholder="Select product…"
-            searchPlaceholder="Search products…"
-          />
-        </div>
-      ) : (
+      cell: (item) => (
         <div>
           <div className="cell-product-name">{item.product?.name || 'N/A'}</div>
           {item.product?.code && <div className="cell-product-code">{item.product.code}</div>}
@@ -275,8 +257,8 @@ export default function PurchaseRequestDetailPage() {
           {editingItemId === item.id ? (
             <>
               <button className="btn btn-primary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
-                disabled={!editingForm.productId || updateItemMutation.isPending}
-                onClick={() => updateItemMutation.mutate({ itemId: item.id!, data: { product_id: editingForm.productId, quantity: editingForm.quantity, unit: editingForm.unit, project_site: editingForm.projectSite, reason: editingForm.reason, notes: editingForm.notes } })}>
+                disabled={updateItemMutation.isPending}
+                onClick={() => updateItemMutation.mutate({ itemId: item.id!, data: { quantity: editingForm.quantity, unit: editingForm.unit, project_site: editingForm.projectSite, reason: editingForm.reason, notes: editingForm.notes } })}>
                 {updateItemMutation.isPending ? '…' : 'Save'}
               </button>
               <button className="btn btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }} onClick={() => setEditingItemId(null)}>
@@ -285,7 +267,7 @@ export default function PurchaseRequestDetailPage() {
             </>
           ) : (
             <button className="btn btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
-              onClick={() => { setEditingItemId(item.id!); setEditingForm({ productId: item.product?.id || 0, quantity: item.quantity, unit: item.unit || item.product?.unit || '', projectSite: item.project_site || '', reason: (item as { reason?: string }).reason || '', notes: item.notes || '' }); }}>
+              onClick={() => { setEditingItemId(item.id!); setEditingForm({ quantity: item.quantity, unit: item.unit || item.product?.unit || '', projectSite: item.project_site || '', reason: item.reason || '', notes: item.notes || '' }); }}>
               Edit
             </button>
           )}
