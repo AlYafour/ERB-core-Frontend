@@ -144,7 +144,7 @@ export default function PurchaseRequestDetailPage() {
   });
 
   const updateItemMutation = useMutation({
-    mutationFn: ({ itemId, data }: { itemId: number; data: { product_id: number; quantity: number; unit?: string; reason?: string; notes?: string } }) =>
+    mutationFn: ({ itemId, data }: { itemId: number; data: { product_id?: number; quantity?: number; unit?: string; project_site?: string; reason?: string; notes?: string } }) =>
       purchaseRequestsApi.updateItem(itemId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-requests', id] });
@@ -202,6 +202,7 @@ export default function PurchaseRequestDetailPage() {
   if (!request)  return <DocLoadState type="not-found" message="Purchase Request not found." />;
 
   const canEditItems = (isAdmin || request.created_by === user?.id) && request.status === 'draft';
+  const canProcurementEdit = (isAdmin || can('purchase_request', 'update')) && request.status === 'approved';
 
 
   type PRItem = (typeof request.items)[number];
@@ -218,7 +219,7 @@ export default function PurchaseRequestDetailPage() {
     {
       header: t('col', 'quantity'),
       align: 'center',
-      cell: (item) => editingItemId === item.id
+      cell: (item) => (editingItemId === item.id && canEditItems)
         ? <input type="number" min="0.001" step="0.001" className="form-input" style={{ width: 90 }} value={editingForm.quantity} onChange={(e) => setEditingForm(f => ({ ...f, quantity: Number(e.target.value) || 0 }))} />
         : <span style={{ fontWeight: 'var(--weight-semibold)' }}>{item.quantity}</span>,
     },
@@ -231,13 +232,13 @@ export default function PurchaseRequestDetailPage() {
     },
     {
       header: t('col', 'projectSite'),
-      cell: (item) => editingItemId === item.id
+      cell: (item) => (editingItemId === item.id && canEditItems)
         ? <input className="form-input" style={{ minWidth: 120 }} value={editingForm.projectSite} onChange={(e) => setEditingForm(f => ({ ...f, projectSite: e.target.value }))} placeholder="Project / Site…" />
         : <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)' }}>{item.project_site || '—'}</span>,
     },
     {
       header: t('col', 'purpose'),
-      cell: (item) => editingItemId === item.id
+      cell: (item) => (editingItemId === item.id && canEditItems)
         ? <input className="form-input" style={{ minWidth: 120 }} value={editingForm.reason} onChange={(e) => setEditingForm(f => ({ ...f, reason: e.target.value }))} placeholder="Purpose…" />
         : <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', maxWidth: 256, display: 'block' }}>{(item as { reason?: string }).reason || '—'}</span>,
     },
@@ -274,6 +275,33 @@ export default function PurchaseRequestDetailPage() {
           <Button variant="delete" size="sm" disabled={deleteItemMutation.isPending} onClick={() => deleteItemMutation.mutate(item.id!)}>
             {t('btn', 'delete')}
           </Button>
+        </div>
+      ),
+    });
+  }
+
+  if (canProcurementEdit) {
+    cols.push({
+      header: '',
+      cell: (item) => (
+        <div style={{ display: 'flex', gap: 6 }}>
+          {editingItemId === item.id ? (
+            <>
+              <button className="btn btn-primary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
+                disabled={updateItemMutation.isPending}
+                onClick={() => updateItemMutation.mutate({ itemId: item.id!, data: { unit: editingForm.unit, notes: editingForm.notes } })}>
+                {updateItemMutation.isPending ? '…' : 'Save'}
+              </button>
+              <button className="btn btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }} onClick={() => setEditingItemId(null)}>
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button className="btn btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: '4px 10px' }}
+              onClick={() => { setEditingItemId(item.id!); setEditingForm({ quantity: item.quantity, unit: item.unit || item.product?.unit || '', projectSite: item.project_site || '', reason: item.reason || '', notes: item.notes || '' }); }}>
+              Edit Unit
+            </button>
+          )}
         </div>
       ),
     });
@@ -510,7 +538,7 @@ export default function PurchaseRequestDetailPage() {
             </div>
 
             {/* ── Additional Charges card ── */}
-            {((request.charges && request.charges.length > 0) || canEditItems) && (
+            {((request.charges && request.charges.length > 0) || canEditItems || canProcurementEdit) && (
               <div className="card" style={{ marginTop: 12 }}>
                 <div className="proc-section-head">
                   <h3 className="proc-section-title">
@@ -519,7 +547,7 @@ export default function PurchaseRequestDetailPage() {
                       <span className="proc-section-count">{request.charges.length}</span>
                     )}
                   </h3>
-                  {canEditItems && !addingCharge && (
+                  {(canEditItems || canProcurementEdit) && !addingCharge && (
                     <Button variant="primary" size="sm" onClick={() => setAddingCharge(true)}>+ Add Charge</Button>
                   )}
                 </div>
@@ -567,7 +595,7 @@ export default function PurchaseRequestDetailPage() {
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: 'var(--surface-subtle)' }}>
-                        {['Description', 'Type', ...(canEditItems ? [''] : [])].map((h) => (
+                        {['Description', 'Type', ...((canEditItems || canProcurementEdit) ? [''] : [])].map((h) => (
                           <th key={h} style={{ padding: '7px 12px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid var(--border-subtle)' }}>{h}</th>
                         ))}
                       </tr>
@@ -581,7 +609,7 @@ export default function PurchaseRequestDetailPage() {
                               {c.charge_type === 'lump_sum' ? 'Lump Sum' : 'Per Unit'}
                             </span>
                           </td>
-                          {canEditItems && (
+                          {(canEditItems || canProcurementEdit) && (
                             <td style={{ padding: '9px 12px' }}>
                               <button type="button"
                                 disabled={deleteChargeMutation.isPending}
