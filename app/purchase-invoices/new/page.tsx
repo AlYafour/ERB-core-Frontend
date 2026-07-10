@@ -10,6 +10,7 @@ import { PurchaseInvoiceFormData, toPurchaseInvoiceCreateData } from '@/lib/type
 import { Button, PageHeader, PageShell } from '@/components/ui';
 import MainLayout from '@/components/layout/MainLayout';
 import { formatPrice } from '@/lib/utils/format';
+import { getApiError } from '@/lib/utils/error';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import DateInput from '@/components/ui/DateInput';
@@ -104,20 +105,21 @@ function NewPurchaseInvoicePageContent() {
       }
     },
     onError: (error: unknown) => {
-      const errorMessage = formatBackendError(error);
-      toast(errorMessage, 'error');
-      
-      // Set field-specific errors
-      if ((error as any)?.response?.data) {
+      toast(getApiError(error, 'Failed to create invoice'), 'error');
+
+      // Set field-specific errors from DRF response
+      const responseData = (error as Record<string, unknown>)?.response as Record<string, unknown> | undefined;
+      const data = responseData?.data as Record<string, unknown> | undefined;
+      if (data) {
         const backendErrors: Record<string, string> = {};
-        Object.entries((error as any).response.data).forEach(([key, value]) => {
+        Object.entries(data).forEach(([key, value]) => {
           if (Array.isArray(value)) {
-            backendErrors[key] = value[0];
+            backendErrors[key] = String(value[0]);
           } else if (typeof value === 'string') {
             backendErrors[key] = value;
-          } else if (typeof value === 'object') {
-            Object.entries(value as Record<string, any>).forEach(([nestedKey, nestedValue]) => {
-              backendErrors[`${key}.${nestedKey}`] = Array.isArray(nestedValue) ? nestedValue[0] : nestedValue;
+          } else if (value && typeof value === 'object') {
+            Object.entries(value as Record<string, unknown>).forEach(([nestedKey, nestedValue]) => {
+              backendErrors[`${key}.${nestedKey}`] = Array.isArray(nestedValue) ? String(nestedValue[0]) : String(nestedValue);
             });
           }
         });

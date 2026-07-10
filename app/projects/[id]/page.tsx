@@ -14,6 +14,7 @@ import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { useT } from '@/lib/i18n/useT';
+import { ROLE_CODES } from '@/lib/constants/roles';
 
 const statusOptions = [
   { value: 'on_going',   label: 'On Going'   },
@@ -39,8 +40,8 @@ export default function EditProjectPage() {
   });
 
   const { data: engineersData } = useQuery({
-    queryKey: ['users', 'site_engineers'],
-    queryFn: () => usersApi.getAll({ role: 'site_engineer', page_size: 200, is_active: true }),
+    queryKey: ['users', ROLE_CODES.SITE_ENGINEER],
+    queryFn: () => usersApi.getAll({ role: ROLE_CODES.SITE_ENGINEER, page_size: 200, is_active: true }),
   });
   const engineers: User[] = engineersData?.results ?? [];
 

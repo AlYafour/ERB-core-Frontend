@@ -82,7 +82,7 @@ export const hrLegalEntitiesApi = {
 
 export const hrLocationTypesApi = {
   getAll: async (): Promise<PaginatedResponse<HRLocationType>> => {
-    const response = await apiClient.get('/hr/employees/location-types/', { params: { page_size: 100 } });
+    const response = await apiClient.get('/hr/employees/location-types/', { params: { page_size: PAGE_SIZES.medium } });
     return response.data;
   },
   create: async (data: Partial<HRLocationType>): Promise<HRLocationType> => {
@@ -342,7 +342,7 @@ export const hrApprovalsApi = {
 
   // ── Policies ────────────────────────────────────────────────────────────────
   getPolicies: async (): Promise<ApprovalPolicy[]> => {
-    const response = await apiClient.get('/hr/approvals/policies/', { params: { page_size: 200 } });
+    const response = await apiClient.get('/hr/approvals/policies/', { params: { page_size: PAGE_SIZES.lookup } });
     const data = response.data;
     return Array.isArray(data) ? data : (data.results ?? []);
   },
@@ -360,7 +360,7 @@ export const hrApprovalsApi = {
 
   // ── Steps ───────────────────────────────────────────────────────────────────
   getSteps: async (policyId: number): Promise<ApprovalStep[]> => {
-    const response = await apiClient.get('/hr/approvals/steps/', { params: { policy: policyId, page_size: 50 } });
+    const response = await apiClient.get('/hr/approvals/steps/', { params: { policy: policyId, page_size: PAGE_SIZES.default } });
     const data = response.data;
     return Array.isArray(data) ? data : (data.results ?? []);
   },
@@ -463,7 +463,7 @@ export const hrPenaltyApplicationsApi = {
 
 export const hrOfficeLocationsApi = {
   getAll: async (params?: { search?: string; is_active?: boolean }): Promise<PaginatedResponse<OfficeLocation>> => {
-    const response = await apiClient.get('/hr/office-locations/', { params: { page_size: 200, ...params } });
+    const response = await apiClient.get('/hr/office-locations/', { params: { page_size: PAGE_SIZES.lookup, ...params } });
     return response.data;
   },
   create: async (data: Partial<OfficeLocation>): Promise<OfficeLocation> => {
@@ -577,7 +577,7 @@ export const hrShiftAssignmentsApi = {
 
 export const hrShiftsApi = {
   getAll: async (): Promise<PaginatedResponse<HRShift>> => {
-    const response = await apiClient.get('/hr/attendance/shifts/', { params: { page_size: 200 } });
+    const response = await apiClient.get('/hr/attendance/shifts/', { params: { page_size: PAGE_SIZES.lookup } });
     return toPage(response.data);
   },
   create: async (data: Partial<HRShift>): Promise<HRShift> => {
@@ -597,7 +597,7 @@ export const hrShiftsApi = {
 
 export const hrEmployeeGroupsApi = {
   getAll: async (): Promise<PaginatedResponse<EmployeeGroup>> => {
-    const response = await apiClient.get('/hr/employees/groups/', { params: { page_size: 200 } });
+    const response = await apiClient.get('/hr/employees/groups/', { params: { page_size: PAGE_SIZES.lookup } });
     return toPage(response.data);
   },
   create: async (data: Partial<EmployeeGroup>): Promise<EmployeeGroup> => {
@@ -617,7 +617,7 @@ export const hrEmployeeGroupsApi = {
 
 export const hrWorkTeamsApi = {
   getAll: async (params?: Record<string, unknown>): Promise<PaginatedResponse<WorkTeam>> => {
-    const response = await apiClient.get('/hr/employees/work-teams/', { params: { page_size: 200, ...params } });
+    const response = await apiClient.get('/hr/employees/work-teams/', { params: { page_size: PAGE_SIZES.lookup, ...params } });
     return toPage(response.data);
   },
   getMembers: async (id: number): Promise<HREmployee[]> => {
@@ -641,7 +641,7 @@ export const hrWorkTeamsApi = {
 
 export const hrTeamTypesApi = {
   getAll: async (params?: Record<string, unknown>): Promise<PaginatedResponse<TeamType>> => {
-    const response = await apiClient.get('/hr/employees/team-types/', { params: { page_size: 200, ...params } });
+    const response = await apiClient.get('/hr/employees/team-types/', { params: { page_size: PAGE_SIZES.lookup, ...params } });
     return toPage(response.data);
   },
 };
@@ -650,7 +650,7 @@ export const hrSelfAttendanceApi = {
   getToday: async (employeeId: number): Promise<AttendanceRecord | null> => {
     const today = new Date().toISOString().slice(0, 10);
     const response = await apiClient.get('/hr/attendance/', {
-      params: { date: today, employee: employeeId, page_size: 1 },
+      params: { date: today, employee: employeeId, page_size: PAGE_SIZES.single },
     });
     const results: AttendanceRecord[] = response.data?.results ?? [];
     return results[0] ?? null;
@@ -738,7 +738,7 @@ export interface AccrualResult {
 
 export const hrLeavePoliciesApi = {
   getAll: async (params?: { leave_type?: string; is_active?: boolean; employee_group?: number | null }): Promise<PaginatedResponse<LeavePolicy>> => {
-    const response = await apiClient.get('/hr/requests/leave-policies/', { params: { page_size: 200, ...params } });
+    const response = await apiClient.get('/hr/requests/leave-policies/', { params: { page_size: PAGE_SIZES.lookup, ...params } });
     return toPage(response.data);
   },
   create: async (data: Partial<LeavePolicy>): Promise<LeavePolicy> => {
@@ -787,7 +787,7 @@ export const hrLeaveEncashmentsApi = {
 
 export const hrPenaltyRulesApi = {
   getAll: async (): Promise<PenaltyRule[]> => {
-    const response = await apiClient.get('/hr/attendance/penalty-rules/', { params: { page_size: 200 } });
+    const response = await apiClient.get('/hr/attendance/penalty-rules/', { params: { page_size: PAGE_SIZES.lookup } });
     const data = response.data;
     return Array.isArray(data) ? data : (data.results ?? []);
   },
@@ -803,7 +803,7 @@ export const hrPenaltyRulesApi = {
     await apiClient.delete(`/hr/attendance/penalty-rules/${id}/`);
   },
   getTiers: async (ruleId: number): Promise<PenaltyTier[]> => {
-    const response = await apiClient.get('/hr/attendance/penalty-tiers/', { params: { rule: ruleId, page_size: 100 } });
+    const response = await apiClient.get('/hr/attendance/penalty-tiers/', { params: { rule: ruleId, page_size: PAGE_SIZES.medium } });
     const data = response.data;
     return Array.isArray(data) ? data : (data.results ?? []);
   },
@@ -974,7 +974,7 @@ export const hrSalaryHistoryApi = {
     return response.data;
   },
   getByEmployee: async (employeeId: number): Promise<SalaryHistory[]> => {
-    const response = await apiClient.get('/hr/employees/salary-history/', { params: { employee: employeeId, page_size: 50 } });
+    const response = await apiClient.get('/hr/employees/salary-history/', { params: { employee: employeeId, page_size: PAGE_SIZES.default } });
     const data = response.data;
     return Array.isArray(data) ? data : (data.results ?? []);
   },
@@ -1274,7 +1274,7 @@ export const hrContractsApi = {
 
 // Normalises paginated {count, results:[...]} responses to plain arrays so pages can .then(r => r.data) safely.
 async function _paged<T>(url: string, params?: Record<string, string>) {
-  const r = await apiClient.get<any>(url, { params: { page_size: 1000, ...params } })
+  const r = await apiClient.get<any>(url, { params: { page_size: PAGE_SIZES.medium0, ...params } })
   const d = r.data
   const data = (Array.isArray(d) ? d : d?.results ?? []) as T[]
   return { ...r, data }
@@ -1781,7 +1781,7 @@ export const hrWorkTeamMembersApi = {
     page?: number;
     page_size?: number;
   }): Promise<WorkTeamMember[]> => {
-    const response = await apiClient.get('/hr/employees/team-members/', { params: { page_size: 200, ...params } });
+    const response = await apiClient.get('/hr/employees/team-members/', { params: { page_size: PAGE_SIZES.lookup, ...params } });
     const d = response.data;
     return Array.isArray(d) ? d : (d?.results ?? []);
   },
@@ -1821,7 +1821,7 @@ export const hrWorkTeamMembersApi = {
   },
 
   getTeamMemberHistory: async (employeeId: number): Promise<WorkTeamMember[]> => {
-    const response = await apiClient.get('/hr/employees/team-members/history/', { params: { employee_id: employeeId, page_size: 200 } });
+    const response = await apiClient.get('/hr/employees/team-members/history/', { params: { employee_id: employeeId, page_size: PAGE_SIZES.lookup } });
     const data = response.data;
     return Array.isArray(data) ? data : (data.results ?? []);
   },
