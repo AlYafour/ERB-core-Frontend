@@ -96,7 +96,7 @@ function EditPurchaseRequestContent({ pr }: { pr: PurchaseRequest }) {
 
   const [items, setItems] = useState<LocalItem[]>(
     pr.items.map((item) => ({
-      product_id: item.product_id,
+      product_id: item.product_id || item.product?.id || 0,
       product: item.product,
       quantity: item.quantity,
       unit: item.unit || '',
