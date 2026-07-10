@@ -133,6 +133,15 @@ export default function PurchaseRequestDetailPage() {
     onError: (err: unknown) => toast(getApiError(err, 'Failed to recall request'), 'error'),
   });
 
+  const reviseMutation = useMutation({
+    mutationFn: () => purchaseRequestsApi.revise(id),
+    onSuccess: () => {
+      invalidate();
+      toast('Request moved to draft — edit your changes then submit for approval', 'success');
+    },
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to revise request'), 'error'),
+  });
+
   const allowAdditionalOrderMutation = useMutation({
     mutationFn: () => purchaseRequestsApi.allowAdditionalOrder(id),
     onSuccess: () => {
@@ -200,7 +209,7 @@ export default function PurchaseRequestDetailPage() {
   if (isLoading) return <DocLoadState type="loading" />;
   if (!request)  return <DocLoadState type="not-found" message="Purchase Request not found." />;
 
-  const canEditItems = (isAdmin || request.created_by === user?.id) && ['draft', 'rejected'].includes(request.status);
+  const canEditItems = (isAdmin || request.created_by === user?.id) && request.status === 'draft';
 
 
   type PRItem = (typeof request.items)[number];
@@ -323,9 +332,14 @@ export default function PurchaseRequestDetailPage() {
             </Button>
           )}
           {request.status === 'rejected' && (isAdmin || request.created_by === user?.id) && (
-            <Button variant="primary" size="sm" disabled={resubmitMutation.isPending} onClick={() => setResubmitDialogOpen(true)}>
-              Resubmit
-            </Button>
+            <>
+              <Button variant="primary" size="sm" isLoading={reviseMutation.isPending} onClick={() => reviseMutation.mutate()}>
+                Edit &amp; Revise
+              </Button>
+              <Button variant="secondary" size="sm" disabled={resubmitMutation.isPending} onClick={() => setResubmitDialogOpen(true)}>
+                Resubmit As-Is
+              </Button>
+            </>
           )}
           {request.status === 'approved' && (isAdmin || canUndoApprove) && !request.has_quotation_requests && !request.has_active_purchase_orders && (
             <Button variant="secondary" size="sm" isLoading={undoApprovalMutation.isPending} onClick={() => undoApprovalMutation.mutate()}>
