@@ -200,7 +200,7 @@ export default function PurchaseRequestDetailPage() {
   if (isLoading) return <DocLoadState type="loading" />;
   if (!request)  return <DocLoadState type="not-found" message="Purchase Request not found." />;
 
-  const canEditItems = (isAdmin || request.created_by === user?.id) && request.status === 'pending';
+  const canEditItems = (isAdmin || request.created_by === user?.id) && ['draft', 'rejected'].includes(request.status);
 
 
   type PRItem = (typeof request.items)[number];
