@@ -202,7 +202,12 @@ export default function PurchaseRequestDetailPage() {
   if (!request)  return <DocLoadState type="not-found" message="Purchase Request not found." />;
 
   const canEditItems = (isAdmin || request.created_by === user?.id) && request.status === 'draft';
-  const canProcurementEdit = (isAdmin || can('purchase_request', 'update')) && request.status === 'approved';
+  const canProcurementEdit = (
+    isAdmin ||
+    can('purchase_request', 'update') ||
+    can('purchase_order', 'create') ||
+    can('quotation_request', 'create')
+  ) && request.status === 'approved';
 
 
   type PRItem = (typeof request.items)[number];
