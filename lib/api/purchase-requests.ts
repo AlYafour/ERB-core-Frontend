@@ -123,6 +123,18 @@ export const purchaseRequestsApi = {
     return response.data;
   },
 
+  updateDraft: async (id: number, data: {
+    project_id?: number | null;
+    title?: string;
+    request_date?: string;
+    required_by?: string;
+    notes?: string;
+    items: Array<{ product_id: number; quantity: number; unit?: string; project_site?: string; reason?: string; notes?: string }>;
+  }): Promise<PurchaseRequest> => {
+    const response = await apiClient.patch(`/purchase-requests/${id}/update-draft/`, data);
+    return response.data;
+  },
+
   allowAdditionalOrder: async (id: number): Promise<PurchaseRequest> => {
     const response = await apiClient.post(`/purchase-requests/${id}/allow_additional_order/`);
     return response.data;

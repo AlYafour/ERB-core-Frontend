@@ -128,8 +128,8 @@ export default function PurchaseRequestDetailPage() {
   const reviseMutation = useMutation({
     mutationFn: () => purchaseRequestsApi.revise(id),
     onSuccess: () => {
-      invalidate();
-      toast('Request moved to draft — edit your changes then submit for approval', 'success');
+      toast('Request moved to draft — make your changes and submit', 'success');
+      router.push(`/purchase-requests/${id}/edit`);
     },
     onError: (err: unknown) => toast(getApiError(err, 'Failed to revise request'), 'error'),
   });
@@ -299,9 +299,14 @@ export default function PurchaseRequestDetailPage() {
           <Button variant="secondary" size="sm" onClick={() => window.open(`/print/pr/${id}`, '_blank')}>Print</Button>
 
           {request.status === 'draft' && (isAdmin || request.created_by === user?.id) && (
-            <Button variant="primary" size="sm" isLoading={submitMutation.isPending} onClick={() => submitMutation.mutate()}>
-              Submit for Approval
-            </Button>
+            <>
+              <Button variant="secondary" size="sm" onClick={() => router.push(`/purchase-requests/${id}/edit`)}>
+                Edit
+              </Button>
+              <Button variant="primary" size="sm" isLoading={submitMutation.isPending} onClick={() => submitMutation.mutate()}>
+                Submit for Approval
+              </Button>
+            </>
           )}
           {request.status === 'pending' && (isAdmin || request.created_by === user?.id) && (
             <Button variant="secondary" size="sm" isLoading={recallMutation.isPending} onClick={() => recallMutation.mutate()}>

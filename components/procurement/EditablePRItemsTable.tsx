@@ -7,6 +7,7 @@ export interface BasePRItem {
   product_id: number;
   quantity: number;
   unit: string;
+  project_site?: string;
   reason: string;
   notes: string;
 }
@@ -36,6 +37,7 @@ export function EditablePRItemsTable<T extends BasePRItem>({
             <th>{t('col', 'product')}</th>
             <th>{t('col', 'quantity')}</th>
             <th>{t('col', 'unit')}</th>
+            <th>{t('col', 'projectSite')}</th>
             <th>{t('field', 'reason')}</th>
             <th>{t('col', 'notes')}</th>
             <th style={{ width: 60 }}></th>
@@ -64,6 +66,16 @@ export function EditablePRItemsTable<T extends BasePRItem>({
                   placeholder="Unit"
                   searchPlaceholder="Search unit..."
                   allowClear
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  value={item.project_site || ''}
+                  onChange={(e) => onUpdate(index, 'project_site', e.target.value)}
+                  placeholder="Project / Site"
+                  className="form-input"
+                  style={{ width: 130 }}
                 />
               </td>
               <td>
