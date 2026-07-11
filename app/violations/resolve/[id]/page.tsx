@@ -163,7 +163,7 @@ export default function ViolationResolvePage() {
               padding: '12px 16px',
               background: 'var(--surface-subtle)',
               borderRadius: 8,
-              borderRight: '4px solid #EF4444',
+              borderRight: '4px solid var(--status-error)',
             }}
           >
             <p style={{ margin: 0, fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4 }}>
@@ -197,8 +197,8 @@ export default function ViolationResolvePage() {
             </p>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <p style={{ margin: 0, fontSize: 11, color: '#9A3412' }}>الغرامة المحتملة</p>
-            <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#DC2626' }}>{fineStr}</p>
+            <p style={{ margin: 0, fontSize: 11, color: 'var(--status-warning)' }}>الغرامة المحتملة</p>
+            <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--status-error)' }}>{fineStr}</p>
           </div>
         </div>
 

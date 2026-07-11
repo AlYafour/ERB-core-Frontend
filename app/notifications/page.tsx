@@ -13,7 +13,7 @@ import { Button, Loader, PageHeader, PageShell, WorkspaceSurface } from '@/compo
 const getNotificationIcon = (type: string) => {
   if (type.includes('approved')) {
     return (
-      <svg style={{ width: 20, height: 20, color: '#16a34a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg style={{ width: 20, height: 20, color: 'var(--status-success)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     );

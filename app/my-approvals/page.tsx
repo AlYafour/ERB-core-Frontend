@@ -82,7 +82,7 @@ export default function MyApprovalsPage() {
                   onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--card-border)'; }}
                 >
                   {/* Left: dot */}
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--status-warning)', flexShrink: 0 }} />
 
                   {/* Center: info */}
                   <div style={{ flex: 1, minWidth: 0 }}>

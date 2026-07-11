@@ -587,9 +587,9 @@ function ErrorBanner({ message }: { message: string }) {
         padding: 'var(--space-3) var(--space-4)',
         fontSize: 'var(--text-sm)',
         fontWeight: 'var(--weight-medium)',
-        backgroundColor: 'rgba(239,68,68,0.1)',
-        color: '#ef4444',
-        border: '1px solid rgba(239,68,68,0.3)',
+        backgroundColor: 'var(--status-error-bg)',
+        color: 'var(--status-error)',
+        border: '1px solid var(--status-error-border)',
       }}
     >
       {message}

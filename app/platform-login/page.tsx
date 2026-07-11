@@ -134,7 +134,7 @@ export default function PlatformLoginPage() {
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             {error && (
-              <div style={{ borderRadius: 8, padding: '10px 14px', fontSize: 13, fontWeight: 500, backgroundColor: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)', lineHeight: 1.5 }}>
+              <div style={{ borderRadius: 8, padding: '10px 14px', fontSize: 13, fontWeight: 500, backgroundColor: 'var(--status-error-bg)', color: 'var(--status-error)', border: '1px solid var(--status-error-border)', lineHeight: 1.5 }}>
                 {error}
               </div>
             )}

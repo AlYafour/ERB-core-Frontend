@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { hrAnalyticsApi } from '@/lib/api/hr'
 import { Button } from '@/components/ui/Button'
 import MainLayout from '@/components/layout/MainLayout'
+import { PageShell } from '@/components/ui'
 import HasPermission from '@/components/shared/HasPermission'
 import { toast } from '@/lib/hooks/use-toast'
 import { UsersIcon, CalendarIcon, ClockIcon, AlertIcon, DollarIcon } from '@/components/icons'
@@ -68,8 +69,8 @@ function StatCard({ icon, label, value, sub, color = 'var(--brand)' }: {
   icon: React.ReactNode; label: string; value: string | number; sub?: string; color?: string
 }) {
   return (
-    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-4)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-      <div style={{ width: 40, height: 40, borderRadius: 10, background: color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
+    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-4)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+      <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-lg)', background: color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
         {icon}
       </div>
       <div style={{ minWidth: 0 }}>
@@ -83,7 +84,7 @@ function StatCard({ icon, label, value, sub, color = 'var(--brand)' }: {
 
 function Section({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-5)', marginBottom: 'var(--space-4)' }}>
+    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)', marginBottom: 'var(--space-4)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)', paddingLeft: 12, borderLeft: '3px solid var(--brand)' }}>
         <h2 style={{ fontWeight: 700, fontSize: 'var(--text-base)', color: 'var(--text-primary)', margin: 0 }}>{title}</h2>
         {action}
@@ -142,6 +143,7 @@ export default function AnalyticsPage() {
 
   return (
     <MainLayout>
+    <PageShell>
     <div style={{ maxWidth: 1440, margin: '0 auto' }}>
       <div style={{ marginBottom: 'var(--space-6)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
@@ -270,6 +272,7 @@ export default function AnalyticsPage() {
         </Section>
       )}
     </div>
+    </PageShell>
     </MainLayout>
   )
 }

@@ -224,7 +224,7 @@ export default function EmployeeLocationsPage() {
                     color: 'var(--text-secondary)', fontSize: 10, lineHeight: 1,
                     transition: 'background 100ms, color 100ms', flexShrink: 0,
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.color = '#dc2626'; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--status-error-bg)'; e.currentTarget.style.color = 'var(--status-error)'; }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'var(--border-default)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
                 >×</button>
               </span>

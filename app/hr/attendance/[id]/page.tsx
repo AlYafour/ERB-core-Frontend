@@ -35,7 +35,7 @@ const WORKLOG_STATUS_COLOR: Record<WorkLog['status'], string> = {
   draft: 'var(--text-secondary)',
   pending_review: '#B45309',
   approved: '#16A34A',
-  rejected: '#DC2626',
+  rejected: 'var(--status-error)',
 };
 
 const WORKLOG_STATUS_BG: Record<WorkLog['status'], string> = {
@@ -101,7 +101,7 @@ function RejectReasonModal({
           type="button"
           onClick={() => { if (reason.trim()) onReject(reason.trim()); }}
           disabled={isLoading || !reason.trim()}
-          style={{ padding: '7px 20px', borderRadius: 'var(--radius-md)', border: 'none', background: '#DC2626', color: '#fff', cursor: isLoading || !reason.trim() ? 'default' : 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', opacity: isLoading || !reason.trim() ? 0.7 : 1 }}
+          style={{ padding: '7px 20px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--status-error)', color: '#fff', cursor: isLoading || !reason.trim() ? 'default' : 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', opacity: isLoading || !reason.trim() ? 0.7 : 1 }}
         >
           {isLoading ? 'Rejecting…' : 'Reject'}
         </button>
@@ -194,7 +194,7 @@ function AddWorkLogModal({
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
           <div style={fieldStyle}>
-            <label style={labelStyle}>Hours <span style={{ color: '#DC2626' }}>*</span></label>
+            <label style={labelStyle}>Hours <span style={{ color: 'var(--status-error)' }}>*</span></label>
             <input
               type="number" className="form-input" value={hours} step="0.5" min="0.5" max="24"
               onChange={e => setHours(e.target.value)}
@@ -387,13 +387,13 @@ function WorkAllocationSection({
                     <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '0 0 2px 0' }}>Remaining</p>
                     <p style={{
                       fontSize: 'var(--text-base)', fontWeight: 'var(--weight-semibold)', fontFamily: 'monospace', margin: 0,
-                      color: isOverAllocated ? '#DC2626' : remaining === 0 ? '#16A34A' : 'var(--text-primary)',
+                      color: isOverAllocated ? 'var(--status-error)' : remaining === 0 ? 'var(--status-success)' : 'var(--text-primary)',
                     }}>
                       {remaining !== null ? (isOverAllocated ? `+${Math.abs(remaining)}h over` : `${remaining}h`) : '—'}
                     </p>
                   </div>
                 </div>
-                <span style={{ fontSize: 'var(--text-xs)', color: isOverAllocated ? '#DC2626' : 'var(--text-secondary)', fontWeight: 'var(--weight-medium)' }}>
+                <span style={{ fontSize: 'var(--text-xs)', color: isOverAllocated ? 'var(--status-error)' : 'var(--text-secondary)', fontWeight: 'var(--weight-medium)' }}>
                   {totalWorkHours > 0 ? Math.round((totalAllocated / totalWorkHours) * 100) : 0}%
                 </span>
               </div>
@@ -402,14 +402,14 @@ function WorkAllocationSection({
               <div style={{ width: '100%', height: 8, borderRadius: 999, background: 'var(--border-subtle)', overflow: 'visible', position: 'relative' }}>
                 <div style={{
                   height: '100%', borderRadius: 999,
-                  background: isOverAllocated ? '#DC2626' : totalAllocated >= totalWorkHours ? '#16A34A' : 'var(--brand)',
+                  background: isOverAllocated ? 'var(--status-error)' : totalAllocated >= totalWorkHours ? 'var(--status-success)' : 'var(--brand)',
                   width: `${Math.min((totalAllocated / totalWorkHours) * 100, 100)}%`,
                   transition: 'width 0.3s ease',
                 }} />
               </div>
 
               {isOverAllocated && (
-                <p style={{ fontSize: 'var(--text-xs)', color: '#DC2626', fontWeight: 'var(--weight-medium)', margin: 0 }}>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--status-error)', fontWeight: 'var(--weight-medium)', margin: 0 }}>
                   Warning: Allocated hours exceed total work hours by {Math.abs(remaining!)}h
                 </p>
               )}
@@ -536,14 +536,14 @@ function WorkAllocationSection({
                           type="button"
                           onClick={() => setRejectTarget(wl.id)}
                           disabled={rejectMutation.isPending}
-                          style={{ ...smallBtnBase, background: 'none', color: '#DC2626', borderColor: '#DC2626', opacity: rejectMutation.isPending ? 0.7 : 1 }}
+                          style={{ ...smallBtnBase, background: 'none', color: 'var(--status-error)', borderColor: 'var(--status-error)', opacity: rejectMutation.isPending ? 0.7 : 1 }}
                         >
                           Reject
                         </button>
                       </>
                     )}
                     {wl.status === 'rejected' && wl.rejection_reason && (
-                      <span style={{ fontSize: 'var(--text-xs)', color: '#DC2626', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={wl.rejection_reason}>
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--status-error)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={wl.rejection_reason}>
                         {wl.rejection_reason}
                       </span>
                     )}

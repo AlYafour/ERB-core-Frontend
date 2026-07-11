@@ -92,8 +92,8 @@
   border-color: var(--green-600);
 }
 .btn-success:hover:not(:disabled) {
-  background: #166534;
-  border-color: #166534;
+  background: var(--green-600);
+  border-color: var(--green-600);
   box-shadow: var(--shadow-xs);
 }
 
@@ -103,8 +103,8 @@
   border-color: var(--red-600);
 }
 .btn-destructive:hover:not(:disabled) {
-  background: #991B1B;
-  border-color: #991B1B;
+  background: var(--red-600);
+  border-color: var(--red-600);
   box-shadow: var(--shadow-xs);
 }
 

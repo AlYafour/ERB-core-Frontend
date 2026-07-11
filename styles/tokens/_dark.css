@@ -178,4 +178,15 @@
   --primary:             var(--wine-400);
   --primary-hover:       var(--wine-300);
   --ring:                var(--wine-400);
+
+  /* Primary color aliases — dark mode overrides */
+  --color-primary:       var(--brand);
+  --color-primary-light: var(--brand-subtle);
+  --color-primary-dark:  var(--brand-hover);
+
+  /* Surface aliases */
+  --surface-default:     var(--surface-base);
+
+  /* Text aliases */
+  --text-muted:          var(--text-secondary);
 }

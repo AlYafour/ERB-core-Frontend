@@ -216,7 +216,7 @@ export default function TasksPage() {
       render: t => {
         const od = isOverdue(t);
         return t.due_date ? (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: od ? 600 : 400, color: od ? '#EF4444' : 'var(--text-secondary)', background: od ? '#FEF2F2' : 'transparent', padding: od ? '3px 7px' : '0', borderRadius: od ? 6 : 0, whiteSpace: 'nowrap' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: od ? 600 : 400, color: od ? 'var(--status-error)' : 'var(--text-secondary)', background: od ? 'var(--status-error-bg)' : 'transparent', padding: od ? '3px 7px' : '0', borderRadius: od ? 6 : 0, whiteSpace: 'nowrap' }}>
             {od && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
             {fmtDate(t.due_date)}
           </span>

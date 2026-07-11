@@ -433,8 +433,8 @@ function ChainEditor({ requestType, realTypeId, policies, roles, onRefresh }: {
       {error && (
         <div style={{
           padding: '10px 14px', borderRadius: 8,
-          background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
-          color: '#ef4444', fontSize: 13,
+          background: 'var(--status-error-bg)', border: '1px solid var(--status-error-border)',
+          color: 'var(--status-error)', fontSize: 13,
         }}>{error}</div>
       )}
 

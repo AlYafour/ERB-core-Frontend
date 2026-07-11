@@ -101,7 +101,7 @@ function ChangePasswordSection() {
     <Section title="Change Password" description="After changing your password, all other sessions will be signed out.">
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 400 }}>
         {error && (
-          <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: 13, border: '1px solid rgba(239,68,68,0.3)' }}>
+          <div style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--status-error-bg)', color: 'var(--status-error)', fontSize: 13, border: '1px solid var(--status-error-border)' }}>
             {error}
           </div>
         )}
@@ -174,7 +174,7 @@ function TwoFASection({ is2FAEnabled, onToggled }: { is2FAEnabled: boolean; onTo
             <button
               type="button"
               onClick={() => setShowDisable(true)}
-              style={{ ...BTN, background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)' }}
+              style={{ ...BTN, background: 'var(--status-error-bg)', color: 'var(--status-error)', border: '1px solid var(--status-error-border)' }}
             >
               Disable 2FA
             </button>
@@ -199,7 +199,7 @@ function TwoFASection({ is2FAEnabled, onToggled }: { is2FAEnabled: boolean; onTo
                 type="button"
                 onClick={() => disableMutation.mutate()}
                 disabled={disableMutation.isPending || code.length < 6 || !password}
-                style={{ ...BTN, background: '#ef4444', color: '#fff', opacity: (disableMutation.isPending || code.length < 6 || !password) ? 0.5 : 1 }}
+                style={{ ...BTN, background: 'var(--status-error)', color: '#fff', opacity: (disableMutation.isPending || code.length < 6 || !password) ? 0.5 : 1 }}
               >
                 {disableMutation.isPending ? 'Disabling…' : 'Confirm Disable'}
               </button>
@@ -365,7 +365,7 @@ function PasskeysSection() {
                   type="button"
                   onClick={() => deleteMutation.mutate(c.credential_id!)}
                   disabled={deleteMutation.isPending}
-                  style={{ ...BTN, padding: '6px 14px', fontSize: 12, background: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}
+                  style={{ ...BTN, padding: '6px 14px', fontSize: 12, background: 'var(--status-error-bg)', color: 'var(--status-error)', border: '1px solid var(--status-error-border)' }}
                 >
                   Remove
                 </button>

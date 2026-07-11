@@ -205,6 +205,17 @@
   --space-12: 3rem;
   --space-16: 4rem;
 
+  /* Primary color aliases — used across components and pages */
+  --color-primary:       var(--brand);
+  --color-primary-light: var(--brand-subtle);
+  --color-primary-dark:  var(--brand-hover);
+
+  /* Surface aliases — alternate naming used in some pages */
+  --surface-default:     var(--surface-base);
+
+  /* Text aliases — backward compat for --text-muted */
+  --text-muted:          var(--text-secondary);
+
   /* Legacy aliases — old token names point to new semantics */
   --color-wine-50:  var(--wine-50);
   --color-wine-100: var(--wine-100);

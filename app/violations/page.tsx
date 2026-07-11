@@ -18,7 +18,7 @@ const STATUS_CFG = {
   new:      { bg: 'var(--brand-muted, #FBF4E8)', color: 'var(--brand)', dot: 'var(--brand)', border: 'var(--brand-border, rgba(201,148,58,0.30))', label: 'New' },
   notified: { bg: 'var(--brand-muted, #FBF4E8)', color: 'var(--brand)', dot: 'var(--brand)', border: 'var(--brand-border, rgba(201,148,58,0.30))', label: 'Notified' },
   resolved: { bg: 'var(--surface-subtle)',        color: 'var(--text-secondary)', dot: 'var(--text-tertiary)', border: 'var(--border-subtle)', label: 'Resolved' },
-  fined:    { bg: '#FEF2F2', color: '#7F1D1D', dot: '#E05C5C', border: 'rgba(224,92,92,0.30)',  label: 'Fined' },
+  fined:    { bg: 'var(--status-error-bg)', color: 'var(--status-error)', dot: 'var(--status-error)', border: 'var(--status-error-border)', label: 'Fined' },
 } as const;
 
 function fmtDate(iso: string) {
@@ -86,9 +86,9 @@ function ViolationDetailPanel({
   };
 
   const deadlineColor = violation.deadline_days == null ? 'var(--text-tertiary)'
-    : violation.deadline_days <= 1 ? 'var(--red-600, #DC2626)'
-    : violation.deadline_days <= 3 ? 'var(--orange-600, #D97706)'
-    : 'var(--green-700, #15803D)';
+    : violation.deadline_days <= 1 ? 'var(--status-error)'
+    : violation.deadline_days <= 3 ? 'var(--status-warning)'
+    : 'var(--status-success)';
 
   return (
     <div className="detail-panel">
@@ -117,7 +117,7 @@ function ViolationDetailPanel({
           <InfoBox label="Sector" value={violation.sector || '—'} />
           <InfoBox label="Plot No." value={violation.plot || '—'} />
           {violation.fine_amount && (
-            <InfoBox label="Fine" value={`${Number(violation.fine_amount).toLocaleString()} AED`} valueColor="var(--red-600, #DC2626)" bold />
+            <InfoBox label="Fine" value={`${Number(violation.fine_amount).toLocaleString()} AED`} valueColor="var(--status-error)" bold />
           )}
           {violation.deadline_days != null && (
             <InfoBox label="Deadline" value={`${violation.deadline_days} days`} valueColor={deadlineColor} bold />
@@ -131,9 +131,9 @@ function ViolationDetailPanel({
         {violation.violation_description && (
           <div style={{
             padding: 'var(--space-3) var(--space-4)',
-            background: 'color-mix(in srgb, var(--yellow-400, #FACC15) 8%, var(--card-bg))',
+            background: 'var(--status-warning-bg)',
             borderRadius: 'var(--radius-lg)',
-            border: '1px solid color-mix(in srgb, var(--yellow-400, #FACC15) 30%, transparent)',
+            border: '1px solid var(--status-warning-border)',
             fontSize: 'var(--text-xs)',
             color: 'var(--text-secondary)',
             direction: 'rtl', textAlign: 'right', lineHeight: 1.9,
@@ -204,24 +204,24 @@ function ViolationDetailPanel({
             <div style={{
               display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
               padding: 'var(--space-2) var(--space-3)',
-              background: 'color-mix(in srgb, var(--green-600, #16A34A) 8%, var(--card-bg))',
+              background: 'var(--status-success-bg)',
               borderRadius: 'var(--radius-md)',
-              border: '1px solid color-mix(in srgb, var(--green-600, #16A34A) 25%, transparent)',
+              border: '1px solid var(--status-success-border)',
             }}>
-              <div className="av-initials" style={{ width: 28, height: 28, fontSize: 11, background: 'var(--green-600, #16A34A)' }}>
+              <div className="av-initials" style={{ width: 28, height: 28, fontSize: 11, background: 'var(--status-success)' }}>
                 {violation.engineer_name[0].toUpperCase()}
               </div>
               <div>
                 <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-primary)' }}>{violation.engineer_name}</div>
-                <div style={{ fontSize: 10, color: 'var(--green-600, #16A34A)' }}>Responsible Engineer</div>
+                <div style={{ fontSize: 10, color: 'var(--status-success)' }}>Responsible Engineer</div>
               </div>
             </div>
           ) : (
             <div style={{
               padding: 'var(--space-2) var(--space-3)',
-              background: 'color-mix(in srgb, var(--yellow-400, #FACC15) 8%, var(--card-bg))',
+              background: 'var(--status-warning-bg)',
               borderRadius: 'var(--radius-md)',
-              border: '1px solid color-mix(in srgb, var(--yellow-400, #FACC15) 30%, transparent)',
+              border: '1px solid var(--status-warning-border)',
               fontSize: 'var(--text-xs)', color: 'var(--text-secondary)',
             }}>
               No engineer assigned — link a project to auto-assign
@@ -236,7 +236,7 @@ function ViolationDetailPanel({
           <button
             onClick={() => onResolve(violation.id)} disabled={resolving}
             className="btn btn-primary"
-            style={{ flex: 1, background: 'var(--green-600, #16A34A)', opacity: resolving ? 0.7 : 1, cursor: resolving ? 'wait' : 'pointer' }}
+            style={{ flex: 1, background: 'var(--status-success)', opacity: resolving ? 0.7 : 1, cursor: resolving ? 'wait' : 'pointer' }}
           >
             ✓ Mark Resolved
           </button>
@@ -245,9 +245,9 @@ function ViolationDetailPanel({
           onClick={copyLink}
           className="btn"
           style={{
-            border: `1px solid ${copiedLink ? 'var(--green-400, #4ADE80)' : 'var(--border-default)'}`,
-            background: copiedLink ? 'color-mix(in srgb, var(--green-500, #22C55E) 10%, var(--card-bg))' : 'var(--card-bg)',
-            color: copiedLink ? 'var(--green-700, #15803D)' : 'var(--text-secondary)',
+            border: `1px solid ${copiedLink ? 'var(--status-success-border)' : 'var(--border-default)'}`,
+            background: copiedLink ? 'var(--status-success-bg)' : 'var(--card-bg)',
+            color: copiedLink ? 'var(--status-success)' : 'var(--text-secondary)',
           }}
         >
           {copiedLink ? '✓ Copied' : 'Engineer Link'}
@@ -395,25 +395,26 @@ export default function ViolationsPage() {
 
         {/* Test panel */}
         {testOpen && (
-          <div style={{ background: '#FFFBEB', border: '1.5px solid #FDE68A', borderRadius: 14, padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ background: 'var(--status-warning-bg)', border: '1.5px solid var(--status-warning-border)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-5)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             <div>
-              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: '#92400E' }}>Test SMS Message</p>
-              <p style={{ margin: '3px 0 0', fontSize: 12, color: '#B45309' }}>Paste an ADM SMS text to test parsing and the full notification pipeline</p>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 'var(--text-base)', color: 'var(--status-warning)' }}>Test SMS Message</p>
+              <p style={{ margin: '3px 0 0', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Paste an ADM SMS text to test parsing and the full notification pipeline</p>
             </div>
             <textarea value={testMsg} onChange={e => { setTestMsg(e.target.value); setTestResult(null); }}
               placeholder="Paste message text here..." rows={4}
-              style={{ padding: 12, borderRadius: 8, border: '1.5px solid #FDE68A', resize: 'vertical', direction: 'rtl', fontSize: 13, fontFamily: 'system-ui, Tahoma, Arial, sans-serif', background: '#fff', width: '100%', boxSizing: 'border-box' }} />
+              style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1px solid var(--input-border)', resize: 'vertical', direction: 'rtl', fontSize: 'var(--text-sm)', fontFamily: 'system-ui, Tahoma, Arial, sans-serif', background: 'var(--input-bg)', color: 'var(--text-primary)', width: '100%', boxSizing: 'border-box' }} />
             {testResult && (
               <div style={{
-                padding: '9px 13px', borderRadius: 9, fontSize: 13, fontWeight: 600,
-                background: testResult.type === 'ok' ? '#DCFCE7' : testResult.type === 'ignored' ? '#FEF9C3' : '#FEE2E2',
-                color:      testResult.type === 'ok' ? '#14532D' : testResult.type === 'ignored' ? '#854D0E' : '#7F1D1D',
+                padding: '9px 13px', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)', fontWeight: 600,
+                background: testResult.type === 'ok' ? 'var(--status-success-bg)' : testResult.type === 'ignored' ? 'var(--status-warning-bg)' : 'var(--status-error-bg)',
+                color:      testResult.type === 'ok' ? 'var(--status-success)'    : testResult.type === 'ignored' ? 'var(--status-warning)'     : 'var(--status-error)',
+                border: `1px solid ${testResult.type === 'ok' ? 'var(--status-success-border)' : testResult.type === 'ignored' ? 'var(--status-warning-border)' : 'var(--status-error-border)'}`,
               }}>
                 {testResult.type === 'ok' ? '✓ ' : testResult.type === 'ignored' ? '⊘ ' : '✗ '}{testResult.detail}
               </div>
             )}
             <button onClick={() => simulateMutation.mutate(testMsg)} disabled={!testMsg.trim() || simulateMutation.isPending}
-              style={{ padding: '9px 20px', borderRadius: 9, border: 'none', background: '#D97706', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', alignSelf: 'flex-start', opacity: simulateMutation.isPending ? 0.7 : 1 }}>
+              style={{ padding: '9px 20px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--status-warning)', color: '#fff', fontSize: 'var(--text-sm)', fontWeight: 700, cursor: 'pointer', alignSelf: 'flex-start', opacity: simulateMutation.isPending ? 0.7 : 1 }}>
               {simulateMutation.isPending ? 'Processing...' : 'Analyze Message'}
             </button>
           </div>
@@ -470,14 +471,14 @@ export default function ViolationsPage() {
               <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>Confirm Delete</h3>
               <p style={{ margin: '0 0 24px', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                 You are about to permanently delete{' '}
-                <strong style={{ color: '#DC2626' }}>
+                <strong style={{ color: 'var(--status-error)' }}>
                   {selectAllPages ? `all ${totalCount} violations` : `${selectedIds.size} violation${selectedIds.size !== 1 ? 's' : ''}`}
                 </strong>.
                 This cannot be undone.
               </p>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => bulkDeleteMutation.mutate()} disabled={bulkDeleteMutation.isPending}
-                  style={{ flex: 1, padding: '11px', borderRadius: 9, border: 'none', background: '#EF4444', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: bulkDeleteMutation.isPending ? 0.7 : 1 }}>
+                  style={{ flex: 1, padding: '11px', borderRadius: 'var(--radius-lg)', border: 'none', background: 'var(--status-error)', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: bulkDeleteMutation.isPending ? 0.7 : 1 }}>
                   {bulkDeleteMutation.isPending ? 'Deleting...' : 'Yes, Delete'}
                 </button>
                 <button onClick={() => setConfirmDelete(false)} disabled={bulkDeleteMutation.isPending}
@@ -584,7 +585,7 @@ export default function ViolationsPage() {
                           {/* Reference */}
                           <td style={tdS()}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                              {noProj && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#F59E0B', display: 'inline-block', flexShrink: 0 }} title="No project linked" />}
+                              {noProj && <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--status-warning)', display: 'inline-block', flexShrink: 0 }} title="No project linked" />}
                               <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'var(--text-primary)' }}>
                                 {v.reference_number || `#${v.id}`}
                               </span>
@@ -621,7 +622,7 @@ export default function ViolationsPage() {
                           <td style={tdS()}>
                             {v.project_name
                               ? <span style={{ fontWeight: 500, fontSize: 12, color: 'var(--text-primary)' }}>{v.project_name}</span>
-                              : <span style={{ display: 'inline-block', padding: '2px 9px', borderRadius: 20, background: '#FEF3C7', color: '#92400E', fontSize: 11, fontWeight: 600 }}>
+                              : <span style={{ display: 'inline-block', padding: '2px 9px', borderRadius: 20, background: 'var(--status-warning-bg)', color: 'var(--status-warning)', fontSize: 11, fontWeight: 600 }}>
                                   No Project
                                 </span>
                             }
@@ -632,8 +633,8 @@ export default function ViolationsPage() {
                             {v.deadline_days != null
                               ? <span style={{
                                   display: 'inline-block', padding: '2px 8px', borderRadius: 8, fontWeight: 700, fontSize: 12,
-                                  background: v.deadline_days <= 1 ? '#FEE2E2' : v.deadline_days <= 3 ? '#FEF3C7' : '#F0FDF4',
-                                  color:      v.deadline_days <= 1 ? '#DC2626' : v.deadline_days <= 3 ? '#D97706' : '#16A34A',
+                                  background: v.deadline_days <= 1 ? 'var(--status-error-bg)' : v.deadline_days <= 3 ? 'var(--status-warning-bg)' : 'var(--status-success-bg)',
+                                  color:      v.deadline_days <= 1 ? 'var(--status-error)' : v.deadline_days <= 3 ? 'var(--status-warning)' : 'var(--status-success)',
                                 }}>
                                   {v.deadline_days}d
                                 </span>
@@ -645,7 +646,7 @@ export default function ViolationsPage() {
                           <td style={{ ...tdS(), textAlign: 'center' }}>
                             {v.fine_amount
                               ? <div>
-                                  <div style={{ fontWeight: 800, color: '#DC2626', fontSize: 13 }}>{Number(v.fine_amount).toLocaleString()}</div>
+                                  <div style={{ fontWeight: 800, color: 'var(--status-error)', fontSize: 13 }}>{Number(v.fine_amount).toLocaleString()}</div>
                                   <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>AED</div>
                                 </div>
                               : <span style={{ color: 'var(--text-tertiary)' }}>—</span>

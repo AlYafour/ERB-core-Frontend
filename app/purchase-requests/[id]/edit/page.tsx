@@ -420,7 +420,7 @@ function EditPurchaseRequestContent({ pr }: { pr: PurchaseRequest }) {
                     }}>
                       <div>
                         <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          {t('col', 'quantity')} <span style={{ color: '#ef4444' }}>*</span>
+                          {t('col', 'quantity')} <span style={{ color: 'var(--status-error)' }}>*</span>
                         </label>
                         <QuantityInput
                           value={currentItem.quantity}

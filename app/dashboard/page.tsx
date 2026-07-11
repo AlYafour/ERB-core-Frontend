@@ -29,8 +29,8 @@ const V = {
   text3:   'var(--text-tertiary)',
   gold:    'var(--brand)',
   danger:  'var(--status-error)',
-  warn:    'var(--status-warning, #D97706)',
-  ok:      'var(--status-success, #16a34a)',
+  warn:    'var(--status-warning)',
+  ok:      'var(--status-success)',
 };
 
 function kpiAED(v: number): string {
@@ -137,7 +137,7 @@ function DashboardContent() {
   };
 
   const card = (extra?: CSSProperties): CSSProperties => ({
-    background: V.surf, border: `1px solid ${V.border}`, borderRadius: 12, ...extra,
+    background: V.surf, border: `1px solid ${V.border}`, borderRadius: 'var(--radius-xl)', ...extra,
   });
 
   const sectionTitle: CSSProperties = {

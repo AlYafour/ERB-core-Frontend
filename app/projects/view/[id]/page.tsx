@@ -208,8 +208,8 @@ function MembersTab({ projectId, isAdmin }: { projectId: number; isAdmin: boolea
                         <button
                           onClick={() => handleRemove(m.id, m.employee_name || 'this member')}
                           disabled={removeMut.isPending}
-                          style={{ fontSize: 'var(--text-xs)', color: 'var(--color-error-600, #dc2626)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 8px', borderRadius: 'var(--radius-sm)', fontWeight: 500 }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-error-50, #fef2f2)'; }}
+                          style={{ fontSize: 'var(--text-xs)', color: 'var(--status-error)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 8px', borderRadius: 'var(--radius-sm)', fontWeight: 500 }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--status-error-bg)'; }}
                           onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
                         >
                           Remove

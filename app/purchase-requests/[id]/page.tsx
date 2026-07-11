@@ -563,7 +563,7 @@ export default function PurchaseRequestDetailPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px', gap: 8, alignItems: 'flex-end' }}>
                       <div>
                         <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3, fontWeight: 600 }}>
-                          Description <span style={{ color: '#ef4444' }}>*</span>
+                          Description <span style={{ color: 'var(--status-error)' }}>*</span>
                         </label>
                         <input className="form-input" placeholder="e.g. Pump Charge, Transportation"
                           value={newCharge.description}
@@ -619,7 +619,7 @@ export default function PurchaseRequestDetailPage() {
                               <button type="button"
                                 disabled={deleteChargeMutation.isPending}
                                 onClick={() => deleteChargeMutation.mutate(c.id)}
-                                style={{ fontSize: 10, fontWeight: 600, color: '#ef4444', background: '#fef2f2', border: '1px solid var(--status-error-border)', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>
+                                style={{ fontSize: 10, fontWeight: 600, color: 'var(--status-error)', background: 'var(--status-error-bg)', border: '1px solid var(--status-error-border)', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>
                                 Remove
                               </button>
                             </td>

@@ -381,7 +381,7 @@ function NewPurchaseRequestPageContent() {
                     }}>
                       <div>
                         <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          {t('col', 'quantity')} <span style={{ color: '#ef4444' }}>*</span>
+                          {t('col', 'quantity')} <span style={{ color: 'var(--status-error)' }}>*</span>
                         </label>
                         <QuantityInput
                           value={currentItem.quantity}
@@ -500,7 +500,7 @@ function NewPurchaseRequestPageContent() {
                 <div style={{ padding: '10px 14px', background: 'var(--surface-subtle)', borderBottom: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div>
                     <label style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 4 }}>
-                      Description <span style={{ color: '#ef4444' }}>*</span>
+                      Description <span style={{ color: 'var(--status-error)' }}>*</span>
                     </label>
                     <input className="form-input" placeholder="e.g. Pump Charge, Transportation"
                       value={currentCharge.description}
@@ -546,7 +546,7 @@ function NewPurchaseRequestPageContent() {
                         </div>
                       </div>
                       <button type="button" onClick={() => setCharges(charges.filter((_, j) => j !== i))}
-                        style={{ fontSize: 10, color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px 4px', opacity: 0.7 }}>
+                        style={{ fontSize: 10, color: 'var(--status-error)', background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px 4px', opacity: 0.7 }}>
                         âœ•
                       </button>
                     </div>

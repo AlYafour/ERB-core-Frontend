@@ -480,7 +480,7 @@ export default function LandingPage() {
               style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
             >
               {modalError && (
-                <div style={{ borderRadius: 8, padding: '10px 14px', fontSize: 13, fontWeight: 500, background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}>
+                <div style={{ borderRadius: 8, padding: '10px 14px', fontSize: 13, fontWeight: 500, background: 'var(--status-error-bg)', color: 'var(--status-error)', border: '1px solid var(--status-error-border)' }}>
                   {modalError}
                 </div>
               )}
@@ -502,7 +502,7 @@ export default function LandingPage() {
                     fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
                     outline: 'none', boxSizing: 'border-box', transition: 'border-color 140ms',
                   }}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = C.primary; }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--border-focus)'; }}
                   onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-default)'; }}
                 />
               </div>
@@ -512,7 +512,7 @@ export default function LandingPage() {
                 disabled={isModalValidating || !modalCode.trim()}
                 style={{
                   width: '100%', padding: '12px 0', borderRadius: 10,
-                  background: (isModalValidating || !modalCode.trim()) ? 'var(--surface-subtle)' : C.primary,
+                  background: (isModalValidating || !modalCode.trim()) ? 'var(--surface-subtle)' : 'var(--brand)',
                   color: (isModalValidating || !modalCode.trim()) ? 'var(--text-muted)' : '#fff',
                   fontSize: 15, fontWeight: 700, border: 'none',
                   cursor: (isModalValidating || !modalCode.trim()) ? 'not-allowed' : 'pointer',
