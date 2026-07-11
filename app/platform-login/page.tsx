@@ -73,7 +73,7 @@ export default function PlatformLoginPage() {
       >
         {/* Decorative blobs */}
         <div style={{ position: 'absolute', top: -80, right: -80, width: 280, height: 280, borderRadius: '50%', background: `${C.accent}1a`, pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: 60, left: -100, width: 340, height: 340, borderRadius: '50%', background: `${C.primary}0f`, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: 60, left: -100, width: 340, height: 340, borderRadius: '50%', background: 'color-mix(in srgb, var(--brand) 6%, transparent)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -30, right: 60, width: 160, height: 160, borderRadius: '50%', background: `${C.accentLight}18`, pointerEvents: 'none' }} />
 
         {/* Logo */}
@@ -118,7 +118,7 @@ export default function PlatformLoginPage() {
           {/* Mobile logo */}
           <div className="lg:hidden" style={{ textAlign: 'center', marginBottom: 36 }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-              <div style={{ width: 52, height: 52, borderRadius: 14, background: C.primary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 52, height: 52, borderRadius: 14, background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Image src={XERB.logo} alt={XERB.name} width={32} height={32} />
               </div>
             </div>
@@ -157,15 +157,15 @@ export default function PlatformLoginPage() {
               disabled={!canSubmit}
               style={{
                 width: '100%', padding: '11px 0', borderRadius: 9,
-                background: C.primary, color: '#fff',
+                background: 'var(--brand)', color: '#fff',
                 fontSize: 14, fontWeight: 600,
                 border: 'none', cursor: canSubmit ? 'pointer' : 'not-allowed',
                 opacity: canSubmit ? 1 : 0.55,
                 transition: 'background 150ms, opacity 150ms',
                 letterSpacing: '0.01em',
               }}
-              onMouseEnter={(e) => { if (canSubmit) e.currentTarget.style.background = C.primaryHover; }}
-              onMouseLeave={(e) => { if (canSubmit) e.currentTarget.style.background = C.primary; }}
+              onMouseEnter={(e) => { if (canSubmit) e.currentTarget.style.background = 'var(--brand-hover)'; }}
+              onMouseLeave={(e) => { if (canSubmit) e.currentTarget.style.background = 'var(--brand)'; }}
             >
               {isLoggingIn ? 'Signing in…' : 'Sign In to Platform'}
             </button>
@@ -175,7 +175,7 @@ export default function PlatformLoginPage() {
             <Link
               href="/company-login"
               style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = C.primary; }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--brand)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
             >
               Company user? Use Company Login →

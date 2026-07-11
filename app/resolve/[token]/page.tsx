@@ -61,7 +61,7 @@ export default function ResolvePage() {
     <div style={styles.center}>
       <div style={{ ...styles.card, textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 12 }}>❌</div>
-        <p style={{ color: '#EF4444', fontWeight: 600 }}>{error}</p>
+        <p style={{ color: 'var(--status-error)', fontWeight: 600 }}>{error}</p>
       </div>
     </div>
   );
@@ -161,7 +161,7 @@ function Row({ label, value, highlight, urgent }: {
       <span style={styles.label}>{label}</span>
       <span style={{
         ...styles.value,
-        color: urgent ? '#DC2626' : highlight ? '#DC2626' : '#111827',
+        color: urgent ? 'var(--status-error)' : highlight ? 'var(--status-error)' : 'var(--text-primary)',
         fontWeight: (highlight || urgent) ? 700 : 500,
       }}>
         {value}
@@ -196,7 +196,7 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
   },
   header: {
-    background: 'linear-gradient(135deg, #B91C1C, #DC2626)',
+    background: 'var(--status-error)',
     color: '#fff',
     padding: '28px 24px 20px',
     textAlign: 'center',
@@ -255,7 +255,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: 40,
     height: 40,
     border: '4px solid #E5E7EB',
-    borderTop: '4px solid #DC2626',
+    borderTop: '4px solid var(--status-error)',
     borderRadius: '50%',
     animation: 'spin 0.8s linear infinite',
   },

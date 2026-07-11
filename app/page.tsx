@@ -11,6 +11,19 @@ import { getApiError } from '@/lib/utils/error';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 
 const C = XERB.colors;
+const V = {
+  p:   'var(--brand)',
+  ph:  'var(--brand-hover)',
+  pd:  'var(--brand-active)',
+  s:   'var(--brand-subtle)',
+  p03: 'color-mix(in srgb, var(--brand)  3%, transparent)',
+  p05: 'color-mix(in srgb, var(--brand)  5%, transparent)',
+  p18: 'color-mix(in srgb, var(--brand) 18%, transparent)',
+  p19: 'color-mix(in srgb, var(--brand) 19%, transparent)',
+  p24: 'color-mix(in srgb, var(--brand) 24%, transparent)',
+  p25: 'color-mix(in srgb, var(--brand) 25%, transparent)',
+  p27: 'color-mix(in srgb, var(--brand) 27%, transparent)',
+};
 
 // ─── Feature definitions ──────────────────────────────────────────────────────
 
@@ -225,7 +238,7 @@ export default function LandingPage() {
         <div style={{ ...SECTION, display: 'flex', alignItems: 'center' }}>
 
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: C.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 1px 3px ${C.primary}45` }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: V.p, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 1px 3px ${V.p27}` }}>
               <Image src={XERB.logo} alt={XERB.name} width={22} height={22} style={{ objectFit: 'contain', display: 'block' }} priority />
             </div>
             <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{BRAND.name}</span>
@@ -243,14 +256,14 @@ export default function LandingPage() {
 
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
             <DarkModeToggle />
-            <Link href="/platform-login" className="hidden lg:block" style={{ padding: '7px 16px', borderRadius: 8, border: `1px solid ${C.primary}40`, background: 'transparent', fontSize: 13, fontWeight: 500, color: C.primary, textDecoration: 'none', transition: 'border-color 140ms, background 140ms' }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.primary; e.currentTarget.style.background = `${C.primary}08`; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = `${C.primary}40`; e.currentTarget.style.background = 'transparent'; }}>
+            <Link href="/platform-login" className="hidden lg:block" style={{ padding: '7px 16px', borderRadius: 8, border: `1px solid ${V.p25}`, background: 'transparent', fontSize: 13, fontWeight: 500, color: V.p, textDecoration: 'none', transition: 'border-color 140ms, background 140ms' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = V.p; e.currentTarget.style.background = `${V.p03}`; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = `${V.p25}`; e.currentTarget.style.background = 'transparent'; }}>
               Platform Admin
             </Link>
-            <button onClick={goToLogin} className="hidden lg:block" style={{ padding: '7px 18px', borderRadius: 8, border: 'none', background: C.primary, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, transition: 'background 140ms', whiteSpace: 'nowrap' }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = C.primaryHover; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = C.primary; }}>
+            <button onClick={goToLogin} className="hidden lg:block" style={{ padding: '7px 18px', borderRadius: 8, border: 'none', background: V.p, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, transition: 'background 140ms', whiteSpace: 'nowrap' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = V.ph; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = V.p; }}>
               Company Login
             </button>
 
@@ -270,10 +283,10 @@ export default function LandingPage() {
             </button>
           ))}
           <hr style={{ margin: '8px 0', border: 'none', borderTop: '1px solid var(--border-subtle)' }} />
-          <Link href="/platform-login" onClick={() => setMobileOpen(false)} style={{ padding: '10px 12px', borderRadius: 8, fontSize: 15, fontWeight: 500, color: C.primary, textDecoration: 'none' }}>
+          <Link href="/platform-login" onClick={() => setMobileOpen(false)} style={{ padding: '10px 12px', borderRadius: 8, fontSize: 15, fontWeight: 500, color: V.p, textDecoration: 'none' }}>
             Platform Admin
           </Link>
-          <button onClick={goToLogin} style={{ padding: '10px 16px', borderRadius: 8, background: C.primary, color: '#fff', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', textAlign: 'center' }}>
+          <button onClick={goToLogin} style={{ padding: '10px 16px', borderRadius: 8, background: V.p, color: '#fff', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', textAlign: 'center' }}>
             Company Login
           </button>
         </div>
@@ -282,18 +295,18 @@ export default function LandingPage() {
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <section style={{
         paddingTop: 'calc(64px + 80px)', paddingBottom: 80,
-        background: `radial-gradient(ellipse 90% 60% at 50% -10%, ${C.primary}0d 0%, transparent 65%), var(--surface-app)`,
+        background: `radial-gradient(ellipse 90% 60% at 50% -10%, ${V.p05} 0%, transparent 65%), var(--surface-app)`,
         textAlign: 'center',
       }}>
         <div style={{ ...SECTION }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 14px', borderRadius: 99, background: C.subtle, border: `1px solid ${C.primary}2e`, marginBottom: 28 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.primary, flexShrink: 0 }} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: C.primaryDark, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{BRAND.tagline}</span>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 14px', borderRadius: 99, background: V.s, border: `1px solid ${V.p18}`, marginBottom: 28 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: V.p, flexShrink: 0 }} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: V.pd, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{BRAND.tagline}</span>
           </div>
 
           <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.75rem)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.03em', color: 'var(--text-primary)', margin: '0 0 20px', maxWidth: 800, marginLeft: 'auto', marginRight: 'auto' }}>
             Operations & procurement,{' '}
-            <span style={{ color: C.primary }}>built for contractors.</span>
+            <span style={{ color: V.p }}>built for contractors.</span>
           </h1>
 
           <p style={{ fontSize: 'clamp(1rem, 2vw, 1.2rem)', color: 'var(--text-secondary)', lineHeight: 1.65, maxWidth: 600, margin: '0 auto 40px', fontWeight: 400 }}>
@@ -302,9 +315,9 @@ export default function LandingPage() {
           </p>
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={goToLogin} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 28px', borderRadius: 10, background: C.primary, color: '#fff', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: `0 2px 8px ${C.primary}3d`, transition: 'background 140ms, transform 140ms' }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = C.primaryHover; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = C.primary; e.currentTarget.style.transform = 'none'; }}>
+            <button onClick={goToLogin} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 28px', borderRadius: 10, background: V.p, color: '#fff', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: `0 2px 8px ${V.p24}`, transition: 'background 140ms, transform 140ms' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = V.ph; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = V.p; e.currentTarget.style.transform = 'none'; }}>
               Company Login
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
             </button>
@@ -322,7 +335,7 @@ export default function LandingPage() {
               ['1',    'Platform, any number of companies'],
             ].map(([num, label]) => (
               <div key={label} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', fontWeight: 800, color: C.primary, letterSpacing: '-0.03em' }}>{num}</div>
+                <div style={{ fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', fontWeight: 800, color: V.p, letterSpacing: '-0.03em' }}>{num}</div>
                 <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{label}</div>
               </div>
             ))}
@@ -334,7 +347,7 @@ export default function LandingPage() {
       <section id="features" style={{ padding: '96px 0', backgroundColor: 'var(--surface-base)' }}>
         <div style={{ ...SECTION }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.primary, marginBottom: 12 }}>Platform modules</p>
+            <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: V.p, marginBottom: 12 }}>Platform modules</p>
             <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 800, letterSpacing: '-0.025em', color: 'var(--text-primary)', margin: '0 0 16px' }}>
               Everything your team needs
             </h2>
@@ -345,9 +358,9 @@ export default function LandingPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
             {FEATURES.map(({ title, body, icon }) => (
               <div key={title} style={{ padding: '28px 28px 24px', borderRadius: 14, border: '1px solid var(--border-subtle)', backgroundColor: 'var(--surface-raised)', transition: 'box-shadow 180ms, border-color 180ms' }}
-                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--shadow-md)'; e.currentTarget.style.borderColor = `${C.primary}30`; }}
+                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--shadow-md)'; e.currentTarget.style.borderColor = `${V.p19}`; }}
                 onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: C.subtle, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.primary, marginBottom: 16, flexShrink: 0 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: V.s, display: 'flex', alignItems: 'center', justifyContent: 'center', color: V.p, marginBottom: 16, flexShrink: 0 }}>
                   {icon}
                 </div>
                 <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px', letterSpacing: '-0.01em' }}>{title}</h3>
@@ -362,7 +375,7 @@ export default function LandingPage() {
       <section id="pricing" style={{ padding: '96px 0', backgroundColor: 'var(--surface-app)' }}>
         <div style={{ ...SECTION }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.primary, marginBottom: 12 }}>Pricing</p>
+            <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: V.p, marginBottom: 12 }}>Pricing</p>
             <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 800, letterSpacing: '-0.025em', color: 'var(--text-primary)', margin: '0 0 16px' }}>
               Simple, transparent plans
             </h2>
@@ -375,9 +388,9 @@ export default function LandingPage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, alignItems: 'stretch', maxWidth: 960, margin: '0 auto' }}>
             {PLANS.map((plan) => (
-              <div key={plan.name} style={{ padding: '36px 32px', borderRadius: 16, border: plan.highlight ? `2px solid ${C.primary}` : '1px solid var(--border-subtle)', backgroundColor: plan.highlight ? 'var(--surface-base)' : 'var(--surface-raised)', boxShadow: plan.highlight ? 'var(--shadow-lg)' : 'none', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+              <div key={plan.name} style={{ padding: '36px 32px', borderRadius: 16, border: plan.highlight ? `2px solid ${V.p}` : '1px solid var(--border-subtle)', backgroundColor: plan.highlight ? 'var(--surface-base)' : 'var(--surface-raised)', boxShadow: plan.highlight ? 'var(--shadow-lg)' : 'none', display: 'flex', flexDirection: 'column', position: 'relative' }}>
                 {plan.highlight && (
-                  <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', padding: '3px 16px', borderRadius: 99, background: C.primary, color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                  <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', padding: '3px 16px', borderRadius: 99, background: V.p, color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
                     Most popular
                   </div>
                 )}
@@ -400,15 +413,15 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 {plan.ctaHref === '/company-login' ? (
-                  <button onClick={goToLogin} style={{ display: 'block', width: '100%', textAlign: 'center', marginTop: 28, padding: '11px 20px', borderRadius: 10, border: plan.highlight ? 'none' : '1px solid var(--border-default)', background: plan.highlight ? C.primary : 'transparent', color: plan.highlight ? '#fff' : 'var(--text-primary)', fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'background 140ms, border-color 140ms' }}
-                    onMouseEnter={(e) => { if (plan.highlight) { e.currentTarget.style.background = C.primaryHover; } else { e.currentTarget.style.borderColor = 'var(--border-strong)'; } }}
-                    onMouseLeave={(e) => { if (plan.highlight) { e.currentTarget.style.background = C.primary; } else { e.currentTarget.style.borderColor = 'var(--border-default)'; } }}>
+                  <button onClick={goToLogin} style={{ display: 'block', width: '100%', textAlign: 'center', marginTop: 28, padding: '11px 20px', borderRadius: 10, border: plan.highlight ? 'none' : '1px solid var(--border-default)', background: plan.highlight ? V.p : 'transparent', color: plan.highlight ? '#fff' : 'var(--text-primary)', fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'background 140ms, border-color 140ms' }}
+                    onMouseEnter={(e) => { if (plan.highlight) { e.currentTarget.style.background = V.ph; } else { e.currentTarget.style.borderColor = 'var(--border-strong)'; } }}
+                    onMouseLeave={(e) => { if (plan.highlight) { e.currentTarget.style.background = V.p; } else { e.currentTarget.style.borderColor = 'var(--border-default)'; } }}>
                     {plan.cta}
                   </button>
                 ) : (
-                  <Link href={plan.ctaHref} style={{ display: 'block', textAlign: 'center', marginTop: 28, padding: '11px 20px', borderRadius: 10, border: plan.highlight ? 'none' : '1px solid var(--border-default)', background: plan.highlight ? C.primary : 'transparent', color: plan.highlight ? '#fff' : 'var(--text-primary)', fontSize: 14, fontWeight: 600, textDecoration: 'none', transition: 'background 140ms, border-color 140ms' }}
-                    onMouseEnter={(e) => { if (plan.highlight) { e.currentTarget.style.background = C.primaryHover; } else { e.currentTarget.style.borderColor = 'var(--border-strong)'; } }}
-                    onMouseLeave={(e) => { if (plan.highlight) { e.currentTarget.style.background = C.primary; } else { e.currentTarget.style.borderColor = 'var(--border-default)'; } }}>
+                  <Link href={plan.ctaHref} style={{ display: 'block', textAlign: 'center', marginTop: 28, padding: '11px 20px', borderRadius: 10, border: plan.highlight ? 'none' : '1px solid var(--border-default)', background: plan.highlight ? V.p : 'transparent', color: plan.highlight ? '#fff' : 'var(--text-primary)', fontSize: 14, fontWeight: 600, textDecoration: 'none', transition: 'background 140ms, border-color 140ms' }}
+                    onMouseEnter={(e) => { if (plan.highlight) { e.currentTarget.style.background = V.ph; } else { e.currentTarget.style.borderColor = 'var(--border-strong)'; } }}
+                    onMouseLeave={(e) => { if (plan.highlight) { e.currentTarget.style.background = V.p; } else { e.currentTarget.style.borderColor = 'var(--border-default)'; } }}>
                     {plan.cta}
                   </Link>
                 )}
@@ -428,7 +441,7 @@ export default function LandingPage() {
             Your company code is all you need. Log in and see your team&apos;s operations in one place.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={goToLogin} style={{ padding: '12px 28px', borderRadius: 10, background: '#fff', color: C.primaryDark, fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer', transition: 'opacity 140ms' }}
+            <button onClick={goToLogin} style={{ padding: '12px 28px', borderRadius: 10, background: '#fff', color: V.pd, fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer', transition: 'opacity 140ms' }}
               onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.92'; }}
               onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}>
               Company Login
@@ -462,7 +475,7 @@ export default function LandingPage() {
 
             {/* Logo + heading */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 9, background: C.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 1px 4px ${C.primary}45` }}>
+              <div style={{ width: 36, height: 36, borderRadius: 9, background: V.p, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 1px 4px ${V.p27}` }}>
                 <Image src={XERB.logo} alt={XERB.name} width={22} height={22} style={{ objectFit: 'contain', display: 'block' }} />
               </div>
               <div>
@@ -532,7 +545,7 @@ export default function LandingPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 32, marginBottom: 36 }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 7, background: C.primary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 28, height: 28, borderRadius: 7, background: V.p, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Image src={XERB.logo} alt={XERB.name} width={18} height={18} style={{ objectFit: 'contain', display: 'block' }} />
                 </div>
                 <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--gray-100)' }}>{BRAND.name}</span>
