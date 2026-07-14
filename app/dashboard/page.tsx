@@ -293,8 +293,8 @@ function DashboardContent() {
             {isLoading
               ? [0,1,2,3,4,5,6].map(i => (
                   <div key={i} style={{ flex: 1, padding: '14px 18px', borderRight: i < 6 ? `1px solid ${V.border}` : 'none' }}>
-                    <div style={{ height: 9, width: '55%', background: V.surf2, borderRadius: 4, marginBottom: 14 }} />
-                    <div style={{ height: 26, width: '40%', background: V.surf2, borderRadius: 4 }} />
+                    <div className="skeleton" style={{ height: 9, width: '55%', borderRadius: 4, marginBottom: 14 }} />
+                    <div className="skeleton" style={{ height: 26, width: '40%', borderRadius: 4 }} />
                   </div>
                 ))
               : stats && hrStats && ([

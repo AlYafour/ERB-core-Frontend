@@ -156,6 +156,7 @@ function NewPurchaseRequestPageContent() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (mutation.isPending) return; // double-submit guard (synchronous)
     if (items.length === 0) { toast('Please add at least one product', 'warning'); return; }
     const itemsToSubmit = items.map((item) => ({
       product_id: item.product_id, quantity: item.quantity,

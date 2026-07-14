@@ -182,6 +182,9 @@ function NewPOContent() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Hard double-submit guard: rapid clicks can all fire before React
+    // re-renders the disabled button state — this check is synchronous.
+    if (mutation.isPending) return;
     setErrors({});
     const errs: Record<string, string> = {};
     if (!formData.supplier_id) errs.supplier_id = 'Supplier is required.';
