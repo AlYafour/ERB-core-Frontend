@@ -19,6 +19,7 @@ import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import DateInput from '@/components/ui/DateInput';
 import { rolesApi, Role, UserRoles, AdditionalRoleAssignment } from '@/lib/api/roles';
 import { HREmployee, User, EmployeeBankAccount } from '@/types';
+import CustomFieldsSection from '@/components/shared/CustomFieldsSection';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -73,7 +74,7 @@ function maskAccount(acc: string): string {
   return `•••• ${acc.slice(-4)}`;
 }
 
-const TABS = ['Home', 'Profile', 'Account', 'Attendance', 'Requests', 'Documents'];
+const TABS = ['Home', 'Profile', 'Account', 'Attendance', 'Requests', 'Documents', 'Custom Fields'];
 
 const TAB_ICONS: Record<string, React.ReactNode> = {
   Home: (
@@ -104,6 +105,11 @@ const TAB_ICONS: Record<string, React.ReactNode> = {
   Documents: (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+    </svg>
+  ),
+  'Custom Fields': (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
     </svg>
   ),
 };
@@ -998,6 +1004,18 @@ export default function EmployeeDetailPage() {
               <div>
                 <RolesTab empUserId={emp.user?.id} isAdmin={isAdmin} />
               </div>
+            </div>
+          );
+
+          if (activeTab === 'Custom Fields') return (
+            <div className="card">
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 16 }}>Custom Fields</div>
+              <CustomFieldsSection
+                entityType="employee"
+                entityBaseUrl="/hr/employees/"
+                objectId={emp.id}
+                readOnly={!isAdmin}
+              />
             </div>
           );
 

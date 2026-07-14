@@ -15,6 +15,7 @@ import { getApiError } from '@/lib/utils/error';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { useT } from '@/lib/i18n/useT';
 import { ROLE_CODES } from '@/lib/constants/roles';
+import CustomFieldsSection from '@/components/shared/CustomFieldsSection';
 
 const statusOptions = [
   { value: 'on_going',   label: 'On Going'   },
@@ -366,6 +367,20 @@ export default function EditProjectPage() {
               </div>
             </div>
           </div>
+
+          {/* Custom Fields */}
+          {project && (
+            <div className="card">
+              <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', marginBottom: 'var(--space-4)', marginTop: 0, color: 'var(--text-primary)' }}>
+                Custom Fields
+              </h2>
+              <CustomFieldsSection
+                entityType="project"
+                entityBaseUrl="/projects/"
+                objectId={id}
+              />
+            </div>
+          )}
 
           {/* Actions */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>

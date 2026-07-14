@@ -1274,7 +1274,7 @@ export const hrContractsApi = {
 
 // Normalises paginated {count, results:[...]} responses to plain arrays so pages can .then(r => r.data) safely.
 async function _paged<T>(url: string, params?: Record<string, string>) {
-  const r = await apiClient.get<any>(url, { params: { page_size: PAGE_SIZES.medium0, ...params } })
+  const r = await apiClient.get<any>(url, { params: { page_size: PAGE_SIZES.medium, ...params } })
   const d = r.data
   const data = (Array.isArray(d) ? d : d?.results ?? []) as T[]
   return { ...r, data }
@@ -1825,4 +1825,49 @@ export const hrWorkTeamMembersApi = {
     const data = response.data;
     return Array.isArray(data) ? data : (data.results ?? []);
   },
+};
+
+// ─── WorkLog ──────────────────────────────────────────────────────────────────
+
+export interface WorkLog {
+  id: number;
+  employee: number;
+  employee_name: string;
+  project: number | null;
+  project_name: string | null;
+  work_team: number | null;
+  work_team_name: string | null;
+  date: string;
+  hours: string;
+  overtime_hours: string;
+  cost_amount: string;
+  status: 'draft' | 'pending_review' | 'approved' | 'rejected';
+  status_display: string;
+  notes: string;
+  is_auto: boolean;
+  created_at: string;
+}
+
+export const hrWorklogApi = {
+  getAll: async (params?: Record<string, string>): Promise<PaginatedResponse<WorkLog>> => {
+    const r = await apiClient.get<PaginatedResponse<WorkLog>>('/hr/attendance/worklogs/', { params: { page_size: PAGE_SIZES.default, ...params } })
+    return toPage(r.data)
+  },
+
+  create: (data: {
+    employee: number;
+    date: string;
+    hours: number;
+    overtime_hours?: number;
+    project?: number | null;
+    work_team?: number | null;
+    notes?: string;
+  }) => apiClient.post<WorkLog>('/hr/attendance/worklogs/', data),
+
+  submit: (id: number) => apiClient.post<WorkLog>(`/hr/attendance/worklogs/${id}/submit/`),
+
+  approve: (id: number) => apiClient.post<WorkLog>(`/hr/attendance/worklogs/${id}/approve/`),
+
+  reject: (id: number, data: { reason: string }) =>
+    apiClient.post<WorkLog>(`/hr/attendance/worklogs/${id}/reject/`, data),
 };

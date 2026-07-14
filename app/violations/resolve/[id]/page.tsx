@@ -89,7 +89,7 @@ export default function ViolationResolvePage() {
       {/* Header */}
       <div
         style={{
-          background: isAlreadyResolved ? '#166534' : '#B91C1C',
+          background: isAlreadyResolved ? 'var(--status-success)' : 'var(--status-error)',
           borderRadius: '12px 12px 0 0',
           padding: '20px 24px',
           color: '#fff',
@@ -180,9 +180,9 @@ export default function ViolationResolvePage() {
           style={{
             margin: '16px 0',
             padding: '14px 16px',
-            background: 'var(--color-wine-50)',
+            background: 'var(--brand-subtle)',
             borderRadius: 8,
-            borderRight: '4px solid var(--color-wine-500)',
+            borderRight: '4px solid var(--brand)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -208,16 +208,16 @@ export default function ViolationResolvePage() {
             style={{
               margin: '16px 0',
               padding: '16px',
-              background: '#F0FDF4',
-              border: '1px solid #BBF7D0',
+              background: 'var(--status-success-bg)',
+              border: '1px solid var(--status-success)',
               borderRadius: 8,
               textAlign: 'center',
             }}
           >
-            <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#166534' }}>
+            <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--status-success)' }}>
               ✅ تم تسجيل الحل بنجاح
             </p>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#15803D' }}>
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--status-success)' }}>
               سيتم تحديث الداشبورد تلقائياً.
             </p>
           </div>
@@ -232,7 +232,7 @@ export default function ViolationResolvePage() {
               style={{
                 flex: 1,
                 padding: '12px 20px',
-                background: resolveMutation.isPending ? '#9CA3AF' : '#16A34A',
+                background: resolveMutation.isPending ? 'var(--text-tertiary)' : 'var(--status-success)',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 8,

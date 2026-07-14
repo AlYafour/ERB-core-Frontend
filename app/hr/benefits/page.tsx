@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { hrBenefitsApi, BenefitPlan, TravelRequest, ExpenseClaim, Grievance, Asset } from '@/lib/api/hr'
+import { hrBenefitsApi, BenefitPlan, TravelRequest, ExpenseClaim, Grievance, Asset, hrEmployeesApi } from '@/lib/api/hr'
 import { Badge } from '@/components/ui/Badge'
 import MainLayout from '@/components/layout/MainLayout'
 import { Button } from '@/components/ui/Button'
@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { confirm, toast } from '@/lib/hooks/use-toast'
 import HasPermission from '@/components/shared/HasPermission'
 import { ShieldCheckIcon, BriefcaseIcon, DollarIcon, AlertIcon } from '@/components/icons'
+import { BaseModal } from '@/components/ui/base/BaseModal'
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'var(--text-tertiary)', submitted: 'var(--status-warning)', approved: 'var(--status-success)',
@@ -34,12 +35,24 @@ const PRIORITY_BG: Record<string, string> = {
   low: 'rgba(0,0,0,0.06)', medium: 'var(--status-warning-bg)', high: 'var(--status-error-bg)', critical: 'var(--status-warning-bg)',
 }
 
+const F: React.CSSProperties = {
+  width: '100%', padding: '7px 10px', borderRadius: 'var(--radius-md)',
+  border: '1px solid var(--input-border)', background: 'var(--input-bg)',
+  color: 'var(--text-primary)', fontSize: 'var(--text-sm)', outline: 'none',
+  boxSizing: 'border-box',
+}
+const L: React.CSSProperties = {
+  display: 'block', fontSize: 'var(--text-xs)', fontWeight: 600,
+  color: 'var(--text-secondary)', marginBottom: 4,
+}
+const FG: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }
+
 function StatCard({ icon, label, value, color = 'var(--brand)' }: {
   icon: React.ReactNode; label: string; value: string | number; color?: string
 }) {
   return (
     <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, padding: 'var(--space-4)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-      <div style={{ width: 40, height: 40, borderRadius: 10, background: color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
+      <div style={{ width: 40, height: 40, borderRadius: 10, background: `color-mix(in srgb, ${color} 8%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
         {icon}
       </div>
       <div style={{ minWidth: 0 }}>
@@ -50,11 +63,12 @@ function StatCard({ icon, label, value, color = 'var(--brand)' }: {
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 'var(--space-6)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)', paddingLeft: 12, borderLeft: '3px solid var(--brand)' }}>
         <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{title}</h3>
+        {action}
       </div>
       {children}
     </div>
@@ -115,10 +129,60 @@ function BenefitPlansTab() {
 }
 
 // ─── Assets ───────────────────────────────────────────────────────────────────
+
+const ASSET_TYPES = ['laptop','mobile','sim','vehicle','access_card','uniform','tools','other']
+const CURRENCIES = ['AED','USD','EUR','GBP']
+
 function AssetsTab() {
   const qc = useQueryClient()
   const { data: assets = [] } = useQuery({ queryKey: ['assets'], queryFn: () => hrBenefitsApi.getAssets().then(r => r.data) })
   const { data: assignments = [] } = useQuery({ queryKey: ['assignments'], queryFn: () => hrBenefitsApi.getAssignments().then(r => r.data) })
+
+  const [showNewAsset, setShowNewAsset] = useState(false)
+  const [assetForm, setAssetForm] = useState({ name: '', asset_type: 'laptop', asset_tag: '', serial_number: '', brand: '', purchase_cost: '', currency: 'AED' })
+
+  const [assigningAsset, setAssigningAsset] = useState<Asset | null>(null)
+  const [assignForm, setAssignForm] = useState({ employee: '', condition_out: 'good', notes: '' })
+  const { data: employees = [] } = useQuery({
+    queryKey: ['employees-lookup'],
+    queryFn: () => hrEmployeesApi.getAll({ page_size: 200 }).then(r => r.results),
+    enabled: showNewAsset || !!assigningAsset,
+  })
+
+  const createAssetMut = useMutation({
+    mutationFn: () => hrBenefitsApi.createAsset({
+      name: assetForm.name,
+      asset_type: assetForm.asset_type,
+      asset_tag: assetForm.asset_tag || undefined,
+      serial_number: assetForm.serial_number || undefined,
+      brand: assetForm.brand || undefined,
+      purchase_cost: assetForm.purchase_cost ? Number(assetForm.purchase_cost) : undefined,
+      currency: assetForm.currency,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['assets'] })
+      toast('Asset added', 'success')
+      setShowNewAsset(false)
+      setAssetForm({ name: '', asset_type: 'laptop', asset_tag: '', serial_number: '', brand: '', purchase_cost: '', currency: 'AED' })
+    },
+    onError: () => toast('Failed to create asset', 'error'),
+  })
+
+  const assignMut = useMutation({
+    mutationFn: () => hrBenefitsApi.createAssignment({
+      asset: assigningAsset!.id,
+      employee: Number(assignForm.employee),
+      condition_out: assignForm.condition_out,
+      notes: assignForm.notes || undefined,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['assets'] }); qc.invalidateQueries({ queryKey: ['assignments'] })
+      toast('Asset assigned', 'success')
+      setAssigningAsset(null)
+      setAssignForm({ employee: '', condition_out: 'good', notes: '' })
+    },
+    onError: () => toast('Failed to assign asset', 'error'),
+  })
 
   const returnMutation = useMutation({
     mutationFn: (id: number) => hrBenefitsApi.returnAsset(id, { returned_at: new Date().toISOString().slice(0, 10) }),
@@ -135,10 +199,13 @@ function AssetsTab() {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 16, marginBottom: 'var(--space-4)' }}>
-        <span style={{ fontSize: 'var(--text-sm)' }}>Available: <strong style={{ color: 'var(--status-success)' }}>{available}</strong></span>
-        <span style={{ fontSize: 'var(--text-sm)' }}>Assigned: <strong style={{ color: 'var(--brand)' }}>{assigned}</strong></span>
+      <div style={{ display: 'flex', gap: 16, marginBottom: 'var(--space-4)', alignItems: 'center' }}>
+        <span style={{ fontSize: 'var(--text-sm)', flex: 1 }}>Available: <strong style={{ color: 'var(--status-success)' }}>{available}</strong> &nbsp; Assigned: <strong style={{ color: 'var(--brand)' }}>{assigned}</strong></span>
+        <HasPermission permission="hr_benefits:manage">
+          <Button size="sm" onClick={() => setShowNewAsset(true)}>+ Add Asset</Button>
+        </HasPermission>
       </div>
+
       <Section title="Current Assignments">
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8 }}>
@@ -164,19 +231,126 @@ function AssetsTab() {
           </table>
         </div>
       </Section>
+
+      <Section title="All Assets">
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8 }}>
+            <TableHead cols={['Name', 'Type', 'Tag', 'Brand', 'Status']} />
+            <tbody>
+              {assets.map(a => (
+                <TableRow key={a.id} cells={[
+                  a.name,
+                  a.asset_type_display,
+                  <code key="tag" style={{ fontSize: 11 }}>{a.asset_tag || '—'}</code>,
+                  a.brand || '—',
+                  <Badge key="s" style={{ background: STATUS_BG[a.status] || 'rgba(0,0,0,0.06)', color: STATUS_COLORS[a.status] || 'var(--text-tertiary)', fontSize: 10 }}>{a.status}</Badge>,
+                ]} actions={a.status === 'available' ? (
+                  <HasPermission permission="hr_benefits:manage">
+                    <Button size="sm" style={{ fontSize: 10, padding: '2px 8px', background: 'var(--brand)', color: '#fff' }} onClick={() => { setAssigningAsset(a); setAssignForm({ employee: '', condition_out: 'good', notes: '' }) }}>Assign</Button>
+                  </HasPermission>
+                ) : undefined} />
+              ))}
+              {assets.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>No assets found.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </Section>
+
+      {/* Add Asset Modal */}
+      <BaseModal isOpen={showNewAsset} onClose={() => setShowNewAsset(false)} title="Add Asset" size="md"
+        footer={<>
+          <Button variant="ghost" onClick={() => setShowNewAsset(false)}>Cancel</Button>
+          <Button onClick={() => createAssetMut.mutate()} disabled={!assetForm.name || createAssetMut.isPending}>
+            {createAssetMut.isPending ? 'Saving…' : 'Add Asset'}
+          </Button>
+        </>}>
+        <div style={FG}>
+          <div><label style={L}>Name *</label><input style={F} value={assetForm.name} onChange={e => setAssetForm(p => ({ ...p, name: e.target.value }))} /></div>
+          <div><label style={L}>Type</label>
+            <select style={F} value={assetForm.asset_type} onChange={e => setAssetForm(p => ({ ...p, asset_type: e.target.value }))}>
+              {ASSET_TYPES.map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+            <div><label style={L}>Asset Tag</label><input style={F} value={assetForm.asset_tag} onChange={e => setAssetForm(p => ({ ...p, asset_tag: e.target.value }))} /></div>
+            <div><label style={L}>Serial Number</label><input style={F} value={assetForm.serial_number} onChange={e => setAssetForm(p => ({ ...p, serial_number: e.target.value }))} /></div>
+          </div>
+          <div><label style={L}>Brand</label><input style={F} value={assetForm.brand} onChange={e => setAssetForm(p => ({ ...p, brand: e.target.value }))} /></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--space-3)' }}>
+            <div><label style={L}>Purchase Cost</label><input style={F} type="number" min="0" value={assetForm.purchase_cost} onChange={e => setAssetForm(p => ({ ...p, purchase_cost: e.target.value }))} /></div>
+            <div><label style={L}>Currency</label>
+              <select style={F} value={assetForm.currency} onChange={e => setAssetForm(p => ({ ...p, currency: e.target.value }))}>
+                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+      </BaseModal>
+
+      {/* Assign Asset Modal */}
+      <BaseModal isOpen={!!assigningAsset} onClose={() => setAssigningAsset(null)} title={`Assign: ${assigningAsset?.name ?? ''}`} size="sm"
+        footer={<>
+          <Button variant="ghost" onClick={() => setAssigningAsset(null)}>Cancel</Button>
+          <Button onClick={() => assignMut.mutate()} disabled={!assignForm.employee || assignMut.isPending}>
+            {assignMut.isPending ? 'Assigning…' : 'Assign'}
+          </Button>
+        </>}>
+        <div style={FG}>
+          <div><label style={L}>Employee *</label>
+            <select style={F} value={assignForm.employee} onChange={e => setAssignForm(p => ({ ...p, employee: e.target.value }))}>
+              <option value="">Select employee…</option>
+              {employees.map((e: any) => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+            </select>
+          </div>
+          <div><label style={L}>Condition Out</label>
+            <select style={F} value={assignForm.condition_out} onChange={e => setAssignForm(p => ({ ...p, condition_out: e.target.value }))}>
+              {['excellent','good','fair','poor'].map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div><label style={L}>Notes</label><textarea style={{ ...F, resize: 'vertical', minHeight: 64 }} value={assignForm.notes} onChange={e => setAssignForm(p => ({ ...p, notes: e.target.value }))} /></div>
+        </div>
+      </BaseModal>
     </div>
   )
 }
 
 // ─── Travel Requests ──────────────────────────────────────────────────────────
+
+const TRAVEL_PURPOSES = ['business','training','conference','site_visit','other']
+
 function TravelTab() {
   const qc = useQueryClient()
   const [filter, setFilter] = useState('submitted')
   const { data: travels = [] } = useQuery({ queryKey: ['travel', filter], queryFn: () => hrBenefitsApi.getTravelRequests(filter !== 'all' ? { status: filter } : {}).then(r => r.data) })
 
+  const [showNew, setShowNew] = useState(false)
+  const [form, setForm] = useState({ purpose: 'business', destination: '', departure_date: '', return_date: '', estimated_cost: '', currency: 'AED', description: '' })
+
   const reviewMutation = useMutation({
     mutationFn: ({ id, approved }: { id: number; approved: boolean }) => hrBenefitsApi.reviewTravel(id, { approved }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['travel'] }); toast('Travel request updated', 'success') },
+  })
+
+  const createMut = useMutation({
+    mutationFn: async () => {
+      const res = await hrBenefitsApi.createTravelRequest({
+        purpose: form.purpose,
+        destination: form.destination,
+        departure_date: form.departure_date,
+        return_date: form.return_date,
+        estimated_cost: form.estimated_cost ? Number(form.estimated_cost) : undefined,
+        currency: form.currency,
+        description: form.description,
+      })
+      await hrBenefitsApi.submitTravel(res.data.id)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['travel'] })
+      toast('Travel request submitted', 'success')
+      setShowNew(false)
+      setForm({ purpose: 'business', destination: '', departure_date: '', return_date: '', estimated_cost: '', currency: 'AED', description: '' })
+    },
+    onError: () => toast('Failed to submit request', 'error'),
   })
 
   async function handleReview(id: number, approved: boolean) {
@@ -184,13 +358,19 @@ function TravelTab() {
     if (ok) reviewMutation.mutate({ id, approved })
   }
 
+  const canSubmit = form.destination && form.departure_date && form.return_date
+
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
-        {['all', 'draft', 'submitted', 'approved', 'rejected', 'completed'].map(s => (
-          <button key={s} onClick={() => setFilter(s)} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid var(--card-border)', cursor: 'pointer', fontSize: 11, fontWeight: filter === s ? 700 : 400, background: filter === s ? 'var(--brand)' : 'transparent', color: filter === s ? '#fff' : 'var(--text-primary)' }}>{s}</button>
-        ))}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {['all', 'draft', 'submitted', 'approved', 'rejected', 'completed'].map(s => (
+            <button key={s} onClick={() => setFilter(s)} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid var(--card-border)', cursor: 'pointer', fontSize: 11, fontWeight: filter === s ? 700 : 400, background: filter === s ? 'var(--brand)' : 'transparent', color: filter === s ? '#fff' : 'var(--text-primary)' }}>{s}</button>
+          ))}
+        </div>
+        <Button size="sm" onClick={() => setShowNew(true)}>+ New Request</Button>
       </div>
+
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8 }}>
           <TableHead cols={['Employee', 'Destination', 'Purpose', 'Dates', 'Duration', 'Est. Cost', 'Status']} />
@@ -217,15 +397,51 @@ function TravelTab() {
           </tbody>
         </table>
       </div>
+
+      <BaseModal isOpen={showNew} onClose={() => setShowNew(false)} title="New Travel Request" size="md"
+        footer={<>
+          <Button variant="ghost" onClick={() => setShowNew(false)}>Cancel</Button>
+          <Button onClick={() => createMut.mutate()} disabled={!canSubmit || createMut.isPending}>
+            {createMut.isPending ? 'Submitting…' : 'Submit Request'}
+          </Button>
+        </>}>
+        <div style={FG}>
+          <div><label style={L}>Purpose</label>
+            <select style={F} value={form.purpose} onChange={e => setForm(p => ({ ...p, purpose: e.target.value }))}>
+              {TRAVEL_PURPOSES.map(p => <option key={p} value={p}>{p.replace('_', ' ')}</option>)}
+            </select>
+          </div>
+          <div><label style={L}>Destination *</label><input style={F} placeholder="e.g. Dubai, UAE" value={form.destination} onChange={e => setForm(p => ({ ...p, destination: e.target.value }))} /></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+            <div><label style={L}>Departure Date *</label><input style={F} type="date" value={form.departure_date} onChange={e => setForm(p => ({ ...p, departure_date: e.target.value }))} /></div>
+            <div><label style={L}>Return Date *</label><input style={F} type="date" value={form.return_date} onChange={e => setForm(p => ({ ...p, return_date: e.target.value }))} /></div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--space-3)' }}>
+            <div><label style={L}>Estimated Cost</label><input style={F} type="number" min="0" placeholder="0.00" value={form.estimated_cost} onChange={e => setForm(p => ({ ...p, estimated_cost: e.target.value }))} /></div>
+            <div><label style={L}>Currency</label>
+              <select style={F} value={form.currency} onChange={e => setForm(p => ({ ...p, currency: e.target.value }))}>
+                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+          <div><label style={L}>Description</label><textarea style={{ ...F, resize: 'vertical', minHeight: 72 }} placeholder="Purpose and details…" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} /></div>
+        </div>
+      </BaseModal>
     </div>
   )
 }
 
 // ─── Expenses ─────────────────────────────────────────────────────────────────
+
+const EXPENSE_CATEGORIES = ['travel','accommodation','meals','transport','communication','supplies','training','other']
+
 function ExpensesTab() {
   const qc = useQueryClient()
   const [filter, setFilter] = useState('submitted')
   const { data: expenses = [] } = useQuery({ queryKey: ['expenses', filter], queryFn: () => hrBenefitsApi.getExpenses(filter !== 'all' ? { status: filter } : {}).then(r => r.data) })
+
+  const [showNew, setShowNew] = useState(false)
+  const [form, setForm] = useState({ title: '', category: 'travel', amount: '', currency: 'AED', expense_date: '', description: '' })
 
   const approveMutation = useMutation({
     mutationFn: ({ id, approved }: { id: number; approved: boolean }) => hrBenefitsApi.approveExpense(id, { approved }),
@@ -236,7 +452,29 @@ function ExpensesTab() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['expenses'] }); toast('Marked as paid', 'success') },
   })
 
+  const createMut = useMutation({
+    mutationFn: async () => {
+      const res = await hrBenefitsApi.createExpense({
+        title: form.title,
+        category: form.category,
+        amount: Number(form.amount),
+        currency: form.currency,
+        expense_date: form.expense_date,
+        description: form.description,
+      })
+      await hrBenefitsApi.submitExpense(res.data.id)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['expenses'] })
+      toast('Expense claim submitted', 'success')
+      setShowNew(false)
+      setForm({ title: '', category: 'travel', amount: '', currency: 'AED', expense_date: '', description: '' })
+    },
+    onError: () => toast('Failed to submit claim', 'error'),
+  })
+
   const totalSubmitted = expenses.filter(e => e.status === 'submitted').reduce((s, e) => s + Number(e.amount), 0)
+  const canSubmit = form.title && form.amount && form.expense_date
 
   return (
     <div>
@@ -245,11 +483,15 @@ function ExpensesTab() {
           Pending approval: <strong>AED {totalSubmitted.toLocaleString()}</strong> across {expenses.filter(e => e.status === 'submitted').length} claims
         </div>
       )}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
-        {['all', 'draft', 'submitted', 'approved', 'rejected', 'paid'].map(s => (
-          <button key={s} onClick={() => setFilter(s)} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid var(--card-border)', cursor: 'pointer', fontSize: 11, fontWeight: filter === s ? 700 : 400, background: filter === s ? 'var(--brand)' : 'transparent', color: filter === s ? '#fff' : 'var(--text-primary)' }}>{s}</button>
-        ))}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {['all', 'draft', 'submitted', 'approved', 'rejected', 'paid'].map(s => (
+            <button key={s} onClick={() => setFilter(s)} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid var(--card-border)', cursor: 'pointer', fontSize: 11, fontWeight: filter === s ? 700 : 400, background: filter === s ? 'var(--brand)' : 'transparent', color: filter === s ? '#fff' : 'var(--text-primary)' }}>{s}</button>
+          ))}
+        </div>
+        <Button size="sm" onClick={() => setShowNew(true)}>+ New Claim</Button>
       </div>
+
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8 }}>
           <TableHead cols={['Employee', 'Title', 'Category', 'Amount', 'Date', 'Status']} />
@@ -278,15 +520,51 @@ function ExpensesTab() {
           </tbody>
         </table>
       </div>
+
+      <BaseModal isOpen={showNew} onClose={() => setShowNew(false)} title="New Expense Claim" size="md"
+        footer={<>
+          <Button variant="ghost" onClick={() => setShowNew(false)}>Cancel</Button>
+          <Button onClick={() => createMut.mutate()} disabled={!canSubmit || createMut.isPending}>
+            {createMut.isPending ? 'Submitting…' : 'Submit Claim'}
+          </Button>
+        </>}>
+        <div style={FG}>
+          <div><label style={L}>Title *</label><input style={F} placeholder="e.g. Hotel stay – Dubai trip" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} /></div>
+          <div><label style={L}>Category</label>
+            <select style={F} value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))}>
+              {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c.replace('_', ' ')}</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--space-3)' }}>
+            <div><label style={L}>Amount *</label><input style={F} type="number" min="0" step="0.01" placeholder="0.00" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} /></div>
+            <div><label style={L}>Currency</label>
+              <select style={F} value={form.currency} onChange={e => setForm(p => ({ ...p, currency: e.target.value }))}>
+                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+          <div><label style={L}>Expense Date *</label><input style={F} type="date" value={form.expense_date} onChange={e => setForm(p => ({ ...p, expense_date: e.target.value }))} /></div>
+          <div><label style={L}>Description</label><textarea style={{ ...F, resize: 'vertical', minHeight: 72 }} placeholder="Provide details about this expense…" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} /></div>
+        </div>
+      </BaseModal>
     </div>
   )
 }
 
 // ─── Grievances ───────────────────────────────────────────────────────────────
+
+const GRIEVANCE_TYPES = ['harassment','discrimination','workplace','compensation','workload','policy','other']
+
 function GrievancesTab() {
   const qc = useQueryClient()
   const [filter, setFilter] = useState('open')
   const { data: grievances = [] } = useQuery({ queryKey: ['grievances', filter], queryFn: () => hrBenefitsApi.getGrievances(filter !== 'all' ? { status: filter } : {}).then(r => r.data) })
+
+  const [showNew, setShowNew] = useState(false)
+  const [form, setForm] = useState({ grievance_type: 'workplace', priority: 'medium', subject: '', description: '', is_anonymous: false })
+
+  const [resolvingId, setResolvingId] = useState<number | null>(null)
+  const [resolveText, setResolveText] = useState('')
 
   const assignMutation = useMutation({
     mutationFn: (id: number) => hrBenefitsApi.assignGrievance(id),
@@ -298,7 +576,25 @@ function GrievancesTab() {
   })
   const resolveMutation = useMutation({
     mutationFn: ({ id, resolution }: { id: number; resolution: string }) => hrBenefitsApi.resolveGrievance(id, { resolution }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['grievances'] }); toast('Grievance resolved', 'success') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['grievances'] }); toast('Grievance resolved', 'success'); setResolvingId(null); setResolveText('') },
+    onError: () => toast('Failed to resolve grievance', 'error'),
+  })
+
+  const createMut = useMutation({
+    mutationFn: () => hrBenefitsApi.createGrievance({
+      grievance_type: form.grievance_type,
+      priority: form.priority,
+      subject: form.subject,
+      description: form.description,
+      is_anonymous: form.is_anonymous,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['grievances'] })
+      toast('Grievance submitted', 'success')
+      setShowNew(false)
+      setForm({ grievance_type: 'workplace', priority: 'medium', subject: '', description: '', is_anonymous: false })
+    },
+    onError: () => toast('Failed to submit grievance', 'error'),
   })
 
   async function handleEscalate(id: number) {
@@ -308,11 +604,15 @@ function GrievancesTab() {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
-        {['all', 'open', 'in_review', 'resolved', 'escalated', 'closed'].map(s => (
-          <button key={s} onClick={() => setFilter(s)} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid var(--card-border)', cursor: 'pointer', fontSize: 11, fontWeight: filter === s ? 700 : 400, background: filter === s ? 'var(--brand)' : 'transparent', color: filter === s ? '#fff' : 'var(--text-primary)' }}>{s.replace('_', ' ')}</button>
-        ))}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {['all', 'open', 'in_review', 'resolved', 'escalated', 'closed'].map(s => (
+            <button key={s} onClick={() => setFilter(s)} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid var(--card-border)', cursor: 'pointer', fontSize: 11, fontWeight: filter === s ? 700 : 400, background: filter === s ? 'var(--brand)' : 'transparent', color: filter === s ? '#fff' : 'var(--text-primary)' }}>{s.replace('_', ' ')}</button>
+          ))}
+        </div>
+        <Button size="sm" onClick={() => setShowNew(true)}>+ New Grievance</Button>
       </div>
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
         {grievances.map(g => (
           <div key={g.id} style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderLeft: `4px solid ${PRIORITY_COLORS[g.priority]}`, borderRadius: 8, padding: 'var(--space-4)' }}>
@@ -333,7 +633,7 @@ function GrievancesTab() {
                 <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                   {g.status === 'open' && <Button size="sm" variant="ghost" style={{ fontSize: 10 }} onClick={() => assignMutation.mutate(g.id)}>Assign to me</Button>}
                   {g.status === 'in_review' && <>
-                    <Button size="sm" style={{ fontSize: 10, background: 'var(--status-success)', color: '#fff' }} onClick={() => resolveMutation.mutate({ id: g.id, resolution: 'Resolved by HR' })}>Resolve</Button>
+                    <Button size="sm" style={{ fontSize: 10, background: 'var(--status-success)', color: '#fff' }} onClick={() => { setResolvingId(g.id); setResolveText('') }}>Resolve</Button>
                     <Button size="sm" variant="ghost" style={{ fontSize: 10, color: 'var(--brand)' }} onClick={() => handleEscalate(g.id)}>Escalate</Button>
                   </>}
                 </div>
@@ -343,6 +643,49 @@ function GrievancesTab() {
         ))}
         {grievances.length === 0 && <p style={{ color: 'var(--text-tertiary)' }}>No grievances found.</p>}
       </div>
+
+      {/* New Grievance Modal */}
+      <BaseModal isOpen={showNew} onClose={() => setShowNew(false)} title="Submit Grievance" size="md"
+        footer={<>
+          <Button variant="ghost" onClick={() => setShowNew(false)}>Cancel</Button>
+          <Button onClick={() => createMut.mutate()} disabled={!form.subject || !form.description || createMut.isPending}>
+            {createMut.isPending ? 'Submitting…' : 'Submit Grievance'}
+          </Button>
+        </>}>
+        <div style={FG}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+            <div><label style={L}>Type</label>
+              <select style={F} value={form.grievance_type} onChange={e => setForm(p => ({ ...p, grievance_type: e.target.value }))}>
+                {GRIEVANCE_TYPES.map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
+              </select>
+            </div>
+            <div><label style={L}>Priority</label>
+              <select style={F} value={form.priority} onChange={e => setForm(p => ({ ...p, priority: e.target.value }))}>
+                {['low','medium','high','critical'].map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+          </div>
+          <div><label style={L}>Subject *</label><input style={F} placeholder="Brief description of the issue" value={form.subject} onChange={e => setForm(p => ({ ...p, subject: e.target.value }))} /></div>
+          <div><label style={L}>Description *</label><textarea style={{ ...F, resize: 'vertical', minHeight: 96 }} placeholder="Provide full details…" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} /></div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+            <input type="checkbox" checked={form.is_anonymous} onChange={e => setForm(p => ({ ...p, is_anonymous: e.target.checked }))} />
+            Submit anonymously
+          </label>
+        </div>
+      </BaseModal>
+
+      {/* Resolve Grievance Modal */}
+      <BaseModal isOpen={resolvingId !== null} onClose={() => { setResolvingId(null); setResolveText('') }} title="Resolve Grievance" size="sm"
+        footer={<>
+          <Button variant="ghost" onClick={() => { setResolvingId(null); setResolveText('') }}>Cancel</Button>
+          <Button onClick={() => resolveMutation.mutate({ id: resolvingId!, resolution: resolveText })} disabled={!resolveText.trim() || resolveMutation.isPending}>
+            {resolveMutation.isPending ? 'Saving…' : 'Mark Resolved'}
+          </Button>
+        </>}>
+        <div style={FG}>
+          <div><label style={L}>Resolution Details *</label><textarea style={{ ...F, resize: 'vertical', minHeight: 100 }} placeholder="Describe how the grievance was resolved…" value={resolveText} onChange={e => setResolveText(e.target.value)} /></div>
+        </div>
+      </BaseModal>
     </div>
   )
 }

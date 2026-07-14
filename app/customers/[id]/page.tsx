@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { customersApi } from '@/lib/api/customers';
 import { useT } from '@/lib/i18n/useT';
 import { Button, Badge, PageHeader, PageShell } from '@/components/ui';
+import CustomFieldsSection from '@/components/shared/CustomFieldsSection';
 
 const TYPE_BADGE: Record<string, 'info' | 'warning' | 'default'> = {
   owner:      'info',
@@ -98,6 +99,15 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                 <div className="info-section-title">General Information</div>
                 <InfoRow label="Customer Type" value={customer.customer_type} />
                 <InfoRow label="Status"        value={customer.status} />
+              </div>
+
+              <div className="card">
+                <div className="info-section-title">Custom Fields</div>
+                <CustomFieldsSection
+                  entityType="customer"
+                  entityBaseUrl="/customers/"
+                  objectId={Number(id)}
+                />
               </div>
 
               <div style={{ display: 'flex', gap: 'var(--space-2)' }}>

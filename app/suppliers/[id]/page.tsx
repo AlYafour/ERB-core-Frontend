@@ -10,6 +10,7 @@ import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { useT } from '@/lib/i18n/useT';
 import { Button, PageHeader, PageShell } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
+import CustomFieldsSection from '@/components/shared/CustomFieldsSection';
 
 const currencies = [
   { value: 'AED', label: 'AED - UAE Dirham' },
@@ -266,6 +267,18 @@ export default function EditSupplierPage() {
               </div>
             </div>
           </div>
+
+          {/* Custom Fields */}
+          {supplier && (
+            <div className="card">
+              <h2 className="section-title">Custom Fields</h2>
+              <CustomFieldsSection
+                entityType="supplier"
+                entityBaseUrl="/suppliers/"
+                objectId={id}
+              />
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
             <Button type="submit" variant="primary" isLoading={mutation.isPending}>{t('btn', 'saveChanges')}</Button>

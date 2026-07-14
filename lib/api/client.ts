@@ -12,10 +12,10 @@ const apiClient = axios.create({
 
 // Queue of requests waiting for token refresh
 let isRefreshing = false;
-let refreshQueue: ((token: string) => void)[] = [];
+let refreshQueue: ((token: string | null) => void)[] = [];
 
-function processRefreshQueue(newToken: string) {
-  refreshQueue.forEach((resolve) => resolve(newToken));
+function processRefreshQueue(newToken: string | null) {
+  refreshQueue.forEach((cb) => cb(newToken));
   refreshQueue = [];
 }
 
@@ -45,9 +45,11 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       if (isRefreshing) {
-        // Another request is already refreshing — queue this one
-        return new Promise((resolve) => {
-          refreshQueue.push((newToken: string) => {
+        // Another request is already refreshing — queue this one.
+        // The callback receives null if refresh ultimately fails, which rejects the promise.
+        return new Promise((resolve, reject) => {
+          refreshQueue.push((newToken: string | null) => {
+            if (!newToken) { reject(error); return; }
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
             resolve(apiClient(originalRequest));
           });
@@ -82,6 +84,7 @@ apiClient.interceptors.response.use(
         // Network errors and server errors (5xx) should not kill the session —
         // the user can retry once connectivity is restored.
         const status = (refreshErr as { response?: { status?: number } })?.response?.status;
+        processRefreshQueue(null);  // drain stranded promises regardless of error type
         if (status !== undefined && status >= 400 && status < 500) {
           useAuthStore.getState().logout();
           window.location.href = '/company-login';
