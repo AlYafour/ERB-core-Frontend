@@ -124,6 +124,10 @@ export default function PurchaseOrderDetailPage() {
     : itemsVat > 0 && itemsSubtotal > 0
       ? Math.round((itemsVat / itemsSubtotal) * 100)
       : 0;
+  // Same rule as the LPO print page: the grand total is derived from the SAME
+  // breakdown displayed above it, never from the stored order.total — so the
+  // summary can never contradict its own rows (stale-total bug class).
+  const grandTotal           = combinedSubtotal - globalDiscount + transportationCharge + combinedVat;
 
   const prRef = typeof order.purchase_request === 'object' ? order.purchase_request : order.purchase_request ? { id: order.purchase_request } : null;
   const pqRef = typeof order.purchase_quotation === 'object' ? order.purchase_quotation : order.purchase_quotation ? { id: order.purchase_quotation } : null;
@@ -316,7 +320,7 @@ export default function PurchaseOrderDetailPage() {
                       { label: 'Transportation', value: transportationCharge, hidden: !transportationCharge },
                       { label: vatPct > 0 ? `VAT (${vatPct}%)` : 'VAT', value: combinedVat, hidden: !combinedVat },
                     ]}
-                    total={order.total}
+                    total={grandTotal}
                   />
                 </div>
               </div>
