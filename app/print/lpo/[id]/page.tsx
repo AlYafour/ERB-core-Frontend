@@ -97,6 +97,10 @@ export default function PrintLPOPage() {
     : itemTaxAmount > 0 && itemsOnly > 0
       ? Math.round((itemTaxAmount / itemsOnly) * 100)
       : 0;
+  // Grand total derived from the SAME line breakdown printed above it, so the
+  // document can never be internally inconsistent (e.g. a stale stored po.total
+  // that predates additional-charges recalculation).
+  const grandTotal       = subtotal - discount + transportCharge + combinedVat;
 
   const signatories = [
     { label: 'Prepared By', name: po.pr_created_by_name        || '', stamp: (po as any).pr_created_by_stamp_url        || null },
@@ -349,7 +353,7 @@ export default function PrintLPOPage() {
             }}>
               <div style={{ fontSize:'6pt', fontWeight:700, textTransform:'uppercase',
                 letterSpacing:'.6px', color:GREY, marginBottom:3 }}>Amount in Words</div>
-              <div style={{ fontStyle:'italic' }}>{toWords(Number(po.total))}</div>
+              <div style={{ fontStyle:'italic' }}>{toWords(grandTotal)}</div>
             </div>
 
             {/* Totals box */}
@@ -383,7 +387,7 @@ export default function PrintLPOPage() {
               <div style={{ display:'flex', justifyContent:'space-between',
                 padding:'8px 12px', background:NAVY, color:'#fff', fontSize:'10pt', fontWeight:800 }}>
                 <span>TOTAL</span>
-                <span>AED {fmt(Number(po.total))}</span>
+                <span>AED {fmt(grandTotal)}</span>
               </div>
             </div>
           </div>
