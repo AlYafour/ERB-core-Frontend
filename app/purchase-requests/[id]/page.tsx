@@ -11,6 +11,7 @@ import DropdownButton from '@/components/ui/DropdownButton';
 import { Button, PageShell } from '@/components/ui';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
+import { UNIT_OPTIONS } from '@/lib/constants/unit-options';
 import { canCreateQuotationRequest, canCreatePurchaseOrder } from '@/lib/utils/workflow-guards';
 import { useProcPermissions } from '@/lib/hooks/use-proc-permissions';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -232,7 +233,13 @@ export default function PurchaseRequestDetailPage() {
       header: t('col', 'unit'),
       align: 'center',
       cell: (item) => editingItemId === item.id
-        ? <input className="form-input" style={{ width: 100 }} value={editingForm.unit} onChange={(e) => setEditingForm(f => ({ ...f, unit: e.target.value }))} placeholder="Unit" />
+        ? <select className="form-input" style={{ width: 130 }} value={editingForm.unit} onChange={(e) => setEditingForm(f => ({ ...f, unit: e.target.value }))}>
+            {editingForm.unit && !UNIT_OPTIONS.some(o => o.value === editingForm.unit) && (
+              <option value={editingForm.unit}>{editingForm.unit.toUpperCase()}</option>
+            )}
+            <option value="">— Unit —</option>
+            {UNIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
         : <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontWeight: 600 }}>{(item.unit || item.product?.unit || '—').toUpperCase()}</span>,
     },
     {
@@ -515,7 +522,13 @@ export default function PurchaseRequestDetailPage() {
                       </div>
                       <div style={{ width: 130 }}>
                         <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('col', 'unit')}</label>
-                        <input className="form-input" style={{ width: '100%' }} value={newItem.unit} onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })} placeholder="Unit…" />
+                        <select className="form-input" style={{ width: '100%' }} value={newItem.unit} onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}>
+                          {newItem.unit && !UNIT_OPTIONS.some(o => o.value === newItem.unit) && (
+                            <option value={newItem.unit}>{newItem.unit.toUpperCase()}</option>
+                          )}
+                          <option value="">— Unit —</option>
+                          {UNIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
                       </div>
                       <div style={{ flex: 1, minWidth: 150 }}>
                         <label style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'block', marginBottom: 3 }}>{t('field', 'reason')}</label>
