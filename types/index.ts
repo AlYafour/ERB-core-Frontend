@@ -441,6 +441,19 @@ export interface PurchaseOrder {
   items: PurchaseOrderItem[];
   charges?: PurchaseOrderCharge[];
   charges_vat?: number;
+  financials?: POFinancials;
+}
+
+/** Canonical server-computed financial breakdown (single source of truth). */
+export interface POFinancials {
+  items_subtotal: number;
+  items_vat: number;
+  charges_total: number;
+  subtotal: number;
+  discount: number;
+  transport: number;
+  vat_total: number;
+  grand_total: number;
 }
 
 // Goods Receiving Types

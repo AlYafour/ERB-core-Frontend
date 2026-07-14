@@ -11,7 +11,7 @@ import RejectionReasonDialog from '@/components/features/RejectionReasonDialog';
 import { Button, PageShell } from '@/components/ui';
 import { PO_STATUS } from '@/lib/utils/status-colors';
 import { PO_LABEL } from '@/lib/constants/status-labels';
-import { poItemBreakdown } from '@/lib/utils/po-item-totals';
+import { poFinancials, poVatPercent } from '@/lib/utils/po-financials';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { useProcPermissions } from '@/lib/hooks/use-proc-permissions';
@@ -109,25 +109,17 @@ export default function PurchaseOrderDetailPage() {
   const canRequestAmend    = canUpdate && order.status === 'approved' && !order.pending_amendment;
   const canManageAmend     = canApprove && order.status === 'amendment_requested';
 
-  const { itemsSubtotal, itemsVat } = poItemBreakdown(order.items);
-  const globalDiscount       = Number(order.discount) || 0;
-  const transportationCharge = Number(order.transportation_charge) || 0;
-  const taxAmount            = Number(order.tax_amount) || 0;
+  // Single source of truth: the server-computed breakdown (order.financials).
+  // No client-side money math — poFinancials only falls back to derivation
+  // for responses from an older backend during a deploy overlap.
+  const fin                  = poFinancials(order);
+  const globalDiscount       = fin.discount;
+  const transportationCharge = fin.transport;
   const chargesVat           = Number(order.charges_vat) || 0;
-  const hasExplicitTax       = Number(order.tax_rate) > 0;
-  const transportVat         = hasExplicitTax ? 0 : Math.max(0, taxAmount - chargesVat);
-  const chargesSum           = (order.charges ?? []).reduce((s, c) => s + Number(c.total), 0);
-  const combinedSubtotal     = itemsSubtotal + chargesSum;
-  const combinedVat          = itemsVat + transportVat + chargesVat + (hasExplicitTax ? taxAmount : 0);
-  const vatPct               = hasExplicitTax
-    ? Number(order.tax_rate)
-    : itemsVat > 0 && itemsSubtotal > 0
-      ? Math.round((itemsVat / itemsSubtotal) * 100)
-      : 0;
-  // Same rule as the LPO print page: the grand total is derived from the SAME
-  // breakdown displayed above it, never from the stored order.total — so the
-  // summary can never contradict its own rows (stale-total bug class).
-  const grandTotal           = combinedSubtotal - globalDiscount + transportationCharge + combinedVat;
+  const combinedSubtotal     = fin.subtotal;
+  const combinedVat          = fin.vat_total;
+  const vatPct               = poVatPercent(order, fin);
+  const grandTotal           = fin.grand_total;
 
   const prRef = typeof order.purchase_request === 'object' ? order.purchase_request : order.purchase_request ? { id: order.purchase_request } : null;
   const pqRef = typeof order.purchase_quotation === 'object' ? order.purchase_quotation : order.purchase_quotation ? { id: order.purchase_quotation } : null;

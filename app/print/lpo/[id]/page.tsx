@@ -11,7 +11,7 @@ import { PrintControlsBar } from '@/components/print/PrintControlsBar';
 import Image from 'next/image';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
-import { poItemBreakdown } from '@/lib/utils/po-item-totals';
+import { poFinancials, poVatPercent } from '@/lib/utils/po-financials';
 import { buildLineRows } from '@/components/procurement/shared/POLineItemsTable';
 import { toWords } from '@/lib/utils/number-to-words';
 
@@ -82,25 +82,16 @@ export default function PrintLPOPage() {
   const discount   = Number(po.discount  ?? 0);
   const hasDiscount = discount > 0;
 
-  const { itemsSubtotal: itemsOnly, itemsVat: itemTaxAmount } = poItemBreakdown(po.items);
-  const transportCharge  = Number(po.transportation_charge) || 0;
+  // Single source of truth: server-computed breakdown (po.financials); the
+  // shared helper falls back to line-derivation only for old-backend responses.
+  const fin              = poFinancials(po);
+  const transportCharge  = fin.transport;
   const chargesVat       = Number(po.charges_vat) || 0;
-  const taxAmount        = Number(po.tax_amount) || 0;
-  const hasExplicitTax   = Number(po.tax_rate) > 0;
-  const transportVat     = hasExplicitTax ? 0 : Math.max(0, taxAmount - chargesVat);
   const charges          = po.charges ?? [];
-  const chargesSum       = charges.reduce((s, c) => s + Number(c.total), 0);
-  const subtotal         = itemsOnly + chargesSum;
-  const combinedVat      = itemTaxAmount + transportVat + chargesVat + (hasExplicitTax ? taxAmount : 0);
-  const vatPct           = hasExplicitTax
-    ? Number(po.tax_rate)
-    : itemTaxAmount > 0 && itemsOnly > 0
-      ? Math.round((itemTaxAmount / itemsOnly) * 100)
-      : 0;
-  // Grand total derived from the SAME line breakdown printed above it, so the
-  // document can never be internally inconsistent (e.g. a stale stored po.total
-  // that predates additional-charges recalculation).
-  const grandTotal       = subtotal - discount + transportCharge + combinedVat;
+  const subtotal         = fin.subtotal;
+  const combinedVat      = fin.vat_total;
+  const vatPct           = poVatPercent(po, fin);
+  const grandTotal       = fin.grand_total;
 
   const signatories = [
     { label: 'Prepared By', name: po.pr_created_by_name        || '', stamp: (po as any).pr_created_by_stamp_url        || null },
