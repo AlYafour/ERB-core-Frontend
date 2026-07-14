@@ -152,6 +152,18 @@ export default function RolesPage() {
     },
   });
 
+  const duplicateMutation = useMutation({
+    mutationFn: (id: number) => rolesApi.duplicate(id),
+    onSuccess: (clone) => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      toast(`Editable copy "${clone.name}" created`, 'success');
+      setSelectedRoleId(clone.id);
+    },
+    onError: (err: unknown) => {
+      toast(getApiError(err, 'Failed to duplicate role'), 'error');
+    },
+  });
+
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handlePermToggle = (permId: number, checked: boolean) => {
     if (!selectedRole || !selectedRole.is_editable) return;
@@ -354,16 +366,37 @@ export default function RolesPage() {
                         {selectedRole.parent_name && ` · Inherits from: ${selectedRole.parent_name}`}
                       </p>
                     </div>
-                    {selectedRole.is_editable && (
+                    <div style={{ display: 'flex', gap: 'var(--space-2)', flexShrink: 0 }}>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => { setDrawerMode('edit'); setDrawerOpen(true); }}
+                        onClick={() => duplicateMutation.mutate(selectedRole.id)}
+                        disabled={duplicateMutation.isPending}
                       >
-                        Edit
+                        {duplicateMutation.isPending ? 'Duplicating…' : 'Duplicate'}
                       </Button>
-                    )}
+                      {selectedRole.is_editable && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { setDrawerMode('edit'); setDrawerOpen(true); }}
+                        >
+                          Edit
+                        </Button>
+                      )}
+                    </div>
                   </div>
+                  {selectedRole.is_system && (
+                    <p style={{
+                      margin: 'var(--space-3) 0 0', padding: '8px 12px', borderRadius: 6,
+                      fontSize: '0.8125rem', color: 'var(--text-secondary)',
+                      background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)',
+                    }}>
+                      System roles are shared across all companies and are read-only.
+                      Click <strong>Duplicate</strong> to create an editable copy owned by your company,
+                      customize its permissions, then assign it to your users.
+                    </p>
+                  )}
                 </div>
 
                 {/* Right tabs */}

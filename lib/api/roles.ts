@@ -98,6 +98,11 @@ export const rolesApi = {
     await apiClient.delete(`/permissions/roles/${id}/`);
   },
 
+  duplicate: async (id: number, name?: string): Promise<Role> => {
+    const response = await apiClient.post(`/permissions/roles/${id}/duplicate/`, name ? { name } : {});
+    return response.data;
+  },
+
   assignToUser: async (
     roleId: number,
     userId: number,
