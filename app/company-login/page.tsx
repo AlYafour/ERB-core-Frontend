@@ -13,6 +13,7 @@ import { TextField, PasswordField, Button } from '@/components/ui';
 import AuthParticles from '@/components/layout/AuthParticles';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import { getApiError } from '@/lib/utils/error';
+import { getNextParam } from '@/lib/utils/next-param';
 import {
   prepareAuthenticationOptions,
   serializeAuthenticationCredential,
@@ -59,8 +60,25 @@ export default function CompanyLoginPage() {
   // True while auto-resolving company (Paths A/B/C/D) — never show step 1 during this time
   const [isInitializing, setIsInitializing] = useState(true);
 
-  const { setAuth } = useAuthStore();
+  const { setAuth, isAuthenticated } = useAuthStore();
   const router = useRouter();
+
+  // Where to land after auth: the page the user was on (middleware appends
+  // ?next=), falling back to the dashboard.
+  const postLoginPath = () => getNextParam() ?? '/dashboard';
+
+  // Session still valid client-side (e.g. the middleware cookie lapsed but
+  // the refresh token hasn't)? Go straight back — never show the form again.
+  const persistApi = (useAuthStore as unknown as { persist?: { hasHydrated: () => boolean; onFinishHydration: (cb: () => void) => () => void } }).persist;
+  const [hydrated, setHydrated] = useState(() => persistApi?.hasHydrated() ?? false);
+  useEffect(() => {
+    if (hydrated || !persistApi) return;
+    if (persistApi.hasHydrated()) { setHydrated(true); return; }
+    return persistApi.onFinishHydration(() => setHydrated(true));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (hydrated && isAuthenticated) router.replace(postLoginPath());
+  }, [hydrated, isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     isPlatformAuthenticatorAvailable().then(setPasskeySupported);
@@ -171,7 +189,7 @@ export default function CompanyLoginPage() {
       } catch { /* ignore decode errors */ }
 
       setAuth(data.user, data.tokens.access, data.tokens.refresh);
-      router.replace('/dashboard');
+      router.replace(postLoginPath());
     },
     onError: (err: unknown) => {
       setError(getApiError(err, 'Invalid username or password.'));
@@ -184,7 +202,7 @@ export default function CompanyLoginPage() {
     onSuccess: (data) => {
       setError('');
       setAuth(data.user, data.tokens.access, data.tokens.refresh);
-      router.replace('/dashboard');
+      router.replace(postLoginPath());
     },
     onError: (err: unknown) => {
       setError(getApiError(err, 'Invalid or expired code. Please try again.'));
@@ -211,7 +229,7 @@ export default function CompanyLoginPage() {
       const serialized = serializeAuthenticationCredential(credential);
       const data = await authApi.webauthn.loginComplete(serialized, challenge_token);
       setAuth(data.user, data.tokens.access, data.tokens.refresh);
-      router.replace('/dashboard');
+      router.replace(postLoginPath());
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('NotAllowedError') || msg.includes('cancelled')) {

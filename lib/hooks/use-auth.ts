@@ -5,6 +5,7 @@ import { useAuthStore } from '@/lib/store/auth-store';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
+import { getNextParam } from '@/lib/utils/next-param';
 
 // Typed accessor for Zustand persist API — undefined on the server (no localStorage)
 const authPersist = (useAuthStore as unknown as {
@@ -51,7 +52,7 @@ export function useAuth() {
     onSuccess: (data) => {
       setAuth(data.user, data.tokens.access, data.tokens.refresh);
       queryClient.setQueryData(['auth', 'me'], data.user);
-      router.push('/dashboard');
+      router.push(getNextParam() ?? '/dashboard');
     },
   });
 

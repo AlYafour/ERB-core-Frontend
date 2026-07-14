@@ -28,9 +28,13 @@ export default function middleware(request: NextRequest) {
   const token = request.cookies.get("access_token")?.value;
   const isPublic = isPublicPath(pathname);
 
-  // Unauthenticated: only public paths are allowed → land on "/company-login"
+  // Unauthenticated: only public paths are allowed → land on "/company-login".
+  // Preserve the intended destination so the login page can send the user
+  // straight back after auth instead of dumping them on the dashboard.
   if (!token && !isPublic) {
-    return NextResponse.redirect(new URL("/company-login", request.url));
+    const loginUrl = new URL("/company-login", request.url);
+    loginUrl.searchParams.set("next", pathname + request.nextUrl.search);
+    return NextResponse.redirect(loginUrl);
   }
 
   if (token) {

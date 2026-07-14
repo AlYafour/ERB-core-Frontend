@@ -11,6 +11,7 @@ import { TextField, PasswordField, Button } from '@/components/ui';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import AuthParticles from '@/components/layout/AuthParticles';
 import { getApiError } from '@/lib/utils/error';
+import { getNextParam } from '@/lib/utils/next-param';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export default function LoginPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (hydrated && isAuthenticated) router.replace('/dashboard');
+    if (hydrated && isAuthenticated) router.replace(getNextParam() ?? '/dashboard');
   }, [hydrated, isAuthenticated, router]);
 
   const [error, setError] = useState('');
@@ -38,7 +39,7 @@ export default function LoginPage() {
     onSuccess: (data) => {
       setError('');
       setAuth(data.user, data.tokens.access, data.tokens.refresh);
-      router.replace('/dashboard');
+      router.replace(getNextParam() ?? '/dashboard');
     },
     onError: (err: unknown) => {
       setError(getApiError(err, 'Invalid username or password'));

@@ -35,7 +35,12 @@ function saveTokens(access: string, refresh: string) {
   if (typeof window === 'undefined') return;
   localStorage.setItem('access_token', access);
   localStorage.setItem('refresh_token', refresh);
-  setCookie('access_token', access, 1);
+  // Cookie lifetime matches the refresh-token session (7 days), NOT the
+  // 15-minute access token: the middleware only uses it as a UX gate and
+  // already lets expired tokens through for silent client-side refresh.
+  // A 1-day cookie made hard refreshes bounce to login → dashboard after
+  // ~24h while the session was still perfectly valid.
+  setCookie('access_token', access, 7);
 }
 
 function clearTokens() {
@@ -111,7 +116,7 @@ export const useAuthStore = create<AuthState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state?.accessToken && state?.isAuthenticated) {
-          setCookie('access_token', state.accessToken, 1);
+          setCookie('access_token', state.accessToken, 7);
         }
       },
     }
