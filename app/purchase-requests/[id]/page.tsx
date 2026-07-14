@@ -151,7 +151,7 @@ export default function PurchaseRequestDetailPage() {
       setEditingItemId(null);
       toast('Item updated', 'success');
     },
-    onError: () => toast('Failed to update item', 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to update item'), 'error'),
   });
 
   const addItemMutation = useMutation({
@@ -165,7 +165,7 @@ export default function PurchaseRequestDetailPage() {
       setNewItem({ quantity: 1, unit: '', reason: '', notes: '' });
       toast('Product added', 'success');
     },
-    onError: () => toast('Failed to add product', 'error'),
+    onError: (err: unknown) => toast(getApiError(err, 'Failed to add product'), 'error'),
   });
 
   const deleteItemMutation = useMutation({
