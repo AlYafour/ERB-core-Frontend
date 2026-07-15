@@ -1,0 +1,340 @@
+'use client';
+
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import MainLayout from '@/components/layout/MainLayout';
+import { PageShell } from '@/components/ui/PageShell';
+import { Badge } from '@/components/ui';
+import { accountingApi } from '@/lib/api/accounting';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const today = () => new Date().toISOString().slice(0, 10);
+const yearStart = () => `${new Date().getFullYear()}-01-01`;
+
+const money = (v: unknown) => {
+  const n = Number(v ?? 0);
+  return (
+    <span style={{ fontVariantNumeric: 'tabular-nums', color: n < 0 ? 'var(--error, #dc2626)' : undefined }}>
+      {n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+    </span>
+  );
+};
+
+const CARD: React.CSSProperties = {
+  background: 'var(--surface-1, var(--card-bg))',
+  border: '1px solid var(--border-primary, var(--border-subtle))',
+  borderRadius: 'var(--radius-lg)',
+  padding: 18,
+  overflowX: 'auto',
+};
+
+const TH: React.CSSProperties = {
+  textAlign: 'left', padding: '8px 10px', fontSize: 'var(--text-xs)',
+  color: 'var(--text-secondary)', textTransform: 'uppercase',
+  borderBottom: '1px solid var(--border-primary, var(--border-subtle))',
+  whiteSpace: 'nowrap',
+};
+const THR: React.CSSProperties = { ...TH, textAlign: 'right' };
+const TD: React.CSSProperties = {
+  padding: '7px 10px', fontSize: 'var(--text-sm)',
+  borderBottom: '1px solid var(--border-primary, var(--border-subtle))',
+};
+const TDR: React.CSSProperties = { ...TD, textAlign: 'right' };
+const TOTAL_ROW: React.CSSProperties = { fontWeight: 700, background: 'var(--surface-2, transparent)' };
+
+const INPUT: React.CSSProperties = {
+  padding: '7px 10px', borderRadius: 'var(--radius-md)',
+  border: '1px solid var(--input-border)', background: 'var(--input-bg)',
+  color: 'var(--text-primary)', fontSize: 'var(--text-sm)',
+};
+
+type Section = {
+  category_code: string; category_name: string; category_name_ar: string;
+  accounts: { account_id: number; code: string; name: string; amount: string }[];
+  total: string;
+};
+
+function SectionTable({ title, bucket }: { title: string; bucket: { sections: Section[]; total: string } }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ fontWeight: 700, margin: '10px 0 6px' }}>{title}</div>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <tbody>
+          {bucket.sections.map((sec) => (
+            <SectionRows key={sec.category_code} sec={sec} />
+          ))}
+          <tr style={TOTAL_ROW}>
+            <td style={TD}>Total {title}</td>
+            <td style={TDR}>{money(bucket.total)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SectionRows({ sec }: { sec: Section }) {
+  return (
+    <>
+      <tr>
+        <td style={{ ...TD, fontWeight: 600 }} colSpan={2}>
+          {sec.category_name}
+          {sec.category_name_ar ? <span style={{ color: 'var(--text-secondary)', marginInlineStart: 8, fontSize: 'var(--text-xs)' }}>{sec.category_name_ar}</span> : null}
+        </td>
+      </tr>
+      {sec.accounts.map((a) => (
+        <tr key={a.account_id}>
+          <td style={{ ...TD, paddingInlineStart: 26 }}>{a.code} — {a.name}</td>
+          <td style={TDR}>{money(a.amount)}</td>
+        </tr>
+      ))}
+    </>
+  );
+}
+
+function SummaryRow({ label, value, strong }: { label: string; value: unknown; strong?: boolean }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 10px', fontWeight: strong ? 700 : 400, borderBottom: '1px solid var(--border-primary, var(--border-subtle))', fontSize: 'var(--text-sm)' }}>
+      <span>{label}</span>
+      <span>{money(value)}</span>
+    </div>
+  );
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+
+const TABS = [
+  { key: 'tb',  label: 'Trial Balance' },
+  { key: 'bs',  label: 'Balance Sheet' },
+  { key: 'pl',  label: 'Profit & Loss' },
+  { key: 'cf',  label: 'Cash Flow' },
+  { key: 'vat', label: 'VAT Return' },
+  { key: 'ap',  label: 'AP Aging' },
+  { key: 'ar',  label: 'AR Aging' },
+] as const;
+
+type TabKey = typeof TABS[number]['key'];
+
+export default function AccountingReportsPage() {
+  const [tab, setTab] = useState<TabKey>('tb');
+  const [asOf, setAsOf] = useState(today());
+  const [dateFrom, setDateFrom] = useState(yearStart());
+  const [dateTo, setDateTo] = useState(today());
+
+  const rangeTabs: TabKey[] = ['pl', 'cf', 'vat'];
+  const params = rangeTabs.includes(tab)
+    ? { date_from: dateFrom, date_to: dateTo }
+    : { as_of: asOf };
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['acc-report', tab, params],
+    queryFn: () => {
+      switch (tab) {
+        case 'tb':  return accountingApi.trialBalance({ date_to: asOf });
+        case 'bs':  return accountingApi.balanceSheet(asOf);
+        case 'pl':  return accountingApi.profitLoss(params);
+        case 'cf':  return accountingApi.cashFlow(params);
+        case 'vat': return accountingApi.vatReturn(params);
+        case 'ap':  return accountingApi.apAging({ as_of: asOf });
+        case 'ar':  return accountingApi.arAging({ as_of: asOf });
+      }
+    },
+  });
+
+  return (
+    <MainLayout>
+      <PageShell>
+        <div>
+          <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 700 }}>Financial Reports</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
+            Every figure derives from the posted ledger and reconciles with the trial balance.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {TABS.map((t) => (
+            <button key={t.key} onClick={() => setTab(t.key)} style={{
+              padding: '7px 14px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+              fontSize: 'var(--text-sm)', fontWeight: tab === t.key ? 700 : 400,
+              border: `1px solid ${tab === t.key ? 'var(--accent-primary, #b8860b)' : 'var(--border-primary, var(--border-subtle))'}`,
+              background: tab === t.key ? 'var(--surface-2, transparent)' : 'transparent',
+              color: 'var(--text-primary)',
+            }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          {rangeTabs.includes(tab) ? (
+            <>
+              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>From</label>
+              <input type="date" style={INPUT} value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>To</label>
+              <input type="date" style={INPUT} value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+            </>
+          ) : (
+            <>
+              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>As of</label>
+              <input type="date" style={INPUT} value={asOf} onChange={(e) => setAsOf(e.target.value)} />
+            </>
+          )}
+        </div>
+
+        <div style={CARD}>
+          {isLoading && <div style={{ color: 'var(--text-secondary)' }}>Loading report…</div>}
+          {!!error && <div style={{ color: 'var(--error, #dc2626)' }}>Failed to load report.</div>}
+          {!isLoading && !error && data ? <ReportBody tab={tab} data={data as any} /> : null}
+        </div>
+      </PageShell>
+    </MainLayout>
+  );
+}
+
+function ReportBody({ tab, data }: { tab: TabKey; data: any }) {
+  if (tab === 'tb') {
+    const rows = Array.isArray(data) ? data[0] : data.rows;
+    const td = Array.isArray(data) ? data[1] : data.total_debit;
+    const tc = Array.isArray(data) ? data[2] : data.total_credit;
+    return (
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr>
+            <th style={TH}>Code</th><th style={TH}>Account</th>
+            <th style={THR}>Debit</th><th style={THR}>Credit</th>
+            <th style={THR}>Balance Dr</th><th style={THR}>Balance Cr</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(rows ?? []).map((r: any) => (
+            <tr key={r.account_id}>
+              <td style={TD}>{r.code}</td>
+              <td style={TD}>{r.name}{r.name_ar ? <span style={{ color: 'var(--text-secondary)', marginInlineStart: 8, fontSize: 'var(--text-xs)' }}>{r.name_ar}</span> : null}</td>
+              <td style={TDR}>{money(r.debit)}</td>
+              <td style={TDR}>{money(r.credit)}</td>
+              <td style={TDR}>{money(r.balance_debit)}</td>
+              <td style={TDR}>{money(r.balance_credit)}</td>
+            </tr>
+          ))}
+          <tr style={TOTAL_ROW}>
+            <td style={TD} colSpan={2}>Totals</td>
+            <td style={TDR}>{money(td)}</td>
+            <td style={TDR}>{money(tc)}</td>
+            <td style={TD} colSpan={2}>
+              <Badge variant={String(td) === String(tc) ? 'success' : 'error'}>
+                {String(td) === String(tc) ? 'Balanced' : 'OUT OF BALANCE'}
+              </Badge>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    );
+  }
+
+  if (tab === 'bs') {
+    return (
+      <div>
+        <div style={{ marginBottom: 10 }}>
+          <Badge variant={data.balanced ? 'success' : 'error'}>
+            {data.balanced ? 'Balanced' : 'OUT OF BALANCE'}
+          </Badge>
+        </div>
+        <SectionTable title="Assets" bucket={data.assets} />
+        <SectionTable title="Liabilities" bucket={data.liabilities} />
+        <SectionTable title="Equity" bucket={data.equity} />
+        <SummaryRow label="Current period earnings" value={data.current_period_earnings} />
+        <SummaryRow label="Total equity" value={data.total_equity} strong />
+        <SummaryRow label="Total liabilities + equity" value={data.total_liabilities_equity} strong />
+      </div>
+    );
+  }
+
+  if (tab === 'pl') {
+    return (
+      <div>
+        <SectionTable title="Revenue" bucket={data.revenue} />
+        <SectionTable title="Cost of Sales" bucket={data.cogs} />
+        <SummaryRow label="Gross profit" value={data.gross_profit} strong />
+        <SectionTable title="Operating Expenses" bucket={data.expenses} />
+        <SummaryRow label="Operating profit" value={data.operating_profit} strong />
+        <SectionTable title="Other Income" bucket={data.other_income} />
+        <SectionTable title="Other Expenses" bucket={data.other_expense} />
+        <SummaryRow label="Net profit" value={data.net_profit} strong />
+      </div>
+    );
+  }
+
+  if (tab === 'cf') {
+    const op = data.operating;
+    return (
+      <div style={{ maxWidth: 620 }}>
+        <div style={{ fontWeight: 700, margin: '4px 0 6px' }}>Operating activities</div>
+        <SummaryRow label="Net profit" value={op.net_profit} />
+        <SummaryRow label="Depreciation" value={op.depreciation} />
+        <SummaryRow label="Change in receivables" value={op.change_in_receivables} />
+        <SummaryRow label="Change in payables" value={op.change_in_payables} />
+        <SummaryRow label="Change in inventory" value={op.change_in_inventory} />
+        <SummaryRow label="Change in retentions" value={op.change_in_retentions} />
+        <SummaryRow label="Cash from operations" value={op.total} strong />
+        <div style={{ fontWeight: 700, margin: '14px 0 6px' }}>Investing activities</div>
+        <SummaryRow label="Fixed asset movements" value={data.investing.fixed_asset_movements} />
+        <SummaryRow label="Cash from investing" value={data.investing.total} strong />
+        <div style={{ fontWeight: 700, margin: '14px 0 6px' }}>Financing activities</div>
+        <SummaryRow label="Equity movements" value={data.financing.equity_movements} />
+        <SummaryRow label="Cash from financing" value={data.financing.total} strong />
+        <div style={{ marginTop: 14 }}>
+          <SummaryRow label="Unclassified movement" value={data.unclassified} />
+          <SummaryRow label="Net change in cash" value={data.net_change_in_cash} strong />
+        </div>
+      </div>
+    );
+  }
+
+  if (tab === 'vat') {
+    return (
+      <div style={{ maxWidth: 620 }}>
+        <SummaryRow label="Output tax (on sales)" value={data.output_tax} />
+        <SummaryRow label="Recoverable input tax" value={data.recoverable_input_tax} />
+        <SummaryRow label="Net VAT payable" value={data.net_payable} strong />
+        {data.by_tax_code?.length ? (
+          <>
+            <div style={{ fontWeight: 700, margin: '14px 0 6px' }}>By tax code</div>
+            {data.by_tax_code.map((r: any) => (
+              <SummaryRow key={r.tax_code} label={`${r.tax_code} — ${r.name}`} value={r.amount} />
+            ))}
+          </>
+        ) : null}
+      </div>
+    );
+  }
+
+  // AP / AR aging
+  const rows = tab === 'ap' ? data.suppliers : data.customers;
+  const nameKey = tab === 'ap' ? 'supplier_name' : 'customer_name';
+  return (
+    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <thead>
+        <tr>
+          <th style={TH}>{tab === 'ap' ? 'Supplier' : 'Customer'}</th>
+          {data.buckets.map((b: string) => <th key={b} style={THR}>{b}</th>)}
+          <th style={THR}>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {(rows ?? []).map((r: any) => (
+          <tr key={r.supplier_id ?? r.customer_id}>
+            <td style={TD}>{r[nameKey]}</td>
+            {data.buckets.map((b: string) => <td key={b} style={TDR}>{money(r[b])}</td>)}
+            <td style={{ ...TDR, fontWeight: 700 }}>{money(r.total)}</td>
+          </tr>
+        ))}
+        <tr style={TOTAL_ROW}>
+          <td style={TD}>Totals</td>
+          {data.buckets.map((b: string) => <td key={b} style={TDR}>{money(data.totals[b])}</td>)}
+          <td style={TDR}>{money(data.totals.total)}</td>
+        </tr>
+      </tbody>
+    </table>
+  );
+}

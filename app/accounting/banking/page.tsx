@@ -1,0 +1,510 @@
+'use client';
+
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import MainLayout from '@/components/layout/MainLayout';
+import { PageShell } from '@/components/ui/PageShell';
+import { Button, Badge } from '@/components/ui';
+import { BaseModal } from '@/components/ui/base/BaseModal';
+import { toast, confirm } from '@/lib/hooks/use-toast';
+const toastOk = (m: string) => toast(m, 'success');
+const toastErr = (m: string) => toast(m, 'error');
+const toastInfo = (m: string) => toast(m, 'info');
+import { getApiError } from '@/lib/utils/error';
+import {
+  accountingApi, type BankAccount, type BankStatement, type MatchSuggestion,
+} from '@/lib/api/accounting';
+
+const fmt = (v: string | number) =>
+  `AED ${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const CARD: React.CSSProperties = {
+  background: 'var(--surface-1, var(--card-bg))',
+  border: '1px solid var(--border-primary, var(--border-subtle))',
+  borderRadius: 'var(--radius-lg)', padding: 16,
+};
+const INPUT: React.CSSProperties = {
+  width: '100%', padding: '7px 10px', borderRadius: 'var(--radius-md)',
+  border: '1px solid var(--input-border)', background: 'var(--input-bg)',
+  color: 'var(--text-primary)', fontSize: 'var(--text-sm)',
+};
+const LABEL: React.CSSProperties = {
+  fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', display: 'block', marginBottom: 4,
+};
+const TD: React.CSSProperties = {
+  padding: '6px 8px', fontSize: 'var(--text-sm)',
+  borderBottom: '1px solid var(--border-primary, var(--border-subtle))',
+};
+
+const KIND_LABEL: Record<string, string> = {
+  bank: 'Bank', cash: 'Cash box', petty_cash: 'Petty cash',
+};
+
+export default function BankingPage() {
+  const queryClient = useQueryClient();
+  const [showNewBox, setShowNewBox] = useState(false);
+  const [transferFrom, setTransferFrom] = useState<BankAccount | null>(null);
+  const [showImport, setShowImport] = useState(false);
+  const [openStatement, setOpenStatement] = useState<string | null>(null);
+
+  const { data: boxesData } = useQuery({
+    queryKey: ['acc-bank-accounts'],
+    queryFn: () => accountingApi.listBankAccounts(),
+  });
+  const boxes = boxesData?.results ?? [];
+
+  const { data: statementsData } = useQuery({
+    queryKey: ['acc-statements'],
+    queryFn: () => accountingApi.listStatements(),
+  });
+  const statements = statementsData?.results ?? [];
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['acc-bank-accounts'] });
+    queryClient.invalidateQueries({ queryKey: ['acc-statements'] });
+  };
+
+  return (
+    <MainLayout>
+      <PageShell>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+          <div>
+            <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 700 }}>Banking</h1>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
+              Bank accounts, cash boxes, transfers and statement reconciliation.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button variant="secondary" onClick={() => setShowImport(true)}>Import statement</Button>
+            <Button onClick={() => setShowNewBox(true)}>+ New account / box</Button>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+          {boxes.map((b) => (
+            <div key={b.id} style={CARD}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontWeight: 700 }}>{b.name}</div>
+                <Badge variant={b.kind === 'bank' ? 'info' : 'default'}>{KIND_LABEL[b.kind]}</Badge>
+              </div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {b.bank_name ? <span>{b.bank_name}</span> : null}
+                {b.iban ? <span dir="ltr">{b.iban}</span> : null}
+                <span>Ledger: {b.ledger_account_code} — {b.ledger_account_name}</span>
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <Button variant="secondary" size="sm" onClick={() => setTransferFrom(b)}>Transfer from here</Button>
+              </div>
+            </div>
+          ))}
+          {!boxes.length ? (
+            <div style={{ ...CARD, color: 'var(--text-secondary)' }}>
+              No bank accounts or cash boxes yet — create your first one to start
+              paying, receiving and reconciling.
+            </div>
+          ) : null}
+        </div>
+
+        <div style={CARD}>
+          <div style={{ fontWeight: 700, marginBottom: 10 }}>Statements</div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  {['Imported', 'Account', 'Reference', 'Period', 'Unmatched', 'Status', ''].map((h) => (
+                    <th key={h} style={{ ...TD, textAlign: 'left', color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', textTransform: 'uppercase' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {statements.map((s) => (
+                  <tr key={s.id}>
+                    <td style={TD}>{new Date(s.created_at).toLocaleDateString()}</td>
+                    <td style={TD}>{s.bank_account_name}</td>
+                    <td style={TD}>{s.reference || '—'}</td>
+                    <td style={TD}>{s.period_start} → {s.period_end}</td>
+                    <td style={TD}>
+                      <Badge variant={s.unmatched_count ? 'warning' : 'success'}>{s.unmatched_count ?? 0}</Badge>
+                    </td>
+                    <td style={TD}>
+                      <Badge variant={s.status === 'reconciled' ? 'success' : 'default'}>{s.status}</Badge>
+                    </td>
+                    <td style={TD}>
+                      <Button variant="secondary" size="sm" onClick={() => setOpenStatement(s.id)}>Reconcile</Button>
+                    </td>
+                  </tr>
+                ))}
+                {!statements.length ? (
+                  <tr><td style={{ ...TD, color: 'var(--text-secondary)' }} colSpan={7}>No statements imported yet.</td></tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {showNewBox ? <NewBoxModal onClose={() => { setShowNewBox(false); invalidate(); }} /> : null}
+        {transferFrom ? (
+          <TransferModal source={transferFrom} boxes={boxes}
+                         onClose={() => { setTransferFrom(null); invalidate(); }} />
+        ) : null}
+        {showImport ? (
+          <ImportModal boxes={boxes} onClose={() => { setShowImport(false); invalidate(); }} />
+        ) : null}
+        {openStatement ? (
+          <ReconcileModal statementId={openStatement} onClose={() => { setOpenStatement(null); invalidate(); }} />
+        ) : null}
+      </PageShell>
+    </MainLayout>
+  );
+}
+
+function NewBoxModal({ onClose }: { onClose: () => void }) {
+  const [f, setF] = useState({
+    kind: 'bank', name: '', name_ar: '', bank_name: '',
+    account_number: '', iban: '', currency: 'AED', ledger_account: '',
+  });
+  const { data: accountsData } = useQuery({
+    queryKey: ['acc-asset-accounts'],
+    queryFn: () => accountingApi.listAccounts({ nature: 'asset', is_postable: true, is_active: true, page_size: 500 }),
+  });
+  const accounts = accountsData?.results ?? [];
+
+  const create = useMutation({
+    mutationFn: () => accountingApi.createBankAccount({
+      ...f, ledger_account: Number(f.ledger_account),
+    } as never),
+    onSuccess: () => { toastOk('Account created.'); onClose(); },
+    onError: (e) => toastErr(getApiError(e)),
+  });
+
+  return (
+    <BaseModal isOpen onClose={onClose} title="New bank account / cash box">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10 }}>
+          <div>
+            <label style={LABEL}>Kind</label>
+            <select style={INPUT} value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value })}>
+              <option value="bank">Bank account</option>
+              <option value="cash">Cash box</option>
+              <option value="petty_cash">Petty cash box</option>
+            </select>
+          </div>
+          <div>
+            <label style={LABEL}>Name</label>
+            <input style={INPUT} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+          </div>
+        </div>
+        <div>
+          <label style={LABEL}>Arabic name</label>
+          <input style={INPUT} dir="rtl" value={f.name_ar} onChange={(e) => setF({ ...f, name_ar: e.target.value })} />
+        </div>
+        {f.kind === 'bank' ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+            <div>
+              <label style={LABEL}>Bank name</label>
+              <input style={INPUT} value={f.bank_name} onChange={(e) => setF({ ...f, bank_name: e.target.value })} />
+            </div>
+            <div>
+              <label style={LABEL}>Account no.</label>
+              <input style={INPUT} value={f.account_number} onChange={(e) => setF({ ...f, account_number: e.target.value })} />
+            </div>
+            <div>
+              <label style={LABEL}>IBAN</label>
+              <input style={INPUT} value={f.iban} onChange={(e) => setF({ ...f, iban: e.target.value })} />
+            </div>
+          </div>
+        ) : null}
+        <div>
+          <label style={LABEL}>Ledger account (asset, postable)</label>
+          <select style={INPUT} value={f.ledger_account} onChange={(e) => setF({ ...f, ledger_account: e.target.value })}>
+            <option value="">Select…</option>
+            {accounts.map((a) => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
+          </select>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button disabled={create.isPending} onClick={() => {
+            if (!f.name || !f.ledger_account) { toastErr('Name and ledger account are required.'); return; }
+            create.mutate();
+          }}>
+            {create.isPending ? 'Saving…' : 'Create'}
+          </Button>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
+function TransferModal({ source, boxes, onClose }: {
+  source: BankAccount; boxes: BankAccount[]; onClose: () => void;
+}) {
+  const [f, setF] = useState({
+    destination: '', amount: '',
+    transfer_date: new Date().toISOString().slice(0, 10),
+    reference: '', memo: '',
+  });
+  const run = useMutation({
+    mutationFn: () => accountingApi.transfer(source.id, f),
+    onSuccess: (r: { journal_number?: string }) => { toastOk(`Transfer posted — journal ${r.journal_number ?? ''}.`); onClose(); },
+    onError: (e) => toastErr(getApiError(e)),
+  });
+  const targets = boxes.filter((b) => b.id !== source.id && b.is_active);
+  return (
+    <BaseModal isOpen onClose={onClose} title={`Transfer from ${source.name}`}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div>
+          <label style={LABEL}>To</label>
+          <select style={INPUT} value={f.destination} onChange={(e) => setF({ ...f, destination: e.target.value })}>
+            <option value="">Select…</option>
+            {targets.map((b) => <option key={b.id} value={b.id}>{b.name} ({KIND_LABEL[b.kind]})</option>)}
+          </select>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div>
+            <label style={LABEL}>Amount</label>
+            <input type="number" min="0" step="0.01" style={INPUT} value={f.amount}
+                   onChange={(e) => setF({ ...f, amount: e.target.value })} />
+          </div>
+          <div>
+            <label style={LABEL}>Date</label>
+            <input type="date" style={INPUT} value={f.transfer_date}
+                   onChange={(e) => setF({ ...f, transfer_date: e.target.value })} />
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div>
+            <label style={LABEL}>Reference</label>
+            <input style={INPUT} value={f.reference} onChange={(e) => setF({ ...f, reference: e.target.value })} />
+          </div>
+          <div>
+            <label style={LABEL}>Memo</label>
+            <input style={INPUT} value={f.memo} onChange={(e) => setF({ ...f, memo: e.target.value })} />
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button disabled={run.isPending} onClick={() => {
+            if (!f.destination || Number(f.amount) <= 0) { toastErr('Destination and a positive amount are required.'); return; }
+            run.mutate();
+          }}>
+            {run.isPending ? 'Posting…' : 'Transfer'}
+          </Button>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
+function ImportModal({ boxes, onClose }: { boxes: BankAccount[]; onClose: () => void }) {
+  const [f, setF] = useState({ bank_account: '', format: 'csv' as 'csv' | 'ofx', content: '', filename: '', reference: '' });
+  const run = useMutation({
+    mutationFn: () => accountingApi.importStatement(f),
+    onSuccess: (r) => { toastOk(`Imported ${r.imported} line(s), skipped ${r.skipped}.`); onClose(); },
+    onError: (e) => toastErr(getApiError(e)),
+  });
+
+  const onFile = (file: File | undefined) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setF((prev) => ({
+      ...prev,
+      content: String(reader.result ?? ''),
+      filename: file.name,
+      format: file.name.toLowerCase().endsWith('.ofx') || file.name.toLowerCase().endsWith('.qfx') ? 'ofx' : 'csv',
+    }));
+    reader.readAsText(file);
+  };
+
+  return (
+    <BaseModal isOpen onClose={onClose} title="Import bank statement">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
+          <div>
+            <label style={LABEL}>Bank account</label>
+            <select style={INPUT} value={f.bank_account} onChange={(e) => setF({ ...f, bank_account: e.target.value })}>
+              <option value="">Select…</option>
+              {boxes.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={LABEL}>Format</label>
+            <select style={INPUT} value={f.format} onChange={(e) => setF({ ...f, format: e.target.value as 'csv' | 'ofx' })}>
+              <option value="csv">CSV</option>
+              <option value="ofx">OFX / QFX</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label style={LABEL}>File</label>
+          <input type="file" accept=".csv,.ofx,.qfx,.txt" style={INPUT}
+                 onChange={(e) => onFile(e.target.files?.[0])} />
+        </div>
+        <div>
+          <label style={LABEL}>…or paste content</label>
+          <textarea style={{ ...INPUT, minHeight: 120, fontFamily: 'monospace' }} value={f.content}
+                    onChange={(e) => setF({ ...f, content: e.target.value })}
+                    placeholder={'Date,Description,Reference,Amount\n2026-07-01,Client receipt,TRF-1,5000.00'} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button disabled={run.isPending} onClick={() => {
+            if (!f.bank_account || !f.content.trim()) { toastErr('Bank account and file content are required.'); return; }
+            run.mutate();
+          }}>
+            {run.isPending ? 'Importing…' : 'Import'}
+          </Button>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
+function ReconcileModal({ statementId, onClose }: { statementId: string; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [reopenReason, setReopenReason] = useState('');
+
+  const { data: stmt } = useQuery({
+    queryKey: ['acc-statement', statementId],
+    queryFn: async () => {
+      const page = await accountingApi.listStatements({ page_size: 100 });
+      return page.results.find((s) => s.id === statementId) ?? null;
+    },
+  });
+  const { data: suggestionsData, refetch: refetchSuggestions } = useQuery({
+    queryKey: ['acc-suggest', statementId],
+    queryFn: () => accountingApi.suggestMatches(statementId),
+    enabled: false,
+  });
+  const suggestions = suggestionsData?.suggestions ?? [];
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['acc-statement', statementId] });
+    queryClient.invalidateQueries({ queryKey: ['acc-statements'] });
+  };
+
+  const act = {
+    match: useMutation({
+      mutationFn: (s: MatchSuggestion) => accountingApi.matchLine(statementId, s.line_id, s.journal_line_id, s.confidence),
+      onSuccess: () => { refresh(); refetchSuggestions(); },
+      onError: (e) => toastErr(getApiError(e)),
+    }),
+    unmatch: useMutation({
+      mutationFn: (lineId: number) => accountingApi.unmatchLine(statementId, lineId),
+      onSuccess: refresh,
+      onError: (e) => toastErr(getApiError(e)),
+    }),
+    reconcile: useMutation({
+      mutationFn: () => accountingApi.reconcileStatement(statementId),
+      onSuccess: () => { toastOk('Statement reconciled.'); refresh(); },
+      onError: (e) => toastErr(getApiError(e)),
+    }),
+    reopen: useMutation({
+      mutationFn: () => accountingApi.reopenStatement(statementId, reopenReason.trim()),
+      onSuccess: () => { toastOk('Statement reopened.'); refresh(); },
+      onError: (e) => toastErr(getApiError(e)),
+    }),
+  };
+
+  if (!stmt) {
+    return <BaseModal isOpen onClose={onClose} title="Reconciliation"><div>Loading…</div></BaseModal>;
+  }
+  const unmatched = stmt.lines.filter((l) => l.status === 'unmatched').length;
+
+  return (
+    <BaseModal isOpen onClose={onClose} title={`Reconcile — ${stmt.bank_account_name} (${stmt.reference || stmt.id.slice(0, 8)})`}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '70vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <Badge variant={stmt.status === 'reconciled' ? 'success' : 'default'}>{stmt.status}</Badge>
+          <Badge variant={unmatched ? 'warning' : 'success'}>{unmatched} unmatched</Badge>
+          {stmt.status === 'open' ? (
+            <>
+              <Button variant="secondary" size="sm" onClick={() => refetchSuggestions()}>Suggest matches</Button>
+              <Button size="sm" disabled={unmatched > 0 || act.reconcile.isPending}
+                      onClick={async () => {
+                        if (await confirm('Reconcile this statement? It becomes permanent history.')) act.reconcile.mutate();
+                      }}>
+                Reconcile
+              </Button>
+            </>
+          ) : null}
+        </div>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                {['#', 'Date', 'Description', 'Ref', 'Amount', 'Status', 'Journal', ''].map((h) => (
+                  <th key={h} style={{ ...TD, textAlign: 'left', color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', textTransform: 'uppercase' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {stmt.lines.map((l) => {
+                const lineSuggestions = suggestions.filter((s) => s.line_id === l.id);
+                return (
+                  <LineRows key={l.id} line={l} suggestions={lineSuggestions}
+                            reconciled={stmt.status === 'reconciled'}
+                            onAccept={(s) => act.match.mutate(s)}
+                            onUnmatch={() => act.unmatch.mutate(l.id)} />
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {stmt.status === 'reconciled' ? (
+          <div>
+            <label style={LABEL}>Reopen (requires a reason)</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input style={INPUT} value={reopenReason} onChange={(e) => setReopenReason(e.target.value)} />
+              <Button variant="secondary" disabled={!reopenReason.trim()} onClick={() => act.reopen.mutate()}>Reopen</Button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </BaseModal>
+  );
+}
+
+function LineRows({ line, suggestions, reconciled, onAccept, onUnmatch }: {
+  line: BankStatement['lines'][number];
+  suggestions: MatchSuggestion[];
+  reconciled: boolean;
+  onAccept: (s: MatchSuggestion) => void;
+  onUnmatch: () => void;
+}) {
+  const negative = Number(line.amount) < 0;
+  return (
+    <>
+      <tr>
+        <td style={TD}>{line.line_no}</td>
+        <td style={TD}>{line.txn_date}</td>
+        <td style={TD}>{line.description || '—'}</td>
+        <td style={TD}>{line.reference || '—'}</td>
+        <td style={{ ...TD, fontVariantNumeric: 'tabular-nums', color: negative ? 'var(--error, #dc2626)' : 'var(--success, #16a34a)' }}>
+          {fmt(line.amount)}
+        </td>
+        <td style={TD}>
+          <Badge variant={line.status === 'matched' ? 'success' : 'warning'}>{line.status}</Badge>
+        </td>
+        <td style={TD}>{line.journal_number ?? '—'}</td>
+        <td style={TD}>
+          {line.status === 'matched' && !reconciled ? (
+            <Button variant="secondary" size="sm" onClick={onUnmatch}>Unmatch</Button>
+          ) : null}
+        </td>
+      </tr>
+      {suggestions.map((s) => (
+        <tr key={s.journal_line_id} style={{ background: 'var(--surface-2, transparent)' }}>
+          <td style={TD} />
+          <td style={TD} colSpan={5}>
+            ↳ {s.journal_number} · {s.posting_date} · {s.journal_memo}
+            <Badge variant={s.confidence === 'high' ? 'success' : 'info'}>{s.confidence}</Badge>
+          </td>
+          <td style={TD} colSpan={2}>
+            <Button size="sm" onClick={() => onAccept(s)}>Accept match</Button>
+          </td>
+        </tr>
+      ))}
+    </>
+  );
+}

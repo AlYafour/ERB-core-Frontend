@@ -462,6 +462,23 @@ export default function Sidebar() {
                       {...collapsibleProps}
                     />
                   )}
+                  {(isAdmin || hasPermission('accounting.financial_report.view') || hasPermission('accounting.journal_entry.view')) && (isAdmin || showModule('accounting')) && (
+                    <CollapsibleMenu
+                      title={t('nav', 'accounting')}
+                      icon={<CurrencyIcon className="w-4 h-4" />}
+                      items={[
+                        { name: t('nav', 'accountingDashboard'), href: '/accounting'          },
+                        { name: t('nav', 'accountingJournal'),   href: '/accounting/journal'  },
+                        { name: t('nav', 'accountingPayments'),  href: '/accounting/payments' },
+                        { name: t('nav', 'accountingBanking'),   href: '/accounting/banking'  },
+                        { name: t('nav', 'accountingReports'),   href: '/accounting/reports'  },
+                        { name: t('nav', 'accountingCoA'),       href: '/accounting/accounts' },
+                        { name: t('nav', 'accountingSettings'),  href: '/accounting/settings' },
+                      ]}
+                      defaultOpen={pathname.startsWith('/accounting')}
+                      {...collapsibleProps}
+                    />
+                  )}
                   {(isAdmin || hasPermission('subcontractors.subcontractor.view')) && (isAdmin || showModule('subcontractors')) && (
                     <CollapsibleMenu
                       title={t('nav', 'subcontractors')}
