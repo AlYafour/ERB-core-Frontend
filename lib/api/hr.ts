@@ -126,7 +126,11 @@ export const hrLocationsApi = {
 
 export const hrEmployeesApi = {
   getAll: async (params?: { page?: number; search?: string; department?: number; position?: number; is_active?: boolean; employment_type?: string; user?: number; is_manager?: boolean; page_size?: number }): Promise<PaginatedResponse<HREmployee>> => {
-    const response = await apiClient.get('/hr/employees/', { params });
+    // Default to the full roster: five screens (employees list, approval
+    // chains, salary history, EOS, groups) filter client-side over this
+    // result — DRF's PAGE_SIZE=20 silently hid every employee past page 1
+    // ("employee signs in but isn't in the list" bug). Explicit params win.
+    const response = await apiClient.get('/hr/employees/', { params: { page_size: 1000, ...params } });
     return toPage(response.data);
   },
   getById: async (id: number): Promise<HREmployee> => {
