@@ -1,5 +1,7 @@
 'use client';
 
+import { usePersistentState } from '@/lib/hooks/use-persistent-state';
+
 import { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -74,8 +76,8 @@ const getNotificationLink = (notification: Notification): string | null => {
 };
 
 export default function NotificationsPage() {
-  const [page, setPage] = useState(1);
-  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [page, setPage] = usePersistentState('page', 1);
+  const [filter, setFilter] = usePersistentState<'all' | 'unread'>('filter', 'all');
   const queryClient = useQueryClient();
 
   // Real-time WebSocket notifications

@@ -1,5 +1,7 @@
 'use client';
 
+import { usePersistentState } from '@/lib/hooks/use-persistent-state';
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { tenantApi } from '@/lib/api/tenants';
@@ -46,8 +48,8 @@ function ActionBadge({ action }: { action: string }) {
 }
 
 export default function AuditLogsPage() {
-  const [page, setPage] = useState(1);
-  const [action, setAction] = useState('');
+  const [page, setPage] = usePersistentState('page', 1);
+  const [action, setAction] = usePersistentState('action', '');
 
   const { data, isLoading } = useQuery({
     queryKey: ['super', 'audit-logs', page, action],

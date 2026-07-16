@@ -1,5 +1,7 @@
 ﻿'use client';
 
+import { usePersistentState } from '@/lib/hooks/use-persistent-state';
+
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -354,8 +356,8 @@ export default function LeaveEncashmentsPage() {
   const [showNew, setShowNew] = useState(false);
 
   // Filters
-  const [filterStatus,    setFilterStatus]    = useState('');
-  const [filterLeaveType, setFilterLeaveType] = useState('');
+  const [filterStatus,    setFilterStatus]    = usePersistentState('status', '');
+  const [filterLeaveType, setFilterLeaveType] = usePersistentState('leave_type', '');
 
   const { data, isLoading } = useQuery({
     queryKey: ['leave-encashments', filterStatus, filterLeaveType],

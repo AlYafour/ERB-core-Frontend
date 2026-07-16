@@ -1,5 +1,7 @@
 'use client';
 
+import { usePersistentState } from '@/lib/hooks/use-persistent-state';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -34,7 +36,7 @@ export default function ReportDetailPage({ params }: PageProps) {
 
   const [result, setResult]     = useState<ReportResult | null>(null);
   const [loading, setLoading]   = useState(false);
-  const [page, setPage]         = useState(1);
+  const [page, setPage]         = usePersistentState('page', 1);
   const pageSize                = 50;
 
   const { data: definition, isLoading: defLoading } = useQuery({

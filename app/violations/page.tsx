@@ -1,5 +1,7 @@
 'use client';
 
+import { usePersistentState } from '@/lib/hooks/use-persistent-state';
+
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -263,9 +265,9 @@ export default function ViolationsPage() {
   const { user } = useAuth();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const queryClient = useQueryClient();
-  const [page, setPage]                 = useState(1);
-  const [search, setSearch]             = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [page, setPage]                 = usePersistentState('page', 1);
+  const [search, setSearch]             = usePersistentState('search', '');
+  const [statusFilter, setStatusFilter] = usePersistentState('status', '');
   const [selectedId, setSelectedId]     = useState<number | null>(null);
   const [testOpen, setTestOpen]         = useState(false);
   const [testMsg, setTestMsg]           = useState('');
