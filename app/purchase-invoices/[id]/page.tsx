@@ -144,6 +144,18 @@ export default function PurchaseInvoiceDetailPage() {
                     </Link>
                   } />
                 )}
+                {typeof invoice.purchase_order === 'object' && (invoice.purchase_order as any)?.cost_code ? (
+                  <ProcField label="Cost Code" value={
+                    <span>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>
+                        {(invoice.purchase_order as any).cost_code.excel_code}
+                      </span>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', marginInlineStart: 6 }}>
+                        {String((invoice.purchase_order as any).cost_code.description || '').slice(0, 50)}
+                      </span>
+                    </span>
+                  } />
+                ) : null}
                 {invoice.notes && <ProcField label="Notes" value={invoice.notes} />}
               </div>
               {invoice.rejection_reason && (
