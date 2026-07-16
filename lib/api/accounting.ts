@@ -258,7 +258,8 @@ export interface DashboardData {
 
 // ── API ───────────────────────────────────────────────────────────────────────
 
-const BASE = '/api/accounting';
+// apiClient baseURL already ends with /api — do NOT repeat it here
+const BASE = '/accounting';
 
 export const accountingApi = {
   // Setup / settings
