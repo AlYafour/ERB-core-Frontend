@@ -7,6 +7,7 @@ import { PageShell } from '@/components/ui/PageShell';
 import { Badge } from '@/components/ui';
 import { accountingApi } from '@/lib/api/accounting';
 import { suppliersApi } from '@/lib/api/suppliers';
+import { purchaseInvoicesApi } from '@/lib/api/purchase-invoices';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -111,12 +112,106 @@ const TABS = [
   { key: 'pl',  label: 'Profit & Loss' },
   { key: 'cf',  label: 'Cash Flow' },
   { key: 'vat', label: 'VAT Return' },
+  { key: 'payables', label: 'Payables — Invoices' },
   { key: 'ap',  label: 'AP Aging' },
   { key: 'supplier', label: 'Supplier Statement' },
   { key: 'ar',  label: 'AR Aging' },
 ] as const;
 
 type TabKey = typeof TABS[number]['key'];
+
+function PayablesTab() {
+  const [paidFilter, setPaidFilter] = useState<'all' | 'unpaid' | 'partial' | 'paid'>('unpaid');
+  const { data, isLoading } = useQuery({
+    queryKey: ['acc-payables-invoices'],
+    queryFn: () => purchaseInvoicesApi.getAll({ page_size: 500 } as any),
+  });
+  const all: any[] = (data as any)?.results ?? (Array.isArray(data) ? data : []);
+  // money view: bills that entered the payable world (approved or paid)
+  const bills = all.filter((i: any) => ['approved', 'paid'].includes(i.status));
+
+  const rows = bills.map((i: any) => {
+    const total = Number(i.total || 0);
+    const paid = Number(i.paid_amount || 0);
+    return { ...i, _total: total, _paid: paid, _due: total - paid,
+             _supplier: typeof i.purchase_order === 'object' ? (i.purchase_order?.supplier?.name ?? '—') : '—',
+             _po: typeof i.purchase_order === 'object' ? (i.purchase_order?.order_number ?? '') : '' };
+  });
+  const filtered = rows.filter((r: any) =>
+    paidFilter === 'all' ? true
+    : paidFilter === 'paid' ? r._due <= 0
+    : paidFilter === 'partial' ? (r._paid > 0 && r._due > 0)
+    : r._paid === 0 && r._due > 0);
+
+  const sum = (k: '_total' | '_paid' | '_due') => rows.reduce((s: number, r: any) => s + r[k], 0);
+  const CARD_S: React.CSSProperties = {
+    flex: 1, minWidth: 160, padding: '12px 16px',
+    border: '1px solid var(--border-primary, var(--border-subtle))',
+    borderRadius: 'var(--radius-md)',
+  };
+  const FILTERS: ['all' | 'unpaid' | 'partial' | 'paid', string][] = [
+    ['unpaid', 'Unpaid'], ['partial', 'Partially paid'], ['paid', 'Fully paid'], ['all', 'All'],
+  ];
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+        <div style={CARD_S}>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total billed</div>
+          <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{money(sum('_total'))}</div>
+        </div>
+        <div style={CARD_S}>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Paid</div>
+          <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--success, #16a34a)' }}>{money(sum('_paid'))}</div>
+        </div>
+        <div style={CARD_S}>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Outstanding (we owe)</div>
+          <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--error, #dc2626)' }}>{money(sum('_due'))}</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+        {FILTERS.map(([key, label]) => (
+          <button key={key} onClick={() => setPaidFilter(key)} style={{
+            padding: '5px 12px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+            fontSize: 'var(--text-xs)', fontWeight: paidFilter === key ? 700 : 400,
+            border: `1px solid ${paidFilter === key ? 'var(--accent-primary, #b8860b)' : 'var(--border-primary, var(--border-subtle))'}`,
+            background: 'transparent', color: 'var(--text-primary)',
+          }}>{label} ({key === 'all' ? rows.length : rows.filter((r: any) =>
+              key === 'paid' ? r._due <= 0 : key === 'partial' ? (r._paid > 0 && r._due > 0) : r._paid === 0 && r._due > 0).length})</button>
+        ))}
+      </div>
+
+      {isLoading ? <div style={{ color: 'var(--text-secondary)' }}>Loading…</div> : (
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>{['Invoice #', 'Supplier', 'LPO', 'Date', 'Total', 'Paid', 'Outstanding', 'Status'].map(h =>
+              <th key={h} style={{ ...TH, textAlign: ['Total','Paid','Outstanding'].includes(h) ? 'right' : 'left' }}>{h}</th>)}</tr>
+          </thead>
+          <tbody>
+            {filtered.map((r: any) => (
+              <tr key={r.id}>
+                <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 600 }}>{r.invoice_number}</td>
+                <td style={TD}>{String(r._supplier).slice(0, 30)}</td>
+                <td style={{ ...TD, fontFamily: 'monospace' }}>{r._po}</td>
+                <td style={TD}>{r.invoice_date}</td>
+                <td style={TDR}>{money(r._total)}</td>
+                <td style={{ ...TDR, color: r._paid > 0 ? 'var(--success, #16a34a)' : undefined }}>{money(r._paid)}</td>
+                <td style={{ ...TDR, fontWeight: 700 }}>{money(r._due)}</td>
+                <td style={TD}><Badge variant={r._due <= 0 ? 'success' : r._paid > 0 ? 'warning' : 'error'}>
+                  {r._due <= 0 ? 'Paid' : r._paid > 0 ? 'Partial' : 'Unpaid'}</Badge></td>
+              </tr>
+            ))}
+            {!filtered.length ? <tr><td style={{ ...TD, color: 'var(--text-secondary)' }} colSpan={8}>No invoices in this filter.</td></tr> : null}
+          </tbody>
+        </table>
+      )}
+      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 8 }}>
+        Money view: approved & paid supplier bills. Pending-approval invoices appear here once approved.
+      </p>
+    </div>
+  );
+}
 
 function SupplierStatementTab({ dateFrom, dateTo }: { dateFrom: string; dateTo: string }) {
   const [supplierId, setSupplierId] = useState('');
@@ -175,7 +270,7 @@ export default function AccountingReportsPage() {
   const [dateFrom, setDateFrom] = useState(yearStart());
   const [dateTo, setDateTo] = useState(today());
 
-  const rangeTabs: TabKey[] = ['pl', 'cf', 'vat', 'supplier'];
+  const rangeTabs: TabKey[] = ['pl', 'cf', 'vat', 'supplier', 'payables'];
   const params = rangeTabs.includes(tab)
     ? { date_from: dateFrom, date_to: dateTo }
     : { as_of: asOf };
@@ -183,7 +278,7 @@ export default function AccountingReportsPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['acc-report', tab, params],
     queryFn: () => {
-      if (tab === 'supplier') return null;
+      if (tab === 'supplier' || tab === 'payables') return null;
       switch (tab) {
         case 'tb':  return accountingApi.trialBalance({ date_to: asOf });
         case 'bs':  return accountingApi.balanceSheet(asOf);
@@ -241,6 +336,8 @@ export default function AccountingReportsPage() {
           {!!error && <div style={{ color: 'var(--error, #dc2626)' }}>Failed to load report.</div>}
           {tab === 'supplier'
             ? <SupplierStatementTab dateFrom={dateFrom} dateTo={dateTo} />
+            : tab === 'payables'
+            ? <PayablesTab />
             : (!isLoading && !error && data ? <ReportBody tab={tab} data={data as any} /> : null)}
         </div>
       </PageShell>
