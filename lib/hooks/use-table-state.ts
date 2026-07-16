@@ -189,8 +189,18 @@ export function useTableState(options: UseTableStateOptions = {}) {
     });
   }, []);
 
+  /** Add this page's rows to the selection (cross-page accumulate). */
   const selectPage = useCallback((ids: number[]) => {
-    setSelectedItems(new Set(ids));
+    setSelectedItems(prev => new Set([...prev, ...ids]));
+  }, []);
+
+  /** Remove this page's rows from the selection. */
+  const deselectPage = useCallback((ids: number[]) => {
+    setSelectedItems(prev => {
+      const next = new Set(prev);
+      ids.forEach(id => next.delete(id));
+      return next;
+    });
   }, []);
 
   const clearSelection = useCallback(() => setSelectedItems(new Set()), []);
@@ -219,6 +229,7 @@ export function useTableState(options: UseTableStateOptions = {}) {
     handleRemoveFilter,
     toggleSelect,
     selectPage,
+    deselectPage,
     clearSelection,
     isAllPageSelected,
     isSomePageSelected,

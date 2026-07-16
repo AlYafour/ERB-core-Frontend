@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { formatPrice } from '@/lib/utils/format';
 import { toast } from '@/lib/hooks/use-toast';
 import { confirm } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
@@ -44,6 +45,7 @@ export default function PurchaseInvoicesPage() {
   const isAdmin   = isTenantAdmin || isPlatformAdmin;
   const canCreate = isAdmin || (hasPermission('purchase_invoice', 'create') ?? false);
   const canDelete = isAdmin || (hasPermission('purchase_invoice', 'delete') ?? false);
+  const canApprove = isAdmin || (hasPermission('purchase_invoice', 'approve') ?? false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['purchase-invoices', page, search, filters],
@@ -70,6 +72,28 @@ export default function PurchaseInvoicesPage() {
   });
 
   const handleDelete     = useCallback(async (id: number) => { if (await confirm('Delete this invoice?')) deleteMutation.mutate(id); }, [deleteMutation.mutate]);
+  const bulkApproveMutation = useMutation({
+    mutationFn: (payload: { ids?: number[]; all_pending?: boolean }) =>
+      purchaseInvoicesApi.bulkApprove(payload),
+    onSuccess: (r) => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-count'] });
+      toast(`${r.approved} invoice(s) approved${r.skipped ? ` — ${r.skipped} skipped` : ''}`, 'success');
+      tableState.clearSelection();
+    },
+    onError: (err: unknown) => toast(getApiError(err, 'Bulk approve failed'), 'error'),
+  });
+  const handleBulkApprove = async () => {
+    if (selectedItems.size && await confirm(
+      `Approve ${selectedItems.size} selected invoice(s)? Draft/pending ones will be approved; others are skipped.`)) {
+      bulkApproveMutation.mutate({ ids: Array.from(selectedItems) });
+    }
+  };
+  const handleApproveAllPending = async () => {
+    if (await confirm('Approve ALL pending invoices? Their accounting entries will be prepared as drafts for the accountant.')) {
+      bulkApproveMutation.mutate({ all_pending: true });
+    }
+  };
   const handleBulkDelete = async () => { if (selectedItems.size && await confirm(`Delete ${selectedItems.size} invoice(s)?`)) bulkDeleteMutation.mutate(Array.from(selectedItems)); };
 
   const invoices   = Array.isArray(data?.results) ? data!.results : [];
@@ -115,6 +139,11 @@ export default function PurchaseInvoicesPage() {
       description="Manage supplier invoices and payment tracking."
       totalCount={totalCount}
       pendingCount={pending.invoice > 0 ? pending.invoice : undefined}
+      headerExtra={canApprove ? (
+        <Button variant="secondary" onClick={handleApproveAllPending} isLoading={bulkApproveMutation.isPending}>
+          ✓ Approve all pending
+        </Button>
+      ) : undefined}
       createAction={canCreate ? <Link href="/purchase-invoices/new"><Button variant="primary">Create Invoice</Button></Link> : undefined}
       statusItems={[
         { value: '',          label: 'All',       count: kpiTotal,    loading: kpiTotal === undefined },
@@ -144,11 +173,18 @@ export default function PurchaseInvoicesPage() {
       emptyTitle="No purchase invoices found"
       emptyAction={canCreate ? <Link href="/purchase-invoices/new"><Button variant="primary">Create Invoice</Button></Link> : undefined}
       bulkActions={
-        isAdmin ? (
-          <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
-            Delete {selectedItems.size}
-          </Button>
-        ) : undefined
+        <>
+          {canApprove && (
+            <Button variant="success" onClick={handleBulkApprove} isLoading={bulkApproveMutation.isPending}>
+              Approve {selectedItems.size}
+            </Button>
+          )}
+          {isAdmin && (
+            <Button variant="destructive" onClick={handleBulkDelete} isLoading={bulkDeleteMutation.isPending}>
+              Delete {selectedItems.size}
+            </Button>
+          )}
+        </>
       }
     />
   );

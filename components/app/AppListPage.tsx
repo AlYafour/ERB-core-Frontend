@@ -54,6 +54,7 @@ export interface AppTableState {
   selectedItems:      Set<number>;
   toggleSelect:       (id: number) => void;
   selectPage:         (ids: number[]) => void;
+  deselectPage?:      (ids: number[]) => void;
   clearSelection:     () => void;
   isAllPageSelected:  (ids: number[]) => boolean;
   isSomePageSelected: (ids: number[]) => boolean;
@@ -361,7 +362,16 @@ export function AppListPage({
             {/* Bulk action bar */}
             {bulkActions && selectedItems.size > 0 && (
               <div className="proc-bulk-bar">
-                <span className="proc-bulk-label">{selectedItems.size} selected</span>
+                <span className="proc-bulk-label">
+                  <b>{selectedItems.size}</b> selected
+                  <button type="button" onClick={clearSelection} style={{
+                    marginInlineStart: 10, background: 'none', border: 'none',
+                    color: 'var(--brand)', cursor: 'pointer', fontSize: 'inherit',
+                    fontWeight: 600, textDecoration: 'underline',
+                  }}>
+                    Clear
+                  </button>
+                </span>
                 {bulkActions}
               </div>
             )}
@@ -380,9 +390,13 @@ export function AppListPage({
                 selectable={selectable}
                 selectedItems={selectedItems}
                 onToggleSelect={toggleSelect}
-                onToggleSelectAll={() =>
-                  isAllPageSelected(currentIds) ? clearSelection() : selectPage(currentIds)
-                }
+                onToggleSelectAll={(ids) => {
+                  if (tableState.isAllPageSelected(ids) && tableState.deselectPage) {
+                    tableState.deselectPage(ids);
+                  } else {
+                    tableState.selectPage(ids);
+                  }
+                }}
                 isAllSelected={isAllPageSelected(currentIds)}
                 isSomeSelected={isSomePageSelected(currentIds)}
                 page={page}

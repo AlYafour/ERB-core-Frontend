@@ -52,6 +52,8 @@ interface ProcListPageProps {
   totalCount: number;
   pendingCount?: number;
   createAction?: ReactNode;
+  /* Extra header action rendered before createAction (e.g. Approve all) */
+  headerExtra?: ReactNode;
   /* Status strip */
   statusItems: StripItem[];
   totalAmount?: number;
@@ -89,7 +91,7 @@ interface ProcListPageProps {
 
 export function ProcListPage({
   breadcrumbs,
-  title, description, totalCount, pendingCount, createAction,
+  title, description, totalCount, pendingCount, createAction, headerExtra,
   statusItems, totalAmount, totalAmountLabel,
   searchPlaceholder,
   extraActions,
@@ -187,7 +189,12 @@ export function ProcListPage({
                 </div>
                 <p className="proc-lhc-desc">{description}</p>
               </div>
-              {createAction && <div className="proc-lhc-right">{createAction}</div>}
+              {(headerExtra || createAction) && (
+                <div className="proc-lhc-right" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  {headerExtra}
+                  {createAction}
+                </div>
+              )}
             </div>
 
           </div>

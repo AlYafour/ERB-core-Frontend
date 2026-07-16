@@ -46,6 +46,10 @@ export const purchaseInvoicesApi = {
     await apiClient.delete(`/purchase-invoices/${id}/`);
   },
 
+  bulkApprove: async (payload: { ids?: number[]; all_pending?: boolean }): Promise<{ approved: number; skipped: number }> => {
+    const response = await apiClient.post('/purchase-invoices/bulk-approve/', payload);
+    return response.data;
+  },
   approve: async (id: number): Promise<PurchaseInvoice> => {
     const response = await apiClient.post(`/purchase-invoices/${id}/approve/`);
     return response.data;
