@@ -321,17 +321,23 @@ function NewPurchaseInvoicePageContent() {
                 <span style={{ color: 'var(--info-banner-text)' }}>Total:</span>{' '}
                 <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>{formatPrice(Number(purchaseOrder.total || 0))}</span>
               </div>
-              {(purchaseOrder as any).cost_code ? (
-                <div>
-                  <span style={{ color: 'var(--info-banner-text)' }}>Cost Code:</span>{' '}
-                  <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-                    {(purchaseOrder as any).cost_code.excel_code}
+              <div>
+                <span style={{ color: 'var(--info-banner-text)' }}>Cost Code:</span>{' '}
+                {(purchaseOrder as any).cost_code ? (
+                  <>
+                    <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)', fontFamily: 'monospace' }}>
+                      {(purchaseOrder as any).cost_code.excel_code}
+                    </span>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', marginInlineStart: 6 }}>
+                      {String((purchaseOrder as any).cost_code.description || '').slice(0, 60)}
+                    </span>
+                  </>
+                ) : (
+                  <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--status-warning, #b45309)' }}>
+                    ⚠ No cost code on this LPO — spend will post to the company default account
                   </span>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', marginInlineStart: 6 }}>
-                    {String((purchaseOrder as any).cost_code.description || '').slice(0, 60)}
-                  </span>
-                </div>
-              ) : null}
+                )}
+              </div>
             </div>
           </div>
         )}
