@@ -23,7 +23,7 @@
  *   />
  */
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
@@ -57,6 +57,12 @@ export interface AppTableState {
   clearSelection:     () => void;
   isAllPageSelected:  (ids: number[]) => boolean;
   isSomePageSelected: (ids: number[]) => boolean;
+  /* List-state persistence (useTableState) — optional for backwards compat */
+  ordering?:          string;
+  setOrdering?:       (o: string) => void;
+  advOpen?:           boolean;
+  setAdvOpen?:        (open: boolean) => void;
+  restoreScroll?:     () => void;
 }
 
 interface PaginatedData {
@@ -137,7 +143,50 @@ export function AppListPage({
   children,
 }: AppListPageProps) {
   const router = useRouter();
-  const [advOpen, setAdvOpen] = useState(false);
+  // Panel state lives in tableState when the page uses useTableState (so it
+  // survives navigation); local state is the fallback for older callers.
+  const [localAdvOpen, setLocalAdvOpen] = useState(false);
+  const advOpen = tableState.advOpen ?? localAdvOpen;
+  const setAdvOpen = tableState.setAdvOpen ?? setLocalAdvOpen;
+
+  // Restore the saved scroll position once the first load has rendered rows.
+  useEffect(() => {
+    if (!isLoading) tableState.restoreScroll?.();
+  }, [isLoading, tableState]);
+
+  // Column-header sorting: columns declaring sortKey become clickable and
+  // drive tableState.ordering ('key' → '-key' → default), persisted like
+  // every other piece of list state.
+  const ordering = tableState.ordering ?? '';
+  const sortedColumns = tableState.setOrdering
+    ? columns.map((col) => {
+        const sortKey = (col as { sortKey?: string }).sortKey;
+        if (!sortKey) return col;
+        const active = ordering === sortKey || ordering === `-${sortKey}`;
+        const desc = ordering === `-${sortKey}`;
+        return {
+          ...col,
+          header: (
+            <button
+              type="button"
+              onClick={() => tableState.setOrdering!(
+                !active ? sortKey : desc ? '' : `-${sortKey}`)}
+              style={{
+                background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                font: 'inherit', color: 'inherit', display: 'inline-flex',
+                alignItems: 'center', gap: 4,
+              }}
+              aria-label={`Sort by ${sortKey}`}
+            >
+              {col.header}
+              <span aria-hidden style={{ opacity: active ? 1 : 0.3, fontSize: 10 }}>
+                {active ? (desc ? '▼' : '▲') : '↕'}
+              </span>
+            </button>
+          ),
+        };
+      })
+    : columns;
 
   const {
     page, setPage, search, handleSearch,
@@ -318,7 +367,7 @@ export function AppListPage({
             {/* Table */}
             <div className="proc-list-table-wrap">
               <DataTable
-                columns={columns}
+                columns={sortedColumns}
                 data={data}
                 isLoading={isLoading}
                 error={error as any}

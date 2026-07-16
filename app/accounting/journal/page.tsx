@@ -485,15 +485,17 @@ function NewJournalModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
 
 export default function AccountingJournalPage() {
   const tableState = useTableState();
-  const { page, search, filters } = tableState;
+  const { page, search, filters, ordering } = tableState;
   const queryClient = useQueryClient();
 
   const [showNew,     setShowNew]     = useState(false);
   const [detailEntry, setDetailEntry] = useState<JournalEntry | null>(null);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['acc-journal', page, search, filters],
-    queryFn:  () => accountingApi.listJournal({ page, search, ...filters }),
+    queryKey: ['acc-journal', page, search, filters, ordering],
+    queryFn:  () => accountingApi.listJournal({
+      page, search, ordering: ordering || undefined, ...filters,
+    }),
   });
 
   const invalidate = () => {
@@ -506,11 +508,11 @@ export default function AccountingJournalPage() {
 
   const columns: Column<JournalEntry>[] = [
     {
-      key: 'number', header: 'Number',
+      key: 'number', header: 'Number', sortKey: 'number',
       render: r => <span className="font-mono font-medium">{r.number}</span>,
     },
     {
-      key: 'posting_date', header: 'Posting Date',
+      key: 'posting_date', header: 'Posting Date', sortKey: 'posting_date',
       render: r => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{r.posting_date}</span>,
     },
     {
@@ -542,7 +544,7 @@ export default function AccountingJournalPage() {
       ),
     },
     {
-      key: 'total_debit', header: 'Amount',
+      key: 'total_debit', header: 'Amount', sortKey: 'total_debit',
       render: r => <span className="font-mono">{fmt(r.total_debit)}</span>,
     },
     {

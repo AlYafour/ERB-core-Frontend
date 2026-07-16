@@ -12,6 +12,10 @@ export interface Column<T> {
   width?: number | string;
   className?: string;
   render: (item: T, index: number) => React.ReactNode;
+  /** Server ordering field for this column (e.g. 'name', 'created_at').
+   *  When set and the page uses useTableState, AppListPage renders the
+   *  header as a sort toggle: asc → desc → server default. */
+  sortKey?: string;
 }
 
 // ── Props ────────────────────────────────────────────────────────────────────
