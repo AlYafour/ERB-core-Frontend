@@ -78,6 +78,19 @@ export default function PurchaseInvoicesPage() {
   const columns = useMemo((): Column<PurchaseInvoice>[] => [
     { key: 'number', header: t('col', 'invoiceNumber'), render: i => <span className="font-medium">{i.invoice_number}</span> },
     { key: 'po',     header: t('col', 'relatedPO'),     render: i => <span>{typeof i.purchase_order === 'object' ? (i.purchase_order as any)?.order_number : 'N/A'}</span> },
+    {
+      key: 'supplier', header: t('col', 'supplier'),
+      render: i => {
+        const supplier = typeof i.purchase_order === 'object'
+          ? (i.purchase_order as any)?.supplier : null;
+        return (
+          <span style={{ display: 'inline-block', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}
+                title={supplier?.name || ''}>
+            {supplier?.name || '—'}
+          </span>
+        );
+      },
+    },
     { key: 'date',   header: t('col', 'invoiceDate'),   render: i => <span style={{ color: 'var(--text-secondary)' }}>{fmtDate(i.invoice_date)}</span> },
     { key: 'due',    header: t('col', 'deliveryDate'),  render: i => <span style={{ color: 'var(--text-secondary)' }}>{i.due_date ? fmtDate(i.due_date) : '—'}</span> },
     { key: 'status', header: t('col', 'status'),        render: i => <Badge variant={INVOICE_STATUS[i.status] ?? 'info'}>{INVOICE_LABEL[i.status] || i.status}</Badge> },
