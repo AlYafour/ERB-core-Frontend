@@ -158,7 +158,7 @@ export default function NewProjectPage() {
               {t('section', 'contactInfo')}
             </h2>
             <p style={{ fontSize: 'var(--text-sm)', marginBottom: 'var(--space-4)', marginTop: 0, color: 'var(--text-secondary)' }}>
-              {t('field', 'staffMember')} â€” {t('role', 'site_engineer')}
+              {t('field', 'staffMember')} — {t('role', 'site_engineer')}
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--space-4)' }}>
 
@@ -167,7 +167,7 @@ export default function NewProjectPage() {
                 <FormField label={`${t('role', 'site_engineer')} (${t('misc', 'optional')})`}>
                   <SearchableDropdown
                     options={[
-                      { value: '', label: `â€” ${t('misc', 'selectRole')} â€”` },
+                      { value: '', label: `— ${t('misc', 'selectRole')} —` },
                       ...engineers.map(e => ({
                         value: String(e.id),
                         label: `${e.first_name} ${e.last_name}`.trim() || e.username,
@@ -180,7 +180,7 @@ export default function NewProjectPage() {
                   />
                 </FormField>
 
-                {/* Engineer info card â€” shown when selected */}
+                {/* Engineer info card — shown when selected */}
                 {selectedEngineer && (
                   <div
                     style={{
@@ -208,7 +208,7 @@ export default function NewProjectPage() {
                       </div>
                       <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
                         {selectedEngineer.job_title || t('role', 'site_engineer')}
-                        {selectedEngineer.phone ? ` Â· ${selectedEngineer.phone}` : ''}
+                        {selectedEngineer.phone ? ` · ${selectedEngineer.phone}` : ''}
                       </div>
                     </div>
                     <button
@@ -216,7 +216,7 @@ export default function NewProjectPage() {
                       onClick={() => setFormData(f => ({ ...f, responsible_engineer: null }))}
                       style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-2)', borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
                     >
-                      âœ•
+                      ✕
                     </button>
                   </div>
                 )}

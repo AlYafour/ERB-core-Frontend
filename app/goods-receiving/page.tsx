@@ -97,7 +97,7 @@ export default function GoodsReceivingPage() {
         { value: 'completed', label: 'Completed', count: kpiCompleted, loading: kpiCompleted === undefined },
         { value: 'cancelled', label: 'Cancelled', count: kpiCancelled, loading: kpiCancelled === undefined },
       ]}
-      searchPlaceholder="Search GRN recordsâ€¦"
+      searchPlaceholder="Search GRN records…"
       filterFields={filterFields}
       advFilterTitle="GRN Filters"
       advFilterDesc="Filter goods receiving notes by date range."

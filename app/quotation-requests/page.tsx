@@ -80,7 +80,7 @@ export default function QuotationRequestsPage() {
       key: 'project', header: 'Project',
       render: r => r.project_name
         ? <div><div className="font-medium">{r.project_name}</div>{r.project_code && <div className="font-mono" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{r.project_code}</div>}</div>
-        : <span style={{ color: 'var(--text-secondary)' }}>â€”</span>,
+        : <span style={{ color: 'var(--text-secondary)' }}>—</span>,
     },
     {
       key: 'supplier', header: t('col', 'supplier'),
@@ -106,7 +106,7 @@ export default function QuotationRequestsPage() {
       totalCount={totalCount}
       createAction={canCreate ? <Link href="/quotation-requests/new"><Button variant="primary">New Request</Button></Link> : undefined}
       statusItems={[{ value: '', label: 'All RFQs', count: kpiTotal, loading: kpiTotal === undefined }]}
-      searchPlaceholder="Search by code, titleâ€¦"
+      searchPlaceholder="Search by code, title…"
       filterFields={filterFields}
       advFilterTitle="Quotation Request Filters"
       advFilterDesc="Filter by creation date range."

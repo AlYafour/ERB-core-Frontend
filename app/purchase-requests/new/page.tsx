@@ -170,14 +170,14 @@ function NewPurchaseRequestPageContent() {
     mutation.mutate({ ...toPurchaseRequestCreateData(formData, itemsToSubmit), charges: chargesToSubmit });
   };
 
-  /* â”€â”€â”€ derived for sidebar â”€â”€â”€ */
+  /* ─── derived for sidebar ─── */
   const selectedProject = projectsData?.results?.find((p: Project) => p.id === formData.project_id);
 
   return (
     <MainLayout>
       <PageShell compact>
 
-        {/* â”€â”€ Sticky form bar â”€â”€ */}
+        {/* ── Sticky form bar ── */}
         <div className="proc-form-bar">
           <Link href="/purchase-requests" className="proc-form-bar-back">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -200,10 +200,10 @@ function NewPurchaseRequestPageContent() {
           </div>
         </div>
 
-        {/* â”€â”€ Split layout â”€â”€ */}
+        {/* ── Split layout ── */}
         <div className="proc-form-split">
 
-          {/* â”€â”€ Main form â”€â”€ */}
+          {/* ── Main form ── */}
           <form ref={formRef} onSubmit={handleSubmit} className="proc-form-main">
 
             {/* Section 1: Request Info */}
@@ -294,7 +294,7 @@ function NewPurchaseRequestPageContent() {
                       Request Code will be auto-generated based on the selected project{' '}
                       (e.g.,{' '}
                       <strong style={{ color: 'var(--text-primary)' }}>{formData.project_code || 'PROJ'}-001</strong>,{' '}
-                      <strong style={{ color: 'var(--text-primary)' }}>{formData.project_code || 'PROJ'}-002</strong>â€¦)
+                      <strong style={{ color: 'var(--text-primary)' }}>{formData.project_code || 'PROJ'}-002</strong>…)
                     </p>
                   </div>
                 </div>
@@ -325,7 +325,7 @@ function NewPurchaseRequestPageContent() {
 
             <div className="proc-form-section">
 
-              {/* â”€â”€ Add item card â”€â”€ */}
+              {/* ── Add item card ── */}
               <div style={{
                 border: '1px solid var(--border-subtle)', borderRadius: 10,
                 overflow: 'hidden', marginBottom: items.length > 0 ? 14 : 0,
@@ -353,7 +353,7 @@ function NewPurchaseRequestPageContent() {
                       background: 'var(--brand-subtle)', borderRadius: 4,
                       padding: '2px 7px', fontWeight: 600,
                     }}>
-                      Configure & Add â†’
+                      Configure & Add →
                     </span>
                   )}
                 </div>
@@ -435,7 +435,7 @@ function NewPurchaseRequestPageContent() {
                 )}
               </div>
 
-              {/* â”€â”€ Items table â”€â”€ */}
+              {/* ── Items table ── */}
               {items.length > 0 && (
                 <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 10, overflow: 'hidden' }}>
                   <div style={{
@@ -460,7 +460,7 @@ function NewPurchaseRequestPageContent() {
                           {item.product?.name || 'Unknown Product'}
                         </div>
                         <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>
-                          {item.product?.code || 'N/A'}{item.product?.category ? ` Â· ${item.product.category}` : ''}
+                          {item.product?.code || 'N/A'}{item.product?.category ? ` · ${item.product.category}` : ''}
                         </div>
                       </>
                     )}
@@ -473,10 +473,10 @@ function NewPurchaseRequestPageContent() {
 
           </form>
 
-          {/* â”€â”€ Sticky sidebar â”€â”€ */}
+          {/* ── Sticky sidebar ── */}
           <div className="proc-form-aside">
 
-            {/* â”€â”€ Additional Charges panel â”€â”€ */}
+            {/* ── Additional Charges panel ── */}
             <div style={{
               background: 'var(--card-bg)',
               border: '1px solid var(--border-subtle)',
@@ -548,7 +548,7 @@ function NewPurchaseRequestPageContent() {
                       </div>
                       <button type="button" onClick={() => setCharges(charges.filter((_, j) => j !== i))}
                         style={{ fontSize: 10, color: 'var(--status-error)', background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px 4px', opacity: 0.7 }}>
-                        âœ•
+                        ✕
                       </button>
                     </div>
                   ))}
@@ -556,13 +556,13 @@ function NewPurchaseRequestPageContent() {
               ) : (
                 !addingCharge && (
                   <p style={{ margin: 0, padding: '12px 14px', fontSize: 11, color: 'var(--text-tertiary)', fontStyle: 'italic', textAlign: 'center' }}>
-                    No charges â€” pricing set in LPO
+                    No charges — pricing set in LPO
                   </p>
                 )
               )}
             </div>
 
-            {/* â”€â”€ Summary panel â”€â”€ */}
+            {/* ── Summary panel ── */}
             <div style={{
               background: 'var(--card-bg)',
               border: '1px solid var(--border-subtle)',
@@ -612,7 +612,7 @@ function NewPurchaseRequestPageContent() {
                     <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500 }}>{label}</span>
                     <span style={{
                       fontSize: 12, fontWeight: 700,
-                      color: brand ? 'var(--brand)' : value === 'â€”' ? 'var(--text-tertiary)' : 'var(--text-primary)',
+                      color: brand ? 'var(--brand)' : value === '—' ? 'var(--text-tertiary)' : 'var(--text-primary)',
                       background: brand ? 'var(--brand-subtle)' : 'transparent',
                       padding: brand ? '2px 8px' : '0',
                       borderRadius: 5,
@@ -624,7 +624,7 @@ function NewPurchaseRequestPageContent() {
               </div>
             </div>
 
-            {/* â”€â”€ Actions panel â”€â”€ */}
+            {/* ── Actions panel ── */}
             <div style={{
               background: 'var(--card-bg)',
               border: '1px solid var(--border-subtle)',
@@ -642,7 +642,7 @@ function NewPurchaseRequestPageContent() {
                 disabled={mutation.isPending || items.length === 0}
                 isLoading={mutation.isPending}
                 onClick={() => formRef.current?.requestSubmit()}>
-                {mutation.isPending ? 'Submittingâ€¦' : `Submit Request${items.length > 0 ? ` (${items.length})` : ''}`}
+                {mutation.isPending ? 'Submitting…' : `Submit Request${items.length > 0 ? ` (${items.length})` : ''}`}
               </Button>
               <Button type="button" variant="secondary" onClick={() => router.push('/purchase-requests')}>
                 Cancel
