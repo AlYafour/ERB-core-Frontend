@@ -50,6 +50,14 @@ export const purchaseInvoicesApi = {
     const response = await apiClient.post('/purchase-invoices/bulk-approve/', payload);
     return response.data;
   },
+
+  payables: async (): Promise<{ count: number; results: Array<{
+    id: number; invoice_number: string; invoice_date: string; status: string;
+    total: string; paid_amount: string; po_number: string | null; supplier: string | null;
+  }> }> => {
+    const response = await apiClient.get('/purchase-invoices/payables/');
+    return response.data;
+  },
   approve: async (id: number): Promise<PurchaseInvoice> => {
     const response = await apiClient.post(`/purchase-invoices/${id}/approve/`);
     return response.data;

@@ -122,20 +122,19 @@ type TabKey = typeof TABS[number]['key'];
 
 function PayablesTab() {
   const [paidFilter, setPaidFilter] = useState<'all' | 'unpaid' | 'partial' | 'paid'>('unpaid');
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error: payablesError } = useQuery({
     queryKey: ['acc-payables-invoices'],
-    queryFn: () => purchaseInvoicesApi.getAll({ page_size: 500 } as any),
+    // slim server-side view: one flat query, no nested PO serialization
+    queryFn: () => purchaseInvoicesApi.payables(),
   });
-  const all: any[] = (data as any)?.results ?? (Array.isArray(data) ? data : []);
-  // money view: bills that entered the payable world (approved or paid)
-  const bills = all.filter((i: any) => ['approved', 'paid'].includes(i.status));
+  const bills = data?.results ?? [];
 
-  const rows = bills.map((i: any) => {
+  const rows = bills.map((i) => {
     const total = Number(i.total || 0);
     const paid = Number(i.paid_amount || 0);
     return { ...i, _total: total, _paid: paid, _due: total - paid,
-             _supplier: typeof i.purchase_order === 'object' ? (i.purchase_order?.supplier?.name ?? '—') : '—',
-             _po: typeof i.purchase_order === 'object' ? (i.purchase_order?.order_number ?? '') : '' };
+             _supplier: i.supplier ?? '—',
+             _po: i.po_number ?? '' };
   });
   const filtered = rows.filter((r: any) =>
     paidFilter === 'all' ? true
@@ -182,7 +181,11 @@ function PayablesTab() {
         ))}
       </div>
 
-      {isLoading ? <div style={{ color: 'var(--text-secondary)' }}>Loading…</div> : (
+      {payablesError ? (
+        <div style={{ color: 'var(--error, #dc2626)' }}>
+          Failed to load payables — {String((payablesError as any)?.message || 'try refreshing the page')}
+        </div>
+      ) : isLoading ? <div style={{ color: 'var(--text-secondary)' }}>Loading…</div> : (
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>{['Invoice #', 'Supplier', 'LPO', 'Date', 'Total', 'Paid', 'Outstanding', 'Status'].map(h =>
@@ -270,7 +273,7 @@ export default function AccountingReportsPage() {
   const [dateFrom, setDateFrom] = useState(yearStart());
   const [dateTo, setDateTo] = useState(today());
 
-  const rangeTabs: TabKey[] = ['pl', 'cf', 'vat', 'supplier', 'payables'];
+  const rangeTabs: TabKey[] = ['pl', 'cf', 'vat', 'supplier'];
   const params = rangeTabs.includes(tab)
     ? { date_from: dateFrom, date_to: dateTo }
     : { as_of: asOf };
@@ -315,6 +318,7 @@ export default function AccountingReportsPage() {
           ))}
         </div>
 
+        {tab !== 'payables' && (
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           {rangeTabs.includes(tab) ? (
             <>
@@ -330,6 +334,7 @@ export default function AccountingReportsPage() {
             </>
           )}
         </div>
+        )}
 
         <div style={CARD}>
           {isLoading && <div style={{ color: 'var(--text-secondary)' }}>Loading report…</div>}
