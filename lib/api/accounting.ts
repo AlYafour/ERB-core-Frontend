@@ -443,6 +443,10 @@ export const accountingApi = {
       '/cost-codes/', { params }).then(r => r.data),
   setCostCodeAccount: (id: number, account: number | null) =>
     apiClient.patch(`/cost-codes/${id}/`, { default_account: account }).then(r => r.data),
+  getOpeningBalance: () =>
+    apiClient.get(`${BASE}/opening-balance/`).then(r => r.data),
+  createOpeningBalance: (payload: { as_of: string; rows: Record<string, unknown>[] }) =>
+    apiClient.post(`${BASE}/opening-balance/`, payload).then(r => r.data),
   importQuickBooksCoA: (content: string) =>
     apiClient.post(`${BASE}/import/quickbooks-coa/`, { content }).then(r => r.data),
 };

@@ -12,6 +12,8 @@ const toastErr = (m: string) => toast(m, 'error');
 const toastInfo = (m: string) => toast(m, 'info');
 import { getApiError } from '@/lib/utils/error';
 import { accountingApi, type FiscalYear, type Budget, type TaxCode } from '@/lib/api/accounting';
+import { suppliersApi } from '@/lib/api/suppliers';
+import Link from 'next/link';
 
 const fmt = (v: string | number) =>
   `AED ${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -58,6 +60,7 @@ const TABS = [
   { key: 'fx',       label: 'Exchange Rates & FX' },
   { key: 'budgets',  label: 'Budgets' },
   { key: 'costcodes', label: 'Cost Code Accounts' },
+  { key: 'opening', label: 'Opening Balances' },
   { key: 'import',   label: 'Import' },
 ] as const;
 
@@ -89,6 +92,7 @@ export default function AccountingSettingsPage() {
           {tab === 'fx' && <FxPanel />}
           {tab === 'budgets' && <BudgetsPanel />}
           {tab === 'costcodes' && <CostCodeBridgePanel />}
+          {tab === 'opening' && <OpeningBalancesPanel />}
           {tab === 'import' && <ImportPanel />}
         </div>
       </PageShell>
@@ -666,6 +670,151 @@ function CostCodeBridgePanel() {
             ) : null}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+function OpeningBalancesPanel() {
+  const queryClient = useQueryClient();
+  const accounts = usePostableAccounts();
+  const [asOf, setAsOf] = useState(new Date().toISOString().slice(0, 10));
+  type Row = { account: number | ''; debit: string; credit: string;
+               partner_type: string; partner_id: string };
+  const [rows, setRows] = useState<Row[]>([
+    { account: '', debit: '', credit: '', partner_type: '', partner_id: '' },
+  ]);
+
+  const { data: status } = useQuery({
+    queryKey: ['acc-opening'],
+    queryFn: () => accountingApi.getOpeningBalance(),
+  });
+  const { data: suppliersData } = useQuery({
+    queryKey: ['suppliers-opening'],
+    queryFn: () => suppliersApi.getAll({ page_size: 500 }),
+  });
+  const suppliers: any[] = (suppliersData as any)?.results ?? [];
+
+  const submit = useMutation({
+    mutationFn: () => accountingApi.createOpeningBalance({
+      as_of: asOf,
+      rows: rows.filter(r => r.account && (Number(r.debit) > 0 || Number(r.credit) > 0))
+        .map(r => ({ account: Number(r.account), debit: r.debit || '0',
+                     credit: r.credit || '0',
+                     partner_type: r.partner_type, partner_id: r.partner_id })),
+    }),
+    onSuccess: (r: any) => {
+      toastOk(`Opening entry created as DRAFT (${r.lines} lines) — review and post it under Journal Entries.`);
+      queryClient.invalidateQueries({ queryKey: ['acc-opening'] });
+    },
+    onError: (e) => toastErr(getApiError(e)),
+  });
+
+  const upd = (i: number, patch: Partial<Row>) =>
+    setRows(prev => prev.map((r, j) => j === i ? { ...r, ...patch } : r));
+
+  const totalD = rows.reduce((s, r) => s + (Number(r.debit) || 0), 0);
+  const totalC = rows.reduce((s, r) => s + (Number(r.credit) || 0), 0);
+  const plug = totalD - totalC;
+
+  if ((status as any)?.exists) {
+    const s: any = status;
+    return (
+      <div style={{ maxWidth: 640 }}>
+        <p style={{ fontSize: 'var(--text-sm)', marginBottom: 8 }}>
+          Opening-balance entry already exists:
+          <span style={{ fontFamily: 'monospace', fontWeight: 700, marginInlineStart: 8 }}>
+            {s.number || '(draft)'}
+          </span>
+          <Badge variant={s.status === 'posted' ? 'success' : 'warning'}>{s.status}</Badge>
+        </p>
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+          {s.status === 'draft'
+            ? 'Review and post it under Journal Entries — nothing enters the books before that.'
+            : 'The cutover is complete. To restate, reverse the entry from Journal Entries.'}
+        </p>
+        <Link href={`/accounting/journal?entry=${s.id}`}>
+          <Button variant="secondary" size="sm" style={{ marginTop: 8 }}>Open the entry</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 10 }}>
+        Enter the closing trial balance from the previous books (QuickBooks) as of the
+        cutover date. AP/AR rows can carry the SUPPLIER so each vendor statement starts
+        with its correct balance. Any difference auto-plugs to Opening Balance Equity.
+        The entry lands as a DRAFT — the accountant reviews and posts it.
+      </p>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'end', marginBottom: 10 }}>
+        <div>
+          <label style={LABEL}>Cutover date (as of)</label>
+          <input type="date" style={INPUT} value={asOf} onChange={e => setAsOf(e.target.value)} />
+        </div>
+        <Button variant="secondary" size="sm"
+                onClick={() => setRows(prev => [...prev, { account: '', debit: '', credit: '', partner_type: '', partner_id: '' }])}>
+          + Add row
+        </Button>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead><tr>{['Account', 'Debit', 'Credit', 'Partner (for AP/AR rows)', ''].map(h => <th key={h} style={TH}>{h}</th>)}</tr></thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i}>
+                <td style={TD}>
+                  <select style={{ ...INPUT, minWidth: 260 }} value={r.account}
+                          onChange={e => upd(i, { account: e.target.value ? Number(e.target.value) : '' })}>
+                    <option value="">Account…</option>
+                    {accounts.map(a => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
+                  </select>
+                </td>
+                <td style={TD}><input type="number" min="0" step="0.01" style={{ ...INPUT, width: 130 }}
+                    value={r.debit} onChange={e => upd(i, { debit: e.target.value, credit: '' })} /></td>
+                <td style={TD}><input type="number" min="0" step="0.01" style={{ ...INPUT, width: 130 }}
+                    value={r.credit} onChange={e => upd(i, { credit: e.target.value, debit: '' })} /></td>
+                <td style={TD}>
+                  <select style={{ ...INPUT, minWidth: 200 }}
+                          value={r.partner_type === 'supplier' ? r.partner_id : ''}
+                          onChange={e => upd(i, e.target.value
+                            ? { partner_type: 'supplier', partner_id: e.target.value }
+                            : { partner_type: '', partner_id: '' })}>
+                    <option value="">— none —</option>
+                    {suppliers.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </td>
+                <td style={TD}>
+                  <Button variant="secondary" size="sm"
+                          onClick={() => setRows(prev => prev.filter((_, j) => j !== i))}>✕</Button>
+                </td>
+              </tr>
+            ))}
+            <tr style={{ fontWeight: 700 }}>
+              <td style={TD}>Totals</td>
+              <td style={TD}>{fmt(totalD)}</td>
+              <td style={TD}>{fmt(totalC)}</td>
+              <td style={TD} colSpan={2}>
+                {plug !== 0
+                  ? <span style={{ color: 'var(--text-secondary)', fontWeight: 400 }}>
+                      Plug to Opening Balance Equity: {fmt(Math.abs(plug))} {plug > 0 ? '(credit)' : '(debit)'}
+                    </span>
+                  : <Badge variant="success">Balanced</Badge>}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style={{ marginTop: 12 }}>
+        <Button disabled={submit.isPending || !rows.some(r => r.account)}
+                onClick={async () => {
+                  if (await confirm(`Create the opening-balance DRAFT as of ${asOf}? You will review and post it under Journal Entries.`)) {
+                    submit.mutate();
+                  }
+                }}>
+          {submit.isPending ? 'Creating…' : 'Create opening entry (draft)'}
+        </Button>
       </div>
     </div>
   );

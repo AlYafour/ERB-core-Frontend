@@ -6,6 +6,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { PageShell } from '@/components/ui/PageShell';
 import { Badge } from '@/components/ui';
 import { accountingApi } from '@/lib/api/accounting';
+import { suppliersApi } from '@/lib/api/suppliers';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -111,10 +112,62 @@ const TABS = [
   { key: 'cf',  label: 'Cash Flow' },
   { key: 'vat', label: 'VAT Return' },
   { key: 'ap',  label: 'AP Aging' },
+  { key: 'supplier', label: 'Supplier Statement' },
   { key: 'ar',  label: 'AR Aging' },
 ] as const;
 
 type TabKey = typeof TABS[number]['key'];
+
+function SupplierStatementTab({ dateFrom, dateTo }: { dateFrom: string; dateTo: string }) {
+  const [supplierId, setSupplierId] = useState('');
+  const { data: suppliersData } = useQuery({
+    queryKey: ['suppliers-stmt'],
+    queryFn: () => suppliersApi.getAll({ page_size: 500 }),
+  });
+  const suppliers: any[] = (suppliersData as any)?.results ?? [];
+  const { data, isLoading } = useQuery({
+    queryKey: ['acc-supplier-stmt', supplierId, dateFrom, dateTo],
+    queryFn: () => accountingApi.supplierStatement(supplierId, { date_from: dateFrom, date_to: dateTo }),
+    enabled: !!supplierId,
+  });
+  const stmt: any = data;
+  return (
+    <div>
+      <select style={{ ...INPUT, minWidth: 300, marginBottom: 12 }} value={supplierId}
+              onChange={e => setSupplierId(e.target.value)}>
+        <option value="">Select supplier…</option>
+        {suppliers.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+      </select>
+      {!supplierId ? <div style={{ color: 'var(--text-secondary)' }}>Pick a supplier to see the statement — invoices, payments and the running balance, straight from the ledger.</div>
+        : isLoading ? <div style={{ color: 'var(--text-secondary)' }}>Loading…</div>
+        : stmt ? (
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>{['Date', 'Journal', 'Event', 'Reference', 'Description', 'Debit', 'Credit', 'Balance'].map(h =>
+              <th key={h} style={{ ...TH, textAlign: ['Debit','Credit','Balance'].includes(h) ? 'right' : 'left' }}>{h}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style={TD} colSpan={7}>Opening balance</td><td style={TDR}>{money(stmt.opening_balance)}</td></tr>
+            {stmt.rows.map((r: any, i: number) => (
+              <tr key={i}>
+                <td style={TD}>{r.date}</td>
+                <td style={{ ...TD, fontFamily: 'monospace' }}>{r.journal_number}</td>
+                <td style={TD}>{r.event_code}</td>
+                <td style={TD}>{r.reference || '—'}</td>
+                <td style={TD}>{r.description}</td>
+                <td style={TDR}>{r.debit && Number(r.debit) ? money(r.debit) : ''}</td>
+                <td style={TDR}>{r.credit && Number(r.credit) ? money(r.credit) : ''}</td>
+                <td style={TDR}>{money(r.balance)}</td>
+              </tr>
+            ))}
+            <tr style={TOTAL_ROW}><td style={TD} colSpan={7}>Closing balance (we owe)</td><td style={TDR}>{money(stmt.closing_balance)}</td></tr>
+          </tbody>
+        </table>
+      ) : null}
+    </div>
+  );
+}
 
 export default function AccountingReportsPage() {
   const [tab, setTab] = useState<TabKey>('tb');
@@ -122,7 +175,7 @@ export default function AccountingReportsPage() {
   const [dateFrom, setDateFrom] = useState(yearStart());
   const [dateTo, setDateTo] = useState(today());
 
-  const rangeTabs: TabKey[] = ['pl', 'cf', 'vat'];
+  const rangeTabs: TabKey[] = ['pl', 'cf', 'vat', 'supplier'];
   const params = rangeTabs.includes(tab)
     ? { date_from: dateFrom, date_to: dateTo }
     : { as_of: asOf };
@@ -130,6 +183,7 @@ export default function AccountingReportsPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['acc-report', tab, params],
     queryFn: () => {
+      if (tab === 'supplier') return null;
       switch (tab) {
         case 'tb':  return accountingApi.trialBalance({ date_to: asOf });
         case 'bs':  return accountingApi.balanceSheet(asOf);
@@ -185,7 +239,9 @@ export default function AccountingReportsPage() {
         <div style={CARD}>
           {isLoading && <div style={{ color: 'var(--text-secondary)' }}>Loading report…</div>}
           {!!error && <div style={{ color: 'var(--error, #dc2626)' }}>Failed to load report.</div>}
-          {!isLoading && !error && data ? <ReportBody tab={tab} data={data as any} /> : null}
+          {tab === 'supplier'
+            ? <SupplierStatementTab dateFrom={dateFrom} dateTo={dateTo} />
+            : (!isLoading && !error && data ? <ReportBody tab={tab} data={data as any} /> : null)}
         </div>
       </PageShell>
     </MainLayout>
