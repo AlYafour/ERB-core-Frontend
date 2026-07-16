@@ -193,6 +193,7 @@ function NewPOContent() {
       const de = validateDateAfter(formData.delivery_date, formData.order_date, 'Delivery Date', 'Order Date');
       if (de) errs.delivery_date = de;
     }
+    if (!costCode) errs.cost_code = 'Cost code is required — pick the company cost code this order belongs to.';
     if (items.length === 0) errs.items = 'At least one product is required.';
     items.forEach((item, i) => {
       if (!item.product_id) errs[`items.${i}.product_id`] = 'Product required.';
@@ -288,8 +289,9 @@ function NewPOContent() {
                 </div>
 
                 <div>
-                  <label className="form-label">Cost Code <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(optional)</span></label>
+                  <label className="form-label">Cost Code <span style={{ color: 'var(--color-error)' }}>*</span></label>
                   <CostCodePicker value={costCode} onChange={setCostCode} />
+                  {errors.cost_code && !costCode && <p style={{ color: 'var(--color-error)', fontSize: 'var(--text-xs)', margin: '4px 0 0' }}>{errors.cost_code}</p>}
                   {costCode && (
                     <div style={{ marginTop: 5, padding: '5px 10px', background: 'var(--muted)', borderRadius: 6, fontSize: 13 }}>
                       <span style={{ fontWeight: 600, color: '#C9943A' }}>{costCode.excel_code}</span>
