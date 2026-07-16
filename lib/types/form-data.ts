@@ -201,6 +201,7 @@ export function toPurchaseInvoiceCreateData(form: PurchaseInvoiceFormData, items
     discount: item.discount ?? 0,
     tax_rate: item.tax_rate ?? 0,
     notes: item.notes ?? '',
+    account: item.account ?? undefined,
   }));
   return {
     purchase_order_id: form.purchase_order_id as number,

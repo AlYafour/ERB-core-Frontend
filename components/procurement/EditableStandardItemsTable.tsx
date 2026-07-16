@@ -31,6 +31,12 @@ interface Props<T extends BaseEditableItem> {
   readOnly?: boolean;
   onProductSearch?: (query: string) => void;
   isProductsLoading?: boolean;
+  /** Optional extra column rendered before Total (e.g. per-line GL account). */
+  extraColumn?: {
+    header: React.ReactNode;
+    width?: number;
+    render: (item: T, index: number) => React.ReactNode;
+  };
 }
 
 export function EditableStandardItemsTable<T extends BaseEditableItem>({
@@ -45,6 +51,7 @@ export function EditableStandardItemsTable<T extends BaseEditableItem>({
   readOnly = false,
   onProductSearch,
   isProductsLoading,
+  extraColumn,
 }: Props<T>) {
   const t = useT();
 
@@ -70,6 +77,7 @@ export function EditableStandardItemsTable<T extends BaseEditableItem>({
             <th style={{ width: 110 }}>{t('col', 'unitPrice')}</th>
             <th style={{ width: 90 }}>{t('col', 'discountPct')}</th>
             <th style={{ width: 90 }}>{t('col', 'taxPct')}</th>
+            {extraColumn && <th style={{ width: extraColumn.width ?? 190 }}>{extraColumn.header}</th>}
             <th style={{ width: 110, textAlign: 'right' }}>{t('col', 'total')}</th>
             {onRemove && <th style={{ width: 48 }} />}
           </tr>
@@ -118,6 +126,7 @@ export function EditableStandardItemsTable<T extends BaseEditableItem>({
                   value={item.tax_rate ?? 0} disabled={readOnly}
                   onChange={(e) => onUpdate(index, 'tax_rate', parseFloat(e.target.value) || 0)} />
               </td>
+              {extraColumn && <td>{extraColumn.render(item, index)}</td>}
               <td className="cell-total">
                 {formatPrice(rowItemTotal(item))}
               </td>

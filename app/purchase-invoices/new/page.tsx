@@ -440,6 +440,24 @@ function NewPurchaseInvoicePageContent() {
             <EditableStandardItemsTable
               items={items}
               onUpdate={(index, field, value) => updateItem(index, field as keyof PurchaseInvoiceItem, value)}
+              extraColumn={glAccounts.length > 0 ? {
+                header: 'Account',
+                width: 200,
+                render: (item: any, index: number) => (
+                  <select
+                    className="form-input"
+                    style={{ width: 190, fontSize: 'var(--text-xs)' }}
+                    value={item.account ?? ''}
+                    onChange={(e) => updateItem(index, 'account' as keyof PurchaseInvoiceItem,
+                      e.target.value ? Number(e.target.value) : (null as any))}
+                  >
+                    <option value="">Auto (item default)</option>
+                    {glAccounts.map((a) => (
+                      <option key={a.id} value={a.id}>{a.code} — {a.name}</option>
+                    ))}
+                  </select>
+                ),
+              } : undefined}
               showUnit={true}
               renderProduct={(item) => {
                 const poItem = purchaseOrder?.items?.find((poi) => poi.id === item.purchase_order_item_id);
