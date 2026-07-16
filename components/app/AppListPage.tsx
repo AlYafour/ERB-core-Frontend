@@ -401,18 +401,7 @@ export function AppListPage({
                 isSomeSelected={isSomePageSelected(currentIds)}
                 page={page}
                 totalCount={totalCount}
-                pageSize={(() => {
-                  // The SERVER decides the real page size (DRF PAGE_SIZE) —
-                  // infer it from the response instead of trusting the prop,
-                  // otherwise the pager math breaks (the '94 rows, 2 pages'
-                  // bug when the server pages by 20 and the prop says 50).
-                  const rows = data?.length ?? 0;
-                  if (paginatedData?.next && rows > 0) return rows;
-                  if (!paginatedData?.next && page > 1 && rows > 0 && totalCount > rows) {
-                    return Math.round((totalCount - rows) / (page - 1));
-                  }
-                  return pageSize;
-                })()}
+                pageSize={pageSize}
                 hasPrev={!!paginatedData?.previous}
                 hasNext={!!paginatedData?.next}
                 onPageChange={setPage}

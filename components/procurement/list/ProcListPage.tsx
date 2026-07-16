@@ -31,6 +31,7 @@ interface TableState {
   selectedItems: Set<number>;
   toggleSelect: (id: number) => void;
   selectPage: (ids: number[]) => void;
+  deselectPage?: (ids: number[]) => void;
   clearSelection: () => void;
   isAllPageSelected: (ids: number[]) => boolean;
   isSomePageSelected: (ids: number[]) => boolean;
@@ -109,7 +110,7 @@ export function ProcListPage({
   const {
     page, setPage, search, handleSearch,
     filters, handleFilterChange, handleFilterReset, handleRemoveFilter,
-    selectedItems, toggleSelect, selectPage, clearSelection,
+    selectedItems, toggleSelect, selectPage, deselectPage, clearSelection,
     isAllPageSelected, isSomePageSelected,
   } = tableState;
 
@@ -277,7 +278,16 @@ export function ProcListPage({
             {/* Bulk action bar */}
             {bulkActions && selectedItems.size > 0 && (
               <div className="proc-bulk-bar">
-                <span className="proc-bulk-label">{selectedItems.size} selected</span>
+                <span className="proc-bulk-label">
+                  <b>{selectedItems.size}</b> selected
+                  <button type="button" onClick={clearSelection} style={{
+                    marginInlineStart: 10, background: 'none', border: 'none',
+                    color: 'var(--brand)', cursor: 'pointer', fontSize: 'inherit',
+                    fontWeight: 600, textDecoration: 'underline',
+                  }}>
+                    Clear
+                  </button>
+                </span>
                 {bulkActions}
               </div>
             )}
@@ -298,7 +308,7 @@ export function ProcListPage({
                 onToggleSelect={toggleSelect}
                 onToggleSelectAll={() =>
                   isAllPageSelected(currentIds)
-                    ? clearSelection()
+                    ? (deselectPage ? deselectPage(currentIds) : clearSelection())
                     : selectPage(currentIds)
                 }
                 isAllSelected={isAllPageSelected(currentIds)}

@@ -60,14 +60,28 @@ interface DataTableProps<T> {
 
 // ── Pagination bar ───────────────────────────────────────────────────────────
 function PaginationBar({
-  page, totalCount, pageSize = 20, hasPrev, hasNext, onPageChange, surface,
+  page, totalCount, pageSize = 20, rowsOnPage = 0, hasPrev, hasNext, onPageChange, surface,
 }: {
-  page: number; totalCount: number; pageSize?: number;
+  page: number; totalCount: number; pageSize?: number; rowsOnPage?: number;
   hasPrev?: boolean; hasNext?: boolean;
   onPageChange: (p: number) => void;
   surface?: boolean;
 }) {
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  // The SERVER decides the real page size — the prop is only a fallback.
+  // A page with a `next` link is by definition full, so its row count IS the
+  // server page size. On the last page, all earlier pages were full, so the
+  // size back-computes from what's left. Trusting the prop when it disagrees
+  // with the server produces phantom page counts (e.g. 94 rows @20/page shown
+  // as "2 pages" because the prop said 50).
+  const effectiveSize = (() => {
+    if (rowsOnPage > 0 && hasNext) return rowsOnPage;
+    if (rowsOnPage > 0 && page > 1) {
+      const inferred = Math.round((totalCount - rowsOnPage) / (page - 1));
+      if (inferred > 0) return inferred;
+    }
+    return rowsOnPage > 0 ? rowsOnPage : pageSize;
+  })();
+  const totalPages = Math.max(1, Math.ceil(totalCount / effectiveSize));
 
   // Self-heal: a restored/stale page beyond the last real page (filters
   // narrowed the data, records deleted, …) snaps back to the last page.
@@ -77,8 +91,8 @@ function PaginationBar({
 
   if (totalPages <= 1) return null;
 
-  const from = (page - 1) * pageSize + 1;
-  const to   = Math.min(page * pageSize, totalCount);
+  const from = (page - 1) * effectiveSize + 1;
+  const to   = rowsOnPage > 0 ? from + rowsOnPage - 1 : Math.min(page * effectiveSize, totalCount);
 
   // Numbered window: 1 … p-1 p p+1 … last
   const pages: (number | '…')[] = [];
@@ -292,6 +306,7 @@ export default function DataTable<T>({
       page={page}
       totalCount={totalCount}
       pageSize={pageSize}
+      rowsOnPage={safeData.length}
       hasPrev={hasPrev}
       hasNext={hasNext}
       onPageChange={onPageChange}
