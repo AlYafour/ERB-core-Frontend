@@ -3,6 +3,9 @@
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { suppliersApi } from '@/lib/api/suppliers';
+import { purchaseInvoicesApi } from '@/lib/api/purchase-invoices';
+import { formatPrice, fmtDate } from '@/lib/utils/format';
+import { Badge } from '@/components/ui';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import EntityHeader from '@/components/ui/EntityHeader';
@@ -139,7 +142,85 @@ export default function SupplierDetailPage() {
             </div>
           )}
         </div>
+
+        <SupplierInvoices supplierId={Number(params.id)} />
       </PageShell>
     </MainLayout>
   );
 }
+
+const INV_BADGE: Record<string, 'success' | 'info' | 'default' | 'warning' | 'error'> = {
+  draft: 'default', pending: 'warning', approved: 'info',
+  paid: 'success', rejected: 'error', cancelled: 'error',
+};
+
+function SupplierInvoices({ supplierId }: { supplierId: number }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['supplier-invoices', supplierId],
+    queryFn: () => purchaseInvoicesApi.getAll({ supplier: supplierId, page_size: 200 } as any),
+  });
+  const invoices: any[] = (data as any)?.results ?? (Array.isArray(data) ? data : []);
+  const total = invoices.reduce((s, i) => s + Number(i.total || 0), 0);
+  const paid = invoices.reduce((s, i) => s + Number(i.paid_amount || 0), 0);
+
+  const TD: React.CSSProperties = {
+    padding: '7px 10px', fontSize: 'var(--text-sm)',
+    borderBottom: '1px solid var(--border-subtle)',
+  };
+  const TH: React.CSSProperties = {
+    ...TD, textAlign: 'left', color: 'var(--text-secondary)',
+    fontSize: 'var(--text-xs)', textTransform: 'uppercase',
+  };
+
+  return (
+    <div className="card" style={{ marginTop: 'var(--space-4)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div className="info-section-title" style={{ margin: 0 }}>
+          Invoices ({invoices.length})
+        </div>
+        <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+          Total: <b style={{ color: 'var(--text-primary)' }}>{formatPrice(total)}</b>
+          <span style={{ marginInlineStart: 14 }}>Paid: <b style={{ color: 'var(--status-success)' }}>{formatPrice(paid)}</b></span>
+          <span style={{ marginInlineStart: 14 }}>Outstanding: <b style={{ color: 'var(--status-warning, #b45309)' }}>{formatPrice(total - paid)}</b></span>
+        </div>
+      </div>
+      {isLoading ? (
+        <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>Loading…</div>
+      ) : invoices.length === 0 ? (
+        <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>No invoices for this supplier yet.</div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                {['Invoice #', 'LPO', 'Date', 'Total', 'Paid', 'Status', ''].map(h => (
+                  <th key={h} style={TH}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {invoices.map((inv: any) => (
+                <tr key={inv.id}>
+                  <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 600 }}>{inv.invoice_number}</td>
+                  <td style={{ ...TD, fontFamily: 'monospace' }}>
+                    {typeof inv.purchase_order === 'object' ? inv.purchase_order?.order_number : `#${inv.purchase_order_id ?? ''}`}
+                  </td>
+                  <td style={TD}>{fmtDate(inv.invoice_date)}</td>
+                  <td style={{ ...TD, textAlign: 'right', fontFamily: 'monospace' }}>{formatPrice(Number(inv.total || 0))}</td>
+                  <td style={{ ...TD, textAlign: 'right', fontFamily: 'monospace' }}>{formatPrice(Number(inv.paid_amount || 0))}</td>
+                  <td style={TD}><Badge variant={INV_BADGE[inv.status] ?? 'default'}>{inv.status}</Badge></td>
+                  <td style={TD}>
+                    <Link href={`/purchase-invoices/${inv.id}`} style={{ color: 'var(--brand)', fontWeight: 600, textDecoration: 'none' }}>
+                      Open
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
