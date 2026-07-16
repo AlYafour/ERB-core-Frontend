@@ -36,6 +36,12 @@ export const purchaseInvoicesApi = {
     return response.data;
   },
 
+  updateAccounts: async (id: number, data: {
+    expense_account?: number | null; payable_account?: number | null;
+  }): Promise<PurchaseInvoice> => {
+    const response = await apiClient.patch(`/purchase-invoices/${id}/`, data);
+    return response.data;
+  },
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/purchase-invoices/${id}/`);
   },

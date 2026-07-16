@@ -202,6 +202,9 @@ export interface Product {
   tax1?: number;
   tax2?: number;
   track_stock?: boolean;
+  /** Accounting defaults (Item Master pattern) — account ids */
+  expense_account?: number | null;
+  inventory_account?: number | null;
   stock_balance?: number;
   low_stock_threshold?: number;
   profit_margin?: number;

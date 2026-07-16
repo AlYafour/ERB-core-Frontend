@@ -14,6 +14,7 @@ import BilingualName from '@/components/domain/BilingualName';
 import { useT } from '@/lib/i18n/useT';
 import Drawer from '@/components/ui/Drawer';
 import { toast } from '@/lib/hooks/use-toast';
+import { accountingApi } from '@/lib/api/accounting';
 import { Product } from '@/types';
 
 function Field({ label, value, mono, full }: { label: string; value?: string | null; mono?: boolean; full?: boolean }) {
@@ -52,6 +53,13 @@ export default function ProductDetailPage() {
 
   const isAdmin = isTenantAdmin || isPlatformAdmin;
 
+  const { data: glAccountsData } = useQuery({
+    queryKey: ['acc-postable-accounts-product'],
+    queryFn: () => accountingApi.listAccounts({ is_postable: true, is_active: true, page_size: 500 }),
+    retry: false,
+  });
+  const glAccounts = glAccountsData?.results ?? [];
+
   const updateMutation = useMutation({
     mutationFn: (data: Partial<Product>) => productsApi.update(id, data),
     onSuccess: (updated) => {
@@ -78,6 +86,8 @@ export default function ProductDetailPage() {
       sell_price:  product.sell_price ?? product.unit_price,
       description: product.description ?? '',
       is_active:   product.is_active,
+      expense_account:   (product as any).expense_account ?? null,
+      inventory_account: (product as any).inventory_account ?? null,
     });
     setIsEditOpen(true);
   };
@@ -347,6 +357,34 @@ export default function ProductDetailPage() {
                 />
               </div>
             </div>
+
+            {/* Accounting defaults (Item Master) — shown when accounting is active */}
+            {glAccounts.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>Default Expense Account</label>
+                  <select
+                    className="input"
+                    value={(form as any).expense_account ?? ''}
+                    onChange={(e) => setForm((f) => ({ ...f, expense_account: e.target.value ? Number(e.target.value) : null } as any))}
+                  >
+                    <option value="">— company default —</option>
+                    {glAccounts.map((a) => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>Default Inventory Account</label>
+                  <select
+                    className="input"
+                    value={(form as any).inventory_account ?? ''}
+                    onChange={(e) => setForm((f) => ({ ...f, inventory_account: e.target.value ? Number(e.target.value) : null } as any))}
+                  >
+                    <option value="">— company default —</option>
+                    {glAccounts.map((a) => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
 
             {/* Unit + Brand */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

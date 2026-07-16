@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { accountingApi, type JournalEntry, type JournalStatus, type GLAccount } from '@/lib/api/accounting';
 import { toast, confirm } from '@/lib/hooks/use-toast';
@@ -490,6 +491,19 @@ export default function AccountingJournalPage() {
 
   const [showNew,     setShowNew]     = useState(false);
   const [detailEntry, setDetailEntry] = useState<JournalEntry | null>(null);
+
+  // Deep link: /accounting/journal?entry=<id> opens that entry (used by the
+  // Open-journal links on source documents like purchase invoices).
+  const searchParams = useSearchParams();
+  const deepLinkId = searchParams.get('entry');
+  const { data: deepLinkEntry } = useQuery({
+    queryKey: ['acc-journal-deeplink', deepLinkId],
+    queryFn: () => accountingApi.getJournal(deepLinkId as string),
+    enabled: !!deepLinkId,
+  });
+  useEffect(() => {
+    if (deepLinkEntry) setDetailEntry(deepLinkEntry);
+  }, [deepLinkEntry]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['acc-journal', page, search, filters, ordering],

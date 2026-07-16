@@ -433,6 +433,8 @@ export const accountingApi = {
     apiClient.post(`${BASE}/exchange-rates/`, payload).then(r => r.data),
   revalueFx: (asOf?: string) =>
     apiClient.post(`${BASE}/fx/revalue/`, asOf ? { as_of: asOf } : {}).then(r => r.data),
+  previewPurchaseInvoice: (invoiceId: number) =>
+    apiClient.get(`${BASE}/preview/purchase-invoice/${invoiceId}/`).then(r => r.data),
   importQuickBooksCoA: (content: string) =>
     apiClient.post(`${BASE}/import/quickbooks-coa/`, { content }).then(r => r.data),
 };
