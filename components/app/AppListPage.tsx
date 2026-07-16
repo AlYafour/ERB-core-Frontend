@@ -204,7 +204,9 @@ export function AppListPage({
   };
 
   const activeFilters = Object.entries(filters).filter(
-    ([k, v]) => k !== 'status' && v !== '' && v != null,
+    // '__'-prefixed keys are page-private state (e.g. toggles) — persisted
+    // with the filters but never rendered as chips.
+    ([k, v]) => k !== 'status' && !k.startsWith('__') && v !== '' && v != null,
   );
   const activeFilterCount = activeFilters.length;
 

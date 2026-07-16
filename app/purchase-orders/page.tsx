@@ -40,8 +40,9 @@ export default function PurchaseOrdersPage() {
   const canCreate = isAdmin || (hasPermission('purchase_order', 'create') ?? false);
   const canDelete = isAdmin || (hasPermission('purchase_order', 'delete') ?? false);
 
-  const [isMyPOs, setIsMyPOs] = useState(false);
-  const toggleMyPOs = () => { setIsMyPOs(v => !v); tableState.setPage(1); };
+  // Persisted with the rest of the list state (survives Back navigation)
+  const isMyPOs = filters.__my_pos === true;
+  const toggleMyPOs = () => tableState.handleFilterChange('__my_pos', isMyPOs ? undefined : true);
 
   const { data: projectsData } = useQuery({
     queryKey: ['projects-list-filter'],
@@ -78,9 +79,11 @@ export default function PurchaseOrdersPage() {
   ];
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['purchase-orders', page, search, filters, isMyPOs],
+    queryKey: ['purchase-orders', page, search, filters],
     queryFn:  () => purchaseOrdersApi.getAll({
-      page, search, ...filters,
+      page, search,
+      ...Object.fromEntries(Object.entries(filters)
+        .filter(([k]) => !k.startsWith('__'))),
       ...(isMyPOs && user?.id ? { pr_created_by: user.id } : {}),
     }),
     staleTime: 2 * 60 * 1000,
