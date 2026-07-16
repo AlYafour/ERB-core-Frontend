@@ -5,6 +5,7 @@ import { useDebounce } from '@/lib/hooks/use-debounce';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
+import { tenantApi } from '@/lib/api/tenants';
 import { purchaseRequestsApi } from '@/lib/api/purchase-requests';
 import { purchaseQuotationsApi } from '@/lib/api/purchase-quotations';
 import { suppliersApi } from '@/lib/api/suppliers';
@@ -62,7 +63,7 @@ function NewPOContent() {
     supplier_id: 0,
     order_date: new Date().toISOString().split('T')[0],
     delivery_date: '', delivery_method: '', payment_terms: '', payment_method: '', delivery_terms: '',
-    notes: '', terms_and_conditions: 'Conditions: -',
+    notes: '', terms_and_conditions: '',
     tax_rate: 0, discount: 0, transportation_charge: 0, transport_vat_included: true,
     status: 'pending',
   });
@@ -70,6 +71,21 @@ function NewPOContent() {
   const [charges, setCharges]   = useState<FormCharge[]>([]);
   const [newItem, setNewItem]   = useState<AddItemState>(BLANK_ITEM);
   const [costCode, setCostCode] = useState<CostCode | null>(null);
+
+  // Standard T&C come from Settings -> Company (default_terms) — the exact
+  // text the GM maintains there lands on every LPO automatically.
+  const { data: branding } = useQuery({
+    queryKey: ['tenant-branding'],
+    queryFn: () => tenantApi.myBranding(),
+    staleTime: 10 * 60 * 1000,
+  });
+  useEffect(() => {
+    const terms = (branding as any)?.default_terms;
+    if (terms && !formData.terms_and_conditions.trim()) {
+      setForm({ terms_and_conditions: terms });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [branding]);
 
   // Payment dropdowns — searchable + creatable (same pattern as HR forms)
   const [paymentTermsOpts, setPaymentTermsOpts] = useState(
