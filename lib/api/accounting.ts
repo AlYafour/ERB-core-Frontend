@@ -435,6 +435,14 @@ export const accountingApi = {
     apiClient.post(`${BASE}/fx/revalue/`, asOf ? { as_of: asOf } : {}).then(r => r.data),
   previewPurchaseInvoice: (invoiceId: number) =>
     apiClient.get(`${BASE}/preview/purchase-invoice/${invoiceId}/`).then(r => r.data),
+  listCostCodes: (params?: Record<string, unknown>) =>
+    apiClient.get<{ id: number; qb_code: string; excel_code: string;
+      description: string; level: number; parent: number | null;
+      default_account: number | null; default_account_code?: string | null;
+      effective_account_code?: string | null }[]>(
+      '/cost-codes/', { params }).then(r => r.data),
+  setCostCodeAccount: (id: number, account: number | null) =>
+    apiClient.patch(`/cost-codes/${id}/`, { default_account: account }).then(r => r.data),
   importQuickBooksCoA: (content: string) =>
     apiClient.post(`${BASE}/import/quickbooks-coa/`, { content }).then(r => r.data),
 };

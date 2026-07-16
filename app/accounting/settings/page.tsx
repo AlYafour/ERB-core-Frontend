@@ -57,6 +57,7 @@ const TABS = [
   { key: 'fiscal',   label: 'Fiscal Years & Closing' },
   { key: 'fx',       label: 'Exchange Rates & FX' },
   { key: 'budgets',  label: 'Budgets' },
+  { key: 'costcodes', label: 'Cost Code Accounts' },
   { key: 'import',   label: 'Import' },
 ] as const;
 
@@ -87,6 +88,7 @@ export default function AccountingSettingsPage() {
           {tab === 'fiscal' && <FiscalPanel />}
           {tab === 'fx' && <FxPanel />}
           {tab === 'budgets' && <BudgetsPanel />}
+          {tab === 'costcodes' && <CostCodeBridgePanel />}
           {tab === 'import' && <ImportPanel />}
         </div>
       </PageShell>
@@ -594,3 +596,78 @@ function ImportPanel() {
     </div>
   );
 }
+
+function CostCodeBridgePanel() {
+  const queryClient = useQueryClient();
+  const accounts = usePostableAccounts();
+  const [search, setSearch] = useState('');
+  const { data } = useQuery({
+    queryKey: ['acc-cost-codes'],
+    queryFn: () => accountingApi.listCostCodes(),
+  });
+  const codes = data ?? [];
+
+  const update = useMutation({
+    mutationFn: ({ id, account }: { id: number; account: number | null }) =>
+      accountingApi.setCostCodeAccount(id, account),
+    onSuccess: () => { toastOk('Cost code account saved.'); queryClient.invalidateQueries({ queryKey: ['acc-cost-codes'] }); },
+    onError: (e) => toastErr(getApiError(e)),
+  });
+
+  const q = search.trim().toLowerCase();
+  const visible = q
+    ? codes.filter(c => c.excel_code.toLowerCase().includes(q)
+        || c.qb_code.toLowerCase().includes(q)
+        || c.description.toLowerCase().includes(q))
+    : codes.filter(c => c.level === 1);
+
+  return (
+    <div>
+      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 10 }}>
+        Map each cost-code GROUP to its GL account once — every invoice coded
+        by site staff then posts to the right account automatically. Children
+        inherit the group account; search to override a specific code.
+        Showing {q ? `${visible.length} matches` : 'level-1 groups only'}.
+      </p>
+      <input style={{ ...INPUT, width: 320, marginBottom: 10 }}
+             placeholder="Search all 377 codes (e.g. CWU, OFFICE, كرين)…"
+             value={search} onChange={(e) => setSearch(e.target.value)} />
+      <div style={{ overflowX: 'auto', maxHeight: 520, overflowY: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={TH}>Code</th><th style={TH}>Description</th>
+              <th style={TH}>GL account</th><th style={TH}>Effective</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visible.map((c) => (
+              <tr key={c.id}>
+                <td style={{ ...TD, fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+                  {c.excel_code}
+                  <div style={{ color: 'var(--text-secondary)', fontSize: 10 }}>{c.qb_code}</div>
+                </td>
+                <td style={TD}>{c.description.slice(0, 70)}</td>
+                <td style={TD}>
+                  <select style={{ ...INPUT, minWidth: 240 }}
+                          value={c.default_account ?? ''}
+                          onChange={(e) => update.mutate({ id: c.id, account: e.target.value ? Number(e.target.value) : null })}>
+                    <option value="">— inherit / company default —</option>
+                    {accounts.map((a) => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
+                  </select>
+                </td>
+                <td style={{ ...TD, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                  {c.effective_account_code ?? '—'}
+                </td>
+              </tr>
+            ))}
+            {!visible.length ? (
+              <tr><td style={{ ...TD, color: 'var(--text-secondary)' }} colSpan={4}>No codes found.</td></tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
