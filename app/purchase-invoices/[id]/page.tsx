@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchaseInvoicesApi } from '@/lib/api/purchase-invoices';
 import { accountingApi } from '@/lib/api/accounting';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import MainLayout from '@/components/layout/MainLayout';
 import Link from 'next/link';
 import { formatPrice, fmtDate } from '@/lib/utils/format';
@@ -27,6 +28,10 @@ export default function PurchaseInvoiceDetailPage() {
   const id = Number(params.id);
   const queryClient = useQueryClient();
   const { can } = useProcPermissions();
+  const { isTenantAdmin, isPlatformAdmin, hasPermission: hasPerm } = useMyPermissions();
+  const isAccountant = isTenantAdmin || isPlatformAdmin
+    || hasPerm('accounting.journal_entry.view')
+    || hasPerm('accounting.accounting_settings.update');
 
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [showPayDialog, setShowPayDialog] = useState(false);
@@ -149,7 +154,7 @@ export default function PurchaseInvoiceDetailPage() {
               )}
             </div>
 
-            <AccountingInfoCard invoiceId={invoice.id} canEdit={can('purchase_invoice', 'update')} />
+            <AccountingInfoCard invoiceId={invoice.id} canEdit={can('purchase_invoice', 'update')} visible={isAccountant} />
           </div>
 
           {/* RIGHT: Items + Financial */}
@@ -267,7 +272,7 @@ export default function PurchaseInvoiceDetailPage() {
 
 // ── Accounting Information (accounting-module integration) ───────────────────
 
-function AccountingInfoCard({ invoiceId, canEdit }: { invoiceId: number; canEdit: boolean }) {
+function AccountingInfoCard({ invoiceId, canEdit, visible }: { invoiceId: number; canEdit: boolean; visible: boolean }) {
   const queryClient = useQueryClient();
   const { data: preview } = useQuery({
     queryKey: ['pi-accounting-preview', invoiceId],
@@ -296,7 +301,7 @@ function AccountingInfoCard({ invoiceId, canEdit }: { invoiceId: number; canEdit
     onError: (e) => toast(getApiError(e), 'error'),
   });
 
-  if (!preview?.activated) return null;
+  if (!visible || !preview?.activated) return null;
 
   const SOURCE_LABEL: Record<string, string> = {
     invoice_override: 'Invoice override',
