@@ -77,6 +77,7 @@ export interface PurchaseOrderFormData {
   order_date: string;
   delivery_date: string;
   payment_terms: string;
+  payment_method?: string;
   delivery_method: 'pickup' | 'delivery' | '';
   delivery_terms: string;
   tax_rate: number;
@@ -108,6 +109,7 @@ export function toPurchaseOrderCreateData(form: PurchaseOrderFormData, items?: A
     order_date: form.order_date,
     delivery_date: form.delivery_date || undefined,
     payment_terms: form.payment_terms,
+    payment_method: form.payment_method ?? '',
     delivery_method: form.delivery_method || undefined,
     delivery_terms: form.delivery_terms,
     tax_rate: form.tax_rate,
@@ -143,6 +145,7 @@ export interface PurchaseQuotationFormData {
   quotation_date: string;
   valid_until: string;
   payment_terms: string;
+  payment_method?: string;
   delivery_method: 'pickup' | 'delivery' | '';
   delivery_terms: string;
   tax_rate: number;
@@ -168,6 +171,7 @@ export function toPurchaseQuotationCreateData(form: PurchaseQuotationFormData, i
     quotation_date: form.quotation_date,
     valid_until: form.valid_until || undefined,
     payment_terms: form.payment_terms,
+    payment_method: form.payment_method ?? '',
     delivery_method: form.delivery_method || undefined,
     delivery_terms: form.delivery_terms,
     tax_rate: form.tax_rate,

@@ -268,6 +268,7 @@ export default function PurchaseOrderDetailPage() {
                     } />
                   )}
                   {order.payment_terms && <ProcField label="Payment Terms" value={order.payment_terms} />}
+                  {(order as any).payment_method && <ProcField label="Payment Method" value={(order as any).payment_method} />}
                   {order.delivery_terms && <ProcField label="Delivery Terms" value={order.delivery_terms} />}
                   {order.notes && <ProcField label="Notes" value={order.notes} />}
                 </div>

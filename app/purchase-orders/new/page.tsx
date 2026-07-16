@@ -61,7 +61,7 @@ function NewPOContent() {
     purchase_quotation_id: purchaseQuotationId ? Number(purchaseQuotationId) : undefined,
     supplier_id: 0,
     order_date: new Date().toISOString().split('T')[0],
-    delivery_date: '', delivery_method: '', payment_terms: '', delivery_terms: '',
+    delivery_date: '', delivery_method: '', payment_terms: '', payment_method: '', delivery_terms: '',
     notes: '', terms_and_conditions: 'Conditions: -',
     tax_rate: 0, discount: 0, transportation_charge: 0, transport_vat_included: true,
     status: 'pending',
@@ -70,6 +70,14 @@ function NewPOContent() {
   const [charges, setCharges]   = useState<FormCharge[]>([]);
   const [newItem, setNewItem]   = useState<AddItemState>(BLANK_ITEM);
   const [costCode, setCostCode] = useState<CostCode | null>(null);
+
+  // Payment dropdowns — searchable + creatable (same pattern as HR forms)
+  const [paymentTermsOpts, setPaymentTermsOpts] = useState(
+    ['CASH/TRANSFER', 'PDC CHQ', '30 DAYS CREDIT', '60 DAYS', '90 DAYS', '120 DAYS']
+      .map(v => ({ value: v, label: v })));
+  const [paymentMethodOpts, setPaymentMethodOpts] = useState(
+    ['BY CASH', 'BY TRANSFER', 'BY CDC CHQ', 'BY PDC CHQ', 'BY CREDIT CARD']
+      .map(v => ({ value: v, label: v })));
   const [errors, setErrors]     = useState<Record<string, string>>({});
 
   const { data: purchaseRequest }   = useQuery({ queryKey: ['purchase-requests', purchaseRequestId], queryFn: () => purchaseRequestsApi.getById(Number(purchaseRequestId!)), enabled: !!purchaseRequestId });
@@ -463,8 +471,35 @@ function NewPOContent() {
               <div className="form-grid form-grid--2col">
                 <div>
                   <label className="form-label">{t('field', 'paymentTerms')}</label>
-                  <textarea className="form-textarea" rows={2} placeholder="Payment terms…"
-                    value={formData.payment_terms} onChange={(e) => setForm({ payment_terms: e.target.value })} />
+                  <SearchableDropdown
+                    options={paymentTermsOpts}
+                    value={formData.payment_terms}
+                    onChange={(v) => setForm({ payment_terms: String(v ?? '') })}
+                    placeholder="Select payment terms…"
+                    allowClear
+                    onCreateOption={async (label) => {
+                      const opt = { value: label, label };
+                      setPaymentTermsOpts(prev => [...prev, opt]);
+                      return opt;
+                    }}
+                    createLabel="Add"
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Payment Method</label>
+                  <SearchableDropdown
+                    options={paymentMethodOpts}
+                    value={formData.payment_method ?? ''}
+                    onChange={(v) => setForm({ payment_method: String(v ?? '') })}
+                    placeholder="Select payment method…"
+                    allowClear
+                    onCreateOption={async (label) => {
+                      const opt = { value: label, label };
+                      setPaymentMethodOpts(prev => [...prev, opt]);
+                      return opt;
+                    }}
+                    createLabel="Add"
+                  />
                 </div>
                 <div>
                   <label className="form-label">{t('field', 'deliveryTerms')}</label>
