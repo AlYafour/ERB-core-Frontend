@@ -187,6 +187,8 @@ export interface PurchaseInvoiceFormData {
   tax_rate: number;
   discount: number;
   notes: string;
+  expense_account?: number | null;
+  payable_account?: number | null;
   items?: PurchaseInvoiceItemFormData[];
 }
 
@@ -210,6 +212,8 @@ export function toPurchaseInvoiceCreateData(form: PurchaseInvoiceFormData, items
     tax_rate: form.tax_rate,
     discount: form.discount,
     notes: form.notes,
+    expense_account: form.expense_account ?? undefined,
+    payable_account: form.payable_account ?? undefined,
     items: allItems,
   };
 }
