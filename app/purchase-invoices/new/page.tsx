@@ -5,8 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { purchaseOrdersApi } from '@/lib/api/purchase-orders';
 import { purchaseInvoicesApi } from '@/lib/api/purchase-invoices';
-import { accountingApi } from '@/lib/api/accounting';
-import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { PurchaseInvoiceItem } from '@/types';
 import { PurchaseInvoiceFormData, toPurchaseInvoiceCreateData } from '@/lib/types/form-data';
 import { Button, PageHeader, PageShell } from '@/components/ui';
@@ -54,18 +52,6 @@ function NewPurchaseInvoicePageContent() {
 
   const [items, setItems] = useState<PurchaseInvoiceItem[]>([]);
 
-  const { isTenantAdmin, isPlatformAdmin, hasPermission: hasPerm } = useMyPermissions();
-  const isAccountant = isTenantAdmin || isPlatformAdmin
-    || hasPerm('accounting.journal_entry.view')
-    || hasPerm('accounting.accounting_settings.update');
-
-  const { data: glAccountsData } = useQuery({
-    queryKey: ['acc-postable-accounts-pi-create'],
-    queryFn: () => accountingApi.listAccounts({ is_postable: true, is_active: true, page_size: 500 }),
-    retry: false,
-    enabled: isAccountant,
-  });
-  const glAccounts = glAccountsData?.results ?? [];
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data: purchaseOrder } = useQuery({
@@ -410,44 +396,6 @@ function NewPurchaseInvoicePageContent() {
                 />
               </div>
 
-              {/* Accounting Information — shown when the accounting module is active.
-                  Leave on Automatic: accounts resolve from item defaults / supplier
-                  master / company mappings; the exact journal preview appears on the
-                  invoice page after creation. */}
-              {isAccountant && glAccounts.length > 0 && (
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <div className="form-label" style={{ fontWeight: 700, marginBottom: 8 }}>
-                    Accounting Information
-                    <span style={{ fontWeight: 400, color: 'var(--text-tertiary)', marginInlineStart: 8, fontSize: 'var(--text-xs)' }}>
-                      Posting date = invoice date · optional overrides
-                    </span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                    <div>
-                      <label className="form-label">Expense / Inventory Account</label>
-                      <select
-                        className="form-input"
-                        value={formData.expense_account ?? ''}
-                        onChange={(e) => setFormData({ ...formData, expense_account: e.target.value ? Number(e.target.value) : null })}
-                      >
-                        <option value="">Automatic — item defaults, then company default</option>
-                        {glAccounts.map((a) => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="form-label">Accounts Payable Account</label>
-                      <select
-                        className="form-input"
-                        value={formData.payable_account ?? ''}
-                        onChange={(e) => setFormData({ ...formData, payable_account: e.target.value ? Number(e.target.value) : null })}
-                      >
-                        <option value="">Automatic — supplier master, then company AP</option>
-                        {glAccounts.map((a) => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
@@ -464,24 +412,6 @@ function NewPurchaseInvoicePageContent() {
             <EditableStandardItemsTable
               items={items}
               onUpdate={(index, field, value) => updateItem(index, field as keyof PurchaseInvoiceItem, value)}
-              extraColumn={isAccountant && glAccounts.length > 0 ? {
-                header: 'Account',
-                width: 200,
-                render: (item: any, index: number) => (
-                  <select
-                    className="form-input"
-                    style={{ width: 190, fontSize: 'var(--text-xs)' }}
-                    value={item.account ?? ''}
-                    onChange={(e) => updateItem(index, 'account' as keyof PurchaseInvoiceItem,
-                      e.target.value ? Number(e.target.value) : (null as any))}
-                  >
-                    <option value="">Auto (item default)</option>
-                    {glAccounts.map((a) => (
-                      <option key={a.id} value={a.id}>{a.code} — {a.name}</option>
-                    ))}
-                  </select>
-                ),
-              } : undefined}
               showUnit={true}
               renderProduct={(item) => {
                 const poItem = purchaseOrder?.items?.find((poi) => poi.id === item.purchase_order_item_id);
