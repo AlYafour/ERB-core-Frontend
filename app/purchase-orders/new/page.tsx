@@ -89,10 +89,13 @@ function NewPOContent() {
 
   // Payment dropdowns — searchable + creatable (same pattern as HR forms)
   const [paymentTermsOpts, setPaymentTermsOpts] = useState(
-    ['CASH/TRANSFER', 'PDC CHQ', '30 DAYS CREDIT', '60 DAYS', '90 DAYS', '120 DAYS']
+    ['Due on Receipt', 'Advance Payment', 'Post-Dated Cheque (PDC)',
+     'Net 30 — 30 Days Credit', 'Net 60 — 60 Days Credit',
+     'Net 90 — 90 Days Credit', 'Net 120 — 120 Days Credit']
       .map(v => ({ value: v, label: v })));
   const [paymentMethodOpts, setPaymentMethodOpts] = useState(
-    ['BY CASH', 'BY TRANSFER', 'BY CDC CHQ', 'BY PDC CHQ', 'BY CREDIT CARD']
+    ['Cash', 'Bank Transfer', 'Cheque — Current Dated (CDC)',
+     'Cheque — Post-Dated (PDC)', 'Credit Card']
       .map(v => ({ value: v, label: v })));
   const [errors, setErrors]     = useState<Record<string, string>>({});
 
