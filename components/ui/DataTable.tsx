@@ -67,34 +67,62 @@ function PaginationBar({
   onPageChange: (p: number) => void;
   surface?: boolean;
 }) {
-  const totalPages = Math.ceil(totalCount / pageSize);
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  // Self-heal: a restored/stale page beyond the last real page (filters
+  // narrowed the data, records deleted, …) snaps back to the last page.
+  React.useEffect(() => {
+    if (totalCount > 0 && page > totalPages) onPageChange(totalPages);
+  }, [page, totalPages, totalCount, onPageChange]);
+
   if (totalPages <= 1) return null;
 
   const from = (page - 1) * pageSize + 1;
   const to   = Math.min(page * pageSize, totalCount);
 
+  // Numbered window: 1 … p-1 p p+1 … last
+  const pages: (number | '…')[] = [];
+  const window = new Set([1, 2, page - 1, page, page + 1, totalPages - 1, totalPages]
+    .filter(n => n >= 1 && n <= totalPages));
+  let prev = 0;
+  Array.from(window).sort((a, b) => a - b).forEach(n => {
+    if (n - prev > 1) pages.push('…');
+    pages.push(n);
+    prev = n;
+  });
+
+  const PAGE_BTN = (n: number, active: boolean): React.CSSProperties => ({
+    minWidth: 32, height: 32, padding: '0 8px',
+    borderRadius: 8, cursor: active ? 'default' : 'pointer',
+    fontSize: 13, fontWeight: active ? 700 : 500,
+    border: `1px solid ${active ? 'var(--brand, #b8860b)' : 'var(--border-subtle)'}`,
+    background: active ? 'var(--brand, #b8860b)' : 'transparent',
+    color: active ? '#fff' : 'var(--text-primary)',
+  });
+
   const inner = (
     <>
       <p className="text-sm" style={{ color: 'var(--text-secondary)', margin: 0 }}>
-        {from}–{to} of {totalCount}
+        Showing <b style={{ color: 'var(--text-primary)' }}>{from}–{to}</b> of{' '}
+        <b style={{ color: 'var(--text-primary)' }}>{totalCount}</b>
       </p>
-      <div className="flex gap-2">
-        <Button
-          variant="secondary"
-          onClick={() => onPageChange(page - 1)}
-          disabled={!hasPrev && page === 1}
-        >
-          Previous
+      <div className="flex items-center gap-1">
+        <Button variant="secondary" size="sm"
+                onClick={() => onPageChange(page - 1)} disabled={page <= 1}>
+          ‹ Previous
         </Button>
-        <span className="flex items-center px-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          {page} / {totalPages}
-        </span>
-        <Button
-          variant="secondary"
-          onClick={() => onPageChange(page + 1)}
-          disabled={!hasNext && page >= totalPages}
-        >
-          Next
+        {pages.map((p, i) => p === '…'
+          ? <span key={`e${i}`} style={{ padding: '0 4px', color: 'var(--text-tertiary)' }}>…</span>
+          : (
+            <button key={p} type="button" style={PAGE_BTN(p, p === page)}
+                    onClick={() => p !== page && onPageChange(p)}
+                    aria-current={p === page ? 'page' : undefined}>
+              {p}
+            </button>
+          ))}
+        <Button variant="secondary" size="sm"
+                onClick={() => onPageChange(page + 1)} disabled={page >= totalPages}>
+          Next ›
         </Button>
       </div>
     </>
