@@ -130,6 +130,16 @@ export default function GRNDetailPage() {
                     </Link>
                   } />
                 )}
+                {(purchaseOrder as any)?.cost_code ? (
+                  <ProcField label="Cost Code" value={
+                    <span>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{(purchaseOrder as any).cost_code.excel_code}</span>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', marginInlineStart: 6 }}>
+                        {String((purchaseOrder as any).cost_code.description || '').slice(0, 50)}
+                      </span>
+                    </span>
+                  } />
+                ) : null}
                 <ProcField label={t('field', 'receiptDate')} value={fmtDate(grn.receipt_date)} />
                 <ProcField label={t('col', 'createdBy')}     value={grn.received_by_name || '—'} />
                 <ProcField label="Total Items"               value={<span style={{ fontWeight: 700 }}>{grn.total_items || 0}</span>} />

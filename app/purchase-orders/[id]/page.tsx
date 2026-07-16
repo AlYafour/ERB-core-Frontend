@@ -248,6 +248,16 @@ export default function PurchaseOrderDetailPage() {
                 <div className="proc-info-grid">
                   <ProcField label="Supplier" value={typeof order.supplier === 'object' ? ((order.supplier as any)?.business_name || (order.supplier as any)?.name || '—') : '—'} />
                   <ProcField label="Order Date" value={fmtDate(order.order_date)} />
+                  <ProcField label="Cost Code" value={
+                    (order as any).cost_code ? (
+                      <span>
+                        <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{(order as any).cost_code.excel_code}</span>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', marginInlineStart: 6 }}>
+                          {String((order as any).cost_code.description || '').slice(0, 50)}
+                        </span>
+                      </span>
+                    ) : <span style={{ color: 'var(--status-warning, #b45309)' }}>Not set</span>
+                  } />
                   {order.delivery_date && <ProcField label="Delivery Date" value={fmtDate(order.delivery_date)} />}
                   {order.delivery_method && <ProcField label="Delivery Method" value={order.delivery_method === 'pickup' ? 'Pick Up' : 'Delivery'} />}
                   {order.approved_by_name && <ProcField label="Approved By" value={order.approved_by_name} />}

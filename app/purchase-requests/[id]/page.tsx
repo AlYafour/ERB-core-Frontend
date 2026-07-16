@@ -433,6 +433,16 @@ export default function PurchaseRequestDetailPage() {
                   <ProcField label={t('section', 'authorization')} value={request.approved_by_name} />
                 )}
                 {request.notes && <ProcField label={t('col', 'notes')} value={request.notes} />}
+                {((request as any).linked_purchase_orders ?? [])
+                  .filter((po: any) => po.cost_code_excel)
+                  .map((po: any) => (
+                    <ProcField key={po.id} label={`Cost Code — ${po.order_number}`} value={
+                      <span>
+                        <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{po.cost_code_excel}</span>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', marginInlineStart: 6 }}>{po.cost_code_desc}</span>
+                      </span>
+                    } />
+                  ))}
               </div>
               {request.rejection_reason && (
                 <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 8, background: 'var(--status-error-bg)', border: '1px solid var(--status-error-border)' }}>
