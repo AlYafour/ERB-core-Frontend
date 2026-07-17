@@ -97,6 +97,16 @@ export interface JournalLine {
   project?: number | null;
   cost_code?: number | null;
   department?: number | null;
+  tax_code?: number | null;
+}
+
+export interface JournalAttachment {
+  id: string;
+  name: string;
+  size: number;
+  url: string | null;
+  uploaded_by_name?: string | null;
+  created_at: string;
 }
 
 export type JournalStatus =
@@ -121,7 +131,9 @@ export interface JournalEntry {
   posted_by_name?: string | null;
   reversal_of_number?: string | null;
   lines: JournalLine[];
+  attachments?: JournalAttachment[];
   created_at: string;
+  updated_at?: string;
 }
 
 export interface PaymentAllocation {
@@ -339,6 +351,8 @@ export const accountingApi = {
     apiClient.patch<JournalEntry>(`${BASE}/journal-entries/${id}/`, payload).then(r => r.data),
   postJournal: (id: string) =>
     apiClient.post<JournalEntry>(`${BASE}/journal-entries/${id}/post/`).then(r => r.data),
+  deleteJournal: (id: string) =>
+    apiClient.delete(`${BASE}/journal-entries/${id}/`),
   uploadJournalAttachment: (id: string, file: File) => {
     const fd = new FormData();
     fd.append('file', file);
