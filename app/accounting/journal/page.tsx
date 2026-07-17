@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { accountingApi, type JournalEntry, type JournalStatus, type GLAccount } from '@/lib/api/accounting';
 import { toast, confirm } from '@/lib/hooks/use-toast';
@@ -489,6 +489,7 @@ export default function AccountingJournalPage() {
   const { page, search, filters, ordering } = tableState;
   const queryClient = useQueryClient();
 
+  const router = useRouter();
   const [showNew,     setShowNew]     = useState(false);
   const [detailEntry, setDetailEntry] = useState<JournalEntry | null>(null);
 
@@ -610,7 +611,7 @@ export default function AccountingJournalPage() {
         </Button>
       }
       createAction={
-        <Button variant="primary" size="sm" onClick={() => setShowNew(true)}>
+        <Button variant="primary" size="sm" onClick={() => router.push('/accounting/journal/new')}>
           + New Entry
         </Button>
       }

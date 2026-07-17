@@ -339,6 +339,15 @@ export const accountingApi = {
     apiClient.patch<JournalEntry>(`${BASE}/journal-entries/${id}/`, payload).then(r => r.data),
   postJournal: (id: string) =>
     apiClient.post<JournalEntry>(`${BASE}/journal-entries/${id}/post/`).then(r => r.data),
+  uploadJournalAttachment: (id: string, file: File) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return apiClient.post<{ id: string; name: string; size: number; url: string }>(
+      `${BASE}/journal-entries/${id}/attachments/`, fd,
+      { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data);
+  },
+  deleteJournalAttachment: (id: string, attId: string) =>
+    apiClient.delete(`${BASE}/journal-entries/${id}/attachments/${attId}/`),
   bulkPostJournals: (payload: { ids?: string[]; all_drafts?: boolean }) =>
     apiClient.post<{ posted: number; skipped: Array<{ id: string; memo: string; reason: string }>; errors: Array<{ id: string; memo: string; error: string }> }>(
       `${BASE}/journal-entries/bulk-post/`, payload).then(r => r.data),
