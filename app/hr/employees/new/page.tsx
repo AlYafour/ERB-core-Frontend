@@ -350,8 +350,10 @@ function NewEmployeeForm() {
   // ── Derived ────────────────────────────────────────────────────────────────
 
   const deptOptions  = (depts?.results          ?? []).map(d  => ({ value: d.id,  label: d.name }));
+  // A department narrows the list but never hides company-wide positions
+  // (department = null) — hiding them made the dropdown look empty.
   const positionOpts = (positions?.results      ?? [])
-    .filter(p => !employment.department || p.department === employment.department)
+    .filter(p => !employment.department || !p.department || p.department === employment.department)
     .map(p => ({ value: p.id, label: p.title }));
   const groupOptions  = (groups?.results         ?? []).map(g  => ({ value: g.id,  label: g.name }));
   const locationOpts  = (officeLocations?.results ?? []).map(l  => ({ value: l.id,  label: l.name }));
@@ -663,7 +665,7 @@ function NewEmployeeForm() {
                     <SearchableDropdown options={deptOptions} value={employment.department} onChange={v => {
                       const newDept = v as number | null;
                       const currPos = positions?.results?.find(pos => pos.id === employment.position);
-                      const stillValid = !newDept || currPos?.department === newDept;
+                      const stillValid = !newDept || !currPos?.department || currPos?.department === newDept;
                       setEmployment(prev => ({ ...prev, department: newDept, position: stillValid ? prev.position : null }));
                     }} placeholder="" allowClear
                       onCreateOption={async name => {
@@ -676,7 +678,12 @@ function NewEmployeeForm() {
                   <div className="form-field"><label className="form-label">Position</label>
                     <SearchableDropdown options={positionOpts} value={employment.position} onChange={v => setEmployment(prev => ({ ...prev, position: v as number | null }))} placeholder="" allowClear
                       onCreateOption={async title => {
-                        const pos = await hrPositionsApi.create({ title });
+                        // Stamp the selected department so the new position
+                        // survives the department filter it was created under.
+                        const pos = await hrPositionsApi.create({
+                          title,
+                          ...(employment.department ? { department: employment.department } : {}),
+                        });
                         queryClient.invalidateQueries({ queryKey: ['hr-positions'] });
                         toast(`Position "${title}" created`, 'success');
                         return { value: pos.id, label: pos.title };
