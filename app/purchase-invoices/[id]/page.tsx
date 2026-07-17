@@ -151,6 +151,13 @@ export default function PurchaseInvoiceDetailPage() {
                   } />
                 ) : null}
                 {invoice.notes && <ProcField label="Notes" value={invoice.notes} />}
+                {invoice.journal_entry && (
+                  <ProcField label="Journal Entry" value={
+                    <Link href={`/accounting/journal/${invoice.journal_entry.id}`} style={{ color: 'var(--brand)', fontWeight: 'var(--weight-semibold)', textDecoration: 'none' }}>
+                      {invoice.journal_entry.number || 'Draft'} ({invoice.journal_entry.status}) ↗
+                    </Link>
+                  } />
+                )}
               </div>
               {invoice.rejection_reason && (
                 <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 8, background: 'var(--status-error-bg)', border: '1px solid var(--status-error-border)' }}>

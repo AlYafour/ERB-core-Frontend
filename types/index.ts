@@ -537,6 +537,7 @@ export interface PurchaseInvoice {
   payment_method?: string;
   payment_reference?: string;
   notes?: string;
+  journal_entry?: { id: string; number: string | null; status: string } | null;
   created_by: number;
   created_by_name?: string;
   created_at: string;

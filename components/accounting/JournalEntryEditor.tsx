@@ -16,6 +16,7 @@
  */
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button, Badge, PageHeader } from '@/components/ui';
@@ -344,7 +345,13 @@ export default function JournalEntryEditor({ entry }: { entry?: JournalEntry }) 
           <div className="proc-info-grid">
             <ProcField label="Journal Date" value={journalDate} />
             <ProcField label="Journal No." value={<span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{entry?.number || journalNo || '—'}</span>} />
-            <ProcField label="Source" value={entry?.source_module === 'manual' ? 'Manual' : `${entry?.source_module} · ${entry?.event_code}`} />
+            <ProcField label="Source" value={
+              entry?.source_module === 'purchase_invoices' && entry?.source_id ? (
+                <Link href={`/purchase-invoices/${entry.source_id}`} style={{ color: 'var(--brand)', fontWeight: 'var(--weight-semibold)', textDecoration: 'none' }}>
+                  Supplier bill ↗
+                </Link>
+              ) : entry?.source_module === 'manual' ? 'Manual' : `${entry?.source_module} · ${entry?.event_code}`
+            } />
             <ProcField label="Created By" value={entry?.created_by_name || '—'} />
             {entry?.posted_by_name && <ProcField label="Posted By" value={entry.posted_by_name} />}
             {entry?.reversal_of_number && <ProcField label="Reverses" value={entry.reversal_of_number} />}
