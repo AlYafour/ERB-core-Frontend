@@ -126,6 +126,12 @@ export default function SuppliersPage() {
       key: 'name', header: t('col', 'name'),
       render: s => <BilingualName nameEn={s.business_name || s.name} nameAr={s.business_name_ar} />,
     },
+    {
+      key: 'trn', header: 'TRN',
+      render: s => s.trn
+        ? <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)' }}>{s.trn}</span>
+        : <span style={{ color: 'var(--status-warning)', fontSize: 'var(--text-xs)', fontWeight: 600 }}>Missing</span>,
+    },
     { key: 'email', header: t('col', 'email'), render: s => <span style={{ color: 'var(--text-secondary)' }}>{s.email || '—'}</span> },
     { key: 'phone', header: t('col', 'phone'), render: s => <span style={{ color: 'var(--text-secondary)' }}>{s.phone || '—'}</span> },
     {
