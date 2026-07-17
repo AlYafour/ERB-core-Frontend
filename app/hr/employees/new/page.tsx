@@ -8,6 +8,7 @@ import { hrEmployeesApi, hrDepartmentsApi, hrPositionsApi, hrEmployeeGroupsApi, 
 import { usersApi } from '@/lib/api/users';
 import type { User, HREmployee, HRPosition } from '@/types';
 import { toast } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import SearchableDropdown, { DropdownOption } from '@/components/ui/SearchableDropdown';
 import DateInput from '@/components/ui/DateInput';
 import PhoneInput from '@/components/ui/PhoneInput';
@@ -479,11 +480,7 @@ function NewEmployeeForm() {
       toast('Employee created successfully', 'success');
       router.push('/hr/employees');
     } catch (err: unknown) {
-      const e = err as { response?: { data?: Record<string, unknown[]> } };
-      const msg = e?.response?.data
-        ? Object.entries(e.response.data).map(([k, v]) => `${k}: ${(v as unknown[]).flat().join(', ')}`).join(' | ')
-        : 'Failed to create employee';
-      toast(msg as string, 'error');
+      toast(getApiError(err, 'Failed to create employee'), 'error');
     }
   };
 
