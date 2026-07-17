@@ -403,9 +403,11 @@ export default function PrintLPOPage() {
             </div>
           )}
 
-          {(b?.default_terms || po.terms_and_conditions) && (() => {
-            // Prefer company-level default_terms; fall back to per-PO field
-            const raw = b?.default_terms || po.terms_and_conditions || '';
+          {b?.default_terms && (() => {
+            // SINGLE SOURCE: company branding (Settings → Company). Per-PO
+            // stored text is legacy and deliberately ignored — old records
+            // carried duplicated/stale blocks.
+            const raw = b?.default_terms || '';
             // Strip leading label like "Conditions: -" or "Terms & Conditions:"
             const cleaned = raw
               .replace(/^(terms\s*[&and]*\s*conditions\s*:?\s*-?\s*)/i, '')

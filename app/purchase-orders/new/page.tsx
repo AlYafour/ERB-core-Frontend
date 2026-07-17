@@ -79,13 +79,8 @@ function NewPOContent() {
     queryFn: () => tenantApi.myBranding(),
     staleTime: 10 * 60 * 1000,
   });
-  useEffect(() => {
-    const terms = (branding as any)?.default_terms;
-    if (terms && !formData.terms_and_conditions.trim()) {
-      setForm({ terms_and_conditions: terms });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [branding]);
+  // Terms & Conditions live in ONE place: Settings → Company (branding).
+  // The printed LPO reads them from there — no per-PO copy is stored.
 
   // Payment dropdowns — searchable + creatable (same pattern as HR forms)
   const [paymentTermsOpts, setPaymentTermsOpts] = useState(
@@ -529,11 +524,6 @@ function NewPOContent() {
                   <label className="form-label">{t('col', 'notes')}</label>
                   <textarea className="form-textarea" rows={2} placeholder="Additional notes…"
                     value={formData.notes} onChange={(e) => setForm({ notes: e.target.value })} />
-                </div>
-                <div>
-                  <label className="form-label">Standard Terms & Conditions</label>
-                  <textarea className="form-textarea" rows={2} placeholder="Terms & Conditions…"
-                    value={formData.terms_and_conditions} onChange={(e) => setForm({ terms_and_conditions: e.target.value })} />
                 </div>
               </div>
             </div>

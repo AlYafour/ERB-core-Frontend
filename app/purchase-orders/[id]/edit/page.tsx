@@ -409,11 +409,6 @@ function EditPOContent() {
                 <textarea className="form-textarea" rows={3} placeholder="Notes…"
                   value={formData.notes} onChange={(e) => setForm({ notes: e.target.value })} />
               </div>
-              <div>
-                <label className="form-label">Standard Terms & Conditions</label>
-                <textarea className="form-textarea" rows={3} placeholder="Terms & Conditions…" style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)' }}
-                  value={formData.terms_and_conditions} onChange={(e) => setForm({ terms_and_conditions: e.target.value })} />
-              </div>
             </div>
           </div>
 

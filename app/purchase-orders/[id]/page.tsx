@@ -34,7 +34,6 @@ export default function PurchaseOrderDetailPage() {
   const [cancelDialogOpen,    setCancelDialogOpen]    = useState(false);
   const [amendmentDialogOpen, setAmendmentDialogOpen] = useState(false);
   const [rejectAmendmentOpen, setRejectAmendmentOpen] = useState(false);
-  const [termsOpen,           setTermsOpen]           = useState(false);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['purchase-orders', id],
@@ -331,18 +330,8 @@ export default function PurchaseOrderDetailPage() {
 
           </div>
 
-          {/* ── Terms & Conditions accordion ── */}
-          {order.terms_and_conditions && (
-            <div className="proc-terms-accordion">
-              <button className="proc-terms-toggle" onClick={() => setTermsOpen((o) => !o)} aria-expanded={termsOpen}>
-                <span>Terms &amp; Conditions</span>
-                <svg className={`proc-terms-icon${termsOpen ? ' proc-terms-icon--open' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
-              </button>
-              {termsOpen && <div className="proc-terms-body">{order.terms_and_conditions}</div>}
-            </div>
-          )}
+          {/* Terms & Conditions live in Settings → Company and appear only
+              on the printed LPO — never on screens. */}
 
           <RejectionReasonDialog isOpen={rejectDialogOpen}    onClose={() => setRejectDialogOpen(false)}    onConfirm={(r) => rejectMutation.mutate(r)}            title="Reject Purchase Order"    message="Please provide a reason for rejecting this purchase order." />
           <RejectionReasonDialog isOpen={cancelDialogOpen}    onClose={() => setCancelDialogOpen(false)}    onConfirm={(r) => cancelMutation.mutate(r)}             title="Cancel Purchase Order"    message="Please provide a reason for cancelling this purchase order." />
