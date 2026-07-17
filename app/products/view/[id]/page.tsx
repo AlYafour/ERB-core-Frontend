@@ -3,12 +3,12 @@
 import React from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import { productsApi } from '@/lib/api/products';
-import { PageShell } from '@/components/ui';
+import { PageShell, Badge, Button, PageHeader } from '@/components/ui';
+import { ProcField } from '@/components/procurement/shared/ProcField';
 import MainLayout from '@/components/layout/MainLayout';
 import { formatPrice, formatPercentage, formatNumber } from '@/lib/utils/format';
-import EntityHeader from '@/components/ui/EntityHeader';
-import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import BilingualName from '@/components/domain/BilingualName';
 import { useT } from '@/lib/i18n/useT';
@@ -16,15 +16,6 @@ import Drawer from '@/components/ui/Drawer';
 import { toast } from '@/lib/hooks/use-toast';
 import { accountingApi } from '@/lib/api/accounting';
 import { Product } from '@/types';
-
-function Field({ label, value, mono, full }: { label: string; value?: string | null; mono?: boolean; full?: boolean }) {
-  return (
-    <div className={full ? 'info-full' : undefined}>
-      <div className="info-label">{label}</div>
-      <div className={mono ? 'info-value-mono' : 'info-value'}>{value || '—'}</div>
-    </div>
-  );
-}
 
 const UNITS: Product['unit'][] = [
   'piece','pcs','kg','kl','meter','lm','liter','box','pack','pkt','bag',
@@ -36,7 +27,6 @@ export default function ProductDetailPage() {
   const t = useT();
   const params = useParams();
   const id = Number(params.id);
-  const { user } = useAuth();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const queryClient = useQueryClient();
 
@@ -46,7 +36,6 @@ export default function ProductDetailPage() {
     staleTime: 2 * 60 * 1000,
   });
 
-  // ── all state before any early return ──────────────────────────────────
   const [copied, setCopied] = React.useState(false);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
   const [form, setForm] = React.useState<Partial<Product>>({});
@@ -59,6 +48,11 @@ export default function ProductDetailPage() {
     retry: false,
   });
   const glAccounts = glAccountsData?.results ?? [];
+  const accLabel = (accId: unknown) => {
+    if (!accId) return null;
+    const a = glAccounts.find(x => String(x.id) === String(accId));
+    return a ? `${a.code} — ${a.name}` : null;
+  };
 
   const updateMutation = useMutation({
     mutationFn: (data: Partial<Product>) => productsApi.update(id, data),
@@ -68,9 +62,7 @@ export default function ProductDetailPage() {
       setIsEditOpen(false);
       toast('Product updated successfully', 'success');
     },
-    onError: () => {
-      toast('Failed to update product', 'error');
-    },
+    onError: () => toast('Failed to update product', 'error'),
   });
 
   const openEdit = () => {
@@ -104,191 +96,152 @@ export default function ProductDetailPage() {
       setTimeout(() => setCopied(false), 2000);
     });
   };
-  // ───────────────────────────────────────────────────────────────────────
 
   if (isLoading) {
     return (
-      <MainLayout>
-        <PageShell>
-          <div className="card animate-pulse" style={{ height: 120 }} />
-          <div className="card animate-pulse" style={{ height: 320 }} />
-        </PageShell>
-      </MainLayout>
+      <MainLayout><PageShell>
+        <div className="animate-pulse" style={{ height: 40, width: 320, background: 'var(--bg-secondary)', borderRadius: 8, marginBottom: 12 }} />
+        <div className="animate-pulse" style={{ height: 300, background: 'var(--bg-secondary)', borderRadius: 8 }} />
+      </PageShell></MainLayout>
     );
   }
-
   if (!product) {
     return (
-      <MainLayout>
-        <PageShell>
-          <div className="card empty-state">
-            <p className="empty-state-title">{t('empty', 'notFound')}</p>
-          </div>
-        </PageShell>
-      </MainLayout>
+      <MainLayout><PageShell>
+        <PageHeader title={t('empty', 'notFound')} breadcrumbs={[{ label: 'Home', href: '/' }, { label: t('page', 'products'), href: '/products' }, { label: t('empty', 'notFound') }]} backHref="/products" />
+      </PageShell></MainLayout>
     );
   }
 
-  const getStatusVariant = () => {
-    if (!product.is_active) return 'error';
-    if (product.status === 'inactive') return 'error';
-    return 'success';
-  };
-
+  const statusVariant: 'success' | 'error' =
+    (!product.is_active || product.status === 'inactive') ? 'error' : 'success';
   const isLowStock =
     product.stock_balance !== undefined &&
     product.low_stock_threshold !== undefined &&
     product.stock_balance <= product.low_stock_threshold;
-
   const supplierName = product.supplier
     ? typeof product.supplier === 'object'
       ? (product.supplier as any).business_name || (product.supplier as any).name
       : `Supplier #${product.supplier}`
     : null;
+  const expenseAcc   = accLabel((product as any).expense_account);
+  const inventoryAcc = accLabel((product as any).inventory_account);
 
   return (
     <MainLayout>
       <PageShell>
-        <EntityHeader
+        <PageHeader
           title={product.name}
-          subtitle={product.code}
-          image={product.image_url || product.image}
-          imageAlt={product.name}
-          entityType="product"
-          statusBadge={product.is_active ? (product.status === 'inactive' ? t('status', 'inactive') : t('status', 'active')) : t('status', 'inactive')}
-          statusVariant={getStatusVariant()}
+          description={product.code ? `Product ${product.code}` : 'Product'}
+          breadcrumbs={[{ label: 'Home', href: '/' }, { label: t('page', 'products'), href: '/products' }, { label: product.name }]}
           backHref="/products"
-          backLabel={`${t('btn', 'back')} ${t('page', 'products')}`}
           actions={
-            isAdmin ? (
-              <button onClick={openEdit} className="btn btn-edit">
-                {t('btn', 'edit')}
-              </button>
-            ) : undefined
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <Badge variant={statusVariant}>
+                {product.is_active ? (product.status === 'inactive' ? t('status', 'inactive') : t('status', 'active')) : t('status', 'inactive')}
+              </Badge>
+              {isAdmin && <Button variant="edit" size="sm" onClick={openEdit}>{t('btn', 'edit')}</Button>}
+            </div>
           }
         />
 
-        <div className="card">
-          {/* Product Identity */}
-          <div className="info-section-title">Product Identity</div>
-          <div className="info-grid">
-            <div className="info-full">
-              <div className="info-label">Product Name</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
-                <BilingualName nameEn={product.name} nameAr={product.name_ar} />
-                {product.code && (
-                  <button
-                    onClick={handleCopyCode}
-                    title="Copy product code"
-                    style={{
-                      background: 'none',
-                      border: '1px solid var(--border-primary)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '2px 8px',
-                      cursor: 'pointer',
-                      fontSize: 'var(--font-xs)',
-                      color: copied ? 'var(--color-success)' : 'var(--text-secondary)',
-                      fontFamily: 'monospace',
-                      transition: 'color 0.2s',
-                    }}
-                  >
-                    {copied ? '✓ Copied' : product.code}
-                  </button>
-                )}
-              </div>
-            </div>
-            <Field label="Product Code" value={product.code} mono />
-            <Field label="SKU" value={product.sku} mono />
-            <Field label="Barcode" value={product.barcode} mono />
-            <Field label="Brand" value={product.brand} />
-            <Field label="Unit" value={product.unit} />
-            <Field label="Category" value={product.category} />
-            <Field label="Supplier" value={supplierName} />
+        {/* Identity */}
+        <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+          <div className="proc-section-head"><h3 className="proc-section-title">Product Identity</h3></div>
+          <div className="proc-info-grid">
+            <ProcField label="Product Name" value={<BilingualName nameEn={product.name} nameAr={product.name_ar} />} />
+            <ProcField label="Product Code" value={
+              product.code ? (
+                <button onClick={handleCopyCode} title="Copy product code" style={{
+                  background: 'none', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)',
+                  padding: '2px 8px', cursor: 'pointer', fontSize: 'var(--text-xs)',
+                  color: copied ? 'var(--status-success)' : 'var(--text-secondary)', fontFamily: 'monospace',
+                }}>{copied ? '✓ Copied' : product.code}</button>
+              ) : undefined
+            } />
+            <ProcField label="SKU" value={product.sku ? <span style={{ fontFamily: 'monospace' }}>{product.sku}</span> : undefined} />
+            <ProcField label="Barcode" value={product.barcode ? <span style={{ fontFamily: 'monospace' }}>{product.barcode}</span> : undefined} />
+            <ProcField label="Brand" value={product.brand} />
+            <ProcField label="Unit" value={product.unit} />
+            <ProcField label="Category" value={product.category} />
+            <ProcField label="Supplier" value={supplierName} />
           </div>
-
-          {/* Pricing */}
-          <div className="info-section">
-            <div className="info-section-title">Pricing</div>
-            <div className="info-grid">
-              <Field label="Purchase Price" value={formatPrice(product.buy_price)} />
-              <Field label="Selling Price" value={formatPrice(product.sell_price ?? product.unit_price)} />
-              <Field label="Minimum Price" value={formatPrice(product.minimum_price)} />
-              <Field label="Average Cost" value={formatPrice(product.average_cost)} />
-              <Field
-                label="Discount"
-                value={product.discount_type === 'fixed' ? formatPrice(product.discount) : formatPercentage(product.discount)}
-              />
-              <Field label="Profit Margin" value={formatPercentage(product.profit_margin)} />
-            </div>
-          </div>
-
-          {/* Tax & Discount */}
-          <div className="info-section">
-            <div className="info-section-title">Tax & Discount</div>
-            <div className="info-grid">
-              <Field label="Tax 1" value={formatPercentage(product.tax1)} />
-              <Field label="Tax 2" value={formatPercentage(product.tax2)} />
-              <Field label="Discount Type" value={product.discount_type} />
-              <div>
-                <div className="info-label">Track Stock</div>
-                <span className={`badge ${product.track_stock ? 'badge-success' : 'badge-info'}`}>
-                  {product.track_stock ? 'Yes' : 'No'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Inventory */}
-          {product.track_stock && (
-            <div className="info-section">
-              <div className="info-section-title">Inventory</div>
-              <div className="info-grid">
-                <Field label="Stock Balance" value={formatNumber(product.stock_balance, 2)} />
-                <Field label="Low Stock Threshold" value={formatNumber(product.low_stock_threshold, 2)} />
-                <div>
-                  <div className="info-label">Stock Status</div>
-                  <span className={`badge ${isLowStock ? 'badge-error' : 'badge-success'}`}>
-                    {isLowStock ? 'Low Stock' : 'In Stock'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Tags */}
-          {product.tags && (
-            <div className="info-section">
-              <div className="info-section-title">Tags</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginTop: 'var(--space-1)' }}>
-                {product.tags.split(',').map((tag, i) => (
-                  <span key={i} className="badge badge-info">{tag.trim()}</span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Description */}
-          {product.description && (
-            <div className="info-section">
-              <div className="info-section-title">Description</div>
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: 0 }}>
-                {product.description}
-              </p>
-            </div>
-          )}
-
-          {/* Internal Notes */}
-          {product.internal_notes && (
-            <div className="info-section">
-              <div className="info-section-title">Internal Notes</div>
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: 0 }}>
-                {product.internal_notes}
-              </p>
-            </div>
-          )}
         </div>
 
-        {/* ── Edit Drawer ───────────────────────────────────────────────── */}
+        {/* Pricing */}
+        <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+          <div className="proc-section-head"><h3 className="proc-section-title">Pricing</h3></div>
+          <div className="proc-info-grid">
+            <ProcField label="Purchase Price" value={formatPrice(product.buy_price)} />
+            <ProcField label="Selling Price" value={formatPrice(product.sell_price ?? product.unit_price)} />
+            <ProcField label="Minimum Price" value={formatPrice(product.minimum_price)} />
+            <ProcField label="Average Cost" value={formatPrice(product.average_cost)} />
+            <ProcField label="Discount" value={product.discount_type === 'fixed' ? formatPrice(product.discount) : formatPercentage(product.discount)} />
+            <ProcField label="Profit Margin" value={formatPercentage(product.profit_margin)} />
+            <ProcField label="Tax 1" value={formatPercentage(product.tax1)} />
+            <ProcField label="Tax 2" value={formatPercentage(product.tax2)} />
+          </div>
+        </div>
+
+        {/* Accounting — item-master GL defaults */}
+        <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+          <div className="proc-section-head"><h3 className="proc-section-title">Accounting</h3></div>
+          <div className="proc-info-grid">
+            <ProcField label="Track Stock" value={<Badge variant={product.track_stock ? 'success' : 'info'}>{product.track_stock ? 'Yes' : 'No'}</Badge>} />
+            <ProcField label="Default Expense Account" value={
+              expenseAcc
+                ? <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)' }}>{expenseAcc}</span>
+                : <span style={{ color: 'var(--text-tertiary)' }}>Company default</span>
+            } />
+            <ProcField label="Default Inventory Account" value={
+              inventoryAcc
+                ? <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)' }}>{inventoryAcc}</span>
+                : <span style={{ color: 'var(--text-tertiary)' }}>Company default</span>
+            } />
+          </div>
+        </div>
+
+        {/* Inventory */}
+        {product.track_stock && (
+          <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+            <div className="proc-section-head"><h3 className="proc-section-title">Inventory</h3></div>
+            <div className="proc-info-grid">
+              <ProcField label="Stock Balance" value={formatNumber(product.stock_balance, 2)} />
+              <ProcField label="Low Stock Threshold" value={formatNumber(product.low_stock_threshold, 2)} />
+              <ProcField label="Stock Status" value={<Badge variant={isLowStock ? 'error' : 'success'}>{isLowStock ? 'Low Stock' : 'In Stock'}</Badge>} />
+            </div>
+          </div>
+        )}
+
+        {/* Tags */}
+        {product.tags && (
+          <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+            <div className="proc-section-head"><h3 className="proc-section-title">Tags</h3></div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+              {product.tags.split(',').map((tag, i) => <Badge key={i} variant="info">{tag.trim()}</Badge>)}
+            </div>
+          </div>
+        )}
+
+        {/* Description / Notes */}
+        {(product.description || product.internal_notes) && (
+          <div className="card">
+            {product.description && (
+              <>
+                <div className="proc-section-head"><h3 className="proc-section-title">Description</h3></div>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: '0 0 var(--space-3)' }}>{product.description}</p>
+              </>
+            )}
+            {product.internal_notes && (
+              <>
+                <div className="proc-section-head"><h3 className="proc-section-title">Internal Notes</h3></div>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: 0 }}>{product.internal_notes}</p>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── Edit Drawer (unchanged) ─────────────────────────────────────── */}
         <Drawer
           isOpen={isEditOpen}
           onClose={() => setIsEditOpen(false)}
@@ -297,9 +250,7 @@ export default function ProductDetailPage() {
           size="md"
           footer={
             <>
-              <button className="btn btn-ghost" onClick={() => setIsEditOpen(false)} disabled={updateMutation.isPending}>
-                Cancel
-              </button>
+              <button className="btn btn-ghost" onClick={() => setIsEditOpen(false)} disabled={updateMutation.isPending}>Cancel</button>
               <button className="btn btn-primary" onClick={handleSave} disabled={updateMutation.isPending}>
                 {updateMutation.isPending ? 'Saving…' : 'Save Changes'}
               </button>
@@ -307,164 +258,76 @@ export default function ProductDetailPage() {
           }
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-            {/* Name EN */}
             <div>
               <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>
                 Product Name (English) <span style={{ color: 'var(--color-error)' }}>*</span>
               </label>
-              <input
-                className="input"
-                value={form.name ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder="Product name in English"
-                autoFocus
-              />
+              <input className="input" value={form.name ?? ''} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Product name in English" autoFocus />
             </div>
-
-            {/* Name AR */}
             <div>
               <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>اسم المنتج (عربي)</label>
-              <input
-                className="input"
-                dir="rtl"
-                value={form.name_ar ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, name_ar: e.target.value }))}
-                placeholder="اسم المنتج بالعربي"
-              />
+              <input className="input" dir="rtl" value={form.name_ar ?? ''} onChange={(e) => setForm((f) => ({ ...f, name_ar: e.target.value }))} placeholder="اسم المنتج بالعربي" />
             </div>
-
-            {/* Code + SKU */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>Product Code</label>
-                <input
-                  className="input"
-                  style={{ fontFamily: 'monospace' }}
-                  value={form.code ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
-                  placeholder="MAT-0000"
-                />
+                <input className="input" style={{ fontFamily: 'monospace' }} value={form.code ?? ''} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} placeholder="MAT-0000" />
               </div>
               <div>
                 <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>SKU</label>
-                <input
-                  className="input"
-                  style={{ fontFamily: 'monospace' }}
-                  value={form.sku ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, sku: e.target.value }))}
-                  placeholder="Optional"
-                />
+                <input className="input" style={{ fontFamily: 'monospace' }} value={form.sku ?? ''} onChange={(e) => setForm((f) => ({ ...f, sku: e.target.value }))} placeholder="Optional" />
               </div>
             </div>
-
-            {/* Accounting defaults (Item Master) — shown when accounting is active */}
             {glAccounts.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>Default Expense Account</label>
-                  <select
-                    className="input"
-                    value={(form as any).expense_account ?? ''}
-                    onChange={(e) => setForm((f) => ({ ...f, expense_account: e.target.value ? Number(e.target.value) : null } as any))}
-                  >
+                  <select className="input" value={(form as any).expense_account ?? ''} onChange={(e) => setForm((f) => ({ ...f, expense_account: e.target.value ? Number(e.target.value) : null } as any))}>
                     <option value="">— company default —</option>
                     {glAccounts.map((a) => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>Default Inventory Account</label>
-                  <select
-                    className="input"
-                    value={(form as any).inventory_account ?? ''}
-                    onChange={(e) => setForm((f) => ({ ...f, inventory_account: e.target.value ? Number(e.target.value) : null } as any))}
-                  >
+                  <select className="input" value={(form as any).inventory_account ?? ''} onChange={(e) => setForm((f) => ({ ...f, inventory_account: e.target.value ? Number(e.target.value) : null } as any))}>
                     <option value="">— company default —</option>
                     {glAccounts.map((a) => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
                   </select>
                 </div>
               </div>
             )}
-
-            {/* Unit + Brand */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>Unit</label>
-                <select
-                  className="input"
-                  value={form.unit ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value as Product['unit'] }))}
-                >
+                <select className="input" value={form.unit ?? ''} onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value as Product['unit'] }))}>
                   {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
                 </select>
               </div>
               <div>
                 <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>Brand</label>
-                <input
-                  className="input"
-                  value={form.brand ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, brand: e.target.value }))}
-                  placeholder="Optional"
-                />
+                <input className="input" value={form.brand ?? ''} onChange={(e) => setForm((f) => ({ ...f, brand: e.target.value }))} placeholder="Optional" />
               </div>
             </div>
-
-            {/* Buy Price + Sell Price */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>Purchase Price (AED)</label>
-                <input
-                  className="input"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={form.buy_price ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, buy_price: Number(e.target.value) }))}
-                />
+                <input className="input" type="number" min="0" step="0.01" value={form.buy_price ?? ''} onChange={(e) => setForm((f) => ({ ...f, buy_price: Number(e.target.value) }))} />
               </div>
               <div>
                 <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>Selling Price (AED)</label>
-                <input
-                  className="input"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={form.sell_price ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, sell_price: Number(e.target.value) }))}
-                />
+                <input className="input" type="number" min="0" step="0.01" value={form.sell_price ?? ''} onChange={(e) => setForm((f) => ({ ...f, sell_price: Number(e.target.value) }))} />
               </div>
             </div>
-
-            {/* Description */}
             <div>
               <label className="info-label" style={{ display: 'block', marginBottom: 4 }}>Description</label>
-              <textarea
-                className="input"
-                rows={3}
-                style={{ resize: 'vertical' }}
-                value={form.description ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                placeholder="Optional product description"
-              />
+              <textarea className="input" rows={3} style={{ resize: 'vertical' }} value={form.description ?? ''} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Optional product description" />
             </div>
-
-            {/* Active toggle */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <input
-                type="checkbox"
-                id="is_active"
-                checked={form.is_active ?? true}
-                onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
-                style={{ width: 16, height: 16, cursor: 'pointer' }}
-              />
-              <label htmlFor="is_active" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)', cursor: 'pointer' }}>
-                Active product
-              </label>
+              <input type="checkbox" id="is_active" checked={form.is_active ?? true} onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+              <label htmlFor="is_active" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)', cursor: 'pointer' }}>Active product</label>
             </div>
-
           </div>
         </Drawer>
-
       </PageShell>
     </MainLayout>
   );
