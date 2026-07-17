@@ -9,12 +9,17 @@
  *
  * Field mapping: Name→partner, Tax→tax code, Location→project,
  * Class→cost code, Journal no.→reference (real number stamped at posting).
+ *
+ * Visual shell matches every other detail page in the system:
+ * PageHeader (breadcrumbs + actions) and `card` sections with
+ * proc-section-head titles — no bespoke chrome.
  */
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button, Badge } from '@/components/ui';
+import { Button, Badge, PageHeader } from '@/components/ui';
+import { ProcField } from '@/components/procurement/shared/ProcField';
 import { accountingApi, type JournalEntry } from '@/lib/api/accounting';
 import { costCodesApi } from '@/lib/api/cost-codes';
 import { projectsApi } from '@/lib/api/projects';
@@ -61,12 +66,13 @@ const TD: React.CSSProperties = {
 };
 const CELL_INPUT: React.CSSProperties = {
   width: '100%', minWidth: 90, padding: '7px 8px', fontSize: 'var(--text-sm)',
-  border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)',
-  background: 'var(--bg-primary)', color: 'var(--text-primary)',
+  border: '1px solid var(--input-border, var(--border-subtle))', borderRadius: 'var(--radius-sm)',
+  background: 'var(--input-bg, var(--bg-primary))', color: 'var(--text-primary)',
 };
 const RO_CELL: React.CSSProperties = { fontSize: 'var(--text-sm)', padding: '7px 8px', display: 'block' };
 const HEAD_LBL: React.CSSProperties = {
-  display: 'block', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 4,
+  display: 'block', fontSize: 'var(--text-xs)', fontWeight: 600,
+  color: 'var(--text-secondary)', marginBottom: 4,
 };
 
 function entryToDrafts(entry: JournalEntry): LineDraft[] {
@@ -262,252 +268,288 @@ export default function JournalEntryEditor({ entry }: { entry?: JournalEntry }) 
   const isDraft  = entry?.status === 'draft';
   const isPosted = entry?.status === 'posted';
 
+  const headerActions = (
+    <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', flexWrap: 'wrap' }}>
+      {entry && (
+        <Badge variant={STATUS_VARIANT[entry.status] ?? 'default'}>
+          {STATUS_LABEL[entry.status] ?? entry.status}
+        </Badge>
+      )}
+      {isCreate && (
+        <>
+          <Button variant="ghost" size="sm" onClick={handleClose} disabled={saveMutation.isPending}>Cancel</Button>
+          <Button variant="secondary" size="sm" onClick={() => save(false)} isLoading={saveMutation.isPending}
+                  disabled={!totals.balanced || !filled.length}>Save</Button>
+          <Button variant="primary" size="sm" onClick={() => save(true)} isLoading={saveMutation.isPending}
+                  disabled={!totals.balanced || !filled.length}>Save and new</Button>
+        </>
+      )}
+      {isDraft && !editing && (
+        <>
+          <Button variant="destructive" size="sm" onClick={handleDelete} isLoading={deleteMutation.isPending}>
+            Delete draft
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>Edit</Button>
+          <Button variant="success" size="sm" onClick={handlePost} isLoading={postMutation.isPending}>Post</Button>
+        </>
+      )}
+      {isDraft && editing && (
+        <>
+          <Button variant="ghost" size="sm" onClick={handleClose} disabled={saveMutation.isPending}>Cancel</Button>
+          <Button variant="primary" size="sm" onClick={() => save(false)} isLoading={saveMutation.isPending}
+                  disabled={!totals.balanced || !filled.length}>Save changes</Button>
+        </>
+      )}
+      {isPosted && !reverseOpen && (
+        <Button variant="secondary" size="sm" onClick={() => setReverseOpen(true)}>Reverse</Button>
+      )}
+    </div>
+  );
+
   return (
     <>
-      {/* ── Header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, margin: 0 }}>
-            {isCreate ? 'New Journal Entry' : `Journal Entry ${entry!.number || '(draft)'}`}
-          </h1>
-          {entry && (
-            <Badge variant={STATUS_VARIANT[entry.status] ?? 'default'}>
-              {STATUS_LABEL[entry.status] ?? entry.status}
+      <PageHeader
+        title={isCreate ? 'New Journal Entry' : `Journal Entry ${entry!.number || '(draft)'}`}
+        description="General ledger journal entry — double-sided, balanced, auditable."
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Accounting' },
+          { label: 'Journal Entries', href: '/accounting/journal' },
+          { label: isCreate ? 'New' : (entry!.number || 'Draft') },
+        ]}
+        backHref="/accounting/journal"
+        actions={headerActions}
+      />
+
+      {/* ── Entry details ── */}
+      <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+        <div className="proc-section-head">
+          <h3 className="proc-section-title">Entry Details</h3>
+        </div>
+        {editing ? (
+          <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
+            <div>
+              <label style={HEAD_LBL}>Journal date <span style={{ color: 'var(--status-error)' }}>*</span></label>
+              <input type="date" value={journalDate} onChange={e => setJournalDate(e.target.value)}
+                     style={{ ...CELL_INPUT, width: 180 }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 220, maxWidth: 420 }}>
+              <label style={HEAD_LBL}>Journal no.</label>
+              <input type="text" value={journalNo} onChange={e => setJournalNo(e.target.value)}
+                     placeholder="Reference — official number is assigned when posted"
+                     style={{ ...CELL_INPUT, width: '100%' }} />
+            </div>
+          </div>
+        ) : (
+          <div className="proc-info-grid">
+            <ProcField label="Journal Date" value={journalDate} />
+            <ProcField label="Journal No." value={<span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{entry?.number || journalNo || '—'}</span>} />
+            <ProcField label="Source" value={entry?.source_module === 'manual' ? 'Manual' : `${entry?.source_module} · ${entry?.event_code}`} />
+            <ProcField label="Created By" value={entry?.created_by_name || '—'} />
+            {entry?.posted_by_name && <ProcField label="Posted By" value={entry.posted_by_name} />}
+            {entry?.reversal_of_number && <ProcField label="Reverses" value={entry.reversal_of_number} />}
+          </div>
+        )}
+      </div>
+
+      {/* ── Lines ── */}
+      <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+        <div className="proc-section-head">
+          <h3 className="proc-section-title">Lines</h3>
+          {(totals.debit > 0 || totals.credit > 0) && (
+            <Badge variant={totals.balanced ? 'success' : 'warning'}>
+              {totals.balanced ? 'Balanced' : `Off by ${fmt(Math.abs(totals.debit - totals.credit))}`}
             </Badge>
           )}
         </div>
-        <button onClick={handleClose} aria-label="Close" style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          fontSize: 22, color: 'var(--text-secondary)', lineHeight: 1,
-        }}>×</button>
-      </div>
-
-      {/* ── Meta row (view mode extras) ── */}
-      {entry && (
-        <div style={{
-          display: 'flex', gap: 'var(--space-5)', flexWrap: 'wrap', marginBottom: 'var(--space-4)',
-          fontSize: 'var(--text-sm)', color: 'var(--text-secondary)',
-        }}>
-          <span>Source: <b style={{ color: 'var(--text-primary)' }}>{entry.source_module === 'manual' ? 'Manual' : `${entry.source_module} · ${entry.event_code}`}</b></span>
-          <span>Created by: <b style={{ color: 'var(--text-primary)' }}>{entry.created_by_name || '—'}</b></span>
-          {entry.posted_by_name && <span>Posted by: <b style={{ color: 'var(--text-primary)' }}>{entry.posted_by_name}</b></span>}
-          {entry.reversal_of_number && <span>Reverses: <b style={{ color: 'var(--text-primary)' }}>{entry.reversal_of_number}</b></span>}
-        </div>
-      )}
-
-      {/* ── Date + Journal no. ── */}
-      <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap', marginBottom: 'var(--space-4)' }}>
-        <div>
-          <label style={HEAD_LBL}>Journal date {editing && <span style={{ color: 'var(--status-error)' }}>*</span>}</label>
-          {editing ? (
-            <input type="date" value={journalDate} onChange={e => setJournalDate(e.target.value)}
-                   style={{ ...CELL_INPUT, width: 180 }} />
-          ) : (
-            <span style={RO_CELL}>{journalDate}</span>
-          )}
-        </div>
-        <div style={{ flex: 1, minWidth: 220, maxWidth: 420, marginLeft: 'auto' }}>
-          <label style={HEAD_LBL}>Journal no.</label>
-          {editing ? (
-            <input type="text" value={journalNo} onChange={e => setJournalNo(e.target.value)}
-                   placeholder="Reference — official number is assigned when posted"
-                   style={{ ...CELL_INPUT, width: '100%' }} />
-          ) : (
-            <span style={RO_CELL}>{entry?.number || journalNo || '—'}</span>
-          )}
-        </div>
-      </div>
-
-      {/* ── Lines grid ── */}
-      <div style={{ overflowX: 'auto', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: readOnly ? 980 : 1150 }}>
-          <thead>
-            <tr>
-              <th style={{ ...TH, width: 34 }}>#</th>
-              <th style={{ ...TH, minWidth: 210 }}>Account</th>
-              <th style={{ ...TH, width: 110, textAlign: 'right' }}>Debits</th>
-              <th style={{ ...TH, width: 110, textAlign: 'right' }}>Credits</th>
-              <th style={{ ...TH, minWidth: 160 }}>Description</th>
-              <th style={{ ...TH, minWidth: 170 }}>Name</th>
-              <th style={{ ...TH, width: 110 }}>Tax</th>
-              <th style={{ ...TH, minWidth: 140 }}>Location</th>
-              <th style={{ ...TH, minWidth: 150 }}>Class</th>
-              {!readOnly && <th style={{ ...TH, width: 64 }} />}
-            </tr>
-          </thead>
-          <tbody>
-            {visibleLines.map((line, idx) => (
-              <tr key={idx}>
-                <td style={{ ...TD, color: 'var(--text-tertiary)', textAlign: 'center' }}>{idx + 1}</td>
-                <td style={TD}>
-                  {readOnly ? <span style={RO_CELL}>{accLabel(line.account)}</span> : (
-                    <select value={line.account} onChange={e => setLine(idx, { account: e.target.value })} style={CELL_INPUT}>
-                      <option value="" />
-                      {accounts.map((a: any) => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
-                    </select>
-                  )}
-                </td>
-                <td style={{ ...TD, textAlign: 'right' }}>
-                  {readOnly ? <span className="font-mono" style={RO_CELL}>{line.debit ? fmt(parseFloat(line.debit)) : ''}</span> : (
-                    <input type="number" min="0" step="0.01" value={line.debit}
-                           onChange={e => setLine(idx, { debit: e.target.value, credit: e.target.value ? '' : line.credit })}
-                           style={{ ...CELL_INPUT, textAlign: 'right' }} />
-                  )}
-                </td>
-                <td style={{ ...TD, textAlign: 'right' }}>
-                  {readOnly ? <span className="font-mono" style={RO_CELL}>{line.credit ? fmt(parseFloat(line.credit)) : ''}</span> : (
-                    <input type="number" min="0" step="0.01" value={line.credit}
-                           onChange={e => setLine(idx, { credit: e.target.value, debit: e.target.value ? '' : line.debit })}
-                           style={{ ...CELL_INPUT, textAlign: 'right' }} />
-                  )}
-                </td>
-                <td style={TD}>
-                  {readOnly ? <span style={RO_CELL}>{line.description}</span> : (
-                    <input type="text" value={line.description} onChange={e => setLine(idx, { description: e.target.value })} style={CELL_INPUT} />
-                  )}
-                </td>
-                <td style={TD}>
-                  {readOnly ? <span style={RO_CELL}>{partnerLabel(line.partner)}</span> : (
-                    <select value={line.partner} onChange={e => setLine(idx, { partner: e.target.value })} style={CELL_INPUT}>
-                      <option value="" />
-                      <optgroup label="Suppliers">
-                        {suppliers.map((s: any) => <option key={`s${s.id}`} value={`supplier:${s.id}`}>{s.name}</option>)}
-                      </optgroup>
-                      <optgroup label="Customers">
-                        {customers.map((c: any) => <option key={`c${c.id}`} value={`customer:${c.id}`}>{c.name || c.business_name}</option>)}
-                      </optgroup>
-                    </select>
-                  )}
-                </td>
-                <td style={TD}>
-                  {readOnly ? <span style={RO_CELL}>{taxLabel(line.tax_code)}</span> : (
-                    <select value={line.tax_code} onChange={e => setLine(idx, { tax_code: e.target.value })} style={CELL_INPUT}>
-                      <option value="" />
-                      {taxCodes.map((t: any) => <option key={t.id} value={t.id}>{t.code}</option>)}
-                    </select>
-                  )}
-                </td>
-                <td style={TD}>
-                  {readOnly ? <span style={RO_CELL}>{projLabel(line.project)}</span> : (
-                    <select value={line.project} onChange={e => setLine(idx, { project: e.target.value })} style={CELL_INPUT}>
-                      <option value="" />
-                      {projects.map((p: any) => <option key={p.id} value={p.id}>{p.code ? `${p.code} — ` : ''}{p.name}</option>)}
-                    </select>
-                  )}
-                </td>
-                <td style={TD}>
-                  {readOnly ? <span style={RO_CELL}>{ccLabel(line.cost_code)}</span> : (
-                    <select value={line.cost_code} onChange={e => setLine(idx, { cost_code: e.target.value })} style={CELL_INPUT}>
-                      <option value="" />
-                      {costCodes.map((c: any) => <option key={c.id} value={c.id}>{c.excel_code}</option>)}
-                    </select>
-                  )}
-                </td>
-                {!readOnly && (
-                  <td style={{ ...TD, whiteSpace: 'nowrap', textAlign: 'center' }}>
-                    <button onClick={() => copyLine(idx)} title="Duplicate line" aria-label={`Duplicate line ${idx + 1}`}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: 3 }}>⧉</button>
-                    <button onClick={() => removeLine(idx)} title="Delete line" aria-label={`Delete line ${idx + 1}`}
-                            disabled={lines.length <= 1}
-                            style={{ background: 'none', border: 'none', cursor: lines.length > 1 ? 'pointer' : 'not-allowed', color: 'var(--status-error)', padding: 3 }}>🗑</button>
-                  </td>
-                )}
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: readOnly ? 980 : 1150 }}>
+            <thead>
+              <tr>
+                <th style={{ ...TH, width: 34 }}>#</th>
+                <th style={{ ...TH, minWidth: 210 }}>Account</th>
+                <th style={{ ...TH, width: 110, textAlign: 'right' }}>Debits</th>
+                <th style={{ ...TH, width: 110, textAlign: 'right' }}>Credits</th>
+                <th style={{ ...TH, minWidth: 160 }}>Description</th>
+                <th style={{ ...TH, minWidth: 170 }}>Name</th>
+                <th style={{ ...TH, width: 110 }}>Tax</th>
+                <th style={{ ...TH, minWidth: 140 }}>Location</th>
+                <th style={{ ...TH, minWidth: 150 }}>Class</th>
+                {!readOnly && <th style={{ ...TH, width: 64 }} />}
               </tr>
-            ))}
-            <tr>
-              <td style={TD} />
-              <td style={{ ...TD, textAlign: 'right', fontWeight: 700 }}>Total</td>
-              <td style={{ ...TD, textAlign: 'right', fontWeight: 700 }} className="font-mono">AED {fmt(totals.debit)}</td>
-              <td style={{ ...TD, textAlign: 'right', fontWeight: 700 }} className="font-mono">AED {fmt(totals.credit)}</td>
-              <td colSpan={readOnly ? 5 : 5} style={TD}>
-                {(totals.debit > 0 || totals.credit > 0) && (
-                  <Badge variant={totals.balanced ? 'success' : 'warning'}>
-                    {totals.balanced ? 'Balanced' : `Off by ${fmt(Math.abs(totals.debit - totals.credit))}`}
-                  </Badge>
-                )}
-              </td>
-              {!readOnly && <td style={TD} />}
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      {!readOnly && (
-        <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
-          <Button variant="secondary" size="sm" onClick={() => addLines(4)}>Add lines</Button>
-          <Button variant="ghost" size="sm" onClick={clearAll}>Clear all lines</Button>
+            </thead>
+            <tbody>
+              {visibleLines.map((line, idx) => (
+                <tr key={idx}>
+                  <td style={{ ...TD, color: 'var(--text-tertiary)', textAlign: 'center' }}>{idx + 1}</td>
+                  <td style={TD}>
+                    {readOnly ? <span style={RO_CELL}>{accLabel(line.account)}</span> : (
+                      <select value={line.account} onChange={e => setLine(idx, { account: e.target.value })} style={CELL_INPUT}>
+                        <option value="" />
+                        {accounts.map((a: any) => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
+                      </select>
+                    )}
+                  </td>
+                  <td style={{ ...TD, textAlign: 'right' }}>
+                    {readOnly ? <span className="font-mono" style={RO_CELL}>{line.debit ? fmt(parseFloat(line.debit)) : ''}</span> : (
+                      <input type="number" min="0" step="0.01" value={line.debit}
+                             onChange={e => setLine(idx, { debit: e.target.value, credit: e.target.value ? '' : line.credit })}
+                             style={{ ...CELL_INPUT, textAlign: 'right' }} />
+                    )}
+                  </td>
+                  <td style={{ ...TD, textAlign: 'right' }}>
+                    {readOnly ? <span className="font-mono" style={RO_CELL}>{line.credit ? fmt(parseFloat(line.credit)) : ''}</span> : (
+                      <input type="number" min="0" step="0.01" value={line.credit}
+                             onChange={e => setLine(idx, { credit: e.target.value, debit: e.target.value ? '' : line.debit })}
+                             style={{ ...CELL_INPUT, textAlign: 'right' }} />
+                    )}
+                  </td>
+                  <td style={TD}>
+                    {readOnly ? <span style={RO_CELL}>{line.description}</span> : (
+                      <input type="text" value={line.description} onChange={e => setLine(idx, { description: e.target.value })} style={CELL_INPUT} />
+                    )}
+                  </td>
+                  <td style={TD}>
+                    {readOnly ? <span style={RO_CELL}>{partnerLabel(line.partner)}</span> : (
+                      <select value={line.partner} onChange={e => setLine(idx, { partner: e.target.value })} style={CELL_INPUT}>
+                        <option value="" />
+                        <optgroup label="Suppliers">
+                          {suppliers.map((s: any) => <option key={`s${s.id}`} value={`supplier:${s.id}`}>{s.name}</option>)}
+                        </optgroup>
+                        <optgroup label="Customers">
+                          {customers.map((c: any) => <option key={`c${c.id}`} value={`customer:${c.id}`}>{c.name || c.business_name}</option>)}
+                        </optgroup>
+                      </select>
+                    )}
+                  </td>
+                  <td style={TD}>
+                    {readOnly ? <span style={RO_CELL}>{taxLabel(line.tax_code)}</span> : (
+                      <select value={line.tax_code} onChange={e => setLine(idx, { tax_code: e.target.value })} style={CELL_INPUT}>
+                        <option value="" />
+                        {taxCodes.map((t: any) => <option key={t.id} value={t.id}>{t.code}</option>)}
+                      </select>
+                    )}
+                  </td>
+                  <td style={TD}>
+                    {readOnly ? <span style={RO_CELL}>{projLabel(line.project)}</span> : (
+                      <select value={line.project} onChange={e => setLine(idx, { project: e.target.value })} style={CELL_INPUT}>
+                        <option value="" />
+                        {projects.map((p: any) => <option key={p.id} value={p.id}>{p.code ? `${p.code} — ` : ''}{p.name}</option>)}
+                      </select>
+                    )}
+                  </td>
+                  <td style={TD}>
+                    {readOnly ? <span style={RO_CELL}>{ccLabel(line.cost_code)}</span> : (
+                      <select value={line.cost_code} onChange={e => setLine(idx, { cost_code: e.target.value })} style={CELL_INPUT}>
+                        <option value="" />
+                        {costCodes.map((c: any) => <option key={c.id} value={c.id}>{c.excel_code}</option>)}
+                      </select>
+                    )}
+                  </td>
+                  {!readOnly && (
+                    <td style={{ ...TD, whiteSpace: 'nowrap', textAlign: 'center' }}>
+                      <button onClick={() => copyLine(idx)} title="Duplicate line" aria-label={`Duplicate line ${idx + 1}`}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: 3 }}>⧉</button>
+                      <button onClick={() => removeLine(idx)} title="Delete line" aria-label={`Delete line ${idx + 1}`}
+                              disabled={lines.length <= 1}
+                              style={{ background: 'none', border: 'none', cursor: lines.length > 1 ? 'pointer' : 'not-allowed', color: 'var(--status-error)', padding: 3 }}>🗑</button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+              <tr>
+                <td style={TD} />
+                <td style={{ ...TD, textAlign: 'right', fontWeight: 700 }}>Total</td>
+                <td style={{ ...TD, textAlign: 'right', fontWeight: 700 }} className="font-mono">AED {fmt(totals.debit)}</td>
+                <td style={{ ...TD, textAlign: 'right', fontWeight: 700 }} className="font-mono">AED {fmt(totals.credit)}</td>
+                <td colSpan={5} style={TD} />
+                {!readOnly && <td style={TD} />}
+              </tr>
+            </tbody>
+          </table>
         </div>
-      )}
+        {!readOnly && (
+          <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
+            <Button variant="secondary" size="sm" onClick={() => addLines(4)}>Add lines</Button>
+            <Button variant="ghost" size="sm" onClick={clearAll}>Clear all lines</Button>
+          </div>
+        )}
+      </div>
 
       {/* ── Memo + attachments ── */}
-      <div style={{ display: 'flex', gap: 'var(--space-5)', flexWrap: 'wrap', marginTop: 'var(--space-5)' }}>
-        <div style={{ flex: 1, minWidth: 280 }}>
-          <label style={HEAD_LBL}>Memo</label>
-          {editing ? (
-            <textarea value={memo} onChange={e => setMemo(e.target.value)} rows={4}
-                      style={{ ...CELL_INPUT, resize: 'vertical' }} />
-          ) : (
-            <p style={{ ...RO_CELL, whiteSpace: 'pre-wrap', margin: 0 }}>{memo || '—'}</p>
-          )}
+      <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+        <div className="proc-section-head">
+          <h3 className="proc-section-title">Memo &amp; Attachments</h3>
         </div>
-        <div style={{ flex: 1, minWidth: 280 }}>
-          <label style={HEAD_LBL}>Attachments</label>
-          <label style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            gap: 4, minHeight: 72, padding: 'var(--space-3)', cursor: 'pointer',
-            border: '1px dashed var(--border-subtle)', borderRadius: 'var(--radius-md)',
-            color: 'var(--text-secondary)', fontSize: 'var(--text-sm)',
-          }}>
-            <span style={{ color: 'var(--brand, #b8860b)', fontWeight: 600 }}>Add attachment</span>
-            <span style={{ fontSize: 'var(--text-xs)' }}>Max file size: 20 MB</span>
-            <input type="file" multiple hidden
-                   onChange={e => {
-                     const chosen = Array.from(e.target.files ?? []);
-                     const ok = chosen.filter(f => f.size <= 20 * 1024 * 1024);
-                     if (ok.length < chosen.length) toast('Some files exceed 20 MB and were skipped', 'error');
-                     if (isCreate) setPendingFiles(prev => [...prev, ...ok]);
-                     else uploadNow(ok);
-                     e.target.value = '';
-                   }} />
-          </label>
-          {(entry?.attachments?.length || pendingFiles.length) ? (
-            <ul style={{ listStyle: 'none', margin: 'var(--space-2) 0 0', padding: 0, fontSize: 'var(--text-sm)' }}>
-              {entry?.attachments?.map(a => (
-                <li key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '3px 0' }}>
-                  {a.url
-                    ? <a href={a.url} target="_blank" rel="noreferrer" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--brand, #b8860b)' }}>{a.name}</a>
-                    : <span>{a.name}</span>}
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>{(a.size / 1024).toFixed(0)} KB</span>
-                    <button onClick={async () => {
-                      if (await confirm(`Remove attachment "${a.name}"?`)) {
-                        try {
-                          await accountingApi.deleteJournalAttachment(entry!.id, a.id);
-                          invalidate(); router.refresh();
-                        } catch (err) { toast(getApiError(err, 'Delete failed'), 'error'); }
-                      }
-                    }} style={{ background: 'none', border: 'none', color: 'var(--status-error)', cursor: 'pointer' }}>×</button>
-                  </span>
-                </li>
-              ))}
-              {pendingFiles.map((f, i) => (
-                <li key={`p${i}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0' }}>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name} <em style={{ color: 'var(--text-tertiary)' }}>(uploads on save)</em></span>
-                  <button onClick={() => setPendingFiles(prev => prev.filter((_, j) => j !== i))}
-                          style={{ background: 'none', border: 'none', color: 'var(--status-error)', cursor: 'pointer' }}>×</button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
+        <div style={{ display: 'flex', gap: 'var(--space-5)', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 280 }}>
+            <label style={HEAD_LBL}>Memo</label>
+            {editing ? (
+              <textarea value={memo} onChange={e => setMemo(e.target.value)} rows={4}
+                        style={{ ...CELL_INPUT, resize: 'vertical' }} />
+            ) : (
+              <p style={{ ...RO_CELL, whiteSpace: 'pre-wrap', margin: 0 }}>{memo || '—'}</p>
+            )}
+          </div>
+          <div style={{ flex: 1, minWidth: 280 }}>
+            <label style={HEAD_LBL}>Attachments</label>
+            <label style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 4, minHeight: 72, padding: 'var(--space-3)', cursor: 'pointer',
+              border: '1px dashed var(--border-subtle)', borderRadius: 'var(--radius-md)',
+              color: 'var(--text-secondary)', fontSize: 'var(--text-sm)',
+            }}>
+              <span style={{ color: 'var(--brand, #b8860b)', fontWeight: 600 }}>Add attachment</span>
+              <span style={{ fontSize: 'var(--text-xs)' }}>Max file size: 20 MB</span>
+              <input type="file" multiple hidden
+                     onChange={e => {
+                       const chosen = Array.from(e.target.files ?? []);
+                       const ok = chosen.filter(f => f.size <= 20 * 1024 * 1024);
+                       if (ok.length < chosen.length) toast('Some files exceed 20 MB and were skipped', 'error');
+                       if (isCreate) setPendingFiles(prev => [...prev, ...ok]);
+                       else uploadNow(ok);
+                       e.target.value = '';
+                     }} />
+            </label>
+            {(entry?.attachments?.length || pendingFiles.length) ? (
+              <ul style={{ listStyle: 'none', margin: 'var(--space-2) 0 0', padding: 0, fontSize: 'var(--text-sm)' }}>
+                {entry?.attachments?.map(a => (
+                  <li key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '3px 0' }}>
+                    {a.url
+                      ? <a href={a.url} target="_blank" rel="noreferrer" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--brand, #b8860b)' }}>{a.name}</a>
+                      : <span>{a.name}</span>}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>{(a.size / 1024).toFixed(0)} KB</span>
+                      <button onClick={async () => {
+                        if (await confirm(`Remove attachment "${a.name}"?`)) {
+                          try {
+                            await accountingApi.deleteJournalAttachment(entry!.id, a.id);
+                            invalidate(); router.refresh();
+                          } catch (err) { toast(getApiError(err, 'Delete failed'), 'error'); }
+                        }
+                      }} style={{ background: 'none', border: 'none', color: 'var(--status-error)', cursor: 'pointer' }}>×</button>
+                    </span>
+                  </li>
+                ))}
+                {pendingFiles.map((f, i) => (
+                  <li key={`p${i}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0' }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name} <em style={{ color: 'var(--text-tertiary)' }}>(uploads on save)</em></span>
+                    <button onClick={() => setPendingFiles(prev => prev.filter((_, j) => j !== i))}
+                            style={{ background: 'none', border: 'none', color: 'var(--status-error)', cursor: 'pointer' }}>×</button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
         </div>
       </div>
 
       {/* ── Reverse reason ── */}
       {reverseOpen && (
-        <div style={{
-          marginTop: 'var(--space-4)', padding: 'var(--space-3)',
-          border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)',
-        }}>
+        <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+          <div className="proc-section-head">
+            <h3 className="proc-section-title">Reverse Entry</h3>
+          </div>
           <label style={HEAD_LBL}>Reversal reason <span style={{ color: 'var(--status-error)' }}>*</span></label>
           <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
             <input type="text" value={reverseReason} onChange={e => setReverseReason(e.target.value)}
@@ -520,47 +562,6 @@ export default function JournalEntryEditor({ entry }: { entry?: JournalEntry }) 
           </div>
         </div>
       )}
-
-      {/* ── Footer actions ── */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginTop: 'var(--space-6)', paddingTop: 'var(--space-4)',
-        borderTop: '1px solid var(--border-subtle)', gap: 'var(--space-2)', flexWrap: 'wrap',
-      }}>
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <Button variant="ghost" onClick={handleClose} disabled={saveMutation.isPending}>
-            {isCreate || editing ? 'Cancel' : 'Close'}
-          </Button>
-          {isDraft && !editing && (
-            <Button variant="destructive" onClick={handleDelete} isLoading={deleteMutation.isPending}>
-              Delete draft
-            </Button>
-          )}
-        </div>
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          {isCreate && (
-            <>
-              <Button variant="secondary" onClick={() => save(false)} isLoading={saveMutation.isPending}
-                      disabled={!totals.balanced || !filled.length}>Save</Button>
-              <Button variant="primary" onClick={() => save(true)} isLoading={saveMutation.isPending}
-                      disabled={!totals.balanced || !filled.length}>Save and new</Button>
-            </>
-          )}
-          {isDraft && !editing && (
-            <>
-              <Button variant="secondary" onClick={() => setEditing(true)}>Edit</Button>
-              <Button variant="primary" onClick={handlePost} isLoading={postMutation.isPending}>Post</Button>
-            </>
-          )}
-          {isDraft && editing && (
-            <Button variant="primary" onClick={() => save(false)} isLoading={saveMutation.isPending}
-                    disabled={!totals.balanced || !filled.length}>Save changes</Button>
-          )}
-          {isPosted && !reverseOpen && (
-            <Button variant="secondary" onClick={() => setReverseOpen(true)}>Reverse</Button>
-          )}
-        </div>
-      </div>
     </>
   );
 }
