@@ -1,17 +1,20 @@
 ﻿'use client';
 
-import { Suspense, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subcontractorsApi, ProgressCertificate } from '@/lib/api/subcontractors';
 import Link from 'next/link';
-import { Button, Badge } from '@/components/ui';
+import { Button, Badge, type Column } from '@/components/ui';
 import { type FilterField } from '@/components/ui/FilterPanel';
-import { useListState } from '@/lib/hooks/use-list-state';
+import { useTableState } from '@/lib/hooks/use-table-state';
 import { CERTIFICATE_STATUS } from '@/lib/utils/status-colors';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
-import { EnterpriseListPage, type EnterpriseColumn, type BulkAction } from '@/components/ui/enterprise';
+import { AppListPage } from '@/components/app/AppListPage';
+
+const money = (n: number | string) => `AED ${Number(n).toLocaleString()}`;
+const RIGHT: React.CSSProperties = { display: 'block', textAlign: 'right', fontFamily: 'monospace', fontSize: 'var(--text-sm)' };
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Draft', submitted: 'Submitted', under_review: 'Under Review',
@@ -30,19 +33,19 @@ const DELETABLE_STATUSES = new Set(['draft', 'submitted', 'under_review', 'revie
 
 interface RejectDialog { id: number; reason: string }
 
-function CertificatesContent() {
+export default function CertificatesPage() {
   const router = useRouter();
-  const listState = useListState('subcon-certificates');
-  const { page, search, filters, pageSize, selectedItems, clearSelection } = listState;
+  const tableState = useTableState({ key: 'subcon-certificates' });
+  const { page, search, filters, selectedItems, clearSelection } = tableState;
   const queryClient = useQueryClient();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const isPrivileged = isTenantAdmin || isPlatformAdmin;
 
   const [rejectDialog, setRejectDialog] = useState<RejectDialog | null>(null);
 
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['subcon-certificates', page, pageSize, search, filters],
-    queryFn: () => subcontractorsApi.certificates.list({ page, page_size: pageSize, search: search || undefined, ...filters }),
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['subcon-certificates', page, search, filters],
+    queryFn: () => subcontractorsApi.certificates.list({ page, search: search || undefined, ...filters }),
     staleTime: 2 * 60 * 1000,
   });
 
@@ -113,17 +116,18 @@ function CertificatesContent() {
     deleteMutation.mutate(deletableIds);
   };
 
-  const columns: EnterpriseColumn<ProgressCertificate>[] = [
+  const columns: Column<ProgressCertificate>[] = [
     {
-      key: 'certificate_no', header: 'IPC No.', sortable: true, mobileMain: true, width: 120,
+      key: 'certificate_no', header: 'IPC No.', sortKey: 'certificate_no',
       render: c => (
-        <Link href={`/subcontractors/certificates/${c.id}`} style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--text-brand)', fontWeight: 600 }}>
+        <Link href={`/subcontractors/certificates/${c.id}`} onClick={e => e.stopPropagation()}
+              style={{ fontFamily: 'monospace', fontSize: 'var(--text-xs)', color: 'var(--brand)', fontWeight: 600 }}>
           {c.certificate_no}
         </Link>
       ),
     },
     {
-      key: 'subcontractor_name', header: 'Subcontractor / Contract', minWidth: 200,
+      key: 'subcontractor_name', header: 'Subcontractor / Contract',
       render: c => (
         <div>
           <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{c.subcontractor_name}</div>
@@ -132,37 +136,35 @@ function CertificatesContent() {
       ),
     },
     {
-      key: 'project_name', header: 'Project', minWidth: 140, mobileHide: true,
+      key: 'project_name', header: 'Project',
       render: c => c.project_name
         ? <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{c.project_name}</span>
         : <span style={{ color: 'var(--text-tertiary)' }}>—</span>,
     },
     {
-      key: 'certificate_date', header: 'Date', sortable: true, width: 110,
+      key: 'certificate_date', header: 'Date', sortKey: 'certificate_date',
       render: c => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{c.certificate_date}</span>,
     },
     {
-      key: 'gross_approved_amount', header: 'Gross Approved', align: 'right', sortable: true, width: 150,
-      render: c => <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)' }}>AED {Number(c.gross_approved_amount).toLocaleString()}</span>,
-      aggregate: (data) => <span style={{ fontFamily: 'monospace' }}>AED {data.reduce((s, c) => s + Number(c.gross_approved_amount), 0).toLocaleString()}</span>,
+      key: 'gross_approved_amount', header: 'Gross Approved', sortKey: 'gross_approved_amount',
+      render: c => <span style={RIGHT}>{money(c.gross_approved_amount)}</span>,
     },
     {
-      key: 'retention_amount', header: 'Retention', align: 'right', width: 130, mobileHide: true,
-      render: c => <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>AED {Number(c.retention_amount).toLocaleString()}</span>,
+      key: 'retention_amount', header: 'Retention',
+      render: c => <span style={{ ...RIGHT, color: 'var(--text-secondary)' }}>{money(c.retention_amount)}</span>,
     },
     {
-      key: 'net_payable_amount', header: 'Net Payable', align: 'right', sortable: true, width: 140,
-      render: c => <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 700 }}>AED {Number(c.net_payable_amount).toLocaleString()}</span>,
-      aggregate: (data) => <span style={{ fontFamily: 'monospace' }}>AED {data.reduce((s, c) => s + Number(c.net_payable_amount), 0).toLocaleString()}</span>,
+      key: 'net_payable_amount', header: 'Net Payable', sortKey: 'net_payable_amount',
+      render: c => <span style={{ ...RIGHT, fontWeight: 700 }}>{money(c.net_payable_amount)}</span>,
     },
     {
-      key: 'status', header: 'Status', width: 120,
+      key: 'status', header: 'Status',
       render: c => <Badge variant={CERTIFICATE_STATUS[c.status] ?? 'default'}>{STATUS_LABEL[c.status] || c.status}</Badge>,
     },
     {
-      key: 'actions', header: '', hideable: false, width: 240,
+      key: 'actions', header: '',
       render: c => (
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }} onClick={e => e.stopPropagation()}>
           <Link href={`/subcontractors/certificates/${c.id}`}>
             <Button variant="view" size="sm">View</Button>
           </Link>
@@ -186,53 +188,37 @@ function CertificatesContent() {
     },
   ];
 
-  const paidCount     = rows.filter(c => c.status === 'paid').length;
-  const approvedCount = rows.filter(c => c.status === 'approved' || c.status === 'gm_approved').length;
-  const pendingCount  = rows.filter(c => ['draft', 'submitted', 'under_review', 'reviewed'].includes(c.status)).length;
-  const totalNet      = rows.reduce((s, c) => s + Number(c.net_payable_amount), 0);
-
-  const kpiCards = [
-    { label: 'Total IPCs', value: totalCount },
-    { label: 'Pending Review', value: pendingCount, variant: 'warning' as const },
-    { label: 'Approved', value: approvedCount, variant: 'success' as const },
-    { label: 'Page Net Payable', value: `AED ${(totalNet / 1000).toFixed(0)}K`, variant: 'default' as const },
-  ];
-
-  const bulkActions: BulkAction[] = [
-    {
-      key: 'delete', label: 'Delete Selected', variant: 'destructive',
-      onClick: handleBulkDelete,
-      isLoading: deleteMutation.isPending,
-      disabled: selectedItems.size === 0,
-    },
-  ];
+  const totalNet = rows.reduce((s, c) => s + Number(c.net_payable_amount || 0), 0);
 
   return (
     <>
-      <EnterpriseListPage
+      <AppListPage
         title="Progress Certificates (IPC)"
-        breadcrumbs={[{ label: 'Subcontractors', href: '/subcontractors' }, { label: 'Certificates' }]}
-        primaryAction={
-          <Link href="/subcontractors/certificates/new">
-            <Button variant="primary">+ New Certificate</Button>
-          </Link>
-        }
-        kpiCards={kpiCards}
-        listState={listState}
+        description="Interim payment certificates — approvals, retention and net payable."
+        breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Subcontractors', href: '/subcontractors' }, { label: 'Certificates' }]}
+        totalCount={totalCount}
+        totalAmount={totalNet}
+        totalAmountLabel="Page Net Payable"
+        createAction={<Link href="/subcontractors/certificates/new"><Button variant="primary">+ New Certificate</Button></Link>}
+        statusItems={[{ value: '', label: 'All', count: totalCount },
+          ...Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label }))]}
         filterFields={filterFields}
-        filterSaveKey="subcon-certificates"
-        searchPlaceholder="Search by IPC number, subcontractor, contract..."
+        searchPlaceholder="Search by IPC number, subcontractor, contract…"
         columns={columns}
         data={rows}
-        totalCount={totalCount}
         isLoading={isLoading}
         error={error}
-        onRefetch={refetch}
-        paginatedData={data}
         selectable
-        bulkActions={bulkActions}
-        onRowClick={c => router.push('/subcontractors/certificates/' + c.id)}
-        emptyMessage="No certificates found."
+        tableState={tableState}
+        paginatedData={data}
+        pageSize={50}
+        onRowClick={c => router.push(`/subcontractors/certificates/${c.id}`)}
+        emptyTitle="No certificates found."
+        bulkActions={
+          <Button variant="destructive" onClick={handleBulkDelete} isLoading={deleteMutation.isPending}>
+            Delete {selectedItems.size}
+          </Button>
+        }
       />
 
       {/* Reject dialog */}
@@ -263,8 +249,4 @@ function CertificatesContent() {
       )}
     </>
   );
-}
-
-export default function CertificatesPage() {
-  return <Suspense><CertificatesContent /></Suspense>;
 }

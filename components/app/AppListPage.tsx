@@ -88,6 +88,8 @@ export interface AppListPageProps {
 
   /* ── Status strip (optional) ── */
   statusItems?:      AppStatusItem[];
+  /** Which filter key the status strip drives (default 'status'). */
+  statusKey?:        string;
   totalAmount?:      number;
   totalAmountLabel?: string;
 
@@ -132,6 +134,7 @@ export function AppListPage({
   showBack = true,
   title, description, totalCount = 0, pendingCount, createAction, headerExtra,
   statusItems = [],
+  statusKey = 'status',
   totalAmount, totalAmountLabel,
   searchPlaceholder,
   extraActions,
@@ -198,9 +201,9 @@ export function AppListPage({
 
   const currentIds: number[] = (data ?? []).map((r: any) => r.id);
 
-  const statusValue = (filters.status as string) ?? '';
+  const statusValue = (filters[statusKey] as string) ?? '';
   const handleStatusChange = (v: string) => {
-    handleFilterChange('status', v);
+    handleFilterChange(statusKey, v);
     setPage(1);
   };
 

@@ -1,15 +1,14 @@
-﻿'use client';
+'use client';
 
-import { Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { subcontractorsApi, Subcontractor } from '@/lib/api/subcontractors';
 import Link from 'next/link';
-import { Button, Badge } from '@/components/ui';
+import { Button, Badge, type Column } from '@/components/ui';
 import { type FilterField } from '@/components/ui/FilterPanel';
-import { useListState } from '@/lib/hooks/use-list-state';
+import { useTableState } from '@/lib/hooks/use-table-state';
 import { SUBCON_STATUS } from '@/lib/utils/status-colors';
-import { EnterpriseListPage, type EnterpriseColumn } from '@/components/ui/enterprise';
+import { AppListPage } from '@/components/app/AppListPage';
 
 const STATUS_LABEL: Record<string, string> = { active: 'Active', inactive: 'Inactive' };
 
@@ -20,10 +19,9 @@ const filterFields: FilterField[] = [
   },
 ];
 
-const columns: EnterpriseColumn<Subcontractor>[] = [
+const columns: Column<Subcontractor>[] = [
   {
-    key: 'company_name', header: 'Company Name',
-    sortable: true, mobileMain: true, minWidth: 180,
+    key: 'company_name', header: 'Company Name', sortKey: 'company_name',
     render: s => (
       <div>
         <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{s.company_name}</div>
@@ -34,7 +32,7 @@ const columns: EnterpriseColumn<Subcontractor>[] = [
     ),
   },
   {
-    key: 'contact_person', header: 'Contact', minWidth: 140,
+    key: 'contact_person', header: 'Contact',
     render: s => (
       <div>
         {s.contact_person && <div style={{ color: 'var(--text-primary)' }}>{s.contact_person}</div>}
@@ -43,11 +41,11 @@ const columns: EnterpriseColumn<Subcontractor>[] = [
     ),
   },
   {
-    key: 'email', header: 'Email', minWidth: 160,
+    key: 'email', header: 'Email',
     render: s => <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{s.email || '—'}</span>,
   },
   {
-    key: 'active_contracts_count', header: 'Active Contracts', align: 'center', width: 140,
+    key: 'active_contracts_count', header: 'Active Contracts',
     render: s => (
       <Badge variant={s.active_contracts_count > 0 ? 'info' : 'default'}>
         {s.active_contracts_count}
@@ -55,7 +53,7 @@ const columns: EnterpriseColumn<Subcontractor>[] = [
     ),
   },
   {
-    key: 'total_contract_value', header: 'Total Value', align: 'right', sortable: true, width: 150,
+    key: 'total_contract_value', header: 'Total Value', sortKey: 'total_contract_value',
     render: s => (
       <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
         {s.total_contract_value ? `AED ${Number(s.total_contract_value).toLocaleString()}` : '—'}
@@ -63,77 +61,60 @@ const columns: EnterpriseColumn<Subcontractor>[] = [
     ),
   },
   {
-    key: 'status', header: 'Status', width: 100,
+    key: 'status', header: 'Status',
     render: s => <Badge variant={SUBCON_STATUS[s.status] ?? 'default'}>{STATUS_LABEL[s.status] || s.status}</Badge>,
   },
   {
-    key: 'actions', header: '', width: 80, hideable: false,
+    key: 'actions', header: '',
     render: s => (
-      <Link href={`/subcontractors/${s.id}`}>
+      <Link href={`/subcontractors/${s.id}`} onClick={e => e.stopPropagation()}>
         <Button variant="view" size="sm">View</Button>
       </Link>
     ),
   },
 ];
 
-function SubcontractorsContent() {
+export default function SubcontractorsPage() {
   const router = useRouter();
-  const listState = useListState('subcontractors');
-  const { page, search, filters, pageSize } = listState;
+  const tableState = useTableState({ key: 'subcontractors' });
+  const { page, search, filters } = tableState;
 
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['subcontractors', page, pageSize, search, filters],
-    queryFn: () => subcontractorsApi.list({ page, page_size: pageSize, search: search || undefined, ...filters }),
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['subcontractors', page, search, filters],
+    queryFn: () => subcontractorsApi.list({ page, search: search || undefined, ...filters }),
   });
 
   const rows       = data?.results ?? [];
   const totalCount = data?.count ?? 0;
 
-  const kpiCards = [
-    { label: 'Total', value: totalCount, variant: 'default' as const },
-    {
-      label: 'Active', variant: 'success' as const,
-      value: rows.filter(s => s.status === 'active').length,
-      sub: totalCount > 0 ? `${Math.round(rows.filter(s => s.status === 'active').length / Math.max(rows.length, 1) * 100)}% of page` : undefined,
-    },
-    {
-      label: 'Inactive', variant: 'warning' as const,
-      value: rows.filter(s => s.status === 'inactive').length,
-    },
-  ];
-
   return (
-    <EnterpriseListPage
+    <AppListPage
       title="Subcontractors"
-      breadcrumbs={[{ label: 'Subcontractors' }]}
-      primaryAction={
-        <Link href="/subcontractors/new">
-          <Button variant="primary">+ Add Subcontractor</Button>
-        </Link>
+      description="Manage subcontractors, their contracts and progress."
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Subcontractors' }]}
+      totalCount={totalCount}
+      createAction={
+        <Link href="/subcontractors/new"><Button variant="primary">+ Add Subcontractor</Button></Link>
       }
-      kpiCards={kpiCards}
-      listState={listState}
+      statusItems={[
+        { value: '',         label: 'All', count: totalCount },
+        { value: 'active',   label: 'Active' },
+        { value: 'inactive', label: 'Inactive' },
+      ]}
       filterFields={filterFields}
-      filterSaveKey="subcontractors"
-      searchPlaceholder="Search by company name, contact, email..."
+      searchPlaceholder="Search by company name, contact, email…"
       columns={columns}
       data={rows}
-      totalCount={totalCount}
       isLoading={isLoading}
       error={error}
-      onRefetch={refetch}
+      onRowClick={s => router.push(`/subcontractors/${s.id}`)}
+      tableState={tableState}
       paginatedData={data}
-      onRowClick={s => router.push('/subcontractors/' + s.id)}
-      emptyMessage="No subcontractors found."
+      pageSize={50}
+      emptyTitle="No subcontractors found."
       emptyAction={
-        <Link href="/subcontractors/new">
-          <Button variant="primary">+ Add Subcontractor</Button>
-        </Link>
+        <Link href="/subcontractors/new"><Button variant="primary">+ Add Subcontractor</Button></Link>
       }
     />
   );
-}
-
-export default function SubcontractorsPage() {
-  return <Suspense><SubcontractorsContent /></Suspense>;
 }
