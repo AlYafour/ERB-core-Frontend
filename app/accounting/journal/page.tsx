@@ -517,6 +517,24 @@ export default function AccountingJournalPage() {
     queryClient.invalidateQueries({ queryKey: ['acc-journal-detail'] });
   };
 
+  const bulkPostMutation = useMutation({
+    mutationFn: () => accountingApi.bulkPostJournals({ all_drafts: true }),
+    onSuccess: (r) => {
+      invalidate();
+      let msg = `${r.posted} entries posted to the ledger`;
+      if (r.skipped.length) msg += ` — ${r.skipped.length} skipped (source document deleted)`;
+      if (r.errors.length) msg += ` — ${r.errors.length} failed`;
+      toast(msg, r.errors.length ? 'error' : 'success');
+    },
+    onError: () => toast('Bulk posting failed', 'error'),
+  });
+  const handlePostAllDrafts = async () => {
+    if (await confirm(
+      'Post ALL draft entries to the general ledger? Posted entries are permanent and will appear in every financial report. Drafts whose source document was deleted are skipped automatically.')) {
+      bulkPostMutation.mutate();
+    }
+  };
+
   const records    = data?.results ?? [];
   const totalCount = data?.count ?? 0;
 
@@ -585,6 +603,12 @@ export default function AccountingJournalPage() {
       description="General ledger journal — manual entries and automated postings."
       breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Accounting' }, { label: 'Journal Entries' }]}
       totalCount={totalCount}
+      headerExtra={
+        <Button variant="success" size="sm" onClick={handlePostAllDrafts}
+                isLoading={bulkPostMutation.isPending}>
+          ✓ Post all drafts
+        </Button>
+      }
       createAction={
         <Button variant="primary" size="sm" onClick={() => setShowNew(true)}>
           + New Entry

@@ -338,7 +338,10 @@ export const accountingApi = {
   updateJournal: (id: string, payload: Partial<JournalEntry>) =>
     apiClient.patch<JournalEntry>(`${BASE}/journal-entries/${id}/`, payload).then(r => r.data),
   postJournal: (id: string) =>
-    apiClient.post<JournalEntry>(`${BASE}/journal-entries/${id}/post_entry/`).then(r => r.data),
+    apiClient.post<JournalEntry>(`${BASE}/journal-entries/${id}/post/`).then(r => r.data),
+  bulkPostJournals: (payload: { ids?: string[]; all_drafts?: boolean }) =>
+    apiClient.post<{ posted: number; skipped: Array<{ id: string; memo: string; reason: string }>; errors: Array<{ id: string; memo: string; error: string }> }>(
+      `${BASE}/journal-entries/bulk-post/`, payload).then(r => r.data),
   reverseJournal: (id: string, reason: string) =>
     apiClient.post<JournalEntry>(`${BASE}/journal-entries/${id}/reverse/`, { reason }).then(r => r.data),
   trialBalance: (params?: { date_from?: string; date_to?: string }) =>
