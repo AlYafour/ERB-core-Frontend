@@ -71,6 +71,7 @@ export default function ExpensesPage() {
       totalCount={totalCount}
       totalAmount={pageTotal}
       totalAmountLabel="Page Total"
+      headerExtra={<Link href="/expenses/cash-boxes"><Button variant="secondary" size="sm">Cash Boxes</Button></Link>}
       createAction={<Link href="/expenses/new"><Button variant="primary">+ New Expense</Button></Link>}
       statusItems={[
         { value: '',                    label: 'All', count: totalCount },

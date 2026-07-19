@@ -67,6 +67,32 @@ export interface ExpensePayload {
   notes?: string;
 }
 
+export interface CashIn {
+  id: string;
+  number: string;
+  cash_box: string;
+  cash_box_name?: string | null;
+  source_account?: string | null;
+  amount: string;
+  date: string;
+  transfer_type?: string;
+  bank_reference?: string;
+  transfer_from?: string;
+  description?: string;
+  status: 'draft' | 'approved' | 'posted' | 'cancelled';
+  created_by_name?: string | null;
+  created_at: string;
+}
+export interface CashInPayload {
+  cash_box: string;
+  source_account?: string | null;
+  amount: string | number;
+  date: string;
+  transfer_from?: string;
+  bank_reference?: string;
+  description?: string;
+}
+
 const BASE = '/expenses';
 
 export const expensesApi = {
@@ -92,15 +118,26 @@ export const expensesApi = {
   preview: (id: string): Promise<{ lines: Array<{ account: string; debit: string; credit: string; source: string }> }> =>
     apiClient.get(`${BASE}/${id}/preview/`).then(r => r.data),
 
-  listCashBoxes: (): Promise<Array<{ id: string; name: string; kind: string; custodian?: number | null; custodian_name?: string | null }>> =>
+  listCashBoxes: (): Promise<Array<{ id: string; name: string; kind: string; custodian?: number | null; custodian_name?: string | null; cash_in?: string; spent?: string; balance?: string }>> =>
     apiClient.get(`${BASE}/cash-boxes/`).then(r => r.data),
   createCashBox: (payload: { name: string; custodian?: number | null }): Promise<{ id: string; name: string; kind: string; custodian_name?: string | null }> =>
     apiClient.post(`${BASE}/cash-boxes/`, payload).then(r => r.data),
+
+  updateCashBox: (id: string, patch: { name?: string; custodian?: number | null; is_active?: boolean }): Promise<any> =>
+    apiClient.patch(`${BASE}/cash-boxes/${id}/`, patch).then(r => r.data),
 
   listCostTypes: (): Promise<Array<{ id: string; name: string; is_direct: boolean }>> =>
     apiClient.get(`${BASE}/cost-types/`).then(r => r.data),
   createCostType: (name: string, is_direct = true): Promise<{ id: string; name: string; is_direct: boolean }> =>
     apiClient.post(`${BASE}/cost-types/`, { name, is_direct }).then(r => r.data),
+
+  // Cash-In (box top-up)
+  listCashIns: (params?: Record<string, unknown>): Promise<PaginatedResponse<CashIn>> =>
+    apiClient.get('/cash-ins/', { params }).then(r => r.data),
+  createCashIn: (payload: CashInPayload): Promise<CashIn> =>
+    apiClient.post('/cash-ins/', payload).then(r => r.data),
+  approveCashIn: (id: string): Promise<CashIn> =>
+    apiClient.post(`/cash-ins/${id}/approve/`).then(r => r.data),
 
   uploadAttachment: (id: string, file: File): Promise<ExpenseAttachment> => {
     const fd = new FormData();
