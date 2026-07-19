@@ -67,8 +67,16 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
 
   const boxOpts = boxes.map(b => ({ value: b.id, label: `${b.name}${b.custodian_name ? ` — ${b.custodian_name}` : ''}${b.kind === 'petty_cash' ? '' : ' (Bank)'}` }));
   const costTypeOpts = costTypes.map(c => ({ value: c.id, label: c.name }));
+  const isIndirect = selectedType ? !selectedType.is_direct : false;
   const projectOpts = projects.map((p: any) => ({ value: p.id, label: p.code ? `${p.code} — ${p.name}` : p.name }));
-  const costCodeOpts = costCodes.map((c: any) => ({ value: c.id, label: `${c.excel_code} — ${String(c.description || '').slice(0, 40)}` }));
+  // Only pickable items (not the group headers), each labelled with its
+  // group so repeated names like "OTHER" are never ambiguous.
+  const costCodeOpts = costCodes
+    .filter((c: any) => c.level !== 1)
+    .map((c: any) => {
+      const grp = c.parent_desc ? String(c.parent_desc).replace(/\s*[—-].*$/, '').trim().slice(0, 22) : '';
+      return { value: c.id, label: `${c.excel_code} — ${String(c.description || '').replace(/\s*[—-].*$/, '').trim().slice(0, 34)}${grp ? `  ·  ${grp}` : ''}` };
+    });
   const supplierOpts = supData.map((s: any) => ({ value: s.id, label: s.business_name || s.name }));
 
   const netAmount = useMemo(() => {
@@ -143,7 +151,15 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                 }} /></div>
             <div><label style={LABEL}>Cost Type</label>
               <SearchableDropdown options={costTypeOpts} value={costType} allowClear placeholder="Select or add a type"
-                onChange={v => setCostType(v ? String(v) : null)}
+                onChange={v => {
+                  const id = v ? String(v) : null;
+                  setCostType(id);
+                  // Indirect/overhead is not project work — clear the project;
+                  // also drop a cost code from the other catalog.
+                  const t = costTypes.find(c => c.id === id);
+                  if (t && !t.is_direct) setProject(null);
+                  setCostCode(null);
+                }}
                 onCreateOption={async name => {
                   try {
                     const c = await expensesApi.createCostType(name);
@@ -152,10 +168,17 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                   } catch (err) { toast(getApiError(err, 'Could not add type'), 'error'); return null; }
                 }} /></div>
             <div><label style={LABEL}>Project</label>
-              <SearchableDropdown options={projectOpts} value={project} allowClear placeholder="Which project"
-                onChange={v => setProject(v ? Number(v) : null)} /></div>
+              {isIndirect ? (
+                <div style={{ ...INPUT, background: 'var(--bg-secondary)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
+                  Office / Overhead — no project
+                </div>
+              ) : (
+                <SearchableDropdown options={projectOpts} value={project} allowClear placeholder="Which project"
+                  onChange={v => setProject(v ? Number(v) : null)} />
+              )}</div>
             <div><label style={LABEL}>Cost Code</label>
-              <SearchableDropdown options={costCodeOpts} value={costCode} allowClear placeholder="Expense category"
+              <SearchableDropdown options={costCodeOpts} value={costCode} allowClear
+                placeholder={isIndirect ? 'Office / overhead code' : 'Project expense code'}
                 onChange={v => setCostCode(v ? Number(v) : null)} /></div>
             <div><label style={LABEL}>Supplier {vatLiable && <span style={{ color: 'var(--status-error)' }}>*</span>}</label>
               <SearchableDropdown options={supplierOpts} value={supplier} allowClear placeholder="Select or add supplier"
