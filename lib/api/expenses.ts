@@ -4,8 +4,6 @@ import { PaginatedResponse } from '@/types';
 export type ExpenseStatus =
   | 'draft' | 'submitted' | 'accounting_approved' | 'approved' | 'posted' | 'rejected' | 'cancelled';
 
-export type CostType = 'direct' | 'indirect' | 'office';
-
 export interface ExpenseAttachment {
   id: string;
   name: string;
@@ -22,7 +20,8 @@ export interface Expense {
   cash_box: string | null;
   cash_box_name?: string | null;
   expense_date: string;
-  cost_type: CostType;
+  cost_type: string | null;
+  cost_type_label?: string | null;
   project: number | null;
   project_name?: string | null;
   cost_code: number | null;
@@ -54,7 +53,7 @@ export interface ExpensePayload {
   voucher_number?: string;
   cash_box?: string | null;
   expense_date: string;
-  cost_type: CostType;
+  cost_type: string | null;
   project?: number | null;
   cost_code?: number | null;
   expense_account?: number | null;
@@ -93,10 +92,15 @@ export const expensesApi = {
   preview: (id: string): Promise<{ lines: Array<{ account: string; debit: string; credit: string; source: string }> }> =>
     apiClient.get(`${BASE}/${id}/preview/`).then(r => r.data),
 
-  listCashBoxes: (): Promise<Array<{ id: string; name: string; kind: string }>> =>
+  listCashBoxes: (): Promise<Array<{ id: string; name: string; kind: string; custodian?: number | null; custodian_name?: string | null }>> =>
     apiClient.get(`${BASE}/cash-boxes/`).then(r => r.data),
-  createCashBox: (name: string): Promise<{ id: string; name: string; kind: string }> =>
-    apiClient.post(`${BASE}/cash-boxes/`, { name }).then(r => r.data),
+  createCashBox: (payload: { name: string; custodian?: number | null }): Promise<{ id: string; name: string; kind: string; custodian_name?: string | null }> =>
+    apiClient.post(`${BASE}/cash-boxes/`, payload).then(r => r.data),
+
+  listCostTypes: (): Promise<Array<{ id: string; name: string; is_direct: boolean }>> =>
+    apiClient.get(`${BASE}/cost-types/`).then(r => r.data),
+  createCostType: (name: string, is_direct = true): Promise<{ id: string; name: string; is_direct: boolean }> =>
+    apiClient.post(`${BASE}/cost-types/`, { name, is_direct }).then(r => r.data),
 
   uploadAttachment: (id: string, file: File): Promise<ExpenseAttachment> => {
     const fd = new FormData();

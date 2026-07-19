@@ -22,7 +22,6 @@ const STATUS_VARIANT: Record<ExpenseStatus, 'default' | 'warning' | 'info' | 'su
   draft: 'default', submitted: 'warning', accounting_approved: 'info',
   approved: 'success', posted: 'success', rejected: 'error', cancelled: 'default',
 };
-const COST_LABEL: Record<string, string> = { direct: 'Direct (D.C)', indirect: 'Indirect (I.D.C)', office: 'Office' };
 const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
 
 export default function ExpenseDetailPage() {
@@ -131,7 +130,7 @@ function ExpenseDetailContent() {
             <ProcField label="System No." value={<span style={{ fontFamily: 'monospace' }}>{exp.number}</span>} />
             <ProcField label="Date" value={fmtDate(exp.expense_date)} />
             <ProcField label="Cash Box" value={exp.cash_box_name} />
-            <ProcField label="Cost Type" value={COST_LABEL[exp.cost_type] ?? exp.cost_type} />
+            <ProcField label="Cost Type" value={exp.cost_type_label} />
             <ProcField label="Project" value={exp.project_name} />
             <ProcField label="Cost Code" value={exp.cost_code_code
               ? <span><span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{exp.cost_code_code}</span>{exp.cost_code_desc ? <span style={{ color: 'var(--text-secondary)', marginInlineStart: 6, fontSize: 'var(--text-xs)' }}>{exp.cost_code_desc.slice(0, 40)}</span> : null}</span>

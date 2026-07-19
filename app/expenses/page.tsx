@@ -18,11 +18,7 @@ const STATUS_VARIANT: Record<ExpenseStatus, 'default' | 'warning' | 'info' | 'su
   draft: 'default', submitted: 'warning', accounting_approved: 'info',
   approved: 'success', posted: 'success', rejected: 'error', cancelled: 'default',
 };
-const COST_LABEL: Record<string, string> = { direct: 'Direct', indirect: 'Indirect', office: 'Office' };
-
 const filterFields: FilterField[] = [
-  { name: 'cost_type', label: 'Cost Type', type: 'select', group: 'Expense',
-    options: [{ value: 'direct', label: 'Direct' }, { value: 'indirect', label: 'Indirect' }, { value: 'office', label: 'Office' }] },
   { name: 'vat_liable', label: 'VAT Liable', type: 'select', group: 'Expense',
     options: [{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }] },
 ];
@@ -52,7 +48,7 @@ export default function ExpensesPage() {
     { key: 'supplier', header: 'Supplier / Payee',
       render: e => <span>{e.supplier_name || e.payee_name || '—'}</span> },
     { key: 'cost', header: 'Cost',
-      render: e => <Badge variant="default">{COST_LABEL[e.cost_type] ?? e.cost_type}</Badge> },
+      render: e => e.cost_type_label ? <Badge variant="default">{e.cost_type_label}</Badge> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
     { key: 'code', header: 'Cost Code',
       render: e => e.cost_code_code
         ? <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)' }} title={e.cost_code_desc || ''}>{e.cost_code_code}</span>

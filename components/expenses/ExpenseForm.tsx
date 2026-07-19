@@ -14,7 +14,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageShell, Button, PageHeader } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
-import { expensesApi, type Expense, type CostType } from '@/lib/api/expenses';
+import { expensesApi, type Expense } from '@/lib/api/expenses';
 import { costCodesApi } from '@/lib/api/cost-codes';
 import { projectsApi } from '@/lib/api/projects';
 import { suppliersApi } from '@/lib/api/suppliers';
@@ -38,7 +38,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
 
   const [cashBox, setCashBox] = useState<string | null>(existing?.cash_box ?? null);
   const [date, setDate] = useState(existing?.expense_date ?? today());
-  const [costType, setCostType] = useState<CostType>(existing?.cost_type ?? 'direct');
+  const [costType, setCostType] = useState<string | null>(existing?.cost_type ?? null);
   const [project, setProject] = useState<number | null>(existing?.project ?? null);
   const [costCode, setCostCode] = useState<number | null>(existing?.cost_code ?? null);
   const [supplier, setSupplier] = useState<number | null>(existing?.supplier ?? null);
@@ -51,6 +51,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
   const [files, setFiles] = useState<File[]>([]);
 
   const { data: boxes = [] }   = useQuery({ queryKey: ['exp-cash-boxes'], queryFn: () => expensesApi.listCashBoxes(), staleTime: 300_000 });
+  const { data: costTypes = [] } = useQuery({ queryKey: ['exp-cost-types'], queryFn: () => expensesApi.listCostTypes(), staleTime: 300_000 });
   const { data: ccData }       = useQuery({ queryKey: ['cost-codes-all'], queryFn: () => costCodesApi.getAll(), staleTime: 300_000 });
   const { data: projData }     = useQuery({ queryKey: ['projects-for-exp'], queryFn: () => projectsApi.getAll({ page_size: 300 } as any), staleTime: 300_000 });
   const { data: supData = [] } = useQuery({ queryKey: ['suppliers-active'], queryFn: () => suppliersApi.getAllActive(), staleTime: 300_000 });
@@ -58,7 +59,8 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
   const costCodes = Array.isArray(ccData) ? ccData : ((ccData as any)?.results ?? []);
   const projects = (projData as any)?.results ?? [];
 
-  const boxOpts = boxes.map(b => ({ value: b.id, label: `${b.name}${b.kind === 'petty_cash' ? '' : ' (Bank)'}` }));
+  const boxOpts = boxes.map(b => ({ value: b.id, label: `${b.name}${b.custodian_name ? ` — ${b.custodian_name}` : ''}${b.kind === 'petty_cash' ? '' : ' (Bank)'}` }));
+  const costTypeOpts = costTypes.map(c => ({ value: c.id, label: c.name }));
   const projectOpts = projects.map((p: any) => ({ value: p.id, label: p.code ? `${p.code} — ${p.name}` : p.name }));
   const costCodeOpts = costCodes.map((c: any) => ({ value: c.id, label: `${c.excel_code} — ${String(c.description || '').slice(0, 40)}` }));
   const supplierOpts = supData.map((s: any) => ({ value: s.id, label: s.business_name || s.name }));
@@ -128,17 +130,21 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                 onChange={v => setCashBox(v ? String(v) : null)}
                 onCreateOption={async name => {
                   try {
-                    const b = await expensesApi.createCashBox(name);
+                    const b = await expensesApi.createCashBox({ name });
                     queryClient.invalidateQueries({ queryKey: ['exp-cash-boxes'] });
                     return { value: b.id, label: b.name };
                   } catch (err) { toast(getApiError(err, 'Could not add box'), 'error'); return null; }
                 }} /></div>
             <div><label style={LABEL}>Cost Type</label>
-              <select style={INPUT} value={costType} onChange={e => setCostType(e.target.value as CostType)}>
-                <option value="direct">Direct (project)</option>
-                <option value="indirect">Indirect</option>
-                <option value="office">Office / Overhead</option>
-              </select></div>
+              <SearchableDropdown options={costTypeOpts} value={costType} allowClear placeholder="Select or add a type"
+                onChange={v => setCostType(v ? String(v) : null)}
+                onCreateOption={async name => {
+                  try {
+                    const c = await expensesApi.createCostType(name);
+                    queryClient.invalidateQueries({ queryKey: ['exp-cost-types'] });
+                    return { value: c.id, label: c.name };
+                  } catch (err) { toast(getApiError(err, 'Could not add type'), 'error'); return null; }
+                }} /></div>
             <div><label style={LABEL}>Project</label>
               <SearchableDropdown options={projectOpts} value={project} allowClear placeholder="Which project"
                 onChange={v => setProject(v ? Number(v) : null)} /></div>
