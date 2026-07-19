@@ -37,6 +37,7 @@ const Check = () => (
 const DOC_META: Record<string, { emoji: string; sub: string }> = {
   purchase_request: { emoji: '📋', sub: 'Purchase requests submitted to suppliers' },
   purchase_order:   { emoji: '📦', sub: 'Formal purchase orders' },
+  expense:          { emoji: '💵', sub: 'Petty cash / expense vouchers' },
   leave_request:    { emoji: '🏖️', sub: 'Employee leave requests' },
 };
 
@@ -476,7 +477,7 @@ export default function ApprovalChainsPage() {
   const refresh = useCallback(() => qc.invalidateQueries({ queryKey: ['approval-policies'] }), [qc]);
 
   // Only show types that are actually wired to the approval engine
-  const ACTIVE_CODES = new Set(['purchase_request', 'purchase_order']);
+  const ACTIVE_CODES = new Set(['purchase_request', 'purchase_order', 'expense']);
 
   const byCode = new Map<string, RequestType>();
   [...apiTypes]

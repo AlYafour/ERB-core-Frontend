@@ -1,5 +1,6 @@
 import apiClient from './client';
 import { PaginatedResponse } from '@/types';
+import type { ApprovalStatus } from './approvals';
 
 export type ExpenseStatus =
   | 'draft' | 'submitted' | 'accounting_approved' | 'approved' | 'posted' | 'rejected' | 'cancelled';
@@ -44,6 +45,7 @@ export interface Expense {
   notes?: string;
   attachments?: ExpenseAttachment[];
   journal_entry?: { id: string; number: string | null; status: string } | null;
+  approval_status?: ApprovalStatus | null;
   created_by_name?: string | null;
   created_at: string;
   updated_at: string;
@@ -109,8 +111,6 @@ export const expensesApi = {
 
   submit: (id: string): Promise<Expense> =>
     apiClient.post(`${BASE}/${id}/submit/`).then(r => r.data),
-  accountingApprove: (id: string): Promise<Expense> =>
-    apiClient.post(`${BASE}/${id}/accounting-approve/`).then(r => r.data),
   approve: (id: string): Promise<Expense> =>
     apiClient.post(`${BASE}/${id}/approve/`).then(r => r.data),
   reject: (id: string, reason: string): Promise<Expense> =>

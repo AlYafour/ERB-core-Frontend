@@ -13,6 +13,7 @@ import { getApiError } from '@/lib/utils/error';
 import { formatPrice } from '@/lib/utils/format';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
+import { ApprovalStatusWidget } from '@/components/ui/ApprovalStatusWidget';
 
 const STATUS_LABEL: Record<ExpenseStatus, string> = {
   draft: 'Draft', submitted: 'Submitted', accounting_approved: 'Accounting Approved',
@@ -55,11 +56,6 @@ function ExpenseDetailContent() {
   const submitM = useMutation({
     mutationFn: () => expensesApi.submit(id),
     onSuccess: () => { invalidate(); toast('Submitted for approval', 'success'); },
-    onError: (err) => toast(getApiError(err, 'Action failed'), 'error'),
-  });
-  const accApM = useMutation({
-    mutationFn: () => expensesApi.accountingApprove(id),
-    onSuccess: () => { invalidate(); toast('Accounting approved', 'success'); },
     onError: (err) => toast(getApiError(err, 'Action failed'), 'error'),
   });
   const approveM = useMutation({
@@ -115,13 +111,18 @@ function ExpenseDetailContent() {
               <Badge variant={STATUS_VARIANT[s] ?? 'default'}>{STATUS_LABEL[s] ?? s}</Badge>
               {isDraft && canEdit && <Button variant="edit" size="sm" onClick={() => router.push(`/expenses/${id}/edit`)}>Edit</Button>}
               {isDraft && canEdit && <Button variant="secondary" size="sm" onClick={() => submitM.mutate()} isLoading={submitM.isPending}>Submit</Button>}
-              {s === 'submitted' && canApprove && <Button variant="secondary" size="sm" onClick={() => accApM.mutate()} isLoading={accApM.isPending}>Accounting Approve</Button>}
-              {(s === 'submitted' || s === 'accounting_approved') && canApprove && <Button variant="success" size="sm" onClick={() => approveM.mutate()} isLoading={approveM.isPending}>Approve</Button>}
-              {(s === 'submitted' || s === 'accounting_approved') && canApprove && <Button variant="destructive" size="sm" onClick={handleReject} isLoading={rejectM.isPending}>Reject</Button>}
+              {s === 'submitted' && canApprove && <Button variant="success" size="sm" onClick={() => approveM.mutate()} isLoading={approveM.isPending}>Approve</Button>}
+              {s === 'submitted' && canApprove && <Button variant="destructive" size="sm" onClick={handleReject} isLoading={rejectM.isPending}>Reject</Button>}
               {isDraft && canEdit && <Button variant="destructive" size="sm" onClick={handleDelete} isLoading={deleteM.isPending}>Delete</Button>}
             </div>
           }
         />
+
+        {(exp as any).approval_status && (
+          <div style={{ marginBottom: 'var(--space-4)' }}>
+            <ApprovalStatusWidget approvalStatus={(exp as any).approval_status} />
+          </div>
+        )}
 
         <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
           <div className="proc-section-head"><h3 className="proc-section-title">Details</h3></div>
