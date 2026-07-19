@@ -131,6 +131,11 @@ export const expensesApi = {
   createCostType: (name: string, is_direct = true): Promise<{ id: string; name: string; is_direct: boolean }> =>
     apiClient.post(`${BASE}/cost-types/`, { name, is_direct }).then(r => r.data),
 
+  listOverheadCategories: (): Promise<Array<{ id: string; name: string }>> =>
+    apiClient.get(`${BASE}/overhead-categories/`).then(r => r.data),
+  createOverheadCategory: (name: string): Promise<{ id: string; name: string }> =>
+    apiClient.post(`${BASE}/overhead-categories/`, { name }).then(r => r.data),
+
   // Cash-In (box top-up)
   listCashIns: (params?: Record<string, unknown>): Promise<PaginatedResponse<CashIn>> =>
     apiClient.get('/cash-ins/', { params }).then(r => r.data),

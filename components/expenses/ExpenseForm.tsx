@@ -40,6 +40,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
   const [date, setDate] = useState(existing?.expense_date ?? today());
   const [costType, setCostType] = useState<string | null>(existing?.cost_type ?? null);
   const [project, setProject] = useState<number | null>(existing?.project ?? null);
+  const [overhead, setOverhead] = useState<string | null>((existing as any)?.overhead_category ?? null);
   const [costCode, setCostCode] = useState<number | null>(existing?.cost_code ?? null);
   const [supplier, setSupplier] = useState<number | null>(existing?.supplier ?? null);
   const [payee, setPayee] = useState(existing?.payee_name ?? '');
@@ -52,6 +53,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
 
   const { data: boxes = [] }   = useQuery({ queryKey: ['exp-cash-boxes'], queryFn: () => expensesApi.listCashBoxes(), staleTime: 300_000 });
   const { data: costTypes = [] } = useQuery({ queryKey: ['exp-cost-types'], queryFn: () => expensesApi.listCostTypes(), staleTime: 300_000 });
+  const { data: overheads = [] } = useQuery({ queryKey: ['exp-overheads'], queryFn: () => expensesApi.listOverheadCategories(), staleTime: 300_000 });
   const { data: ccData }       = useQuery({ queryKey: ['cost-codes-all'], queryFn: () => costCodesApi.getAll(), staleTime: 300_000 });
   const { data: projData }     = useQuery({ queryKey: ['projects-for-exp'], queryFn: () => projectsApi.getAll({ page_size: 300 } as any), staleTime: 300_000 });
   const { data: supData = [] } = useQuery({ queryKey: ['suppliers-active'], queryFn: () => suppliersApi.getAllActive(), staleTime: 300_000 });
@@ -87,9 +89,11 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = {
+      const payload: any = {
         cash_box: cashBox, expense_date: date, cost_type: costType,
-        project, cost_code: costCode, supplier, payee_name: payee,
+        project: isIndirect ? null : project,
+        overhead_category: isIndirect ? overhead : null,
+        cost_code: costCode, supplier, payee_name: payee,
         invoice_no: invoiceNo, description, amount,
         vat_liable: vatLiable, vat_amount: vatLiable ? vatAmount || '0' : '0',
       };
@@ -167,15 +171,22 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                     return { value: c.id, label: c.name };
                   } catch (err) { toast(getApiError(err, 'Could not add type'), 'error'); return null; }
                 }} /></div>
-            <div><label style={LABEL}>Project</label>
-              {isIndirect ? (
-                <div style={{ ...INPUT, background: 'var(--bg-secondary)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
-                  Office / Overhead — no project
-                </div>
-              ) : (
+            {isIndirect ? (
+              <div><label style={LABEL}>Office / Location</label>
+                <SearchableDropdown options={overheads.map(o => ({ value: o.id, label: o.name }))} value={overhead} allowClear placeholder="Select or add"
+                  onChange={v => setOverhead(v ? String(v) : null)}
+                  onCreateOption={async name => {
+                    try {
+                      const o = await expensesApi.createOverheadCategory(name);
+                      queryClient.invalidateQueries({ queryKey: ['exp-overheads'] });
+                      return { value: o.id, label: o.name };
+                    } catch (err) { toast(getApiError(err, 'Could not add'), 'error'); return null; }
+                  }} /></div>
+            ) : (
+              <div><label style={LABEL}>Project</label>
                 <SearchableDropdown options={projectOpts} value={project} allowClear placeholder="Which project"
-                  onChange={v => setProject(v ? Number(v) : null)} />
-              )}</div>
+                  onChange={v => setProject(v ? Number(v) : null)} /></div>
+            )}
             <div><label style={LABEL}>Cost Code</label>
               <SearchableDropdown options={costCodeOpts} value={costCode} allowClear
                 placeholder={isIndirect ? 'Office / overhead code' : 'Project expense code'}

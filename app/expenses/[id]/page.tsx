@@ -131,7 +131,9 @@ function ExpenseDetailContent() {
             <ProcField label="Date" value={fmtDate(exp.expense_date)} />
             <ProcField label="Cash Box" value={exp.cash_box_name} />
             <ProcField label="Cost Type" value={exp.cost_type_label} />
-            <ProcField label="Project" value={exp.project_name} />
+            {(exp as any).overhead_category_label
+              ? <ProcField label="Office / Location" value={(exp as any).overhead_category_label} />
+              : <ProcField label="Project" value={exp.project_name} />}
             <ProcField label="Cost Code" value={exp.cost_code_code
               ? <span><span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{exp.cost_code_code}</span>{exp.cost_code_desc ? <span style={{ color: 'var(--text-secondary)', marginInlineStart: 6, fontSize: 'var(--text-xs)' }}>{exp.cost_code_desc.slice(0, 40)}</span> : null}</span>
               : undefined} />
