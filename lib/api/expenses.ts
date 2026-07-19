@@ -93,6 +93,11 @@ export const expensesApi = {
   preview: (id: string): Promise<{ lines: Array<{ account: string; debit: string; credit: string; source: string }> }> =>
     apiClient.get(`${BASE}/${id}/preview/`).then(r => r.data),
 
+  listCashBoxes: (): Promise<Array<{ id: string; name: string; kind: string }>> =>
+    apiClient.get(`${BASE}/cash-boxes/`).then(r => r.data),
+  createCashBox: (name: string): Promise<{ id: string; name: string; kind: string }> =>
+    apiClient.post(`${BASE}/cash-boxes/`, { name }).then(r => r.data),
+
   uploadAttachment: (id: string, file: File): Promise<ExpenseAttachment> => {
     const fd = new FormData();
     fd.append('file', file);
