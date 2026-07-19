@@ -31,6 +31,8 @@ export interface Expense {
   expense_account: number | null;
   supplier: number | null;
   supplier_name?: string | null;
+  vehicle: number | null;
+  vehicle_label?: string | null;
   payee_name: string;
   invoice_no: string;
   description: string;
@@ -60,6 +62,7 @@ export interface ExpensePayload {
   cost_code?: number | null;
   expense_account?: number | null;
   supplier?: number | null;
+  vehicle?: number | null;
   payee_name?: string;
   invoice_no?: string;
   description?: string;
@@ -155,6 +158,10 @@ export const expensesApi = {
     apiClient.patch(`${BASE}/cash-boxes/${id}/`, patch).then(r => r.data),
   deactivateCashBox: (id: string): Promise<CashBox> =>
     apiClient.patch(`${BASE}/cash-boxes/${id}/`, { is_active: false }).then(r => r.data),
+
+  // Select-only list of the tenant's registered vehicles (managed in HR → Assets).
+  listVehicles: (): Promise<Array<{ id: number; label: string; plate: string; name: string }>> =>
+    apiClient.get(`${BASE}/vehicles/`).then(r => r.data),
 
   listCostTypes: (includeInactive = false): Promise<CostTypeOption[]> =>
     apiClient.get(`${BASE}/cost-types/`, { params: includeInactive ? { include_inactive: 1 } : undefined }).then(r => r.data),

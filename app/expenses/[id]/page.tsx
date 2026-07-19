@@ -139,7 +139,8 @@ function ExpenseDetailContent() {
               ? <span><span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{exp.cost_code_code}</span>{exp.cost_code_desc ? <span style={{ color: 'var(--text-secondary)', marginInlineStart: 6, fontSize: 'var(--text-xs)' }}>{exp.cost_code_desc.slice(0, 40)}</span> : null}</span>
               : undefined} />
             <ProcField label="Supplier" value={exp.supplier_name} />
-            <ProcField label="Payee / Plate" value={exp.payee_name} />
+            <ProcField label="Vehicle" value={exp.vehicle_label} />
+            <ProcField label="Payee" value={exp.payee_name} />
             <ProcField label="Invoice No." value={exp.invoice_no ? <span style={{ fontFamily: 'monospace' }}>{exp.invoice_no}</span> : undefined} />
             <ProcField label="Description" value={exp.description} />
             {exp.journal_entry && (

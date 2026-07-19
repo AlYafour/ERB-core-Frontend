@@ -43,6 +43,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
   const [overhead, setOverhead] = useState<string | null>((existing as any)?.overhead_category ?? null);
   const [costCode, setCostCode] = useState<number | null>(existing?.cost_code ?? null);
   const [supplier, setSupplier] = useState<number | null>(existing?.supplier ?? null);
+  const [vehicle, setVehicle] = useState<number | null>(existing?.vehicle ?? null);
   const [payee, setPayee] = useState(existing?.payee_name ?? '');
   const [invoiceNo, setInvoiceNo] = useState(existing?.invoice_no ?? '');
   const [description, setDescription] = useState(existing?.description ?? '');
@@ -60,6 +61,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
   const { data: ccData }       = useQuery({ queryKey: ['cost-codes-all'], queryFn: () => costCodesApi.getAll(), staleTime: 300_000 });
   const { data: projData }     = useQuery({ queryKey: ['projects-for-exp'], queryFn: () => projectsApi.getAll({ page_size: 300 } as any), staleTime: 300_000 });
   const { data: supData = [] } = useQuery({ queryKey: ['suppliers-active'], queryFn: () => suppliersApi.getAllActive(), staleTime: 300_000 });
+  const { data: vehicles = [] } = useQuery({ queryKey: ['exp-vehicles'], queryFn: () => expensesApi.listVehicles(), staleTime: 300_000 });
 
   const allCostCodes = Array.isArray(ccData) ? ccData : ((ccData as any)?.results ?? []);
   const projects = (projData as any)?.results ?? [];
@@ -83,6 +85,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
       return { value: c.id, label: `${c.excel_code} — ${String(c.description || '').replace(/\s*[—-].*$/, '').trim().slice(0, 34)}${grp ? `  ·  ${grp}` : ''}` };
     });
   const supplierOpts = supData.map((s: any) => ({ value: s.id, label: s.business_name || s.name }));
+  const vehicleOpts = vehicles.map(v => ({ value: v.id, label: v.label }));
 
   const netAmount = useMemo(() => {
     const a = parseFloat(amount) || 0;
@@ -103,7 +106,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
         cash_box: cashBox, expense_date: date, cost_type: costType,
         project: isIndirect ? null : project,
         overhead_category: isIndirect ? overhead : null,
-        cost_code: costCode, supplier, payee_name: payee,
+        cost_code: costCode, supplier, vehicle, payee_name: payee,
         invoice_no: invoiceNo, description, amount,
         vat_liable: vatLiable, vat_amount: vatLiable ? vatAmount || '0' : '0',
       };
@@ -227,8 +230,18 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                     return { value: s.id, label: s.business_name || s.name };
                   } catch (err) { toast(getApiError(err, 'Could not add supplier'), 'error'); return null; }
                 }} /></div>
-            <div><label style={LABEL}>Payee / Vehicle plate</label>
-              <input style={INPUT} value={payee} onChange={e => setPayee(e.target.value)} placeholder="If no supplier — who / which vehicle" /></div>
+            <div><label style={LABEL}>Vehicle</label>
+              <SearchableDropdown options={vehicleOpts} value={vehicle} allowClear
+                placeholder={vehicles.length ? 'Select a vehicle' : 'No vehicles registered'}
+                onChange={v => setVehicle(v ? Number(v) : null)} />
+              {vehicles.length === 0 && (
+                <div style={{ fontSize: 11, marginTop: 4, color: 'var(--text-muted)' }}>
+                  Register vehicles in HR → Assets to pick them here.
+                </div>
+              )}
+            </div>
+            <div><label style={LABEL}>Payee</label>
+              <input style={INPUT} value={payee} onChange={e => setPayee(e.target.value)} placeholder="If no supplier / vehicle — who was paid" /></div>
             <div><label style={LABEL}>Invoice No.</label>
               <input style={INPUT} value={invoiceNo} onChange={e => setInvoiceNo(e.target.value)} /></div>
           </div>
