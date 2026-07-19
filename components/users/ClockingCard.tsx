@@ -1,10 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { hrSelfAttendanceApi } from '@/lib/api/hr';
+import { hrSelfAttendanceApi, type BiometricProof } from '@/lib/api/hr';
 import { Loader } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
+import {
+  isPlatformAuthenticatorAvailable,
+  prepareAuthenticationOptions,
+  serializeAuthenticationCredential,
+} from '@/lib/utils/webauthn';
 
 interface Props {
   emp: any;
@@ -98,6 +104,53 @@ export default function ClockingCard({ emp, isSelf }: Props) {
   const queryClient = useQueryClient();
   const [gpsError, setGpsError]   = useState<string | null>(null);
   const [gettingGps, setGettingGps] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  // Fingerprint (WebAuthn) is optional: only offered where the OS supports it
+  // (Windows Hello / Touch ID). hasPasskey is discovered lazily on first use.
+  const [platformAvail, setPlatformAvail] = useState(false);
+  const [hasPasskey, setHasPasskey] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!isSelf) return;
+    let alive = true;
+    isPlatformAuthenticatorAvailable().then(a => { if (alive) setPlatformAvail(a); });
+    return () => { alive = false; };
+  }, [isSelf]);
+
+  /**
+   * Attempt an optional fingerprint verification for a clock event.
+   * Returns the assertion to attach, or null to clock manually (never blocks).
+   * `hadPasskey` distinguishes "not enrolled" (silent manual) from
+   * "enrolled but fingerprint didn't complete" (manual + a heads-up toast).
+   */
+  async function tryFingerprint(): Promise<{ proof: BiometricProof | null; hadPasskey: boolean }> {
+    if (!platformAvail) return { proof: null, hadPasskey: false };
+    setVerifying(true); // lock the buttons for the WHOLE flow, incl. the begin round-trip
+    try {
+      let begin: { options: Record<string, unknown>; challenge_token: string };
+      try {
+        begin = await hrSelfAttendanceApi.biometricBegin();
+        setHasPasskey(true);
+      } catch (err: any) {
+        // 400 = no fingerprint registered on this account → clock manually + nudge.
+        if (err?.response?.status === 400) setHasPasskey(false);
+        return { proof: null, hadPasskey: false };
+      }
+      try {
+        const options = prepareAuthenticationOptions(begin.options);
+        const cred = (await navigator.credentials.get({ publicKey: options })) as PublicKeyCredential | null;
+        if (!cred) return { proof: null, hadPasskey: true };
+        return {
+          proof: { webauthn: serializeAuthenticationCredential(cred), challenge_token: begin.challenge_token },
+          hadPasskey: true,
+        };
+      } catch {
+        return { proof: null, hadPasskey: true }; // cancelled / failed → manual fallback
+      }
+    } finally {
+      setVerifying(false);
+    }
+  }
 
   const { data: record, isLoading } = useQuery({
     queryKey: ['attendance-today', emp?.id],
@@ -110,15 +163,15 @@ export default function ClockingCard({ emp, isSelf }: Props) {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['attendance-today', emp?.id] });
 
   const checkInMut = useMutation({
-    mutationFn: (coords: { latitude: number; longitude: number }) => hrSelfAttendanceApi.checkIn(coords),
-    onSuccess: () => { invalidate(); toast('Checked in successfully.', 'success'); },
+    mutationFn: (data: { latitude: number; longitude: number } & Partial<BiometricProof>) => hrSelfAttendanceApi.checkIn(data),
+    onSuccess: (rec) => { invalidate(); toast(rec.check_in_method === 'biometric' ? 'Checked in — verified by fingerprint.' : 'Checked in successfully.', 'success'); },
     onError:   (err: any) => setGpsError(err?.response?.data?.detail ?? 'Check-in failed.'),
     throwOnError: false,
   });
 
   const checkOutMut = useMutation({
-    mutationFn: (data?: { latitude?: number; longitude?: number }) => hrSelfAttendanceApi.checkOut(data),
-    onSuccess: () => { invalidate(); toast('Checked out successfully.', 'success'); },
+    mutationFn: (data?: { latitude?: number; longitude?: number } & Partial<BiometricProof>) => hrSelfAttendanceApi.checkOut(data),
+    onSuccess: (rec) => { invalidate(); toast(rec.check_out_method === 'biometric' ? 'Checked out — verified by fingerprint.' : 'Checked out successfully.', 'success'); },
     onError:   (err: any) => setGpsError(err?.response?.data?.detail ?? 'Check-out failed.'),
     throwOnError: false,
   });
@@ -144,7 +197,9 @@ export default function ClockingCard({ emp, isSelf }: Props) {
     const coords = await getLocation();
     setGettingGps(false);
     if (!coords) { setGpsError('Could not get your location. Please enable GPS and try again.'); return; }
-    checkInMut.mutate({ latitude: coords.latitude, longitude: coords.longitude });
+    const { proof, hadPasskey } = await tryFingerprint();
+    if (hadPasskey && !proof) toast('Fingerprint not verified — clocking in without it.', 'info');
+    checkInMut.mutate({ latitude: coords.latitude, longitude: coords.longitude, ...(proof ?? {}) });
   };
 
   const handleCheckOut = async () => {
@@ -154,10 +209,13 @@ export default function ClockingCard({ emp, isSelf }: Props) {
     setGettingGps(true);
     const coords = await getLocation();
     setGettingGps(false);
-    checkOutMut.mutate(coords ? { latitude: coords.latitude, longitude: coords.longitude } : undefined);
+    const { proof, hadPasskey } = await tryFingerprint();
+    if (hadPasskey && !proof) toast('Fingerprint not verified — clocking out without it.', 'info');
+    const base = coords ? { latitude: coords.latitude, longitude: coords.longitude } : {};
+    checkOutMut.mutate({ ...base, ...(proof ?? {}) });
   };
 
-  const busy       = gettingGps || checkInMut.isPending || checkOutMut.isPending || breakOutMut.isPending || breakInMut.isPending;
+  const busy       = gettingGps || verifying || checkInMut.isPending || checkOutMut.isPending || breakOutMut.isPending || breakInMut.isPending;
   const checkedIn  = !!record?.check_in;
   const checkedOut = !!record?.check_out;
   const isOnBreak  = !!record?.break_start && !record?.break_end;
@@ -242,6 +300,9 @@ export default function ClockingCard({ emp, isSelf }: Props) {
               <p style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', color: checkedIn ? 'var(--text-primary)' : 'var(--border-default)', margin: 0, lineHeight: 1 }}>
                 {fmtTime(record?.check_in)}
               </p>
+              {record?.check_in_method === 'biometric' && (
+                <span title="Verified by fingerprint" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, marginTop: 5, fontSize: 10, fontWeight: 700, color: '#16a34a' }}>🔒 Fingerprint</span>
+              )}
             </div>
 
             <span style={{ padding: '0 10px', color: 'var(--border-default)', fontSize: 20, userSelect: 'none' }}>›</span>
@@ -266,6 +327,9 @@ export default function ClockingCard({ emp, isSelf }: Props) {
               <p style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', color: checkedOut ? 'var(--text-primary)' : 'var(--border-default)', margin: 0, lineHeight: 1 }}>
                 {fmtTime(record?.check_out)}
               </p>
+              {record?.check_out_method === 'biometric' && (
+                <span title="Verified by fingerprint" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, marginTop: 5, fontSize: 10, fontWeight: 700, color: '#16a34a' }}>🔒 Fingerprint</span>
+              )}
             </div>
           </div>
 
@@ -336,7 +400,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
               {!checkedIn && (
                 <button onClick={handleCheckIn} disabled={busy}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 24px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: 'var(--brand)', color: '#fff', opacity: busy ? 0.65 : 1, transition: 'opacity .15s' }}>
-                  {gettingGps || checkInMut.isPending ? '⏳ Locating…' : '⏱ Clock In'}
+                  {gettingGps ? '⏳ Locating…' : verifying ? '🔒 Verifying…' : checkInMut.isPending ? '⏳ Saving…' : '⏱ Clock In'}
                 </button>
               )}
 
@@ -350,7 +414,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
                   )}
                   <button onClick={handleCheckOut} disabled={busy}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 20px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: 'var(--brand)', color: '#fff', opacity: busy ? 0.65 : 1 }}>
-                    {checkOutMut.isPending || gettingGps ? '⏳ Saving…' : '✓ Clock Out'}
+                    {gettingGps ? '⏳ Locating…' : verifying ? '🔒 Verifying…' : checkOutMut.isPending ? '⏳ Saving…' : '✓ Clock Out'}
                   </button>
                 </>
               )}
@@ -366,6 +430,15 @@ export default function ClockingCard({ emp, isSelf }: Props) {
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
                   Great work today — {fmtHours(displayHours)} logged.
                 </p>
+              )}
+
+              {/* Optional: nudge to register a fingerprint (only if the device
+                  supports it and none is registered yet). */}
+              {platformAvail && hasPasskey === false && !checkedOut && (
+                <Link href="/security" title="Register your fingerprint"
+                  style={{ flexBasis: '100%', display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 2, fontSize: 12, color: 'var(--text-secondary)', textDecoration: 'none' }}>
+                  <span>🔒</span> Register your fingerprint to clock in with it →
+                </Link>
               )}
             </div>
           )}

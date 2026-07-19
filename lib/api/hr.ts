@@ -533,12 +533,20 @@ export interface AttendanceRecord {
   matched_location: number | null;
   matched_location_name: string | null;
   is_out_of_range: boolean;
+  check_in_method: 'manual' | 'biometric';
+  check_out_method: 'manual' | 'biometric';
   status: string;
   work_hours: number | null;
   duration_hours: number | null;
   break_start: string | null;
   break_end: string | null;
   notes: string;
+}
+
+/** Optional fingerprint assertion attached to a self clock-in/out. */
+export interface BiometricProof {
+  webauthn: Record<string, unknown>;
+  challenge_token: string;
 }
 
 export interface EmployeeAssignmentFlat {
@@ -659,12 +667,17 @@ export const hrSelfAttendanceApi = {
     const results: AttendanceRecord[] = response.data?.results ?? [];
     return results[0] ?? null;
   },
-  checkIn: async (data: { latitude: number; longitude: number; address?: string }): Promise<AttendanceRecord> => {
+  checkIn: async (data: { latitude: number; longitude: number; address?: string } & Partial<BiometricProof>): Promise<AttendanceRecord> => {
     const response = await apiClient.post('/hr/attendance/self-check-in/', data);
     return response.data;
   },
-  checkOut: async (data?: { latitude?: number; longitude?: number }): Promise<AttendanceRecord> => {
+  checkOut: async (data?: { latitude?: number; longitude?: number } & Partial<BiometricProof>): Promise<AttendanceRecord> => {
     const response = await apiClient.post('/hr/attendance/self-check-out/', data ?? {});
+    return response.data;
+  },
+  /** Begin a fingerprint check for the current user's clock event. */
+  biometricBegin: async (): Promise<{ options: Record<string, unknown>; challenge_token: string }> => {
+    const response = await apiClient.post('/hr/attendance/biometric-begin/', {});
     return response.data;
   },
   breakOut: async (): Promise<AttendanceRecord> => {
