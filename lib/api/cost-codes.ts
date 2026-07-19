@@ -2,8 +2,19 @@ import apiClient from './client';
 import { CostCode } from '@/types';
 
 export const costCodesApi = {
-  getAll: async (params?: { level?: number; search?: string; parent?: number }): Promise<CostCode[]> => {
+  getAll: async (params?: { level?: number; search?: string; parent?: number; is_direct?: boolean; is_active?: boolean }): Promise<CostCode[]> => {
     const response = await apiClient.get('/cost-codes/', { params });
     return response.data;
+  },
+  create: async (payload: Partial<CostCode>): Promise<CostCode> => {
+    const response = await apiClient.post('/cost-codes/', payload);
+    return response.data;
+  },
+  update: async (id: number, payload: Partial<CostCode>): Promise<CostCode> => {
+    const response = await apiClient.patch(`/cost-codes/${id}/`, payload);
+    return response.data;
+  },
+  remove: async (id: number): Promise<void> => {
+    await apiClient.delete(`/cost-codes/${id}/`);
   },
 };

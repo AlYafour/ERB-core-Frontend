@@ -221,10 +221,14 @@ export interface CostCode {
   excel_code: string;
   description: string;
   level: 1 | 2 | 3;
+  is_direct?: boolean;
   parent: number | null;
   parent_code?: string | null;
   parent_desc?: string | null;
   is_active: boolean;
+  default_account?: number | null;
+  default_account_code?: string | null;
+  effective_account_code?: string | null;
 }
 
 // Purchase Request Types

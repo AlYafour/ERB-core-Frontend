@@ -470,6 +470,7 @@ export default function Sidebar() {
                         { name: t('nav', 'accountingDashboard'), href: '/accounting'          },
                         { name: t('nav', 'accountingJournal'),   href: '/accounting/journal'  },
                         { name: 'Petty Cash & Expenses',         href: '/expenses'           },
+                        { name: 'Cost Codes',                    href: '/accounting/cost-codes' },
                         { name: t('nav', 'accountingPayments'),  href: '/accounting/payments' },
                         { name: t('nav', 'accountingBanking'),   href: '/accounting/banking'  },
                         { name: t('nav', 'accountingReports'),   href: '/accounting/reports'  },

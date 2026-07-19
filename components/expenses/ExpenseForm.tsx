@@ -56,8 +56,14 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
   const { data: projData }     = useQuery({ queryKey: ['projects-for-exp'], queryFn: () => projectsApi.getAll({ page_size: 300 } as any), staleTime: 300_000 });
   const { data: supData = [] } = useQuery({ queryKey: ['suppliers-active'], queryFn: () => suppliersApi.getAllActive(), staleTime: 300_000 });
 
-  const costCodes = Array.isArray(ccData) ? ccData : ((ccData as any)?.results ?? []);
+  const allCostCodes = Array.isArray(ccData) ? ccData : ((ccData as any)?.results ?? []);
   const projects = (projData as any)?.results ?? [];
+
+  // Show cost codes matching the selected cost type's direct/indirect nature.
+  const selectedType = costTypes.find(c => c.id === costType);
+  const costCodes = selectedType
+    ? allCostCodes.filter((c: any) => (c.is_direct ?? true) === selectedType.is_direct)
+    : allCostCodes;
 
   const boxOpts = boxes.map(b => ({ value: b.id, label: `${b.name}${b.custodian_name ? ` — ${b.custodian_name}` : ''}${b.kind === 'petty_cash' ? '' : ' (Bank)'}` }));
   const costTypeOpts = costTypes.map(c => ({ value: c.id, label: c.name }));
