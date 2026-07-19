@@ -95,6 +95,35 @@ export interface CashInPayload {
   description?: string;
 }
 
+export interface CashBox {
+  id: string;
+  name: string;
+  kind: string;
+  custodian?: number | null;
+  custodian_name?: string | null;
+  cash_in?: string;
+  spent?: string;
+  balance?: string;
+  is_active?: boolean;
+}
+
+export interface CostTypeOption {
+  id: string;
+  name: string;
+  name_ar?: string;
+  is_direct: boolean;
+  is_active?: boolean;
+  display_order?: number;
+}
+
+export interface OverheadCategory {
+  id: string;
+  name: string;
+  name_ar?: string;
+  is_active?: boolean;
+  display_order?: number;
+}
+
 const BASE = '/expenses';
 
 export const expensesApi = {
@@ -118,23 +147,32 @@ export const expensesApi = {
   preview: (id: string): Promise<{ lines: Array<{ account: string; debit: string; credit: string; source: string }> }> =>
     apiClient.get(`${BASE}/${id}/preview/`).then(r => r.data),
 
-  listCashBoxes: (): Promise<Array<{ id: string; name: string; kind: string; custodian?: number | null; custodian_name?: string | null; cash_in?: string; spent?: string; balance?: string }>> =>
+  listCashBoxes: (): Promise<CashBox[]> =>
     apiClient.get(`${BASE}/cash-boxes/`).then(r => r.data),
-  createCashBox: (payload: { name: string; custodian?: number | null }): Promise<{ id: string; name: string; kind: string; custodian_name?: string | null }> =>
+  createCashBox: (payload: { name: string; custodian?: number | null }): Promise<CashBox> =>
     apiClient.post(`${BASE}/cash-boxes/`, payload).then(r => r.data),
-
-  updateCashBox: (id: string, patch: { name?: string; custodian?: number | null; is_active?: boolean }): Promise<any> =>
+  updateCashBox: (id: string, patch: { name?: string; custodian?: number | null; is_active?: boolean }): Promise<CashBox> =>
     apiClient.patch(`${BASE}/cash-boxes/${id}/`, patch).then(r => r.data),
+  deactivateCashBox: (id: string): Promise<CashBox> =>
+    apiClient.patch(`${BASE}/cash-boxes/${id}/`, { is_active: false }).then(r => r.data),
 
-  listCostTypes: (): Promise<Array<{ id: string; name: string; is_direct: boolean }>> =>
-    apiClient.get(`${BASE}/cost-types/`).then(r => r.data),
-  createCostType: (name: string, is_direct = true): Promise<{ id: string; name: string; is_direct: boolean }> =>
-    apiClient.post(`${BASE}/cost-types/`, { name, is_direct }).then(r => r.data),
+  listCostTypes: (includeInactive = false): Promise<CostTypeOption[]> =>
+    apiClient.get(`${BASE}/cost-types/`, { params: includeInactive ? { include_inactive: 1 } : undefined }).then(r => r.data),
+  createCostType: (name: string, is_direct = true, name_ar = ''): Promise<CostTypeOption> =>
+    apiClient.post(`${BASE}/cost-types/`, { name, is_direct, name_ar }).then(r => r.data),
+  updateCostType: (id: string, patch: Partial<Pick<CostTypeOption, 'name' | 'name_ar' | 'is_direct' | 'is_active' | 'display_order'>>): Promise<CostTypeOption> =>
+    apiClient.patch(`${BASE}/cost-types/${id}/`, patch).then(r => r.data),
+  deleteCostType: (id: string): Promise<void> =>
+    apiClient.delete(`${BASE}/cost-types/${id}/`).then(() => undefined),
 
-  listOverheadCategories: (): Promise<Array<{ id: string; name: string }>> =>
-    apiClient.get(`${BASE}/overhead-categories/`).then(r => r.data),
-  createOverheadCategory: (name: string): Promise<{ id: string; name: string }> =>
-    apiClient.post(`${BASE}/overhead-categories/`, { name }).then(r => r.data),
+  listOverheadCategories: (includeInactive = false): Promise<OverheadCategory[]> =>
+    apiClient.get(`${BASE}/overhead-categories/`, { params: includeInactive ? { include_inactive: 1 } : undefined }).then(r => r.data),
+  createOverheadCategory: (name: string, name_ar = ''): Promise<OverheadCategory> =>
+    apiClient.post(`${BASE}/overhead-categories/`, { name, name_ar }).then(r => r.data),
+  updateOverheadCategory: (id: string, patch: Partial<Pick<OverheadCategory, 'name' | 'name_ar' | 'is_active' | 'display_order'>>): Promise<OverheadCategory> =>
+    apiClient.patch(`${BASE}/overhead-categories/${id}/`, patch).then(r => r.data),
+  deleteOverheadCategory: (id: string): Promise<void> =>
+    apiClient.delete(`${BASE}/overhead-categories/${id}/`).then(() => undefined),
 
   // Cash-In (box top-up)
   listCashIns: (params?: Record<string, unknown>): Promise<PaginatedResponse<CashIn>> =>

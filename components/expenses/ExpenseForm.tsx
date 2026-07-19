@@ -52,8 +52,11 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
   const [files, setFiles] = useState<File[]>([]);
 
   const { data: boxes = [] }   = useQuery({ queryKey: ['exp-cash-boxes'], queryFn: () => expensesApi.listCashBoxes(), staleTime: 300_000 });
-  const { data: costTypes = [] } = useQuery({ queryKey: ['exp-cost-types'], queryFn: () => expensesApi.listCostTypes(), staleTime: 300_000 });
-  const { data: overheads = [] } = useQuery({ queryKey: ['exp-overheads'], queryFn: () => expensesApi.listOverheadCategories(), staleTime: 300_000 });
+  // When editing, include inactive lookups too, so a voucher coded to a type /
+  // office that was later deactivated still resolves (otherwise the form would
+  // lock the cost code and silently drop the overhead context on save).
+  const { data: costTypes = [] } = useQuery({ queryKey: ['exp-cost-types', isEdit], queryFn: () => expensesApi.listCostTypes(isEdit), staleTime: 300_000 });
+  const { data: overheads = [] } = useQuery({ queryKey: ['exp-overheads', isEdit], queryFn: () => expensesApi.listOverheadCategories(isEdit), staleTime: 300_000 });
   const { data: ccData }       = useQuery({ queryKey: ['cost-codes-all'], queryFn: () => costCodesApi.getAll(), staleTime: 300_000 });
   const { data: projData }     = useQuery({ queryKey: ['projects-for-exp'], queryFn: () => projectsApi.getAll({ page_size: 300 } as any), staleTime: 300_000 });
   const { data: supData = [] } = useQuery({ queryKey: ['suppliers-active'], queryFn: () => suppliersApi.getAllActive(), staleTime: 300_000 });
@@ -87,6 +90,13 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
     return a - v;
   }, [amount, vatAmount, vatLiable]);
 
+  // Cash-box balance awareness: show the selected box's balance and warn when
+  // this voucher would overdraw it (imprest safeguard).
+  const selectedBox = boxes.find(b => b.id === cashBox);
+  const boxBalance = selectedBox ? Number(selectedBox.balance ?? 0) : null;
+  const grossNum = parseFloat(amount) || 0;
+  const overSpend = boxBalance !== null && grossNum > 0 && grossNum > boxBalance;
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload: any = {
@@ -113,9 +123,11 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
     onError: (err) => toast(getApiError(err, 'Failed to save expense'), 'error'),
   });
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!amount || parseFloat(amount) <= 0) { toast('Enter an amount greater than zero', 'error'); return; }
     if (vatLiable && !supplier) { toast('VAT-liable expenses need a supplier (with TRN)', 'error'); return; }
+    if (overSpend && !(await confirm(
+      `This amount (${formatPrice(grossNum)}) is more than the box balance (${formatPrice(boxBalance!)}). Record it anyway?`))) return;
     saveMutation.mutate();
   };
   const handleCancel = async () => {
@@ -152,7 +164,14 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                     queryClient.invalidateQueries({ queryKey: ['exp-cash-boxes'] });
                     return { value: b.id, label: b.name };
                   } catch (err) { toast(getApiError(err, 'Could not add box'), 'error'); return null; }
-                }} /></div>
+                }} />
+              {selectedBox && (
+                <div style={{ fontSize: 11, marginTop: 4, fontWeight: 600, color: overSpend ? 'var(--status-error)' : 'var(--text-muted)' }}>
+                  Balance: <span style={{ fontFamily: 'monospace' }}>{formatPrice(boxBalance!)}</span>
+                  {overSpend && ' — exceeds balance'}
+                </div>
+              )}
+            </div>
             <div><label style={LABEL}>Cost Type</label>
               <SearchableDropdown options={costTypeOpts} value={costType} allowClear placeholder="Select or add a type"
                 onChange={v => {
@@ -188,9 +207,16 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                   onChange={v => setProject(v ? Number(v) : null)} /></div>
             )}
             <div><label style={LABEL}>Cost Code</label>
-              <SearchableDropdown options={costCodeOpts} value={costCode} allowClear
-                placeholder={isIndirect ? 'Office / overhead code' : 'Project expense code'}
-                onChange={v => setCostCode(v ? Number(v) : null)} /></div>
+              {selectedType ? (
+                <SearchableDropdown options={costCodeOpts} value={costCode} allowClear
+                  placeholder={isIndirect ? 'Office / overhead code' : 'Project expense code'}
+                  onChange={v => setCostCode(v ? Number(v) : null)} />
+              ) : (
+                <div style={{ ...INPUT, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', cursor: 'not-allowed' }}>
+                  Choose a Cost Type first
+                </div>
+              )}
+            </div>
             <div><label style={LABEL}>Supplier {vatLiable && <span style={{ color: 'var(--status-error)' }}>*</span>}</label>
               <SearchableDropdown options={supplierOpts} value={supplier} allowClear placeholder="Select or add supplier"
                 onChange={v => setSupplier(v ? Number(v) : null)}

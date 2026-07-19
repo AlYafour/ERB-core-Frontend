@@ -8,7 +8,7 @@ import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { expensesApi } from '@/lib/api/expenses';
 import { usersApi } from '@/lib/api/users';
-import { toast } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { formatPrice } from '@/lib/utils/format';
 
@@ -35,6 +35,8 @@ function CashBoxesContent() {
   const [cashInBox, setCashInBox] = useState<{ id: string; name: string } | null>(null);
   const [newName, setNewName] = useState('');
   const [newCustodian, setNewCustodian] = useState<number | null>(null);
+  const [renameId, setRenameId] = useState<string | null>(null);
+  const [renameVal, setRenameVal] = useState('');
 
   const { data: boxes = [], isLoading } = useQuery({ queryKey: ['exp-cash-boxes'], queryFn: () => expensesApi.listCashBoxes() });
   const { data: usersResp } = useQuery({ queryKey: ['users-for-custodian'], queryFn: () => usersApi.getAll({ page_size: 200 } as any), staleTime: 300_000 });
@@ -53,6 +55,21 @@ function CashBoxesContent() {
     onSuccess: () => { invalidate(); toast('Custodian updated', 'success'); },
     onError: (err) => toast(getApiError(err, 'Update failed'), 'error'),
   });
+  const renameBox = useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) => expensesApi.updateCashBox(id, { name }),
+    onSuccess: () => { invalidate(); setRenameId(null); toast('Box renamed', 'success'); },
+    onError: (err) => toast(getApiError(err, 'Rename failed'), 'error'),
+  });
+  const deactivateBox = useMutation({
+    mutationFn: (id: string) => expensesApi.deactivateCashBox(id),
+    onSuccess: () => { invalidate(); toast('Box deactivated', 'success'); },
+    onError: (err) => toast(getApiError(err, 'Could not deactivate'), 'error'),
+  });
+  const askDeactivate = async (b: { id: string; name: string }) => {
+    if (await confirm(`Deactivate "${b.name}"? It will be hidden from new vouchers; its history stays intact.`)) {
+      deactivateBox.mutate(b.id);
+    }
+  };
 
   return (
     <MainLayout>
@@ -92,7 +109,17 @@ function CashBoxesContent() {
                     const bal = Number(b.balance ?? 0);
                     return (
                       <tr key={b.id}>
-                        <td style={{ ...TD, fontWeight: 600 }}>{b.name}{b.kind !== 'petty_cash' && <Badge variant="info" >Bank</Badge>}</td>
+                        <td style={{ ...TD, fontWeight: 600 }}>
+                          {renameId === b.id ? (
+                            <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                              <input style={{ ...INPUT, width: 180 }} value={renameVal} onChange={e => setRenameVal(e.target.value)} autoFocus />
+                              <Button variant="primary" size="sm" onClick={() => renameVal.trim() && renameBox.mutate({ id: b.id, name: renameVal.trim() })} isLoading={renameBox.isPending}>Save</Button>
+                              <Button variant="ghost" size="sm" onClick={() => setRenameId(null)}>Cancel</Button>
+                            </span>
+                          ) : (
+                            <>{b.name}{b.kind !== 'petty_cash' && <Badge variant="info">Bank</Badge>}</>
+                          )}
+                        </td>
                         <td style={TD}>
                           <SearchableDropdown options={userOpts} value={b.custodian ?? null} allowClear placeholder="Assign custodian"
                             onChange={v => setCustodian.mutate({ id: b.id, custodian: v ? Number(v) : null })} />
@@ -100,8 +127,12 @@ function CashBoxesContent() {
                         <td style={{ ...TD, textAlign: 'right', fontFamily: 'monospace' }}>{formatPrice(Number(b.cash_in ?? 0))}</td>
                         <td style={{ ...TD, textAlign: 'right', fontFamily: 'monospace' }}>{formatPrice(Number(b.spent ?? 0))}</td>
                         <td style={{ ...TD, textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: bal < 0 ? 'var(--status-error)' : 'var(--text-primary)' }}>{formatPrice(bal)}</td>
-                        <td style={{ ...TD, textAlign: 'right' }}>
-                          <Button variant="secondary" size="sm" onClick={() => setCashInBox({ id: b.id, name: b.name })}>+ Cash In</Button>
+                        <td style={{ ...TD, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <span style={{ display: 'inline-flex', gap: 6, justifyContent: 'flex-end' }}>
+                            <Button variant="secondary" size="sm" onClick={() => setCashInBox({ id: b.id, name: b.name })}>+ Cash In</Button>
+                            <Button variant="edit" size="sm" onClick={() => { setRenameId(b.id); setRenameVal(b.name); }}>Rename</Button>
+                            <Button variant="ghost" size="sm" onClick={() => askDeactivate({ id: b.id, name: b.name })}>Deactivate</Button>
+                          </span>
                         </td>
                       </tr>
                     );
