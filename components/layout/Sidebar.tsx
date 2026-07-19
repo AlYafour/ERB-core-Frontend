@@ -469,6 +469,7 @@ export default function Sidebar() {
                       items={[
                         { name: t('nav', 'accountingDashboard'), href: '/accounting'          },
                         { name: t('nav', 'accountingJournal'),   href: '/accounting/journal'  },
+                        { name: 'Petty Cash & Expenses',         href: '/expenses'           },
                         { name: t('nav', 'accountingPayments'),  href: '/accounting/payments' },
                         { name: t('nav', 'accountingBanking'),   href: '/accounting/banking'  },
                         { name: t('nav', 'accountingReports'),   href: '/accounting/reports'  },
