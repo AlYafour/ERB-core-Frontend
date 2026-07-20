@@ -100,6 +100,11 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
   const grossNum = parseFloat(amount) || 0;
   const overSpend = boxBalance !== null && grossNum > 0 && grossNum > boxBalance;
 
+  // The Vehicle picker only appears for vehicle/fleet cost codes (a code flagged
+  // as a vehicle code, or any child of one).
+  const selectedCostCode = allCostCodes.find((c: any) => c.id === costCode);
+  const showVehicle = !!(selectedCostCode as any)?.is_vehicle_effective;
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload: any = {
@@ -213,7 +218,12 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
               {selectedType ? (
                 <SearchableDropdown options={costCodeOpts} value={costCode} allowClear
                   placeholder={isIndirect ? 'Office / overhead code' : 'Project expense code'}
-                  onChange={v => setCostCode(v ? Number(v) : null)} />
+                  onChange={v => {
+                    const id = v ? Number(v) : null;
+                    setCostCode(id);
+                    const cc = allCostCodes.find((c: any) => c.id === id);
+                    if (!cc?.is_vehicle_effective) setVehicle(null);   // not a vehicle code → drop any vehicle
+                  }} />
               ) : (
                 <div style={{ ...INPUT, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', cursor: 'not-allowed' }}>
                   Choose a Cost Type first
@@ -230,16 +240,18 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                     return { value: s.id, label: s.business_name || s.name };
                   } catch (err) { toast(getApiError(err, 'Could not add supplier'), 'error'); return null; }
                 }} /></div>
-            <div><label style={LABEL}>Vehicle</label>
-              <SearchableDropdown options={vehicleOpts} value={vehicle} allowClear
-                placeholder={vehicles.length ? 'Select a vehicle' : 'No vehicles registered'}
-                onChange={v => setVehicle(v ? Number(v) : null)} />
-              {vehicles.length === 0 && (
-                <div style={{ fontSize: 11, marginTop: 4, color: 'var(--text-muted)' }}>
-                  Register vehicles in HR → Assets to pick them here.
-                </div>
-              )}
-            </div>
+            {showVehicle && (
+              <div><label style={LABEL}>Vehicle</label>
+                <SearchableDropdown options={vehicleOpts} value={vehicle} allowClear
+                  placeholder={vehicles.length ? 'Select a vehicle' : 'No vehicles registered'}
+                  onChange={v => setVehicle(v ? Number(v) : null)} />
+                {vehicles.length === 0 && (
+                  <div style={{ fontSize: 11, marginTop: 4, color: 'var(--text-muted)' }}>
+                    Register vehicles in HR → Assets to pick them here.
+                  </div>
+                )}
+              </div>
+            )}
             <div><label style={LABEL}>Payee</label>
               <input style={INPUT} value={payee} onChange={e => setPayee(e.target.value)} placeholder="If no supplier / vehicle — who was paid" /></div>
             <div><label style={LABEL}>Invoice No.</label>

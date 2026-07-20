@@ -222,6 +222,8 @@ export interface CostCode {
   description: string;
   level: 1 | 2 | 3;
   is_direct?: boolean;
+  is_vehicle?: boolean;
+  is_vehicle_effective?: boolean;
   parent: number | null;
   parent_code?: string | null;
   parent_desc?: string | null;

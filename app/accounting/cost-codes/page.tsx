@@ -160,6 +160,11 @@ function CostCodesContent() {
                   <SearchableDropdown options={accOpts} value={editing.default_account ?? null} allowClear placeholder="Inherits from parent if empty"
                     onChange={v => setEditing(d => ({ ...d!, default_account: v ? Number(v) : null }))} /></div>
               </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, fontSize: 13, cursor: 'pointer' }}>
+                <input type="checkbox" checked={!!editing.is_vehicle}
+                  onChange={e => setEditing(d => ({ ...d!, is_vehicle: e.target.checked }))} />
+                Vehicle / fleet code — shows the Vehicle picker on expenses (child codes inherit this)
+              </label>
               <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
                 <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>Cancel</Button>
                 <Button variant="primary" size="sm" isLoading={saveMut.isPending}
