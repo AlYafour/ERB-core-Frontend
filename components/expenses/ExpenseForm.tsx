@@ -49,7 +49,6 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
   const [description, setDescription] = useState(existing?.description ?? '');
   const [amount, setAmount] = useState(existing ? String(existing.amount) : '');
   const [vatLiable, setVatLiable] = useState(existing?.vat_liable ?? false);
-  const [vatAmount, setVatAmount] = useState(existing ? String(existing.vat_amount) : '');
   const [files, setFiles] = useState<File[]>([]);
 
   const { data: boxes = [] }   = useQuery({ queryKey: ['exp-cash-boxes'], queryFn: () => expensesApi.listCashBoxes(), staleTime: 300_000 });
@@ -87,11 +86,13 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
   const supplierOpts = supData.map((s: any) => ({ value: s.id, label: s.business_name || s.name }));
   const vehicleOpts = vehicles.map(v => ({ value: v.id, label: v.label }));
 
-  const netAmount = useMemo(() => {
-    const a = parseFloat(amount) || 0;
-    const v = vatLiable ? (parseFloat(vatAmount) || 0) : 0;
-    return a - v;
-  }, [amount, vatAmount, vatLiable]);
+  // VAT is computed automatically — the gross is VAT-inclusive, so the 5% UAE
+  // VAT is extracted from it (gross × 5/105). No manual entry.
+  const { vatAmount, netAmount } = useMemo(() => {
+    const g = parseFloat(amount) || 0;
+    const v = vatLiable ? Math.round((g * 5 / 105) * 100) / 100 : 0;
+    return { vatAmount: v, netAmount: g - v };
+  }, [amount, vatLiable]);
 
   // Cash-box balance awareness: show the selected box's balance and warn when
   // this voucher would overdraw it (imprest safeguard).
@@ -113,7 +114,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
         overhead_category: isIndirect ? overhead : null,
         cost_code: costCode, supplier, vehicle, payee_name: payee,
         invoice_no: invoiceNo, description, amount,
-        vat_liable: vatLiable, vat_amount: vatLiable ? vatAmount || '0' : '0',
+        vat_liable: vatLiable, vat_amount: vatLiable ? vatAmount.toFixed(2) : '0',
       };
       const saved = isEdit
         ? await expensesApi.update(existing!.id, payload)
@@ -274,8 +275,8 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
               <span style={{ fontSize: 'var(--text-sm)' }}>VAT liable</span>
             </label>
             {vatLiable && (
-              <div style={{ minWidth: 130 }}><label style={LABEL}>VAT (AED)</label>
-                <input type="number" min="0" step="0.01" style={INPUT} value={vatAmount} onChange={e => setVatAmount(e.target.value)} /></div>
+              <div style={{ minWidth: 130 }}><label style={LABEL}>VAT (AED) · 5%</label>
+                <div style={{ ...INPUT, background: 'var(--bg-secondary)' }} className="font-mono">{formatPrice(vatAmount)}</div></div>
             )}
             <div style={{ minWidth: 130 }}><label style={LABEL}>Net</label>
               <div style={{ ...INPUT, background: 'var(--bg-secondary)' }} className="font-mono">{formatPrice(netAmount)}</div></div>
