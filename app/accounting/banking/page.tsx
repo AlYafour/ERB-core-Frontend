@@ -46,6 +46,7 @@ export default function BankingPage() {
   const [transferFrom, setTransferFrom] = useState<BankAccount | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [openStatement, setOpenStatement] = useState<string | null>(null);
+  const [showOpening, setShowOpening] = useState(false);
 
   const { data: boxesData } = useQuery({
     queryKey: ['acc-bank-accounts'],
@@ -75,6 +76,7 @@ export default function BankingPage() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
+            <Button variant="secondary" onClick={() => setShowOpening(true)}>Opening balances</Button>
             <Button variant="secondary" onClick={() => setShowImport(true)}>Import statement</Button>
             <Button onClick={() => setShowNewBox(true)}>+ New account / box</Button>
           </div>
@@ -91,6 +93,12 @@ export default function BankingPage() {
                 {b.bank_name ? <span>{b.bank_name}</span> : null}
                 {b.iban ? <span dir="ltr">{b.iban}</span> : null}
                 <span>Ledger: {b.ledger_account_code} — {b.ledger_account_name}</span>
+              </div>
+              <div style={{ marginTop: 10, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Balance</span>
+                <span style={{ fontSize: 'var(--text-lg)', fontWeight: 700, fontFamily: 'monospace', color: Number(b.balance ?? 0) < 0 ? 'var(--status-error)' : 'var(--text-primary)' }}>
+                  {fmt(b.balance ?? 0)}
+                </span>
               </div>
               <div style={{ marginTop: 10 }}>
                 <Button variant="secondary" size="sm" onClick={() => setTransferFrom(b)}>Transfer from here</Button>
@@ -153,8 +161,60 @@ export default function BankingPage() {
         {openStatement ? (
           <ReconcileModal statementId={openStatement} onClose={() => { setOpenStatement(null); invalidate(); }} />
         ) : null}
+        {showOpening ? (
+          <OpeningBalancesModal boxes={boxes} onClose={() => { setShowOpening(false); invalidate(); }} />
+        ) : null}
       </PageShell>
     </MainLayout>
+  );
+}
+
+function OpeningBalancesModal({ boxes, onClose }: { boxes: BankAccount[]; onClose: () => void }) {
+  const [asOf, setAsOf] = useState(new Date().toISOString().slice(0, 10));
+  const [amounts, setAmounts] = useState<Record<string, string>>({});
+
+  const save = useMutation({
+    mutationFn: () => accountingApi.setBankOpeningBalances({
+      as_of: asOf,
+      entries: boxes
+        .filter(b => Number(amounts[b.id] || 0) > 0)
+        .map(b => ({ account: b.id, amount: String(amounts[b.id]) })),
+    }),
+    onSuccess: () => { toastOk('Opening balances posted.'); onClose(); },
+    onError: (err) => toastErr(getApiError(err, 'Could not set opening balances')),
+  });
+
+  const anyAmount = boxes.some(b => Number(amounts[b.id] || 0) > 0);
+
+  return (
+    <BaseModal isOpen onClose={onClose} title="Opening balances">
+      <p style={{ margin: '0 0 12px', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+        Enter each account&apos;s starting balance as of the cutover date. One balanced
+        opening entry is posted (the difference goes to Opening Balance Equity). This is
+        done once — to restate, reverse the opening entry first.
+      </p>
+      <div style={{ marginBottom: 12 }}>
+        <label style={LABEL}>As of date</label>
+        <input type="date" style={{ ...INPUT, maxWidth: 200 }} value={asOf} onChange={e => setAsOf(e.target.value)} />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {boxes.map(b => (
+          <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ flex: 1, fontSize: 'var(--text-sm)' }}>
+              {b.name} <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)' }}>({KIND_LABEL[b.kind]})</span>
+            </span>
+            <input type="number" min="0" step="0.01" placeholder="0.00" style={{ ...INPUT, maxWidth: 160, textAlign: 'right', fontFamily: 'monospace' }}
+              value={amounts[b.id] ?? ''} onChange={e => setAmounts(a => ({ ...a, [b.id]: e.target.value }))} />
+          </div>
+        ))}
+        {!boxes.length && <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>No accounts yet — add one first.</span>}
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
+        <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
+        <Button variant="primary" size="sm" isLoading={save.isPending} disabled={!anyAmount}
+          onClick={() => save.mutate()}>Post opening balances</Button>
+      </div>
+    </BaseModal>
   );
 }
 

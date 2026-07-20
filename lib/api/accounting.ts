@@ -180,6 +180,7 @@ export interface BankAccount {
   ledger_account_code?: string;
   ledger_account_name?: string;
   custodian: number | null;
+  balance?: string;
   is_active: boolean;
 }
 
@@ -393,6 +394,8 @@ export const accountingApi = {
     apiClient.patch<BankAccount>(`${BASE}/bank-accounts/${id}/`, payload).then(r => r.data),
   transfer: (sourceId: string, payload: { destination: string; amount: string; transfer_date?: string; reference?: string; memo?: string }) =>
     apiClient.post(`${BASE}/bank-accounts/${sourceId}/transfer/`, payload).then(r => r.data),
+  setBankOpeningBalances: (payload: { as_of?: string; entries: Array<{ account: string; amount: string }> }) =>
+    apiClient.post(`${BASE}/bank-accounts/opening-balances/`, payload).then(r => r.data),
   listStatements: (params?: Record<string, unknown>) =>
     apiClient.get<PaginatedResponse<BankStatement>>(`${BASE}/bank-statements/`, { params }).then(r => r.data),
   importStatement: (payload: { bank_account: string; content?: string; format?: 'csv' | 'ofx'; filename?: string; reference?: string }) =>
