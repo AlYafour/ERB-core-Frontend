@@ -224,25 +224,20 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
             const fieldStyle = (basis: string): React.CSSProperties => ({ flex: `1 1 ${basis}`, minWidth: 0 });
 
             return (
-              <div key={ln.key} className="card" style={{ padding: '16px 18px', position: 'relative' }}>
-                {/* Line header: number + serial + remove */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                  <span style={{ width: 26, height: 26, borderRadius: '50%', background: 'color-mix(in srgb, var(--brand) 14%, transparent)', color: 'var(--brand)', fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
-                  <div style={{ flex: '0 0 200px' }}>
-                    <label style={LABEL}>Serial / Voucher</label>
-                    <input style={{ ...INPUT, fontFamily: 'monospace', fontWeight: 700, fontSize: 15, letterSpacing: '0.02em' }}
-                      value={ln.serial} onChange={e => updateLine(ln.key, { serial: e.target.value })} placeholder="e.g. 01-GHP" />
+              <div key={ln.key} className="card" style={{ padding: '14px 16px', position: 'relative' }}>
+                {!isEdit && lines.length > 1 && (
+                  <button onClick={() => removeLine(ln.key)} title="Remove line"
+                    style={{ position: 'absolute', top: 10, right: 10, background: 'none', border: '1px solid var(--border-default)', borderRadius: 8, padding: '3px 8px', cursor: 'pointer', color: 'var(--status-error)', fontSize: 12, lineHeight: 1.4, zIndex: 1 }}>✕</button>
+                )}
+                {/* Row 1 — serial + coding */}
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 10, paddingRight: 30 }}>
+                  <span style={{ alignSelf: 'flex-end', width: 24, height: 36, color: 'var(--brand)', fontWeight: 800, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+                  <div style={{ flex: '0 0 150px' }}>
+                    <label style={LABEL}>Serial</label>
+                    <input style={{ ...INPUT, fontFamily: 'monospace', fontWeight: 700, fontSize: 14 }}
+                      value={ln.serial} onChange={e => updateLine(ln.key, { serial: e.target.value })} placeholder="01-GHP" />
                   </div>
-                  <div style={{ flex: 1 }} />
-                  {!isEdit && lines.length > 1 && (
-                    <button onClick={() => removeLine(ln.key)} title="Remove line"
-                      style={{ background: 'none', border: '1px solid var(--border-default)', borderRadius: 8, padding: 7, cursor: 'pointer', color: 'var(--status-error)', flexShrink: 0 }}>✕</button>
-                  )}
-                </div>
-
-                {/* Row 1 — coding */}
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-                  <div style={fieldStyle('180px')}>
+                  <div style={fieldStyle('170px')}>
                     <label style={LABEL}>Cost Type</label>
                     <SearchableDropdown options={costTypeOpts} value={ln.costType} allowClear placeholder="Select or add"
                       onChange={v => { const id = v ? String(v) : null; const t = costTypes.find(c => c.id === id);
