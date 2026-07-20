@@ -1,10 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { expensesApi, type Expense, type ExpenseStatus } from '@/lib/api/expenses';
 import { Button, Badge, type Column } from '@/components/ui';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { AppListPage } from '@/components/app/AppListPage';
@@ -29,12 +30,34 @@ export default function ExpensesPage() {
   const router = useRouter();
   const tableState = useTableState();
   const { page, search, filters } = tableState;
+  const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['expenses', page, search, filters],
     queryFn: () => expensesApi.getAll({ page, search, ...filters }),
     staleTime: 2 * 60 * 1000,
   });
+
+  const deleteMut = useMutation({
+    mutationFn: (ids: Array<string | number>) =>
+      Promise.allSettled(ids.map(id => expensesApi.remove(String(id)))),
+    onSuccess: (results) => {
+      const failed = results.filter(r => r.status === 'rejected').length;
+      const ok = results.length - failed;
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      tableState.clearSelection();
+      if (failed) toast(`Deleted ${ok}. ${failed} skipped — approved/posted vouchers must be reversed in Accounting.`, ok ? 'warning' : 'error');
+      else toast(`Deleted ${ok} expense${ok === 1 ? '' : 's'}.`, 'success');
+    },
+    onError: () => toast('Delete failed.', 'error'),
+  });
+  const handleBulkDelete = async () => {
+    const ids = Array.from(tableState.selectedItems);
+    if (!ids.length) return;
+    if (await confirm(`Delete ${ids.length} selected expense${ids.length === 1 ? '' : 's'}? Approved/posted ones are skipped.`)) {
+      deleteMut.mutate(ids);
+    }
+  };
 
   const rows = data?.results ?? [];
   const totalCount = data?.count ?? 0;
@@ -83,6 +106,12 @@ export default function ExpensesPage() {
       ]}
       filterFields={filterFields}
       searchPlaceholder="Search by voucher, invoice, payee…"
+      selectable
+      bulkActions={
+        <Button variant="destructive" size="sm" isLoading={deleteMut.isPending} onClick={handleBulkDelete}>
+          Delete selected
+        </Button>
+      }
       columns={columns}
       data={rows}
       isLoading={isLoading}
