@@ -232,7 +232,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
             </div>
             <div><label style={LABEL}>Supplier {vatLiable && <span style={{ color: 'var(--status-error)' }}>*</span>}</label>
               <SearchableDropdown options={supplierOpts} value={supplier} allowClear placeholder="Select or add supplier"
-                onChange={v => setSupplier(v ? Number(v) : null)}
+                onChange={v => { const id = v ? Number(v) : null; setSupplier(id); if (id) setPayee(''); }}
                 onCreateOption={async name => {
                   try {
                     const s: any = await suppliersApi.create({ name, business_name: name } as any);
@@ -244,7 +244,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
               <div><label style={LABEL}>Vehicle</label>
                 <SearchableDropdown options={vehicleOpts} value={vehicle} allowClear
                   placeholder={vehicles.length ? 'Select a vehicle' : 'No vehicles registered'}
-                  onChange={v => setVehicle(v ? Number(v) : null)} />
+                  onChange={v => { const id = v ? Number(v) : null; setVehicle(id); if (id) setPayee(''); }} />
                 {vehicles.length === 0 && (
                   <div style={{ fontSize: 11, marginTop: 4, color: 'var(--text-muted)' }}>
                     Register vehicles in HR → Assets to pick them here.
@@ -252,8 +252,10 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                 )}
               </div>
             )}
-            <div><label style={LABEL}>Payee</label>
-              <input style={INPUT} value={payee} onChange={e => setPayee(e.target.value)} placeholder="If no supplier / vehicle — who was paid" /></div>
+            {!supplier && !vehicle && (
+              <div><label style={LABEL}>Payee</label>
+                <input style={INPUT} value={payee} onChange={e => setPayee(e.target.value)} placeholder="Who was paid (no supplier / vehicle)" /></div>
+            )}
             <div><label style={LABEL}>Invoice No.</label>
               <input style={INPUT} value={invoiceNo} onChange={e => setInvoiceNo(e.target.value)} /></div>
           </div>
