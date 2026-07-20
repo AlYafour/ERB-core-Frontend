@@ -74,12 +74,12 @@ export default function ExpensesPage() {
       headerExtra={<Link href="/expenses/cash-boxes"><Button variant="secondary" size="sm">Cash Boxes</Button></Link>}
       createAction={<Link href="/expenses/new"><Button variant="primary">+ New Expense</Button></Link>}
       statusItems={[
-        { value: '',                    label: 'All', count: totalCount },
-        { value: 'draft',               label: 'Draft' },
-        { value: 'submitted',           label: 'Submitted' },
-        { value: 'accounting_approved', label: 'Accounting Approved' },
-        { value: 'approved',            label: 'Approved' },
-        { value: 'rejected',            label: 'Rejected' },
+        { value: '',          label: 'All', count: totalCount },
+        { value: 'draft',     label: 'Draft' },
+        { value: 'submitted', label: 'Submitted' },
+        { value: 'approved',  label: 'Approved' },
+        { value: 'posted',    label: 'Posted' },
+        { value: 'rejected',  label: 'Rejected' },
       ]}
       filterFields={filterFields}
       searchPlaceholder="Search by voucher, invoice, payee…"

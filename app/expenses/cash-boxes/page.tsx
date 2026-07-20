@@ -7,6 +7,7 @@ import { PageShell, Button, Badge, PageHeader } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { expensesApi } from '@/lib/api/expenses';
+import { accountingApi } from '@/lib/api/accounting';
 import { usersApi } from '@/lib/api/users';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
@@ -152,12 +153,24 @@ function CashBoxesContent() {
 function CashInModal({ box, onClose, onDone }: { box: { id: string; name: string }; onClose: () => void; onDone: () => void }) {
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [sourceAccount, setSourceAccount] = useState<string | null>(null);
   const [from, setFrom] = useState('');
   const [ref, setRef] = useState('');
 
+  const { data: banksData } = useQuery({
+    queryKey: ['acc-bank-accounts'],
+    queryFn: () => accountingApi.listBankAccounts(),
+    staleTime: 300_000,
+  });
+  const bankOpts = ((banksData?.results ?? []) as any[])
+    .filter(b => b.kind === 'bank' && b.is_active !== false)
+    .map(b => ({ value: b.id, label: b.name }));
+
   const save = useMutation({
     mutationFn: async () => {
-      const ci = await expensesApi.createCashIn({ cash_box: box.id, amount, date, transfer_from: from, bank_reference: ref });
+      const ci = await expensesApi.createCashIn({
+        cash_box: box.id, amount, date,
+        source_account: sourceAccount, transfer_from: from, bank_reference: ref });
       await expensesApi.approveCashIn(ci.id);   // approve immediately → posts + counts in balance
       return ci;
     },
@@ -174,7 +187,11 @@ function CashInModal({ box, onClose, onDone }: { box: { id: string; name: string
           <div><label style={LABEL}>Amount (AED) <span style={{ color: 'var(--status-error)' }}>*</span></label>
             <input type="number" min="0" step="0.01" style={INPUT} value={amount} onChange={e => setAmount(e.target.value)} autoFocus /></div>
           <div><label style={LABEL}>Date</label><input type="date" style={INPUT} value={date} onChange={e => setDate(e.target.value)} /></div>
-          <div><label style={LABEL}>Transfer from</label><input style={INPUT} value={from} onChange={e => setFrom(e.target.value)} placeholder="e.g. ADCB current account" /></div>
+          <div><label style={LABEL}>From bank account</label>
+            <SearchableDropdown options={bankOpts} value={sourceAccount} allowClear
+              placeholder={bankOpts.length ? 'Which bank funded this' : 'No bank accounts — add one in Banking'}
+              onChange={v => setSourceAccount(v ? String(v) : null)} /></div>
+          <div><label style={LABEL}>Note (optional)</label><input style={INPUT} value={from} onChange={e => setFrom(e.target.value)} placeholder="e.g. cheque / branch" /></div>
           <div><label style={LABEL}>Bank reference</label><input style={INPUT} value={ref} onChange={e => setRef(e.target.value)} /></div>
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
