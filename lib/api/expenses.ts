@@ -28,6 +28,8 @@ export interface Expense {
   cost_code: number | null;
   cost_code_code?: string | null;
   cost_code_desc?: string | null;
+  /** Full classification chain, Work Section → Main Category → Item. */
+  cost_code_path?: Array<{ level: 1 | 2 | 3; code: string; description: string }>;
   expense_account: number | null;
   supplier: number | null;
   supplier_name?: string | null;

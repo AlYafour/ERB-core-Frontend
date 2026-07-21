@@ -74,7 +74,10 @@ export default function ExpensesPage() {
       render: e => e.cost_type_label ? <Badge variant="default">{e.cost_type_label}</Badge> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
     { key: 'code', header: 'Cost Code',
       render: e => e.cost_code_code
-        ? <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)' }} title={e.cost_code_desc || ''}>{e.cost_code_code}</span>
+        ? <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)' }}
+            title={e.cost_code_path?.length ? e.cost_code_path.map(p => `${p.code} — ${p.description}`).join(' › ') : (e.cost_code_desc || '')}>
+            {e.cost_code_code}
+          </span>
         : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
     { key: 'project', header: 'Project',
       render: e => <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{e.project_name || '—'}</span> },

@@ -135,9 +135,27 @@ function ExpenseDetailContent() {
             {(exp as any).overhead_category_label
               ? <ProcField label="Office / Location" value={(exp as any).overhead_category_label} />
               : <ProcField label="Project" value={exp.project_name} />}
-            <ProcField label="Cost Code" value={exp.cost_code_code
-              ? <span><span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{exp.cost_code_code}</span>{exp.cost_code_desc ? <span style={{ color: 'var(--text-secondary)', marginInlineStart: 6, fontSize: 'var(--text-xs)' }}>{exp.cost_code_desc.slice(0, 40)}</span> : null}</span>
-              : undefined} />
+            <ProcField label="Cost Code" value={exp.cost_code_path?.length ? (
+              <span style={{ display: 'inline-flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 4 }}>
+                {exp.cost_code_path.map((seg, i) => {
+                  const isLeaf = i === exp.cost_code_path!.length - 1;
+                  return (
+                    <span key={seg.code} style={{ display: 'inline-flex', alignItems: 'baseline', gap: 4 }}>
+                      {i > 0 && <span style={{ color: 'var(--text-tertiary)' }}>›</span>}
+                      <span style={{
+                        fontFamily: 'monospace', fontWeight: isLeaf ? 700 : 500,
+                        color: isLeaf ? 'var(--text-primary)' : 'var(--text-secondary)',
+                      }}>{seg.code}</span>
+                      <span style={{
+                        fontSize: 'var(--text-xs)', color: 'var(--text-secondary)',
+                      }}>{seg.description.slice(0, isLeaf ? 40 : 24)}</span>
+                    </span>
+                  );
+                })}
+              </span>
+            ) : exp.cost_code_code ? (
+              <span><span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{exp.cost_code_code}</span>{exp.cost_code_desc ? <span style={{ color: 'var(--text-secondary)', marginInlineStart: 6, fontSize: 'var(--text-xs)' }}>{exp.cost_code_desc.slice(0, 40)}</span> : null}</span>
+            ) : undefined} />
             <ProcField label="Supplier" value={exp.supplier_name} />
             <ProcField label="Vehicle" value={exp.vehicle_label} />
             <ProcField label="Payee" value={exp.payee_name} />
