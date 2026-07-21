@@ -101,7 +101,13 @@ export default function BankingPage() {
                 </span>
               </div>
               <div style={{ marginTop: 10 }}>
-                <Button variant="secondary" size="sm" onClick={() => setTransferFrom(b)}>Transfer from here</Button>
+                {b.kind === 'petty_cash' ? (
+                  <a href="/expenses/cash-boxes" style={{ fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 600 }}>
+                    Fund / manage in Cash Boxes →
+                  </a>
+                ) : (
+                  <Button variant="secondary" size="sm" onClick={() => setTransferFrom(b)}>Transfer from here</Button>
+                )}
               </div>
             </div>
           ))}
@@ -308,7 +314,9 @@ function TransferModal({ source, boxes, onClose }: {
     onSuccess: (r: { journal_number?: string }) => { toastOk(`Transfer posted — journal ${r.journal_number ?? ''}.`); onClose(); },
     onError: (e) => toastErr(getApiError(e)),
   });
-  const targets = boxes.filter((b) => b.id !== source.id && b.is_active);
+  // Petty-cash boxes are funded via "Cash In" (so the imprest balance stays
+  // correct), never a bank transfer — so they aren't valid transfer targets.
+  const targets = boxes.filter((b) => b.id !== source.id && b.is_active && b.kind !== 'petty_cash');
   return (
     <BaseModal isOpen onClose={onClose} title={`Transfer from ${source.name}`}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -318,6 +326,9 @@ function TransferModal({ source, boxes, onClose }: {
             <option value="">Select…</option>
             {targets.map((b) => <option key={b.id} value={b.id}>{b.name} ({KIND_LABEL[b.kind]})</option>)}
           </select>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 4 }}>
+            To fund a petty-cash box, use “+ Cash In” on the box (Cash Boxes).
+          </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div>
