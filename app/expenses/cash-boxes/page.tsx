@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageShell, Button, Badge, PageHeader } from '@/components/ui';
@@ -118,7 +119,12 @@ function CashBoxesContent() {
                               <Button variant="ghost" size="sm" onClick={() => setRenameId(null)}>Cancel</Button>
                             </span>
                           ) : (
-                            <>{b.name}{b.kind !== 'petty_cash' && <Badge variant="info">Bank</Badge>}</>
+                            <>
+                              <Link href={`/expenses/cash-boxes/${b.id}`} style={{ color: 'var(--brand)', textDecoration: 'none', fontWeight: 700 }}>
+                                {b.name}
+                              </Link>
+                              {b.kind !== 'petty_cash' && <Badge variant="info">Bank</Badge>}
+                            </>
                           )}
                         </td>
                         <td style={TD}>

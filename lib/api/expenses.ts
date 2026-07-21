@@ -110,6 +110,31 @@ export interface CashBox {
   is_active?: boolean;
 }
 
+export interface CashBoxMovement {
+  date: string;
+  journal_id: string;
+  journal_number: string;
+  status: string;
+  source: string;
+  source_module: string;
+  source_id: string;
+  reference: string;
+  description: string;
+  in: string;
+  out: string;
+}
+
+export interface CashBoxStatement {
+  box: {
+    id: string; name: string; kind: string; is_active: boolean;
+    custodian: number | null; custodian_name: string | null;
+    ledger_code: string | null;
+  };
+  totals: { cash_in: string; spent: string; balance: string };
+  vouchers: { count: number; total: string };
+  movements: CashBoxMovement[];
+}
+
 export interface CostTypeOption {
   id: string;
   name: string;
@@ -158,6 +183,8 @@ export const expensesApi = {
     apiClient.patch(`${BASE}/cash-boxes/${id}/`, patch).then(r => r.data),
   deactivateCashBox: (id: string): Promise<CashBox> =>
     apiClient.patch(`${BASE}/cash-boxes/${id}/`, { is_active: false }).then(r => r.data),
+  getCashBoxStatement: (id: string): Promise<CashBoxStatement> =>
+    apiClient.get(`${BASE}/cash-boxes/${id}/statement/`).then(r => r.data),
 
   // Select-only list of the tenant's registered vehicles (managed in HR → Assets).
   listVehicles: (): Promise<Array<{ id: number; label: string; plate: string; name: string }>> =>
