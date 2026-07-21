@@ -106,7 +106,7 @@ function CostCodesContent() {
           {isLoading ? <div style={{ color: 'var(--text-secondary)' }}>Loading…</div> : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr>{['Excel Code', 'QB Code', 'Description', 'Level', 'GL Account', ''].map((h, i) =>
+                <thead><tr>{['Excel Code', 'QB Code', 'Description', 'Level', 'Parent', 'GL Account', ''].map((h, i) =>
                   <th key={h || i} style={TH}>{h}</th>)}</tr></thead>
                 <tbody>
                   {filtered.map(c => (
@@ -115,6 +115,9 @@ function CostCodesContent() {
                       <td style={{ ...TD, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{c.qb_code}</td>
                       <td style={TD}>{String(c.description).slice(0, 60)}</td>
                       <td style={TD}><Badge variant="default">L{c.level}</Badge></td>
+                      <td style={{ ...TD, fontFamily: 'monospace', fontSize: 'var(--text-xs)' }} title={c.parent_desc || ''}>
+                        {c.parent_code || <span style={{ color: 'var(--text-tertiary)' }}>—</span>}
+                      </td>
                       <td style={{ ...TD, fontFamily: 'monospace' }}>{c.effective_account_code || <span style={{ color: 'var(--status-warning)' }}>—</span>}</td>
                       <td style={{ ...TD, textAlign: 'right', whiteSpace: 'nowrap' }}>
                         <Button variant="secondary" size="sm" onClick={() => setEditing({ ...c })}>Edit</Button>{' '}
@@ -123,7 +126,7 @@ function CostCodesContent() {
                       </td>
                     </tr>
                   ))}
-                  {filtered.length === 0 && <tr><td colSpan={6} style={{ ...TD, color: 'var(--text-tertiary)' }}>No codes in this category.</td></tr>}
+                  {filtered.length === 0 && <tr><td colSpan={7} style={{ ...TD, color: 'var(--text-tertiary)' }}>No codes in this category.</td></tr>}
                 </tbody>
               </table>
             </div>
