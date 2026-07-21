@@ -315,6 +315,27 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                         catch (err) { toast(getApiError(err, 'Could not add type'), 'error'); return null; }
                       }} />
                   </div>
+                  <div style={F(1.2, 180)}>
+                    {indirect ? (
+                      <>
+                        <label style={LABEL}>Office / Location</label>
+                        <SearchableDropdown options={overheads.map(o => ({ value: o.id, label: o.name }))} value={ln.overhead} allowClear placeholder="Select or add"
+                          onChange={v => updateLine(ln.key, { overhead: v ? String(v) : null })}
+                          onCreateOption={async name => {
+                            try { const o = await expensesApi.createOverheadCategory(name);
+                              queryClient.invalidateQueries({ queryKey: ['exp-overheads', isEdit] });
+                              return { value: o.id, label: o.name }; }
+                            catch (err) { toast(getApiError(err, 'Could not add'), 'error'); return null; }
+                          }} />
+                      </>
+                    ) : (
+                      <>
+                        <label style={LABEL}>Project</label>
+                        <SearchableDropdown options={projectOpts} value={ln.project} allowClear placeholder="Which project"
+                          onChange={v => updateLine(ln.key, { project: v ? Number(v) : null })} />
+                      </>
+                    )}
+                  </div>
                   <div style={F(1.4, 200)}>
                     <label style={LABEL}>Main Category</label>
                     {st ? (
@@ -348,27 +369,6 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                           return mkCostCode(name, st.is_direct, catId);
                         }} />
                     ) : <div style={DISABLED}>Choose a Cost Type first</div>}
-                  </div>
-                  <div style={F(1.2, 180)}>
-                    {indirect ? (
-                      <>
-                        <label style={LABEL}>Office / Location</label>
-                        <SearchableDropdown options={overheads.map(o => ({ value: o.id, label: o.name }))} value={ln.overhead} allowClear placeholder="Select or add"
-                          onChange={v => updateLine(ln.key, { overhead: v ? String(v) : null })}
-                          onCreateOption={async name => {
-                            try { const o = await expensesApi.createOverheadCategory(name);
-                              queryClient.invalidateQueries({ queryKey: ['exp-overheads', isEdit] });
-                              return { value: o.id, label: o.name }; }
-                            catch (err) { toast(getApiError(err, 'Could not add'), 'error'); return null; }
-                          }} />
-                      </>
-                    ) : (
-                      <>
-                        <label style={LABEL}>Project</label>
-                        <SearchableDropdown options={projectOpts} value={ln.project} allowClear placeholder="Which project"
-                          onChange={v => updateLine(ln.key, { project: v ? Number(v) : null })} />
-                      </>
-                    )}
                   </div>
                   {showVehicle && (
                     <div style={F(1, 160)}>
