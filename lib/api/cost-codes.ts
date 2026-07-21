@@ -10,6 +10,12 @@ export const costCodesApi = {
     const response = await apiClient.post('/cost-codes/', payload);
     return response.data;
   },
+  /** Add a code from a picker — excel/qb codes are generated server-side.
+   *  With parent → a sub-code under it; without → a new main category. */
+  quickAdd: async (payload: { name: string; is_direct?: boolean; parent?: number | null }): Promise<CostCode> => {
+    const response = await apiClient.post('/cost-codes/quick-add/', payload);
+    return response.data;
+  },
   update: async (id: number, payload: Partial<CostCode>): Promise<CostCode> => {
     const response = await apiClient.patch(`/cost-codes/${id}/`, payload);
     return response.data;
