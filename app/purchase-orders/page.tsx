@@ -95,6 +95,7 @@ export default function PurchaseOrdersPage() {
   const { data: kpiApproved }  = useQuery({ queryKey: ['po-kpi', 'approved'],  queryFn: () => poAll({ status: 'approved' }),  staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
   const { data: kpiCompleted } = useQuery({ queryKey: ['po-kpi', 'completed'], queryFn: () => poAll({ status: 'completed' }), staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
   const { data: kpiCancelled } = useQuery({ queryKey: ['po-kpi', 'cancelled'], queryFn: () => poAll({ status: 'cancelled' }), staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
+  const { data: kpiAmendment } = useQuery({ queryKey: ['po-kpi', 'amendment'], queryFn: () => poAll({ status: 'amendment_requested' }), staleTime: 5 * 60 * 1000, select: (d: { count?: number }) => d.count ?? 0 });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => purchaseOrdersApi.delete(id),
@@ -181,6 +182,8 @@ export default function PurchaseOrdersPage() {
         { value: 'draft',     label: 'Draft' },
         { value: 'pending',   label: 'Pending',   count: kpiPending,   loading: kpiPending === undefined },
         { value: 'approved',  label: 'Approved',  count: kpiApproved,  loading: kpiApproved === undefined },
+        { value: 'amendment_requested', label: 'Amendment', count: kpiAmendment, loading: kpiAmendment === undefined },
+        { value: 'superseded', label: 'Superseded' },
         { value: 'completed', label: 'Completed', count: kpiCompleted, loading: kpiCompleted === undefined },
         { value: 'cancelled', label: 'Cancelled', count: kpiCancelled, loading: kpiCancelled === undefined },
       ]}
