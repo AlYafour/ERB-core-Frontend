@@ -14,6 +14,9 @@ import { getApiError } from '@/lib/utils/error';
 import {
   accountingApi, type BankAccount, type BankStatement, type MatchSuggestion,
 } from '@/lib/api/accounting';
+import { usersApi } from '@/lib/api/users';
+
+type UserOpt = { id: number; label: string };
 
 const fmt = (v: string | number) =>
   `AED ${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -42,7 +45,8 @@ const KIND_LABEL: Record<string, string> = {
 
 export default function BankingPage() {
   const queryClient = useQueryClient();
-  const [showNewBox, setShowNewBox] = useState(false);
+  // false = closed · true = blank form · string = create a SUB under that main
+  const [showNewBox, setShowNewBox] = useState<boolean | string>(false);
   const [transferFrom, setTransferFrom] = useState<BankAccount | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [openStatement, setOpenStatement] = useState<string | null>(null);
@@ -60,10 +64,37 @@ export default function BankingPage() {
   });
   const statements = statementsData?.results ?? [];
 
+  const { data: usersResp } = useQuery({
+    queryKey: ['users-for-custodian'],
+    queryFn: () => usersApi.getAll({ page_size: 200 } as any),
+    staleTime: 300_000,
+  });
+  const users: UserOpt[] = ((usersResp as any)?.results ?? []).map((u: any) => ({
+    id: u.id, label: u.full_name || `${u.first_name} ${u.last_name}`.trim() || u.username,
+  }));
+
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['acc-bank-accounts'] });
     queryClient.invalidateQueries({ queryKey: ['acc-statements'] });
   };
+
+  // Visible, editable structure — never hidden data:
+  const patchAccount = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: Partial<BankAccount> }) =>
+      accountingApi.updateBankAccount(id, patch),
+    onSuccess: () => { invalidate(); toastOk('Saved.'); },
+    onError: (e) => toastErr(getApiError(e)),
+  });
+
+  // The bank's own shape: main accounts, each with its sub-accounts nested,
+  // then whatever isn't linked under any bank yet.
+  const mains = boxes.filter(b => !b.parent && b.kind === 'bank');
+  const subsOf = (id: string) => boxes.filter(b => b.parent === id);
+  const unlinked = boxes.filter(b => !b.parent && b.kind !== 'bank');
+
+  const sum = (list: BankAccount[]) => list.reduce((s, b) => s + Number(b.balance ?? 0), 0);
+  const banksTotal = sum(boxes.filter(b => b.kind === 'bank'));
+  const pettyTotal = sum(boxes.filter(b => b.kind !== 'bank'));
 
   return (
     <MainLayout>
@@ -82,53 +113,167 @@ export default function BankingPage() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
-          {[...boxes]
-            // Mirror the bank's own structure: mains first, each followed by
-            // its sub-accounts (a CDC petty-cash sub sits under its parent).
-            .sort((a, b) => {
-              const ka = a.parent ? `${a.parent_name ?? ''}~1${a.name}` : `${a.name}~0`;
-              const kb = b.parent ? `${b.parent_name ?? ''}~1${b.name}` : `${b.name}~0`;
-              return ka.localeCompare(kb);
-            })
-            .map((b) => (
-            <div key={b.id} style={{ ...CARD, ...(b.parent ? { borderInlineStart: '3px solid var(--brand)' } : {}) }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontWeight: 700 }}>{b.name}</div>
-                <Badge variant={b.kind === 'bank' ? 'info' : 'default'}>{KIND_LABEL[b.kind]}</Badge>
-              </div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {b.parent_name ? (
-                  <span style={{ color: 'var(--brand)', fontWeight: 600 }}>↳ Sub-account of {b.parent_name}</span>
-                ) : null}
-                {b.bank_name ? <span>{b.bank_name}</span> : null}
-                {b.account_number ? <span dir="ltr">A/C {b.account_number}</span> : null}
-                {b.iban ? <span dir="ltr">{b.iban}</span> : null}
-                <span>Ledger: {b.ledger_account_code} — {b.ledger_account_name}</span>
-              </div>
-              <div style={{ marginTop: 10, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Balance</span>
-                <span style={{ fontSize: 'var(--text-lg)', fontWeight: 700, fontFamily: 'monospace', color: Number(b.balance ?? 0) < 0 ? 'var(--status-error)' : 'var(--text-primary)' }}>
-                  {fmt(b.balance ?? 0)}
-                </span>
-              </div>
-              <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-                <Button variant="secondary" size="sm" onClick={() => setTransferFrom(b)}>Transfer from here</Button>
-                {b.kind === 'petty_cash' && (
-                  <a href="/expenses/cash-boxes" style={{ fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 600, alignSelf: 'center' }}>
-                    Cash In →
-                  </a>
-                )}
-              </div>
+        {/* Position summary */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+          {[
+            { label: 'Bank Accounts', value: banksTotal },
+            { label: 'Petty Cash', value: pettyTotal },
+            { label: 'Total Cash Position', value: banksTotal + pettyTotal },
+          ].map(k => (
+            <div key={k.label} style={{ ...CARD, padding: '12px 16px' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>{k.label}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, fontFamily: 'monospace', color: k.value < 0 ? 'var(--status-error)' : 'var(--text-primary)' }}>{fmt(k.value)}</div>
             </div>
           ))}
-          {!boxes.length ? (
-            <div style={{ ...CARD, color: 'var(--text-secondary)' }}>
-              No bank accounts or cash boxes yet — create your first one to start
-              paying, receiving and reconciling.
-            </div>
-          ) : null}
         </div>
+
+        {/* Banks — each main account with its sub-accounts nested, exactly
+            like the bank's own portal. Structure is visible AND editable. */}
+        {mains.map(main => (
+          <div key={main.id} style={{ ...CARD, padding: 0, overflow: 'hidden' }}>
+            {/* Main account header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', flexWrap: 'wrap', borderBottom: '1px solid var(--border-subtle)' }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--brand)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 15, flexShrink: 0 }}>
+                {(main.bank_name || main.name).slice(0, 2).toUpperCase()}
+              </div>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: 800, fontSize: 'var(--text-base)' }}>{main.name}</span>
+                  <Badge variant="info">Main Account</Badge>
+                </div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 3, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                  {main.bank_name && <span>{main.bank_name}</span>}
+                  {main.account_number && <span dir="ltr" style={{ fontFamily: 'monospace' }}>A/C {main.account_number}</span>}
+                  {main.iban && <span dir="ltr" style={{ fontFamily: 'monospace' }}>{main.iban}</span>}
+                  <span>Ledger {main.ledger_account_code}</span>
+                </div>
+              </div>
+              <div style={{ textAlign: 'end' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Balance</div>
+                <div style={{ fontSize: 20, fontWeight: 800, fontFamily: 'monospace', color: Number(main.balance ?? 0) < 0 ? 'var(--status-error)' : 'var(--text-primary)' }}>
+                  {fmt(main.balance ?? 0)}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Button variant="secondary" size="sm" onClick={() => setTransferFrom(main)}>Transfer</Button>
+                <Button variant="primary" size="sm" onClick={() => setShowNewBox(main.id)}>+ Sub-account</Button>
+              </div>
+            </div>
+
+            {/* Sub-accounts */}
+            {subsOf(main.id).length === 0 ? (
+              <div style={{ padding: '12px 20px', fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>
+                No sub-accounts yet — "+ Sub-account" adds one under this bank (e.g. a custodian's CDC petty-cash sub).
+              </div>
+            ) : subsOf(main.id).map((b, i, arr) => (
+              <div key={b.id} style={{
+                display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+                padding: '12px 20px 12px 34px',
+                borderBottom: i < arr.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+                background: 'var(--surface-subtle)',
+              }}>
+                <span style={{ color: 'var(--brand)', fontWeight: 800, flexShrink: 0 }}>└</span>
+                <div style={{ flex: 1, minWidth: 180 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 700 }}>{b.name}</span>
+                    <Badge variant="default">{KIND_LABEL[b.kind]}</Badge>
+                  </div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                    {b.account_number && <span dir="ltr" style={{ fontFamily: 'monospace' }}>Sub A/C {b.account_number}</span>}
+                    <span>Ledger {b.ledger_account_code}</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Custodian</span>
+                  <select
+                    value={b.custodian ?? ''} style={{ ...INPUT, width: 150, padding: '5px 8px' }}
+                    onChange={e => patchAccount.mutate({ id: b.id, patch: { custodian: e.target.value ? Number(e.target.value) : null } as any })}>
+                    <option value="">— none —</option>
+                    {users.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
+                  </select>
+                </div>
+                <div style={{ textAlign: 'end', minWidth: 120 }}>
+                  <span style={{ fontSize: 'var(--text-base)', fontWeight: 800, fontFamily: 'monospace', color: Number(b.balance ?? 0) < 0 ? 'var(--status-error)' : 'var(--text-primary)' }}>
+                    {fmt(b.balance ?? 0)}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <Button variant="secondary" size="sm" onClick={() => setTransferFrom(b)}>Transfer</Button>
+                  {b.kind === 'petty_cash' && (
+                    <a href={`/expenses/cash-boxes/${b.id}`} style={{ fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 700, alignSelf: 'center' }}>
+                      Open box →
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+
+        {/* Cash boxes not linked under any bank yet */}
+        {unlinked.length > 0 && (
+          <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
+              <span style={{ fontWeight: 800 }}>Cash Boxes (not linked to a bank)</span>
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginInlineStart: 10 }}>
+                Physical floats with no bank sub-account — link one below if the bank issues it a number.
+              </span>
+            </div>
+            {unlinked.map((b, i, arr) => (
+              <div key={b.id} style={{
+                display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+                padding: '12px 20px',
+                borderBottom: i < arr.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+              }}>
+                <div style={{ flex: 1, minWidth: 180 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 700 }}>{b.name}</span>
+                    <Badge variant="default">{KIND_LABEL[b.kind]}</Badge>
+                  </div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>Ledger {b.ledger_account_code}</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Custodian</span>
+                  <select
+                    value={b.custodian ?? ''} style={{ ...INPUT, width: 150, padding: '5px 8px' }}
+                    onChange={e => patchAccount.mutate({ id: b.id, patch: { custodian: e.target.value ? Number(e.target.value) : null } as any })}>
+                    <option value="">— none —</option>
+                    {users.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
+                  </select>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Link under</span>
+                  <select
+                    value="" style={{ ...INPUT, width: 170, padding: '5px 8px' }}
+                    onChange={e => { if (e.target.value) patchAccount.mutate({ id: b.id, patch: { parent: e.target.value } as any }); }}>
+                    <option value="">— choose bank —</option>
+                    {mains.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                </div>
+                <div style={{ textAlign: 'end', minWidth: 120 }}>
+                  <span style={{ fontSize: 'var(--text-base)', fontWeight: 800, fontFamily: 'monospace', color: Number(b.balance ?? 0) < 0 ? 'var(--status-error)' : 'var(--text-primary)' }}>
+                    {fmt(b.balance ?? 0)}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <Button variant="secondary" size="sm" onClick={() => setTransferFrom(b)}>Transfer</Button>
+                  {b.kind === 'petty_cash' && (
+                    <a href={`/expenses/cash-boxes/${b.id}`} style={{ fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 700, alignSelf: 'center' }}>
+                      Open box →
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!boxes.length ? (
+          <div style={{ ...CARD, color: 'var(--text-secondary)' }}>
+            No bank accounts or cash boxes yet — create your first one to start
+            paying, receiving and reconciling.
+          </div>
+        ) : null}
 
         <div style={CARD}>
           <div style={{ fontWeight: 700, marginBottom: 10 }}>Statements</div>
@@ -167,7 +312,12 @@ export default function BankingPage() {
           </div>
         </div>
 
-        {showNewBox ? <NewBoxModal onClose={() => { setShowNewBox(false); invalidate(); }} /> : null}
+        {showNewBox ? (
+          <NewBoxModal
+            mains={mains} users={users}
+            defaultParent={typeof showNewBox === 'string' ? showNewBox : ''}
+            onClose={() => { setShowNewBox(false); invalidate(); }} />
+        ) : null}
         {transferFrom ? (
           <TransferModal source={transferFrom} boxes={boxes}
                          onClose={() => { setTransferFrom(null); invalidate(); }} />
@@ -235,27 +385,37 @@ function OpeningBalancesModal({ boxes, onClose }: { boxes: BankAccount[]; onClos
   );
 }
 
-function NewBoxModal({ onClose }: { onClose: () => void }) {
+function NewBoxModal({ onClose, mains, users, defaultParent }: {
+  onClose: () => void; mains: BankAccount[]; users: UserOpt[]; defaultParent: string;
+}) {
   const [f, setF] = useState({
-    kind: 'bank', name: '', name_ar: '', bank_name: '',
+    kind: defaultParent ? 'petty_cash' : 'bank',
+    name: '', name_ar: '', bank_name: '',
     account_number: '', iban: '', currency: 'AED', ledger_account: '',
+    parent: defaultParent, custodian: '',
   });
   const { data: accountsData } = useQuery({
     queryKey: ['acc-asset-accounts'],
     queryFn: () => accountingApi.listAccounts({ nature: 'asset', is_postable: true, is_active: true, page_size: 500 }),
   });
   const accounts = accountsData?.results ?? [];
+  const parentBank = mains.find(m => m.id === f.parent);
 
   const create = useMutation({
     mutationFn: () => accountingApi.createBankAccount({
-      ...f, ledger_account: Number(f.ledger_account),
+      ...f,
+      ledger_account: Number(f.ledger_account),
+      parent: f.parent || null,
+      custodian: f.custodian ? Number(f.custodian) : null,
+      bank_name: f.bank_name || parentBank?.bank_name || '',
     } as never),
     onSuccess: () => { toastOk('Account created.'); onClose(); },
     onError: (e) => toastErr(getApiError(e)),
   });
 
   return (
-    <BaseModal isOpen onClose={onClose} title="New bank account / cash box">
+    <BaseModal isOpen onClose={onClose}
+      title={parentBank ? `New sub-account under ${parentBank.name}` : 'New bank account / cash box'}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10 }}>
           <div>
@@ -268,29 +428,43 @@ function NewBoxModal({ onClose }: { onClose: () => void }) {
           </div>
           <div>
             <label style={LABEL}>Name</label>
-            <input style={INPUT} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+            <input style={INPUT} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder={parentBank ? 'e.g. SAIF' : 'e.g. FAB — Current (AED)'} />
           </div>
         </div>
         <div>
           <label style={LABEL}>Arabic name</label>
           <input style={INPUT} dir="rtl" value={f.name_ar} onChange={(e) => setF({ ...f, name_ar: e.target.value })} />
         </div>
-        {f.kind === 'bank' ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-            <div>
-              <label style={LABEL}>Bank name</label>
-              <input style={INPUT} value={f.bank_name} onChange={(e) => setF({ ...f, bank_name: e.target.value })} />
-            </div>
-            <div>
-              <label style={LABEL}>Account no.</label>
-              <input style={INPUT} value={f.account_number} onChange={(e) => setF({ ...f, account_number: e.target.value })} />
-            </div>
-            <div>
-              <label style={LABEL}>IBAN</label>
-              <input style={INPUT} value={f.iban} onChange={(e) => setF({ ...f, iban: e.target.value })} />
-            </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div>
+            <label style={LABEL}>Sub-account of (main bank account)</label>
+            <select style={INPUT} value={f.parent} onChange={(e) => setF({ ...f, parent: e.target.value })}>
+              <option value="">— none (top-level) —</option>
+              {mains.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
           </div>
-        ) : null}
+          <div>
+            <label style={LABEL}>Custodian (accountable person)</label>
+            <select style={INPUT} value={f.custodian} onChange={(e) => setF({ ...f, custodian: e.target.value })}>
+              <option value="">— none —</option>
+              {users.map((u) => <option key={u.id} value={u.id}>{u.label}</option>)}
+            </select>
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+          <div>
+            <label style={LABEL}>Bank name</label>
+            <input style={INPUT} value={f.bank_name} placeholder={parentBank?.bank_name || ''} onChange={(e) => setF({ ...f, bank_name: e.target.value })} />
+          </div>
+          <div>
+            <label style={LABEL}>Account no. {f.parent ? '(the sub-account number)' : ''}</label>
+            <input style={INPUT} value={f.account_number} onChange={(e) => setF({ ...f, account_number: e.target.value })} />
+          </div>
+          <div>
+            <label style={LABEL}>IBAN</label>
+            <input style={INPUT} value={f.iban} onChange={(e) => setF({ ...f, iban: e.target.value })} />
+          </div>
+        </div>
         <div>
           <label style={LABEL}>Ledger account (asset, postable)</label>
           <select style={INPUT} value={f.ledger_account} onChange={(e) => setF({ ...f, ledger_account: e.target.value })}>
