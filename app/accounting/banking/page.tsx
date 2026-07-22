@@ -83,14 +83,26 @@ export default function BankingPage() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
-          {boxes.map((b) => (
-            <div key={b.id} style={CARD}>
+          {[...boxes]
+            // Mirror the bank's own structure: mains first, each followed by
+            // its sub-accounts (a CDC petty-cash sub sits under its parent).
+            .sort((a, b) => {
+              const ka = a.parent ? `${a.parent_name ?? ''}~1${a.name}` : `${a.name}~0`;
+              const kb = b.parent ? `${b.parent_name ?? ''}~1${b.name}` : `${b.name}~0`;
+              return ka.localeCompare(kb);
+            })
+            .map((b) => (
+            <div key={b.id} style={{ ...CARD, ...(b.parent ? { borderInlineStart: '3px solid var(--brand)' } : {}) }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontWeight: 700 }}>{b.name}</div>
                 <Badge variant={b.kind === 'bank' ? 'info' : 'default'}>{KIND_LABEL[b.kind]}</Badge>
               </div>
               <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {b.parent_name ? (
+                  <span style={{ color: 'var(--brand)', fontWeight: 600 }}>↳ Sub-account of {b.parent_name}</span>
+                ) : null}
                 {b.bank_name ? <span>{b.bank_name}</span> : null}
+                {b.account_number ? <span dir="ltr">A/C {b.account_number}</span> : null}
                 {b.iban ? <span dir="ltr">{b.iban}</span> : null}
                 <span>Ledger: {b.ledger_account_code} — {b.ledger_account_name}</span>
               </div>

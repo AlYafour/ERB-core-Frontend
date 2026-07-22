@@ -84,6 +84,9 @@ function CashBoxDetail() {
           title={stmt ? stmt.box.name : 'Cash Box'}
           description={stmt ? [
             stmt.box.custodian_name ? `Custodian: ${stmt.box.custodian_name}` : 'No custodian assigned',
+            stmt.box.account_number
+              ? `Bank sub-account ${stmt.box.account_number}${stmt.box.parent_name ? ` (under ${stmt.box.parent_name})` : ''}`
+              : null,
             stmt.box.ledger_code ? `Ledger ${stmt.box.ledger_code}` : null,
             `${stmt.vouchers.count} vouchers = ${formatPrice(Number(stmt.vouchers.total))}`,
           ].filter(Boolean).join(' · ') : 'Box statement'}

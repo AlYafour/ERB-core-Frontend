@@ -123,6 +123,9 @@ export interface CashBox {
   kind: string;
   custodian?: number | null;
   custodian_name?: string | null;
+  account_number?: string;
+  iban?: string;
+  parent_name?: string | null;
   cash_in?: string;
   spent?: string;
   balance?: string;
@@ -148,6 +151,8 @@ export interface CashBoxStatement {
     id: string; name: string; kind: string; is_active: boolean;
     custodian: number | null; custodian_name: string | null;
     ledger_code: string | null;
+    account_number?: string; iban?: string; bank_name?: string;
+    parent_name?: string | null;
   };
   totals: { cash_in: string; spent: string; balance: string };
   vouchers: { count: number; total: string };

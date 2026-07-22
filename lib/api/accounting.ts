@@ -183,6 +183,10 @@ export interface BankAccount {
   ledger_account_code?: string;
   ledger_account_name?: string;
   custodian: number | null;
+  /** Real banking hierarchy: this account is a SUB-account of `parent`
+   *  (e.g. a CDC petty-cash sub under the main corporate account). */
+  parent?: string | null;
+  parent_name?: string | null;
   balance?: string;
   is_active: boolean;
 }
