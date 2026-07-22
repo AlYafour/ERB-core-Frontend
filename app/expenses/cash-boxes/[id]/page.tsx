@@ -40,7 +40,9 @@ const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'n
 
 export default function CashBoxDetailPage() {
   return (
-    <RouteGuard requiredPermission={{ category: 'expense', action: 'view' }} redirectTo="/expenses">
+    <RouteGuard requiredPermission={{ category: 'expense', action: 'view' }}
+                anyOfPermissions={[{ category: 'banking', action: 'view' }, { category: 'expense', action: 'approve' }]}
+                redirectTo="/expenses">
       <CashBoxDetail />
     </RouteGuard>
   );

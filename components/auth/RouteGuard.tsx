@@ -11,6 +11,8 @@ import { Loader } from '@/components/ui/Loader';
 interface RouteGuardProps {
   children: React.ReactNode;
   requiredPermission: { category: string; action: string };
+  /** Extra permissions that ALSO open the page — access = required OR any of these. */
+  anyOfPermissions?: Array<{ category: string; action: string }>;
   redirectTo?: string;
   fallback?: React.ReactNode;
 }
@@ -18,6 +20,7 @@ interface RouteGuardProps {
 export default function RouteGuard({
   children,
   requiredPermission,
+  anyOfPermissions,
   redirectTo,
   fallback,
 }: RouteGuardProps) {
@@ -41,17 +44,16 @@ export default function RouteGuard({
       return;
     }
 
-    const hasAccess = isTenantAdmin || isPlatformAdmin || hasPermission(
-      requiredPermission.category,
-      requiredPermission.action
-    );
+    const hasAccess = isTenantAdmin || isPlatformAdmin
+      || hasPermission(requiredPermission.category, requiredPermission.action)
+      || (anyOfPermissions ?? []).some(p => hasPermission(p.category, p.action));
 
     setIsAuthorized(hasAccess ?? false);
 
     if (!hasAccess && redirectTo) {
       router.push(redirectTo);
     }
-  }, [user, authLoading, permissionsLoading, isTenantAdmin, isPlatformAdmin, hasPermission, requiredPermission, redirectTo, router]);
+  }, [user, authLoading, permissionsLoading, isTenantAdmin, isPlatformAdmin, hasPermission, requiredPermission, anyOfPermissions, redirectTo, router]);
 
   // Show loading while checking permissions
   if (authLoading || permissionsLoading || isAuthorized === null) {

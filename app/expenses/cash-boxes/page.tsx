@@ -29,7 +29,9 @@ const TD: React.CSSProperties = { padding: '9px 10px', fontSize: 'var(--text-sm)
 
 export default function CashBoxesPage() {
   return (
-    <RouteGuard requiredPermission={{ category: 'expense', action: 'view' }} redirectTo="/expenses">
+    <RouteGuard requiredPermission={{ category: 'expense', action: 'view' }}
+                anyOfPermissions={[{ category: 'banking', action: 'view' }, { category: 'expense', action: 'approve' }]}
+                redirectTo="/expenses">
       <CashBoxesContent />
     </RouteGuard>
   );
