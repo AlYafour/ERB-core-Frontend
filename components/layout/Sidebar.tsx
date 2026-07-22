@@ -476,20 +476,25 @@ export default function Sidebar() {
                     const canCoA      = isAdmin || hasPermission('accounting.chart_of_accounts.view');
                     const canFiscal   = isAdmin || hasPermission('accounting.fiscal_period.view');
                     const canAssets   = isAdmin || hasPermission('accounting.fixed_asset.view');
-                    const anyAccess = canJournal || canExpense || canSettings || canPayments
+                    // Dashboard aggregates figures across the whole module — only
+                    // meaningful (and only shown) to someone with broader access,
+                    // not to a role scoped to petty cash alone.
+                    const broaderAccess = canJournal || canSettings || canPayments
                       || canBanking || canReports || canCoA || canFiscal || canAssets;
+                    const anyAccess = canExpense || broaderAccess;
                     if (!anyAccess || !(isAdmin || showModule('accounting'))) return null;
                     return (
                       <CollapsibleMenu
                         title={t('nav', 'accounting')}
                         icon={<CurrencyIcon className="w-4 h-4" />}
                         items={[
-                          { name: t('nav', 'accountingDashboard'), href: '/accounting' },
+                          ...(broaderAccess ? [{ name: t('nav', 'accountingDashboard'), href: '/accounting' }] : []),
                           ...(canJournal  ? [{ name: t('nav', 'accountingJournal'), href: '/accounting/journal' }] : []),
-                          ...(canExpense  ? [
-                            { name: 'Petty Cash & Expenses', href: '/expenses' },
-                            { name: 'Expense Setup',          href: '/expenses/setup' },
-                          ] : []),
+                          ...(canExpense  ? [{ name: 'Petty Cash & Expenses', href: '/expenses' }] : []),
+                          // Configuring cost types/offices is admin-level setup,
+                          // not part of everyday voucher entry — never exposed
+                          // just because someone can submit/view expenses.
+                          ...(isAdmin ? [{ name: 'Expense Setup', href: '/expenses/setup' }] : []),
                           ...(canSettings ? [{ name: 'Cost Codes', href: '/accounting/cost-codes' }] : []),
                           ...(canPayments ? [{ name: t('nav', 'accountingPayments'), href: '/accounting/payments' }] : []),
                           ...(canBanking  ? [{ name: t('nav', 'accountingBanking'), href: '/accounting/banking' }] : []),
