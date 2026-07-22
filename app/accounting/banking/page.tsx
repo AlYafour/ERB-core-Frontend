@@ -545,18 +545,18 @@ function TransferModal({ source, boxes, onClose }: {
           </div>
           <div>
             <label style={LABEL}>Date</label>
-            <input type="date" style={INPUT} value={f.transfer_date}
-                   onChange={(e) => setF({ ...f, transfer_date: e.target.value })} />
+            <DateInputDMY style={INPUT} value={f.transfer_date}
+                          onChange={(v) => setF({ ...f, transfer_date: v })} />
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div>
-            <label style={LABEL}>Reference</label>
-            <input style={INPUT} value={f.reference} onChange={(e) => setF({ ...f, reference: e.target.value })} />
+            <label style={LABEL}>Bank Reference No</label>
+            <input style={INPUT} placeholder="PHUB… / CASH" value={f.reference} onChange={(e) => setF({ ...f, reference: e.target.value })} />
           </div>
           <div>
-            <label style={LABEL}>Memo</label>
-            <input style={INPUT} value={f.memo} onChange={(e) => setF({ ...f, memo: e.target.value })} />
+            <label style={LABEL}>Description</label>
+            <input style={INPUT} placeholder="What is this transfer for?" value={f.memo} onChange={(e) => setF({ ...f, memo: e.target.value })} />
           </div>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
