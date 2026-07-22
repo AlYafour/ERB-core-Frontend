@@ -136,11 +136,13 @@ export default function PurchaseOrdersPage() {
   const [bulkApproving, setBulkApproving] = useState(false);
   const handleBulkApprove = async () => {
     // Status-aware: pending POs go through the approval chain; POs under
-    // amendment get their amendment approved (creates the R1 draft).
+    // amendment get their amendment approved (creates the R1 draft); draft
+    // revisions are enrolled + approved in one call (backend handles it).
     // Anything else in the selection is skipped, not errored.
     const chosen = orders.filter(o => selectedItems.has(o.id));
-    const actionable = chosen.filter(o => o.status === 'pending' || o.status === 'amendment_requested');
-    if (!actionable.length) { toast('Nothing approvable in the selection (only Pending or Amendment Requested).', 'error'); return; }
+    const actionable = chosen.filter(o =>
+      o.status === 'pending' || o.status === 'amendment_requested' || o.status === 'draft');
+    if (!actionable.length) { toast('Nothing approvable in the selection (only Draft, Pending or Amendment Requested).', 'error'); return; }
     if (!await confirm(`Approve ${actionable.length} purchase order${actionable.length !== 1 ? 's' : ''}?`
       + (chosen.length !== actionable.length ? ` (${chosen.length - actionable.length} skipped — not approvable)` : ''))) return;
     setBulkApproving(true);
