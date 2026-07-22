@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageShell, Button, Badge, PageHeader } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
+import DateInputDMY from '@/components/ui/DateInputDMY';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { expensesApi } from '@/lib/api/expenses';
 import { accountingApi } from '@/lib/api/accounting';
@@ -192,7 +193,7 @@ function CashInModal({ box, onClose, onDone }: { box: { id: string; name: string
         <div style={{ display: 'grid', gap: 'var(--space-3)' }}>
           <div><label style={LABEL}>Amount (AED) <span style={{ color: 'var(--status-error)' }}>*</span></label>
             <input type="number" min="0" step="0.01" style={INPUT} value={amount} onChange={e => setAmount(e.target.value)} autoFocus /></div>
-          <div><label style={LABEL}>Date</label><input type="date" style={INPUT} value={date} onChange={e => setDate(e.target.value)} /></div>
+          <div><label style={LABEL}>Date</label><DateInputDMY style={INPUT} value={date} onChange={setDate} /></div>
           <div><label style={LABEL}>From bank account</label>
             <SearchableDropdown options={bankOpts} value={sourceAccount} allowClear
               placeholder={bankOpts.length ? 'Which bank funded this' : 'No bank accounts — add one in Banking'}

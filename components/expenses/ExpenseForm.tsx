@@ -19,6 +19,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageShell, Button, PageHeader } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
+import DateInputDMY from '@/components/ui/DateInputDMY';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { expensesApi, type Expense } from '@/lib/api/expenses';
@@ -289,7 +290,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
           <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap', alignItems: 'flex-start' }}>
             <div style={{ flex: '0 0 190px' }}>
               <label style={LABEL}>Date <span style={{ color: 'var(--status-error)' }}>*</span></label>
-              <input type="date" style={INPUT} value={date} onChange={e => setDate(e.target.value)} />
+              <DateInputDMY style={INPUT} value={date} onChange={setDate} />
             </div>
             <div style={{ flex: '1 1 300px', minWidth: 260, maxWidth: 460 }}>
               <label style={LABEL}>Cash Box</label>
@@ -519,8 +520,8 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                   </div>
                   <div style={{ flex: '0 0 140px' }}>
                     <label style={LABEL}>Invoice Date</label>
-                    <input type="date" style={INPUT} value={ln.invoiceDate}
-                      onChange={e => updateLine(ln.key, { invoiceDate: e.target.value })} />
+                    <DateInputDMY style={INPUT} value={ln.invoiceDate}
+                      onChange={v => updateLine(ln.key, { invoiceDate: v })} />
                   </div>
                   <div style={F(1.8, 200)}>
                     <label style={LABEL}>Description</label>
