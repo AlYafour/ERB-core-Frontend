@@ -156,6 +156,39 @@ export default function JournalEntryEditor({ entry }: { entry?: JournalEntry }) 
   const removeLine = (idx: number) => setLines(prev => (prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev));
   const clearAll = () => setLines(Array.from({ length: 4 }, () => ({ ...EMPTY })));
 
+  // QuickBooks behavior: stepping into a fresh line auto-fills the amount
+  // that BALANCES the entry — on the correct side — and carries the last
+  // description down. (Debit 1,000 on line 1 → line 2 arrives as credit
+  // 1,000 with the same description.)
+  const autoBalance = (idx: number) => {
+    setLines(prev => {
+      const line = prev[idx];
+      if (!line || line.debit || line.credit) return prev;   // only untouched lines
+      let d = 0, c = 0;
+      prev.forEach((l, i) => {
+        if (i !== idx) { d += parseFloat(l.debit) || 0; c += parseFloat(l.credit) || 0; }
+      });
+      const diff = Math.round((d - c) * 100) / 100;
+      if (!diff) return prev;
+      const patch: Partial<LineDraft> = diff > 0
+        ? { credit: String(diff) } : { debit: String(-diff) };
+      if (!line.description) {
+        const lastDesc = [...prev.slice(0, idx)].reverse().find(l => l.description)?.description;
+        if (lastDesc) patch.description = lastDesc;
+      }
+      return prev.map((l, i) => (i === idx ? { ...l, ...patch } : l));
+    });
+  };
+  const autoDesc = (idx: number) => {
+    setLines(prev => {
+      const line = prev[idx];
+      if (!line || line.description) return prev;
+      const lastDesc = [...prev.slice(0, idx)].reverse().find(l => l.description)?.description;
+      if (!lastDesc) return prev;
+      return prev.map((l, i) => (i === idx ? { ...l, description: lastDesc } : l));
+    });
+  };
+
   const totals = useMemo(() => {
     const debit  = lines.reduce((s, l) => s + (parseFloat(l.debit)  || 0), 0);
     const credit = lines.reduce((s, l) => s + (parseFloat(l.credit) || 0), 0);
@@ -173,7 +206,9 @@ export default function JournalEntryEditor({ entry }: { entry?: JournalEntry }) 
   const buildPayload = () => ({
     entry_date: journalDate,
     posting_date: journalDate,
-    memo, reference: journalNo,
+    // QB behavior: an untouched memo inherits the line description.
+    memo: memo || filled.find(l => l.description)?.description || '',
+    reference: journalNo,
     lines: filled.map((l, i) => {
       const [ptype, pid] = l.partner ? l.partner.split(':') : ['', ''];
       return {
@@ -391,7 +426,9 @@ export default function JournalEntryEditor({ entry }: { entry?: JournalEntry }) 
                   <td style={{ ...TD, color: 'var(--text-tertiary)', textAlign: 'center' }}>{idx + 1}</td>
                   <td style={TD}>
                     {readOnly ? <span style={RO_CELL}>{accLabel(line.account)}</span> : (
-                      <select value={line.account} onChange={e => setLine(idx, { account: e.target.value })} style={CELL_INPUT}>
+                      <select value={line.account}
+                              onChange={e => { setLine(idx, { account: e.target.value }); if (e.target.value) autoBalance(idx); }}
+                              style={CELL_INPUT}>
                         <option value="" />
                         {accounts.map((a: any) => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
                       </select>
@@ -400,6 +437,7 @@ export default function JournalEntryEditor({ entry }: { entry?: JournalEntry }) 
                   <td style={{ ...TD, textAlign: 'right' }}>
                     {readOnly ? <span className="font-mono" style={RO_CELL}>{line.debit ? fmt(parseFloat(line.debit)) : ''}</span> : (
                       <input type="number" min="0" step="0.01" value={line.debit}
+                             onFocus={() => autoBalance(idx)}
                              onChange={e => setLine(idx, { debit: e.target.value, credit: e.target.value ? '' : line.credit })}
                              style={{ ...CELL_INPUT, textAlign: 'right' }} />
                     )}
@@ -407,13 +445,16 @@ export default function JournalEntryEditor({ entry }: { entry?: JournalEntry }) 
                   <td style={{ ...TD, textAlign: 'right' }}>
                     {readOnly ? <span className="font-mono" style={RO_CELL}>{line.credit ? fmt(parseFloat(line.credit)) : ''}</span> : (
                       <input type="number" min="0" step="0.01" value={line.credit}
+                             onFocus={() => autoBalance(idx)}
                              onChange={e => setLine(idx, { credit: e.target.value, debit: e.target.value ? '' : line.debit })}
                              style={{ ...CELL_INPUT, textAlign: 'right' }} />
                     )}
                   </td>
                   <td style={TD}>
                     {readOnly ? <span style={RO_CELL}>{line.description}</span> : (
-                      <input type="text" value={line.description} onChange={e => setLine(idx, { description: e.target.value })} style={CELL_INPUT} />
+                      <input type="text" value={line.description}
+                             onFocus={() => autoDesc(idx)}
+                             onChange={e => setLine(idx, { description: e.target.value })} style={CELL_INPUT} />
                     )}
                   </td>
                   <td style={TD}>
