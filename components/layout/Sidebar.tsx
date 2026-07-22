@@ -462,7 +462,7 @@ export default function Sidebar() {
                       {...collapsibleProps}
                     />
                   )}
-                  {(isAdmin || hasPermission('accounting.financial_report.view') || hasPermission('accounting.journal_entry.view')) && (isAdmin || showModule('accounting')) && (
+                  {(isAdmin || hasPermission('accounting.financial_report.view') || hasPermission('accounting.journal_entry.view') || hasPermission('accounting.expense.view')) && (isAdmin || showModule('accounting')) && (
                     <CollapsibleMenu
                       title={t('nav', 'accounting')}
                       icon={<CurrencyIcon className="w-4 h-4" />}
