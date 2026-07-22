@@ -462,26 +462,46 @@ export default function Sidebar() {
                       {...collapsibleProps}
                     />
                   )}
-                  {(isAdmin || hasPermission('accounting.financial_report.view') || hasPermission('accounting.journal_entry.view') || hasPermission('accounting.expense.view')) && (isAdmin || showModule('accounting')) && (
-                    <CollapsibleMenu
-                      title={t('nav', 'accounting')}
-                      icon={<CurrencyIcon className="w-4 h-4" />}
-                      items={[
-                        { name: t('nav', 'accountingDashboard'), href: '/accounting'          },
-                        { name: t('nav', 'accountingJournal'),   href: '/accounting/journal'  },
-                        { name: 'Petty Cash & Expenses',         href: '/expenses'           },
-                        { name: 'Expense Setup',                 href: '/expenses/setup'     },
-                        { name: 'Cost Codes',                    href: '/accounting/cost-codes' },
-                        { name: t('nav', 'accountingPayments'),  href: '/accounting/payments' },
-                        { name: t('nav', 'accountingBanking'),   href: '/accounting/banking'  },
-                        { name: t('nav', 'accountingReports'),   href: '/accounting/reports'  },
-                        { name: t('nav', 'accountingCoA'),       href: '/accounting/accounts' },
-                        { name: t('nav', 'accountingSettings'),  href: '/accounting/settings' },
-                      ]}
-                      defaultOpen={pathname.startsWith('/accounting')}
-                      {...collapsibleProps}
-                    />
-                  )}
+                  {(() => {
+                    // Each accounting sub-page shows only for the SPECIFIC
+                    // permission it needs — a role granted only "Petty Cash &
+                    // Expenses" must not also see Banking / Chart of Accounts
+                    // / Settings just because the section itself is visible.
+                    const canJournal  = isAdmin || hasPermission('accounting.journal_entry.view');
+                    const canExpense  = isAdmin || hasPermission('accounting.expense.view');
+                    const canSettings = isAdmin || hasPermission('accounting.accounting_settings.view');
+                    const canPayments = isAdmin || hasPermission('accounting.acc_payment.view');
+                    const canBanking  = isAdmin || hasPermission('accounting.banking.view');
+                    const canReports  = isAdmin || hasPermission('accounting.financial_report.view');
+                    const canCoA      = isAdmin || hasPermission('accounting.chart_of_accounts.view');
+                    const canFiscal   = isAdmin || hasPermission('accounting.fiscal_period.view');
+                    const canAssets   = isAdmin || hasPermission('accounting.fixed_asset.view');
+                    const anyAccess = canJournal || canExpense || canSettings || canPayments
+                      || canBanking || canReports || canCoA || canFiscal || canAssets;
+                    if (!anyAccess || !(isAdmin || showModule('accounting'))) return null;
+                    return (
+                      <CollapsibleMenu
+                        title={t('nav', 'accounting')}
+                        icon={<CurrencyIcon className="w-4 h-4" />}
+                        items={[
+                          { name: t('nav', 'accountingDashboard'), href: '/accounting' },
+                          ...(canJournal  ? [{ name: t('nav', 'accountingJournal'), href: '/accounting/journal' }] : []),
+                          ...(canExpense  ? [
+                            { name: 'Petty Cash & Expenses', href: '/expenses' },
+                            { name: 'Expense Setup',          href: '/expenses/setup' },
+                          ] : []),
+                          ...(canSettings ? [{ name: 'Cost Codes', href: '/accounting/cost-codes' }] : []),
+                          ...(canPayments ? [{ name: t('nav', 'accountingPayments'), href: '/accounting/payments' }] : []),
+                          ...(canBanking  ? [{ name: t('nav', 'accountingBanking'), href: '/accounting/banking' }] : []),
+                          ...(canReports  ? [{ name: t('nav', 'accountingReports'), href: '/accounting/reports' }] : []),
+                          ...(canCoA      ? [{ name: t('nav', 'accountingCoA'), href: '/accounting/accounts' }] : []),
+                          ...(canSettings ? [{ name: t('nav', 'accountingSettings'), href: '/accounting/settings' }] : []),
+                        ]}
+                        defaultOpen={pathname.startsWith('/accounting')}
+                        {...collapsibleProps}
+                      />
+                    );
+                  })()}
                   {(isAdmin || hasPermission('subcontractors.subcontractor.view')) && (isAdmin || showModule('subcontractors')) && (
                     <CollapsibleMenu
                       title={t('nav', 'subcontractors')}
