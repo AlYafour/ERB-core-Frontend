@@ -3,12 +3,14 @@
 /**
  * ExpenseForm — fast multi-line petty-cash entry. Date + Cash Box are shared
  * across the batch; each expense is a two-row card (coding on row 1, party +
- * money on row 2) with a numbered badge. Cost coding is hierarchical like the
- * company sheets: Cost Type → Main Category → Cost Code (sub-code), with
- * Project (direct) or Office/Location (indirect) beside it. The hierarchy is
- * data-driven from the tenant's cost-code tree — no hardcoded levels — and
- * every list is add-able inline (codes are generated server-side).
- * VAT is auto-extracted (5%, gross is VAT-inclusive).
+ * money on row 2) with a numbered badge. Cost coding cascades Main Category →
+ * Sub Category → Cost Code exactly as deep as the tenant's real cost-code
+ * tree goes on that branch — some branches genuinely have all three tiers
+ * (the direct-cost catalog), others bottom out after two (the indirect/
+ * office catalog); nothing here hardcodes which. Project (direct) or
+ * Office/Location (indirect) sits beside it. Every list is add-able inline
+ * (codes are generated server-side). VAT is auto-extracted (5%, gross is
+ * VAT-inclusive).
  */
 
 import { useState } from 'react';
@@ -51,8 +53,9 @@ interface Line {
   key: number;
   serial: string;
   costType: string | null;
-  category: number | null;   // main classification (cost-code group)
-  costCode: number | null;   // the actual posted code (sub-code or self-posting category)
+  workSection: number | null;  // top-level branch (Direct's real Level 1: "EXCAVATION & CONCRETE WORKS"…)
+  category: number | null;     // Main Category, one level down — only exists on branches that actually have one
+  costCode: number | null;     // the actual posted code (leaf, wherever the branch bottoms out)
   project: number | null;
   overhead: string | null;
   supplier: number | null;
@@ -66,14 +69,14 @@ interface Line {
 }
 
 const blankLine = (key: number): Line => ({
-  key, serial: '', costType: null, category: null, costCode: null, project: null,
-  overhead: null, supplier: null, vehicle: null, payee: '', invoiceNo: '',
+  key, serial: '', costType: null, workSection: null, category: null, costCode: null,
+  project: null, overhead: null, supplier: null, vehicle: null, payee: '', invoiceNo: '',
   description: '', amount: '', vatLiable: false, files: [],
 });
 
 const lineFromExisting = (e: Expense): Line => ({
   key: 1, serial: e.voucher_number || '', costType: e.cost_type,
-  category: null /* derived from the saved code once the tree loads */,
+  workSection: null, category: null /* derived from the saved code once the tree loads */,
   costCode: e.cost_code, project: e.project,
   overhead: (e as any).overhead_category ?? null,
   supplier: e.supplier, vehicle: e.vehicle ?? null, payee: e.payee_name || '',
@@ -110,7 +113,11 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
   const supplierOpts = supData.map((s: any) => ({ value: s.id, label: s.business_name || s.name }));
   const vehicleOpts = vehicles.map(v => ({ value: v.id, label: v.label }));
 
-  /** Data-driven hierarchy for one cost type (direct/indirect). */
+  /** Data-driven hierarchy for one cost type (direct/indirect) — depth isn't
+   *  assumed: some branches genuinely cascade Work Section → Main Category →
+   *  Cost Code (3 levels, real Direct data), others go straight from their
+   *  top-level branch to postable items (2 levels, real Indirect data). The
+   *  form below reads this shape directly instead of hardcoding either. */
   const treeFor = (isDirect: boolean) => {
     const matching = allCostCodes.filter(c => (c.is_direct ?? true) === isDirect);
     const kids = new Map<number, CostCode[]>();
@@ -121,16 +128,25 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
       }
     }
     const isLeaf = (c: CostCode) => !kids.has(c.id);
-    // Main categories: groups whose children are postable leaves, plus
-    // childless level-2 codes (they post directly to themselves).
-    const categories = matching.filter(c => {
-      const ch = kids.get(c.id);
-      if (ch) return ch.some(isLeaf);
-      return c.level === 2;
-    });
-    // Every postable code (used for search-across-everything when no category picked).
+    const roots = matching.filter(c => c.parent == null);
+    // Every postable code (used for search-across-everything when nothing picked yet).
     const leaves = matching.filter(c => isLeaf(c) && c.level !== 1);
-    return { matching, kids, categories, leaves };
+    return { matching, kids, isLeaf, roots, leaves };
+  };
+
+  /** Walk a leaf code's parent chain back to its root — used to pre-fill the
+   *  Work Section / Main Category pickers when opening an existing voucher,
+   *  or when a code is picked directly in the free-search Cost Code box. */
+  const ancestorChain = (code: CostCode | null): CostCode[] => {
+    const chain: CostCode[] = [];
+    let node = code;
+    const seen = new Set<number>();
+    while (node && !seen.has(node.id)) {
+      seen.add(node.id);
+      chain.unshift(node);
+      node = node.parent != null ? (allCostCodes.find(c => c.id === node!.parent) ?? null) : null;
+    }
+    return chain; // [root, …, leaf]
   };
 
   const updateLine = (key: number, patch: Partial<Line>) =>
@@ -204,9 +220,12 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
       return { value: s.id, label: s.business_name || s.name }; }
     catch (err) { toast(getApiError(err, 'Could not add supplier'), 'error'); return null; }
   };
-  const mkCostCode = async (name: string, isDirect: boolean, parent?: number | null) => {
+  const mkCostCode = async (name: string, isDirect: boolean, parent?: number | null, asRoot?: boolean) => {
     try {
-      const c = await costCodesApi.quickAdd({ name, is_direct: isDirect, parent: parent ?? undefined });
+      const c = await costCodesApi.quickAdd({
+        name, is_direct: isDirect, parent: parent ?? undefined,
+        ...(asRoot ? { level: '1' as const } : {}),
+      });
       await queryClient.invalidateQueries({ queryKey: ['cost-codes-all'] });
       return codeOption(c);
     } catch (err) { toast(getApiError(err, 'Could not add the code'), 'error'); return null; }
@@ -264,23 +283,35 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
             const tree = st ? treeFor(st.is_direct) : null;
 
             const selCode = allCostCodes.find(c => c.id === ln.costCode) ?? null;
-            // Category: explicit choice, else derived from the saved code (edit mode).
-            const catId = ln.category
-              ?? (selCode ? (tree?.categories.some(c => c.id === selCode.parent) ? selCode.parent
-                : tree?.categories.some(c => c.id === selCode.id) ? selCode.id : null) : null);
-            const catChildren = catId != null ? (tree?.kids.get(catId) ?? []) : [];
-            const selCat = catId != null ? allCostCodes.find(c => c.id === catId) : null;
-            const categoryOpts = (tree?.categories ?? []).map(codeOption);
-            // With a category → its sub-codes (a childless category posts to
-            // itself and stays listed so the first sub-code can be added);
-            // without → search across every postable code.
-            const codeOpts = catId != null
-              ? (catChildren.length
-                  ? catChildren.filter(c => !tree?.kids.has(c.id)).map(codeOption)
-                  : (selCat ? [codeOption(selCat)] : []))
-              : (tree?.leaves ?? []).map(codeOption);
+            const chain = tree ? ancestorChain(selCode) : [];  // [Work Section, (Main Category), leaf]
+
+            // Work Section (Level 1 branch): explicit choice, else derived
+            // from the saved leaf's ancestor chain (edit mode / free search).
+            const wsId = ln.workSection ?? (chain.length >= 1 ? chain[0].id : null);
+            const wsChildren = wsId != null ? (tree?.kids.get(wsId) ?? []) : [];
+            // This branch has a real Main Category tier only when its
+            // children are themselves groups (Direct's shape) — a branch
+            // whose children are already postable items has none (Indirect's
+            // shape), so the Main Category picker is skipped entirely.
+            const needsCategory = wsChildren.length > 0 && wsChildren.every(c => !tree!.isLeaf(c));
+
+            const catId = needsCategory ? (ln.category ?? (chain.length >= 3 ? chain[1].id : null)) : null;
+            const catChildren = needsCategory && catId != null ? (tree?.kids.get(catId) ?? []) : [];
+
+            const workSectionOpts = (tree?.roots ?? []).map(codeOption);
+            const categoryOpts = wsChildren.map(codeOption);
+            // Final Cost Code picker: children of whichever tier is the
+            // immediate parent for this branch (Main Category if it has one,
+            // else the Work Section directly) — or search everything when
+            // no branch is picked yet.
+            const codeOpts = wsId == null
+              ? (tree?.leaves ?? []).map(codeOption)
+              : needsCategory
+                ? (catId != null ? catChildren.map(codeOption) : [])
+                : wsChildren.map(codeOption);
 
             const showVehicle = !!(selCode?.is_vehicle_effective
+              || allCostCodes.find(c => c.id === wsId)?.is_vehicle_effective
               || allCostCodes.find(c => c.id === catId)?.is_vehicle_effective);
             const vat = lineVat(ln);
             const net = lineNet(ln);
@@ -307,7 +338,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                     <label style={LABEL}>Cost Type</label>
                     <SearchableDropdown options={costTypeOpts} value={ln.costType} allowClear placeholder="Direct / Indirect…"
                       onChange={v => { const id = v ? String(v) : null; const t = costTypes.find(c => c.id === id);
-                        updateLine(ln.key, { costType: id, category: null, costCode: null, vehicle: null, ...(t && !t.is_direct ? { project: null } : { overhead: null }) }); }}
+                        updateLine(ln.key, { costType: id, workSection: null, category: null, costCode: null, vehicle: null, ...(t && !t.is_direct ? { project: null } : { overhead: null }) }); }}
                       onCreateOption={async name => {
                         try { const c = await expensesApi.createCostType(name);
                           queryClient.invalidateQueries({ queryKey: ['exp-cost-types', isEdit] });
@@ -336,37 +367,63 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                       </>
                     )}
                   </div>
-                  <div style={F(1.4, 200)}>
+                  <div style={F(1.2, 180)}>
                     <label style={LABEL}>Main Category</label>
                     {st ? (
-                      <SearchableDropdown options={categoryOpts} value={catId} allowClear placeholder="Main classification"
+                      <SearchableDropdown options={workSectionOpts} value={wsId} allowClear placeholder="Top-level branch"
                         onChange={v => {
                           const id = v ? Number(v) : null;
+                          // Changing the branch invalidates everything under it.
                           const children = id != null ? (tree?.kids.get(id) ?? []) : [];
-                          // A childless category posts to itself.
-                          updateLine(ln.key, { category: id, costCode: id != null && children.length === 0 ? id : null, vehicle: null });
+                          updateLine(ln.key, {
+                            workSection: id, category: null, vehicle: null,
+                            // A branch with no children at all posts to itself
+                            // (rare — most have either a Sub Category tier or
+                            // direct items below them, resolved by the next picker).
+                            costCode: id != null && children.length === 0 ? id : null,
+                          });
                         }}
-                        onCreateOption={name => mkCostCode(name, st.is_direct)} />
+                        onCreateOption={name => mkCostCode(name, st.is_direct, null, true)} />
                     ) : <div style={DISABLED}>Choose a Cost Type first</div>}
                   </div>
+                  {needsCategory && (
+                    <div style={F(1.2, 180)}>
+                      <label style={LABEL}>Sub Category</label>
+                      <SearchableDropdown options={categoryOpts} value={catId} allowClear placeholder="Sub-classification"
+                        onChange={v => {
+                          const id = v ? Number(v) : null;
+                          updateLine(ln.key, { category: id, costCode: null, vehicle: null });
+                        }}
+                        onCreateOption={name => mkCostCode(name, st!.is_direct, wsId)} />
+                    </div>
+                  )}
                   <div style={F(1.6, 220)}>
                     <label style={LABEL}>Cost Code</label>
                     {st ? (
                       <SearchableDropdown options={codeOpts} value={ln.costCode} allowClear
-                        placeholder={catId != null ? 'Sub-code in this category' : 'Search all codes…'}
+                        placeholder={wsId == null ? 'Search all codes…' : needsCategory && catId == null ? 'Pick Sub Category first' : 'Select the item'}
                         onChange={v => {
                           const id = v ? Number(v) : null;
                           const cc = allCostCodes.find(c => c.id === id);
-                          // Picking a code without a category auto-fills its group.
                           const patch: Partial<Line> = { costCode: id };
-                          if (id != null && ln.category == null && cc?.parent != null
-                              && tree?.categories.some(c => c.id === cc.parent)) patch.category = cc.parent;
+                          // Picking a code with no branch selected yet
+                          // (free-search mode) auto-fills the whole chain above it.
+                          if (id != null && wsId == null && cc) {
+                            const anc = ancestorChain(cc);
+                            if (anc.length >= 1) patch.workSection = anc[0].id;
+                            if (anc.length >= 3) patch.category = anc[1].id;
+                          }
                           if (!cc?.is_vehicle_effective) patch.vehicle = null;
                           updateLine(ln.key, patch);
                         }}
                         onCreateOption={name => {
-                          if (catId == null) { toast('Pick a Main Category first, then add the code under it', 'error'); return Promise.resolve(null); }
-                          return mkCostCode(name, st.is_direct, catId);
+                          const parentId = needsCategory ? catId : wsId;
+                          if (parentId == null) {
+                            toast(needsCategory ? 'Pick a Sub Category first, then add the item under it'
+                                                : 'Pick a Main Category first, then add the item under it', 'error');
+                            return Promise.resolve(null);
+                          }
+                          return mkCostCode(name, st!.is_direct, parentId);
                         }} />
                     ) : <div style={DISABLED}>Choose a Cost Type first</div>}
                   </div>
