@@ -50,6 +50,7 @@ export default function BankingPage() {
   // false = closed · true = blank form · string = create a SUB under that main
   const [showNewBox, setShowNewBox] = useState<boolean | string>(false);
   const [transferFrom, setTransferFrom] = useState<BankAccount | null>(null);
+  const [editAccount, setEditAccount] = useState<BankAccount | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [openStatement, setOpenStatement] = useState<string | null>(null);
   const [showOpening, setShowOpening] = useState(false);
@@ -157,6 +158,7 @@ export default function BankingPage() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
+                <Button variant="ghost" size="sm" title="Edit account" onClick={() => setEditAccount(main)}>✎ Edit</Button>
                 <Button variant="secondary" size="sm" onClick={() => setTransferFrom(main)}>Transfer</Button>
                 <Button variant="primary" size="sm" onClick={() => setShowNewBox(main.id)}>+ Sub-account</Button>
               </div>
@@ -200,6 +202,7 @@ export default function BankingPage() {
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
+                  <Button variant="ghost" size="sm" title="Edit account" onClick={() => setEditAccount(b)}>✎</Button>
                   <Button variant="secondary" size="sm" onClick={() => setTransferFrom(b)}>Transfer</Button>
                   {b.kind === 'petty_cash' && (
                     <a href={`/expenses/cash-boxes/${b.id}`} style={{ fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 700, alignSelf: 'center' }}>
@@ -258,6 +261,7 @@ export default function BankingPage() {
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
+                  <Button variant="ghost" size="sm" title="Edit account" onClick={() => setEditAccount(b)}>✎</Button>
                   <Button variant="secondary" size="sm" onClick={() => setTransferFrom(b)}>Transfer</Button>
                   {b.kind === 'petty_cash' && (
                     <a href={`/expenses/cash-boxes/${b.id}`} style={{ fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 700, alignSelf: 'center' }}>
@@ -333,6 +337,10 @@ export default function BankingPage() {
         {showOpening ? (
           <OpeningBalancesModal boxes={boxes} onClose={() => { setShowOpening(false); invalidate(); }} />
         ) : null}
+        {editAccount ? (
+          <EditAccountModal account={editAccount} mains={mains} users={users}
+            onClose={() => { setEditAccount(null); invalidate(); }} />
+        ) : null}
       </PageShell>
     </MainLayout>
   );
@@ -370,7 +378,7 @@ function OpeningBalancesModal({ boxes, onClose }: { boxes: BankAccount[]; onClos
     onError: (err) => toastErr(getApiError(err, 'Could not set opening balances')),
   });
 
-  const anyAmount = boxes.some(b => Number(amounts[b.id] || 0) > 0);
+  const anyAmount = boxes.some(b => Number(amounts[b.id] || 0) !== 0);
 
   return (
     <BaseModal isOpen onClose={onClose} title="Opening balances">
@@ -378,7 +386,8 @@ function OpeningBalancesModal({ boxes, onClose }: { boxes: BankAccount[]; onClos
         Enter each account&apos;s starting balance as of the cutover date. One balanced
         opening entry is posted (the difference goes to Opening Balance Equity).
         You can come back anytime — edit a number, add the rest, or clear a field
-        to remove it, then save again.
+        to remove it, then save again. <b>Negative amounts are allowed</b> — a box
+        that opened in deficit (spent more than it was funded) takes a minus.
       </p>
       {existing?.exists ? (
         <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 8,
@@ -398,7 +407,8 @@ function OpeningBalancesModal({ boxes, onClose }: { boxes: BankAccount[]; onClos
             <span style={{ flex: 1, fontSize: 'var(--text-sm)' }}>
               {b.name} <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)' }}>({KIND_LABEL[b.kind]})</span>
             </span>
-            <input type="number" min="0" step="0.01" placeholder="0.00" style={{ ...INPUT, maxWidth: 160, textAlign: 'right', fontFamily: 'monospace' }}
+            <input type="number" step="0.01" placeholder="0.00" style={{ ...INPUT, maxWidth: 160, textAlign: 'right', fontFamily: 'monospace',
+                color: Number(amounts[b.id] || 0) < 0 ? 'var(--status-error)' : undefined }}
               value={amounts[b.id] ?? ''} onChange={e => setAmounts(a => ({ ...a, [b.id]: e.target.value }))} />
           </div>
         ))}
@@ -513,6 +523,91 @@ function NewBoxModal({ onClose, mains, users, defaultParent }: {
           }}>
             {create.isPending ? 'Saving…' : 'Create'}
           </Button>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
+function EditAccountModal({ account, mains, users, onClose }: {
+  account: BankAccount; mains: BankAccount[]; users: UserOpt[]; onClose: () => void;
+}) {
+  const [f, setF] = useState({
+    name: account.name ?? '', name_ar: account.name_ar ?? '',
+    bank_name: account.bank_name ?? '',
+    account_number: account.account_number ?? '', iban: account.iban ?? '',
+    parent: (account.parent as string | null) ?? '',
+    custodian: account.custodian != null ? String(account.custodian) : '',
+    is_active: account.is_active ?? true,
+  });
+  const save = useMutation({
+    mutationFn: () => accountingApi.updateBankAccount(account.id, {
+      name: f.name, name_ar: f.name_ar, bank_name: f.bank_name,
+      account_number: f.account_number, iban: f.iban,
+      parent: f.parent || null,
+      custodian: f.custodian ? Number(f.custodian) : null,
+      is_active: f.is_active,
+    } as never),
+    onSuccess: () => { toastOk('Account updated.'); onClose(); },
+    onError: (e) => toastErr(getApiError(e)),
+  });
+  const parentChoices = mains.filter(m => m.id !== account.id);
+  return (
+    <BaseModal isOpen onClose={onClose} title={`Edit — ${account.name}`}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div>
+            <label style={LABEL}>Name</label>
+            <input style={INPUT} value={f.name} onChange={e => setF({ ...f, name: e.target.value })} />
+          </div>
+          <div>
+            <label style={LABEL}>Arabic name</label>
+            <input style={INPUT} dir="rtl" value={f.name_ar} onChange={e => setF({ ...f, name_ar: e.target.value })} />
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+          <div>
+            <label style={LABEL}>Bank name</label>
+            <input style={INPUT} value={f.bank_name} onChange={e => setF({ ...f, bank_name: e.target.value })} />
+          </div>
+          <div>
+            <label style={LABEL}>Account no.</label>
+            <input style={INPUT} value={f.account_number} onChange={e => setF({ ...f, account_number: e.target.value })} />
+          </div>
+          <div>
+            <label style={LABEL}>IBAN</label>
+            <input style={INPUT} value={f.iban} onChange={e => setF({ ...f, iban: e.target.value })} />
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div>
+            <label style={LABEL}>Sub-account of</label>
+            <select style={INPUT} value={f.parent} onChange={e => setF({ ...f, parent: e.target.value })}>
+              <option value="">— none (top-level) —</option>
+              {parentChoices.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={LABEL}>Custodian</label>
+            <select style={INPUT} value={f.custodian} onChange={e => setF({ ...f, custodian: e.target.value })}>
+              <option value="">— none —</option>
+              {users.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
+            </select>
+          </div>
+        </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--text-sm)' }}>
+          <input type="checkbox" checked={f.is_active} onChange={e => setF({ ...f, is_active: e.target.checked })} />
+          Active
+        </label>
+        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+          Renaming also renames this account&apos;s line in the Chart of Accounts.
+        </span>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button disabled={save.isPending} onClick={() => {
+            if (!f.name.trim()) { toastErr('Name is required.'); return; }
+            save.mutate();
+          }}>{save.isPending ? 'Saving…' : 'Save changes'}</Button>
         </div>
       </div>
     </BaseModal>
