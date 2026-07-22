@@ -125,6 +125,9 @@ export interface JournalEntry {
   source_module: string;
   source_id: string;
   event_code: string;
+  /** List enrichment: the source DOCUMENT behind a system entry (which
+   *  box / which voucher) — null for manual entries or non-expense sources. */
+  source_doc?: { kind: 'expense' | 'cashin'; id: string; label: string; ref: string } | null;
   total_debit: string;
   total_credit: string;
   created_by_name?: string;

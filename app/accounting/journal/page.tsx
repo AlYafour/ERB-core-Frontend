@@ -8,6 +8,7 @@
  */
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { accountingApi, type JournalEntry, type JournalStatus } from '@/lib/api/accounting';
@@ -39,12 +40,30 @@ const STATUS_LABEL: Record<JournalStatus, string> = {
 const fmt = (v: string | number) =>
   Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+const fmtDate = (d?: string | null) =>
+  d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+
+/** Friendly names for where a system entry came from. */
+const MODULE_LABEL: Record<string, string> = {
+  expenses:          'Petty Cash',
+  expenses_cashin:   'Cash In',
+  expenses_history:  'Historical (cutover)',
+  banking:           'Bank',
+  purchase_invoices: 'Supplier Bill',
+  subcontractors:    'Subcontractors',
+  accounting:        'Opening / Closing',
+};
+
 const filterFields: FilterField[] = [
   {
     name: 'status', label: 'Status', type: 'select', group: 'Filters',
     options: (Object.entries(STATUS_LABEL) as [JournalStatus, string][]).map(
       ([value, label]) => ({ value, label }),
     ),
+  },
+  {
+    name: 'source_module', label: 'Source', type: 'select', group: 'Filters',
+    options: Object.entries(MODULE_LABEL).map(([value, label]) => ({ value, label })),
   },
 ];
 
@@ -102,7 +121,7 @@ export default function JournalPage() {
     },
     {
       key: 'posting_date', header: 'Posting Date', sortKey: 'posting_date',
-      render: r => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{r.posting_date}</span>,
+      render: r => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{fmtDate(r.posting_date)}</span>,
     },
     {
       key: 'memo', header: 'Memo',
@@ -117,20 +136,28 @@ export default function JournalPage() {
       ),
     },
     {
-      key: 'event_code', header: 'Event',
-      render: r => (
-        <span className="font-mono" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-          {r.event_code || '—'}
-        </span>
-      ),
+      key: 'source_module', header: 'Source',
+      render: r => {
+        const doc = r.source_doc;
+        if (doc) {
+          const href = doc.kind === 'expense' ? `/expenses/${doc.id}` : '/expenses/cash-boxes';
+          return (
+            <Link href={href} onClick={e => e.stopPropagation()}
+              style={{ color: 'var(--brand)', fontWeight: 600, fontSize: 'var(--text-sm)', textDecoration: 'none' }}>
+              {doc.label}{doc.ref ? <span className="font-mono" style={{ fontSize: 'var(--text-xs)', marginInlineStart: 6, color: 'var(--text-secondary)' }}>{doc.ref}</span> : null}
+            </Link>
+          );
+        }
+        return (
+          <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+            {MODULE_LABEL[r.source_module] ?? (r.source_module || 'Manual')}
+          </span>
+        );
+      },
     },
     {
-      key: 'source_module', header: 'Source',
-      render: r => (
-        <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-          {r.source_module === 'manual' ? 'Manual' : r.source_module || 'Manual'}
-        </span>
-      ),
+      key: 'created_at', header: 'Recorded', sortKey: 'created_at',
+      render: r => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{fmtDate(r.created_at)}</span>,
     },
     {
       key: 'total_debit', header: 'Amount', sortKey: 'total_debit',
