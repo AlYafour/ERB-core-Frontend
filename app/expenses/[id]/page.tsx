@@ -23,7 +23,7 @@ const STATUS_VARIANT: Record<ExpenseStatus, 'default' | 'warning' | 'info' | 'su
   draft: 'default', submitted: 'warning', accounting_approved: 'info',
   approved: 'success', posted: 'success', rejected: 'error', cancelled: 'default',
 };
-const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 
 export default function ExpenseDetailPage() {
   return (

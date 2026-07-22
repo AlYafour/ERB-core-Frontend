@@ -36,7 +36,7 @@ const STATUS_VARIANT: Record<string, 'default' | 'warning' | 'info' | 'success' 
   approved: 'success', posted: 'success', rejected: 'error', cancelled: 'default',
 };
 
-const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
 export default function CashBoxDetailPage() {
   return (

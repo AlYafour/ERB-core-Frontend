@@ -24,7 +24,7 @@ const filterFields: FilterField[] = [
     options: [{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }] },
 ];
 
-const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
 export default function ExpensesPage() {
   const router = useRouter();
