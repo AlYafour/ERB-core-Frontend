@@ -128,7 +128,11 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
       }
     }
     const isLeaf = (c: CostCode) => !kids.has(c.id);
-    const roots = matching.filter(c => c.parent == null);
+    // A true top-level branch is level 1 AND parentless — level is checked
+    // too, not just parent==null: a code the catalog couldn't safely
+    // reparent (an unresolved source-file ambiguity) is still a deep item,
+    // not a new branch, even while it's sitting parentless.
+    const roots = matching.filter(c => c.parent == null && c.level === 1);
     // Every postable code (used for search-across-everything when nothing picked yet).
     const leaves = matching.filter(c => isLeaf(c) && c.level !== 1);
     return { matching, kids, isLeaf, roots, leaves };
