@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageShell } from '@/components/ui/PageShell';
@@ -516,31 +517,67 @@ function NewBoxModal({ onClose, mains, users, defaultParent }: {
 function TransferModal({ source, boxes, onClose }: {
   source: BankAccount; boxes: BankAccount[]; onClose: () => void;
 }) {
+  const router = useRouter();
   const [f, setF] = useState({
     destination: '', amount: '',
     transfer_date: new Date().toISOString().slice(0, 10),
     reference: '', memo: '',
   });
-  const run = useMutation({
-    mutationFn: () => accountingApi.transfer(source.id, f),
-    onSuccess: (r: { journal_number?: string }) => { toastOk(`Transfer posted — journal ${r.journal_number ?? ''}.`); onClose(); },
-    onError: (e) => toastErr(getApiError(e)),
-  });
+  const [files, setFiles] = useState<File[]>([]);
+  const [busy, setBusy] = useState(false);
+
   const targets = boxes.filter((b) => b.id !== source.id && b.is_active);
+  const dest = targets.find((b) => b.id === f.destination) || null;
+  const amt = Number(f.amount) > 0 ? Number(f.amount) : 0;
+
+  const submit = async (thenView: boolean) => {
+    if (!f.destination || amt <= 0) { toastErr('Destination and a positive amount are required.'); return; }
+    setBusy(true);
+    try {
+      const r = await accountingApi.transfer(source.id, f) as { journal_entry: string; journal_number?: string };
+      let attached = 0;
+      for (const file of files) {
+        try { await accountingApi.uploadJournalAttachment(r.journal_entry, file); attached += 1; }
+        catch { toastErr(`Could not attach ${file.name}`); }
+      }
+      toastOk(`Transfer posted — journal ${r.journal_number ?? ''}`
+        + (attached ? ` with ${attached} attachment${attached !== 1 ? 's' : ''}` : '') + '.');
+      onClose();
+      if (thenView) router.push(`/accounting/journal/${r.journal_entry}`);
+    } catch (e) { toastErr(getApiError(e)); }
+    finally { setBusy(false); }
+  };
+
+  const acctLine = (b: BankAccount | null, fallback: string) => b
+    ? `${b.name}${b.account_number ? ` — A/C ${b.account_number}` : ''}`
+    : fallback;
+
   return (
     <BaseModal isOpen onClose={onClose} title={`Transfer from ${source.name}`}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div>
-          <label style={LABEL}>To</label>
-          <select style={INPUT} value={f.destination} onChange={(e) => setF({ ...f, destination: e.target.value })}>
-            <option value="">Select…</option>
-            {targets.map((b) => <option key={b.id} value={b.id}>{b.name} ({KIND_LABEL[b.kind]})</option>)}
-          </select>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* From → To */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 10, alignItems: 'end' }}>
+          <div>
+            <label style={LABEL}>From</label>
+            <div style={{ ...INPUT, background: 'var(--surface-secondary)', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{source.name}</span>
+              <span style={{ color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmt(source.balance ?? 0)}</span>
+            </div>
+          </div>
+          <span style={{ paddingBottom: 8, color: 'var(--text-secondary)' }}>→</span>
+          <div>
+            <label style={LABEL}>To</label>
+            <select style={INPUT} value={f.destination} onChange={(e) => setF({ ...f, destination: e.target.value })}>
+              <option value="">Select…</option>
+              {targets.map((b) => <option key={b.id} value={b.id}>{b.name} ({KIND_LABEL[b.kind]}{b.account_number ? ` · ${b.account_number}` : ''})</option>)}
+            </select>
+          </div>
         </div>
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div>
-            <label style={LABEL}>Amount</label>
-            <input type="number" min="0" step="0.01" style={INPUT} value={f.amount}
+            <label style={LABEL}>Amount (AED)</label>
+            <input type="number" min="0" step="0.01" style={{ ...INPUT, textAlign: 'right', fontFamily: 'monospace' }} value={f.amount}
                    onChange={(e) => setF({ ...f, amount: e.target.value })} />
           </div>
           <div>
@@ -559,13 +596,67 @@ function TransferModal({ source, boxes, onClose }: {
             <input style={INPUT} placeholder="What is this transfer for?" value={f.memo} onChange={(e) => setF({ ...f, memo: e.target.value })} />
           </div>
         </div>
+
+        {/* Live double-entry preview — the journal this will post */}
+        <div style={{ border: '1px solid var(--border-primary, var(--border-subtle))', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+          <div style={{ padding: '6px 10px', fontSize: 'var(--text-xs)', fontWeight: 700, letterSpacing: '0.04em',
+            textTransform: 'uppercase', color: 'var(--text-secondary)', background: 'var(--surface-secondary)' }}>
+            Journal entry preview
+          </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={{ ...TD, textAlign: 'left', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Account</th>
+                <th style={{ ...TD, textAlign: 'right', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Debit</th>
+                <th style={{ ...TD, textAlign: 'right', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Credit</th>
+              </tr>
+            </thead>
+            <tbody style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <tr>
+                <td style={TD}>{acctLine(dest, 'Destination…')}</td>
+                <td style={{ ...TD, textAlign: 'right' }}>{amt ? fmt(amt) : '—'}</td>
+                <td style={{ ...TD, textAlign: 'right', color: 'var(--text-secondary)' }}>—</td>
+              </tr>
+              <tr>
+                <td style={TD}>{acctLine(source, source.name)}</td>
+                <td style={{ ...TD, textAlign: 'right', color: 'var(--text-secondary)' }}>—</td>
+                <td style={{ ...TD, textAlign: 'right' }}>{amt ? fmt(amt) : '—'}</td>
+              </tr>
+              <tr>
+                <td style={{ ...TD, borderBottom: 'none', fontWeight: 700 }}>Total</td>
+                <td style={{ ...TD, borderBottom: 'none', textAlign: 'right', fontWeight: 700 }}>{fmt(amt)}</td>
+                <td style={{ ...TD, borderBottom: 'none', textAlign: 'right', fontWeight: 700 }}>{fmt(amt)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Attachments — the bank slip lives on the journal entry */}
+        <div>
+          <label style={LABEL}>Attachments (transfer slip, advice…)</label>
+          <input type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp"
+                 onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+                 style={{ fontSize: 'var(--text-sm)' }} />
+          {files.length > 0 && (
+            <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {files.map((file, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                  <span>{file.name}</span>
+                  <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))}
+                          style={{ border: 'none', background: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button disabled={run.isPending} onClick={() => {
-            if (!f.destination || Number(f.amount) <= 0) { toastErr('Destination and a positive amount are required.'); return; }
-            run.mutate();
-          }}>
-            {run.isPending ? 'Posting…' : 'Transfer'}
+          <Button variant="secondary" disabled={busy} onClick={() => submit(true)}>
+            {busy ? 'Posting…' : 'Transfer & view entry'}
+          </Button>
+          <Button disabled={busy} onClick={() => submit(false)}>
+            {busy ? 'Posting…' : 'Transfer'}
           </Button>
         </div>
       </div>
