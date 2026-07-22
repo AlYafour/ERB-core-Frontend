@@ -432,7 +432,9 @@ function NewBoxModal({ onClose, mains, users, defaultParent }: {
   const create = useMutation({
     mutationFn: () => accountingApi.createBankAccount({
       ...f,
-      ledger_account: Number(f.ledger_account),
+      // Blank = the backend provisions a dedicated ledger sub-account —
+      // one box, one line in the chart of accounts.
+      ledger_account: f.ledger_account ? Number(f.ledger_account) : null,
       parent: f.parent || null,
       custodian: f.custodian ? Number(f.custodian) : null,
       bank_name: f.bank_name || parentBank?.bank_name || '',
@@ -494,16 +496,19 @@ function NewBoxModal({ onClose, mains, users, defaultParent }: {
           </div>
         </div>
         <div>
-          <label style={LABEL}>Ledger account (asset, postable)</label>
+          <label style={LABEL}>Ledger account (optional)</label>
           <select style={INPUT} value={f.ledger_account} onChange={(e) => setF({ ...f, ledger_account: e.target.value })}>
-            <option value="">Select…</option>
+            <option value="">Automatic — a dedicated account is created in the chart</option>
             {accounts.map((a) => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
           </select>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+            Leave on Automatic — every account/box gets its own line in the Chart of Accounts.
+          </span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button disabled={create.isPending} onClick={() => {
-            if (!f.name || !f.ledger_account) { toastErr('Name and ledger account are required.'); return; }
+            if (!f.name) { toastErr('Name is required.'); return; }
             create.mutate();
           }}>
             {create.isPending ? 'Saving…' : 'Create'}
