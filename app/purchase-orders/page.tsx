@@ -186,7 +186,24 @@ export default function PurchaseOrdersPage() {
     { key: 'supplier', header: t('col', 'supplier'),    render: o => <span style={{ color: 'var(--text-secondary)' }}>{typeof o.supplier === 'object' ? (o.supplier as any).name : '—'}</span> },
     { key: 'date',     header: 'Order Date',             render: o => <span style={{ color: 'var(--text-secondary)' }}>{new Date(o.order_date).toLocaleDateString('en-US')}</span> },
     { key: 'total',    header: t('col', 'totalAmount'),  render: o => <span className="font-semibold">{formatPrice(o.total)}</span> },
-    { key: 'status',   header: t('col', 'status'),       render: o => <Badge variant={PO_STATUS[o.status] ?? 'info'}>{PO_LABEL[o.status] || o.status}</Badge> },
+    { key: 'status',   header: t('col', 'status'),       render: o => {
+      const amendment = (o as any).latest_approved_amendment;
+      // An approved amendment leaves the ORIGINAL parked here until its
+      // revision is finalized — surface the revision so "I approved it,
+      // why is it still listed?" answers itself.
+      if (o.status === 'amendment_requested' && amendment?.revision_po_id) {
+        return (
+          <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 2 }}>
+            <Badge variant={PO_STATUS[o.status] ?? 'info'}>{PO_LABEL[o.status] || o.status}</Badge>
+            <Link href={`/purchase-orders/${amendment.revision_po_id}`} onClick={e => e.stopPropagation()}
+              className="font-mono" style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', fontWeight: 600, textDecoration: 'none' }}>
+              → {amendment.revision_po_number || 'revision draft'}
+            </Link>
+          </span>
+        );
+      }
+      return <Badge variant={PO_STATUS[o.status] ?? 'info'}>{PO_LABEL[o.status] || o.status}</Badge>;
+    } },
     {
       key: 'actions', header: '',
       render: o => (
