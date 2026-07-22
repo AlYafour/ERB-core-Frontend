@@ -402,7 +402,12 @@ export const accountingApi = {
   transfer: (sourceId: string, payload: { destination: string; amount: string; transfer_date?: string; reference?: string; memo?: string }) =>
     apiClient.post(`${BASE}/bank-accounts/${sourceId}/transfer/`, payload).then(r => r.data),
   setBankOpeningBalances: (payload: { as_of?: string; entries: Array<{ account: string; amount: string }> }) =>
-    apiClient.post(`${BASE}/bank-accounts/opening-balances/`, payload).then(r => r.data),
+    apiClient.post<{ journal_number: string; restated: boolean }>(
+      `${BASE}/bank-accounts/opening-balances/`, payload).then(r => r.data),
+  getBankOpeningBalances: () =>
+    apiClient.get<{ exists: boolean; number?: string; status?: string; as_of?: string;
+      entries: Array<{ account: string; amount: string }>; other_lines?: number }>(
+      `${BASE}/bank-accounts/opening-balances/`).then(r => r.data),
   listStatements: (params?: Record<string, unknown>) =>
     apiClient.get<PaginatedResponse<BankStatement>>(`${BASE}/bank-statements/`, { params }).then(r => r.data),
   importStatement: (payload: { bank_account: string; content?: string; format?: 'csv' | 'ofx'; filename?: string; reference?: string }) =>

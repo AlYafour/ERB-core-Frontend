@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageShell } from '@/components/ui/PageShell';
 import { Button, Badge } from '@/components/ui';
 import { BaseModal } from '@/components/ui/base/BaseModal';
+import DateInputDMY from '@/components/ui/DateInputDMY';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 const toastOk = (m: string) => toast(m, 'success');
 const toastErr = (m: string) => toast(m, 'error');
@@ -337,17 +338,34 @@ export default function BankingPage() {
 }
 
 function OpeningBalancesModal({ boxes, onClose }: { boxes: BankAccount[]; onClose: () => void }) {
-  const [asOf, setAsOf] = useState(new Date().toISOString().slice(0, 10));
+  // Default cutover = start of the current year; overridden by the saved
+  // statement's date once the prefill loads.
+  const [asOf, setAsOf] = useState(`${new Date().getFullYear()}-01-01`);
   const [amounts, setAmounts] = useState<Record<string, string>>({});
+  const [loaded, setLoaded] = useState(false);
+
+  const { data: existing } = useQuery({
+    queryKey: ['opening-balances'],
+    queryFn: accountingApi.getBankOpeningBalances,
+    staleTime: 0,
+  });
+  useEffect(() => {
+    if (!existing || loaded) return;
+    if (existing.exists) {
+      if (existing.as_of) setAsOf(existing.as_of);
+      setAmounts(Object.fromEntries(existing.entries.map(e => [e.account, e.amount])));
+    }
+    setLoaded(true);
+  }, [existing, loaded]);
 
   const save = useMutation({
     mutationFn: () => accountingApi.setBankOpeningBalances({
       as_of: asOf,
-      entries: boxes
-        .filter(b => Number(amounts[b.id] || 0) > 0)
-        .map(b => ({ account: b.id, amount: String(amounts[b.id]) })),
+      // Send every account — 0 tells the backend to drop a previously saved
+      // line, so clearing a field really removes it.
+      entries: boxes.map(b => ({ account: b.id, amount: String(Number(amounts[b.id] || 0)) })),
     }),
-    onSuccess: () => { toastOk('Opening balances posted.'); onClose(); },
+    onSuccess: (d) => { toastOk(d.restated ? 'Opening balances updated (old entry reversed automatically).' : 'Opening balances posted.'); onClose(); },
     onError: (err) => toastErr(getApiError(err, 'Could not set opening balances')),
   });
 
@@ -357,12 +375,21 @@ function OpeningBalancesModal({ boxes, onClose }: { boxes: BankAccount[]; onClos
     <BaseModal isOpen onClose={onClose} title="Opening balances">
       <p style={{ margin: '0 0 12px', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
         Enter each account&apos;s starting balance as of the cutover date. One balanced
-        opening entry is posted (the difference goes to Opening Balance Equity). This is
-        done once — to restate, reverse the opening entry first.
+        opening entry is posted (the difference goes to Opening Balance Equity).
+        You can come back anytime — edit a number, add the rest, or clear a field
+        to remove it, then save again.
       </p>
+      {existing?.exists ? (
+        <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 8,
+          background: 'var(--surface-secondary)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+          Currently on the books: <b style={{ color: 'var(--text-primary)' }}>{existing.number}</b>.
+          Saving restates it — the old entry is reversed automatically, nothing is lost from the audit trail.
+          {existing.other_lines ? ` ${existing.other_lines} non-bank line(s) from the full wizard are preserved as-is.` : ''}
+        </div>
+      ) : null}
       <div style={{ marginBottom: 12 }}>
         <label style={LABEL}>As of date</label>
-        <input type="date" style={{ ...INPUT, maxWidth: 200 }} value={asOf} onChange={e => setAsOf(e.target.value)} />
+        <DateInputDMY style={{ ...INPUT, maxWidth: 200 }} value={asOf} onChange={setAsOf} />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {boxes.map(b => (
@@ -379,7 +406,7 @@ function OpeningBalancesModal({ boxes, onClose }: { boxes: BankAccount[]; onClos
       <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
         <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
         <Button variant="primary" size="sm" isLoading={save.isPending} disabled={!anyAmount}
-          onClick={() => save.mutate()}>Post opening balances</Button>
+          onClick={() => save.mutate()}>{existing?.exists ? 'Save & restate' : 'Post opening balances'}</Button>
       </div>
     </BaseModal>
   );
