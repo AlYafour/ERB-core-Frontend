@@ -1,13 +1,21 @@
 'use client';
 
+/**
+ * Expense voucher — redesigned as a financial DOCUMENT, not a field dump:
+ *  · hero: the money (gross large, VAT + net beneath) with status & dates
+ *  · Classification: each tier of the cost-code tree on its OWN labeled row
+ *    (Cost Type → Main Category → Sub Category → Cost Code → Project/Office)
+ *  · Payment: who was paid, invoice details, description
+ *  · sidebar: approval trail, accounting links, receipts, record info
+ */
+
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageShell, Button, Badge, PageHeader } from '@/components/ui';
-import { ProcField } from '@/components/procurement/shared/ProcField';
 import RouteGuard from '@/components/auth/RouteGuard';
-import { expensesApi, type Expense, type ExpenseStatus } from '@/lib/api/expenses';
+import { expensesApi, type ExpenseStatus } from '@/lib/api/expenses';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { formatPrice } from '@/lib/utils/format';
@@ -24,6 +32,44 @@ const STATUS_VARIANT: Record<ExpenseStatus, 'default' | 'warning' | 'info' | 'su
   approved: 'success', posted: 'success', rejected: 'error', cancelled: 'default',
 };
 const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+
+const ROW_LABEL: React.CSSProperties = {
+  fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+  color: 'var(--text-muted)', flex: '0 0 150px', paddingTop: 2,
+};
+const SECTION_TITLE: React.CSSProperties = {
+  fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase',
+  color: 'var(--brand)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8,
+};
+
+/** One labeled row — label column left, roomy value right, hairline below. */
+function Row({ label, children, last = false }: { label: string; children: React.ReactNode; last?: boolean }) {
+  return (
+    <div style={{
+      display: 'flex', gap: 16, alignItems: 'flex-start', padding: '10px 0',
+      borderBottom: last ? 'none' : '1px solid var(--border-subtle)',
+    }}>
+      <span style={ROW_LABEL}>{label}</span>
+      <span style={{ flex: 1, minWidth: 0, fontSize: 'var(--text-sm)', color: 'var(--text-primary)', lineHeight: 1.5 }}>
+        {children ?? <span style={{ color: 'var(--text-tertiary)' }}>—</span>}
+      </span>
+    </div>
+  );
+}
+
+/** A code tier: monospace code chip + full description, never truncated. */
+function CodeValue({ code, desc }: { code: string; desc?: string | null }) {
+  return (
+    <span style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+      <span style={{
+        fontFamily: 'monospace', fontWeight: 700, fontSize: 13,
+        background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)',
+        borderRadius: 6, padding: '2px 8px', whiteSpace: 'nowrap',
+      }}>{code}</span>
+      {desc ? <span style={{ color: 'var(--text-secondary)' }}>{desc}</span> : null}
+    </span>
+  );
+}
 
 export default function ExpenseDetailPage() {
   return (
@@ -98,17 +144,30 @@ function ExpenseDetailContent() {
   const s = exp.status;
   const isDraft = s === 'draft' || s === 'rejected';
 
+  // The code chain, split into NAMED tiers — never one crammed breadcrumb.
+  const path = exp.cost_code_path ?? [];
+  const tiers: Array<{ label: string; code: string; desc: string }> = [];
+  if (path.length >= 1) tiers.push({ label: 'Main Category', code: path[0].code, desc: path[0].description });
+  if (path.length === 3) tiers.push({ label: 'Sub Category', code: path[1].code, desc: path[1].description });
+  if (path.length >= 2) tiers.push({ label: 'Cost Code', code: path[path.length - 1].code, desc: path[path.length - 1].description });
+  if (path.length === 1) tiers[0].label = 'Cost Code';
+  if (!path.length && exp.cost_code_code) tiers.push({ label: 'Cost Code', code: exp.cost_code_code, desc: exp.cost_code_desc || '' });
+
+  const paidTo = exp.supplier_name || exp.payee_worker_name || exp.payee_name || exp.vehicle_label;
+  const gross = Number(exp.amount || 0);
+  const vat = Number(exp.vat_amount || 0);
+  const net = Number(exp.net_amount || 0);
+
   return (
     <MainLayout>
       <PageShell>
         <PageHeader
           title={exp.voucher_number || exp.number}
-          description={`Expense ${exp.number}`}
+          description={`Petty-cash voucher · ${exp.number}`}
           breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Petty Cash & Expenses', href: '/expenses' }, { label: exp.voucher_number || exp.number }]}
           backHref="/expenses"
           actions={
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              <Badge variant={STATUS_VARIANT[s] ?? 'default'}>{STATUS_LABEL[s] ?? s}</Badge>
               {isDraft && canEdit && <Button variant="edit" size="sm" onClick={() => router.push(`/expenses/${id}/edit`)}>Edit</Button>}
               {isDraft && canEdit && <Button variant="secondary" size="sm" onClick={() => submitM.mutate()} isLoading={submitM.isPending}>Submit</Button>}
               {s === 'submitted' && canApprove && <Button variant="success" size="sm" onClick={() => approveM.mutate()} isLoading={approveM.isPending}>Approve</Button>}
@@ -118,103 +177,159 @@ function ExpenseDetailContent() {
           }
         />
 
-        {(exp as any).approval_status && (
-          <div style={{ marginBottom: 'var(--space-4)' }}>
-            <ApprovalStatusWidget approvalStatus={(exp as any).approval_status} />
+        {exp.rejection_reason && (
+          <div style={{ marginBottom: 'var(--space-4)', padding: '12px 16px', borderRadius: 10, background: 'var(--status-error-bg)', border: '1px solid var(--status-error-border)', borderInlineStart: '4px solid var(--status-error)' }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--status-error)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Rejected</div>
+            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--status-error)' }}>{exp.rejection_reason || 'No reason recorded.'}</div>
           </div>
         )}
 
-        <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
-          <div className="proc-section-head"><h3 className="proc-section-title">Details</h3></div>
-          <div className="proc-info-grid">
-            <ProcField label="Voucher Number" value={<span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{exp.voucher_number || '—'}</span>} />
-            <ProcField label="System No." value={<span style={{ fontFamily: 'monospace' }}>{exp.number}</span>} />
-            <ProcField label="Date" value={fmtDate(exp.expense_date)} />
-            <ProcField label="Cash Box" value={exp.cash_box_name} />
-            <ProcField label="Cost Type" value={exp.cost_type_label} />
-            {(exp as any).overhead_category_label
-              ? <ProcField label="Office / Location" value={(exp as any).overhead_category_label} />
-              : <ProcField label="Project" value={exp.project_name} />}
-            <ProcField label="Cost Code" value={exp.cost_code_path?.length ? (
-              <span style={{ display: 'inline-flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 4 }}>
-                {exp.cost_code_path.map((seg, i) => {
-                  const isLeaf = i === exp.cost_code_path!.length - 1;
-                  return (
-                    <span key={seg.code} style={{ display: 'inline-flex', alignItems: 'baseline', gap: 4 }}>
-                      {i > 0 && <span style={{ color: 'var(--text-tertiary)' }}>›</span>}
-                      <span style={{
-                        fontFamily: 'monospace', fontWeight: isLeaf ? 700 : 500,
-                        color: isLeaf ? 'var(--text-primary)' : 'var(--text-secondary)',
-                      }}>{seg.code}</span>
-                      <span style={{
-                        fontSize: 'var(--text-xs)', color: 'var(--text-secondary)',
-                      }}>{seg.description.slice(0, isLeaf ? 40 : 24)}</span>
-                    </span>
-                  );
-                })}
-              </span>
-            ) : exp.cost_code_code ? (
-              <span><span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{exp.cost_code_code}</span>{exp.cost_code_desc ? <span style={{ color: 'var(--text-secondary)', marginInlineStart: 6, fontSize: 'var(--text-xs)' }}>{exp.cost_code_desc.slice(0, 40)}</span> : null}</span>
-            ) : undefined} />
-            <ProcField label="Supplier" value={exp.supplier_name} />
-            <ProcField label="Vehicle" value={exp.vehicle_label} />
-            <ProcField label="Payee" value={exp.payee_name} />
-            <ProcField label="Invoice No." value={exp.invoice_no ? <span style={{ fontFamily: 'monospace' }}>{exp.invoice_no}</span> : undefined} />
-            <ProcField label="Invoice Date" value={exp.invoice_date ? fmtDate(exp.invoice_date) : undefined} />
-            <ProcField label="Description" value={exp.description} />
-            {exp.journal_entry && (
-              <ProcField label="Journal Entry" value={
-                <Link href={`/accounting/journal/${exp.journal_entry.id}`} style={{ color: 'var(--brand)', fontWeight: 'var(--weight-semibold)', textDecoration: 'none' }}>
-                  {exp.journal_entry.number || 'Draft'} ({exp.journal_entry.status}) ↗
-                </Link>
-              } />
-            )}
-          </div>
-          {exp.rejection_reason && (
-            <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 8, background: 'var(--status-error-bg)', border: '1px solid var(--status-error-border)' }}>
-              <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--status-error)', textTransform: 'uppercase', marginBottom: 4 }}>Rejection Reason</div>
-              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--status-error)' }}>{exp.rejection_reason}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(280px, 1fr)', gap: 'var(--space-4)', alignItems: 'start' }}>
+
+          {/* ── Main column ─────────────────────────────────────────────── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', minWidth: 0 }}>
+
+            {/* Hero — the money */}
+            <div className="card" style={{ padding: '20px 24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 6 }}>
+                    Amount Paid (Gross)
+                  </div>
+                  <div style={{ fontSize: 34, fontWeight: 800, fontFamily: 'monospace', lineHeight: 1.1, color: 'var(--text-primary)' }}>
+                    {formatPrice(gross)}
+                  </div>
+                  <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap', fontSize: 'var(--text-sm)' }}>
+                    {exp.vat_liable ? (
+                      <>
+                        <span style={{ color: 'var(--text-secondary)' }}>VAT 5%: <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{formatPrice(vat)}</span></span>
+                        <span style={{ color: 'var(--text-secondary)' }}>Net to expense: <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{formatPrice(net)}</span></span>
+                      </>
+                    ) : (
+                      <span style={{ color: 'var(--text-tertiary)' }}>Not VAT liable — full amount to expense</span>
+                    )}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                  <Badge variant={STATUS_VARIANT[s] ?? 'default'}>{STATUS_LABEL[s] ?? s}</Badge>
+                  <div style={{ textAlign: 'end', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                    <div><span style={{ color: 'var(--text-muted)' }}>Voucher date:</span> <strong>{fmtDate(exp.expense_date)}</strong></div>
+                    <div style={{ marginTop: 2 }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Cash box:</span>{' '}
+                      {exp.cash_box ? (
+                        <Link href={`/expenses/cash-boxes/${exp.cash_box}`} style={{ color: 'var(--brand)', fontWeight: 700, textDecoration: 'none' }}>
+                          {exp.cash_box_name}
+                        </Link>
+                      ) : <strong>{exp.cash_box_name || '—'}</strong>}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
 
-        <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
-          <div className="proc-section-head"><h3 className="proc-section-title">Amount</h3></div>
-          <div className="proc-info-grid">
-            <ProcField label="Gross" value={<span className="font-semibold">{formatPrice(Number(exp.amount || 0))}</span>} />
-            <ProcField label="VAT" value={exp.vat_liable ? formatPrice(Number(exp.vat_amount || 0)) : 'Not VAT liable'} />
-            <ProcField label="Net (to expense)" value={formatPrice(Number(exp.net_amount || 0))} />
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="proc-section-head"><h3 className="proc-section-title">Receipts</h3></div>
-          <label style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            gap: 4, minHeight: 64, padding: 'var(--space-3)', cursor: 'pointer',
-            border: '1px dashed var(--border-subtle)', borderRadius: 'var(--radius-md)',
-            color: 'var(--text-secondary)', fontSize: 'var(--text-sm)',
-          }}>
-            <span style={{ color: 'var(--brand, #b8860b)', fontWeight: 600 }}>Add receipt</span>
-            <input type="file" multiple hidden onChange={e => {
-              const chosen = Array.from(e.target.files ?? []).filter(f => f.size <= 20 * 1024 * 1024);
-              uploadReceipt(chosen); e.target.value = '';
-            }} />
-          </label>
-          {exp.attachments && exp.attachments.length > 0 ? (
-            <ul style={{ listStyle: 'none', margin: 'var(--space-2) 0 0', padding: 0, fontSize: 'var(--text-sm)' }}>
-              {exp.attachments.map(a => (
-                <li key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '4px 0' }}>
-                  {a.url ? <a href={a.url} target="_blank" rel="noreferrer" style={{ color: 'var(--brand, #b8860b)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</a> : <span>{a.name}</span>}
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>{(a.size / 1024).toFixed(0)} KB</span>
-                    <button onClick={async () => { if (await confirm(`Remove "${a.name}"?`)) { try { await expensesApi.deleteAttachment(id, a.id); invalidate(); } catch (err) { toast(getApiError(err, 'Delete failed'), 'error'); } } }}
-                            style={{ background: 'none', border: 'none', color: 'var(--status-error)', cursor: 'pointer' }}>×</button>
-                  </span>
-                </li>
+            {/* Classification — every tier on its own row */}
+            <div className="card" style={{ padding: '18px 24px' }}>
+              <div style={SECTION_TITLE}>Classification</div>
+              <Row label="Cost Type">{exp.cost_type_label}</Row>
+              {tiers.map(t => (
+                <Row key={t.label + t.code} label={t.label}>
+                  <CodeValue code={t.code} desc={t.desc} />
+                </Row>
               ))}
-            </ul>
-          ) : <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', marginTop: 8 }}>No receipts attached.</p>}
+              {(exp as any).overhead_category_label
+                ? <Row label="Office / Location" last>{(exp as any).overhead_category_label}</Row>
+                : <Row label="Project" last>{exp.project_name}</Row>}
+            </div>
+
+            {/* Payment details */}
+            <div className="card" style={{ padding: '18px 24px' }}>
+              <div style={SECTION_TITLE}>Payment</div>
+              <Row label="Paid To">
+                {paidTo ? (
+                  <span style={{ fontWeight: 600 }}>
+                    {paidTo}
+                    {exp.supplier_name ? <span style={{ marginInlineStart: 8, fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>(supplier)</span>
+                      : exp.payee_worker_name ? <span style={{ marginInlineStart: 8, fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>(box worker)</span>
+                      : null}
+                  </span>
+                ) : null}
+              </Row>
+              {exp.vehicle_label && <Row label="Vehicle">{exp.vehicle_label}</Row>}
+              <Row label="Invoice No.">{exp.invoice_no ? <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{exp.invoice_no}</span> : null}</Row>
+              <Row label="Invoice Date">{exp.invoice_date ? fmtDate(exp.invoice_date) : null}</Row>
+              <Row label="Description" last>{exp.description}</Row>
+            </div>
+          </div>
+
+          {/* ── Sidebar ─────────────────────────────────────────────────── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', minWidth: 0 }}>
+
+            {(exp as any).approval_status && (
+              <ApprovalStatusWidget approvalStatus={(exp as any).approval_status} />
+            )}
+
+            {/* Accounting */}
+            <div className="card" style={{ padding: '16px 20px' }}>
+              <div style={SECTION_TITLE}>Accounting</div>
+              {exp.journal_entry ? (
+                <Link href={`/accounting/journal/${exp.journal_entry.id}`}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, textDecoration: 'none', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--brand)' }}>
+                    {exp.journal_entry.number || 'Draft entry'}
+                  </span>
+                  <Badge variant={exp.journal_entry.status === 'posted' ? 'success' : 'default'}>
+                    {exp.journal_entry.status}
+                  </Badge>
+                </Link>
+              ) : (
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', margin: 0 }}>
+                  Journal entry is created automatically when the voucher is approved.
+                </p>
+              )}
+            </div>
+
+            {/* Receipts */}
+            <div className="card" style={{ padding: '16px 20px' }}>
+              <div style={SECTION_TITLE}>Receipts {exp.attachments?.length ? `(${exp.attachments.length})` : ''}</div>
+              <label style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                minHeight: 48, padding: '10px', cursor: 'pointer',
+                border: '1.5px dashed var(--border-default)', borderRadius: 10,
+                color: 'var(--brand)', fontSize: 'var(--text-sm)', fontWeight: 700,
+              }}>
+                📎 Add receipt
+                <input type="file" multiple hidden onChange={e => {
+                  const chosen = Array.from(e.target.files ?? []).filter(f => f.size <= 20 * 1024 * 1024);
+                  uploadReceipt(chosen); e.target.value = '';
+                }} />
+              </label>
+              {exp.attachments && exp.attachments.length > 0 ? (
+                <ul style={{ listStyle: 'none', margin: '10px 0 0', padding: 0, fontSize: 'var(--text-sm)' }}>
+                  {exp.attachments.map(a => (
+                    <li key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                      {a.url ? <a href={a.url} target="_blank" rel="noreferrer" style={{ color: 'var(--brand)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none', fontWeight: 600 }}>{a.name}</a> : <span>{a.name}</span>}
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                        <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>{(a.size / 1024).toFixed(0)} KB</span>
+                        <button onClick={async () => { if (await confirm(`Remove "${a.name}"?`)) { try { await expensesApi.deleteAttachment(id, a.id); invalidate(); } catch (err) { toast(getApiError(err, 'Delete failed'), 'error'); } } }}
+                                style={{ background: 'none', border: 'none', color: 'var(--status-error)', cursor: 'pointer', fontSize: 14 }}>×</button>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '8px 0 0' }}>No receipts attached yet.</p>}
+            </div>
+
+            {/* Record info */}
+            <div className="card" style={{ padding: '16px 20px' }}>
+              <div style={SECTION_TITLE}>Record</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                <div><span style={{ color: 'var(--text-muted)' }}>System no.:</span> <span style={{ fontFamily: 'monospace' }}>{exp.number}</span></div>
+                <div><span style={{ color: 'var(--text-muted)' }}>Entered by:</span> {exp.created_by_name || '—'}</div>
+                <div><span style={{ color: 'var(--text-muted)' }}>Entered on:</span> {fmtDate(exp.created_at)}</div>
+                {exp.approved_at && <div><span style={{ color: 'var(--text-muted)' }}>Approved on:</span> {fmtDate(exp.approved_at)}</div>}
+              </div>
+            </div>
+          </div>
         </div>
       </PageShell>
     </MainLayout>
