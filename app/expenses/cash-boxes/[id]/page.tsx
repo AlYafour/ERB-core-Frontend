@@ -89,7 +89,12 @@ function CashBoxDetail() {
           ].filter(Boolean).join(' · ') : 'Box statement'}
           breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Petty Cash & Expenses', href: '/expenses' }, { label: 'Cash Boxes', href: '/expenses/cash-boxes' }, { label: stmt?.box.name ?? '…' }]}
           backHref="/expenses/cash-boxes"
-          actions={stmt && !stmt.box.is_active ? <Badge variant="error">Inactive</Badge> : undefined}
+          actions={
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {stmt && !stmt.box.is_active && <Badge variant="error">Inactive</Badge>}
+              <Link href="/expenses/new"><Button variant="primary" size="sm">+ New Expense</Button></Link>
+            </div>
+          }
         />
 
         {/* Totals */}

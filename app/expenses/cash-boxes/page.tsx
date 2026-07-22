@@ -1,8 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageShell, Button, Badge, PageHeader } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
@@ -34,6 +37,7 @@ export default function CashBoxesPage() {
 
 function CashBoxesContent() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [showAdd, setShowAdd] = useState(false);
   const [cashInBox, setCashInBox] = useState<{ id: string; name: string } | null>(null);
   const [newName, setNewName] = useState('');
@@ -41,8 +45,23 @@ function CashBoxesContent() {
   const [renameId, setRenameId] = useState<string | null>(null);
   const [renameVal, setRenameVal] = useState('');
 
+  // Managing boxes (create / rename / reassign custodian / deactivate / fund)
+  // is an admin + accounting job. A custodian's workspace is his own box
+  // page — landing here sends him straight there.
+  const { user } = useAuth();
+  const { isTenantAdmin, isPlatformAdmin, hasPermission, isLoading: permsLoading } = useMyPermissions();
+  const seesAll = isTenantAdmin || isPlatformAdmin
+    || hasPermission('accounting.banking.view') || hasPermission('accounting.expense.approve');
+
   const { data: boxes = [], isLoading } = useQuery({ queryKey: ['exp-cash-boxes'], queryFn: () => expensesApi.listCashBoxes() });
-  const { data: usersResp } = useQuery({ queryKey: ['users-for-custodian'], queryFn: () => usersApi.getAll({ page_size: 200 } as any), staleTime: 300_000 });
+  const myBox = (!permsLoading && !seesAll)
+    ? boxes.find(b => b.kind === 'petty_cash' && b.custodian === user?.id)
+    : undefined;
+  useEffect(() => {
+    if (myBox) router.replace(`/expenses/cash-boxes/${myBox.id}`);
+  }, [myBox, router]);
+
+  const { data: usersResp } = useQuery({ queryKey: ['users-for-custodian'], queryFn: () => usersApi.getAll({ page_size: 200 } as any), staleTime: 300_000, enabled: seesAll });
   const users = (usersResp as any)?.results ?? (Array.isArray(usersResp) ? usersResp : []);
   const userOpts = users.map((u: any) => ({ value: u.id, label: u.full_name || `${u.first_name} ${u.last_name}`.trim() || u.username }));
 
@@ -74,6 +93,8 @@ function CashBoxesContent() {
     }
   };
 
+  if (myBox) return null;   // redirecting the custodian to his own box — no flash
+
   return (
     <MainLayout>
       <PageShell>
@@ -82,7 +103,7 @@ function CashBoxesContent() {
           description="Petty-cash boxes and their custodians. Each box's balance = top-ups minus expenses (imprest system)."
           breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Petty Cash & Expenses', href: '/expenses' }, { label: 'Cash Boxes' }]}
           backHref="/expenses"
-          actions={<Button variant="primary" size="sm" onClick={() => setShowAdd(v => !v)}>{showAdd ? 'Close' : '+ New Box'}</Button>}
+          actions={seesAll ? <Button variant="primary" size="sm" onClick={() => setShowAdd(v => !v)}>{showAdd ? 'Close' : '+ New Box'}</Button> : undefined}
         />
 
         {showAdd && (
@@ -129,18 +150,24 @@ function CashBoxesContent() {
                           )}
                         </td>
                         <td style={TD}>
-                          <SearchableDropdown options={userOpts} value={b.custodian ?? null} allowClear placeholder="Assign custodian"
-                            onChange={v => setCustodian.mutate({ id: b.id, custodian: v ? Number(v) : null })} />
+                          {seesAll ? (
+                            <SearchableDropdown options={userOpts} value={b.custodian ?? null} allowClear placeholder="Assign custodian"
+                              onChange={v => setCustodian.mutate({ id: b.id, custodian: v ? Number(v) : null })} />
+                          ) : (
+                            <span style={{ color: 'var(--text-secondary)' }}>{b.custodian_name || '—'}</span>
+                          )}
                         </td>
                         <td style={{ ...TD, textAlign: 'right', fontFamily: 'monospace' }}>{formatPrice(Number(b.cash_in ?? 0))}</td>
                         <td style={{ ...TD, textAlign: 'right', fontFamily: 'monospace' }}>{formatPrice(Number(b.spent ?? 0))}</td>
                         <td style={{ ...TD, textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: bal < 0 ? 'var(--status-error)' : 'var(--text-primary)' }}>{formatPrice(bal)}</td>
                         <td style={{ ...TD, textAlign: 'right', whiteSpace: 'nowrap' }}>
-                          <span style={{ display: 'inline-flex', gap: 6, justifyContent: 'flex-end' }}>
-                            <Button variant="secondary" size="sm" onClick={() => setCashInBox({ id: b.id, name: b.name })}>+ Cash In</Button>
-                            <Button variant="edit" size="sm" onClick={() => { setRenameId(b.id); setRenameVal(b.name); }}>Rename</Button>
-                            <Button variant="ghost" size="sm" onClick={() => askDeactivate({ id: b.id, name: b.name })}>Deactivate</Button>
-                          </span>
+                          {seesAll && (
+                            <span style={{ display: 'inline-flex', gap: 6, justifyContent: 'flex-end' }}>
+                              <Button variant="secondary" size="sm" onClick={() => setCashInBox({ id: b.id, name: b.name })}>+ Cash In</Button>
+                              <Button variant="edit" size="sm" onClick={() => { setRenameId(b.id); setRenameVal(b.name); }}>Rename</Button>
+                              <Button variant="ghost" size="sm" onClick={() => askDeactivate({ id: b.id, name: b.name })}>Deactivate</Button>
+                            </span>
+                          )}
                         </td>
                       </tr>
                     );

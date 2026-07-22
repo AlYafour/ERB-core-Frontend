@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
@@ -9,6 +10,8 @@ import { toast, confirm } from '@/lib/hooks/use-toast';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { AppListPage } from '@/components/app/AppListPage';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { formatPrice } from '@/lib/utils/format';
 
 const STATUS_LABEL: Record<ExpenseStatus, string> = {
@@ -32,10 +35,30 @@ export default function ExpensesPage() {
   const { page, search, filters } = tableState;
   const queryClient = useQueryClient();
 
+  // Best-practice workspaces: a box custodian's whole world is HIS box page —
+  // the company-wide voucher list belongs to admins / accounting / approvers.
+  // Custodians landing here are sent straight to their box.
+  const { user } = useAuth();
+  const { isTenantAdmin, isPlatformAdmin, hasPermission, isLoading: permsLoading } = useMyPermissions();
+  const seesAll = isTenantAdmin || isPlatformAdmin
+    || hasPermission('accounting.banking.view') || hasPermission('accounting.expense.approve');
+  const { data: myBoxes } = useQuery({
+    queryKey: ['exp-cash-boxes'],
+    queryFn: () => expensesApi.listCashBoxes(),
+    enabled: !permsLoading && !seesAll, staleTime: 300_000,
+  });
+  const myBox = (!permsLoading && !seesAll)
+    ? myBoxes?.find(b => b.kind === 'petty_cash' && b.custodian === user?.id)
+    : undefined;
+  useEffect(() => {
+    if (myBox) router.replace(`/expenses/cash-boxes/${myBox.id}`);
+  }, [myBox, router]);
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['expenses', page, search, filters],
     queryFn: () => expensesApi.getAll({ page, search, ...filters }),
     staleTime: 2 * 60 * 1000,
+    enabled: !myBox,
   });
 
   const deleteMut = useMutation({
@@ -62,6 +85,8 @@ export default function ExpensesPage() {
   const rows = data?.results ?? [];
   const totalCount = data?.count ?? 0;
   const pageTotal = rows.reduce((s, e) => s + Number(e.amount || 0), 0);
+
+  if (myBox) return null;   // redirecting to the custodian's box — no flash
 
   const columns: Column<Expense>[] = [
     { key: 'voucher', header: 'Voucher', sortKey: 'number',
