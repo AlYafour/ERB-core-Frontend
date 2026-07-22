@@ -13,12 +13,14 @@
  * VAT-inclusive).
  */
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageShell, Button, PageHeader } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { expensesApi, type Expense } from '@/lib/api/expenses';
 import { costCodesApi } from '@/lib/api/cost-codes';
 import { projectsApi } from '@/lib/api/projects';
@@ -38,8 +40,9 @@ const INPUT: React.CSSProperties = {
 const READONLY: React.CSSProperties = { ...INPUT, background: 'var(--surface-subtle)', display: 'flex', alignItems: 'center', fontFamily: 'monospace', fontWeight: 600 };
 const DISABLED: React.CSSProperties = { ...INPUT, color: 'var(--text-muted)', background: 'var(--surface-subtle)', display: 'flex', alignItems: 'center', cursor: 'not-allowed', fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden' };
 
-/** Squash whitespace and cap length so bilingual sheet descriptions stay readable. */
-const clean = (s: string | null | undefined, n = 48) => {
+/** Squash whitespace; the pickers render multiline so bilingual labels
+ *  (English + Arabic) show in full instead of losing their tail. */
+const clean = (s: string | null | undefined, n = 160) => {
   const t = String(s || '').replace(/\s+/g, ' ').trim();
   return t.length > n ? `${t.slice(0, n - 1)}…` : t;
 };
@@ -60,8 +63,10 @@ interface Line {
   overhead: string | null;
   supplier: number | null;
   vehicle: number | null;
-  payee: string;
+  payee: string;               // legacy free-text mirror (kept for edit prefill)
+  payeeWorker: string | null;  // structured payee: one of the box's workers
   invoiceNo: string;
+  invoiceDate: string;
   description: string;
   amount: string;
   vatLiable: boolean;
@@ -70,8 +75,8 @@ interface Line {
 
 const blankLine = (key: number): Line => ({
   key, serial: '', costType: null, workSection: null, category: null, costCode: null,
-  project: null, overhead: null, supplier: null, vehicle: null, payee: '', invoiceNo: '',
-  description: '', amount: '', vatLiable: false, files: [],
+  project: null, overhead: null, supplier: null, vehicle: null, payee: '', payeeWorker: null,
+  invoiceNo: '', invoiceDate: '', description: '', amount: '', vatLiable: false, files: [],
 });
 
 const lineFromExisting = (e: Expense): Line => ({
@@ -80,7 +85,9 @@ const lineFromExisting = (e: Expense): Line => ({
   costCode: e.cost_code, project: e.project,
   overhead: (e as any).overhead_category ?? null,
   supplier: e.supplier, vehicle: e.vehicle ?? null, payee: e.payee_name || '',
-  invoiceNo: e.invoice_no || '', description: e.description || '',
+  payeeWorker: e.payee_worker ?? null,
+  invoiceNo: e.invoice_no || '', invoiceDate: e.invoice_date || '',
+  description: e.description || '',
   amount: String(e.amount), vatLiable: e.vat_liable, files: [],
 });
 
@@ -91,6 +98,8 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isEdit = !!existing;
+  const { user } = useAuth();
+  const { isTenantAdmin } = useMyPermissions();
 
   const [date, setDate] = useState(existing?.expense_date ?? today());
   const [cashBox, setCashBox] = useState<string | null>(existing?.cash_box ?? null);
@@ -106,6 +115,24 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
 
   const allCostCodes: CostCode[] = Array.isArray(ccData) ? ccData : ((ccData as any)?.results ?? []);
   const projects = (projData as any)?.results ?? [];
+
+  // The signed-in custodian's own box: auto-selected, and locked for
+  // non-admins — a custodian never files vouchers against someone else's box.
+  const myBox = useMemo(
+    () => boxes.find(b => b.kind === 'petty_cash' && b.custodian === user?.id) ?? null,
+    [boxes, user?.id]);
+  useEffect(() => {
+    if (!isEdit && myBox) setCashBox(prev => prev ?? myBox.id);
+  }, [isEdit, myBox]);
+  const boxLocked = !isEdit && !!myBox && !isTenantAdmin;
+
+  // The selected box's workers — the people the custodian hands cash to;
+  // they populate the Payee picker and each shows a live float balance.
+  const { data: workers = [] } = useQuery({
+    queryKey: ['box-workers', cashBox],
+    queryFn: () => expensesApi.listBoxWorkers(cashBox!),
+    enabled: !!cashBox, staleTime: 60_000,
+  });
 
   const boxOpts = boxes.map(b => ({ value: b.id, label: `${b.name}${b.custodian_name ? ` — ${b.custodian_name}` : ''}${b.kind === 'petty_cash' ? '' : ' (Bank)'}` }));
   const costTypeOpts = costTypes.map(c => ({ value: c.id, label: c.name }));
@@ -173,7 +200,11 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
       project: indirect ? null : ln.project,
       overhead_category: indirect ? ln.overhead : null,
       cost_code: ln.costCode, supplier: ln.supplier, vehicle: ln.vehicle,
-      payee_name: ln.payee, invoice_no: ln.invoiceNo, description: ln.description,
+      payee_worker: ln.payeeWorker,
+      payee_name: ln.payeeWorker ? '' : ln.payee,   // server mirrors the worker's name
+      invoice_no: ln.invoiceNo,
+      invoice_date: ln.invoiceDate || null,
+      description: ln.description,
       amount: ln.amount, vat_liable: ln.vatLiable,
       vat_amount: ln.vatLiable ? lineVat(ln).toFixed(2) : '0',
     };
@@ -262,14 +293,21 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
             </div>
             <div style={{ flex: '1 1 300px', minWidth: 260, maxWidth: 460 }}>
               <label style={LABEL}>Cash Box</label>
-              <SearchableDropdown options={boxOpts} value={cashBox} allowClear placeholder="Select or add a box"
-                onChange={v => setCashBox(v ? String(v) : null)}
-                onCreateOption={async name => {
-                  try { const b = await expensesApi.createCashBox({ name });
-                    queryClient.invalidateQueries({ queryKey: ['exp-cash-boxes'] });
-                    return { value: b.id, label: b.name }; }
-                  catch (err) { toast(getApiError(err, 'Could not add box'), 'error'); return null; }
-                }} />
+              {boxLocked ? (
+                <div style={{ ...READONLY, fontFamily: 'inherit', gap: 8 }}>
+                  <span style={{ fontWeight: 700 }}>{myBox!.name}</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>— your box</span>
+                </div>
+              ) : (
+                <SearchableDropdown options={boxOpts} value={cashBox} allowClear placeholder="Select or add a box"
+                  onChange={v => setCashBox(v ? String(v) : null)}
+                  onCreateOption={async name => {
+                    try { const b = await expensesApi.createCashBox({ name });
+                      queryClient.invalidateQueries({ queryKey: ['exp-cash-boxes'] });
+                      return { value: b.id, label: b.name }; }
+                    catch (err) { toast(getApiError(err, 'Could not add box'), 'error'); return null; }
+                  }} />
+              )}
             </div>
             {selectedBox && (
               <div style={{ flex: '0 0 auto', alignSelf: 'flex-end', paddingBottom: 8, fontSize: 12, fontWeight: 700, color: overSpend ? 'var(--status-error)' : 'var(--text-muted)' }}>
@@ -374,7 +412,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                   <div style={F(1.2, 180)}>
                     <label style={LABEL}>Main Category</label>
                     {st ? (
-                      <SearchableDropdown options={workSectionOpts} value={wsId} allowClear placeholder="Top-level branch"
+                      <SearchableDropdown options={workSectionOpts} value={wsId} allowClear multiline placeholder="Top-level branch"
                         onChange={v => {
                           const id = v ? Number(v) : null;
                           // Changing the branch invalidates everything under it.
@@ -393,7 +431,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                   {needsCategory && (
                     <div style={F(1.2, 180)}>
                       <label style={LABEL}>Sub Category</label>
-                      <SearchableDropdown options={categoryOpts} value={catId} allowClear placeholder="Sub-classification"
+                      <SearchableDropdown options={categoryOpts} value={catId} allowClear multiline placeholder="Sub-classification"
                         onChange={v => {
                           const id = v ? Number(v) : null;
                           updateLine(ln.key, { category: id, costCode: null, vehicle: null });
@@ -404,7 +442,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                   <div style={F(1.6, 220)}>
                     <label style={LABEL}>Cost Code</label>
                     {st ? (
-                      <SearchableDropdown options={codeOpts} value={ln.costCode} allowClear
+                      <SearchableDropdown options={codeOpts} value={ln.costCode} allowClear multiline
                         placeholder={wsId == null ? 'Search all codes…' : needsCategory && catId == null ? 'Pick Sub Category first' : 'Select the item'}
                         onChange={v => {
                           const id = v ? Number(v) : null;
@@ -451,14 +489,38 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                       onCreateOption={async name => { const r = await mkSupplier(name); return r; }} />
                   </div>
                   {!ln.supplier && !ln.vehicle && (
-                    <div style={F(1, 150)}>
+                    <div style={F(1, 170)}>
                       <label style={LABEL}>Payee</label>
-                      <input style={INPUT} value={ln.payee} onChange={e => updateLine(ln.key, { payee: e.target.value })} placeholder="Who was paid" />
+                      {cashBox ? (
+                        <SearchableDropdown
+                          options={workers.map(w => ({
+                            value: w.id,
+                            label: `${w.name}  ·  ${Number(w.balance) < 0 ? '−' : ''}${Math.abs(Number(w.balance)).toFixed(2)}`,
+                            searchText: w.name,
+                          }))}
+                          value={ln.payeeWorker} allowClear
+                          placeholder={workers.length ? 'Who took the cash' : 'Add your people…'}
+                          onChange={v => updateLine(ln.key, { payeeWorker: v ? String(v) : null })}
+                          onCreateOption={async name => {
+                            try {
+                              const w = await expensesApi.createBoxWorker(cashBox, { name });
+                              queryClient.invalidateQueries({ queryKey: ['box-workers', cashBox] });
+                              return { value: w.id, label: w.name };
+                            } catch (err) { toast(getApiError(err, 'Could not add person'), 'error'); return null; }
+                          }} />
+                      ) : (
+                        <div style={DISABLED}>Choose a Cash Box first</div>
+                      )}
                     </div>
                   )}
                   <div style={{ flex: '0 0 110px' }}>
                     <label style={LABEL}>Invoice No.</label>
                     <input style={INPUT} value={ln.invoiceNo} onChange={e => updateLine(ln.key, { invoiceNo: e.target.value })} />
+                  </div>
+                  <div style={{ flex: '0 0 140px' }}>
+                    <label style={LABEL}>Invoice Date</label>
+                    <input type="date" style={INPUT} value={ln.invoiceDate}
+                      onChange={e => updateLine(ln.key, { invoiceDate: e.target.value })} />
                   </div>
                   <div style={F(1.8, 200)}>
                     <label style={LABEL}>Description</label>

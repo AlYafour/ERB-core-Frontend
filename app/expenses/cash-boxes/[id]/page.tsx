@@ -10,11 +10,13 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageShell, Button, Badge, PageHeader } from '@/components/ui';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { expensesApi, type Expense } from '@/lib/api/expenses';
+import { toast, confirm } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { formatPrice } from '@/lib/utils/format';
 
 const TH: React.CSSProperties = { padding: '8px 10px', textAlign: 'left', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' };
@@ -106,6 +108,9 @@ function CashBoxDetail() {
             Balance is negative — recorded funding is less than recorded spend. Reconcile the funding with accounting.
           </div>
         )}
+
+        {/* Workers — the custodian's sub-floats */}
+        <WorkersCard boxId={boxId} />
 
         {/* Ledger movements */}
         <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
@@ -200,5 +205,115 @@ function CashBoxDetail() {
         </div>
       </PageShell>
     </MainLayout>
+  );
+}
+
+/** The people this box's custodian hands cash to — each is a tracked
+ *  sub-float: received (handovers) − spent (their vouchers) = balance.
+ *  Negative is allowed (spent from their own pocket, settled later) — it
+ *  shows red, it never blocks. */
+function WorkersCard({ boxId }: { boxId: string }) {
+  const queryClient = useQueryClient();
+  const [newName, setNewName] = useState('');
+  const [handingTo, setHandingTo] = useState<string | null>(null);
+  const [amount, setAmount] = useState('');
+  const [note, setNote] = useState('');
+
+  const { data: workers = [], isLoading } = useQuery({
+    queryKey: ['box-workers', boxId],
+    queryFn: () => expensesApi.listBoxWorkers(boxId),
+  });
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['box-workers', boxId] });
+
+  const addMut = useMutation({
+    mutationFn: () => expensesApi.createBoxWorker(boxId, { name: newName.trim() }),
+    onSuccess: () => { invalidate(); setNewName(''); toast('Person added', 'success'); },
+    onError: (err) => toast(getApiError(err, 'Could not add'), 'error'),
+  });
+  const handMut = useMutation({
+    mutationFn: (workerId: string) => expensesApi.workerHandover(boxId, workerId, { amount, note }),
+    onSuccess: () => { invalidate(); setHandingTo(null); setAmount(''); setNote(''); toast('Cash handed over', 'success'); },
+    onError: (err) => toast(getApiError(err, 'Handover failed'), 'error'),
+  });
+  const deactivateMut = useMutation({
+    mutationFn: (workerId: string) => expensesApi.updateBoxWorker(boxId, workerId, { is_active: false }),
+    onSuccess: () => { invalidate(); toast('Deactivated', 'success'); },
+    onError: (err) => toast(getApiError(err, 'Failed'), 'error'),
+  });
+
+  return (
+    <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+      <div className="proc-section-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <h3 className="proc-section-title">People Holding Cash ({workers.length})</h3>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input style={{ ...INPUT, width: 200 }} placeholder="Add a person…" value={newName}
+            onChange={e => setNewName(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && newName.trim()) addMut.mutate(); }} />
+          <Button variant="secondary" size="sm" isLoading={addMut.isPending}
+            onClick={() => { if (!newName.trim()) { toast('Enter a name', 'error'); return; } addMut.mutate(); }}>
+            + Add
+          </Button>
+        </div>
+      </div>
+      {isLoading ? <div style={{ color: 'var(--text-secondary)' }}>Loading…</div>
+        : workers.length === 0 ? (
+          <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
+            No one registered yet — add the people you hand cash to (site engineers, buyers…). They become the Payee list on new vouchers.
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr>
+                <th style={TH}>Name</th>
+                <th style={{ ...TH, textAlign: 'right' }}>Received</th>
+                <th style={{ ...TH, textAlign: 'right' }}>Spent</th>
+                <th style={{ ...TH, textAlign: 'right' }}>Holding Now</th>
+                <th style={TH}></th>
+              </tr></thead>
+              <tbody>
+                {workers.map(w => {
+                  const bal = Number(w.balance);
+                  return (
+                    <tr key={w.id}>
+                      <td style={{ ...TD, fontWeight: 600 }}>{w.name}</td>
+                      <td style={{ ...NUM, color: 'var(--status-success)' }}>{formatPrice(Number(w.received))}</td>
+                      <td style={NUM}>{formatPrice(Number(w.spent))}</td>
+                      <td style={{ ...NUM, fontWeight: 700, color: bal < 0 ? 'var(--status-error)' : 'var(--text-primary)' }}>
+                        {formatPrice(bal)}{bal < 0 && ' ⚠'}
+                      </td>
+                      <td style={{ ...TD, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        {handingTo === w.id ? (
+                          <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                            <input autoFocus type="number" min="0" step="0.01" placeholder="Amount"
+                              style={{ ...INPUT, width: 110, fontFamily: 'monospace', textAlign: 'right' }}
+                              value={amount} onChange={e => setAmount(e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter' && Number(amount) > 0) handMut.mutate(w.id); if (e.key === 'Escape') setHandingTo(null); }} />
+                            <input placeholder="Note (optional)" style={{ ...INPUT, width: 150 }}
+                              value={note} onChange={e => setNote(e.target.value)} />
+                            <Button variant="primary" size="sm" isLoading={handMut.isPending}
+                              onClick={() => { if (!(Number(amount) > 0)) { toast('Enter a valid amount', 'error'); return; } handMut.mutate(w.id); }}>
+                              Hand
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => setHandingTo(null)}>Cancel</Button>
+                          </span>
+                        ) : (
+                          <span style={{ display: 'inline-flex', gap: 6 }}>
+                            <Button variant="secondary" size="sm" onClick={() => { setHandingTo(w.id); setAmount(''); setNote(''); }}>
+                              + Hand Cash
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={async () => {
+                              if (await confirm(`Deactivate "${w.name}"? Their history stays; they disappear from the Payee list.`)) deactivateMut.mutate(w.id);
+                            }}>Deactivate</Button>
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+    </div>
   );
 }

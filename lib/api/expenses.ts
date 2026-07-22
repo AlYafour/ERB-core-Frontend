@@ -36,7 +36,10 @@ export interface Expense {
   vehicle: number | null;
   vehicle_label?: string | null;
   payee_name: string;
+  payee_worker?: string | null;
+  payee_worker_name?: string | null;
   invoice_no: string;
+  invoice_date?: string | null;
   description: string;
   amount: string;
   vat_liable: boolean;
@@ -66,12 +69,26 @@ export interface ExpensePayload {
   supplier?: number | null;
   vehicle?: number | null;
   payee_name?: string;
+  payee_worker?: string | null;
   invoice_no?: string;
+  invoice_date?: string | null;
   description?: string;
   amount: string | number;
   vat_liable: boolean;
   vat_amount?: string | number;
   notes?: string;
+}
+
+/** A person the box custodian hands cash to (site engineer, buyer…) —
+ *  balance = handovers − their vouchers; negative is allowed. */
+export interface BoxWorker {
+  id: string;
+  name: string;
+  user: number | null;
+  is_active: boolean;
+  received: string;
+  spent: string;
+  balance: string;
 }
 
 export interface CashIn {
@@ -187,6 +204,17 @@ export const expensesApi = {
     apiClient.patch(`${BASE}/cash-boxes/${id}/`, { is_active: false }).then(r => r.data),
   getCashBoxStatement: (id: string): Promise<CashBoxStatement> =>
     apiClient.get(`${BASE}/cash-boxes/${id}/statement/`).then(r => r.data),
+
+  // Box workers — the custodian's sub-floats.
+  listBoxWorkers: (boxId: string, includeInactive = false): Promise<BoxWorker[]> =>
+    apiClient.get(`${BASE}/cash-boxes/${boxId}/workers/`,
+      { params: includeInactive ? { include_inactive: 1 } : undefined }).then(r => r.data),
+  createBoxWorker: (boxId: string, payload: { name: string; user?: number | null }): Promise<BoxWorker> =>
+    apiClient.post(`${BASE}/cash-boxes/${boxId}/workers/`, payload).then(r => r.data),
+  updateBoxWorker: (boxId: string, workerId: string, patch: { name?: string; is_active?: boolean }): Promise<BoxWorker> =>
+    apiClient.patch(`${BASE}/cash-boxes/${boxId}/workers/${workerId}/`, patch).then(r => r.data),
+  workerHandover: (boxId: string, workerId: string, payload: { amount: string | number; date?: string; note?: string }): Promise<BoxWorker> =>
+    apiClient.post(`${BASE}/cash-boxes/${boxId}/workers/${workerId}/handover/`, payload).then(r => r.data),
 
   // Select-only list of the tenant's registered vehicles (managed in HR → Assets).
   listVehicles: (): Promise<Array<{ id: number; label: string; plate: string; name: string }>> =>

@@ -32,6 +32,9 @@ interface SearchableDropdownProps {
   onCreateOption?: (label: string) => Promise<DropdownOption | null>;
   /** Label for the create button — defaults to "Add" */
   createLabel?: string;
+  /** Let menu items wrap to multiple lines instead of clipping — for long
+   *  bilingual labels (Arabic + English) that lose their tail otherwise. */
+  multiline?: boolean;
 }
 
 interface MenuPosition {
@@ -61,6 +64,7 @@ export default function SearchableDropdown({
   isLoading = false,
   onCreateOption,
   createLabel = 'Add',
+  multiline = false,
 }: SearchableDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -229,6 +233,11 @@ export default function SearchableDropdown({
               type="button"
               onMouseDown={(e) => { e.preventDefault(); handleSelect(option); }}
               className={`dropdown-item${selectedOption?.value === option.value ? ' selected' : ''}`}
+              style={multiline ? {
+                whiteSpace: 'normal', wordBreak: 'break-word',
+                textAlign: 'start', lineHeight: 1.4, height: 'auto',
+                paddingTop: 7, paddingBottom: 7,
+              } : undefined}
             >
               {option.label}
             </button>

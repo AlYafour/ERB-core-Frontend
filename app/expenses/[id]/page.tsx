@@ -160,6 +160,7 @@ function ExpenseDetailContent() {
             <ProcField label="Vehicle" value={exp.vehicle_label} />
             <ProcField label="Payee" value={exp.payee_name} />
             <ProcField label="Invoice No." value={exp.invoice_no ? <span style={{ fontFamily: 'monospace' }}>{exp.invoice_no}</span> : undefined} />
+            <ProcField label="Invoice Date" value={exp.invoice_date ? fmtDate(exp.invoice_date) : undefined} />
             <ProcField label="Description" value={exp.description} />
             {exp.journal_entry && (
               <ProcField label="Journal Entry" value={
