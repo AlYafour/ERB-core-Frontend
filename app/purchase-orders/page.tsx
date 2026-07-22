@@ -37,8 +37,9 @@ export default function PurchaseOrdersPage() {
   const { hasPermission } = usePermissions();
   const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
   const isAdmin   = isTenantAdmin || isPlatformAdmin;
-  const canCreate = isAdmin || (hasPermission('purchase_order', 'create') ?? false);
-  const canDelete = isAdmin || (hasPermission('purchase_order', 'delete') ?? false);
+  const canCreate  = isAdmin || (hasPermission('purchase_order', 'create') ?? false);
+  const canDelete  = isAdmin || (hasPermission('purchase_order', 'delete') ?? false);
+  const canApprove = isAdmin || (hasPermission('purchase_order', 'approve') ?? false);
 
   // Persisted with the rest of the list state (survives Back navigation)
   const isMyPOs = filters.__my_pos === true;
@@ -132,6 +133,35 @@ export default function PurchaseOrdersPage() {
   const orders     = Array.isArray(data?.results) ? data!.results : [];
   const totalCount = data?.count ?? 0;
 
+  const [bulkApproving, setBulkApproving] = useState(false);
+  const handleBulkApprove = async () => {
+    // Status-aware: pending POs go through the approval chain; POs under
+    // amendment get their amendment approved (creates the R1 draft).
+    // Anything else in the selection is skipped, not errored.
+    const chosen = orders.filter(o => selectedItems.has(o.id));
+    const actionable = chosen.filter(o => o.status === 'pending' || o.status === 'amendment_requested');
+    if (!actionable.length) { toast('Nothing approvable in the selection (only Pending or Amendment Requested).', 'error'); return; }
+    if (!await confirm(`Approve ${actionable.length} purchase order${actionable.length !== 1 ? 's' : ''}?`
+      + (chosen.length !== actionable.length ? ` (${chosen.length - actionable.length} skipped — not approvable)` : ''))) return;
+    setBulkApproving(true);
+    let ok = 0; const failed: string[] = [];
+    for (const o of actionable) {
+      try {
+        if (o.status === 'amendment_requested') await purchaseOrdersApi.approveAmendment(o.id);
+        else await purchaseOrdersApi.approve(o.id);
+        ok += 1;
+      } catch { failed.push(o.order_number); }
+    }
+    setBulkApproving(false);
+    queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+    queryClient.invalidateQueries({ queryKey: ['po-kpi'] });
+    queryClient.invalidateQueries({ queryKey: ['pending-count'] });
+    clearSelection();
+    if (!failed.length) toast(`Approved ${ok} purchase order${ok !== 1 ? 's' : ''}`, 'success');
+    else if (!ok)       toast(`Failed to approve: ${failed.join(', ')}`, 'error');
+    else                toast(`Approved ${ok} — failed: ${failed.join(', ')}`, 'warning');
+  };
+
   const columns = useMemo((): Column<PurchaseOrder>[] => [
     {
       key: 'number', header: 'Order #',
@@ -204,17 +234,26 @@ export default function PurchaseOrdersPage() {
       isLoading={isLoading}
       error={error}
       onRowClick={o => router.push(`/purchase-orders/${o.id}`)}
-      selectable={canDelete}
+      selectable={canDelete || canApprove}
       tableState={tableState}
       paginatedData={data}
       pageSize={50}
       emptyTitle="No purchase orders found"
       emptyAction={canCreate ? <Link href="/purchase-orders/new"><Button variant="primary">Create Purchase Order</Button></Link> : undefined}
       bulkActions={
-        canDelete ? (
-          <Button variant="destructive" onClick={handleBulkDelete}>
-            Delete {selectedItems.size}
-          </Button>
+        (canDelete || canApprove) ? (
+          <div style={{ display: 'flex', gap: 8 }}>
+            {canApprove && (
+              <Button variant="success" isLoading={bulkApproving} onClick={handleBulkApprove}>
+                Approve {selectedItems.size}
+              </Button>
+            )}
+            {canDelete && (
+              <Button variant="destructive" onClick={handleBulkDelete}>
+                Delete {selectedItems.size}
+              </Button>
+            )}
+          </div>
         ) : undefined
       }
     />
