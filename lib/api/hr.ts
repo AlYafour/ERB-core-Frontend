@@ -557,7 +557,23 @@ export interface AttendanceTimesheet {
   };
   company: { name: string | null; name_ar: string | null };
   period: { from: string; to: string; days: number };
-  totals: { present_days: number; work_hours: number; overtime_hours: number; records: number };
+  status: 'GOOD' | 'NEEDS_ATTENTION' | 'CRITICAL';
+  attention: string[];
+  totals: {
+    present_days: number;
+    expected_working_days: number;
+    attendance_rate: number | null;
+    work_hours: number;
+    expected_hours: number;
+    overtime_hours: number;
+    late_days: number;
+    absent_days: number;
+    missing_check_ins: number;
+    missing_check_outs: number;
+    complete_records: number;
+    incomplete_records: number;
+    records: number;
+  };
   rows: HRAttendance[];
 }
 
