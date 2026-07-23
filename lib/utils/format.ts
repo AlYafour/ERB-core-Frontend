@@ -36,6 +36,19 @@ export function formatPrice(value: number | string | null | undefined, decimals:
 }
 
 /**
+ * Currency-aware money formatter: "AED 1,234.56". Pair with useBaseCurrency()
+ * so displays follow the tenant's chosen base currency instead of a hardcoded
+ * one. `currency` defaults to AED for callers without tenant context.
+ */
+export function formatMoney(
+  value: number | string | null | undefined,
+  currency: string = 'AED',
+  decimals: number = 2,
+): string {
+  return `${currency} ${formatNumber(value, decimals)}`;
+}
+
+/**
  * Format percentage
  */
 export function formatPercentage(value: number | string | null | undefined, decimals: number = 2): string {

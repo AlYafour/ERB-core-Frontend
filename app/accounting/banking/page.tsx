@@ -20,11 +20,14 @@ import {
   accountingApi, type BankAccount, type BankStatement, type MatchSuggestion,
 } from '@/lib/api/accounting';
 import { usersApi } from '@/lib/api/users';
+import { useBaseCurrency } from '@/lib/hooks/use-base-currency';
 
 type UserOpt = { id: number; label: string };
 
-const fmt = (v: string | number) =>
-  `AED ${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+// Currency defaults to AED but follows the tenant's base currency when a
+// caller passes it (the page threads useBaseCurrency() through).
+const fmt = (v: string | number, ccy = 'AED') =>
+  `${ccy} ${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const CARD: React.CSSProperties = {
   background: 'var(--surface-1, var(--card-bg))',
@@ -50,6 +53,8 @@ const KIND_LABEL: Record<string, string> = {
 
 function BankingPageInner() {
   const queryClient = useQueryClient();
+  const ccy = useBaseCurrency();
+  const money = (v: string | number) => fmt(v, ccy);
   // false = closed · true = blank form · string = create a SUB under that main
   const [showNewBox, setShowNewBox] = useState<boolean | string>(false);
   const [transferFrom, setTransferFrom] = useState<BankAccount | null>(null);
@@ -128,7 +133,7 @@ function BankingPageInner() {
           ].map(k => (
             <div key={k.label} style={{ ...CARD, padding: '12px 16px' }}>
               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>{k.label}</div>
-              <div style={{ fontSize: 20, fontWeight: 800, fontFamily: 'monospace', color: k.value < 0 ? 'var(--status-error)' : 'var(--text-primary)' }}>{fmt(k.value)}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, fontFamily: 'monospace', color: k.value < 0 ? 'var(--status-error)' : 'var(--text-primary)' }}>{money(k.value)}</div>
             </div>
           ))}
         </div>
@@ -162,7 +167,7 @@ function BankingPageInner() {
               <div style={{ textAlign: 'end' }}>
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Balance</div>
                 <div style={{ fontSize: 20, fontWeight: 800, fontFamily: 'monospace', color: Number(main.balance ?? 0) < 0 ? 'var(--status-error)' : 'var(--text-primary)' }}>
-                  {fmt(main.balance ?? 0)}
+                  {money(main.balance ?? 0)}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -211,7 +216,7 @@ function BankingPageInner() {
                 </div>
                 <div style={{ textAlign: 'end', minWidth: 120 }}>
                   <span style={{ fontSize: 'var(--text-base)', fontWeight: 800, fontFamily: 'monospace', color: Number(b.balance ?? 0) < 0 ? 'var(--status-error)' : 'var(--text-primary)' }}>
-                    {fmt(b.balance ?? 0)}
+                    {money(b.balance ?? 0)}
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
@@ -275,7 +280,7 @@ function BankingPageInner() {
                 </div>
                 <div style={{ textAlign: 'end', minWidth: 120 }}>
                   <span style={{ fontSize: 'var(--text-base)', fontWeight: 800, fontFamily: 'monospace', color: Number(b.balance ?? 0) < 0 ? 'var(--status-error)' : 'var(--text-primary)' }}>
-                    {fmt(b.balance ?? 0)}
+                    {money(b.balance ?? 0)}
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
