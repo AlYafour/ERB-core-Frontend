@@ -266,11 +266,11 @@ export default function HRAttendancePage() {
     let from = flt.date_after || flt.date;
     let to = flt.date_before || flt.date;
     if (!from || !to) {
+      // Default: 1st of the current month → today.
       const now = new Date();
       const first = new Date(now.getFullYear(), now.getMonth(), 1);
-      const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       from = from || first.toISOString().split('T')[0];
-      to = to || last.toISOString().split('T')[0];
+      to = to || now.toISOString().split('T')[0];
     }
     window.open(`/print/attendance/${employeeId}?from=${from}&to=${to}`, '_blank');
   };

@@ -21,6 +21,7 @@ import { PrintControlsBar } from '@/components/print/PrintControlsBar';
 
 const NAVY = '#1a1a2e';
 const GREY = '#64748b';
+const BORDER = '#e2e8f0';
 
 const STATUS_LABEL: Record<string, string> = {
   present: 'Present', absent: 'Absent', late: 'Late',
@@ -73,6 +74,23 @@ export default function PrintAttendancePage() {
   const emp = data.employee;
   const periodLabel = `${fmtDate(data.period.from)} — ${fmtDate(data.period.to)}`;
 
+  // Per-row completeness + summary for the KPI strip.
+  const rowState = (r: typeof data.rows[number]) => {
+    const hasIn = !!r.check_in, hasOut = !!r.check_out;
+    if (hasIn && hasOut) return { key: 'complete', label: 'Complete', color: '#15803d', bg: '#f0fdf4' };
+    if (hasIn && !hasOut) return { key: 'no_out', label: 'No check-out', color: '#b45309', bg: '#fffbeb' };
+    if (!hasIn && hasOut) return { key: 'no_in', label: 'No check-in', color: '#b45309', bg: '#fffbeb' };
+    return { key: 'none', label: '—', color: GREY, bg: '#fff' };
+  };
+  const complete = data.rows.filter(r => rowState(r).key === 'complete').length;
+  const incomplete = data.rows.filter(r => ['no_in', 'no_out'].includes(rowState(r).key)).length;
+  const KPI = [
+    { label: 'Present Days', value: `${data.totals.present_days}`, sub: `of ${data.period.days} days`, color: NAVY },
+    { label: 'Total Work Hours', value: data.totals.work_hours.toFixed(2), sub: 'hours', color: '#15803d' },
+    { label: 'Overtime', value: data.totals.overtime_hours.toFixed(2), sub: 'hours', color: '#b45309' },
+    { label: 'Complete / Incomplete', value: `${complete} / ${incomplete}`, sub: 'punch days', color: incomplete ? '#b45309' : '#15803d' },
+  ];
+
   return (
     <div className="print-page-bg" style={{ minHeight: '100vh', background: '#f1f5f9', fontFamily: "'Inter','Cairo','Segoe UI',sans-serif", fontSize: '12px' }}>
       <PrintControlsBar
@@ -108,60 +126,76 @@ export default function PrintAttendancePage() {
               <SectionTitle>Period</SectionTitle>
               <InfoGrid rows={[
                 ['Period', periodLabel],
-                ['Employment', emp.employment_type ?? '—'],
+                ['Employment', (emp.employment_type ?? '—').replace('_', ' ')],
                 ['Join Date', emp.join_date ? fmtDate(emp.join_date) : '—'],
                 ['Labour Card', emp.labor_card ?? '—'],
-                ['Present Days', `${data.totals.present_days} of ${data.period.days}`],
               ]} />
             </div>
+          </div>
+
+          {/* KPI summary strip */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 14 }}>
+            {KPI.map((k, i) => (
+              <div key={i} style={{
+                border: `1px solid ${BORDER}`, borderRadius: 8, padding: '9px 12px',
+                background: '#fafafa', borderTop: `2.5px solid ${k.color}`,
+              }}>
+                <div style={{ fontSize: '6.5pt', fontWeight: 700, letterSpacing: '.5px', textTransform: 'uppercase', color: GREY }}>{k.label}</div>
+                <div style={{ fontSize: '15pt', fontWeight: 800, color: k.color, lineHeight: 1.15, marginTop: 2, fontFamily: 'monospace' }}>{k.value}</div>
+                <div style={{ fontSize: '6.5pt', color: '#94a3b8' }}>{k.sub}</div>
+              </div>
+            ))}
           </div>
 
           {/* Daily log */}
           <SectionTitle>Daily Attendance</SectionTitle>
           <PrintTable headers={[
-            { label: 'Date', width: 78 },
-            { label: 'Day', align: 'center', width: 40 },
-            { label: 'Check In', align: 'center', width: 60 },
-            { label: 'Break Out', align: 'center', width: 62 },
-            { label: 'Break In', align: 'center', width: 60 },
-            { label: 'Check Out', align: 'center', width: 62 },
-            { label: 'Work Hrs', align: 'right', width: 55 },
-            { label: 'OT', align: 'right', width: 42 },
-            { label: 'Status', align: 'center', width: 62 },
-            { label: 'Notes' },
+            { label: 'Date', width: 74 },
+            { label: 'Day', align: 'center', width: 38 },
+            { label: 'Check In', align: 'center', width: 58 },
+            { label: 'Break Out', align: 'center', width: 60 },
+            { label: 'Break In', align: 'center', width: 58 },
+            { label: 'Check Out', align: 'center', width: 60 },
+            { label: 'Work Hrs', align: 'right', width: 52 },
+            { label: 'OT', align: 'right', width: 38 },
+            { label: 'Record', align: 'center', width: 78 },
           ]}
             footer={
-              <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0', fontWeight: 700 }}>
-                <td colSpan={6} style={{ padding: '7px 10px', fontSize: '8.5pt', color: GREY }}>
-                  TOTALS — {data.totals.present_days} present day(s)
+              <tr style={{ background: NAVY, color: '#fff', fontWeight: 800 }}>
+                <td colSpan={6} style={{ padding: '8px 10px', fontSize: '8.5pt' }}>
+                  TOTAL — {data.totals.present_days} present day(s)
                 </td>
-                <td style={{ padding: '7px 10px', textAlign: 'right' }}>{data.totals.work_hours.toFixed(2)}</td>
-                <td style={{ padding: '7px 10px', textAlign: 'right', color: '#b45309' }}>{data.totals.overtime_hours.toFixed(2)}</td>
-                <td colSpan={2} />
+                <td style={{ padding: '8px 10px', textAlign: 'right', fontFamily: 'monospace' }}>{data.totals.work_hours.toFixed(2)}</td>
+                <td style={{ padding: '8px 10px', textAlign: 'right', fontFamily: 'monospace' }}>{data.totals.overtime_hours.toFixed(2)}</td>
+                <td />
               </tr>
             }
           >
             {data.rows.length === 0 ? (
-              <tr><td colSpan={10} style={{ padding: '10px', textAlign: 'center', color: '#94a3b8' }}>No records in this period.</td></tr>
-            ) : data.rows.map((r, idx) => (
-              <tr key={r.id ?? idx} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? '#fff' : '#fafafa' }}>
-                <td style={{ padding: '6px 10px', whiteSpace: 'nowrap' }}>{fmtDate(r.date)}</td>
+              <tr><td colSpan={9} style={{ padding: '10px', textAlign: 'center', color: '#94a3b8' }}>No records in this period.</td></tr>
+            ) : data.rows.map((r, idx) => {
+              const st = rowState(r);
+              return (
+              <tr key={r.id ?? idx} style={{ borderBottom: '1px solid #f1f5f9', background: st.key === 'complete' ? (idx % 2 === 0 ? '#fff' : '#fafafa') : st.bg }}>
+                <td style={{ padding: '6px 10px', whiteSpace: 'nowrap', fontWeight: 600, color: NAVY }}>{fmtDate(r.date)}</td>
                 <td style={{ padding: '6px 10px', textAlign: 'center', color: GREY }}>{fmtDow(r.date)}</td>
-                <td style={{ padding: '6px 10px', textAlign: 'center', fontFamily: 'monospace' }}>{fmtTime(r.check_in)}</td>
-                <td style={{ padding: '6px 10px', textAlign: 'center', fontFamily: 'monospace', color: '#b45309' }}>{fmtTime(r.break_start)}</td>
-                <td style={{ padding: '6px 10px', textAlign: 'center', fontFamily: 'monospace', color: '#b45309' }}>{fmtTime(r.break_end)}</td>
-                <td style={{ padding: '6px 10px', textAlign: 'center', fontFamily: 'monospace' }}>{fmtTime(r.check_out)}</td>
-                <td style={{ padding: '6px 10px', textAlign: 'right', fontFamily: 'monospace' }}>{r.work_hours != null ? Number(r.work_hours).toFixed(2) : '—'}</td>
-                <td style={{ padding: '6px 10px', textAlign: 'right', fontFamily: 'monospace', color: Number(r.overtime_hours) > 0 ? '#b45309' : '#94a3b8' }}>{r.overtime_hours != null ? Number(r.overtime_hours).toFixed(2) : '—'}</td>
+                <td style={{ padding: '6px 10px', textAlign: 'center', fontFamily: 'monospace', color: r.check_in ? NAVY : '#cbd5e1' }}>{fmtTime(r.check_in)}</td>
+                <td style={{ padding: '6px 10px', textAlign: 'center', fontFamily: 'monospace', color: r.break_start ? '#b45309' : '#cbd5e1' }}>{fmtTime(r.break_start)}</td>
+                <td style={{ padding: '6px 10px', textAlign: 'center', fontFamily: 'monospace', color: r.break_end ? '#b45309' : '#cbd5e1' }}>{fmtTime(r.break_end)}</td>
+                <td style={{ padding: '6px 10px', textAlign: 'center', fontFamily: 'monospace', color: r.check_out ? NAVY : '#cbd5e1' }}>{fmtTime(r.check_out)}</td>
+                <td style={{ padding: '6px 10px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 600 }}>{r.work_hours != null ? Number(r.work_hours).toFixed(2) : '—'}</td>
+                <td style={{ padding: '6px 10px', textAlign: 'right', fontFamily: 'monospace', color: Number(r.overtime_hours) > 0 ? '#b45309' : '#cbd5e1' }}>{Number(r.overtime_hours) > 0 ? Number(r.overtime_hours).toFixed(2) : '—'}</td>
                 <td style={{ padding: '6px 10px', textAlign: 'center' }}>
-                  <span style={{ fontSize: '7.5pt', fontWeight: 700, color: STATUS_COLOR[r.status] ?? GREY }}>
-                    {STATUS_LABEL[r.status] ?? r.status}
+                  <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 4, fontSize: '6.5pt', fontWeight: 700, letterSpacing: '.3px', textTransform: 'uppercase', color: st.color, border: `1px solid ${st.color}`, background: '#fff' }}>
+                    {st.label}
                   </span>
                 </td>
-                <td style={{ padding: '6px 10px', fontSize: '8pt', color: '#555' }}>{r.notes || '—'}</td>
               </tr>
-            ))}
+            );})}
           </PrintTable>
+          <p style={{ fontSize: '7pt', color: '#94a3b8', margin: '6px 0 0' }}>
+            &ldquo;No check-in / No check-out&rdquo; marks a day where a punch is missing on the device or app — the recorded punches are shown as captured.
+          </p>
 
           <div style={{ flex: 1 }} />
 
