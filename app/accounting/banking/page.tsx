@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
@@ -141,12 +142,12 @@ export default function BankingPage() {
               </div>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <a href={`/accounting/banking/${main.id}`}
+                  <Link href={`/accounting/banking/${main.id}`}
                      style={{ fontWeight: 800, fontSize: 'var(--text-base)', color: 'var(--text-primary)', textDecoration: 'none' }}
                      onMouseEnter={e => { e.currentTarget.style.color = 'var(--brand)'; }}
                      onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-primary)'; }}>
                     {main.name} →
-                  </a>
+                  </Link>
                   <Badge variant="info">Main Account</Badge>
                 </div>
                 <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 3, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
@@ -184,12 +185,12 @@ export default function BankingPage() {
                 <span style={{ color: 'var(--brand)', fontWeight: 800, flexShrink: 0 }}>└</span>
                 <div style={{ flex: 1, minWidth: 180 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <a href={`/accounting/banking/${b.id}`}
+                    <Link href={`/accounting/banking/${b.id}`}
                        style={{ fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none' }}
                        onMouseEnter={e => { e.currentTarget.style.color = 'var(--brand)'; }}
                        onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-primary)'; }}>
                       {b.name} →
-                    </a>
+                    </Link>
                     <Badge variant="default">{KIND_LABEL[b.kind]}</Badge>
                   </div>
                   <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -215,9 +216,9 @@ export default function BankingPage() {
                   <Button variant="ghost" size="sm" title="Edit account" onClick={() => setEditAccount(b)}>✎</Button>
                   <Button variant="secondary" size="sm" onClick={() => setTransferFrom(b)}>Transfer</Button>
                   {b.kind === 'petty_cash' && (
-                    <a href={`/expenses/cash-boxes/${b.id}`} style={{ fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 700, alignSelf: 'center' }}>
+                    <Link href={`/expenses/cash-boxes/${b.id}`} style={{ fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 700, alignSelf: 'center' }}>
                       Open box →
-                    </a>
+                    </Link>
                   )}
                 </div>
               </div>
@@ -242,12 +243,12 @@ export default function BankingPage() {
               }}>
                 <div style={{ flex: 1, minWidth: 180 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <a href={`/accounting/banking/${b.id}`}
+                    <Link href={`/accounting/banking/${b.id}`}
                        style={{ fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none' }}
                        onMouseEnter={e => { e.currentTarget.style.color = 'var(--brand)'; }}
                        onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-primary)'; }}>
                       {b.name} →
-                    </a>
+                    </Link>
                     <Badge variant="default">{KIND_LABEL[b.kind]}</Badge>
                   </div>
                   <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>Ledger {b.ledger_account_code}</div>
@@ -279,9 +280,9 @@ export default function BankingPage() {
                   <Button variant="ghost" size="sm" title="Edit account" onClick={() => setEditAccount(b)}>✎</Button>
                   <Button variant="secondary" size="sm" onClick={() => setTransferFrom(b)}>Transfer</Button>
                   {b.kind === 'petty_cash' && (
-                    <a href={`/expenses/cash-boxes/${b.id}`} style={{ fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 700, alignSelf: 'center' }}>
+                    <Link href={`/expenses/cash-boxes/${b.id}`} style={{ fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 700, alignSelf: 'center' }}>
                       Open box →
-                    </a>
+                    </Link>
                   )}
                 </div>
               </div>

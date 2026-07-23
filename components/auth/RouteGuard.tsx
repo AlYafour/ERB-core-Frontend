@@ -27,20 +27,21 @@ export default function RouteGuard({
   const router = useRouter();
   const { hasPermission, isLoading: permissionsLoading } = usePermissions();
   const { user, isLoading: authLoading } = useAuth();
-  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const { isTenantAdmin, isPlatformAdmin, isLoading: myPermsLoading } = useMyPermissions();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (authLoading || permissionsLoading) {
+    // Wait for EVERY permission source before deciding — deciding while
+    // my-permissions is still in flight bounced admins off pages they
+    // fully own (hard-reload race).
+    if (authLoading || permissionsLoading || (user && myPermsLoading)) {
       return;
     }
 
     if (!user) {
-      if (redirectTo) {
-        router.push(redirectTo);
-      } else {
-        router.push('/login');
-      }
+      // Not logged in — that's a login problem, never a permission
+      // redirect (redirectTo used to swallow mid-hydration states).
+      router.push('/login');
       return;
     }
 
@@ -53,10 +54,10 @@ export default function RouteGuard({
     if (!hasAccess && redirectTo) {
       router.push(redirectTo);
     }
-  }, [user, authLoading, permissionsLoading, isTenantAdmin, isPlatformAdmin, hasPermission, requiredPermission, anyOfPermissions, redirectTo, router]);
+  }, [user, authLoading, permissionsLoading, myPermsLoading, isTenantAdmin, isPlatformAdmin, hasPermission, requiredPermission, anyOfPermissions, redirectTo, router]);
 
   // Show loading while checking permissions
-  if (authLoading || permissionsLoading || isAuthorized === null) {
+  if (authLoading || permissionsLoading || (user && myPermsLoading) || isAuthorized === null) {
     return (
       <MainLayout>
         <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-12)' }}>
