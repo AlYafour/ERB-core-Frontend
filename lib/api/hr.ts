@@ -575,6 +575,17 @@ export interface AttendanceTimesheet {
     records: number;
   };
   rows: HRAttendance[];
+  /** Complete day-by-day series across the whole period (present/absent/off/upcoming). */
+  days: Array<{
+    date: string;
+    kind: 'present' | 'absent' | 'off' | 'upcoming';
+    check_in: string | null;
+    break_start: string | null;
+    break_end: string | null;
+    check_out: string | null;
+    work_hours: number | null;
+    overtime_hours: number | null;
+  }>;
 }
 
 /** Optional fingerprint assertion attached to a self clock-in/out. */

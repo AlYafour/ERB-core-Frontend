@@ -85,8 +85,11 @@ export default function PrintAttendancePage() {
   const reportId = `ATT-${emp.employee_id}-${(data.period.to || '').replace(/-/g, '')}`;
   const companyName = brand?.company_legal_name || data.company.name || 'Company';
 
-  const rowState = (r: AttendanceTimesheet['rows'][number]) => {
-    if (r.check_in && r.check_out) return { key: 'ok',  icon: '✓', label: 'Complete',        ...GOOD };
+  const dayState = (r: AttendanceTimesheet['days'][number]) => {
+    if (r.kind === 'off')      return { key: 'off', icon: '·', label: 'Weekend / Off', ...NEUT };
+    if (r.kind === 'upcoming') return { key: 'up',  icon: '·', label: 'Upcoming',      ...NEUT };
+    if (r.kind === 'absent')   return { key: 'ab',  icon: '✕', label: 'Absent',        ...CRIT };
+    if (r.check_in && r.check_out) return { key: 'ok', icon: '✓', label: 'Complete',        ...GOOD };
     if (r.check_in && !r.check_out) return { key: 'no', icon: '!', label: 'Missing check-out', ...WARN };
     if (!r.check_in && r.check_out) return { key: 'ni', icon: '!', label: 'Missing check-in',  ...WARN };
     return { key: 'rv', icon: '!', label: 'Review required', ...WARN };
@@ -230,21 +233,30 @@ export default function PrintAttendancePage() {
             </tr>
           </thead>
           <tbody>
-            {data.rows.length === 0 ? (
-              <tr><td colSpan={9} style={{ padding: 16, textAlign: 'center', color: FAINT }}>No records in this period.</td></tr>
-            ) : data.rows.map((r, idx) => {
-              const s = rowState(r);
+            {data.days.length === 0 ? (
+              <tr><td colSpan={9} style={{ padding: 16, textAlign: 'center', color: FAINT }}>No days in this period.</td></tr>
+            ) : data.days.map((r, idx) => {
+              const s = dayState(r);
               const alt = idx % 2 === 1;
+              const noPunch = s.key === 'off' || s.key === 'up' || s.key === 'ab';
+              const dash = (v: string | null, on: string) =>
+                <span style={{ color: v ? on : '#cbd5e1', fontFamily: 'monospace' }}>{fmtTime(v)}</span>;
               return (
-                <tr key={r.id ?? idx} style={{ background: s.key === 'ok' ? (alt ? '#fbfcfd' : '#fff') : s.bg, borderBottom: `1px solid ${LINE}` }}>
-                  <td style={{ padding: '7px 10px', fontWeight: 700, color: NAVY, whiteSpace: 'nowrap' }}>{fmtDate(r.date)}</td>
+                <tr key={r.date ?? idx} style={{ background: s.key === 'ok' ? (alt ? '#fbfcfd' : '#fff') : s.bg, borderBottom: `1px solid ${LINE}` }}>
+                  <td style={{ padding: '7px 10px', fontWeight: 700, color: s.key === 'ab' ? CRIT.fg : NAVY, whiteSpace: 'nowrap' }}>{fmtDate(r.date)}</td>
                   <td style={{ padding: '7px 10px', textAlign: 'center', color: MUTE }}>{fmtDow(r.date)}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'center', fontFamily: 'monospace', color: r.check_in ? INK : '#cbd5e1' }}>{fmtTime(r.check_in)}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'center', fontFamily: 'monospace', color: r.break_start ? ORANGE : '#cbd5e1' }}>{fmtTime(r.break_start)}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'center', fontFamily: 'monospace', color: r.break_end ? ORANGE : '#cbd5e1' }}>{fmtTime(r.break_end)}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'center', fontFamily: 'monospace', color: r.check_out ? INK : '#cbd5e1' }}>{fmtTime(r.check_out)}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>{r.work_hours != null ? Number(r.work_hours).toFixed(2) : '—'}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'monospace', color: Number(r.overtime_hours) > 0 ? ORANGE : '#cbd5e1' }}>{Number(r.overtime_hours) > 0 ? Number(r.overtime_hours).toFixed(2) : '—'}</td>
+                  {noPunch ? (
+                    <td colSpan={6} style={{ padding: '7px 10px', textAlign: 'center', color: FAINT, fontStyle: 'italic', fontSize: '7.6pt' }}>
+                      {s.key === 'ab' ? 'No attendance recorded' : s.key === 'off' ? 'Non-working day' : 'Upcoming'}
+                    </td>
+                  ) : (<>
+                    <td style={{ padding: '7px 10px', textAlign: 'center' }}>{dash(r.check_in, INK)}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center' }}>{dash(r.break_start, ORANGE)}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center' }}>{dash(r.break_end, ORANGE)}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center' }}>{dash(r.check_out, INK)}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>{r.work_hours != null ? Number(r.work_hours).toFixed(2) : '—'}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'monospace', color: Number(r.overtime_hours) > 0 ? ORANGE : '#cbd5e1' }}>{Number(r.overtime_hours) > 0 ? Number(r.overtime_hours).toFixed(2) : '—'}</td>
+                  </>)}
                   <td style={{ padding: '7px 10px' }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '7pt', fontWeight: 700, color: s.fg }}>
                       <span style={{ width: 13, height: 13, borderRadius: '50%', background: s.fg, color: '#fff',
