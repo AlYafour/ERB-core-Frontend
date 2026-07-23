@@ -243,7 +243,7 @@ export const hrPositionsApi = {
 // ── Attendance ─────────────────────────────────────────────────────────────────
 
 export const hrAttendanceApi = {
-  getAll: async (params?: { page?: number; search?: string; employee?: number; status?: string; date?: string }): Promise<PaginatedResponse<HRAttendance>> => {
+  getAll: async (params?: { page?: number; search?: string; employee?: number; status?: string; date?: string; date_after?: string; date_before?: string; page_size?: number; ordering?: string }): Promise<PaginatedResponse<HRAttendance>> => {
     const response = await apiClient.get('/hr/attendance/', { params });
     return response.data;
   },

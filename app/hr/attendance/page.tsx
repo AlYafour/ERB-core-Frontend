@@ -159,13 +159,14 @@ function AttendanceEditModal({
 
 // ── Today + Export buttons ────────────────────────────────────
 function QuickActions({
-  isToday, onToday, onExport, onRecalcAll, hasRecords,
+  isToday, onToday, onExport, onRecalcAll, hasRecords, exporting,
 }: {
   isToday: boolean;
   onToday: () => void;
   onExport: () => void;
   onRecalcAll: () => void;
   hasRecords: boolean;
+  exporting?: boolean;
 }) {
   const btnStyle: React.CSSProperties = {
     fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)',
@@ -191,11 +192,11 @@ function QuickActions({
         ↻ Recalculate Overtime
       </button>
       {hasRecords && (
-        <button style={btnStyle} onClick={onExport}>
+        <button style={{ ...btnStyle, opacity: exporting ? 0.6 : 1 }} onClick={onExport} disabled={exporting}>
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
-          Export CSV
+          {exporting ? 'Exporting…' : 'Export CSV (full period)'}
         </button>
       )}
     </div>
@@ -257,25 +258,56 @@ export default function HRAttendancePage() {
     onError: () => toast('Bulk recalculation failed', 'error'),
   });
 
-  const exportCSV = () => {
-    if (!records.length) return;
-    const header = ['Employee', 'ID', 'Date', 'Check In', 'Check Out', 'Work Hours', 'Overtime', 'Status', 'Notes'];
-    const rows = records.map(r => [
-      r.employee_name, r.employee_id_code, r.date,
-      formatTime(r.check_in), formatTime(r.check_out),
-      r.work_hours ?? '', r.overtime_hours ?? '',
-      STATUS_LABEL[r.status] || r.status, r.notes ?? '',
-    ]);
-    const csv = [header, ...rows]
-      .map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `attendance-${(filters as Record<string, string>).date || todayStr}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const [exporting, setExporting] = useState(false);
+  const exportCSV = async () => {
+    setExporting(true);
+    try {
+      // Export the WHOLE filtered period, not just the page on screen: pull
+      // every matching row (paged up to the server max), sorted by date.
+      const flt = filters as Record<string, string>;
+      const all: HRAttendance[] = [];
+      let pageNum = 1;
+      for (;;) {
+        const resp = await hrAttendanceApi.getAll({
+          ...flt, search, page: pageNum, page_size: 500, ordering: 'date',
+        } as Record<string, string | number>);
+        const batch = Array.isArray(resp?.results) ? resp.results : [];
+        all.push(...batch);
+        if (!resp?.next || !batch.length) break;
+        pageNum += 1;
+        if (pageNum > 200) break; // hard safety cap (~100k rows)
+      }
+      if (!all.length) { toast('No records match the current filters', 'info'); return; }
+
+      const header = ['Employee', 'ID', 'Date', 'Check In', 'Break Out', 'Break In',
+                      'Check Out', 'Work Hours', 'Overtime', 'Status', 'Notes'];
+      const rows = all.map(r => [
+        r.employee_name, r.employee_id_code, r.date,
+        formatTime(r.check_in), formatTime(r.break_start), formatTime(r.break_end),
+        formatTime(r.check_out),
+        r.work_hours ?? '', r.overtime_hours ?? '',
+        STATUS_LABEL[r.status] || r.status, r.notes ?? '',
+      ]);
+      const csv = [header, ...rows]
+        .map(row => row.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const from = flt.date_after || flt.date;
+      const to = flt.date_before || flt.date;
+      a.download = from && to && from !== to
+        ? `attendance-${from}_to_${to}.csv`
+        : `attendance-${from || todayStr}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast(`Exported ${all.length} record${all.length !== 1 ? 's' : ''}`, 'success');
+    } catch {
+      toast('Export failed — please try again', 'error');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const columns = useMemo((): Column<HRAttendance>[] => [
@@ -378,6 +410,7 @@ export default function HRAttendancePage() {
           onExport={exportCSV}
           onRecalcAll={() => bulkRecalcMutation.mutate()}
           hasRecords={records.length > 0}
+          exporting={exporting}
         />
       }
       filterFields={filterFields}
