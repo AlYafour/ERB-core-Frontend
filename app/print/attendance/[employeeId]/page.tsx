@@ -222,13 +222,20 @@ export default function PrintAttendancePage() {
 
         {/* ── DAILY TABLE ─────────────────────────────────────────── */}
         <SectionLabel style={{ marginTop: 16 }}>Daily Attendance</SectionLabel>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.4pt' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.2pt', tableLayout: 'fixed' }}>
+          <colgroup>
+            <col style={{ width: '14%' }} /><col style={{ width: '6%' }} />
+            <col style={{ width: '10.5%' }} /><col style={{ width: '10.5%' }} />
+            <col style={{ width: '10.5%' }} /><col style={{ width: '10.5%' }} />
+            <col style={{ width: '8%' }} /><col style={{ width: '7%' }} />
+            <col style={{ width: '22.5%' }} />
+          </colgroup>
           <thead>
             <tr style={{ background: NAVY, color: '#fff' }}>
-              {[['Date','left'],['Day','center'],['Check In','center'],['Break Out','center'],['Break In','center'],['Check Out','center'],['Work','right'],['OT','right'],['Status','left']]
+              {([['Date','left'],['Day','center'],['In','center'],['Break Out','center'],['Break In','center'],['Out','center'],['Work','right'],['OT','right'],['Status','left']] as const)
                 .map(([h, a], i) => (
-                <th key={i} style={{ padding: '8px 10px', textAlign: a as 'left'|'center'|'right',
-                  fontSize: '6.8pt', fontWeight: 700, letterSpacing: '.5px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                <th key={i} style={{ padding: '7px 9px', textAlign: a,
+                  fontSize: '6.6pt', fontWeight: 700, letterSpacing: '.6px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -238,29 +245,25 @@ export default function PrintAttendancePage() {
             ) : data.days.map((r, idx) => {
               const s = dayState(r);
               const alt = idx % 2 === 1;
-              const noPunch = s.key === 'off' || s.key === 'up' || s.key === 'ab';
-              const dash = (v: string | null, on: string) =>
-                <span style={{ color: v ? on : '#cbd5e1', fontFamily: 'monospace' }}>{fmtTime(v)}</span>;
+              const rowBg = s.key === 'ab' ? '#fdf4f4' : s.key === 'off' ? '#f8fafc'
+                          : s.key === 'up' ? '#fff' : (alt ? '#fafbfc' : '#fff');
+              const t = (v: string | null, on: string) =>
+                <span style={{ color: v ? on : '#d3dae2', fontFamily: 'monospace', fontSize: '8pt' }}>{fmtTime(v)}</span>;
               return (
-                <tr key={r.date ?? idx} style={{ background: s.key === 'ok' ? (alt ? '#fbfcfd' : '#fff') : s.bg, borderBottom: `1px solid ${LINE}` }}>
-                  <td style={{ padding: '7px 10px', fontWeight: 700, color: s.key === 'ab' ? CRIT.fg : NAVY, whiteSpace: 'nowrap' }}>{fmtDate(r.date)}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'center', color: MUTE }}>{fmtDow(r.date)}</td>
-                  {noPunch ? (
-                    <td colSpan={6} style={{ padding: '7px 10px', textAlign: 'center', color: FAINT, fontStyle: 'italic', fontSize: '7.6pt' }}>
-                      {s.key === 'ab' ? 'No attendance recorded' : s.key === 'off' ? 'Non-working day' : 'Upcoming'}
-                    </td>
-                  ) : (<>
-                    <td style={{ padding: '7px 10px', textAlign: 'center' }}>{dash(r.check_in, INK)}</td>
-                    <td style={{ padding: '7px 10px', textAlign: 'center' }}>{dash(r.break_start, ORANGE)}</td>
-                    <td style={{ padding: '7px 10px', textAlign: 'center' }}>{dash(r.break_end, ORANGE)}</td>
-                    <td style={{ padding: '7px 10px', textAlign: 'center' }}>{dash(r.check_out, INK)}</td>
-                    <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>{r.work_hours != null ? Number(r.work_hours).toFixed(2) : '—'}</td>
-                    <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'monospace', color: Number(r.overtime_hours) > 0 ? ORANGE : '#cbd5e1' }}>{Number(r.overtime_hours) > 0 ? Number(r.overtime_hours).toFixed(2) : '—'}</td>
-                  </>)}
-                  <td style={{ padding: '7px 10px' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '7pt', fontWeight: 700, color: s.fg }}>
-                      <span style={{ width: 13, height: 13, borderRadius: '50%', background: s.fg, color: '#fff',
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '8pt', flexShrink: 0 }}>{s.icon}</span>
+                <tr key={r.date ?? idx} style={{ background: rowBg, borderBottom: `1px solid ${LINE}`,
+                  boxShadow: s.key === 'ab' ? `inset 2px 0 0 ${CRIT.fg}` : 'none' }}>
+                  <td style={{ padding: '6.5px 9px', fontWeight: 700, color: s.key === 'ab' ? CRIT.fg : NAVY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{fmtDate(r.date)}</td>
+                  <td style={{ padding: '6.5px 9px', textAlign: 'center', color: MUTE }}>{fmtDow(r.date)}</td>
+                  <td style={{ padding: '6.5px 9px', textAlign: 'center' }}>{t(r.check_in, INK)}</td>
+                  <td style={{ padding: '6.5px 9px', textAlign: 'center' }}>{t(r.break_start, ORANGE)}</td>
+                  <td style={{ padding: '6.5px 9px', textAlign: 'center' }}>{t(r.break_end, ORANGE)}</td>
+                  <td style={{ padding: '6.5px 9px', textAlign: 'center' }}>{t(r.check_out, INK)}</td>
+                  <td style={{ padding: '6.5px 9px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, fontSize: '8pt', color: r.work_hours != null ? INK : '#d3dae2' }}>{r.work_hours != null ? Number(r.work_hours).toFixed(2) : '—'}</td>
+                  <td style={{ padding: '6.5px 9px', textAlign: 'right', fontFamily: 'monospace', fontSize: '8pt', color: Number(r.overtime_hours) > 0 ? ORANGE : '#d3dae2' }}>{Number(r.overtime_hours) > 0 ? Number(r.overtime_hours).toFixed(2) : '—'}</td>
+                  <td style={{ padding: '6.5px 9px' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '7pt', fontWeight: 700, color: s.fg, whiteSpace: 'nowrap' }}>
+                      <span style={{ width: 12, height: 12, borderRadius: '50%', background: s.fg, color: '#fff',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '7pt', flexShrink: 0, lineHeight: 1 }}>{s.icon}</span>
                       {s.label}
                     </span>
                   </td>
@@ -270,16 +273,18 @@ export default function PrintAttendancePage() {
           </tbody>
           <tfoot>
             <tr style={{ background: NAVY, color: '#fff', fontWeight: 800 }}>
-              <td colSpan={6} style={{ padding: '8px 10px', fontSize: '8pt' }}>TOTAL · {T.present_days} present of {T.expected_working_days} expected day(s)</td>
-              <td style={{ padding: '8px 10px', textAlign: 'right', fontFamily: 'monospace' }}>{T.work_hours.toFixed(2)}</td>
-              <td style={{ padding: '8px 10px', textAlign: 'right', fontFamily: 'monospace' }}>{T.overtime_hours.toFixed(2)}</td>
+              <td colSpan={6} style={{ padding: '8px 9px', fontSize: '7.6pt', letterSpacing: '.3px' }}>TOTAL · {T.present_days} present of {T.expected_working_days} expected day(s)</td>
+              <td style={{ padding: '8px 9px', textAlign: 'right', fontFamily: 'monospace' }}>{T.work_hours.toFixed(2)}</td>
+              <td style={{ padding: '8px 9px', textAlign: 'right', fontFamily: 'monospace' }}>{T.overtime_hours.toFixed(2)}</td>
               <td />
             </tr>
           </tfoot>
         </table>
-        <div style={{ fontSize: '6.8pt', color: FAINT, marginTop: 5, display: 'flex', gap: 14 }}>
-          <span><b style={{ color: GOOD.fg }}>✓</b> Complete = both check-in and check-out captured.</span>
-          <span><b style={{ color: WARN.fg }}>!</b> A punch is missing on the device or app; recorded punches shown as captured.</span>
+        <div style={{ fontSize: '6.6pt', color: FAINT, marginTop: 6, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <span><b style={{ color: GOOD.fg }}>✓ Complete</b> · both punches captured</span>
+          <span><b style={{ color: WARN.fg }}>! Missing</b> · a punch not recorded</span>
+          <span><b style={{ color: CRIT.fg }}>✕ Absent</b> · scheduled day, no attendance</span>
+          <span><b style={{ color: NEUT.fg }}>· Off</b> · non-working day</span>
         </div>
 
         <div style={{ flex: 1, minHeight: 16 }} />

@@ -266,13 +266,16 @@ export default function HRAttendancePage() {
     // A single-day filter must NOT shrink the timesheet to one day — the
     // report always spans a full period. Use an explicit range if the user
     // set one; otherwise default to the 1st of the month → today.
+    // Format from LOCAL parts — toISOString() shifts to UTC and rolls the
+    // 1st back to the previous month in +GMT timezones (Dubai = UTC+4).
+    const ymd = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const now = new Date();
-    const first = new Date(now.getFullYear(), now.getMonth(), 1);
     let from = flt.date_after;
     let to = flt.date_before;
     if (!from || !to) {
-      from = from || first.toISOString().split('T')[0];
-      to = to || now.toISOString().split('T')[0];
+      from = from || ymd(new Date(now.getFullYear(), now.getMonth(), 1));
+      to = to || ymd(now);
     }
     window.open(`/print/attendance/${employeeId}?from=${from}&to=${to}`, '_blank');
   };
