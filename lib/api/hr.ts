@@ -251,6 +251,10 @@ export const hrAttendanceApi = {
     const response = await apiClient.get(`/hr/attendance/${id}/`);
     return response.data;
   },
+  timesheet: async (params: { employee: number | string; date_after?: string; date_before?: string }): Promise<AttendanceTimesheet> => {
+    const response = await apiClient.get('/hr/attendance/timesheet/', { params });
+    return response.data;
+  },
   create: async (data: Partial<HRAttendance>): Promise<HRAttendance> => {
     const response = await apiClient.post('/hr/attendance/', data);
     return response.data;
@@ -541,6 +545,20 @@ export interface AttendanceRecord {
   break_start: string | null;
   break_end: string | null;
   notes: string;
+}
+
+/** Legal per-employee attendance timesheet over a period (printable). */
+export interface AttendanceTimesheet {
+  employee: {
+    id: string; name: string; employee_id: string;
+    job_title: string | null; department: string | null;
+    nationality: string | null; employment_type: string | null;
+    join_date: string | null; labor_card: string | null;
+  };
+  company: { name: string | null; name_ar: string | null };
+  period: { from: string; to: string; days: number };
+  totals: { present_days: number; work_hours: number; overtime_hours: number; records: number };
+  rows: HRAttendance[];
 }
 
 /** Optional fingerprint assertion attached to a self clock-in/out. */

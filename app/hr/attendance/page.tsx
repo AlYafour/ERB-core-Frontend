@@ -258,6 +258,23 @@ export default function HRAttendancePage() {
     onError: () => toast('Bulk recalculation failed', 'error'),
   });
 
+  // Open the printable legal timesheet for an employee over the period the
+  // admin is currently looking at (the date-range filter, a single day, or —
+  // if neither is set — the current calendar month).
+  const openTimesheet = (employeeId: number) => {
+    const flt = filters as Record<string, string>;
+    let from = flt.date_after || flt.date;
+    let to = flt.date_before || flt.date;
+    if (!from || !to) {
+      const now = new Date();
+      const first = new Date(now.getFullYear(), now.getMonth(), 1);
+      const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      from = from || first.toISOString().split('T')[0];
+      to = to || last.toISOString().split('T')[0];
+    }
+    window.open(`/print/attendance/${employeeId}?from=${from}&to=${to}`, '_blank');
+  };
+
   const [exporting, setExporting] = useState(false);
   const exportCSV = async () => {
     setExporting(true);
@@ -383,16 +400,19 @@ export default function HRAttendancePage() {
         </span>
       ),
     },
-    ...(canEdit ? [{
+    ...((admin || canEdit) ? [{
       key: 'actions', header: '' as React.ReactNode,
       render: (r: HRAttendance) => (
         <RowActions actions={[
-          { label: 'Edit Record', onClick: () => setEditRecord(r) },
-          { label: 'Recalculate Metrics', onClick: () => recalcMutation.mutate(r.id) },
+          { label: '📄 View / Print Timesheet', onClick: () => openTimesheet(r.employee) },
+          ...(canEdit ? [
+            { label: 'Edit Record', onClick: () => setEditRecord(r) },
+            { label: 'Recalculate Metrics', onClick: () => recalcMutation.mutate(r.id) },
+          ] : []),
         ]} />
       ),
     }] : []),
-  ], [t, admin]);
+  ], [t, admin, canEdit]);
 
   return (
     <AppListPage
