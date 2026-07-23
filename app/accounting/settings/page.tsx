@@ -1,5 +1,7 @@
 'use client';
 
+import RouteGuard from '@/components/auth/RouteGuard';
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
@@ -64,7 +66,7 @@ const TABS = [
   { key: 'import',   label: 'Import' },
 ] as const;
 
-export default function AccountingSettingsPage() {
+function AccountingSettingsPageInner() {
   const [tab, setTab] = useState<typeof TABS[number]['key']>('general');
   return (
     <MainLayout>
@@ -820,3 +822,12 @@ function OpeningBalancesPanel() {
   );
 }
 
+
+export default function AccountingSettingsPage() {
+  return (
+    <RouteGuard requiredPermission={{ category: 'accounting_settings', action: 'view' }}
+                redirectTo="/accounting">
+      <AccountingSettingsPageInner />
+    </RouteGuard>
+  );
+}

@@ -1,5 +1,7 @@
 'use client';
 
+import RouteGuard from '@/components/auth/RouteGuard';
+
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -46,7 +48,7 @@ const KIND_LABEL: Record<string, string> = {
   bank: 'Bank', cash: 'Cash box', petty_cash: 'Petty cash',
 };
 
-export default function BankingPage() {
+function BankingPageInner() {
   const queryClient = useQueryClient();
   // false = closed · true = blank form · string = create a SUB under that main
   const [showNewBox, setShowNewBox] = useState<boolean | string>(false);
@@ -991,5 +993,16 @@ function LineRows({ line, suggestions, reconciled, onAccept, onUnmatch }: {
         </tr>
       ))}
     </>
+  );
+}
+
+
+export default function BankingPage() {
+  return (
+    <RouteGuard requiredPermission={{ category: 'banking', action: 'view' }}
+                anyOfPermissions={[{ category: 'expense', action: 'approve' }]}
+                redirectTo="/accounting">
+      <BankingPageInner />
+    </RouteGuard>
   );
 }

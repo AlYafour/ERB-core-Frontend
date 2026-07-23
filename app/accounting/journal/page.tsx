@@ -1,5 +1,7 @@
 'use client';
 
+import RouteGuard from '@/components/auth/RouteGuard';
+
 /**
  * Journal Entries list. Creating, viewing and editing entries all happen on
  * the full-page QuickBooks-style editor (shared JournalEntryEditor):
@@ -18,6 +20,8 @@ import { RowActions } from '@/components/ui/RowActions';
 import { AppListPage } from '@/components/app/AppListPage';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { useTableState } from '@/lib/hooks/use-table-state';
+import { usePermissions } from '@/lib/hooks/use-permissions';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 
 const STATUS_VARIANT: Record<JournalStatus, 'success' | 'info' | 'default' | 'warning' | 'error'> = {
   draft:          'default',
@@ -67,11 +71,15 @@ const filterFields: FilterField[] = [
   },
 ];
 
-export default function JournalPage() {
+function JournalPageInner() {
   const tableState = useTableState();
   const { page, search, filters, ordering } = tableState;
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { hasPermission } = usePermissions();
+  const { isTenantAdmin, isPlatformAdmin } = useMyPermissions();
+  const canPost = isTenantAdmin || isPlatformAdmin || (hasPermission('journal_entry', 'post') ?? false);
+  const canCreate = isTenantAdmin || isPlatformAdmin || (hasPermission('journal_entry', 'create') ?? false);
 
   // Deep link: /accounting/journal?entry=<id> → the entry's own page (used by
   // the Open-journal links on source documents like purchase invoices).
@@ -188,15 +196,19 @@ export default function JournalPage() {
       breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Accounting' }, { label: 'Journal Entries' }]}
       totalCount={totalCount}
       headerExtra={
+        canPost ? (
         <Button variant="success" size="sm" onClick={handlePostAllDrafts}
                 isLoading={bulkPostMutation.isPending}>
           ✓ Post all drafts
         </Button>
+        ) : null
       }
       createAction={
+        canCreate ? (
         <Button variant="primary" size="sm" onClick={() => router.push('/accounting/journal/new')}>
           + New Entry
         </Button>
+        ) : null
       }
       statusItems={[
         { value: '',         label: 'All' },
@@ -216,5 +228,15 @@ export default function JournalPage() {
       paginatedData={data}
       pageSize={50}
     />
+  );
+}
+
+
+export default function JournalPage() {
+  return (
+    <RouteGuard requiredPermission={{ category: 'journal_entry', action: 'view' }}
+                redirectTo="/accounting">
+      <JournalPageInner />
+    </RouteGuard>
   );
 }

@@ -1,5 +1,7 @@
 'use client';
 
+import RouteGuard from '@/components/auth/RouteGuard';
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
@@ -267,7 +269,7 @@ function SupplierStatementTab({ dateFrom, dateTo }: { dateFrom: string; dateTo: 
   );
 }
 
-export default function AccountingReportsPage() {
+function AccountingReportsPageInner() {
   const [tab, setTab] = useState<TabKey>('tb');
   const [asOf, setAsOf] = useState(today());
   const [dateFrom, setDateFrom] = useState(yearStart());
@@ -494,5 +496,15 @@ function ReportBody({ tab, data }: { tab: TabKey; data: any }) {
         </tr>
       </tbody>
     </table>
+  );
+}
+
+
+export default function AccountingReportsPage() {
+  return (
+    <RouteGuard requiredPermission={{ category: 'financial_report', action: 'view' }}
+                redirectTo="/accounting">
+      <AccountingReportsPageInner />
+    </RouteGuard>
   );
 }

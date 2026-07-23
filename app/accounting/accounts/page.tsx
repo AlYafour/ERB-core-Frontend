@@ -1,5 +1,7 @@
 'use client';
 
+import RouteGuard from '@/components/auth/RouteGuard';
+
 import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { accountingApi, type GLAccount, type AccountNature } from '@/lib/api/accounting';
@@ -52,7 +54,7 @@ const EMPTY: FormState = {
   category: '', parent: '', is_postable: true, is_active: true,
 };
 
-export default function ChartOfAccountsPage() {
+function ChartOfAccountsPageInner() {
   const queryClient = useQueryClient();
   const tableState = useTableState();
   const [modal, setModal] = useState<FormState | null>(null);
@@ -278,5 +280,15 @@ export default function ChartOfAccountsPage() {
         </BaseModal>
       ) : null}
     </>
+  );
+}
+
+
+export default function ChartOfAccountsPage() {
+  return (
+    <RouteGuard requiredPermission={{ category: 'chart_of_accounts', action: 'view' }}
+                redirectTo="/accounting">
+      <ChartOfAccountsPageInner />
+    </RouteGuard>
   );
 }

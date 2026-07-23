@@ -1,5 +1,7 @@
 'use client';
 
+import RouteGuard from '@/components/auth/RouteGuard';
+
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -29,7 +31,7 @@ const filterFields: FilterField[] = [
 
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
-export default function ExpensesPage() {
+function ExpensesPageInner() {
   const router = useRouter();
   const tableState = useTableState();
   const { page, search, filters } = tableState;
@@ -151,5 +153,15 @@ export default function ExpensesPage() {
       emptyTitle="No expenses yet"
       emptyAction={<Link href="/expenses/new"><Button variant="primary">+ New Expense</Button></Link>}
     />
+  );
+}
+
+
+export default function ExpensesPage() {
+  return (
+    <RouteGuard requiredPermission={{ category: 'expense', action: 'view' }}
+                redirectTo="/">
+      <ExpensesPageInner />
+    </RouteGuard>
   );
 }
