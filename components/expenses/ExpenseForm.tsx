@@ -184,6 +184,14 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
   const updateLine = (key: number, patch: Partial<Line>) =>
     setLines(ls => ls.map(l => (l.key === key ? { ...l, ...patch } : l)));
   const addLine = () => setLines(ls => [...ls, blankLine(Math.max(0, ...ls.map(l => l.key)) + 1)]);
+  // GM: "زرار يكرر السطر" — many near-identical vouchers; clone the line
+  // right below and just edit what differs. Receipts stay on the original.
+  const duplicateLine = (key: number) => setLines(ls => {
+    const idx = ls.findIndex(l => l.key === key);
+    if (idx < 0) return ls;
+    const copy: Line = { ...ls[idx], key: Math.max(0, ...ls.map(l => l.key)) + 1, files: [] };
+    return [...ls.slice(0, idx + 1), copy, ...ls.slice(idx + 1)];
+  });
   const removeLine = (key: number) => setLines(ls => (ls.length > 1 ? ls.filter(l => l.key !== key) : ls));
 
   const total = lines.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
@@ -362,15 +370,23 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
 
             return (
               <div key={ln.key} className="card" style={{ padding: '14px 18px', position: 'relative' }}>
-                {!isEdit && lines.length > 1 && (
-                  <button onClick={() => removeLine(ln.key)} title="Remove line"
-                    style={{ position: 'absolute', top: 8, right: 8, width: 26, height: 26, background: 'none', border: 'none', borderRadius: '50%', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 14, lineHeight: 1, zIndex: 1 }}
-                    onMouseEnter={e => { e.currentTarget.style.color = 'var(--status-error)'; e.currentTarget.style.background = 'var(--surface-subtle)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'none'; }}>✕</button>
+                {!isEdit && (
+                  <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 2, zIndex: 1 }}>
+                    <button onClick={() => duplicateLine(ln.key)} title="Duplicate line — same data, edit what differs"
+                      style={{ width: 26, height: 26, background: 'none', border: 'none', borderRadius: '50%', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 13, lineHeight: 1 }}
+                      onMouseEnter={e => { e.currentTarget.style.color = 'var(--brand)'; e.currentTarget.style.background = 'var(--surface-subtle)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'none'; }}>⧉</button>
+                    {lines.length > 1 && (
+                      <button onClick={() => removeLine(ln.key)} title="Remove line"
+                        style={{ width: 26, height: 26, background: 'none', border: 'none', borderRadius: '50%', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 14, lineHeight: 1 }}
+                        onMouseEnter={e => { e.currentTarget.style.color = 'var(--status-error)'; e.currentTarget.style.background = 'var(--surface-subtle)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'none'; }}>✕</button>
+                    )}
+                  </div>
                 )}
 
                 {/* Row 1 — coding: type → category → code → project/office (+vehicle) */}
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 10, paddingRight: isEdit ? 0 : 26 }}>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 10, paddingRight: isEdit ? 0 : 56 }}>
                   <span style={{ alignSelf: 'flex-end', width: 26, height: 26, marginBottom: 6, borderRadius: '50%', background: 'var(--brand)', color: '#fff', fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
                   <div style={{ flex: '0 0 120px' }}>
                     <label style={LABEL}>Serial</label>
