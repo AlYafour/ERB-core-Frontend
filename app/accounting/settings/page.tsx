@@ -290,7 +290,7 @@ function FiscalPanel() {
     onError: (e) => toastErr(getApiError(e)),
   });
   const closePeriod = useMutation({
-    mutationFn: ({ id, hard }: { id: number; hard: boolean }) => accountingApi.closePeriod(id, hard),
+    mutationFn: ({ id, mode }: { id: number; mode: 'soft' | 'hard' | 'locked' }) => accountingApi.closePeriod(id, mode),
     onSuccess: refresh, onError: (e) => toastErr(getApiError(e)),
   });
   const reopenPeriod = useMutation({
@@ -343,8 +343,8 @@ function FiscalPanel() {
                     <td style={TD}>
                       {p.status === 'open' ? (
                         <span style={{ display: 'inline-flex', gap: 6 }}>
-                          <Button variant="secondary" size="sm" onClick={() => closePeriod.mutate({ id: p.id, hard: false })}>Soft close</Button>
-                          <Button variant="secondary" size="sm" onClick={() => closePeriod.mutate({ id: p.id, hard: true })}>Hard close</Button>
+                          <Button variant="secondary" size="sm" onClick={() => closePeriod.mutate({ id: p.id, mode: 'soft' })}>Soft close</Button>
+                          <Button variant="secondary" size="sm" onClick={() => closePeriod.mutate({ id: p.id, mode: 'hard' })}>Hard close</Button>
                         </span>
                       ) : p.status !== 'locked' ? (
                         <Button variant="secondary" size="sm" onClick={async () => {

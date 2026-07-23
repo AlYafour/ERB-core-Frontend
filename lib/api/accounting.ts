@@ -339,8 +339,8 @@ export const accountingApi = {
     apiClient.get<PaginatedResponse<FiscalYear>>(`${BASE}/fiscal-years/`, { params: { page_size: 50 } }).then(r => r.data),
   createFiscalYear: (year: number) =>
     apiClient.post(`${BASE}/fiscal-years/create-year/`, { year }).then(r => r.data),
-  closePeriod: (id: number, hard = false, reason = '') =>
-    apiClient.post(`${BASE}/fiscal-periods/${id}/close/`, { hard, reason }).then(r => r.data),
+  closePeriod: (id: number, mode: 'soft' | 'hard' | 'locked' = 'soft', reason = '') =>
+    apiClient.post(`${BASE}/fiscal-periods/${id}/close/`, { mode, reason }).then(r => r.data),
   reopenPeriod: (id: number, reason: string) =>
     apiClient.post(`${BASE}/fiscal-periods/${id}/reopen/`, { reason }).then(r => r.data),
   closingChecklist: (fiscalYearId: number) =>
