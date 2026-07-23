@@ -127,8 +127,12 @@ export default function PrintAttendancePage() {
       <div className="print-doc" style={{
         width: '210mm', minHeight: '297mm', margin: '12px auto', background: '#fff',
         borderRadius: 4, boxShadow: '0 4px 32px rgba(0,0,0,.14)', color: INK,
-        display: 'flex', flexDirection: 'column', padding: '13mm 12mm',
+        display: 'flex', flexDirection: 'column',
       }}>
+      {/* Padding lives on THIS inner wrapper, not .print-doc — the print
+          stylesheet forces .print-doc padding to 0, which was making the
+          content bleed to the page edge with no margins in the PDF. */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '12mm 11mm' }}>
         {/* ── HEADER ──────────────────────────────────────────────── */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
@@ -172,14 +176,16 @@ export default function PrintAttendancePage() {
         </div>
 
         {/* ── KPI GRID ────────────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginTop: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 1, marginTop: 12,
+          border: `1px solid ${LINE}`, borderRadius: 10, overflow: 'hidden', background: LINE }}>
           {kpis.map((k, i) => (
-            <div key={i} style={{ borderRadius: 9, border: `1px solid ${LINE}`, padding: '9px 11px', background: '#fff' }}>
-              <div style={{ fontSize: '6.6pt', fontWeight: 700, letterSpacing: '.4px', textTransform: 'uppercase', color: MUTE }}>{k.label}</div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginTop: 3 }}>
-                <span style={{ fontSize: '17pt', fontWeight: 800, lineHeight: 1, color: k.tone.fg, fontFamily: 'monospace' }}>{k.value}</span>
+            <div key={i} style={{ padding: '10px 12px', background: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: k.tone.fg, flexShrink: 0 }} />
+                <span style={{ fontSize: '6.4pt', fontWeight: 700, letterSpacing: '.4px', textTransform: 'uppercase', color: MUTE }}>{k.label}</span>
               </div>
-              {k.sub && <div style={{ fontSize: '6.6pt', color: FAINT, marginTop: 3 }}>{k.sub}</div>}
+              <div style={{ fontSize: '18pt', fontWeight: 800, lineHeight: 1.05, color: k.tone.fg, fontFamily: 'monospace', marginTop: 4 }}>{k.value}</div>
+              {k.sub && <div style={{ fontSize: '6.4pt', color: FAINT, marginTop: 2 }}>{k.sub}</div>}
             </div>
           ))}
         </div>
@@ -287,7 +293,7 @@ export default function PrintAttendancePage() {
           <span><b style={{ color: NEUT.fg }}>· Off</b> · non-working day</span>
         </div>
 
-        <div style={{ flex: 1, minHeight: 16 }} />
+        <div style={{ height: 22 }} />
 
         {/* ── CERTIFICATION ───────────────────────────────────────── */}
         <div style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
@@ -305,6 +311,7 @@ export default function PrintAttendancePage() {
             <span style={{ fontFamily: 'monospace' }}>{reportId}</span>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
