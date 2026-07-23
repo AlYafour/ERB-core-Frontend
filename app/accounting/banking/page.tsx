@@ -486,7 +486,7 @@ function NewBoxModal({ onClose, mains, users, defaultParent }: {
           </div>
           <div>
             <label style={LABEL}>Name</label>
-            <input style={INPUT} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder={parentBank ? 'e.g. SAIF' : 'e.g. FAB — Current (AED)'} />
+            <input style={INPUT} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder={parentBank ? 'e.g. Site petty cash' : 'e.g. Main Bank — Current'} />
           </div>
         </div>
         <div>
@@ -707,7 +707,7 @@ function TransferModal({ source, boxes, onClose }: {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div>
             <label style={LABEL}>Bank Reference No</label>
-            <input style={INPUT} placeholder="PHUB… / CASH" value={f.reference} onChange={(e) => setF({ ...f, reference: e.target.value })} />
+            <input style={INPUT} placeholder="Bank ref / CASH" value={f.reference} onChange={(e) => setF({ ...f, reference: e.target.value })} />
           </div>
           <div>
             <label style={LABEL}>Description</label>

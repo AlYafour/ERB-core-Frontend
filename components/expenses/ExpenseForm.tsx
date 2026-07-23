@@ -391,7 +391,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                   <div style={{ flex: '0 0 120px' }}>
                     <label style={LABEL}>Serial</label>
                     <input style={{ ...INPUT, fontFamily: 'monospace', fontWeight: 700 }}
-                      value={ln.serial} onChange={e => updateLine(ln.key, { serial: e.target.value })} placeholder="01-GHP" />
+                      value={ln.serial} onChange={e => updateLine(ln.key, { serial: e.target.value })} placeholder="e.g. 001" />
                   </div>
                   <div style={F(1, 150)}>
                     <label style={LABEL}>Cost Type</label>

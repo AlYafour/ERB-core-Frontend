@@ -113,7 +113,7 @@ function CashBoxesContent() {
             <div className="proc-section-head"><h3 className="proc-section-title">New Cash Box</h3></div>
             <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <div style={{ minWidth: 220, flex: 1 }}><label style={LABEL}>Box name</label>
-                <input style={INPUT} value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. Ghaith Petty Cash" /></div>
+                <input style={INPUT} value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. Site Petty Cash" /></div>
               <div style={{ minWidth: 220, flex: 1 }}><label style={LABEL}>Custodian (accountable person)</label>
                 <SearchableDropdown options={userOpts} value={newCustodian} allowClear placeholder="Who holds this cash"
                   onChange={v => setNewCustodian(v ? Number(v) : null)} /></div>

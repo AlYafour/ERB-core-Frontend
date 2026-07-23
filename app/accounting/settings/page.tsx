@@ -636,7 +636,7 @@ function CostCodeBridgePanel() {
         Showing {q ? `${visible.length} matches` : 'level-1 groups only'}.
       </p>
       <input style={{ ...INPUT, width: 320, marginBottom: 10 }}
-             placeholder="Search all 377 codes (e.g. CWU, OFFICE, كرين)…"
+             placeholder="Search cost codes…"
              value={search} onChange={(e) => setSearch(e.target.value)} />
       <div style={{ overflowX: 'auto', maxHeight: 520, overflowY: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
