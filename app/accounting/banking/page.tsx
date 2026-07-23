@@ -141,7 +141,12 @@ export default function BankingPage() {
               </div>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontWeight: 800, fontSize: 'var(--text-base)' }}>{main.name}</span>
+                  <a href={`/accounting/banking/${main.id}`}
+                     style={{ fontWeight: 800, fontSize: 'var(--text-base)', color: 'var(--text-primary)', textDecoration: 'none' }}
+                     onMouseEnter={e => { e.currentTarget.style.color = 'var(--brand)'; }}
+                     onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-primary)'; }}>
+                    {main.name} →
+                  </a>
                   <Badge variant="info">Main Account</Badge>
                 </div>
                 <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 3, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
@@ -179,7 +184,12 @@ export default function BankingPage() {
                 <span style={{ color: 'var(--brand)', fontWeight: 800, flexShrink: 0 }}>└</span>
                 <div style={{ flex: 1, minWidth: 180 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 700 }}>{b.name}</span>
+                    <a href={`/accounting/banking/${b.id}`}
+                       style={{ fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none' }}
+                       onMouseEnter={e => { e.currentTarget.style.color = 'var(--brand)'; }}
+                       onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-primary)'; }}>
+                      {b.name} →
+                    </a>
                     <Badge variant="default">{KIND_LABEL[b.kind]}</Badge>
                   </div>
                   <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -232,7 +242,12 @@ export default function BankingPage() {
               }}>
                 <div style={{ flex: 1, minWidth: 180 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 700 }}>{b.name}</span>
+                    <a href={`/accounting/banking/${b.id}`}
+                       style={{ fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none' }}
+                       onMouseEnter={e => { e.currentTarget.style.color = 'var(--brand)'; }}
+                       onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-primary)'; }}>
+                      {b.name} →
+                    </a>
                     <Badge variant="default">{KIND_LABEL[b.kind]}</Badge>
                   </div>
                   <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>Ledger {b.ledger_account_code}</div>

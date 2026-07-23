@@ -404,6 +404,15 @@ export const accountingApi = {
   setBankOpeningBalances: (payload: { as_of?: string; entries: Array<{ account: string; amount: string }> }) =>
     apiClient.post<{ journal_number: string; restated: boolean }>(
       `${BASE}/bank-accounts/opening-balances/`, payload).then(r => r.data),
+  getBankAccountStatement: (id: string) =>
+    apiClient.get<{
+      account: { id: string; name: string; kind: string; bank_name?: string; account_number?: string;
+        iban?: string; is_active: boolean; ledger_code?: string | null;
+        parent?: string | null; parent_name?: string | null; custodian_name?: string | null };
+      totals: { in: string; out: string; balance: string };
+      movements: Array<{ date: string; journal_id: string; journal_number: string | null; status: string;
+        source: string; reference: string; description: string; in: string; out: string }>;
+    }>(`${BASE}/bank-accounts/${id}/statement/`).then(r => r.data),
   getBankOpeningBalances: () =>
     apiClient.get<{ exists: boolean; number?: string; status?: string; as_of?: string;
       entries: Array<{ account: string; amount: string }>; other_lines?: number }>(
