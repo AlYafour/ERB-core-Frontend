@@ -263,12 +263,14 @@ export default function HRAttendancePage() {
   // if neither is set — the current calendar month).
   const openTimesheet = (employeeId: number) => {
     const flt = filters as Record<string, string>;
-    let from = flt.date_after || flt.date;
-    let to = flt.date_before || flt.date;
+    // A single-day filter must NOT shrink the timesheet to one day — the
+    // report always spans a full period. Use an explicit range if the user
+    // set one; otherwise default to the 1st of the month → today.
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    let from = flt.date_after;
+    let to = flt.date_before;
     if (!from || !to) {
-      // Default: 1st of the current month → today.
-      const now = new Date();
-      const first = new Date(now.getFullYear(), now.getMonth(), 1);
       from = from || first.toISOString().split('T')[0];
       to = to || now.toISOString().split('T')[0];
     }
