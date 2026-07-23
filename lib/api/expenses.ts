@@ -225,6 +225,11 @@ export const expensesApi = {
   listVehicles: (): Promise<Array<{ id: number; label: string; plate: string; name: string }>> =>
     apiClient.get(`${BASE}/vehicles/`).then(r => r.data),
 
+  /** Tenant form config — currently the VAT rate (percent), so the form
+   *  doesn't hardcode a jurisdiction-specific 5%. */
+  getConfig: (): Promise<{ vat_rate: string }> =>
+    apiClient.get(`${BASE}/config/`).then(r => r.data),
+
   listCostTypes: (includeInactive = false): Promise<CostTypeOption[]> =>
     apiClient.get(`${BASE}/cost-types/`, { params: includeInactive ? { include_inactive: 1 } : undefined }).then(r => r.data),
   createCostType: (name: string, is_direct = true, name_ar = ''): Promise<CostTypeOption> =>

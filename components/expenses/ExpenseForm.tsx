@@ -92,8 +92,10 @@ const lineFromExisting = (e: Expense): Line => ({
   amount: String(e.amount), vatLiable: e.vat_liable, files: [],
 });
 
-const lineVat = (ln: Line) => ln.vatLiable ? Math.round((parseFloat(ln.amount) || 0) * 5 / 105 * 100) / 100 : 0;
-const lineNet = (ln: Line) => (parseFloat(ln.amount) || 0) - lineVat(ln);
+// VAT is inclusive in the gross amount; extract at the tenant's rate.
+const lineVat = (ln: Line, rate: number) =>
+  ln.vatLiable ? Math.round((parseFloat(ln.amount) || 0) * rate / (100 + rate) * 100) / 100 : 0;
+const lineNet = (ln: Line, rate: number) => (parseFloat(ln.amount) || 0) - lineVat(ln, rate);
 
 export default function ExpenseForm({ existing }: { existing?: Expense }) {
   const router = useRouter();
@@ -106,6 +108,8 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
   const [cashBox, setCashBox] = useState<string | null>(existing?.cash_box ?? null);
   const [lines, setLines] = useState<Line[]>(existing ? [lineFromExisting(existing)] : [blankLine(1)]);
 
+  const { data: cfg }            = useQuery({ queryKey: ['exp-config'], queryFn: () => expensesApi.getConfig(), staleTime: 600_000 });
+  const vatRate = Number(cfg?.vat_rate ?? 5) || 5;
   const { data: boxes = [] }     = useQuery({ queryKey: ['exp-cash-boxes'], queryFn: () => expensesApi.listCashBoxes(), staleTime: 300_000 });
   const { data: costTypes = [] } = useQuery({ queryKey: ['exp-cost-types', isEdit], queryFn: () => expensesApi.listCostTypes(isEdit), staleTime: 300_000 });
   const { data: overheads = [] } = useQuery({ queryKey: ['exp-overheads', isEdit], queryFn: () => expensesApi.listOverheadCategories(isEdit), staleTime: 300_000 });
@@ -195,7 +199,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
   const removeLine = (key: number) => setLines(ls => (ls.length > 1 ? ls.filter(l => l.key !== key) : ls));
 
   const total = lines.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
-  const vatTotal = lines.reduce((s, l) => s + lineVat(l), 0);
+  const vatTotal = lines.reduce((s, l) => s + lineVat(l, vatRate), 0);
   const selectedBox = boxes.find(b => b.id === cashBox);
   const boxBalance = selectedBox ? Number(selectedBox.balance ?? 0) : null;
   const overSpend = boxBalance !== null && total > 0 && total > boxBalance;
@@ -215,7 +219,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
       invoice_date: ln.invoiceDate || null,
       description: ln.description,
       amount: ln.amount, vat_liable: ln.vatLiable,
-      vat_amount: ln.vatLiable ? lineVat(ln).toFixed(2) : '0',
+      vat_amount: ln.vatLiable ? lineVat(ln, vatRate).toFixed(2) : '0',
     };
   };
 
@@ -364,8 +368,8 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
             const showVehicle = !!(selCode?.is_vehicle_effective
               || allCostCodes.find(c => c.id === wsId)?.is_vehicle_effective
               || allCostCodes.find(c => c.id === catId)?.is_vehicle_effective);
-            const vat = lineVat(ln);
-            const net = lineNet(ln);
+            const vat = lineVat(ln, vatRate);
+            const net = lineNet(ln, vatRate);
             const F = (grow: number, min: number): React.CSSProperties => ({ flex: `${grow} 1 ${min}px`, minWidth: min });
 
             return (
@@ -549,7 +553,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                       value={ln.amount} onChange={e => updateLine(ln.key, { amount: e.target.value })} />
                   </div>
                   <button type="button" onClick={() => updateLine(ln.key, { vatLiable: !ln.vatLiable })}
-                    title="Gross includes 5% VAT — needs a supplier tax invoice"
+                    title={`Gross includes ${vatRate}% VAT — needs a supplier tax invoice`}
                     style={{
                       height: 38, padding: '0 12px', flexShrink: 0, borderRadius: 8, cursor: 'pointer',
                       fontSize: 12, fontWeight: 700, letterSpacing: '0.02em',
@@ -557,7 +561,7 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
                       background: ln.vatLiable ? 'var(--brand)' : 'transparent',
                       color: ln.vatLiable ? '#fff' : 'var(--text-muted)',
                     }}>
-                    VAT 5%{ln.vatLiable ? ` · ${vat.toFixed(2)}` : ''}
+                    VAT {vatRate}%{ln.vatLiable ? ` · ${vat.toFixed(2)}` : ''}
                   </button>
                   <div style={{ flex: '0 0 105px' }}>
                     <label style={LABEL}>Net</label>
