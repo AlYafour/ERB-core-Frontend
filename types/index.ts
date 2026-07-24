@@ -889,11 +889,15 @@ export interface HRRequest {
   employee: number;
   employee_name: string;
   employee_id_code: string;
-  request_type: 'annual_leave' | 'sick_leave' | 'emergency_leave' | 'unpaid_leave' | 'work_from_home' | 'overtime' | 'advance_salary' | 'document_request' | 'other';
+  request_type: 'annual_leave' | 'sick_leave' | 'emergency_leave' | 'unpaid_leave' | 'work_from_home' | 'personal_leave' | 'business_leave' | 'missing_punch' | 'overtime' | 'advance_salary' | 'document_request' | 'other';
   status: 'pending' | 'approved' | 'rejected' | 'cancelled';
   start_date: string | null;
   end_date: string | null;
   days: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  hours?: string | null;
+  duration_mode?: 'days' | 'hours' | 'both' | 'none';
   reason: string;
   approver: number | null;
   approver_name: string | null;

@@ -342,12 +342,14 @@ export const hrRequestsApi = {
 // ── Approvals (request types) ──────────────────────────────────────────────────
 
 export interface HRRequestType {
-  id:          number;
-  code:        string;
-  name:        string;
-  name_ar:     string;
-  description: string;
-  is_active:   boolean;
+  id:            number;
+  code:          string;
+  name:          string;
+  name_ar:       string;
+  description:   string;
+  is_active:     boolean;
+  duration_mode?: 'days' | 'hours' | 'both' | 'none';
+  requires_attachment?: boolean;
 }
 
 export const hrApprovalsApi = {

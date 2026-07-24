@@ -28,12 +28,23 @@ const DATE_RANGE_TYPES = new Set([
 // Single-day types that use one date (not a range).
 const SINGLE_DATE_TYPES = new Set(['missing_punch']);
 
+// Fallback duration mode by code (mirrors the backend) for types with no
+// configured RequestType row. The tenant's RequestType.duration_mode wins.
+const DEFAULT_DURATION_MODE: Record<string, 'days' | 'hours' | 'both' | 'none'> = {
+  annual_leave: 'days', unpaid_leave: 'days', work_from_home: 'days',
+  sick_leave: 'both', emergency_leave: 'both',
+  personal_leave: 'hours', business_leave: 'hours', overtime: 'hours',
+  missing_punch: 'none', advance_salary: 'none', document_request: 'none', other: 'none',
+};
+
 const TYPE_LABELS: Record<string, string> = {
   annual_leave:     'Annual Leave',
   sick_leave:       'Sick Leave',
   emergency_leave:  'Emergency Leave',
   unpaid_leave:     'Unpaid Leave',
   work_from_home:   'Work From Home',
+  personal_leave:   'Personal Leave',
+  business_leave:   'Business Leave',
   missing_punch:    'Missing Punch',
   overtime:         'Overtime',
   advance_salary:   'Advance Salary',
@@ -70,6 +81,12 @@ function fmtShort(d?: string | null) {
 function calcDays(start: string, end: string) {
   if (!start || !end) return 0;
   return Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000) + 1);
+}
+
+/** "HH:MM" → minutes since midnight. */
+function toMin(t: string) {
+  const [h, m] = t.split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
 }
 
 function resolveTypeLabel(code: string, types?: { code: string; name: string }[]) {
@@ -171,15 +188,22 @@ function ApprovalsInbox({ userId }: { userId: number }) {
               <p style={{ fontSize: 'var(--text-sm)', margin: 0 }}>{TYPE_LABELS[req.request_type] || req.request_type}</p>
 
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
-                {req.days ? `${parseFloat(req.days)}d` : '—'}
+                {req.hours && parseFloat(req.hours) > 0
+                  ? `${parseFloat(req.hours)}h`
+                  : req.days && parseFloat(req.days) > 0 ? `${parseFloat(req.days)}d` : '—'}
               </p>
 
               <div>
-                {isDateType && req.start_date && (
+                {req.hours && parseFloat(req.hours) > 0 && req.start_date ? (
+                  <p style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', margin: '0 0 2px' }}>
+                    {fmtShort(req.start_date)}
+                    {req.start_time && req.end_time ? ` · ${req.start_time.slice(0, 5)}–${req.end_time.slice(0, 5)}` : ''}
+                  </p>
+                ) : (isDateType && req.start_date && (
                   <p style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', margin: '0 0 2px' }}>
                     {fmtShort(req.start_date)}{req.end_date && req.end_date !== req.start_date ? ` – ${fmtShort(req.end_date)}` : ''}
                   </p>
-                )}
+                ))}
                 {req.reason && (
                   <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
                     {req.reason}
@@ -271,8 +295,10 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
   const [form, setForm] = useState({
     request_type: 'annual_leave',
     start_date: '', end_date: '', days: '', reason: '',
+    start_time: '', end_time: '',
   });
   const [file, setFile] = useState<File | null>(null);
+  const [bothHourly, setBothHourly] = useState(false); // 'both' types: day vs hourly toggle
 
   const { data: requestsData, isLoading } = useQuery({
     queryKey: ['my-requests', userId, statusFilter],
@@ -327,31 +353,45 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
   });
 
   const resetForm = () => {
-    setForm({ request_type: 'annual_leave', start_date: '', end_date: '', days: '', reason: '' });
+    setForm({ request_type: 'annual_leave', start_date: '', end_date: '', days: '', reason: '', start_time: '', end_time: '' });
     setFile(null);
+    setBothHourly(false);
   };
 
-  const isDateType   = DATE_RANGE_TYPES.has(form.request_type);
-  const isSingleDate = SINGLE_DATE_TYPES.has(form.request_type);
+  // Effective duration mode for the selected type (from its RequestType row,
+  // else the built-in default). Drives which fields the form shows.
+  const modeFor = (code: string): 'days' | 'hours' | 'both' | 'none' =>
+    requestTypes?.find(t => t.code === code)?.duration_mode
+    ?? DEFAULT_DURATION_MODE[code] ?? 'days';
+
+  const mode         = modeFor(form.request_type);
+  const isSingleDate = SINGLE_DATE_TYPES.has(form.request_type);   // missing_punch
+  const asHourly     = mode === 'hours' || (mode === 'both' && bothHourly);
+  const asDays       = !isSingleDate && (mode === 'days' || (mode === 'both' && !bothHourly));
+  const hourlyHours  = (form.start_time && form.end_time && form.end_time > form.start_time)
+    ? Math.round((toMin(form.end_time) - toMin(form.start_time)) / 6) / 10 : 0;
 
   const updateForm = (k: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
       const val = e.target.value;
       setForm(prev => {
         const next = { ...prev, [k]: val };
-        if ((k === 'start_date' || k === 'end_date') && DATE_RANGE_TYPES.has(next.request_type) && next.start_date && next.end_date)
+        if ((k === 'start_date' || k === 'end_date') && next.start_date && next.end_date)
           next.days = String(calcDays(next.start_date, next.end_date));
-        if (k === 'request_type' && !DATE_RANGE_TYPES.has(val) && !SINGLE_DATE_TYPES.has(val))
-          next.start_date = next.end_date = next.days = '';
-        if (k === 'request_type') next.start_date = next.end_date = next.days = '';
+        if (k === 'request_type')
+          Object.assign(next, { start_date: '', end_date: '', days: '', start_time: '', end_time: '' });
         return next;
       });
+      if (k === 'request_type') setBothHourly(false);
     };
 
   const handleSubmit = () => {
     if (!form.request_type) { toast('Select a request type', 'error'); return; }
-    if (isDateType && (!form.start_date || !form.end_date)) { toast('Start and end dates are required', 'error'); return; }
-    if (isDateType && form.end_date < form.start_date) { toast('End date must be after start date', 'error'); return; }
+    if (asDays && (!form.start_date || !form.end_date)) { toast('Start and end dates are required', 'error'); return; }
+    if (asDays && form.end_date < form.start_date) { toast('End date must be after start date', 'error'); return; }
+    if (asHourly && !form.start_date) { toast('Select the day of the request', 'error'); return; }
+    if (asHourly && (!form.start_time || !form.end_time)) { toast('From and to times are required', 'error'); return; }
+    if (asHourly && form.end_time <= form.start_time) { toast('The end time must be after the start time', 'error'); return; }
     if (isSingleDate && !form.start_date) { toast('Select the day the punch was missed', 'error'); return; }
     if (isSingleDate && form.start_date < ymdDaysAgo(1)) {
       toast('A missing punch can only be reported for today or yesterday', 'error'); return;
@@ -365,10 +405,14 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
       ...(empId && { employee: empId }),
       request_type: form.request_type as HRRequest['request_type'],
       reason: form.reason,
-      ...(isDateType && {
+      ...(asDays && {
         start_date: form.start_date,
         end_date:   form.end_date,
         days:       form.days || String(calcDays(form.start_date, form.end_date)),
+      }),
+      ...(asHourly && {
+        start_date: form.start_date, end_date: form.start_date,
+        start_time: form.start_time, end_time: form.end_time,
       }),
       ...(isSingleDate && { start_date: form.start_date, end_date: form.start_date }),
     });
@@ -537,29 +581,68 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
                 </select>
               </div>
 
-              {isDateType && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
-                  <div className="form-field">
-                    <label className="form-label">Start Date *</label>
-                    <input className="form-input" type="date" value={form.start_date} onChange={updateForm('start_date')} />
-                  </div>
-                  <div className="form-field">
-                    <label className="form-label">End Date *</label>
-                    <input className="form-input" type="date" value={form.end_date} min={form.start_date || undefined} onChange={updateForm('end_date')} />
-                  </div>
+              {/* 'both' types: let the employee pick full-day vs hourly. */}
+              {mode === 'both' && (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {[['Full day', false], ['Hourly', true]].map(([label, hourly]) => (
+                    <button key={String(label)} type="button" onClick={() => setBothHourly(hourly as boolean)}
+                      style={{ flex: 1, padding: '7px 12px', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
+                        border: `1px solid ${bothHourly === hourly ? 'var(--brand)' : 'var(--border-subtle)'}`,
+                        background: bothHourly === hourly ? 'var(--brand)' : 'transparent',
+                        color: bothHourly === hourly ? '#fff' : 'var(--text-secondary)' }}>
+                      {label}
+                    </button>
+                  ))}
                 </div>
               )}
 
-              {isDateType && (
-                <div className="form-field">
-                  <label className="form-label">
-                    Days
-                    {form.start_date && form.end_date && (
-                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginLeft: 'var(--space-2)', fontWeight: 'var(--weight-normal)' }}>(auto-calculated)</span>
-                    )}
-                  </label>
-                  <input className="form-input" type="number" min="0.5" step="0.5" value={form.days} onChange={updateForm('days')} placeholder="e.g. 3" />
-                </div>
+              {asDays && (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                    <div className="form-field">
+                      <label className="form-label">Start Date *</label>
+                      <input className="form-input" type="date" value={form.start_date} onChange={updateForm('start_date')} />
+                    </div>
+                    <div className="form-field">
+                      <label className="form-label">End Date *</label>
+                      <input className="form-input" type="date" value={form.end_date} min={form.start_date || undefined} onChange={updateForm('end_date')} />
+                    </div>
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label">
+                      Days
+                      {form.start_date && form.end_date && (
+                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginLeft: 'var(--space-2)', fontWeight: 'var(--weight-normal)' }}>(auto-calculated)</span>
+                      )}
+                    </label>
+                    <input className="form-input" type="number" min="0.5" step="0.5" value={form.days} onChange={updateForm('days')} placeholder="e.g. 3" />
+                  </div>
+                </>
+              )}
+
+              {/* Hourly permission — one day + a time window. */}
+              {asHourly && (
+                <>
+                  <div className="form-field">
+                    <label className="form-label">Date *</label>
+                    <input className="form-input" type="date" value={form.start_date} onChange={updateForm('start_date')} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                    <div className="form-field">
+                      <label className="form-label">From *</label>
+                      <input className="form-input" type="time" value={form.start_time} onChange={updateForm('start_time')} />
+                    </div>
+                    <div className="form-field">
+                      <label className="form-label">To *</label>
+                      <input className="form-input" type="time" value={form.end_time} onChange={updateForm('end_time')} />
+                    </div>
+                  </div>
+                  {hourlyHours > 0 && (
+                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
+                      Duration: <b style={{ color: 'var(--text-primary)' }}>{hourlyHours} hour{hourlyHours !== 1 ? 's' : ''}</b>
+                    </p>
+                  )}
+                </>
               )}
 
               {/* Missing punch — a single recent day (today or yesterday only). */}
@@ -586,7 +669,7 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
                 />
               </div>
 
-              {!isDateType && !isSingleDate && (
+              {mode === 'none' && !isSingleDate && (
                 <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, background: 'var(--surface-subtle)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)' }}>
                   This request type doesn&apos;t require specific dates and will be routed for approval after submission.
                 </p>
