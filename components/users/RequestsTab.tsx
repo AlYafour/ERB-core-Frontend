@@ -25,17 +25,28 @@ const DATE_RANGE_TYPES = new Set([
   'unpaid_leave', 'work_from_home', 'overtime',
 ]);
 
+// Single-day types that use one date (not a range).
+const SINGLE_DATE_TYPES = new Set(['missing_punch']);
+
 const TYPE_LABELS: Record<string, string> = {
   annual_leave:     'Annual Leave',
   sick_leave:       'Sick Leave',
   emergency_leave:  'Emergency Leave',
   unpaid_leave:     'Unpaid Leave',
   work_from_home:   'Work From Home',
+  missing_punch:    'Missing Punch',
   overtime:         'Overtime',
   advance_salary:   'Advance Salary',
   document_request: 'Document Request',
   other:            'Other',
 };
+
+/** yyyy-mm-dd for N days ago, in local time. */
+function ymdDaysAgo(n: number) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 const STRATEGY_LABEL: Record<string, string> = {
   DIRECT_MANAGER:   'Direct Manager',
@@ -320,17 +331,19 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
     setFile(null);
   };
 
-  const isDateType = DATE_RANGE_TYPES.has(form.request_type);
+  const isDateType   = DATE_RANGE_TYPES.has(form.request_type);
+  const isSingleDate = SINGLE_DATE_TYPES.has(form.request_type);
 
   const updateForm = (k: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
       const val = e.target.value;
       setForm(prev => {
         const next = { ...prev, [k]: val };
-        if ((k === 'start_date' || k === 'end_date') && next.start_date && next.end_date)
+        if ((k === 'start_date' || k === 'end_date') && DATE_RANGE_TYPES.has(next.request_type) && next.start_date && next.end_date)
           next.days = String(calcDays(next.start_date, next.end_date));
-        if (k === 'request_type' && !DATE_RANGE_TYPES.has(val))
+        if (k === 'request_type' && !DATE_RANGE_TYPES.has(val) && !SINGLE_DATE_TYPES.has(val))
           next.start_date = next.end_date = next.days = '';
+        if (k === 'request_type') next.start_date = next.end_date = next.days = '';
         return next;
       });
     };
@@ -339,6 +352,10 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
     if (!form.request_type) { toast('Select a request type', 'error'); return; }
     if (isDateType && (!form.start_date || !form.end_date)) { toast('Start and end dates are required', 'error'); return; }
     if (isDateType && form.end_date < form.start_date) { toast('End date must be after start date', 'error'); return; }
+    if (isSingleDate && !form.start_date) { toast('Select the day the punch was missed', 'error'); return; }
+    if (isSingleDate && form.start_date < ymdDaysAgo(1)) {
+      toast('A missing punch can only be reported for today or yesterday', 'error'); return;
+    }
     if (!form.reason.trim()) { toast('Please provide a reason', 'error'); return; }
     if (form.request_type === 'sick_leave' && !file) {
       toast('Sick leave requires a medical certificate — attach a file', 'error'); return;
@@ -353,6 +370,7 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
         end_date:   form.end_date,
         days:       form.days || String(calcDays(form.start_date, form.end_date)),
       }),
+      ...(isSingleDate && { start_date: form.start_date, end_date: form.start_date }),
     });
   };
 
@@ -544,30 +562,61 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
                 </div>
               )}
 
+              {/* Missing punch — a single recent day (today or yesterday only). */}
+              {isSingleDate && (
+                <div className="form-field">
+                  <label className="form-label">Day of the missing punch *</label>
+                  <input className="form-input" type="date"
+                    value={form.start_date}
+                    min={ymdDaysAgo(1)} max={ymdDaysAgo(0)}
+                    onChange={updateForm('start_date')} />
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
+                    Only today or yesterday — older days must be corrected by HR.
+                  </p>
+                </div>
+              )}
+
               <div className="form-field">
                 <label className="form-label">Reason *</label>
                 <textarea className="form-textarea" rows={3}
                   value={form.reason}
                   onChange={e => setForm(p => ({ ...p, reason: e.target.value }))}
-                  placeholder="Details of your request…"
+                  placeholder={form.request_type === 'missing_punch'
+                    ? 'e.g. Forgot to clock out — left at 6:00 PM' : 'Details of your request…'}
                 />
               </div>
 
-              {!isDateType && (
+              {!isDateType && !isSingleDate && (
                 <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, background: 'var(--surface-subtle)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)' }}>
                   This request type doesn&apos;t require specific dates and will be routed for approval after submission.
                 </p>
               )}
 
-              {/* Attachment — required for sick leave (medical certificate) */}
+              {/* Attachment — a styled uploader (the raw file input looked unfinished);
+                  required for sick leave (medical certificate). */}
               <div className="form-field">
                 <label className="form-label">
                   {form.request_type === 'sick_leave'
                     ? 'Medical Certificate *' : 'Attachment (optional)'}
                 </label>
-                <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp"
-                  onChange={e => setFile(e.target.files?.[0] ?? null)}
-                  style={{ fontSize: 'var(--text-sm)' }} />
+                <label style={{
+                  display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                  padding: 'var(--space-3) var(--space-4)', border: '1.5px dashed var(--border-default)',
+                  borderRadius: 'var(--radius-md)', cursor: 'pointer', background: 'var(--surface-subtle)',
+                }}>
+                  <span style={{
+                    fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)',
+                    padding: '4px 12px', borderRadius: 'var(--radius-sm)',
+                    background: 'var(--card-bg)', border: '1px solid var(--border-subtle)',
+                    color: 'var(--text-primary)', whiteSpace: 'nowrap',
+                  }}>Choose file</span>
+                  <span style={{ fontSize: 'var(--text-sm)', color: file ? 'var(--text-primary)' : 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {file ? file.name : 'PDF or image, up to 20 MB'}
+                  </span>
+                  <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp"
+                    onChange={e => setFile(e.target.files?.[0] ?? null)}
+                    style={{ display: 'none' }} />
+                </label>
                 {form.request_type === 'sick_leave' && (
                   <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
                     Sick leave must include a medical certificate.
