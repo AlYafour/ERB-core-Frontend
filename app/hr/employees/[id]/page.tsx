@@ -160,7 +160,6 @@ function SectionHead({ title, onEdit, isAdmin, hovered }: { title: string; onEdi
         <button
           onClick={onEdit}
           className="section-edit-btn"
-          style={hovered !== undefined ? { opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' } : undefined}
         >
           Edit
         </button>
@@ -187,7 +186,6 @@ function CardHead({ title, isAdmin, editVisible, onEdit }: {
         <button
           onClick={onEdit}
           style={{
-            opacity: editVisible ? 1 : 0, transition: 'opacity 0.15s',
             fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)',
             background: 'none', border: '1px solid var(--border-subtle)',
             borderRadius: 'var(--radius-sm)', padding: '2px 10px',
