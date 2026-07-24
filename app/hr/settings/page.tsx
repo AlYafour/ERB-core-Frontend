@@ -197,7 +197,67 @@ function CompanySettingsPanel() {
           ))}
         </div>
       </div>
+
+      {/* ── Attendance policy & notifications (all settings-driven) ── */}
+      <div style={{ marginTop: 'var(--space-5)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
+        <p style={{ margin: '0 0 2px', fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}>Attendance Policy & Notifications</p>
+        <p style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Overtime handling and who is notified about late arrivals or short days — nothing is fixed, set it per your company.</p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
+          <div>
+            <label style={LBL_CS}>Required Hours / Day</label>
+            <input style={INPUT_CS} type="number" min={0} step="0.5" value={form.working_hours_per_day ?? data?.working_hours_per_day ?? 8} onChange={e => set('working_hours_per_day', Number(e.target.value))} />
+          </div>
+          <div>
+            <label style={LBL_CS}>Overtime Multiplier</label>
+            <input style={INPUT_CS} type="number" min={1} step="0.05" value={form.overtime_multiplier ?? data?.overtime_multiplier ?? '1.25'} onChange={e => set('overtime_multiplier', e.target.value)} />
+          </div>
+        </div>
+
+        <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <SwitchRow label="Count overtime" hint="When off, time worked past the shift end is not paid (hours capped at scheduled)." checked={form.overtime_enabled ?? data?.overtime_enabled ?? true} onChange={v => set('overtime_enabled', v)} />
+          <SwitchRow label="Enable attendance notifications" hint="Master switch — turn all attendance notices on or off." checked={form.notifications_enabled ?? data?.notifications_enabled ?? true} onChange={v => set('notifications_enabled', v)} />
+          <SwitchRow label="Notify on late check-in" hint="An informational notice (not a warning) when someone checks in after the late threshold." indent checked={form.notify_late_arrival ?? data?.notify_late_arrival ?? true} onChange={v => set('notify_late_arrival', v)} />
+          <SwitchRow label="Notify on incomplete hours" hint="When someone checks out before completing the day's required hours." indent checked={form.notify_incomplete_hours ?? data?.notify_incomplete_hours ?? true} onChange={v => set('notify_incomplete_hours', v)} />
+        </div>
+
+        <div style={{ marginTop: 'var(--space-4)' }}>
+          <label style={LBL_CS}>Send Notifications To</label>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 4 }}>
+            {([['employee', 'The employee'], ['direct_manager', 'Direct manager'], ['hr', 'HR managers']] as const).map(([key, lbl]) => {
+              const rec = (form.notify_recipients ?? data?.notify_recipients ?? {}) as Record<string, boolean>;
+              return (
+                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={!!rec[key]} onChange={e => set('notify_recipients', { ...rec, [key]: e.target.checked })} />
+                  {lbl}
+                </label>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ marginTop: 'var(--space-4)' }}>
+          <label style={LBL_CS}>CC Emails (comma-separated)</label>
+          <input style={INPUT_CS} placeholder="hr@company.com, manager@company.com"
+            value={(form.notify_cc_emails ?? data?.notify_cc_emails ?? []).join(', ')}
+            onChange={e => set('notify_cc_emails', e.target.value.split(',').map(s => s.trim()).filter(Boolean))} />
+        </div>
+      </div>
     </div>
+  );
+}
+
+function SwitchRow({ label, hint, checked, onChange, indent }: {
+  label: string; hint?: string; checked: boolean; onChange: (v: boolean) => void; indent?: boolean;
+}) {
+  return (
+    <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', paddingLeft: indent ? 20 : 0 }}>
+      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} style={{ marginTop: 2 }} />
+      <span>
+        <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>{label}</span>
+        {hint && <span style={{ display: 'block', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{hint}</span>}
+      </span>
+    </label>
   );
 }
 

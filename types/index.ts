@@ -936,6 +936,15 @@ export interface HRCompanySettings {
   currency: string;
   annual_leave_days: number;
   sick_leave_days: number;
+  working_hours_per_day?: number;
+  overtime_multiplier?: string;
+  // Attendance policy
+  overtime_enabled?: boolean;
+  notifications_enabled?: boolean;
+  notify_late_arrival?: boolean;
+  notify_incomplete_hours?: boolean;
+  notify_recipients?: { employee?: boolean; direct_manager?: boolean; hr?: boolean };
+  notify_cc_emails?: string[];
   updated_at: string;
 }
 
