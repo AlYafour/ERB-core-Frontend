@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { hrRequestsApi, hrApprovalsApi } from '@/lib/api/hr';
-import { toast } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import type { UserTabProps } from './types';
 import type { HRRequest } from '@/types';
 
@@ -261,6 +261,7 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
     request_type: 'annual_leave',
     start_date: '', end_date: '', days: '', reason: '',
   });
+  const [file, setFile] = useState<File | null>(null);
 
   const { data: requestsData, isLoading } = useQuery({
     queryKey: ['my-requests', userId, statusFilter],
@@ -277,7 +278,16 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
   const requests: HRRequest[] = requestsData?.results ?? [];
 
   const createMutation = useMutation({
-    mutationFn: (data: Partial<HRRequest>) => hrRequestsApi.create(data),
+    mutationFn: async (data: Partial<HRRequest>) => {
+      const created = await hrRequestsApi.create(data);
+      // Sick leave carries a medical certificate — upload it onto the new
+      // request right after creation (attachments are a post-create step).
+      if (file) {
+        try { await hrRequestsApi.uploadAttachment(created.id, file); }
+        catch { toast('Request saved, but the attachment failed to upload', 'warning'); }
+      }
+      return created;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-requests', userId] });
       toast('Request submitted successfully', 'success');
@@ -285,6 +295,15 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
       resetForm();
     },
     onError: () => toast('Failed to submit request', 'error'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => hrRequestsApi.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-requests', userId] });
+      toast('Request deleted', 'success');
+    },
+    onError: () => toast('Failed to delete request', 'error'),
   });
 
   const cancelMutation = useMutation({
@@ -296,8 +315,10 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
     onError: () => toast('Failed to cancel request', 'error'),
   });
 
-  const resetForm = () =>
+  const resetForm = () => {
     setForm({ request_type: 'annual_leave', start_date: '', end_date: '', days: '', reason: '' });
+    setFile(null);
+  };
 
   const isDateType = DATE_RANGE_TYPES.has(form.request_type);
 
@@ -319,6 +340,9 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
     if (isDateType && (!form.start_date || !form.end_date)) { toast('Start and end dates are required', 'error'); return; }
     if (isDateType && form.end_date < form.start_date) { toast('End date must be after start date', 'error'); return; }
     if (!form.reason.trim()) { toast('Please provide a reason', 'error'); return; }
+    if (form.request_type === 'sick_leave' && !file) {
+      toast('Sick leave requires a medical certificate — attach a file', 'error'); return;
+    }
 
     createMutation.mutate({
       ...(empId && { employee: empId }),
@@ -410,13 +434,26 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
                 <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
                   {fmtShort(req.created_at)}
                 </p>
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)' }}>
                   {req.status === 'pending' && (isSelf || isAdmin) && (
                     <button
                       onClick={e => { e.stopPropagation(); cancelMutation.mutate(req.id); }}
                       disabled={cancelMutation.isPending}
                       style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', padding: '4px 10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
                       Cancel
+                    </button>
+                  )}
+                  {/* Admin-only delete — for clearing test data without touching the DB. */}
+                  {isAdmin && (
+                    <button
+                      onClick={async e => {
+                        e.stopPropagation();
+                        if (await confirm('Delete this request permanently? This cannot be undone.'))
+                          deleteMutation.mutate(req.id);
+                      }}
+                      disabled={deleteMutation.isPending}
+                      style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', padding: '4px 10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--status-error, #b91c1c)', background: 'none', cursor: 'pointer', color: 'var(--status-error, #b91c1c)' }}>
+                      Delete
                     </button>
                   )}
                 </div>
@@ -521,6 +558,23 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
                   This request type doesn&apos;t require specific dates and will be routed for approval after submission.
                 </p>
               )}
+
+              {/* Attachment — required for sick leave (medical certificate) */}
+              <div className="form-field">
+                <label className="form-label">
+                  {form.request_type === 'sick_leave'
+                    ? 'Medical Certificate *' : 'Attachment (optional)'}
+                </label>
+                <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp"
+                  onChange={e => setFile(e.target.files?.[0] ?? null)}
+                  style={{ fontSize: 'var(--text-sm)' }} />
+                {form.request_type === 'sick_leave' && (
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
+                    Sick leave must include a medical certificate.
+                  </p>
+                )}
+                {file && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '4px 0 0' }}>{file.name}</p>}
+              </div>
             </div>
 
             <div style={{ padding: 'var(--space-4) var(--space-6)', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>

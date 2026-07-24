@@ -323,6 +323,15 @@ export const hrRequestsApi = {
   cancel: async (id: number): Promise<void> => {
     await apiClient.post(`/hr/requests/${id}/cancel/`);
   },
+  remove: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/requests/${id}/`);
+  },
+  uploadAttachment: async (id: number, file: File): Promise<void> => {
+    const fd = new FormData();
+    fd.append('file', file);
+    await apiClient.post(`/hr/requests/${id}/attachments/`, fd,
+      { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
   getPendingMyApproval: async (): Promise<HRRequest[]> => {
     const response = await apiClient.get('/hr/requests/pending-my-approval/');
     const data = response.data;
