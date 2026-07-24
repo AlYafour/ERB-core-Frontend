@@ -235,39 +235,62 @@ export default function Sidebar() {
     { name: t('nav', 'invoiceList'),    href: '/purchase-invoices',   icon: <DollarIcon className="w-4 h-4" />,       badge: pending.invoice   },
   ];
 
-  const hrItems = [
-    { name: 'Employees',               href: '/hr/employees',          perm: 'hr.hr_employee.view',   icon: <UserIcon className="w-4 h-4" /> },
-    { name: 'Employee Categories',         href: '/hr/groups',             perm: 'hr.hr_employee.view',   icon: <UsersIcon className="w-4 h-4" /> },
-    { name: 'Work Teams',              href: '/hr/teams',              perm: 'hr.hr_employee.view',   icon: <UsersIcon className="w-4 h-4" /> },
-    { name: 'Team Types',              href: '/settings/team-types',   perm: 'hr.hr_employee.view',   icon: <UsersIcon className="w-4 h-4" /> },
-    { name: 'Cost Categories',         href: '/settings/cost-categories', perm: 'hr.hr_employee.view', icon: <DollarIcon className="w-4 h-4" /> },
-    { name: 'Operation Labels',        href: '/settings/labels',       perm: 'hr.hr_settings.view',   icon: <SettingsIcon className="w-4 h-4" /> },
-    { name: 'Work Shifts',             href: '/hr/shifts',             perm: 'hr.hr_employee.view',   icon: <ClockIcon className="w-4 h-4" /> },
-    { name: t('nav', 'hrDepartments'), href: '/hr/departments',        perm: 'hr.hr_employee.view',   icon: <BuildingIcon className="w-4 h-4" /> },
-    { name: 'Positions',               href: '/hr/positions',          perm: 'hr.hr_employee.view',   icon: <UserIcon className="w-4 h-4" /> },
-    { name: t('nav', 'hrAttendance'),  href: '/hr/attendance',         perm: 'hr.hr_attendance.view', icon: <CalendarIcon className="w-4 h-4" /> },
-    { name: 'Work Logs',               href: '/hr/work-logs',           perm: 'hr.hr_attendance.view', icon: <ClockIcon className="w-4 h-4" /> },
-    { name: 'Employee Locations',      href: '/hr/employee-locations',  perm: 'hr.hr_attendance.view', icon: <MapPinIcon className="w-4 h-4" /> },
-    { name: 'Geolocations',            href: '/hr/settings/locations',  perm: 'hr.hr_settings.view',   icon: <MapPinIcon className="w-4 h-4" /> },
-    { name: t('nav', 'hrRequests'),    href: '/hr/requests',           perm: 'hr.hr_request.view',    icon: <FileTextIcon className="w-4 h-4" /> },
-    { name: t('nav', 'hrPayroll'),     href: '/hr/payroll',            perm: 'hr.hr_payroll.view',    icon: <DollarIcon className="w-4 h-4" /> },
-    { name: 'Payroll Runs',            href: '/hr/payroll/runs',       perm: 'hr.hr_payroll.view',    icon: <DollarIcon className="w-4 h-4" /> },
-    { name: 'End of Service',          href: '/hr/eos',                perm: 'hr.hr_payroll.view',    icon: <FileTextIcon className="w-4 h-4" /> },
-    { name: 'Salary History',          href: '/hr/employees/salary-history', perm: 'hr.hr_payroll.view', icon: <DollarIcon className="w-4 h-4" /> },
-    { name: 'Loans & Advances',        href: '/hr/loans',              perm: 'hr.hr_loan.view',       icon: <CurrencyIcon className="w-4 h-4" /> },
-    { name: 'Leave Policies',          href: '/hr/leave-policies',     perm: 'hr.hr_leave.view',      icon: <CalendarIcon className="w-4 h-4" /> },
-    { name: 'Leave Encashments',       href: '/hr/leave-encashments',  perm: 'hr.hr_leave.view',      icon: <DollarIcon className="w-4 h-4" /> },
-    { name: 'HR Settings',             href: '/hr/settings',           perm: 'hr.hr_settings.view',   icon: <SettingsIcon className="w-4 h-4" /> },
-    { name: 'Approval Chains',         href: '/hr/approvals/chains',   perm: 'hr.hr_approval.view',   icon: <ShieldCheckIcon className="w-4 h-4" /> },
-    { name: 'Penalty Rules',           href: '/hr/penalties',          perm: 'hr.hr_penalty.view',    icon: <AlertIcon className="w-4 h-4" /> },
-    { name: 'Onboarding',              href: '/hr/onboarding',         perm: 'hr.hr_lifecycle.view',  icon: <UserIcon className="w-4 h-4" /> },
-    { name: 'Offboarding',             href: '/hr/offboarding',        perm: 'hr.hr_lifecycle.view',  icon: <FileTextIcon className="w-4 h-4" /> },
-    { name: 'Performance',             href: '/hr/performance',        perm: 'hr.hr_performance.view', icon: <CalendarIcon className="w-4 h-4" /> },
-    { name: 'Skills & Training',       href: '/hr/skills',             perm: 'hr.hr_performance.view', icon: <BriefcaseIcon className="w-4 h-4" /> },
-    { name: 'Recruitment',             href: '/hr/recruitment',        perm: 'hr.hr_recruitment.view', icon: <BriefcaseIcon className="w-4 h-4" /> },
-    { name: 'Benefits & Welfare',      href: '/hr/benefits',           perm: 'hr.hr_benefits.view',   icon: <ShieldCheckIcon className="w-4 h-4" /> },
-    { name: 'HR Analytics',            href: '/hr/analytics',          perm: 'hr.hr_analytics.view',  icon: <DashboardIcon className="w-4 h-4" /> },
-  ].filter(item => isAdmin || hasPermission(item.perm));
+  // HR nav, organized into collapsible sub-groups ("a list inside a list").
+  // Each leaf is permission-gated; empty groups are dropped so a user only sees
+  // the areas they can access.
+  const hrGroupDefs = [
+    { name: t('nav', 'hrGrpPeople'), icon: <UserIcon className="w-4 h-4" />, children: [
+      { name: 'Employees',          href: '/hr/employees',          perm: 'hr.hr_employee.view', icon: <UserIcon className="w-4 h-4" /> },
+      { name: 'Employee Categories', href: '/hr/groups',            perm: 'hr.hr_employee.view', icon: <UsersIcon className="w-4 h-4" /> },
+      { name: 'Positions',          href: '/hr/positions',          perm: 'hr.hr_employee.view', icon: <UserIcon className="w-4 h-4" /> },
+    ] },
+    { name: t('nav', 'hrGrpOrg'), icon: <BuildingIcon className="w-4 h-4" />, children: [
+      { name: t('nav', 'hrDepartments'), href: '/hr/departments',   perm: 'hr.hr_employee.view', icon: <BuildingIcon className="w-4 h-4" /> },
+      { name: 'Work Teams',         href: '/hr/teams',              perm: 'hr.hr_employee.view', icon: <UsersIcon className="w-4 h-4" /> },
+      { name: 'Team Types',         href: '/settings/team-types',   perm: 'hr.hr_employee.view', icon: <UsersIcon className="w-4 h-4" /> },
+      { name: 'Cost Categories',    href: '/settings/cost-categories', perm: 'hr.hr_employee.view', icon: <DollarIcon className="w-4 h-4" /> },
+      { name: 'Operation Labels',   href: '/settings/labels',       perm: 'hr.hr_settings.view', icon: <SettingsIcon className="w-4 h-4" /> },
+    ] },
+    { name: t('nav', 'hrGrpTime'), icon: <ClockIcon className="w-4 h-4" />, children: [
+      { name: 'Work Shifts',        href: '/hr/shifts',             perm: 'hr.hr_employee.view',   icon: <ClockIcon className="w-4 h-4" /> },
+      { name: t('nav', 'hrAttendance'), href: '/hr/attendance',     perm: 'hr.hr_attendance.view', icon: <CalendarIcon className="w-4 h-4" /> },
+      { name: 'Work Logs',          href: '/hr/work-logs',          perm: 'hr.hr_attendance.view', icon: <ClockIcon className="w-4 h-4" /> },
+      { name: 'Employee Locations', href: '/hr/employee-locations', perm: 'hr.hr_attendance.view', icon: <MapPinIcon className="w-4 h-4" /> },
+      { name: 'Geolocations',       href: '/hr/settings/locations', perm: 'hr.hr_settings.view',   icon: <MapPinIcon className="w-4 h-4" /> },
+    ] },
+    { name: t('nav', 'hrGrpRequests'), icon: <FileTextIcon className="w-4 h-4" />, children: [
+      { name: t('nav', 'hrRequests'), href: '/hr/requests',         perm: 'hr.hr_request.view',  icon: <FileTextIcon className="w-4 h-4" /> },
+      { name: 'Approval Chains',    href: '/hr/approvals/chains',   perm: 'hr.hr_approval.view', icon: <ShieldCheckIcon className="w-4 h-4" /> },
+      { name: 'Penalty Rules',      href: '/hr/penalties',          perm: 'hr.hr_penalty.view',  icon: <AlertIcon className="w-4 h-4" /> },
+    ] },
+    { name: t('nav', 'hrGrpPayroll'), icon: <DollarIcon className="w-4 h-4" />, children: [
+      { name: t('nav', 'hrPayroll'), href: '/hr/payroll',           perm: 'hr.hr_payroll.view', icon: <DollarIcon className="w-4 h-4" /> },
+      { name: 'Payroll Runs',       href: '/hr/payroll/runs',       perm: 'hr.hr_payroll.view', icon: <DollarIcon className="w-4 h-4" /> },
+      { name: 'End of Service',     href: '/hr/eos',                perm: 'hr.hr_payroll.view', icon: <FileTextIcon className="w-4 h-4" /> },
+      { name: 'Salary History',     href: '/hr/employees/salary-history', perm: 'hr.hr_payroll.view', icon: <DollarIcon className="w-4 h-4" /> },
+      { name: 'Loans & Advances',   href: '/hr/loans',              perm: 'hr.hr_loan.view',    icon: <CurrencyIcon className="w-4 h-4" /> },
+    ] },
+    { name: t('nav', 'hrGrpLeave'), icon: <CalendarIcon className="w-4 h-4" />, children: [
+      { name: 'Leave Policies',     href: '/hr/leave-policies',     perm: 'hr.hr_leave.view',     icon: <CalendarIcon className="w-4 h-4" /> },
+      { name: 'Leave Encashments',  href: '/hr/leave-encashments',  perm: 'hr.hr_leave.view',     icon: <DollarIcon className="w-4 h-4" /> },
+      { name: 'Benefits & Welfare', href: '/hr/benefits',           perm: 'hr.hr_benefits.view',  icon: <ShieldCheckIcon className="w-4 h-4" /> },
+    ] },
+    { name: t('nav', 'hrGrpTalent'), icon: <BriefcaseIcon className="w-4 h-4" />, children: [
+      { name: 'Onboarding',         href: '/hr/onboarding',         perm: 'hr.hr_lifecycle.view',   icon: <UserIcon className="w-4 h-4" /> },
+      { name: 'Offboarding',        href: '/hr/offboarding',        perm: 'hr.hr_lifecycle.view',   icon: <FileTextIcon className="w-4 h-4" /> },
+      { name: 'Performance',        href: '/hr/performance',        perm: 'hr.hr_performance.view', icon: <CalendarIcon className="w-4 h-4" /> },
+      { name: 'Skills & Training',  href: '/hr/skills',             perm: 'hr.hr_performance.view', icon: <BriefcaseIcon className="w-4 h-4" /> },
+      { name: 'Recruitment',        href: '/hr/recruitment',        perm: 'hr.hr_recruitment.view', icon: <BriefcaseIcon className="w-4 h-4" /> },
+    ] },
+    { name: t('nav', 'hrGrpConfig'), icon: <SettingsIcon className="w-4 h-4" />, children: [
+      { name: 'HR Settings',        href: '/hr/settings',           perm: 'hr.hr_settings.view',  icon: <SettingsIcon className="w-4 h-4" /> },
+      { name: 'HR Analytics',       href: '/hr/analytics',          perm: 'hr.hr_analytics.view', icon: <DashboardIcon className="w-4 h-4" /> },
+    ] },
+  ];
+
+  const hrGroups = hrGroupDefs
+    .map(g => ({ ...g, children: g.children.filter(i => isAdmin || hasPermission(i.perm)) }))
+    .filter(g => g.children.length > 0);
 
   const otherItems = [
     ...(isAdmin || hasPermission('procurement.supplier.view') ? [
@@ -420,14 +443,14 @@ export default function Sidebar() {
             )}
 
             {/* HR */}
-            {showModule('hr') && hrItems.length > 0 && (
+            {showModule('hr') && hrGroups.length > 0 && (
               <>
                 <SectionDivider collapsed={sidebarCollapsed} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <CollapsibleMenu
                     title={t('nav', 'hrModule')}
                     icon={<UsersIcon className="w-4 h-4" />}
-                    items={hrItems}
+                    items={hrGroups}
                     defaultOpen={isHRActive}
                     {...collapsibleProps}
                   />
