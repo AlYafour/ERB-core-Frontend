@@ -6,13 +6,14 @@ import { hrRequestsApi, hrApprovalsApi } from '@/lib/api/hr';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import type { UserTabProps } from './types';
 import type { HRRequest } from '@/types';
+import { REQUEST_TYPE_LABELS } from '@/lib/hr/request-type-label';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 const STATUS_COLOR: Record<string, { bg: string; text: string }> = {
-  pending:   { bg: '#fef3c7', text: '#92400e' },
-  approved:  { bg: '#d1fae5', text: '#065f46' },
-  rejected:  { bg: '#fee2e2', text: '#991b1b' },
+  pending:   { bg: 'var(--status-warning-bg)', text: 'var(--status-warning)' },
+  approved:  { bg: 'var(--status-success-bg)', text: 'var(--status-success)' },
+  rejected:  { bg: 'var(--status-error-bg)', text: 'var(--status-error)' },
   cancelled: { bg: 'var(--surface-subtle)', text: 'var(--text-secondary)' },
 };
 
@@ -37,20 +38,17 @@ const DEFAULT_DURATION_MODE: Record<string, 'days' | 'hours' | 'both' | 'none'> 
   missing_punch: 'none', advance_salary: 'none', document_request: 'none', other: 'none',
 };
 
-const TYPE_LABELS: Record<string, string> = {
-  annual_leave:     'Annual Leave',
-  sick_leave:       'Sick Leave',
-  emergency_leave:  'Emergency Leave',
-  unpaid_leave:     'Unpaid Leave',
-  work_from_home:   'Work From Home',
-  personal_leave:   'Personal Leave',
-  business_leave:   'Business Leave',
-  missing_punch:    'Missing Punch',
-  overtime:         'Overtime',
-  advance_salary:   'Advance Salary',
-  document_request: 'Document Request',
-  other:            'Other',
-};
+// Single source of truth for labels lives in lib/hr/request-type-label.
+const TYPE_LABELS = REQUEST_TYPE_LABELS;
+
+// Types an employee can actually raise from the New Request form. Internal codes
+// (advance, salary_certificate, expense, generic) are excluded — used only as the
+// fallback when the request-types API hasn't resolved.
+const RAISABLE_TYPES = [
+  'annual_leave', 'sick_leave', 'emergency_leave', 'unpaid_leave', 'work_from_home',
+  'personal_leave', 'business_leave', 'missing_punch', 'overtime', 'advance_salary',
+  'document_request', 'other',
+] as const;
 
 /** yyyy-mm-dd for N days ago, in local time. */
 function ymdDaysAgo(n: number) {
@@ -215,7 +213,7 @@ function ApprovalsInbox({ userId }: { userId: number }) {
                 <button
                   onClick={() => approveMutation.mutate(req.id)}
                   disabled={approveMutation.isPending || rejectMutation.isPending}
-                  style={{ padding: '4px 12px', borderRadius: 'var(--radius-md)', border: 'none', background: '#d1fae5', color: '#065f46', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)' }}>
+                  style={{ padding: '4px 12px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--status-success-bg)', color: 'var(--status-success)', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)' }}>
                   Approve
                 </button>
                 <button
@@ -224,7 +222,7 @@ function ApprovalsInbox({ userId }: { userId: number }) {
                     else { setRejectingId(req.id); setExpandedId(null); }
                   }}
                   disabled={approveMutation.isPending}
-                  style={{ padding: '4px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', background: isRejectOpen ? '#fee2e2' : 'none', color: isRejectOpen ? '#991b1b' : 'var(--text-secondary)', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)' }}>
+                  style={{ padding: '4px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', background: isRejectOpen ? 'var(--status-error-bg)' : 'none', color: isRejectOpen ? 'var(--status-error)' : 'var(--text-secondary)', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)' }}>
                   Reject
                 </button>
               </div>
@@ -232,9 +230,9 @@ function ApprovalsInbox({ userId }: { userId: number }) {
 
             {/* Reject reason inline */}
             {isRejectOpen && (
-              <div onClick={e => e.stopPropagation()} style={{ padding: 'var(--space-3) var(--space-5) var(--space-4)', borderTop: '1px solid #fee2e2', background: '#fff5f5', display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start' }}>
+              <div onClick={e => e.stopPropagation()} style={{ padding: 'var(--space-3) var(--space-5) var(--space-4)', borderTop: '1px solid var(--status-error-border)', background: 'var(--status-error-bg)', display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start' }}>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: '#991b1b', margin: '0 0 var(--space-2)' }}>Reason for rejection *</p>
+                  <p style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--status-error)', margin: '0 0 var(--space-2)' }}>Reason for rejection *</p>
                   <textarea
                     value={rejectReason}
                     onChange={e => setRejectReason(e.target.value)}
@@ -249,7 +247,7 @@ function ApprovalsInbox({ userId }: { userId: number }) {
                   <button
                     onClick={() => handleReject(req.id)}
                     disabled={rejectMutation.isPending || !rejectReason.trim()}
-                    style={{ padding: '6px 14px', borderRadius: 'var(--radius-md)', border: 'none', background: '#991b1b', color: '#fff', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', opacity: rejectMutation.isPending ? 0.7 : 1 }}>
+                    style={{ padding: '6px 14px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--status-error)', color: 'var(--text-inverse)', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', opacity: rejectMutation.isPending ? 0.7 : 1 }}>
                     {rejectMutation.isPending ? 'Rejecting…' : 'Confirm'}
                   </button>
                   <button
@@ -525,7 +523,7 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
                 <div style={{ padding: 'var(--space-3) var(--space-5) var(--space-4)', borderTop: '1px solid var(--border-subtle)', background: 'var(--surface-subtle)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                   {req.approval_instance_id && req.status === 'pending' && req.current_approval_step && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                      <span style={{ fontSize: 'var(--text-xs)', color: '#92400e', background: '#fef3c7', padding: '2px 8px', borderRadius: 99, fontWeight: 'var(--weight-medium)' }}>
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--status-warning)', background: 'var(--status-warning-bg)', padding: '2px 8px', borderRadius: 99, fontWeight: 'var(--weight-medium)' }}>
                         Step {req.current_approval_step.step_order}
                       </span>
                       <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
@@ -534,12 +532,12 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
                     </div>
                   )}
                   {req.status === 'approved' && (
-                    <p style={{ fontSize: 'var(--text-xs)', color: '#065f46', margin: 0 }}>
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--status-success)', margin: 0 }}>
                       Approved{req.approver_name ? ` by ${req.approver_name}` : ''}{req.approved_at ? ` on ${fmtDate(req.approved_at)}` : ''}
                     </p>
                   )}
                   {req.status === 'rejected' && req.reject_reason && (
-                    <p style={{ fontSize: 'var(--text-xs)', color: '#991b1b', margin: 0 }}>
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--status-error)', margin: 0 }}>
                       <span style={{ fontWeight: 'var(--weight-semibold)' }}>Rejection reason: </span>{req.reject_reason}
                     </p>
                   )}
@@ -576,7 +574,7 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
                 <label className="form-label">Request Type *</label>
                 <select className="form-select" value={form.request_type} onChange={updateForm('request_type')}>
                   {(requestTypes?.filter(t => t.is_active) ??
-                    Object.entries(TYPE_LABELS).map(([code, name]) => ({ code, name, id: 0, name_ar: '', description: '', is_active: true }))
+                    RAISABLE_TYPES.map(code => ({ code, name: TYPE_LABELS[code], id: 0, name_ar: '', description: '', is_active: true }))
                   ).map(t => <option key={t.code} value={t.code}>{t.name}</option>)}
                 </select>
               </div>
@@ -761,7 +759,7 @@ function TypeSummary({ userId }: { userId: number }) {
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', flexShrink: 0 }}>
                 {pending > 0 && (
-                  <span style={{ fontSize: 'var(--text-xs)', background: '#fef3c7', color: '#92400e', padding: '1px 6px', borderRadius: 99, fontWeight: 'var(--weight-semibold)' }}>
+                  <span style={{ fontSize: 'var(--text-xs)', background: 'var(--status-warning-bg)', color: 'var(--status-warning)', padding: '1px 6px', borderRadius: 99, fontWeight: 'var(--weight-semibold)' }}>
                     {pending}
                   </span>
                 )}
@@ -829,8 +827,8 @@ export default function RequestsTab({ user, emp, isSelf, isAdmin, userId }: User
           <span style={{
             fontSize: 'var(--text-xs)', padding: '1px 7px', borderRadius: 99,
             fontWeight: 'var(--weight-semibold)',
-            background: active && isApproval && count > 0 ? '#fef3c7' : 'var(--surface-subtle)',
-            color:      active && isApproval && count > 0 ? '#92400e'  : 'var(--text-secondary)',
+            background: active && isApproval && count > 0 ? 'var(--status-warning-bg)' : 'var(--surface-subtle)',
+            color:      active && isApproval && count > 0 ? 'var(--status-warning)'  : 'var(--text-secondary)',
           }}>
             {count}
           </span>

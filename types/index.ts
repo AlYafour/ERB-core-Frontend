@@ -911,6 +911,14 @@ export interface HRRequest {
     strategy: string;
     resolved_approver_id: number | null;
   } | null;
+  attachments?: {
+    id: string | number;
+    name: string;
+    size: number;
+    url: string | null;
+    uploaded_by_name: string | null;
+    created_at: string;
+  }[];
   created_at: string;
   updated_at: string;
 }

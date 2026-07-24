@@ -3,10 +3,12 @@
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
-import { hrRequestsApi } from '@/lib/api/hr';
-import { useAuth } from '@/lib/hooks/use-auth';
+import { hrRequestsApi, hrApprovalsApi } from '@/lib/api/hr';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { useMyEmployeeRecord } from '@/lib/hooks/use-my-employee-record';
+import { useLocale } from '@/lib/hooks/use-locale';
+import { resolveRequestTypeLabel } from '@/lib/hr/request-type-label';
+import { ProcField } from '@/components/procurement/shared/ProcField';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { Button, Badge, Loader, PageHeader, PageShell } from '@/components/ui';
 import { useState } from 'react';
@@ -15,21 +17,29 @@ const STATUS_VARIANT: Record<string, string> = {
   pending: 'warning', approved: 'success', rejected: 'error', cancelled: 'default',
 };
 
-const typeLabels: Record<string, string> = {
-  annual_leave: 'Annual Leave', sick_leave: 'Sick Leave',
-  emergency_leave: 'Emergency Leave', unpaid_leave: 'Unpaid Leave',
-  work_from_home: 'Work From Home', overtime: 'Overtime',
-  advance_salary: 'Advance Salary', document_request: 'Document Request',
-  other: 'Other',
+const fmtDate = (d?: string | null) =>
+  d ? new Date(d).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+const fmtShort = (d?: string | null) =>
+  d ? new Date(d).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }) : '—';
+const fmtDateTime = (d?: string | null) =>
+  d ? new Date(d).toLocaleString('en-GB', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+const t24 = (t?: string | null) => (t ? t.slice(0, 5) : '');
+const t12 = (t?: string | null) => {
+  if (!t) return '';
+  const [h, m] = t.split(':');
+  let hh = parseInt(h, 10);
+  const ampm = hh >= 12 ? 'PM' : 'AM';
+  hh = hh % 12 || 12;
+  return `${hh}:${m} ${ampm}`;
 };
+const isImageName = (n?: string) => !!n && /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(n);
 
 export default function HRRequestDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
   const { hasPermission } = useMyPermissions();
   const { emp: myEmp } = useMyEmployeeRecord();
-  const isAdmin    = hasPermission('hr.hr_request.view');
+  const { isArabic } = useLocale();
   const canApprove = hasPermission('hr.hr_request.approve');
   const canReject  = hasPermission('hr.hr_request.reject');
   const canCancel  = hasPermission('hr.hr_request.cancel');
@@ -39,6 +49,12 @@ export default function HRRequestDetailPage() {
   const { data: req, isLoading, error } = useQuery({
     queryKey: ['hr-request', id],
     queryFn: () => hrRequestsApi.getById(Number(id)),
+  });
+
+  const { data: requestTypes } = useQuery({
+    queryKey: ['hr-request-types'],
+    queryFn: hrApprovalsApi.getRequestTypes,
+    staleTime: 10 * 60 * 1000,
   });
 
   const approveMutation = useMutation({
@@ -60,33 +76,73 @@ export default function HRRequestDetailPage() {
   });
 
   const handleApprove = async () => {
-    const ok = await confirm('Approve this request?');
-    if (ok) approveMutation.mutate();
+    if (await confirm('Approve this request?')) approveMutation.mutate();
   };
-
   const handleCancel = async () => {
-    const ok = await confirm('Cancel this request? The employee will be notified.');
-    if (ok) cancelMutation.mutate();
+    if (await confirm('Cancel this request? The employee will be notified.')) cancelMutation.mutate();
   };
 
   if (isLoading) return <MainLayout><div className="card empty-state"><Loader /></div></MainLayout>;
   if (error || !req) return <MainLayout><div className="card empty-state"><p style={{ color: 'var(--color-error)', margin: 0 }}>Request not found.</p></div></MainLayout>;
 
+  const typeLabel = resolveRequestTypeLabel(req.request_type, requestTypes, isArabic);
+  const statusVariant = (STATUS_VARIANT[req.status] as import('@/components/ui/Badge').BadgeProps['variant']) || 'default';
+
+  const hoursNum = req.hours != null ? Number(req.hours) : 0;
+  const daysNum  = req.days  != null ? Number(req.days)  : 0;
+  const isHourly = hoursNum > 0 && !!req.start_time && !!req.end_time;
+  const isMissingPunch = req.request_type === 'missing_punch';
+
+  // Headline KPI tiles adapt to how the request measures time (hours vs days).
+  type Tile = { value: string; label: string; sub?: string; accent?: boolean };
+  const tiles: Tile[] = [];
+  if (isHourly) {
+    tiles.push({ value: `${hoursNum}`, label: hoursNum === 1 ? 'Hour' : 'Hours', sub: `${t24(req.start_time)}–${t24(req.end_time)}`, accent: true });
+    tiles.push({ value: fmtShort(req.start_date), label: 'Date' });
+  } else if (isMissingPunch && req.start_date) {
+    tiles.push({ value: fmtShort(req.start_date), label: 'Day', accent: true });
+  } else if (req.start_date) {
+    if (daysNum > 0) tiles.push({ value: `${daysNum}`, label: daysNum === 1 ? 'Day' : 'Days', sub: `${fmtShort(req.start_date)} – ${fmtShort(req.end_date)}`, accent: true });
+    else tiles.push({ value: fmtShort(req.start_date), label: 'Date' });
+  }
+  tiles.push({ value: fmtShort(req.created_at), label: 'Submitted' });
+
+  // Request Details fields (precise values; tiles are the at-a-glance summary).
+  const details: { label: string; value: string }[] = [
+    { label: 'Employee', value: `${req.employee_name} (${req.employee_id_code})` },
+    { label: 'Type', value: typeLabel },
+    { label: 'Request No.', value: `#${req.id}` },
+  ];
+  if (isHourly) {
+    details.push({ label: 'Date', value: fmtDate(req.start_date) });
+    details.push({ label: 'Time', value: `${t12(req.start_time)} – ${t12(req.end_time)}` });
+    details.push({ label: 'Hours', value: `${hoursNum}` });
+  } else if (isMissingPunch) {
+    details.push({ label: 'Day', value: fmtDate(req.start_date) });
+  } else if (req.start_date) {
+    details.push({ label: 'Start Date', value: fmtDate(req.start_date) });
+    details.push({ label: 'End Date', value: fmtDate(req.end_date) });
+    if (daysNum > 0) details.push({ label: 'Days', value: `${daysNum}` });
+  }
+
+  const attachments = req.attachments ?? [];
+  const isOwner = req.employee === myEmp?.id;
+
   return (
     <MainLayout>
       <PageShell>
         <PageHeader
-          title={typeLabels[req.request_type] || req.request_type}
-          description={`#${req.id} — ${req.employee_name} (${req.employee_id_code})`}
+          title={typeLabel}
+          description={`${req.employee_name} · ${req.employee_id_code}`}
           breadcrumbs={[{ label: 'HR' }, { label: 'Requests', href: '/hr/requests' }, { label: `#${req.id}` }]}
           actions={
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-              <Badge variant={(STATUS_VARIANT[req.status] as import('@/components/ui/Badge').BadgeProps['variant']) || 'default'}>{req.status.toUpperCase()}</Badge>
+              <Badge variant={statusVariant}>{req.status.toUpperCase()}</Badge>
               {req.status === 'pending' && (
                 <>
                   {canApprove && <Button variant="success" size="sm" onClick={handleApprove} isLoading={approveMutation.isPending}>Approve</Button>}
                   {canReject  && <Button variant="destructive" size="sm" onClick={() => setShowRejectInput(!showRejectInput)}>Reject</Button>}
-                  {(canCancel || req.employee === myEmp?.id) && (
+                  {(canCancel || isOwner) && (
                     <Button variant="secondary" size="sm" onClick={handleCancel} isLoading={cancelMutation.isPending}>Cancel</Button>
                   )}
                 </>
@@ -95,46 +151,103 @@ export default function HRRequestDetailPage() {
           }
         />
 
-        <div className="card" style={{ maxWidth: '42rem', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{new Date(req.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-          </div>
+        {/* Headline facts */}
+        <div className="proc-kpi-bar">
+          {tiles.map(t => (
+            <div key={t.label} className={`proc-kpi-card${t.accent ? ' proc-kpi-card--info' : ''}`}>
+              <div className="proc-kpi-value">{t.value}</div>
+              <div className="proc-kpi-label">{t.label}</div>
+              {t.sub && <div className="proc-kpi-sub">{t.sub}</div>}
+            </div>
+          ))}
+        </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', fontSize: 'var(--text-sm)' }}>
-            {[
-              ['Employee', `${req.employee_name} (${req.employee_id_code})`],
-              ['Type', typeLabels[req.request_type] || req.request_type],
-              ['Start Date', req.start_date ? new Date(req.start_date).toLocaleDateString() : '—'],
-              ['End Date', req.end_date ? new Date(req.end_date).toLocaleDateString() : '—'],
-              ['Days', req.days || '—'],
-              ['Approver', req.approver_name || '—'],
-              ['Approved At', req.approved_at ? new Date(req.approved_at).toLocaleString() : '—'],
-              ['Rejected At', req.rejected_at ? new Date(req.rejected_at).toLocaleString() : '—'],
-            ].map(([label, value]) => (
-              <div key={label}>
-                <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{label}</p>
-                <p style={{ fontWeight: 'var(--weight-medium)', marginTop: 'var(--space-1)', marginBottom: 0 }}>{value}</p>
+        {/* Body: details + reason (main)  ·  approval + attachments (side) */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-4)', alignItems: 'flex-start' }}>
+          {/* MAIN */}
+          <div style={{ flex: '1 1 420px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <div className="card">
+              <div className="proc-section-head"><h3 className="proc-section-title">Request Details</h3></div>
+              <div className="proc-info-grid">
+                {details.map(d => <ProcField key={d.label} label={d.label} value={d.value} />)}
               </div>
-            ))}
+            </div>
+
+            {req.reason && (
+              <div className="card">
+                <div className="proc-section-head"><h3 className="proc-section-title">Reason</h3></div>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{req.reason}</p>
+              </div>
+            )}
+
+            {req.notes && (
+              <div className="card">
+                <div className="proc-section-head"><h3 className="proc-section-title">Notes</h3></div>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{req.notes}</p>
+              </div>
+            )}
+
+            {req.reject_reason && (
+              <div className="card" style={{ borderInlineStart: '3px solid var(--status-error)', background: 'var(--status-error-bg)' }}>
+                <div className="proc-section-head" style={{ borderInlineStart: 'none', paddingInlineStart: 0 }}><h3 className="proc-section-title" style={{ color: 'var(--status-error)' }}>Rejection Reason</h3></div>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{req.reject_reason}</p>
+              </div>
+            )}
           </div>
 
-          {req.reason && (
-            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-3)' }}>
-              <p style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', margin: '0 0 var(--space-1) 0' }}>Reason</p>
-              <p style={{ fontSize: 'var(--text-sm)', margin: 0 }}>{req.reason}</p>
+          {/* SIDE */}
+          <div style={{ flex: '1 1 300px', minWidth: 0, maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <div className="card">
+              <div className="proc-section-head"><h3 className="proc-section-title">Approval</h3></div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span className="proc-info-label" style={{ marginBottom: 0 }}>Status</span>
+                  <Badge variant={statusVariant}>{req.status.toUpperCase()}</Badge>
+                </div>
+                {req.status === 'pending' && req.current_approval_step && (
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                    Awaiting approval — step {req.current_approval_step.step_order}
+                  </div>
+                )}
+                <ProcField label="Submitted" value={fmtDateTime(req.created_at)} />
+                <ProcField label="Approver" value={req.approver_name || '—'} />
+                {req.approved_at && <ProcField label="Approved At" value={<span style={{ color: 'var(--status-success)' }}>{fmtDateTime(req.approved_at)}</span>} />}
+                {req.rejected_at && <ProcField label="Rejected At" value={<span style={{ color: 'var(--status-error)' }}>{fmtDateTime(req.rejected_at)}</span>} />}
+              </div>
             </div>
-          )}
 
-          {req.reject_reason && (
-            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-3)' }}>
-              <p style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', margin: '0 0 var(--space-1) 0' }}>Rejection Reason</p>
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-error)', margin: 0 }}>{req.reject_reason}</p>
-            </div>
-          )}
+            {attachments.length > 0 && (
+              <div className="card">
+                <div className="proc-section-head"><h3 className="proc-section-title">Attachments</h3></div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                  {attachments.map(att => (
+                    isImageName(att.name) && att.url ? (
+                      <div key={att.id}>
+                        <img
+                          src={att.url}
+                          alt={att.name}
+                          onClick={() => window.open(att.url!, '_blank')}
+                          style={{ width: '100%', maxHeight: 280, objectFit: 'contain', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', background: 'var(--surface-inset)', cursor: 'pointer', display: 'block' }}
+                        />
+                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: 'var(--space-1) 0 0' }}>{att.name}</p>
+                      </div>
+                    ) : (
+                      <a key={att.id} href={att.url ?? '#'} target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', background: 'var(--surface-inset)', textDecoration: 'none', color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>
+                        <span aria-hidden>📄</span>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{att.name}</span>
+                        {att.size > 0 && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{Math.round(att.size / 1024)} KB</span>}
+                      </a>
+                    )
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {showRejectInput && (
-          <div className="card" style={{ maxWidth: '42rem', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', margin: 0 }}>Rejection Reason</p>
             <textarea
               className="form-textarea"

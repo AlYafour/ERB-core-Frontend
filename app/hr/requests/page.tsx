@@ -1,9 +1,10 @@
 ﻿'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { hrRequestsApi } from '@/lib/api/hr';
+import { hrRequestsApi, hrApprovalsApi } from '@/lib/api/hr';
+import { useLocale } from '@/lib/hooks/use-locale';
 import { HRRequest } from '@/types';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
@@ -17,25 +18,19 @@ import { AppListPage } from '@/components/app/AppListPage';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { HR_REQUEST_STATUS } from '@/lib/utils/status-colors';
+import { resolveRequestTypeLabel } from '@/lib/hr/request-type-label';
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Pending', approved: 'Approved', rejected: 'Rejected', cancelled: 'Cancelled',
 };
 
-const REQUEST_TYPE_LABEL: Record<string, string> = {
-  annual_leave: 'Annual Leave', sick_leave: 'Sick Leave', emergency_leave: 'Emergency Leave',
-  unpaid_leave: 'Unpaid Leave', work_from_home: 'Work From Home', overtime: 'Overtime',
-  advance_salary: 'Advance Salary', document_request: 'Document Request', other: 'Other',
-};
-
-const filterFields: FilterField[] = [
-  { name: 'status', label: 'Status', type: 'select', group: 'Filters',
-    options: Object.entries(STATUS_LABEL).map(([v, l]) => ({ value: v, label: l })) },
-  { name: 'request_type', label: 'Request Type', type: 'select', group: 'Filters',
-    options: Object.entries(REQUEST_TYPE_LABEL).map(([v, l]) => ({ value: v, label: l })) },
-  { name: 'start_date_after',  label: 'Start Date From', type: 'date', group: 'Dates' },
-  { name: 'start_date_before', label: 'Start Date To',   type: 'date', group: 'Dates' },
-];
+// Only the types an employee can actually raise are offered as filter options
+// (advance/salary_certificate/expense/generic are internal codes).
+const FILTERABLE_TYPES = [
+  'annual_leave', 'sick_leave', 'emergency_leave', 'unpaid_leave', 'work_from_home',
+  'personal_leave', 'business_leave', 'missing_punch', 'overtime', 'advance_salary',
+  'document_request', 'other',
+] as const;
 
 const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
 
@@ -50,6 +45,7 @@ export default function HRRequestsPage() {
   const queryClient = useQueryClient();
   const { hasPermission } = useMyPermissions();
   const { emp: myEmp } = useMyEmployeeRecord();
+  const { isArabic } = useLocale();
   const t           = useT();
   const isAdmin     = hasPermission('hr.hr_request.view');
   const canApprove  = hasPermission('hr.hr_request.approve');
@@ -60,6 +56,23 @@ export default function HRRequestsPage() {
     queryKey: ['hr-requests', page, search, filters],
     queryFn:  () => hrRequestsApi.getAll({ page, search, ...filters }),
   });
+
+  // Tenant-configured, locale-aware request-type labels (falls back to the
+  // shared bilingual map). Shared with the detail page + drawer.
+  const { data: requestTypes } = useQuery({
+    queryKey: ['hr-request-types'],
+    queryFn: hrApprovalsApi.getRequestTypes,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const filterFields: FilterField[] = useMemo(() => [
+    { name: 'status', label: 'Status', type: 'select', group: 'Filters',
+      options: Object.entries(STATUS_LABEL).map(([v, l]) => ({ value: v, label: l })) },
+    { name: 'request_type', label: 'Request Type', type: 'select', group: 'Filters',
+      options: FILTERABLE_TYPES.map(v => ({ value: v, label: resolveRequestTypeLabel(v, requestTypes, isArabic) })) },
+    { name: 'start_date_after',  label: 'Start Date From', type: 'date', group: 'Dates' },
+    { name: 'start_date_before', label: 'Start Date To',   type: 'date', group: 'Dates' },
+  ], [requestTypes, isArabic]);
 
   const approveMutation = useMutation({
     mutationFn: (id: number) => hrRequestsApi.approve(id),
@@ -101,11 +114,16 @@ export default function HRRequestsPage() {
         </div>
       ),
     },
-    { key: 'type',   header: 'Type',       render: r => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{REQUEST_TYPE_LABEL[r.request_type] || r.request_type}</span> },
+    { key: 'type',   header: 'Type',       render: r => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{resolveRequestTypeLabel(r.request_type, requestTypes, isArabic)}</span> },
     { key: 'status', header: t('col', 'status'), render: r => <Badge variant={HR_REQUEST_STATUS[r.status] ?? 'default'}>{STATUS_LABEL[r.status] || r.status}</Badge> },
     { key: 'start',  header: 'Start Date', render: r => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{fmtDate(r.start_date)}</span> },
     { key: 'end',    header: 'End Date',   render: r => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{fmtDate(r.end_date)}</span> },
-    { key: 'days',   header: 'Days',       render: r => <span className="font-medium" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{r.days != null ? r.days : '—'}</span> },
+    { key: 'days',   header: 'Duration',   render: r => {
+      const h = r.hours != null ? Number(r.hours) : 0;
+      const d = r.days  != null ? Number(r.days)  : 0;
+      const label = h > 0 ? `${h}h` : d > 0 ? `${d}d` : '—';
+      return <span className="font-medium" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{label}</span>;
+    } },
     { key: 'reason', header: 'Reason',     render: r => <span className="block max-w-[200px] truncate" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }} title={r.reason}>{r.reason || '—'}</span> },
     { key: 'created', header: 'Created',   render: r => <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{fmtDate(r.created_at)}</span> },
     {
