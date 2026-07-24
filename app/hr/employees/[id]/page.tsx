@@ -591,6 +591,7 @@ export default function EmployeeDetailPage() {
       passport_issue_date:  emp.passport_issue_date || '',
       passport_expiry_date: emp.passport_expiry_date || '',
       // Professional
+      employee_id:          emp.employee_id || '',
       employment_type:      emp.employment_type || 'full_time',
       employee_group:       emp.employee_group ?? '',
       department:           emp.department ?? '',
@@ -675,6 +676,7 @@ export default function EmployeeDetailPage() {
           };
         } else if (editSection === 'professional') {
           payload = {
+            employee_id:        str(form.employee_id),
             employment_type:    str(form.employment_type) as HREmployee['employment_type'],
             employee_group:     fk(form.employee_group),
             department:         fk(form.department),
@@ -1468,6 +1470,10 @@ export default function EmployeeDetailPage() {
         {/* ─ Professional ─ */}
         {editSection === 'professional' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+            <div className={fld}>
+              <label className={lbl}>Employee ID</label>
+              <input className={inp} value={form.employee_id as string ?? ''} onChange={f('employee_id')} placeholder="e.g. EMP-0169" />
+            </div>
             <div className={fld}>
               <label className={lbl}>Employment Type</label>
               <select className={sel} value={form.employment_type as string} onChange={f('employment_type')}>
