@@ -433,6 +433,7 @@ export default function Sidebar() {
                 t('nav', 'myProfile'),
                 <UsersIcon className="w-4 h-4" />
               )}
+              {user?.id && navLink('/hr/my-profile', 'My Profile', <UserIcon className="w-4 h-4" />)}
               {user?.id && navLink('/security', 'Account Security', <ShieldCheckIcon className="w-4 h-4" />)}
               {user?.id && navLink('/my-approvals', 'My Approvals', <ShieldCheckIcon className="w-4 h-4" />, myApprovalsBadge)}
             </div>
