@@ -9,6 +9,10 @@ interface DateInputProps {
   disabled?: boolean;
   name?: string;
   style?: React.CSSProperties;
+  /** ISO (YYYY-MM-DD) lower bound — a completed earlier date is flagged invalid. */
+  minDate?: string;
+  /** ISO (YYYY-MM-DD) upper bound — a completed later date is flagged invalid. */
+  maxDate?: string;
 }
 
 function isoToDisplay(iso: string): string {
@@ -24,12 +28,21 @@ function displayToIso(display: string): string {
   return `${digits.slice(4, 8)}-${digits.slice(2, 4)}-${digits.slice(0, 2)}`;
 }
 
-export default function DateInput({ value, onChange, className = 'form-input', disabled, name, style }: DateInputProps) {
+function outOfRange(iso: string, minDate?: string, maxDate?: string): boolean {
+  if (!iso) return false;
+  if (minDate && iso < minDate) return true;
+  if (maxDate && iso > maxDate) return true;
+  return false;
+}
+
+export default function DateInput({ value, onChange, className = 'form-input', disabled, name, style, minDate, maxDate }: DateInputProps) {
   const [display, setDisplay] = useState(() => isoToDisplay(value));
+  const [invalid, setInvalid] = useState(false);
 
   useEffect(() => {
     setDisplay(isoToDisplay(value));
-  }, [value]);
+    setInvalid(outOfRange(value, minDate, maxDate));
+  }, [value, minDate, maxDate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const digits = e.target.value.replace(/\D/g, '').slice(0, 8);
@@ -41,11 +54,18 @@ export default function DateInput({ value, onChange, className = 'form-input', d
 
     if (digits.length === 8) {
       const iso = displayToIso(formatted);
+      setInvalid(outOfRange(iso, minDate, maxDate));
       onChange(iso);
     } else if (digits.length === 0) {
+      setInvalid(false);
       onChange('');
     }
   };
+
+  const rangeHint = minDate && maxDate
+    ? `Date must be between ${isoToDisplay(minDate)} and ${isoToDisplay(maxDate)}`
+    : minDate ? `Date must be on or after ${isoToDisplay(minDate)}`
+    : maxDate ? `Date must be on or before ${isoToDisplay(maxDate)}` : undefined;
 
   const handleBlur = () => {
     // Reformat from stored ISO on blur to handle manual edits
@@ -62,9 +82,12 @@ export default function DateInput({ value, onChange, className = 'form-input', d
       onBlur={handleBlur}
       disabled={disabled}
       name={name}
-      style={style}
+      aria-invalid={invalid || undefined}
+      title={invalid ? rangeHint : undefined}
+      style={{ ...style, ...(invalid ? { borderColor: 'var(--status-error)' } : {}) }}
       maxLength={10}
       inputMode="numeric"
+      placeholder="DD/MM/YYYY"
     />
   );
 }

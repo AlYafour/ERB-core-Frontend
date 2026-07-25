@@ -17,6 +17,7 @@ import { toast } from '@/lib/hooks/use-toast';
 import { Button, Badge, PageShell, Drawer, Loader } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import DateInput from '@/components/ui/DateInput';
+import { NATIONALITY_OPTS, HOME_COUNTRY_OPTS, RELIGION_OPTS } from '@/lib/hr/lookups';
 import { rolesApi, Role, UserRoles, AdditionalRoleAssignment } from '@/lib/api/roles';
 import { HREmployee, User, EmployeeBankAccount } from '@/types';
 import CustomFieldsSection from '@/components/shared/CustomFieldsSection';
@@ -508,6 +509,7 @@ export default function EmployeeDetailPage() {
   const [stampFile,     setStampFile]     = useState<File | null>(null);
   const [stampPreview,  setStampPreview]  = useState<string | null>(null);
   const [changePassword, setChangePassword] = useState(false);
+  const todayIso = new Date().toLocaleDateString('en-CA');
   const [salaryRevealed, setSalaryRevealed] = useState(false);
   const [hoveredCard,    setHoveredCard]    = useState<string | null>(null);
   const fileInputRef  = useRef<HTMLInputElement>(null);
@@ -1412,20 +1414,31 @@ export default function EmployeeDetailPage() {
             </div>
 
             <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-4)', marginTop: 'var(--space-4)' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer', marginBottom: 'var(--space-3)' }}>
-                <input type="checkbox" checked={changePassword}
-                  onChange={e => {
-                    setChangePassword(e.target.checked);
-                    if (!e.target.checked) setForm(p => ({ ...p, password: '', password2: '' }));
-                  }} />
-                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--text-primary)' }}>
-                  Change Password
-                </span>
-              </label>
-              {changePassword && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
-                  <div className={fld}><label className={lbl}>New Password</label><input className={inp} type="password" placeholder="Min 8 characters" value={form.password as string} onChange={f('password')} /></div>
-                  <div className={fld}><label className={lbl}>Confirm Password</label><input className={inp} type="password" placeholder="Repeat password" value={form.password2 as string} onChange={f('password2')} /></div>
+              {!changePassword ? (
+                <button type="button" onClick={() => setChangePassword(true)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)',
+                    padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-default)', background: 'var(--surface-subtle)',
+                    color: 'var(--text-primary)', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)',
+                    cursor: 'pointer',
+                  }}>
+                  🔑 Change Password
+                </button>
+              ) : (
+                <div style={{ border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', background: 'var(--surface-subtle)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>Set a new password</span>
+                    <button type="button"
+                      onClick={() => { setChangePassword(false); setForm(p => ({ ...p, password: '', password2: '' })); }}
+                      style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 'var(--text-sm)' }}>
+                      Cancel
+                    </button>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                    <div className={fld}><label className={lbl}>New Password</label><input className={inp} type="password" placeholder="Min 8 characters" value={form.password as string} onChange={f('password')} /></div>
+                    <div className={fld}><label className={lbl}>Confirm Password</label><input className={inp} type="password" placeholder="Repeat password" value={form.password2 as string} onChange={f('password2')} /></div>
+                  </div>
                 </div>
               )}
             </div>
@@ -1446,7 +1459,7 @@ export default function EmployeeDetailPage() {
                 <option value="female">Female</option>
               </select>
             </div>
-            <div className={fld}><label className={lbl}>Date of Birth</label><DateInput className={inp} value={(form.date_of_birth as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, date_of_birth: v }))} /></div>
+            <div className={fld}><label className={lbl}>Date of Birth</label><DateInput className={inp} value={(form.date_of_birth as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, date_of_birth: v }))} maxDate={todayIso} /></div>
             <div className={fld}>
               <label className={lbl}>Marital Status</label>
               <select className={sel} value={form.marital_status as string} onChange={f('marital_status')}>
@@ -1457,13 +1470,19 @@ export default function EmployeeDetailPage() {
                 <option value="widowed">Widowed</option>
               </select>
             </div>
-            <div className={fld}><label className={lbl}>Nationality</label><input className={inp} value={form.nationality as string} onChange={f('nationality')} /></div>
-            <div className={fld}><label className={lbl}>Home Country</label><input className={inp} value={form.home_country as string} onChange={f('home_country')} /></div>
-            <div className={fld}><label className={lbl}>Religion</label><input className={inp} value={form.religion as string} onChange={f('religion')} /></div>
+            <div className={fld}><label className={lbl}>Nationality</label>
+              <SearchableDropdown options={NATIONALITY_OPTS} value={(form.nationality as string) || null}
+                onChange={v => setForm(p => ({ ...p, nationality: String(v ?? '') }))} allowClear placeholder="Select nationality…" /></div>
+            <div className={fld}><label className={lbl}>Home Country</label>
+              <SearchableDropdown options={HOME_COUNTRY_OPTS} value={(form.home_country as string) || null}
+                onChange={v => setForm(p => ({ ...p, home_country: String(v ?? '') }))} allowClear placeholder="Select country…" /></div>
+            <div className={fld}><label className={lbl}>Religion</label>
+              <SearchableDropdown options={RELIGION_OPTS} value={(form.religion as string) || null}
+                onChange={v => setForm(p => ({ ...p, religion: String(v ?? '') }))} allowClear placeholder="Select religion…" /></div>
             <div className={fld}><label className={lbl}>National ID (Emirates ID)</label><input className={inp} value={form.national_id as string} onChange={f('national_id')} placeholder="XXX-XXXX-XXXXXXX-X" /></div>
             <div className={fld}><label className={lbl}>Passport Number</label><input className={inp} value={form.passport_number as string} onChange={f('passport_number')} /></div>
-            <div className={fld}><label className={lbl}>Passport Issue Date</label><DateInput className={inp} value={(form.passport_issue_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, passport_issue_date: v }))} /></div>
-            <div className={fld}><label className={lbl}>Passport Expiry Date</label><DateInput className={inp} value={(form.passport_expiry_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, passport_expiry_date: v }))} /></div>
+            <div className={fld}><label className={lbl}>Passport Issue Date</label><DateInput className={inp} value={(form.passport_issue_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, passport_issue_date: v }))} maxDate={todayIso} /></div>
+            <div className={fld}><label className={lbl}>Passport Expiry Date</label><DateInput className={inp} value={(form.passport_expiry_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, passport_expiry_date: v }))} minDate={todayIso} /></div>
           </div>
         )}
 
@@ -1546,9 +1565,9 @@ export default function EmployeeDetailPage() {
                 placeholder="— None —" allowClear />
             </div>
 
-            <div className={fld}><label className={lbl}>Hiring Date</label><DateInput className={inp} value={(form.join_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, join_date: v }))} /></div>
-            <div className={fld}><label className={lbl}>End of Probation</label><DateInput className={inp} value={(form.probation_end_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, probation_end_date: v }))} /></div>
-            <div className={fld}><label className={lbl}>Contract End Date</label><DateInput className={inp} value={(form.end_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, end_date: v }))} /></div>
+            <div className={fld}><label className={lbl}>Hiring Date</label><DateInput className={inp} value={(form.join_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, join_date: v }))} maxDate={todayIso} /></div>
+            <div className={fld}><label className={lbl}>End of Probation</label><DateInput className={inp} value={(form.probation_end_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, probation_end_date: v }))} minDate={todayIso} /></div>
+            <div className={fld}><label className={lbl}>Contract End Date</label><DateInput className={inp} value={(form.end_date as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, end_date: v }))} minDate={todayIso} /></div>
           </div>
         )}
 
@@ -1573,7 +1592,7 @@ export default function EmployeeDetailPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
             <div className={fld}><label className={lbl}>Resident ID</label><input className={inp} value={form.resident_id as string} onChange={f('resident_id')} /></div>
             <div className={fld}><label className={lbl}>Labor Card Number</label><input className={inp} value={form.labor_card as string} onChange={f('labor_card')} /></div>
-            <div className={fld}><label className={lbl}>Labor Card Expiry</label><DateInput className={inp} value={(form.labor_card_expiry as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, labor_card_expiry: v }))} /></div>
+            <div className={fld}><label className={lbl}>Labor Card Expiry</label><DateInput className={inp} value={(form.labor_card_expiry as string) ?? ''} onChange={(v) => setForm(p => ({ ...p, labor_card_expiry: v }))} minDate={todayIso} /></div>
             <div className={fld}><label className={lbl}>MOL Number</label><input className={inp} value={form.mol_number as string} onChange={f('mol_number')} /></div>
             <div className={fld}><label className={lbl}>Sponsor Name</label><input className={inp} value={form.sponsor_name as string} onChange={f('sponsor_name')} /></div>
             <div className={fld}><label className={lbl}>Sponsor ID</label><input className={inp} value={form.sponsor_id as string} onChange={f('sponsor_id')} /></div>

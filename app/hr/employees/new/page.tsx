@@ -315,6 +315,9 @@ function NewEmployeeForm() {
   const [religionOpts,       setReligionOpts]       = useState<DropdownOption[]>(RELIGION_OPTS);
   const [employmentTypeOpts, setEmploymentTypeOpts] = useState<DropdownOption[]>(DEFAULT_EMPLOYMENT_TYPES);
 
+  // Local (not UTC) today, for date-field bounds.
+  const todayIso = new Date().toLocaleDateString('en-CA');
+
   // ── Queries ────────────────────────────────────────────────────────────────
 
   const { data: existingUser } = useQuery({
@@ -420,6 +423,16 @@ function NewEmployeeForm() {
   // ── Submit ─────────────────────────────────────────────────────────────────
 
   const handleFinalSubmit = async () => {
+    // Date sanity: past-dates must be in the past, expiry/end dates not before today.
+    const dateErr =
+      (personal.date_of_birth      && personal.date_of_birth      > todayIso && 'Date of birth must be in the past')
+      || (personal.passport_issue_date && personal.passport_issue_date > todayIso && 'Passport issue date cannot be in the future')
+      || (employment.join_date     && employment.join_date        > todayIso && 'Hiring date cannot be in the future')
+      || (personal.passport_expiry_date && personal.passport_expiry_date < todayIso && 'Passport expiry date cannot be before today')
+      || (employment.probation_end_date && employment.probation_end_date < todayIso && 'Probation end date cannot be before today')
+      || (employment.end_date      && employment.end_date         < todayIso && 'Contract end date cannot be before today')
+      || (legal.labor_card_expiry  && legal.labor_card_expiry      < todayIso && 'Labor card expiry cannot be before today');
+    if (dateErr) { toast(dateErr as string, 'error'); return; }
     try {
       let userId: number;
 
@@ -480,6 +493,9 @@ function NewEmployeeForm() {
       }
 
       toast('Employee created successfully', 'success');
+      // Refresh the directory so the new employee + avatar appear immediately.
+      queryClient.invalidateQueries({ queryKey: ['hr-employees-all'] });
+      queryClient.invalidateQueries({ queryKey: ['hr-employees'] });
       router.push('/hr/employees');
     } catch (err: unknown) {
       toast(getApiError(err, 'Failed to create employee'), 'error');
@@ -591,7 +607,7 @@ function NewEmployeeForm() {
                   <div className="form-field"><label className="form-label">Last Name</label><input className={fi} value={personal.last_name} onChange={p('last_name')} /></div>
                   <div className="form-field"><label className="form-label">Arabic Name</label><input className={fi} dir="rtl" value={personal.full_name_ar} onChange={p('full_name_ar')} /></div>
                   <div className="form-field"><label className="form-label">Date of Birth</label>
-                    <DateInput className={fi} value={personal.date_of_birth} onChange={v => setPersonal(prev => ({ ...prev, date_of_birth: v }))} />
+                    <DateInput className={fi} value={personal.date_of_birth} onChange={v => setPersonal(prev => ({ ...prev, date_of_birth: v }))} maxDate={todayIso} />
                   </div>
                   <div className="form-field"><label className="form-label">Gender</label>
                     <SearchableDropdown options={GENDER_OPTS} value={personal.gender} onChange={v => setPersonal(prev => ({ ...prev, gender: String(v ?? '') }))} placeholder="" allowClear />
@@ -627,10 +643,10 @@ function NewEmployeeForm() {
                     <input className={fi} value={personal.passport_number} onChange={p('passport_number')} />
                   </div>
                   <div className="form-field"><label className="form-label">Passport Issue Date</label>
-                    <DateInput className={fi} value={personal.passport_issue_date} onChange={v => setPersonal(prev => ({ ...prev, passport_issue_date: v }))} />
+                    <DateInput className={fi} value={personal.passport_issue_date} onChange={v => setPersonal(prev => ({ ...prev, passport_issue_date: v }))} maxDate={todayIso} />
                   </div>
                   <div className="form-field"><label className="form-label">Passport Expiry Date</label>
-                    <DateInput className={fi} value={personal.passport_expiry_date} onChange={v => setPersonal(prev => ({ ...prev, passport_expiry_date: v }))} />
+                    <DateInput className={fi} value={personal.passport_expiry_date} onChange={v => setPersonal(prev => ({ ...prev, passport_expiry_date: v }))} minDate={todayIso} />
                   </div>
                 </div>
 
@@ -723,13 +739,13 @@ function NewEmployeeForm() {
 
                 <div className="form-grid">
                   <div className="form-field"><label className="form-label">Hiring Date *</label>
-                    <DateInput className={fi} value={employment.join_date} onChange={v => setEmployment(prev => ({ ...prev, join_date: v }))} />
+                    <DateInput className={fi} value={employment.join_date} onChange={v => setEmployment(prev => ({ ...prev, join_date: v }))} maxDate={todayIso} />
                   </div>
                   <div className="form-field"><label className="form-label">End of Probation</label>
-                    <DateInput className={fi} value={employment.probation_end_date} onChange={v => setEmployment(prev => ({ ...prev, probation_end_date: v }))} />
+                    <DateInput className={fi} value={employment.probation_end_date} onChange={v => setEmployment(prev => ({ ...prev, probation_end_date: v }))} minDate={todayIso} />
                   </div>
                   <div className="form-field"><label className="form-label">Contract End Date</label>
-                    <DateInput className={fi} value={employment.end_date} onChange={v => setEmployment(prev => ({ ...prev, end_date: v }))} />
+                    <DateInput className={fi} value={employment.end_date} onChange={v => setEmployment(prev => ({ ...prev, end_date: v }))} minDate={todayIso} />
                   </div>
                 </div>
 
@@ -830,7 +846,7 @@ function NewEmployeeForm() {
                     <input className={fi} value={legal.labor_card} onChange={le('labor_card')} />
                   </div>
                   <div className="form-field"><label className="form-label">Labor Card Expiry</label>
-                    <DateInput className={fi} value={legal.labor_card_expiry} onChange={v => setLegal(prev => ({ ...prev, labor_card_expiry: v }))} />
+                    <DateInput className={fi} value={legal.labor_card_expiry} onChange={v => setLegal(prev => ({ ...prev, labor_card_expiry: v }))} minDate={todayIso} />
                   </div>
                   <div className="form-field"><label className="form-label">MOL Number</label>
                     <input className={fi} value={legal.mol_number} onChange={le('mol_number')} />
