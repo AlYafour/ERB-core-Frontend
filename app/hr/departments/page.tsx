@@ -16,6 +16,8 @@ export default function DepartmentsPage() {
   const queryClient = useQueryClient();
   const { hasPermission } = useMyPermissions();
   const isAdmin = hasPermission('hr.hr_employee.view');
+  // Gate write actions on the write permission the backend enforces (admins → true).
+  const canManage = hasPermission('hr.hr_employee.create');
 
   const tableState = useTableState();
   const { search } = tableState;
@@ -129,8 +131,8 @@ export default function DepartmentsPage() {
       header: '',
       render: r => (
         <RowActions actions={[
-          { label: 'Edit', onClick: () => openEdit(r), hidden: !isAdmin },
-          { label: 'Delete', variant: 'danger', hidden: !isAdmin, onClick: async () => {
+          { label: 'Edit', onClick: () => openEdit(r), hidden: !canManage },
+          { label: 'Delete', variant: 'danger', hidden: !canManage, onClick: async () => {
             if (await confirm(`Delete department "${r.name}"?`)) deleteMutation.mutate(r.id);
           }},
         ]} />
@@ -144,7 +146,7 @@ export default function DepartmentsPage() {
       description="Organisational units — structure, hierarchy, headcount"
       breadcrumbs={[{ label: 'HR' }, { label: 'Departments' }]}
       totalCount={all.length}
-      createAction={isAdmin
+      createAction={canManage
         ? <Button variant="primary" size="sm" onClick={openCreate}>+ New Department</Button>
         : undefined}
       selectable={true}

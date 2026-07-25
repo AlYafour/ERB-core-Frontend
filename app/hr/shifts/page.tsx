@@ -417,6 +417,8 @@ function DayChips({ days }: { days: number[] }) {
 export default function ShiftsPage() {
   const { hasPermission } = useMyPermissions();
   const admin = hasPermission('hr.hr_employee.view');
+  // Shift writes are gated on hr_attendance.create by the backend (admins → true).
+  const canManage = hasPermission('hr.hr_attendance.create');
   const queryClient = useQueryClient();
   const tableState = useTableState();
   const { search } = tableState;
@@ -552,9 +554,9 @@ export default function ShiftsPage() {
       width: '48px',
       render: s => (
         <RowActions actions={[
-          { label: 'Edit', onClick: () => setModalShift(s), hidden: !admin },
+          { label: 'Edit', onClick: () => setModalShift(s), hidden: !canManage },
           { separator: true },
-          { label: 'Delete', variant: 'danger', hidden: !admin, onClick: async () => {
+          { label: 'Delete', variant: 'danger', hidden: !canManage, onClick: async () => {
             if (await confirm(`Delete shift "${s.name}"?`)) deleteMutation.mutate(s.id);
           }},
         ]} />
@@ -568,7 +570,7 @@ export default function ShiftsPage() {
       description="Define named work schedules and assign them to employee categories."
       breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Work Shifts' }]}
       totalCount={allShifts.length}
-      createAction={admin ? (
+      createAction={canManage ? (
         <Button variant="primary" size="sm" onClick={() => setModalShift('new')}>+ Create Shift</Button>
       ) : undefined}
       selectable={true}

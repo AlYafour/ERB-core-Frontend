@@ -243,6 +243,8 @@ function GroupModal({
 export default function EmployeeGroupsPage() {
   const { hasPermission } = useMyPermissions();
   const admin = hasPermission('hr.hr_employee.view');
+  // Write actions require the write permission the backend enforces (admins → true).
+  const canManage = hasPermission('hr.hr_employee.create');
   const queryClient = useQueryClient();
 
   const tableState = useTableState();
@@ -410,11 +412,13 @@ export default function EmployeeGroupsPage() {
             {
               label: 'Edit',
               onClick: () => setModalGroup(group),
+              hidden: !canManage,
             },
             { separator: true },
             {
               label: 'Delete',
               variant: 'danger',
+              hidden: !canManage,
               onClick: async () => {
                 if (await confirm(`Delete category "${group.name}" (${group.code})?`)) {
                   deleteMutation.mutate(group.id);
@@ -438,7 +442,7 @@ export default function EmployeeGroupsPage() {
       ]}
       totalCount={allGroups.length}
       createAction={
-        admin ? (
+        canManage ? (
           <Button variant="primary" size="sm" onClick={() => setModalGroup('new')}>
             + Create Category
           </Button>

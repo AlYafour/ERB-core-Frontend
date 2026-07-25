@@ -37,6 +37,9 @@ export default function PositionsPage() {
   const queryClient = useQueryClient();
   const { hasPermission } = useMyPermissions();
   const isAdmin = hasPermission('hr.hr_employee.view');
+  // Write actions must be gated on the WRITE permission the backend enforces,
+  // not on 'view' (which regular employees have). Admins short-circuit to true.
+  const canManage = hasPermission('hr.hr_employee.create');
 
   const tableState = useTableState();
   const { search } = tableState;
@@ -232,9 +235,9 @@ export default function PositionsPage() {
       header: '',
       render: r => (
         <RowActions actions={[
-          { label: 'Edit', onClick: () => openEdit(r), hidden: !isAdmin },
+          { label: 'Edit', onClick: () => openEdit(r), hidden: !canManage },
           { label: 'View Employees', onClick: () => setViewingPosition(r) },
-          { label: 'Delete', variant: 'danger', hidden: !isAdmin, onClick: async () => {
+          { label: 'Delete', variant: 'danger', hidden: !canManage, onClick: async () => {
             if (await confirm(`Delete position "${r.title}"?`)) deleteMutation.mutate(r.id);
           }},
         ]} />
@@ -250,7 +253,7 @@ export default function PositionsPage() {
       description="Job positions — department, level, and default role assignment"
       breadcrumbs={[{ label: 'HR' }, { label: 'Positions' }]}
       totalCount={filtered.length}
-      createAction={isAdmin
+      createAction={canManage
         ? <Button variant="primary" size="sm" onClick={openCreate}>+ New Position</Button>
         : undefined}
       selectable={true}

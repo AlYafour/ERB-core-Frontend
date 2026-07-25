@@ -757,7 +757,10 @@ function MembersDrawer({
 
 export default function WorkTeamsPage() {
   const { hasPermission } = useMyPermissions();
-  const admin = hasPermission('hr.hr_employee.view');
+  // `admin` gates every write action on this management page (create/edit/delete
+  // team + add/remove members). It must require the WRITE permission the backend
+  // enforces (hr_employee.create), not 'view' which regular employees hold.
+  const admin = hasPermission('hr.hr_employee.create');
   const queryClient = useQueryClient();
   const tableState = useTableState();
   const { search } = tableState;

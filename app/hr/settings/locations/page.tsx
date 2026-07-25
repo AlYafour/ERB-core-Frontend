@@ -26,6 +26,9 @@ export default function HRSettingsLocationsPage() {
   const { hasPermission } = useMyPermissions();
   const router = useRouter();
   const isAdmin = hasPermission('hr.hr_settings.view');
+  // Page access is gated on hr_settings.view; the actual create/edit/delete
+  // buttons require the write permission the backend enforces (admins → true).
+  const canManage = hasPermission('hr.hr_employee.create');
 
   const [selectedType,  setSelectedType]  = useState<HRLocationType | null>(null);
   const [searchLoc,     setSearchLoc]     = useState('');
@@ -257,7 +260,7 @@ export default function HRSettingsLocationsPage() {
           <td style={tdStyle}>
             <Badge variant={loc.is_active ? 'success' : 'error'}>{loc.is_active ? 'Active' : 'Inactive'}</Badge>
           </td>
-          {isAdmin && (
+          {canManage && (
             <td style={{ ...tdStyle, textAlign: 'right' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 'var(--space-1)' }}>
                 <button onClick={() => openLocCreate(loc.id)} title="Add sub-location"
@@ -302,7 +305,7 @@ export default function HRSettingsLocationsPage() {
                   Manage location types, organisational hierarchy, and GPS check-in geofences
                 </p>
               </div>
-              {isAdmin && (
+              {canManage && (
                 <Button variant="primary" size="sm" onClick={openTypeCreate}>
                   + New Type
                 </Button>
@@ -319,7 +322,7 @@ export default function HRSettingsLocationsPage() {
                 {loadingTypes ? <Loader /> : types.length === 0 ? (
                   <div className="card empty-state" style={{ padding: 'var(--space-6) var(--space-4)' }}>
                     <p className="empty-state-title" style={{ fontSize: 'var(--text-xs)' }}>No types yet</p>
-                    {isAdmin && (
+                    {canManage && (
                       <button onClick={openTypeCreate} style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', fontWeight: 'var(--weight-medium)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 'var(--space-2)' }}>
                         + Create first type
                       </button>
@@ -346,7 +349,7 @@ export default function HRSettingsLocationsPage() {
                               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>{t.locations_count} locations</p>
                             </div>
                           </div>
-                          {isAdmin && (
+                          {canManage && (
                             <div style={{ display: 'flex', gap: 'var(--space-1)', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                               <button onClick={() => openTypeEdit(t)}
                                 style={{ fontSize: 'var(--text-xs)', padding: '2px var(--space-1-5)', borderRadius: 'var(--radius-sm)', color: 'var(--text-secondary)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer' }}>✎</button>
@@ -390,7 +393,7 @@ export default function HRSettingsLocationsPage() {
                             Expand all
                           </button>
                         )}
-                        {isAdmin && (
+                        {canManage && (
                           <Button variant="primary" size="sm" onClick={() => openLocCreate()}>
                             + Add Location
                           </Button>
@@ -403,7 +406,7 @@ export default function HRSettingsLocationsPage() {
                     ) : allLocs.length === 0 ? (
                       <div className="card empty-state">
                         <p className="empty-state-title">No locations yet for &quot;{selectedType.name}&quot;</p>
-                        {isAdmin && (
+                        {canManage && (
                           <Button variant="primary" size="sm" onClick={() => openLocCreate()}>+ Add First Location</Button>
                         )}
                       </div>
@@ -435,14 +438,14 @@ export default function HRSettingsLocationsPage() {
                   <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', margin: 0 }}>Check-in Points (Geofences)</h2>
                   <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>GPS-verified zones used by the mobile attendance geofence</p>
                 </div>
-                {isAdmin && <Button variant="primary" size="sm" onClick={openOfficeCreate}>+ Add Check-in Point</Button>}
+                {canManage && <Button variant="primary" size="sm" onClick={openOfficeCreate}>+ Add Check-in Point</Button>}
               </div>
 
               {loadingOfficeLocs ? <Loader /> : officeLocs.length === 0 ? (
                 <div className="card empty-state">
                   <p className="empty-state-title">No check-in points configured</p>
                   <p className="empty-state-desc">Add an office location so employees can check in from approved sites</p>
-                  {isAdmin && <Button variant="primary" size="sm" onClick={openOfficeCreate} style={{ marginTop: 'var(--space-3)' }}>+ Add First Check-in Point</Button>}
+                  {canManage && <Button variant="primary" size="sm" onClick={openOfficeCreate} style={{ marginTop: 'var(--space-3)' }}>+ Add First Check-in Point</Button>}
                 </div>
               ) : (
                 <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -466,7 +469,7 @@ export default function HRSettingsLocationsPage() {
                           <td style={{ ...tdStyle, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>{o.longitude.toFixed(6)}</td>
                           <td style={{ ...tdStyle, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{o.radius_m}</td>
                           <td style={tdStyle}><Badge variant={o.is_active ? 'success' : 'error'}>{o.is_active ? 'Active' : 'Inactive'}</Badge></td>
-                          {isAdmin && (
+                          {canManage && (
                             <td style={{ ...tdStyle, textAlign: 'right' }}>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 'var(--space-1)' }}>
                                 <button onClick={() => openOfficeEdit(o)}
