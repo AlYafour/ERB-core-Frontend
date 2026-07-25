@@ -341,8 +341,8 @@ function TeamModal({
             </button>
             <button
               type="submit"
-              disabled={isSaving || !form.name.trim() || !form.supervisor}
-              style={{ padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--brand)', color: 'var(--primary-foreground)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', opacity: isSaving || !form.supervisor ? 0.5 : 1 }}
+              disabled={isSaving || !form.name.trim()}
+              style={{ padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--brand)', color: 'var(--primary-foreground)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', opacity: isSaving || !form.name.trim() ? 0.5 : 1 }}
             >
               {isSaving ? 'Saving…' : team ? 'Save Changes' : 'Create Team'}
             </button>
