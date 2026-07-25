@@ -7,7 +7,7 @@ import { AppListPage } from '@/components/app/AppListPage';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { type Column } from '@/components/ui/DataTable';
 import { RowActions } from '@/components/ui/RowActions';
-import { Badge, Button } from '@/components/ui';
+import { Badge, Button, Drawer } from '@/components/ui';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
 import { hrEmployeeGroupsApi, hrShiftsApi, hrEmployeesApi } from '@/lib/api/hr';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
@@ -251,6 +251,13 @@ export default function EmployeeGroupsPage() {
   const { search } = tableState;
 
   const [modalGroup, setModalGroup] = useState<EmployeeGroup | null | 'new'>(null);
+  const [viewingGroup, setViewingGroup] = useState<EmployeeGroup | null>(null);
+
+  const { data: groupMembers, isLoading: loadingGroupMembers } = useQuery({
+    queryKey: ['group-members', viewingGroup?.id],
+    queryFn: () => hrEmployeesApi.getAll({ employee_group: viewingGroup!.id, page_size: 200 }),
+    enabled: !!viewingGroup,
+  });
 
   const { data: raw, isLoading } = useQuery({
     queryKey: ['hr-employee-groups'],
@@ -410,6 +417,10 @@ export default function EmployeeGroupsPage() {
         <RowActions
           actions={[
             {
+              label: 'View Members',
+              onClick: () => setViewingGroup(group),
+            },
+            {
               label: 'Edit',
               onClick: () => setModalGroup(group),
               hidden: !canManage,
@@ -476,6 +487,29 @@ export default function EmployeeGroupsPage() {
           isSaving={isSaving}
         />
       )}
+
+      {/* ── Category members ───────────────────────────────────────── */}
+      <Drawer
+        isOpen={!!viewingGroup}
+        onClose={() => setViewingGroup(null)}
+        title={viewingGroup ? `${viewingGroup.name} — Members` : ''}
+      >
+        {loadingGroupMembers && <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>Loading…</p>}
+        {!loadingGroupMembers && (groupMembers?.results?.length ?? 0) === 0 && (
+          <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>No employees in this category.</p>
+        )}
+        {!loadingGroupMembers && (groupMembers?.results ?? []).map(emp => (
+          <Link key={emp.id} href={`/hr/employees/${emp.id}`}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)',
+              padding: 'var(--space-3) 0', borderBottom: '1px solid var(--border-subtle)', textDecoration: 'none', color: 'inherit' }}>
+            <div>
+              <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)' }}>{emp.full_name}</div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{emp.employee_id}</div>
+            </div>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)' }}>View →</span>
+          </Link>
+        ))}
+      </Drawer>
     </AppListPage>
   );
 }

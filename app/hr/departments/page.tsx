@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AppListPage } from '@/components/app/AppListPage';
 import { useTableState } from '@/lib/hooks/use-table-state';
@@ -9,7 +10,7 @@ import { RowActions } from '@/components/ui/RowActions';
 import { Button, Drawer } from '@/components/ui';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
-import { hrDepartmentsApi } from '@/lib/api/hr';
+import { hrDepartmentsApi, hrEmployeesApi } from '@/lib/api/hr';
 import { HRDepartment } from '@/types';
 
 export default function DepartmentsPage() {
@@ -25,6 +26,14 @@ export default function DepartmentsPage() {
   const [drawerOpen, setDrawerOpen]   = useState(false);
   const [editingDept, setEditingDept] = useState<HRDepartment | null>(null);
   const [form, setForm]               = useState({ name: '', name_ar: '', description: '' });
+  const [viewingDept, setViewingDept] = useState<HRDepartment | null>(null);
+
+  const { data: memberData, isLoading: loadingMembers } = useQuery({
+    queryKey: ['department-members', viewingDept?.id],
+    queryFn: () => hrEmployeesApi.getAll({ department: viewingDept!.id, page_size: 200 }),
+    enabled: !!viewingDept,
+  });
+  const members = memberData?.results ?? [];
 
   const { data: raw, isLoading, error } = useQuery({
     queryKey: ['hr-departments'],
@@ -131,6 +140,7 @@ export default function DepartmentsPage() {
       header: '',
       render: r => (
         <RowActions actions={[
+          { label: 'View Members', onClick: () => setViewingDept(r) },
           { label: 'Edit', onClick: () => openEdit(r), hidden: !canManage },
           { label: 'Delete', variant: 'danger', hidden: !canManage, onClick: async () => {
             if (await confirm(`Delete department "${r.name}"?`)) deleteMutation.mutate(r.id);
@@ -201,6 +211,29 @@ export default function DepartmentsPage() {
             onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
           />
         </div>
+      </Drawer>
+
+      {/* ── Department members ─────────────────────────────────────── */}
+      <Drawer
+        isOpen={!!viewingDept}
+        onClose={() => setViewingDept(null)}
+        title={viewingDept ? `${viewingDept.name} — Members` : ''}
+      >
+        {loadingMembers && <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>Loading…</p>}
+        {!loadingMembers && members.length === 0 && (
+          <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>No employees in this department.</p>
+        )}
+        {!loadingMembers && members.map(emp => (
+          <Link key={emp.id} href={`/hr/employees/${emp.id}`}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)',
+              padding: 'var(--space-3) 0', borderBottom: '1px solid var(--border-subtle)', textDecoration: 'none', color: 'inherit' }}>
+            <div>
+              <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)' }}>{emp.full_name}</div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{emp.employee_id}</div>
+            </div>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)' }}>View →</span>
+          </Link>
+        ))}
       </Drawer>
     </AppListPage>
   );
