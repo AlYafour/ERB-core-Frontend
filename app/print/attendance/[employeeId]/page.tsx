@@ -31,6 +31,7 @@ const GOOD   = { fg: '#15803d', bg: '#effaf1', bd: '#bbe7c4' };
 const WARN   = { fg: '#b45309', bg: '#fef8ee', bd: '#f0d9a8' };
 const CRIT   = { fg: '#b91c1c', bg: '#fef2f2', bd: '#f4c4c4' };
 const NEUT   = { fg: '#475569', bg: '#f6f8fa', bd: '#e2e8f0' };
+const LEAVE  = { fg: '#1d4ed8', bg: '#eef3ff', bd: '#c7d7fe' };
 
 const STATUS_META = {
   GOOD:            { label: 'GOOD',            dot: '🟢', ...GOOD, line: 'Attendance is on track — no issues detected.' },
@@ -88,6 +89,7 @@ export default function PrintAttendancePage() {
   const dayState = (r: AttendanceTimesheet['days'][number]) => {
     if (r.kind === 'off')      return { key: 'off', icon: '·', label: 'Weekend / Off', ...NEUT };
     if (r.kind === 'upcoming') return { key: 'up',  icon: '·', label: 'Upcoming',      ...NEUT };
+    if (r.kind === 'leave')    return { key: 'lv',  icon: '⤶', label: 'On Leave',       ...LEAVE };
     if (r.kind === 'absent')   return { key: 'ab',  icon: '✕', label: 'Absent',        ...CRIT };
     if (r.check_in && r.check_out) return { key: 'ok', icon: '✓', label: 'Complete',        ...GOOD };
     if (r.check_in && !r.check_out) return { key: 'no', icon: '!', label: 'Missing check-out', ...WARN };
@@ -102,6 +104,8 @@ export default function PrintAttendancePage() {
       tone: T.attendance_rate == null ? NEUT : T.attendance_rate >= 90 ? GOOD : T.attendance_rate >= 70 ? WARN : CRIT },
     { label: 'Present Days', value: String(T.present_days), sub: `of ${T.expected_working_days} expected`, tone: NEUT },
     { label: 'Absent Days', value: String(T.absent_days), sub: 'scheduled, no record', tone: T.absent_days ? CRIT : GOOD },
+    { label: 'Leave Days', value: String(T.leave_days ?? 0), sub: 'approved leave', tone: NEUT },
+    ...((T.permission_hours ?? 0) > 0 ? [{ label: 'Permission', value: `${T.permission_hours}h`, sub: `${T.permission_days} day(s)`, tone: NEUT }] : []),
     { label: 'Work Hours', value: T.work_hours.toFixed(1), sub: `of ${T.expected_hours.toFixed(0)} expected`, tone: NEUT },
     { label: 'Overtime', value: T.overtime_hours.toFixed(1), sub: 'hours', tone: T.overtime_hours > 0 ? WARN : NEUT },
     { label: 'Late Arrivals', value: String(T.late_days), sub: 'days', tone: T.late_days ? WARN : GOOD },
@@ -251,7 +255,7 @@ export default function PrintAttendancePage() {
             ) : data.days.map((r, idx) => {
               const s = dayState(r);
               const alt = idx % 2 === 1;
-              const rowBg = s.key === 'ab' ? '#fdf4f4' : s.key === 'off' ? '#f8fafc'
+              const rowBg = s.key === 'ab' ? '#fdf4f4' : s.key === 'lv' ? LEAVE.bg : s.key === 'off' ? '#f8fafc'
                           : s.key === 'up' ? '#fff' : (alt ? '#fafbfc' : '#fff');
               const t = (v: string | null, on: string) =>
                 <span style={{ color: v ? on : '#d3dae2', fontFamily: 'monospace', fontSize: '8pt' }}>{fmtTime(v)}</span>;
@@ -271,6 +275,7 @@ export default function PrintAttendancePage() {
                       <span style={{ width: 12, height: 12, borderRadius: '50%', background: s.fg, color: '#fff',
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '7pt', flexShrink: 0, lineHeight: 1 }}>{s.icon}</span>
                       {s.label}
+                      {r.permission_hours ? <span style={{ color: LEAVE.fg, fontWeight: 600 }}> · {r.permission_hours}h permit</span> : null}
                     </span>
                   </td>
                 </tr>

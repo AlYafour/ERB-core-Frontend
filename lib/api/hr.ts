@@ -579,6 +579,9 @@ export interface AttendanceTimesheet {
     overtime_hours: number;
     late_days: number;
     absent_days: number;
+    leave_days: number;
+    permission_hours: number;
+    permission_days: number;
     missing_check_ins: number;
     missing_check_outs: number;
     complete_records: number;
@@ -586,10 +589,13 @@ export interface AttendanceTimesheet {
     records: number;
   };
   rows: HRAttendance[];
-  /** Complete day-by-day series across the whole period (present/absent/off/upcoming). */
+  /** Complete day-by-day series across the whole period. */
   days: Array<{
     date: string;
-    kind: 'present' | 'absent' | 'off' | 'upcoming';
+    kind: 'present' | 'absent' | 'off' | 'upcoming' | 'leave';
+    leave_type: string | null;
+    permission_hours: number | null;
+    permission_type: string | null;
     check_in: string | null;
     break_start: string | null;
     break_end: string | null;
