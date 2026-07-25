@@ -695,7 +695,20 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
                     {file ? file.name : 'PDF or image, up to 20 MB'}
                   </span>
                   <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp"
-                    onChange={e => setFile(e.target.files?.[0] ?? null)}
+                    onChange={e => {
+                      const f = e.target.files?.[0] ?? null;
+                      if (f) {
+                        if (!/\.(pdf|png|jpe?g|webp)$/i.test(f.name)) {
+                          toast('Only PDF or image files (PDF, PNG, JPG, WEBP) are allowed', 'error');
+                          e.target.value = ''; return;
+                        }
+                        if (f.size > 20 * 1024 * 1024) {
+                          toast('File is too large — maximum 20 MB', 'error');
+                          e.target.value = ''; return;
+                        }
+                      }
+                      setFile(f);
+                    }}
                     style={{ display: 'none' }} />
                 </label>
                 {form.request_type === 'sick_leave' && (
