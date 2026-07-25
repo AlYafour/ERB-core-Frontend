@@ -260,6 +260,7 @@ export default function Sidebar() {
     ] },
     { name: t('nav', 'hrGrpRequests'), icon: <FileTextIcon className="w-4 h-4" />, children: [
       { name: t('nav', 'hrRequests'), href: '/hr/requests',         perm: 'hr.hr_request.view',  icon: <FileTextIcon className="w-4 h-4" /> },
+      { name: 'Profile Changes',    href: '/hr/profile-changes',    perm: 'hr.hr_employee.view', icon: <UserIcon className="w-4 h-4" /> },
       { name: 'Approval Chains',    href: '/hr/approvals/chains',   perm: 'hr.hr_approval.view', icon: <ShieldCheckIcon className="w-4 h-4" /> },
       { name: 'Penalty Rules',      href: '/hr/penalties',          perm: 'hr.hr_penalty.view',  icon: <AlertIcon className="w-4 h-4" /> },
     ] },

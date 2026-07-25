@@ -200,6 +200,55 @@ export const hrEmployeesApi = {
   },
 };
 
+// ── Profile change requests (self-service + approval workflow) ───────────────────
+
+export interface ProfileChangeRequest {
+  id: number;
+  employee: number;
+  employee_name: string;
+  employee_id_code: string;
+  requested_by: number | null;
+  requested_by_name: string | null;
+  requested_changes: Record<string, unknown>;
+  old_values: Record<string, unknown>;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  reviewed_by: number | null;
+  reviewed_by_name: string | null;
+  reviewed_at: string | null;
+  review_note: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const hrProfileChangesApi = {
+  getAll: async (params?: Record<string, string | number>): Promise<PaginatedResponse<ProfileChangeRequest>> => {
+    const r = await apiClient.get('/hr/employees/profile-changes/', { params: { page_size: PAGE_SIZES.default, ...params } });
+    return toPage(r.data);
+  },
+  create: async (data: { requested_changes: Record<string, unknown>; reason?: string; employee?: number }): Promise<ProfileChangeRequest> => {
+    const r = await apiClient.post('/hr/employees/profile-changes/', data);
+    return r.data;
+  },
+  approve: async (id: number, note?: string): Promise<ProfileChangeRequest> => {
+    const r = await apiClient.post(`/hr/employees/profile-changes/${id}/approve/`, { note: note ?? '' });
+    return r.data;
+  },
+  reject: async (id: number, note: string): Promise<ProfileChangeRequest> => {
+    const r = await apiClient.post(`/hr/employees/profile-changes/${id}/reject/`, { note });
+    return r.data;
+  },
+  cancel: async (id: number): Promise<ProfileChangeRequest> => {
+    const r = await apiClient.post(`/hr/employees/profile-changes/${id}/cancel/`, {});
+    return r.data;
+  },
+  // Self-service update of the caller's own allowed fields (personal email / mobile).
+  updateSelf: async (data: Record<string, unknown>): Promise<Record<string, unknown>> => {
+    const r = await apiClient.patch('/hr/employees/me/', data);
+    return r.data;
+  },
+};
+
 // ── Departments ────────────────────────────────────────────────────────────────
 
 export const hrDepartmentsApi = {
