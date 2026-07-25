@@ -323,7 +323,7 @@ export default function Sidebar() {
   const showOperations = true || showModule('crm') || showModule('subcontractors'); // tasks always visible
   const collapsibleProps = { isAdmin, collapsed: sidebarCollapsed };
 
-  function navLink(href: string, label: string, icon: React.ReactNode) {
+  function navLink(href: string, label: string, icon: React.ReactNode, badge?: number) {
     const active = isActive(href);
     return (
       <Link
@@ -362,8 +362,18 @@ export default function Sidebar() {
           {icon}
         </span>
         {!sidebarCollapsed && (
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
             {label}
+          </span>
+        )}
+        {!!badge && badge > 0 && !sidebarCollapsed && (
+          <span style={{
+            flexShrink: 0, minWidth: 16, height: 16, borderRadius: 8,
+            background: 'var(--status-info-bg)', color: 'var(--status-info)',
+            fontSize: 10, fontWeight: 700,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px',
+          }}>
+            {badge > 99 ? '99+' : badge}
           </span>
         )}
       </Link>

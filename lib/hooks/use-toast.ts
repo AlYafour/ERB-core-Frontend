@@ -19,9 +19,30 @@ function notify() {
   listeners.forEach((listener) => listener([...toasts]));
 }
 
-export function toast(message: string, type: ToastType = 'info') {
+// Accept either the string API — toast('Saved', 'success') — or an object API
+// — toast({ title: 'Saved', variant: 'success' }). Both are used across the app;
+// normalizing here keeps every call site working AND prevents rendering an object
+// as a React child (which throws "Objects are not valid as a React child").
+export type ToastInput =
+  | string
+  | { title?: string; message?: string; description?: string; variant?: string; type?: ToastType };
+
+const VARIANT_TO_TYPE: Record<string, ToastType> = {
+  success: 'success', error: 'error', destructive: 'error',
+  warning: 'warning', warn: 'warning', info: 'info', default: 'info',
+};
+
+function normalizeToast(input: ToastInput, fallbackType: ToastType): { message: string; type: ToastType } {
+  if (typeof input === 'string') return { message: input, type: fallbackType };
+  const message = input.message ?? input.title ?? input.description ?? '';
+  const raw = input.variant ?? input.type ?? fallbackType;
+  return { message: String(message), type: VARIANT_TO_TYPE[raw] ?? fallbackType };
+}
+
+export function toast(input: ToastInput, type: ToastType = 'info') {
+  const { message, type: resolvedType } = normalizeToast(input, type);
   const id = `toast-${++toastId}`;
-  toasts = [...toasts, { id, message, type }];
+  toasts = [...toasts, { id, message, type: resolvedType }];
   notify();
   setTimeout(() => { toasts = toasts.filter((t) => t.id !== id); notify(); }, 5000);
 }

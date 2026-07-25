@@ -330,8 +330,8 @@ function ChainEditor({ requestType, realTypeId, policies, roles, onRefresh }: {
           escalation_after_hours: step.escalation_after_hours,
           role_name: '', sod_fallback_role_name: '',
         };
-        if (step.id) await approvalsApi.updateStep(step.id, payload);
-        else await approvalsApi.createStep(payload as Omit<ApprovalStep, 'id'>);
+        if (step.id) await approvalsApi.updateStep(step.id, payload as unknown as Partial<ApprovalStep>);
+        else await approvalsApi.createStep(payload as unknown as Omit<ApprovalStep, 'id'>);
       }
 
       setSaved(true);

@@ -156,7 +156,7 @@ function AssetsTab() {
       asset_tag: assetForm.asset_tag || undefined,
       serial_number: assetForm.serial_number || undefined,
       brand: assetForm.brand || undefined,
-      purchase_cost: assetForm.purchase_cost ? Number(assetForm.purchase_cost) : undefined,
+      purchase_cost: assetForm.purchase_cost || undefined,
       currency: assetForm.currency,
     }),
     onSuccess: () => {
@@ -338,7 +338,7 @@ function TravelTab() {
         destination: form.destination,
         departure_date: form.departure_date,
         return_date: form.return_date,
-        estimated_cost: form.estimated_cost ? Number(form.estimated_cost) : undefined,
+        estimated_cost: form.estimated_cost || undefined,
         currency: form.currency,
         description: form.description,
       })
@@ -457,7 +457,7 @@ function ExpensesTab() {
       const res = await hrBenefitsApi.createExpense({
         title: form.title,
         category: form.category,
-        amount: Number(form.amount),
+        amount: form.amount,
         currency: form.currency,
         expense_date: form.expense_date,
         description: form.description,
@@ -583,7 +583,7 @@ function GrievancesTab() {
   const createMut = useMutation({
     mutationFn: () => hrBenefitsApi.createGrievance({
       grievance_type: form.grievance_type,
-      priority: form.priority,
+      priority: form.priority as 'low' | 'medium' | 'high' | 'critical',
       subject: form.subject,
       description: form.description,
       is_anonymous: form.is_anonymous,

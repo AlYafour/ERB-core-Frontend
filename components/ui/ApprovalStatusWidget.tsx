@@ -4,6 +4,9 @@ import { type ApprovalStatus } from '@/lib/api/approvals';
 
 interface Props {
   approvalStatus: ApprovalStatus | null | undefined;
+  // Optional react-query key of the parent document, so callers can pass it for
+  // cache invalidation after an inline action. Accepted but not required.
+  queryKey?: (string | number)[];
 }
 
 const ACTION_LABEL: Record<string, string> = {

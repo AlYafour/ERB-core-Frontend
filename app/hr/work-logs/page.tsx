@@ -133,14 +133,14 @@ function RejectModal({ log, onClose, onSuccess }: { log: WorkLog; onClose: () =>
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 const filterFields: FilterField[] = [
-  { key: 'status', label: 'Status', type: 'select', options: [
+  { name: 'status', label: 'Status', type: 'select', options: [
     { value: 'draft', label: 'Draft' },
     { value: 'pending_review', label: 'Pending Review' },
     { value: 'approved', label: 'Approved' },
     { value: 'rejected', label: 'Rejected' },
   ]},
-  { key: 'date_from', label: 'From', type: 'date' },
-  { key: 'date_to',   label: 'To',   type: 'date' },
+  { name: 'date_from', label: 'From', type: 'date' },
+  { name: 'date_to',   label: 'To',   type: 'date' },
 ]
 
 export default function WorkLogsPage() {
@@ -182,7 +182,7 @@ export default function WorkLogsPage() {
       key: 'employee_name', header: 'Employee',
       render: r => <span style={{ fontWeight: 600 }}>{r.employee_name}</span>,
     },
-    { key: 'date', header: 'Date' },
+    { key: 'date', header: 'Date', render: r => <span style={{ fontVariantNumeric: 'tabular-nums' }}>{r.date}</span> },
     {
       key: 'hours', header: 'Hours',
       render: r => (

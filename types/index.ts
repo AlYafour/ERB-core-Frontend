@@ -1,3 +1,5 @@
+import type { ApprovalStatus } from '@/lib/api/approvals';
+
 // Permission Types (declared before User so User can reference them)
 export interface Permission {
   id: number;
@@ -45,6 +47,8 @@ export interface User {
   /** Full PermissionSet object returned by the API */
   permission_set?: PermissionSet | null;
   created_at?: string;
+  /** True when the user is a company admin (role==='admin' / permission level ≥100). */
+  is_company_admin?: boolean;
   /** SaaS multi-tenant fields */
   is_platform_admin?: boolean;
   tenant?: string | null;
@@ -271,6 +275,7 @@ export interface PurchaseRequest {
   id: number;
   code: string;
   title: string;
+  approval_status?: ApprovalStatus | null;
   project?: Project | number | null;
   project_id?: number | null;
   project_code?: string;
@@ -405,6 +410,7 @@ export interface PurchaseOrder {
   cost_code?: CostCode | null;
   cost_code_id?: number | null;
   id: number;
+  approval_status?: ApprovalStatus | null;
   order_number: string;
   purchase_request?: number | PurchaseRequest;
   purchase_quotation?: number | PurchaseQuotation;

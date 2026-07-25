@@ -100,7 +100,7 @@ export default function ReportDetailPage({ params }: PageProps) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
             <button onClick={() => router.push('/reports')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', fontSize: '20px' }}>←</button>
             <h1 style={{ fontSize: '22px', fontWeight: 700, margin: 0 }}>{definition.name}</h1>
-            {definition.is_built_in && <Badge variant="secondary">Built-in</Badge>}
+            {definition.is_built_in && <Badge variant="default">Built-in</Badge>}
             <span style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>v{definition.version}</span>
           </div>
           <p style={{ color: 'var(--muted-foreground)', fontSize: '13px', margin: '0 0 0 36px' }}>
@@ -113,11 +113,11 @@ export default function ReportDetailPage({ params }: PageProps) {
           )}
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <Button variant="outline" onClick={() => handlePreview(1)} disabled={loading}>
+          <Button variant="secondary" onClick={() => handlePreview(1)} disabled={loading}>
             {loading ? 'Loading…' : 'Preview'}
           </Button>
-          <Button variant="outline" onClick={() => handleExport('csv')}>Export CSV</Button>
-          <Button variant="outline" onClick={() => handleExport('xlsx')}>Export Excel</Button>
+          <Button variant="secondary" onClick={() => handleExport('csv')}>Export CSV</Button>
+          <Button variant="secondary" onClick={() => handleExport('xlsx')}>Export Excel</Button>
           <Button onClick={handleRun}>Run in Background</Button>
         </div>
       </div>

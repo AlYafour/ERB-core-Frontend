@@ -186,7 +186,7 @@ export default function NewReportPage() {
           <section style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '10px', padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <h2 style={{ fontSize: '15px', fontWeight: 600, margin: 0 }}>Filters</h2>
-              <Button size="sm" variant="outline" onClick={addFilter}>+ Add Filter</Button>
+              <Button size="sm" variant="secondary" onClick={addFilter}>+ Add Filter</Button>
             </div>
             {filters.length === 0 ? (
               <p style={{ color: 'var(--muted-foreground)', fontSize: '13px', margin: 0 }}>No filters — showing all rows.</p>
@@ -244,7 +244,7 @@ export default function NewReportPage() {
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-          <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
+          <Button variant="secondary" onClick={() => router.back()}>Cancel</Button>
           <Button onClick={handleSave} disabled={createMutation.isPending}>
             {createMutation.isPending ? 'Saving…' : 'Save Report'}
           </Button>

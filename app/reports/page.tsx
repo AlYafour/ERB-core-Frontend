@@ -100,7 +100,7 @@ export default function ReportsPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                   <span style={{ fontWeight: 600, fontSize: '15px' }}>{rd.name}</span>
                   {rd.is_built_in && (
-                    <Badge variant="secondary" style={{ fontSize: '11px' }}>Built-in</Badge>
+                    <Badge variant="default" style={{ fontSize: '11px' }}>Built-in</Badge>
                   )}
                   <span style={{
                     fontSize: '11px', padding: '2px 6px', borderRadius: '4px',
@@ -120,13 +120,13 @@ export default function ReportsPage() {
               </div>
 
               <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                <Button size="sm" variant="outline" onClick={() => router.push(`/reports/${rd.id}`)}>
+                <Button size="sm" variant="secondary" onClick={() => router.push(`/reports/${rd.id}`)}>
                   Open
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => handleExport(rd, 'csv')}>
+                <Button size="sm" variant="secondary" onClick={() => handleExport(rd, 'csv')}>
                   CSV
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => handleExport(rd, 'xlsx')}>
+                <Button size="sm" variant="secondary" onClick={() => handleExport(rd, 'xlsx')}>
                   Excel
                 </Button>
                 {!rd.is_built_in && (

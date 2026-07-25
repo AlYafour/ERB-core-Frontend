@@ -592,8 +592,8 @@ function EditPurchaseRequestContent({ pr }: { pr: PurchaseRequest }) {
 
               <div style={{ padding: '4px 16px 8px' }}>
                 {([
-                  { label: 'Request Date', value: fmtDate(formData.request_date) },
-                  { label: 'Required By',  value: fmtDate(formData.required_by) },
+                  { label: 'Request Date', value: fmtDate(formData.request_date), brand: false },
+                  { label: 'Required By',  value: fmtDate(formData.required_by), brand: false },
                   { label: 'Products',     value: items.length > 0 ? `${items.length} item${items.length !== 1 ? 's' : ''}` : '0 items', brand: items.length > 0 },
                 ] as const).map(({ label, value, brand }) => (
                   <div key={label} style={{
