@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hrDocumentTemplatesApi, hrGeneratedDocsApi, DocumentTemplate, GeneratedDocument } from '@/lib/api/hr'
 import { Button } from '@/components/ui/Button'
@@ -33,6 +33,33 @@ const [editTemplate, setEditTemplate] = useState<Partial<DocumentTemplate> | nul
     queryKey: ['doc-generated'],
     queryFn: () => hrGeneratedDocsApi.getAll().then(r => r.data),
   })
+
+  // ── Generated-docs search / filters / sort ──────────────────────────────────
+  const [genSearch, setGenSearch] = useState('')
+  const [genType, setGenType]     = useState('')
+  const [genStatus, setGenStatus] = useState('')
+  const [genFrom, setGenFrom]     = useState('')
+  const [genTo, setGenTo]         = useState('')
+  const [genSort, setGenSort]     = useState<'newest' | 'oldest'>('newest')
+
+  const genTypeOptions = useMemo(() => {
+    const seen = new Map<string, string>()
+    generated.forEach(d => { if (d.template_type) seen.set(d.template_type, d.template_type_display || d.template_type) })
+    return Array.from(seen.entries())
+  }, [generated])
+
+  const filteredGen = useMemo(() => {
+    let list = generated
+    const q = genSearch.trim().toLowerCase()
+    if (q) list = list.filter(d => (d.employee_name || '').toLowerCase().includes(q) || (d.reference_number || '').toLowerCase().includes(q))
+    if (genType) list = list.filter(d => d.template_type === genType)
+    if (genStatus) list = list.filter(d => d.status === genStatus)
+    if (genFrom) list = list.filter(d => d.generated_at >= genFrom)
+    if (genTo) list = list.filter(d => d.generated_at <= genTo + 'T23:59:59')
+    return [...list].sort((a, b) => genSort === 'newest'
+      ? +new Date(b.generated_at) - +new Date(a.generated_at)
+      : +new Date(a.generated_at) - +new Date(b.generated_at))
+  }, [generated, genSearch, genType, genStatus, genFrom, genTo, genSort])
 
   const saveMutation = useMutation({
     mutationFn: (data: Partial<DocumentTemplate>) =>
@@ -112,7 +139,27 @@ const [editTemplate, setEditTemplate] = useState<Partial<DocumentTemplate> | nul
         </TabsContent>
 
         <TabsContent value="generated">
-          <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, overflowX: 'auto', marginTop: 'var(--space-4)' }}>
+          {/* Search / filters / sort */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)', alignItems: 'flex-end', marginTop: 'var(--space-4)' }}>
+            <input className="form-input" style={{ flex: '1 1 200px', minWidth: 180 }} placeholder="Search employee or reference…" value={genSearch} onChange={e => setGenSearch(e.target.value)} />
+            <select className="form-select" style={{ width: 160 }} value={genType} onChange={e => setGenType(e.target.value)}>
+              <option value="">All types</option>
+              {genTypeOptions.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
+            </select>
+            <select className="form-select" style={{ width: 140 }} value={genStatus} onChange={e => setGenStatus(e.target.value)}>
+              <option value="">All statuses</option>
+              <option value="draft">Draft</option><option value="final">Final</option>
+              <option value="sent">Sent</option><option value="voided">Voided</option>
+            </select>
+            <div><label style={{ display: 'block', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>From</label>
+              <input className="form-input" type="date" style={{ width: 150 }} value={genFrom} onChange={e => setGenFrom(e.target.value)} /></div>
+            <div><label style={{ display: 'block', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>To</label>
+              <input className="form-input" type="date" style={{ width: 150 }} value={genTo} onChange={e => setGenTo(e.target.value)} /></div>
+            <select className="form-select" style={{ width: 130 }} value={genSort} onChange={e => setGenSort(e.target.value as 'newest' | 'oldest')}>
+              <option value="newest">Newest first</option><option value="oldest">Oldest first</option>
+            </select>
+          </div>
+          <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, overflowX: 'auto', marginTop: 'var(--space-3)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
               <thead>
                 <tr style={{ background: 'var(--surface-subtle)' }}>
@@ -122,7 +169,7 @@ const [editTemplate, setEditTemplate] = useState<Partial<DocumentTemplate> | nul
                 </tr>
               </thead>
               <tbody>
-                {generated.map((doc, i) => (
+                {filteredGen.map((doc, i) => (
                   <tr key={doc.id} style={{ borderBottom: '1px solid var(--card-border)', background: i % 2 ? 'var(--surface-subtle)' : 'transparent' }}>
                     <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontSize: 12 }}>{doc.reference_number}</td>
                     <td style={{ padding: '10px 16px' }}>{doc.employee_name}</td>
@@ -141,7 +188,7 @@ const [editTemplate, setEditTemplate] = useState<Partial<DocumentTemplate> | nul
                     </td>
                   </tr>
                 ))}
-                {generated.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: 'var(--text-tertiary)' }}>No documents generated yet.</td></tr>}
+                {filteredGen.length === 0 && <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: 'var(--text-tertiary)' }}>{generated.length === 0 ? 'No documents generated yet.' : 'No documents match your filters.'}</td></tr>}
               </tbody>
             </table>
           </div>

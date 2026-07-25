@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
-import { hrProfileChangesApi, type ProfileChangeRequest } from '@/lib/api/hr';
+import { hrProfileChangesApi, hrEmployeesApi, type ProfileChangeRequest } from '@/lib/api/hr';
 import { useMyEmployeeRecord } from '@/lib/hooks/use-my-employee-record';
 import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
@@ -59,6 +59,13 @@ export default function MyProfilePage() {
     queryFn: () => hrProfileChangesApi.getAll({ page_size: 50 }),
   });
 
+  // Documents uploaded by HR/admin to this employee's profile appear here.
+  const { data: myDocuments } = useQuery({
+    queryKey: ['my-documents', emp?.id],
+    queryFn: () => hrEmployeesApi.getDocuments(emp!.id),
+    enabled: !!emp?.id,
+  });
+
   const cancelReq = useMutation({
     mutationFn: (id: number) => hrProfileChangesApi.cancel(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['my-profile-changes'] }); toast('Request cancelled', 'info'); },
@@ -108,6 +115,34 @@ export default function MyProfilePage() {
               <Button variant="primary" size="sm" disabled={!newValue.trim()} isLoading={submitRequest.isPending} onClick={() => submitRequest.mutate()}>Submit request</Button>
             </div>
           </div>
+        </div>
+
+        {/* My documents (uploaded by HR/admin) */}
+        <div style={{ ...card, marginTop: 'var(--space-4)' }}>
+          <h3 style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)' }}>My documents</h3>
+          {(myDocuments?.length ?? 0) === 0 ? (
+            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>No documents have been added to your profile.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              {myDocuments!.map(doc => (
+                <div key={doc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)', padding: 'var(--space-3)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)' }}>
+                  <div>
+                    <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)' }}>{doc.title}</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                      {doc.document_type || '—'}
+                      {doc.expiry_date ? ` · expires ${new Date(doc.expiry_date).toLocaleDateString('en-GB')}` : ''}
+                      {doc.is_expired ? ' · EXPIRED' : ''}
+                    </div>
+                  </div>
+                  {doc.file_url && (
+                    <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
+                      <Button variant="ghost" size="sm">View</Button>
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* My requests */}
