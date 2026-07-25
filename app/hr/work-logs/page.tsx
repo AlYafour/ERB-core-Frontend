@@ -10,6 +10,7 @@ import { AppListPage } from '@/components/app/AppListPage';
 import { BaseModal } from '@/components/ui/base/BaseModal';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { useTableState } from '@/lib/hooks/use-table-state';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 
 const STATUS_VARIANT: Record<string, 'default' | 'warning' | 'success' | 'error'> = {
   draft:          'default',
@@ -147,6 +148,11 @@ export default function WorkLogsPage() {
   const tableState = useTableState()
   const { page, search, filters } = tableState
   const qc = useQueryClient()
+  const { hasPermission } = useMyPermissions()
+  // Backend gates work-log create on hr_attendance.create and approve/reject on
+  // hr_attendance.update. Match the UI (admins short-circuit to true).
+  const canLog     = hasPermission('hr.hr_attendance.create')
+  const canApprove = hasPermission('hr.hr_attendance.update')
 
   const [showNew, setShowNew] = useState(false)
   const [rejectingLog, setRejectingLog] = useState<WorkLog | null>(null)
@@ -210,12 +216,12 @@ export default function WorkLogsPage() {
       key: 'actions', header: '',
       render: r => (
         <RowActions actions={[
-          r.status === 'pending_review' && {
+          canApprove && r.status === 'pending_review' && {
             label: 'Approve',
             onClick: () => handleApprove(r),
             variant: 'success' as const,
           },
-          r.status === 'pending_review' && {
+          canApprove && r.status === 'pending_review' && {
             label: 'Reject',
             onClick: () => setRejectingLog(r),
             variant: 'danger' as const,
@@ -231,10 +237,11 @@ export default function WorkLogsPage() {
       description="Track and approve employee work hours per day."
       breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Work Logs' }]}
       totalCount={totalCount}
-      createAction={
-        <Button variant="primary" size="sm" onClick={() => setShowNew(true)}>
-          + Log Hours
-        </Button>
+      createAction={canLog
+        ? <Button variant="primary" size="sm" onClick={() => setShowNew(true)}>
+            + Log Hours
+          </Button>
+        : undefined
       }
       filterFields={filterFields}
       searchPlaceholder="Search by employee…"

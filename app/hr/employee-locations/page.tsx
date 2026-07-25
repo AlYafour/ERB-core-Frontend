@@ -34,6 +34,8 @@ export default function EmployeeLocationsPage() {
   const queryClient = useQueryClient();
   const { hasPermission } = useMyPermissions();
   const isAdmin = hasPermission('hr.hr_attendance.view');
+  // Assigning employees to locations is a write — gate on the write permission.
+  const canManage = hasPermission('hr.hr_attendance.create');
 
   // ── Table state ──────────────────────────────────────────────────────────
   const tableState = useTableState();
@@ -267,7 +269,7 @@ export default function EmployeeLocationsPage() {
       breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Employee Locations' }]}
       totalCount={grouped.length}
       createAction={
-        isAdmin ? (
+        canManage ? (
           <Button variant="primary" size="sm" onClick={() => openDrawer()}>
             + Add Assignment
           </Button>
