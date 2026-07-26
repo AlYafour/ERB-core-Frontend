@@ -282,6 +282,9 @@ export default function AttendanceNotificationsPage() {
                 <div style={{ padding: 'var(--space-4)' }}>
                   <p style={{ margin: 0, fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>{previewSubject}</p>
                   <p style={{ margin: '6px 0 0', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{previewBody}</p>
+                  <p style={{ margin: '10px 0 0', paddingTop: 10, borderTop: '1px dashed var(--border-subtle)', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                    This is a simplified preview. The emailed copy is a professionally formatted, bilingual (Arabic + English) message with your company logo and a clear details table. Leave the message blank to use the polished bilingual default.
+                  </p>
                 </div>
               </div>
             </section>
