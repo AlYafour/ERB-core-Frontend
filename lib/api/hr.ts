@@ -984,6 +984,10 @@ export const hrCompanySettingsApi = {
     const response = await apiClient.post('/hr/settings/test-notification/', draft ?? {});
     return response.data;
   },
+  backfillLateNotices: async (date?: string): Promise<{ sent: number; date?: string; disabled?: boolean }> => {
+    const response = await apiClient.post('/hr/settings/late-notify-backfill/', date ? { date } : {});
+    return response.data;
+  },
 };
 
 // ── Payroll Runs ──────────────────────────────────────────────────────────────

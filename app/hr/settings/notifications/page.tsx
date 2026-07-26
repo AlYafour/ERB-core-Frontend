@@ -6,7 +6,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { PageShell, PageHeader, Button } from '@/components/ui';
 import HRSettingsNav from '@/components/hr/HRSettingsNav';
 import { hrCompanySettingsApi, type TestNotificationResult } from '@/lib/api/hr';
-import { toast } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import type { HRCompanySettings } from '@/types';
 
 // ── shared styles (design tokens only) ────────────────────────────────────────
@@ -80,6 +80,24 @@ export default function AttendanceNotificationsPage() {
     },
     onError: () => toast('Could not send the test', 'error'),
   });
+
+  const backfill = useMutation({
+    mutationFn: () => hrCompanySettingsApi.backfillLateNotices(),
+    onSuccess: (res) => {
+      if (res.disabled) toast('Turn notifications on and save first', 'info');
+      else if (res.sent > 0) toast(`Sent late notices to ${res.sent} employee(s) for today`, 'success');
+      else toast('No new late arrivals to notify for today', 'info');
+    },
+    onError: () => toast('Could not send today’s notices', 'error'),
+  });
+
+  const runBackfill = async () => {
+    const ok = await confirm(
+      'Send late-arrival notices for everyone who already checked in late today? '
+      + 'Anyone already notified is skipped, so it is safe to run.',
+    );
+    if (ok) backfill.mutate();
+  };
 
   const set = <K extends keyof HRCompanySettings>(k: K, v: HRCompanySettings[K]) => {
     setForm(f => ({ ...f, [k]: v }));
@@ -278,6 +296,16 @@ export default function AttendanceNotificationsPage() {
               </div>
 
               {testResult && <TestResultPanel result={testResult} />}
+
+              <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
+                <SectionTitle
+                  title="Catch up today's late arrivals"
+                  subtitle="Notifications fire automatically at check-in. Use this once to also notify everyone who already checked in late today. Safe to run — anyone already notified is skipped."
+                />
+                <Button variant="secondary" onClick={runBackfill} disabled={backfill.isPending}>
+                  {backfill.isPending ? 'Sending…' : "Send today's late notices"}
+                </Button>
+              </div>
             </section>
           </div>
         </div>
