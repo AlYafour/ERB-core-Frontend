@@ -198,10 +198,10 @@ function CompanySettingsPanel() {
         </div>
       </div>
 
-      {/* ── Attendance policy & notifications (all settings-driven) ── */}
+      {/* ── Attendance policy (overtime) ── */}
       <div style={{ marginTop: 'var(--space-5)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
-        <p style={{ margin: '0 0 2px', fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}>Attendance Policy & Notifications</p>
-        <p style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Overtime handling and who is notified about late arrivals or short days — nothing is fixed, set it per your company.</p>
+        <p style={{ margin: '0 0 2px', fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}>Attendance Policy</p>
+        <p style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Overtime handling — nothing is fixed, set it per your company. Notification settings now live on their own page.</p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
           <div>
@@ -216,62 +216,24 @@ function CompanySettingsPanel() {
 
         <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <SwitchRow label="Count overtime" hint="When off, time worked past the shift end is not paid (hours capped at scheduled)." checked={form.overtime_enabled ?? data?.overtime_enabled ?? true} onChange={v => set('overtime_enabled', v)} />
-          <SwitchRow label="Enable attendance notifications" hint="Master switch — turn all attendance notices on or off." checked={form.notifications_enabled ?? data?.notifications_enabled ?? true} onChange={v => set('notifications_enabled', v)} />
-          <SwitchRow label="Notify on late check-in" hint="An informational notice (not a warning) when someone checks in after the late threshold." indent checked={form.notify_late_arrival ?? data?.notify_late_arrival ?? true} onChange={v => set('notify_late_arrival', v)} />
-          <SwitchRow label="Notify on incomplete hours" hint="When someone checks out before completing the day's required hours." indent checked={form.notify_incomplete_hours ?? data?.notify_incomplete_hours ?? true} onChange={v => set('notify_incomplete_hours', v)} />
         </div>
 
-        <div style={{ marginTop: 'var(--space-4)' }}>
-          <label style={LBL_CS}>Send Notifications To</label>
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 4 }}>
-            {([['employee', 'The employee'], ['direct_manager', 'Direct manager'], ['hr', 'HR managers']] as const).map(([key, lbl]) => {
-              const rec = (form.notify_recipients ?? data?.notify_recipients ?? {}) as Record<string, boolean>;
-              return (
-                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={!!rec[key]} onChange={e => set('notify_recipients', { ...rec, [key]: e.target.checked })} />
-                  {lbl}
-                </label>
-              );
-            })}
+        <Link href="/hr/settings/notifications" style={{ textDecoration: 'none' }}>
+          <div style={{
+            marginTop: 'var(--space-4)', padding: 'var(--space-4)', borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--border-subtle)', background: 'var(--surface-subtle)',
+            display: 'flex', alignItems: 'center', gap: 'var(--space-3)', cursor: 'pointer',
+          }}>
+            <div style={{ width: 34, height: 34, borderRadius: 'var(--radius-md)', background: 'var(--brand-subtle)', color: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)' }}>Attendance Notifications</p>
+              <p style={{ margin: '2px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Choose recipients, personalise the late-arrival message, and send a test.</p>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6" /></svg>
           </div>
-        </div>
-
-        <div style={{ marginTop: 'var(--space-4)' }}>
-          <label style={LBL_CS}>CC Emails (comma-separated)</label>
-          <input style={INPUT_CS} placeholder="hr@company.com, manager@company.com"
-            value={(form.notify_cc_emails ?? data?.notify_cc_emails ?? []).join(', ')}
-            onChange={e => set('notify_cc_emails', e.target.value.split(',').map(s => s.trim()).filter(Boolean))} />
-        </div>
-
-        {/* Late check-in message: threshold + custom subject/body */}
-        <div style={{ marginTop: 'var(--space-5)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
-          <label style={LBL_CS}>Late Check-in Message</label>
-          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 640 }}>
-            <div>
-              <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', display: 'block' }}>Send only when late by at least (minutes)</label>
-              <input type="number" min={0} style={{ ...INPUT_CS, maxWidth: 160 }}
-                value={form.late_notify_after_mins ?? data?.late_notify_after_mins ?? 15}
-                onChange={e => set('late_notify_after_mins', Math.max(0, parseInt(e.target.value || '0', 10)))} />
-              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '4px 0 0' }}>0 = notify on any lateness.</p>
-            </div>
-            <div>
-              <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', display: 'block' }}>Subject (optional)</label>
-              <input style={INPUT_CS} placeholder="Late check-in recorded"
-                value={form.late_notify_subject ?? data?.late_notify_subject ?? ''}
-                onChange={e => set('late_notify_subject', e.target.value)} />
-            </div>
-            <div>
-              <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', display: 'block' }}>Body (optional)</label>
-              <textarea style={{ ...INPUT_CS, minHeight: 84, resize: 'vertical' }}
-                placeholder="{employee} checked in {minutes} minute(s) late on {date}."
-                value={form.late_notify_body ?? data?.late_notify_body ?? ''}
-                onChange={e => set('late_notify_body', e.target.value)} />
-              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '4px 0 0' }}>
-                Placeholders: <code>{'{employee}'}</code> <code>{'{employee_id}'}</code> <code>{'{minutes}'}</code> <code>{'{date}'}</code> <code>{'{shift}'}</code> <code>{'{department}'}</code>
-              </p>
-            </div>
-          </div>
-        </div>
+        </Link>
       </div>
     </div>
   );

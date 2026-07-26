@@ -954,13 +954,34 @@ export const hrPenaltyRulesApi = {
 
 // ── Company Settings ──────────────────────────────────────────────────────────
 
+export interface TestNotificationResult {
+  subject: string;
+  body: string;
+  inapp_recipients: { name: string; email: string }[];
+  email: {
+    attempted: boolean;
+    delivered: boolean;
+    to: string[];
+    smtp_configured: boolean;
+    error: string;
+  };
+}
+
 export const hrCompanySettingsApi = {
   get: async (): Promise<HRCompanySettings> => {
-    const response = await apiClient.get('/hr/settings/company/');
+    const response = await apiClient.get('/hr/settings/');
     return response.data;
   },
   update: async (data: Partial<HRCompanySettings>): Promise<HRCompanySettings> => {
-    const response = await apiClient.patch('/hr/settings/company/', data);
+    const response = await apiClient.patch('/hr/settings/', data);
+    return response.data;
+  },
+  testNotification: async (draft?: {
+    late_notify_subject?: string;
+    late_notify_body?: string;
+    notify_cc_emails?: string[];
+  }): Promise<TestNotificationResult> => {
+    const response = await apiClient.post('/hr/settings/test-notification/', draft ?? {});
     return response.data;
   },
 };
