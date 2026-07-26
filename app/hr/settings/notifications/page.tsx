@@ -82,10 +82,10 @@ export default function AttendanceNotificationsPage() {
   });
 
   const backfill = useMutation({
-    mutationFn: () => hrCompanySettingsApi.backfillLateNotices(),
+    mutationFn: (force: boolean) => hrCompanySettingsApi.backfillLateNotices({ force }),
     onSuccess: (res) => {
       if (res.disabled) toast('Turn notifications on and save first', 'info');
-      else if (res.sent > 0) toast(`Sent late notices to ${res.sent} employee(s) for today`, 'success');
+      else if (res.sent > 0) toast(`Sent ${res.forced ? '(re-sent) ' : ''}late notices for ${res.sent} record(s) today`, 'success');
       else toast('No new late arrivals to notify for today', 'info');
     },
     onError: () => toast('Could not send today’s notices', 'error'),
@@ -96,7 +96,7 @@ export default function AttendanceNotificationsPage() {
       'Send late-arrival notices for everyone who already checked in late today? '
       + 'Anyone already notified is skipped, so it is safe to run.',
     );
-    if (ok) backfill.mutate();
+    if (ok) backfill.mutate(false);
   };
 
   const set = <K extends keyof HRCompanySettings>(k: K, v: HRCompanySettings[K]) => {
@@ -302,9 +302,19 @@ export default function AttendanceNotificationsPage() {
                   title="Catch up today's late arrivals"
                   subtitle="Notifications fire automatically at check-in. Use this once to also notify everyone who already checked in late today. Safe to run — anyone already notified is skipped."
                 />
-                <Button variant="secondary" onClick={runBackfill} disabled={backfill.isPending}>
-                  {backfill.isPending ? 'Sending…' : "Send today's late notices"}
-                </Button>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                  <Button variant="secondary" onClick={runBackfill} disabled={backfill.isPending}>
+                    {backfill.isPending ? 'Sending…' : "Send today's late notices"}
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => backfill.mutate(true)}
+                    disabled={backfill.isPending}
+                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', textDecoration: 'underline' }}
+                  >
+                    Re-send for testing (ignores “already sent”)
+                  </button>
+                </div>
               </div>
             </section>
           </div>
