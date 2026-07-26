@@ -963,6 +963,9 @@ export interface HRCompanySettings {
   notify_incomplete_hours?: boolean;
   notify_recipients?: { employee?: boolean; direct_manager?: boolean; hr?: boolean };
   notify_cc_emails?: string[];
+  late_notify_after_mins?: number;
+  late_notify_subject?: string;
+  late_notify_body?: string;
   updated_at: string;
 }
 

@@ -242,6 +242,36 @@ function CompanySettingsPanel() {
             value={(form.notify_cc_emails ?? data?.notify_cc_emails ?? []).join(', ')}
             onChange={e => set('notify_cc_emails', e.target.value.split(',').map(s => s.trim()).filter(Boolean))} />
         </div>
+
+        {/* Late check-in message: threshold + custom subject/body */}
+        <div style={{ marginTop: 'var(--space-5)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
+          <label style={LBL_CS}>Late Check-in Message</label>
+          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 640 }}>
+            <div>
+              <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', display: 'block' }}>Send only when late by at least (minutes)</label>
+              <input type="number" min={0} style={{ ...INPUT_CS, maxWidth: 160 }}
+                value={form.late_notify_after_mins ?? data?.late_notify_after_mins ?? 15}
+                onChange={e => set('late_notify_after_mins', Math.max(0, parseInt(e.target.value || '0', 10)))} />
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '4px 0 0' }}>0 = notify on any lateness.</p>
+            </div>
+            <div>
+              <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', display: 'block' }}>Subject (optional)</label>
+              <input style={INPUT_CS} placeholder="Late check-in recorded"
+                value={form.late_notify_subject ?? data?.late_notify_subject ?? ''}
+                onChange={e => set('late_notify_subject', e.target.value)} />
+            </div>
+            <div>
+              <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', display: 'block' }}>Body (optional)</label>
+              <textarea style={{ ...INPUT_CS, minHeight: 84, resize: 'vertical' }}
+                placeholder="{employee} checked in {minutes} minute(s) late on {date}."
+                value={form.late_notify_body ?? data?.late_notify_body ?? ''}
+                onChange={e => set('late_notify_body', e.target.value)} />
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '4px 0 0' }}>
+                Placeholders: <code>{'{employee}'}</code> <code>{'{employee_id}'}</code> <code>{'{minutes}'}</code> <code>{'{date}'}</code> <code>{'{shift}'}</code> <code>{'{department}'}</code>
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
