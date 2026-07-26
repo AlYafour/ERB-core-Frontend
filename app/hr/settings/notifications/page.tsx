@@ -250,14 +250,29 @@ export default function AttendanceNotificationsPage() {
               </div>
 
               <div style={{ marginTop: 'var(--space-4)' }}>
-                <label style={LBL_CS}>Message</label>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
+                  <label style={LBL_CS}>Message</label>
+                  {(subject || body) && (
+                    <button
+                      type="button"
+                      onClick={() => { set('late_notify_subject', ''); set('late_notify_body', ''); }}
+                      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 'var(--text-xs)', color: 'var(--brand)', textDecoration: 'underline' }}
+                    >
+                      Clear &amp; use the bilingual default
+                    </button>
+                  )}
+                </div>
                 <textarea
                   style={{ ...INPUT_CS, minHeight: 96, resize: 'vertical', lineHeight: 1.55 }}
-                  placeholder="{employee} checked in {minutes} minute(s) late on {date}."
+                  placeholder="Leave blank for the professional Arabic + English default."
                   value={body}
                   onFocus={() => { lastFocused.current = 'body'; }}
                   onChange={e => set('late_notify_body', e.target.value)}
                 />
+                <p style={SUBHINT_CS}>
+                  Leave this empty to send the polished bilingual (Arabic + English) message.
+                  Anything you type here replaces it and is sent as-is.
+                </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8, alignItems: 'center' }}>
                   <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginRight: 2 }}>Insert:</span>
                   {PLACEHOLDERS.map(ph => (
