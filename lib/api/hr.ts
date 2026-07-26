@@ -397,15 +397,35 @@ export interface HRRequestType {
   name_ar:       string;
   description:   string;
   is_active:     boolean;
+  is_global?:    boolean;
   duration_mode?: 'days' | 'hours' | 'both' | 'none';
   requires_attachment?: boolean;
+  produces_document?: boolean;
 }
 
 export const hrApprovalsApi = {
+  // Active types only — used by dropdowns / selection (safe as a bare queryFn).
   getRequestTypes: async (): Promise<HRRequestType[]> => {
+    const response = await apiClient.get('/hr/approvals/request-types/', { params: { is_active: true } });
+    const data = response.data;
+    return Array.isArray(data) ? data : (data.results ?? []);
+  },
+  // Everything the tenant sees incl. hidden overrides — for the settings page.
+  getManagedRequestTypes: async (): Promise<HRRequestType[]> => {
     const response = await apiClient.get('/hr/approvals/request-types/');
     const data = response.data;
     return Array.isArray(data) ? data : (data.results ?? []);
+  },
+  createRequestType: async (data: Partial<HRRequestType>): Promise<HRRequestType> => {
+    const response = await apiClient.post('/hr/approvals/request-types/', data);
+    return response.data;
+  },
+  updateRequestType: async (id: number, data: Partial<HRRequestType>): Promise<HRRequestType> => {
+    const response = await apiClient.patch(`/hr/approvals/request-types/${id}/`, data);
+    return response.data;
+  },
+  deleteRequestType: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/approvals/request-types/${id}/`);
   },
 
   // ── Policies ────────────────────────────────────────────────────────────────

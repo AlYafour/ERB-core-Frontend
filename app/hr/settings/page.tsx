@@ -21,6 +21,26 @@ const SETTINGS_SECTIONS = [
     ),
   },
   {
+    href:        '/hr/settings/companies',
+    title:       'Companies',
+    description: 'Your legal entities. Set each company’s Arabic name so notices and documents are signed correctly.',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M16 6h.01M8 10h.01M16 10h.01M8 14h.01M16 14h.01"/>
+      </svg>
+    ),
+  },
+  {
+    href:        '/hr/settings/request-types',
+    title:       'Request Types',
+    description: 'The requests employees can submit. Hide the common ones you don’t use, or add your own.',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/>
+      </svg>
+    ),
+  },
+  {
     href:        '/hr/shifts',
     title:       'Work Shifts',
     description: 'Configure morning, evening, night, and flexible shifts with hours, breaks, and work days.',
