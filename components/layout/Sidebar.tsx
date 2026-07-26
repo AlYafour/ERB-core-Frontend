@@ -428,12 +428,12 @@ export default function Sidebar() {
               {showModule('violations') && isAdmin &&
                 navLink('/violations', t('nav', 'violations'), <AlertIcon className="w-4 h-4" />)
               }
+              {user?.id && navLink('/hr/my-profile', 'My Profile', <UserIcon className="w-4 h-4" />)}
               {user?.id && navLink(
                 myEmp?.id ? `/hr/employees/${myEmp.id}` : `/users/${user.id}`,
-                t('nav', 'myProfile'),
-                <UsersIcon className="w-4 h-4" />
+                'My Employee File',
+                <FileTextIcon className="w-4 h-4" />
               )}
-              {user?.id && navLink('/hr/my-profile', 'My Profile', <UserIcon className="w-4 h-4" />)}
               {user?.id && navLink('/security', 'Account Security', <ShieldCheckIcon className="w-4 h-4" />)}
               {user?.id && navLink('/my-approvals', 'My Approvals', <ShieldCheckIcon className="w-4 h-4" />, myApprovalsBadge)}
             </div>
