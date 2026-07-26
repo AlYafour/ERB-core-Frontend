@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 
 const NAV_ITEMS = [
   { label: 'Geolocations', href: '/hr/settings/locations' },
+  { label: 'Companies', href: '/hr/settings/companies' },
   { label: 'Notifications', href: '/hr/settings/notifications' },
   // { label: 'Document Types',  href: '/hr/settings/document-types' },
   // { label: 'Approval Setup',  href: '/hr/settings/approvals'      },

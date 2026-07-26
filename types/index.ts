@@ -561,6 +561,7 @@ export interface PurchaseInvoice {
 export interface HRLegalEntity {
   id: number;
   name: string;
+  name_ar?: string;
   employee_count: number;
   created_at: string;
   updated_at: string;

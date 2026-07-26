@@ -24,7 +24,7 @@ const SUBHINT_CS: React.CSSProperties = {
   fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '5px 0 0', lineHeight: 1.5,
 };
 
-const PLACEHOLDERS = ['employee', 'employee_id', 'minutes', 'date', 'shift', 'department'];
+const PLACEHOLDERS = ['employee', 'employee_id', 'minutes', 'date', 'shift', 'department', 'company', 'company_ar'];
 const RECIPIENTS = [
   { key: 'employee' as const,        label: 'The employee',   hint: 'The person who was late' },
   { key: 'direct_manager' as const,  label: 'Direct manager', hint: 'Their line manager' },
