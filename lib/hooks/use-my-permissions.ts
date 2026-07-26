@@ -40,9 +40,12 @@ export function useMyPermissions() {
       return res.data;
     },
     enabled: isAuthenticated && !!user,
-    staleTime: Infinity,
+    // Was Infinity — permission/role changes now propagate without a full
+    // re-login: refetch on mount, on tab focus, and at most once a minute.
+    staleTime: 60_000,
     gcTime: Infinity,
-    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
     retry: false,
   });
 
