@@ -293,7 +293,7 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
   const [form, setForm] = useState({
     request_type: 'annual_leave',
     start_date: '', end_date: '', days: '', reason: '',
-    start_time: '', end_time: '',
+    start_time: '', end_time: '', punch_kind: 'both',
   });
   const [file, setFile] = useState<File | null>(null);
   const [bothHourly, setBothHourly] = useState(false); // 'both' types: day vs hourly toggle
@@ -351,7 +351,7 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
   });
 
   const resetForm = () => {
-    setForm({ request_type: 'annual_leave', start_date: '', end_date: '', days: '', reason: '', start_time: '', end_time: '' });
+    setForm({ request_type: 'annual_leave', start_date: '', end_date: '', days: '', reason: '', start_time: '', end_time: '', punch_kind: 'both' });
     setFile(null);
     setBothHourly(false);
   };
@@ -368,6 +368,12 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
   const asDays       = !isSingleDate && (mode === 'days' || (mode === 'both' && !bothHourly));
   const hourlyHours  = (form.start_time && form.end_time && form.end_time > form.start_time)
     ? Math.round((toMin(form.end_time) - toMin(form.start_time)) / 6) / 10 : 0;
+  // How many days back a Missing Punch may be filed — configured per tenant on
+  // the RequestType (falls back to 1 = today or yesterday).
+  const backdateLimit = requestTypes?.find(t => t.code === form.request_type)?.backdate_limit_days ?? 1;
+  const backdateHint = backdateLimit === 0 ? 'Today only.'
+    : backdateLimit === 1 ? 'Today or yesterday only.'
+    : `Within the last ${backdateLimit} days.`;
 
   const updateForm = (k: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -377,7 +383,7 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
         if ((k === 'start_date' || k === 'end_date') && next.start_date && next.end_date)
           next.days = String(calcDays(next.start_date, next.end_date));
         if (k === 'request_type')
-          Object.assign(next, { start_date: '', end_date: '', days: '', start_time: '', end_time: '' });
+          Object.assign(next, { start_date: '', end_date: '', days: '', start_time: '', end_time: '', punch_kind: 'both' });
         return next;
       });
       if (k === 'request_type') setBothHourly(false);
@@ -391,8 +397,16 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
     if (asHourly && (!form.start_time || !form.end_time)) { toast('From and to times are required', 'error'); return; }
     if (asHourly && form.end_time <= form.start_time) { toast('The end time must be after the start time', 'error'); return; }
     if (isSingleDate && !form.start_date) { toast('Select the day the punch was missed', 'error'); return; }
-    if (isSingleDate && form.start_date < ymdDaysAgo(1)) {
-      toast('A missing punch can only be reported for today or yesterday', 'error'); return;
+    if (isSingleDate && form.start_date < ymdDaysAgo(backdateLimit)) {
+      toast(`A missing punch can only be reported for the allowed window (${backdateHint.toLowerCase()})`, 'error'); return;
+    }
+    if (isSingleDate) {
+      const k = form.punch_kind;
+      if ((k === 'in' || k === 'both') && !form.start_time) { toast('Enter the check-in time', 'error'); return; }
+      if ((k === 'out' || k === 'both') && !form.end_time) { toast('Enter the check-out time', 'error'); return; }
+      if (k === 'both' && form.start_time && form.end_time && form.end_time <= form.start_time) {
+        toast('Check-out must be after check-in', 'error'); return;
+      }
     }
     if (!form.reason.trim()) { toast('Please provide a reason', 'error'); return; }
     if (form.request_type === 'sick_leave' && !file) {
@@ -412,7 +426,12 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
         start_date: form.start_date, end_date: form.start_date,
         start_time: form.start_time, end_time: form.end_time,
       }),
-      ...(isSingleDate && { start_date: form.start_date, end_date: form.start_date }),
+      ...(isSingleDate && {
+        start_date: form.start_date, end_date: form.start_date,
+        punch_kind: form.punch_kind as HRRequest['punch_kind'],
+        ...((form.punch_kind === 'in' || form.punch_kind === 'both') && { start_time: form.start_time }),
+        ...((form.punch_kind === 'out' || form.punch_kind === 'both') && { end_time: form.end_time }),
+      }),
     });
   };
 
@@ -643,18 +662,48 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
                 </>
               )}
 
-              {/* Missing punch — a single recent day (today or yesterday only). */}
+              {/* Missing punch — a single recent day + which punch + time(s). */}
               {isSingleDate && (
-                <div className="form-field">
-                  <label className="form-label">Day of the missing punch *</label>
-                  <input className="form-input" type="date"
-                    value={form.start_date}
-                    min={ymdDaysAgo(1)} max={ymdDaysAgo(0)}
-                    onChange={updateForm('start_date')} />
-                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
-                    Only today or yesterday — older days must be corrected by HR.
-                  </p>
-                </div>
+                <>
+                  <div className="form-field">
+                    <label className="form-label">Day of the missing punch *</label>
+                    <input className="form-input" type="date"
+                      value={form.start_date}
+                      min={ymdDaysAgo(backdateLimit)} max={ymdDaysAgo(0)}
+                      onChange={updateForm('start_date')} />
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
+                      {backdateHint} Older days must be corrected by HR.
+                    </p>
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label">Which punch was missed? *</label>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {([['in', 'Check-in'], ['out', 'Check-out'], ['both', 'Both']] as const).map(([val, label]) => (
+                        <button key={val} type="button" onClick={() => setForm(p => ({ ...p, punch_kind: val }))}
+                          style={{ flex: 1, padding: '7px 12px', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
+                            border: `1px solid ${form.punch_kind === val ? 'var(--brand)' : 'var(--border-subtle)'}`,
+                            background: form.punch_kind === val ? 'var(--brand)' : 'transparent',
+                            color: form.punch_kind === val ? '#fff' : 'var(--text-secondary)' }}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                    {(form.punch_kind === 'in' || form.punch_kind === 'both') && (
+                      <div className="form-field">
+                        <label className="form-label">Check-in time *</label>
+                        <input className="form-input" type="time" value={form.start_time} onChange={updateForm('start_time')} />
+                      </div>
+                    )}
+                    {(form.punch_kind === 'out' || form.punch_kind === 'both') && (
+                      <div className="form-field">
+                        <label className="form-label">Check-out time *</label>
+                        <input className="form-input" type="time" value={form.end_time} onChange={updateForm('end_time')} />
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
 
               <div className="form-field">

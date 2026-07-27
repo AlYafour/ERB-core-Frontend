@@ -401,6 +401,7 @@ export interface HRRequestType {
   duration_mode?: 'days' | 'hours' | 'both' | 'none';
   requires_attachment?: boolean;
   produces_document?: boolean;
+  backdate_limit_days?: number;
 }
 
 export const hrApprovalsApi = {

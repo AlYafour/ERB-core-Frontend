@@ -905,6 +905,7 @@ export interface HRRequest {
   end_time?: string | null;
   hours?: string | null;
   duration_mode?: 'days' | 'hours' | 'both' | 'none';
+  punch_kind?: 'in' | 'out' | 'both' | '';
   reason: string;
   approver: number | null;
   approver_name: string | null;
