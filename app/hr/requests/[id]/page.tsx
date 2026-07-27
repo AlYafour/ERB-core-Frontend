@@ -9,8 +9,13 @@ import { useMyEmployeeRecord } from '@/lib/hooks/use-my-employee-record';
 import { useLocale } from '@/lib/hooks/use-locale';
 import { resolveRequestTypeLabel } from '@/lib/hr/request-type-label';
 import { ProcField } from '@/components/procurement/shared/ProcField';
+import { ApprovalStatusWidget } from '@/components/ui/ApprovalStatusWidget';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { Button, Badge, Loader, PageHeader, PageShell } from '@/components/ui';
+
+const PUNCH_KIND_LABEL: Record<string, string> = {
+  clock_in: 'Clocking-In', clock_out: 'Clocking-Out', break_out: 'Break-Out', break_in: 'Break-In',
+};
 import { useState } from 'react';
 
 const STATUS_VARIANT: Record<string, string> = {
@@ -118,7 +123,13 @@ export default function HRRequestDetailPage() {
     details.push({ label: 'Time', value: `${t12(req.start_time)} – ${t12(req.end_time)}` });
     details.push({ label: 'Hours', value: `${hoursNum}` });
   } else if (isMissingPunch) {
-    details.push({ label: 'Day', value: fmtDate(req.start_date) });
+    details.push({ label: 'Attendance Date', value: fmtDate(req.start_date) });
+    if (req.punch_kind) {
+      details.push({
+        label: 'Requested punch',
+        value: `${PUNCH_KIND_LABEL[req.punch_kind] || req.punch_kind}${req.start_time ? ` · ${t12(req.start_time)}` : ''}`,
+      });
+    }
   } else if (req.start_date) {
     details.push({ label: 'Start Date', value: fmtDate(req.start_date) });
     details.push({ label: 'End Date', value: fmtDate(req.end_date) });
@@ -215,6 +226,13 @@ export default function HRRequestDetailPage() {
                 {req.rejected_at && <ProcField label="Rejected At" value={<span style={{ color: 'var(--status-error)' }}>{fmtDateTime(req.rejected_at)}</span>} />}
               </div>
             </div>
+
+            {req.approval_status && (
+              <div className="card">
+                <div className="proc-section-head"><h3 className="proc-section-title">Approval Cycle</h3></div>
+                <ApprovalStatusWidget approvalStatus={req.approval_status} />
+              </div>
+            )}
 
             {attachments.length > 0 && (
               <div className="card">

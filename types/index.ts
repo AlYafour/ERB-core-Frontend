@@ -919,6 +919,7 @@ export interface HRRequest {
     strategy: string;
     resolved_approver_id: number | null;
   } | null;
+  approval_status?: ApprovalStatus | null;
   attachments?: {
     id: string | number;
     name: string;

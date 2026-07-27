@@ -9,11 +9,13 @@ import { approvalsApi } from '@/lib/api/approvals';
 const DOC_LINK: Record<string, (id: number) => string> = {
   purchaserequest: id => `/purchase-requests/${id}`,
   purchaseorder:   id => `/purchase-orders/${id}`,
+  hrrequest:       id => `/hr/requests/${id}`,
 };
 
 const DOC_LABEL: Record<string, string> = {
   purchaserequest: 'Purchase Request',
   purchaseorder:   'Purchase Order',
+  hrrequest:       'HR Request',
 };
 
 function timeAgo(dateStr: string) {
