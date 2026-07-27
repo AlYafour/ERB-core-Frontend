@@ -115,6 +115,7 @@ export default function AttendanceNotificationsPage() {
   const threshold = g('late_notify_after_mins', 15);
   const subject = g('late_notify_subject', '');
   const body = g('late_notify_body', '');
+  const footer = g('notify_footer', '');
 
   const sample: Record<string, string> = {
     employee: 'Ahmed Ali', employee_id: 'EMP-0142', minutes: String(threshold || 15),
@@ -289,6 +290,19 @@ export default function AttendanceNotificationsPage() {
                     >{`{${ph}}`}</button>
                   ))}
                 </div>
+              </div>
+
+              <div style={{ marginTop: 'var(--space-4)' }}>
+                <label style={LBL_CS}>Footer / disclaimer (fixed, appears at the bottom of every email)</label>
+                <textarea
+                  style={{ ...INPUT_CS, minHeight: 110, resize: 'vertical', lineHeight: 1.6 }}
+                  placeholder={'هذه رسالة آلية صادرة من نظام الحضور ولا تتطلب الرد.\n\nThis is an automated message and does not require a reply.'}
+                  value={footer}
+                  onChange={e => set('notify_footer', e.target.value)}
+                />
+                <p style={SUBHINT_CS}>
+                  Fixed text shown at the very bottom of the email (e.g. “automated message, do not reply”, a contact address, a decision reference). Put the Arabic block and the English block separated by a blank line — each renders in its own direction. Leave empty for the default one-line notice.
+                </p>
               </div>
 
               {/* live preview */}

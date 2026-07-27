@@ -968,6 +968,7 @@ export interface HRCompanySettings {
   late_notify_after_mins?: number;
   late_notify_subject?: string;
   late_notify_body?: string;
+  notify_footer?: string;
   updated_at: string;
 }
 
