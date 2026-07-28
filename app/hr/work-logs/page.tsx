@@ -11,6 +11,7 @@ import { BaseModal } from '@/components/ui/base/BaseModal';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
+import { formatHoursMinutes } from '@/lib/utils/hr';
 
 const STATUS_VARIANT: Record<string, 'default' | 'warning' | 'success' | 'error'> = {
   draft:          'default',
@@ -193,8 +194,8 @@ export default function WorkLogsPage() {
       key: 'hours', header: 'Hours',
       render: r => (
         <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-          {Number(r.hours).toFixed(1)}h
-          {Number(r.overtime_hours) > 0 && <span style={{ color: 'var(--status-warning)', marginLeft: 6, fontSize: 11 }}>+{Number(r.overtime_hours).toFixed(1)}h OT</span>}
+          {formatHoursMinutes(r.hours)}
+          {Number(r.overtime_hours) > 0 && <span style={{ color: 'var(--status-warning)', marginLeft: 6, fontSize: 11 }}>+{formatHoursMinutes(r.overtime_hours)} OT</span>}
         </span>
       ),
     },

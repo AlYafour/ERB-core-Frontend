@@ -16,6 +16,7 @@ import { AppListPage } from '@/components/app/AppListPage';
 import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { ATTENDANCE_STATUS } from '@/lib/utils/status-colors';
+import { formatHoursMinutes } from '@/lib/utils/hr';
 
 function fmtShiftTime(t: string): string {
   if (!t) return '';
@@ -385,12 +386,12 @@ export default function HRAttendancePage() {
     },
     {
       key: 'work', header: 'Work Hrs',
-      render: r => <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)' }}>{r.work_hours != null ? `${r.work_hours}h` : '—'}</span>,
+      render: r => <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)' }}>{formatHoursMinutes(r.work_hours)}</span>,
     },
     {
       key: 'ot', header: 'Overtime',
       render: r => r.overtime_hours != null && r.overtime_hours > 0
-        ? <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--brand)', fontWeight: 'var(--weight-semibold)' }}>{r.overtime_hours}h OT</span>
+        ? <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: 'var(--brand)', fontWeight: 'var(--weight-semibold)' }}>{formatHoursMinutes(r.overtime_hours)} OT</span>
         : <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>—</span>,
     },
     {

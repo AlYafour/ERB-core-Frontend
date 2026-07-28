@@ -18,6 +18,7 @@ import { Badge, BaseModal, Loader, PageHeader, PageShell } from '@/components/ui
 import { WorkLog } from '@/types';
 import { toast } from '@/lib/hooks/use-toast';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
+import { formatHoursMinutes } from '@/lib/utils/hr';
 
 const STATUS_VARIANT: Record<string, string> = {
   present: 'success', absent: 'error', late: 'warning',
@@ -500,11 +501,11 @@ function WorkAllocationSection({
                   </div>
 
                   {/* Hours */}
-                  <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)' }}>{parseFloat(wl.hours).toFixed(1)}h</span>
+                  <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)' }}>{formatHoursMinutes(wl.hours)}</span>
 
                   {/* OT Hours */}
                   <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: parseFloat(wl.overtime_hours) > 0 ? 'var(--brand)' : 'var(--text-tertiary)' }}>
-                    {parseFloat(wl.overtime_hours) > 0 ? `${parseFloat(wl.overtime_hours).toFixed(1)}h` : '—'}
+                    {formatHoursMinutes(wl.overtime_hours)}
                   </span>
 
                   {/* Status pill */}
@@ -629,11 +630,11 @@ export default function AttendanceDetailPage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-4)', textAlign: 'center' }}>
             <div>
-              <p style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', margin: 0 }}>{record.work_hours?.toFixed(1) ?? '—'}</p>
+              <p style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', margin: 0 }}>{formatHoursMinutes(record.work_hours)}</p>
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)', marginBottom: 0 }}>Work Hours</p>
             </div>
             <div>
-              <p style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', margin: 0 }}>{record.overtime_hours?.toFixed(1) ?? '—'}</p>
+              <p style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', margin: 0 }}>{formatHoursMinutes(record.overtime_hours)}</p>
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)', marginBottom: 0 }}>Overtime Hours</p>
             </div>
             <div>

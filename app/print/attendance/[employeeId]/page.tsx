@@ -18,6 +18,7 @@ import { useTenantInfo } from '@/lib/hooks/use-tenant';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { PrintControlsBar } from '@/components/print/PrintControlsBar';
+import { formatHoursMinutes } from '@/lib/utils/hr';
 
 /* ── Enterprise palette ──────────────────────────────────────────── */
 const NAVY   = '#16233d';
@@ -105,9 +106,9 @@ export default function PrintAttendancePage() {
     { label: 'Present Days', value: String(T.present_days), sub: `of ${T.expected_working_days} expected`, tone: NEUT },
     { label: 'Absent Days', value: String(T.absent_days), sub: 'scheduled, no record', tone: T.absent_days ? CRIT : GOOD },
     { label: 'Leave Days', value: String(T.leave_days ?? 0), sub: 'approved leave', tone: NEUT },
-    ...((T.permission_hours ?? 0) > 0 ? [{ label: 'Permission', value: `${T.permission_hours}h`, sub: `${T.permission_days} day(s)`, tone: NEUT }] : []),
-    { label: 'Work Hours', value: T.work_hours.toFixed(1), sub: `of ${T.expected_hours.toFixed(0)} expected`, tone: NEUT },
-    { label: 'Overtime', value: T.overtime_hours.toFixed(1), sub: 'hours', tone: T.overtime_hours > 0 ? WARN : NEUT },
+    ...((T.permission_hours ?? 0) > 0 ? [{ label: 'Permission', value: formatHoursMinutes(T.permission_hours), sub: `${T.permission_days} day(s)`, tone: NEUT }] : []),
+    { label: 'Work Hours', value: formatHoursMinutes(T.work_hours, { keepZero: true }), sub: `of ${formatHoursMinutes(T.expected_hours, { keepZero: true })} expected`, tone: NEUT },
+    { label: 'Overtime', value: formatHoursMinutes(T.overtime_hours, { keepZero: true }), sub: 'total', tone: T.overtime_hours > 0 ? WARN : NEUT },
     { label: 'Late Arrivals', value: String(T.late_days), sub: 'days', tone: T.late_days ? WARN : GOOD },
     { label: 'Complete Records', value: String(T.complete_records), sub: 'full punch days', tone: GOOD },
     { label: 'Attendance Issues', value: String(T.incomplete_records + T.absent_days),
@@ -268,8 +269,8 @@ export default function PrintAttendancePage() {
                   <td style={{ padding: '6.5px 9px', textAlign: 'center' }}>{t(r.break_start, ORANGE)}</td>
                   <td style={{ padding: '6.5px 9px', textAlign: 'center' }}>{t(r.break_end, ORANGE)}</td>
                   <td style={{ padding: '6.5px 9px', textAlign: 'center' }}>{t(r.check_out, INK)}</td>
-                  <td style={{ padding: '6.5px 9px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, fontSize: '8pt', color: r.work_hours != null ? INK : '#d3dae2' }}>{r.work_hours != null ? Number(r.work_hours).toFixed(2) : '—'}</td>
-                  <td style={{ padding: '6.5px 9px', textAlign: 'right', fontFamily: 'monospace', fontSize: '8pt', color: Number(r.overtime_hours) > 0 ? ORANGE : '#d3dae2' }}>{Number(r.overtime_hours) > 0 ? Number(r.overtime_hours).toFixed(2) : '—'}</td>
+                  <td style={{ padding: '6.5px 9px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, fontSize: '8pt', color: r.work_hours != null ? INK : '#d3dae2' }}>{formatHoursMinutes(r.work_hours)}</td>
+                  <td style={{ padding: '6.5px 9px', textAlign: 'right', fontFamily: 'monospace', fontSize: '8pt', color: Number(r.overtime_hours) > 0 ? ORANGE : '#d3dae2' }}>{formatHoursMinutes(r.overtime_hours)}</td>
                   <td style={{ padding: '6.5px 9px' }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '7pt', fontWeight: 700, color: s.fg, whiteSpace: 'nowrap' }}>
                       <span style={{ width: 12, height: 12, borderRadius: '50%', background: s.fg, color: '#fff',
@@ -285,8 +286,8 @@ export default function PrintAttendancePage() {
           <tfoot>
             <tr style={{ background: NAVY, color: '#fff', fontWeight: 800 }}>
               <td colSpan={6} style={{ padding: '8px 9px', fontSize: '7.6pt', letterSpacing: '.3px' }}>TOTAL · {T.present_days} present of {T.expected_working_days} expected day(s)</td>
-              <td style={{ padding: '8px 9px', textAlign: 'right', fontFamily: 'monospace' }}>{T.work_hours.toFixed(2)}</td>
-              <td style={{ padding: '8px 9px', textAlign: 'right', fontFamily: 'monospace' }}>{T.overtime_hours.toFixed(2)}</td>
+              <td style={{ padding: '8px 9px', textAlign: 'right', fontFamily: 'monospace' }}>{formatHoursMinutes(T.work_hours, { keepZero: true })}</td>
+              <td style={{ padding: '8px 9px', textAlign: 'right', fontFamily: 'monospace' }}>{formatHoursMinutes(T.overtime_hours, { keepZero: true })}</td>
               <td />
             </tr>
           </tfoot>
