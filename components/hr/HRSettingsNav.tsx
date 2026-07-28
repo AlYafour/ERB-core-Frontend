@@ -3,72 +3,78 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const NAV_ITEMS = [
-  { label: 'Geolocations', href: '/hr/settings/locations' },
-  { label: 'Companies', href: '/hr/settings/companies' },
-  { label: 'Request Types', href: '/hr/settings/request-types' },
-  { label: 'Notifications', href: '/hr/settings/notifications' },
-  // { label: 'Document Types',  href: '/hr/settings/document-types' },
-  // { label: 'Approval Setup',  href: '/hr/settings/approvals'      },
-  // { label: 'Holidays',        href: '/hr/settings/holidays'       },
+// One canonical navigation for the whole HR settings area — grouped, complete,
+// and consistent. Every settings screen renders this same rail, so the sections
+// (and the way back) are always visible. Labels are the single source of truth
+// (e.g. "Office Locations", not "Geolocations").
+const NAV_GROUPS: { title: string; items: { label: string; href: string }[] }[] = [
+  { title: 'General', items: [
+    { label: 'HR Settings', href: '/hr/settings' },
+  ]},
+  { title: 'Organization', items: [
+    { label: 'Companies', href: '/hr/settings/companies' },
+    { label: 'Departments', href: '/hr/departments' },
+    { label: 'Employee Categories', href: '/hr/groups' },
+    { label: 'Office Locations', href: '/hr/settings/locations' },
+  ]},
+  { title: 'Time & Attendance', items: [
+    { label: 'Work Shifts', href: '/hr/shifts' },
+    { label: 'Penalty Rules', href: '/hr/penalties' },
+    { label: 'Notifications', href: '/hr/settings/notifications' },
+  ]},
+  { title: 'Requests & Approvals', items: [
+    { label: 'Request Types', href: '/hr/settings/request-types' },
+    { label: 'Approval Chains', href: '/hr/approvals/chains' },
+    { label: 'Leave Policies', href: '/hr/leave-policies' },
+  ]},
 ];
+
+const GROUP_LABEL: React.CSSProperties = {
+  fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)',
+  color: 'var(--text-tertiary)', textTransform: 'uppercase',
+  letterSpacing: '0.06em', margin: '0 0 var(--space-2)', paddingInlineStart: 'var(--space-3)',
+};
 
 export default function HRSettingsNav() {
   const pathname = usePathname();
 
-  return (
-    <nav
-      style={{
-        width: 184,
-        flexShrink: 0,
-        borderRight: '1px solid var(--border-subtle)',
-        paddingRight: 'var(--space-5)',
-      }}
-    >
-      <p
-        style={{
-          fontSize: 'var(--text-xs)',
-          fontWeight: 'var(--weight-semibold)',
-          color: 'var(--text-secondary)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-          margin: '0 0 var(--space-3)',
-        }}
-      >
-        Configuration
-      </p>
+  const isActive = (href: string) =>
+    // The hub matches exactly (its sub-pages have their own entries); everything
+    // else also lights up on nested routes.
+    href === '/hr/settings'
+      ? pathname === href
+      : pathname === href || pathname.startsWith(href + '/');
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {NAV_ITEMS.map(item => {
-          const active =
-            pathname === item.href || pathname.startsWith(item.href + '/');
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              style={{
-                display: 'block',
-                padding: 'var(--space-2) var(--space-3)',
-                borderRadius: 'var(--radius-md)',
-                fontSize: 'var(--text-sm)',
-                fontWeight: active ? 600 : 400,
-                color: active ? 'var(--sidebar-active-text)' : 'var(--text-primary)',
-                background: active ? 'var(--sidebar-active-bg)' : 'transparent',
-                textDecoration: 'none',
-                transition: 'background 120ms, color 120ms',
-              }}
-              onMouseEnter={e => {
-                if (!active) e.currentTarget.style.background = 'var(--surface-subtle)';
-              }}
-              onMouseLeave={e => {
-                if (!active) e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </div>
+  return (
+    <nav style={{ width: 208, flexShrink: 0, borderInlineEnd: '1px solid var(--border-subtle)', paddingInlineEnd: 'var(--space-4)' }}>
+      {NAV_GROUPS.map((group, gi) => (
+        <div key={group.title} style={{ marginTop: gi === 0 ? 0 : 'var(--space-4)' }}>
+          <p style={GROUP_LABEL}>{group.title}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {group.items.map(item => {
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  style={{
+                    display: 'block', padding: 'var(--space-2) var(--space-3)',
+                    borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)',
+                    fontWeight: active ? 600 : 400,
+                    color: active ? 'var(--sidebar-active-text)' : 'var(--text-primary)',
+                    background: active ? 'var(--sidebar-active-bg)' : 'transparent',
+                    textDecoration: 'none', transition: 'background 120ms, color 120ms',
+                  }}
+                  onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--surface-subtle)'; }}
+                  onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </nav>
   );
 }

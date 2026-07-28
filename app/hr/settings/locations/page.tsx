@@ -288,8 +288,9 @@ export default function HRSettingsLocationsPage() {
     <MainLayout>
       <PageShell>
         <PageHeader
-          title="HR Settings"
-          breadcrumbs={[{ label: 'HR' }, { label: 'Settings' }]}
+          title="Office Locations"
+          description="Manage location types, the organisational hierarchy, and GPS check-in geofences."
+          breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Settings', href: '/hr/settings' }, { label: 'Office Locations' }]}
         />
 
         <div style={{ display: 'flex', gap: 'var(--space-6)', alignItems: 'flex-start' }}>
@@ -297,20 +298,12 @@ export default function HRSettingsLocationsPage() {
 
           <div style={{ flex: 1, minWidth: 0 }}>
 
-            {/* Section header */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'var(--space-5)', gap: 'var(--space-4)' }}>
-              <div>
-                <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', margin: 0 }}>Geolocations</h2>
-                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
-                  Manage location types, organisational hierarchy, and GPS check-in geofences
-                </p>
+            {/* Section actions */}
+            {canManage && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
+                <Button variant="primary" size="sm" onClick={openTypeCreate}>+ New Type</Button>
               </div>
-              {canManage && (
-                <Button variant="primary" size="sm" onClick={openTypeCreate}>
-                  + New Type
-                </Button>
-              )}
-            </div>
+            )}
 
             {/* Location Types + Locations */}
             <div style={{ display: 'flex', gap: 'var(--space-5)', alignItems: 'flex-start' }}>
