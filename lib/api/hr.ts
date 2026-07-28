@@ -1005,7 +1005,7 @@ export const hrCompanySettingsApi = {
     const response = await apiClient.post('/hr/settings/test-notification/', draft ?? {});
     return response.data;
   },
-  backfillLateNotices: async (opts?: { date?: string; force?: boolean }): Promise<{ sent: number; date?: string; disabled?: boolean; forced?: boolean }> => {
+  backfillLateNotices: async (opts?: { date?: string; force?: boolean }): Promise<{ sent: number; late_sent?: number; incomplete_sent?: number; date?: string; disabled?: boolean; forced?: boolean }> => {
     const body: Record<string, unknown> = {};
     if (opts?.date) body.date = opts.date;
     if (opts?.force) body.force = true;

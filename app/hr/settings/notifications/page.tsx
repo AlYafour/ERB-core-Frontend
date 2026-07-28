@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
-import { PageShell, PageHeader, Button } from '@/components/ui';
+import { PageShell, PageHeader, Button, DateInput } from '@/components/ui';
 import HRSettingsNav from '@/components/hr/HRSettingsNav';
 import { hrCompanySettingsApi, type TestNotificationResult } from '@/lib/api/hr';
 import { toast, confirm } from '@/lib/hooks/use-toast';
@@ -33,6 +33,13 @@ const RECIPIENTS = [
 
 function todayLabel() {
   return new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+// Yesterday as YYYY-MM-DD (default target for the per-date test re-send).
+function yesterdayISO() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
 }
 
 // Client-side mirror of the backend _render: fill {placeholders}, leave unknown intact.
@@ -81,20 +88,28 @@ export default function AttendanceNotificationsPage() {
     onError: () => toast('Could not send the test', 'error'),
   });
 
+  const [testDate, setTestDate] = useState(yesterdayISO());
+
   const backfill = useMutation({
-    mutationFn: (force: boolean) => hrCompanySettingsApi.backfillLateNotices({ force }),
+    mutationFn: (force: boolean) => hrCompanySettingsApi.backfillLateNotices({ date: testDate, force }),
     onSuccess: (res) => {
-      if (res.disabled) toast('Turn notifications on and save first', 'info');
-      else if (res.sent > 0) toast(`Sent ${res.forced ? '(re-sent) ' : ''}late notices for ${res.sent} record(s) today`, 'success');
-      else toast('No new late arrivals to notify for today', 'info');
+      if (res.disabled) { toast('Turn notifications on and save first', 'info'); return; }
+      const late = res.late_sent ?? res.sent ?? 0;
+      const inc = res.incomplete_sent ?? 0;
+      const when = res.date ?? testDate;
+      if (late + inc > 0) {
+        toast(`Sent ${res.forced ? '(re-sent) ' : ''}${late} late + ${inc} incomplete notice(s) for ${when}`, 'success');
+      } else {
+        toast(`No notices to send for ${when}`, 'info');
+      }
     },
-    onError: () => toast('Could not send today’s notices', 'error'),
+    onError: () => toast('Could not send that day’s notices', 'error'),
   });
 
   const runBackfill = async () => {
     const ok = await confirm(
-      'Send late-arrival notices for everyone who already checked in late today? '
-      + 'Anyone already notified is skipped, so it is safe to run.',
+      `Send that day's late + incomplete-hours notices (${testDate}) to the recipients and CC? `
+      + 'Anyone already notified is skipped — use “Re-send for testing” to force them.',
     );
     if (ok) backfill.mutate(false);
   };
@@ -331,12 +346,15 @@ export default function AttendanceNotificationsPage() {
 
               <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
                 <SectionTitle
-                  title="Catch up today's late arrivals"
-                  subtitle="Notifications fire automatically at check-in. Use this once to also notify everyone who already checked in late today. Safe to run — anyone already notified is skipped."
+                  title="Test with a real day's punches"
+                  subtitle="Pick a day (defaults to yesterday) and send its late-arrival AND incomplete-hours notices to the recipients and CC — so you can see the exact emails that go out. Notices fire automatically at check-in/out; this is a catch-up and preview tool."
                 />
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                  <div style={{ width: 170 }}>
+                    <DateInput value={testDate} onChange={setTestDate} />
+                  </div>
                   <Button variant="secondary" onClick={runBackfill} disabled={backfill.isPending}>
-                    {backfill.isPending ? 'Sending…' : "Send today's late notices"}
+                    {backfill.isPending ? 'Sending…' : "Send that day's notices"}
                   </Button>
                   <button
                     type="button"
