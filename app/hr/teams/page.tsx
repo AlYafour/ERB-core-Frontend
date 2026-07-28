@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppListPage } from '@/components/app/AppListPage';
+import HRSettingsNav from '@/components/hr/HRSettingsNav';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { type Column } from '@/components/ui/DataTable';
 import { RowActions } from '@/components/ui/RowActions';
@@ -967,7 +968,8 @@ export default function WorkTeamsPage() {
     <AppListPage
       title="Work Teams"
       description="Named sub-units within a category. Membership is derived from the Direct Manager field on each employee."
-      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Work Teams' }]}
+      sideNav={<HRSettingsNav />}
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Settings', href: '/hr/settings' }, { label: 'Work Teams' }]}
       totalCount={allTeams.length}
       createAction={admin ? (
         <Button variant="primary" size="sm" onClick={() => setModalTeam('new')}>+ Create Team</Button>

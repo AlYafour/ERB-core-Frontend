@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AppListPage } from '@/components/app/AppListPage';
+import HRSettingsNav from '@/components/hr/HRSettingsNav';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { type Column } from '@/components/ui/DataTable';
 import { RowActions } from '@/components/ui/RowActions';
@@ -251,7 +252,8 @@ export default function PositionsPage() {
     <AppListPage
       title="Positions"
       description="Job positions — department, level, and default role assignment"
-      breadcrumbs={[{ label: 'HR' }, { label: 'Positions' }]}
+      sideNav={<HRSettingsNav />}
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Settings', href: '/hr/settings' }, { label: 'Positions' }]}
       totalCount={filtered.length}
       createAction={canManage
         ? <Button variant="primary" size="sm" onClick={openCreate}>+ New Position</Button>

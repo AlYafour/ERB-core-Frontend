@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppListPage } from '@/components/app/AppListPage';
+import HRSettingsNav from '@/components/hr/HRSettingsNav';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { type Column } from '@/components/ui/DataTable';
 import { RowActions } from '@/components/ui/RowActions';
@@ -267,9 +268,11 @@ export default function TeamTypesPage() {
     <AppListPage
       title="Team Types"
       description="Define the categories of work teams used across your organisation."
+      sideNav={<HRSettingsNav />}
       breadcrumbs={[
         { label: 'Home', href: '/' },
-        { label: 'Settings' },
+        { label: 'HR' },
+        { label: 'Settings', href: '/hr/settings' },
         { label: 'Team Types' },
       ]}
       totalCount={allItems.length}

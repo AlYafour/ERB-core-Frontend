@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppListPage } from '@/components/app/AppListPage';
+import HRSettingsNav from '@/components/hr/HRSettingsNav';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { type Column } from '@/components/ui/DataTable';
 import { RowActions } from '@/components/ui/RowActions';
@@ -325,9 +326,11 @@ export default function CostCategoriesPage() {
     <AppListPage
       title="Cost Categories"
       description="Define cost categories used to classify project expenses and work logs."
+      sideNav={<HRSettingsNav />}
       breadcrumbs={[
         { label: 'Home', href: '/' },
-        { label: 'Settings' },
+        { label: 'HR' },
+        { label: 'Settings', href: '/hr/settings' },
         { label: 'Cost Categories' },
       ]}
       totalCount={items.length}
