@@ -78,13 +78,25 @@ export default function RequestTypesPage() {
     onError: (err) => toast(getApiError(err, 'Action failed'), 'error'),
   });
 
-  const act = async (t: HRRequestType) => {
-    const k = kindOf(t);
-    if (k === 'hidden') { remove.mutate(t.id); return; }               // restore
-    const msg = k === 'shared'
-      ? `Hide "${t.name}" for your company? Employees won't see it. You can restore it anytime.`
-      : `Delete "${t.name}"? This removes it for your company.`;
-    if (await confirm(msg)) remove.mutate(t.id);
+  // Reversible show/hide for a company's OWN type (e.g. Missing Punch): flips
+  // is_active, so employees stop/start seeing it without losing its settings.
+  const toggle = useMutation({
+    mutationFn: ({ id, active }: { id: number; active: boolean }) =>
+      hrApprovalsApi.updateRequestType(id, { is_active: active }),
+    onSuccess: () => invalidate(),
+    onError: (err) => toast(getApiError(err, 'Action failed'), 'error'),
+  });
+
+  const busy = remove.isPending || toggle.isPending;
+
+  // Hiding a SHARED (global) type = a per-tenant inactive override (destroy).
+  const hideShared = async (t: HRRequestType) => {
+    if (await confirm(`Hide "${t.name}" for your company? Employees won't see it. You can restore it anytime.`))
+      remove.mutate(t.id);
+  };
+  const del = async (t: HRRequestType) => {
+    if (await confirm(`Delete "${t.name}" permanently for your company?`))
+      remove.mutate(t.id);
   };
 
   const sorted = [...data].sort((a, b) => a.name.localeCompare(b.name));
@@ -94,7 +106,7 @@ export default function RequestTypesPage() {
       <PageShell>
         <PageHeader
           title="Request Types"
-          description="The request types employees can submit. Common types are shared across all companies — hide the ones you don't use, or add your own."
+          description="The request types employees can submit. Hide the ones you don't use (reversible — Show brings them back), or add your own. Common types are shared across all companies."
           breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Settings', href: '/hr/settings' }, { label: 'Request Types' }]}
         />
         <div style={{ display: 'flex', gap: 'var(--space-6)', alignItems: 'flex-start' }}>
@@ -156,14 +168,23 @@ export default function RequestTypesPage() {
                         </div>
                         {t.name_ar && <span dir="rtl" style={{ display: 'block', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>{t.name_ar}</span>}
                       </div>
-                      <Button
-                        variant={k === 'custom' ? 'destructive' : k === 'hidden' ? 'secondary' : 'ghost'}
-                        size="sm"
-                        onClick={() => act(t)}
-                        disabled={remove.isPending}
-                      >
-                        {k === 'shared' ? 'Hide' : k === 'hidden' ? 'Restore' : 'Delete'}
-                      </Button>
+                      <div style={{ display: 'flex', gap: 'var(--space-2)', flexShrink: 0 }}>
+                        {k === 'shared' && (
+                          <Button variant="ghost" size="sm" onClick={() => hideShared(t)} disabled={busy}>Hide</Button>
+                        )}
+                        {k === 'custom' && (
+                          <>
+                            <Button variant="secondary" size="sm" onClick={() => toggle.mutate({ id: t.id, active: false })} disabled={busy}>Hide</Button>
+                            <Button variant="ghost" size="sm" onClick={() => del(t)} disabled={busy}>Delete</Button>
+                          </>
+                        )}
+                        {k === 'hidden' && (
+                          <>
+                            <Button variant="success" size="sm" onClick={() => toggle.mutate({ id: t.id, active: true })} disabled={busy}>Show</Button>
+                            <Button variant="ghost" size="sm" onClick={() => del(t)} disabled={busy}>Delete</Button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   );
                 })
