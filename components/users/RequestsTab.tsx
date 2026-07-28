@@ -850,10 +850,12 @@ export default function RequestsTab({ user, emp, isSelf, isAdmin, userId }: User
     queryFn:  () => hrRequestsApi.getPendingMyApproval(),
   });
 
+  // Tab-badge count — scope to this profile's employee too (same as the list &
+  // summary), otherwise an admin's badge shows everyone's count.
   const { data: myData } = useQuery({
-    queryKey: ['my-requests', userId, ''],
-    queryFn:  () => hrRequestsApi.getAll({}),
-    enabled:  !!userId,
+    queryKey: ['my-requests', userId, empId, ''],
+    queryFn:  () => hrRequestsApi.getAll({ ...(empId ? { employee: empId } : {}) }),
+    enabled:  !!userId && !!empId,
     staleTime: 30 * 1000,
   });
 
