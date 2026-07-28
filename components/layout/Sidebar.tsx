@@ -238,31 +238,21 @@ export default function Sidebar() {
   // HR nav, organized into collapsible sub-groups ("a list inside a list").
   // Each leaf is permission-gated; empty groups are dropped so a user only sees
   // the areas they can access.
+  // Operational HR only — day-to-day pages. All setup/configuration lives in the
+  // HR Settings rail (HRSettingsNav), so nothing is duplicated across the two navs.
   const hrGroupDefs = [
     { name: t('nav', 'hrGrpPeople'), icon: <UserIcon className="w-4 h-4" />, children: [
       { name: 'Employees',          href: '/hr/employees',          perm: 'hr.hr_employee.view', icon: <UserIcon className="w-4 h-4" /> },
-      { name: 'Employee Categories', href: '/hr/groups',            perm: 'hr.hr_employee.view', icon: <UsersIcon className="w-4 h-4" /> },
-      { name: 'Positions',          href: '/hr/positions',          perm: 'hr.hr_employee.view', icon: <UserIcon className="w-4 h-4" /> },
-    ] },
-    { name: t('nav', 'hrGrpOrg'), icon: <BuildingIcon className="w-4 h-4" />, children: [
-      { name: t('nav', 'hrDepartments'), href: '/hr/departments',   perm: 'hr.hr_employee.view', icon: <BuildingIcon className="w-4 h-4" /> },
-      { name: 'Work Teams',         href: '/hr/teams',              perm: 'hr.hr_employee.view', icon: <UsersIcon className="w-4 h-4" /> },
-      { name: 'Team Types',         href: '/settings/team-types',   perm: 'hr.hr_employee.view', icon: <UsersIcon className="w-4 h-4" /> },
-      { name: 'Cost Categories',    href: '/settings/cost-categories', perm: 'hr.hr_employee.view', icon: <DollarIcon className="w-4 h-4" /> },
-      { name: 'Operation Labels',   href: '/settings/labels',       perm: 'hr.hr_settings.view', icon: <SettingsIcon className="w-4 h-4" /> },
+      { name: 'Employee Contracts', href: '/hr/contracts',          perm: 'hr.hr_employee.view', icon: <FileTextIcon className="w-4 h-4" /> },
     ] },
     { name: t('nav', 'hrGrpTime'), icon: <ClockIcon className="w-4 h-4" />, children: [
-      { name: 'Work Shifts',        href: '/hr/shifts',             perm: 'hr.hr_employee.view',   icon: <ClockIcon className="w-4 h-4" /> },
       { name: t('nav', 'hrAttendance'), href: '/hr/attendance',     perm: 'hr.hr_attendance.view', icon: <CalendarIcon className="w-4 h-4" /> },
       { name: 'Work Logs',          href: '/hr/work-logs',          perm: 'hr.hr_attendance.view', icon: <ClockIcon className="w-4 h-4" /> },
       { name: 'Employee Locations', href: '/hr/employee-locations', perm: 'hr.hr_attendance.view', icon: <MapPinIcon className="w-4 h-4" /> },
-      { name: 'Geolocations',       href: '/hr/settings/locations', perm: 'hr.hr_settings.view',   icon: <MapPinIcon className="w-4 h-4" /> },
     ] },
     { name: t('nav', 'hrGrpRequests'), icon: <FileTextIcon className="w-4 h-4" />, children: [
       { name: t('nav', 'hrRequests'), href: '/hr/requests',         perm: 'hr.hr_request.view',  icon: <FileTextIcon className="w-4 h-4" /> },
       { name: 'Profile Changes',    href: '/hr/profile-changes',    perm: 'hr.hr_employee.view', icon: <UserIcon className="w-4 h-4" /> },
-      { name: 'Approval Chains',    href: '/hr/approvals/chains',   perm: 'hr.hr_approval.view', icon: <ShieldCheckIcon className="w-4 h-4" /> },
-      { name: 'Penalty Rules',      href: '/hr/penalties',          perm: 'hr.hr_penalty.view',  icon: <AlertIcon className="w-4 h-4" /> },
     ] },
     { name: t('nav', 'hrGrpPayroll'), icon: <DollarIcon className="w-4 h-4" />, children: [
       { name: t('nav', 'hrPayroll'), href: '/hr/payroll',           perm: 'hr.hr_payroll.view', icon: <DollarIcon className="w-4 h-4" /> },
@@ -272,7 +262,6 @@ export default function Sidebar() {
       { name: 'Loans & Advances',   href: '/hr/loans',              perm: 'hr.hr_loan.view',    icon: <CurrencyIcon className="w-4 h-4" /> },
     ] },
     { name: t('nav', 'hrGrpLeave'), icon: <CalendarIcon className="w-4 h-4" />, children: [
-      { name: 'Leave Policies',     href: '/hr/leave-policies',     perm: 'hr.hr_leave.view',     icon: <CalendarIcon className="w-4 h-4" /> },
       { name: 'Leave Encashments',  href: '/hr/leave-encashments',  perm: 'hr.hr_leave.view',     icon: <DollarIcon className="w-4 h-4" /> },
       { name: 'Benefits & Welfare', href: '/hr/benefits',           perm: 'hr.hr_benefits.view',  icon: <ShieldCheckIcon className="w-4 h-4" /> },
     ] },

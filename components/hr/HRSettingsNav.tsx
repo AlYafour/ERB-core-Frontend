@@ -10,22 +10,31 @@ import { usePathname } from 'next/navigation';
 const NAV_GROUPS: { title: string; items: { label: string; href: string }[] }[] = [
   { title: 'General', items: [
     { label: 'HR Settings', href: '/hr/settings' },
+    { label: 'Companies', href: '/hr/settings/companies' },
   ]},
   { title: 'Organization', items: [
-    { label: 'Companies', href: '/hr/settings/companies' },
     { label: 'Departments', href: '/hr/departments' },
+    { label: 'Positions', href: '/hr/positions' },
     { label: 'Employee Categories', href: '/hr/groups' },
-    { label: 'Office Locations', href: '/hr/settings/locations' },
+    { label: 'Work Teams', href: '/hr/teams' },
   ]},
   { title: 'Time & Attendance', items: [
     { label: 'Work Shifts', href: '/hr/shifts' },
+    { label: 'Office Locations', href: '/hr/settings/locations' },
     { label: 'Penalty Rules', href: '/hr/penalties' },
     { label: 'Notifications', href: '/hr/settings/notifications' },
   ]},
-  { title: 'Requests & Approvals', items: [
+  { title: 'Requests & Documents', items: [
     { label: 'Request Types', href: '/hr/settings/request-types' },
     { label: 'Approval Chains', href: '/hr/approvals/chains' },
     { label: 'Leave Policies', href: '/hr/leave-policies' },
+    { label: 'Policy Rules', href: '/hr/policy' },
+    { label: 'Document Templates', href: '/hr/documents' },
+  ]},
+  { title: 'Classification', items: [
+    { label: 'Team Types', href: '/settings/team-types' },
+    { label: 'Cost Categories', href: '/settings/cost-categories' },
+    { label: 'Operation Labels', href: '/settings/labels' },
   ]},
 ];
 
