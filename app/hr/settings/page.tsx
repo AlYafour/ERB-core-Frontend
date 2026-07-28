@@ -160,7 +160,7 @@ function CompanySettingsPanel() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
         <div>
           <p style={{ margin: 0, fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}>General HR Settings</p>
-          <p style={{ margin: '2px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Timezone, working week, attendance rules, and geofence enforcement.</p>
+          <p style={{ margin: '2px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Timezone, currency, working week, and attendance rules.</p>
         </div>
         {dirty && <Button size="sm" onClick={() => mut.mutate()} disabled={mut.isPending}>{mut.isPending ? 'Saving…' : 'Save Changes'}</Button>}
       </div>
@@ -171,12 +171,8 @@ function CompanySettingsPanel() {
           <input style={INPUT_CS} value={form.timezone ?? data?.timezone ?? ''} onChange={e => set('timezone', e.target.value)} placeholder="e.g. Asia/Dubai" />
         </div>
         <div>
-          <label style={LBL_CS}>Work Start Time</label>
-          <input style={INPUT_CS} type="time" value={form.work_start_time ?? data?.work_start_time ?? ''} onChange={e => set('work_start_time', e.target.value)} />
-        </div>
-        <div>
-          <label style={LBL_CS}>Work End Time</label>
-          <input style={INPUT_CS} type="time" value={form.work_end_time ?? data?.work_end_time ?? ''} onChange={e => set('work_end_time', e.target.value)} />
+          <label style={LBL_CS}>Currency</label>
+          <input style={INPUT_CS} value={form.currency ?? data?.currency ?? ''} onChange={e => set('currency', e.target.value)} placeholder="AED" />
         </div>
         <div>
           <label style={LBL_CS}>Check-in Cutoff Time</label>
@@ -189,14 +185,6 @@ function CompanySettingsPanel() {
           <span style={{ display: 'block', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 4 }}>
             After this time employees can’t check in. Leave empty for no limit.
           </span>
-        </div>
-        <div>
-          <label style={LBL_CS}>Late Threshold (minutes)</label>
-          <input style={INPUT_CS} type="number" min={0} value={form.late_threshold_mins ?? data?.late_threshold_mins ?? 0} onChange={e => set('late_threshold_mins', Number(e.target.value))} />
-        </div>
-        <div>
-          <label style={LBL_CS}>Currency</label>
-          <input style={INPUT_CS} value={form.currency ?? data?.currency ?? ''} onChange={e => set('currency', e.target.value)} placeholder="AED" />
         </div>
         <div>
           <label style={LBL_CS}>Geofence Enforcement</label>
@@ -230,10 +218,23 @@ function CompanySettingsPanel() {
         </div>
       </div>
 
+      {/* One source of truth — no duplicated work-hours / late-threshold inputs here. */}
+      <div style={{
+        marginTop: 'var(--space-4)', padding: 'var(--space-3) var(--space-4)',
+        borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)',
+        border: '1px solid var(--border-subtle)', fontSize: 'var(--text-xs)',
+        color: 'var(--text-secondary)', lineHeight: 1.7,
+      }}>
+        <strong style={{ color: 'var(--text-primary)' }}>Where these are set:</strong>{' '}
+        work hours &amp; start/end times live per <Link href="/hr/shifts" style={{ color: 'var(--brand)' }}>Shift</Link>;
+        the late-arrival threshold, recipients &amp; email live on{' '}
+        <Link href="/hr/settings/notifications" style={{ color: 'var(--brand)' }}>Notifications</Link>.
+      </div>
+
       {/* ── Attendance policy (overtime) ── */}
       <div style={{ marginTop: 'var(--space-5)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
         <p style={{ margin: '0 0 2px', fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}>Attendance Policy</p>
-        <p style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Overtime handling — nothing is fixed, set it per your company. Notification settings now live on their own page.</p>
+        <p style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Overtime handling and the required-hours fallback (used when an employee has no shift).</p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
           <div>
