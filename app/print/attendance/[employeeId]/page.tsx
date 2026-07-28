@@ -10,7 +10,7 @@
  */
 
 import Image from 'next/image';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { hrAttendanceApi, type AttendanceTimesheet } from '@/lib/api/hr';
@@ -53,6 +53,43 @@ function fmtTime(dt: string | null): string {
     return m ? `${m[1].padStart(2, '0')}:${m[2]}` : String(dt);
   }
   return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+/** From/To picker shown in the control bar (hidden on print). Changing a date
+ *  rewrites the URL query, which re-runs the timesheet query for the new period. */
+function PeriodPicker({ employeeId, from, to }: { employeeId: string; from?: string; to?: string }) {
+  const router = useRouter();
+  const ymd = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const now = new Date();
+  const [f, setF] = useState(from || ymd(new Date(now.getFullYear(), now.getMonth(), 1)));
+  const [t, setT] = useState(to || ymd(now));
+
+  const go = (nf: string, nt: string) => {
+    if (nf && nt) router.replace(`/print/attendance/${employeeId}?from=${nf}&to=${nt}`);
+  };
+
+  const inp: React.CSSProperties = {
+    padding: '3px 7px', borderRadius: 6, border: `1px solid ${LINE}`,
+    background: '#f8fafc', color: '#475569', fontSize: 11, fontWeight: 600, colorScheme: 'light',
+  };
+  const lbl: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: 4,
+    fontSize: 10, fontWeight: 700, color: MUTE, textTransform: 'uppercase', letterSpacing: '.04em',
+  };
+
+  return (
+    <>
+      <label style={lbl}>From
+        <input type="date" style={inp} value={f} max={t || undefined}
+          onChange={e => { setF(e.target.value); go(e.target.value, t); }} />
+      </label>
+      <label style={lbl}>To
+        <input type="date" style={inp} value={t} min={f || undefined}
+          onChange={e => { setT(e.target.value); go(f, e.target.value); }} />
+      </label>
+    </>
+  );
 }
 
 export default function PrintAttendancePage() {
@@ -127,7 +164,9 @@ export default function PrintAttendancePage() {
   return (
     <div className="print-page-bg" style={{ minHeight: '100vh', background: '#eef1f5', fontFamily: "'Inter','IBM Plex Sans','Helvetica Neue',sans-serif" }}>
       <PrintControlsBar backHref="/hr/attendance" docType="ATTENDANCE" docTypeColor={ORANGE}
-        docNumber={emp.employee_id} status={st.label} />
+        docNumber={emp.employee_id} status={st.label}>
+        <PeriodPicker employeeId={String(employeeId)} from={from} to={to} />
+      </PrintControlsBar>
 
       <div className="print-doc" style={{
         width: '210mm', minHeight: '297mm', margin: '12px auto', background: '#fff',

@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { StatusBadge } from '@/components/print/PrintTemplate';
 
 interface PrintControlsBarProps {
@@ -8,6 +9,8 @@ interface PrintControlsBarProps {
   docTypeColor: string;
   docNumber: string | null | undefined;
   status?: string;
+  /** Optional centre slot (e.g. a period picker). Hidden on print with the bar. */
+  children?: ReactNode;
 }
 
 const NAVY   = '#1a1a2e';
@@ -36,7 +39,7 @@ const BACK_SVG = (
   </svg>
 );
 
-export function PrintControlsBar({ backHref, docType, docTypeColor, docNumber, status }: PrintControlsBarProps) {
+export function PrintControlsBar({ backHref, docType, docTypeColor, docNumber, status, children }: PrintControlsBarProps) {
   return (
     <div
       className="print-controls-bar"
@@ -78,6 +81,13 @@ export function PrintControlsBar({ backHref, docType, docTypeColor, docNumber, s
 
         {status && <StatusBadge status={status} />}
       </div>
+
+      {/* Centre: optional slot (e.g. a period picker) */}
+      {children && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {children}
+        </div>
+      )}
 
       {/* Right: print + download */}
       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
