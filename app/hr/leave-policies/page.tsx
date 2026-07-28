@@ -11,6 +11,7 @@ import { confirm } from '@/lib/hooks/use-toast';
 import { Button, Badge } from '@/components/ui';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { AppListPage } from '@/components/app/AppListPage';
+import HRSettingsNav from '@/components/hr/HRSettingsNav';
 import { type Column } from '@/components/ui/DataTable';
 import { RowActions } from '@/components/ui/RowActions';
 import { BaseModal } from '@/components/ui/base/BaseModal';
@@ -657,6 +658,7 @@ export default function LeavePoliciesPage() {
     <AppListPage
       title="Leave Policies"
       description="Configure annual entitlements, monthly accrual rates, and encashment rules per employee category."
+      sideNav={<HRSettingsNav />}
       breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Settings', href: '/hr/settings' }, { label: 'Leave Policies' }]}
       totalCount={all.length}
       createAction={

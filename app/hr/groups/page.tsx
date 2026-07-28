@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppListPage } from '@/components/app/AppListPage';
+import HRSettingsNav from '@/components/hr/HRSettingsNav';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { type Column } from '@/components/ui/DataTable';
 import { RowActions } from '@/components/ui/RowActions';
@@ -446,6 +447,7 @@ export default function EmployeeGroupsPage() {
     <AppListPage
       title="Employee Categories"
       description="Workforce categories that carry a default shift and approval policy."
+      sideNav={<HRSettingsNav />}
       breadcrumbs={[
         { label: 'Home', href: '/' },
         { label: 'HR' },

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppListPage } from '@/components/app/AppListPage';
+import HRSettingsNav from '@/components/hr/HRSettingsNav';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { type Column } from '@/components/ui/DataTable';
 import { RowActions } from '@/components/ui/RowActions';
@@ -556,6 +557,7 @@ export default function ShiftsPage() {
     <AppListPage
       title="Work Shifts"
       description="Define named work schedules and assign them to employee categories."
+      sideNav={<HRSettingsNav />}
       breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Settings', href: '/hr/settings' }, { label: 'Work Shifts' }]}
       totalCount={allShifts.length}
       createAction={canManage ? (

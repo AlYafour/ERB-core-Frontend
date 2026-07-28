@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { AppListPage } from '@/components/app/AppListPage';
+import HRSettingsNav from '@/components/hr/HRSettingsNav';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { type Column } from '@/components/ui/DataTable';
 import { RowActions } from '@/components/ui/RowActions';
@@ -1022,6 +1023,7 @@ export default function PenaltyRulesPage() {
   return (
     <AppListPage
       title="Penalty Rules"
+      sideNav={<HRSettingsNav />}
       breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Settings', href: '/hr/settings' }, { label: 'Penalty Rules' }]}
       description="Configure tiered penalty rules per employee category and event type (lateness, early leave, absence)."
       showBack={false}

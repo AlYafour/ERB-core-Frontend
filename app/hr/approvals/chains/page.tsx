@@ -9,6 +9,7 @@ import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast } from '@/lib/hooks/use-toast';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { AppListPage } from '@/components/app/AppListPage';
+import HRSettingsNav from '@/components/hr/HRSettingsNav';
 import { type Column } from '@/components/ui/DataTable';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { RowActions } from '@/components/ui/RowActions';
@@ -1205,6 +1206,7 @@ export default function ApprovalChainsPage() {
   return (
     <AppListPage
       title="Approval Chains"
+      sideNav={<HRSettingsNav />}
       breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Settings', href: '/hr/settings' }, { label: 'Approval Chains' }]}
       description="Configure multi-stage approval chains per employee category and request type."
       showBack={false}

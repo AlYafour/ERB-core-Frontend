@@ -85,6 +85,9 @@ export interface AppListPageProps {
   pendingCount?: number;
   createAction?: ReactNode;
   headerExtra?:  ReactNode;
+  /** Optional left rail rendered beside the list (e.g. the HR settings nav).
+      When omitted the page renders exactly as before (display:contents wrapper). */
+  sideNav?:      ReactNode;
 
   /* ── Status strip (optional) ── */
   statusItems?:      AppStatusItem[];
@@ -132,7 +135,7 @@ export interface AppListPageProps {
 export function AppListPage({
   breadcrumbs = [],
   showBack = true,
-  title, description, totalCount = 0, pendingCount, createAction, headerExtra,
+  title, description, totalCount = 0, pendingCount, createAction, headerExtra, sideNav,
   statusItems = [],
   statusKey = 'status',
   totalAmount, totalAmountLabel,
@@ -234,7 +237,9 @@ export function AppListPage({
   return (
     <MainLayout>
       <PageShell compact>
-        <div className="proc-list-page">
+        <div style={sideNav ? { display: 'flex', gap: 'var(--space-6)', alignItems: 'flex-start' } : { display: 'contents' }}>
+          {sideNav}
+          <div className="proc-list-page" style={sideNav ? { flex: 1, minWidth: 0 } : undefined}>
 
           {/* ── Header card ── */}
           <div className="proc-list-header-card">
@@ -413,6 +418,7 @@ export function AppListPage({
             </div>
           </div>
 
+          </div>
         </div>
 
         {children}
