@@ -298,10 +298,15 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
   const [file, setFile] = useState<File | null>(null);
   const [bothHourly, setBothHourly] = useState(false); // 'both' types: day vs hourly toggle
 
+  // Always scope to THIS profile's employee — never rely on the endpoint's
+  // admin-sees-all behaviour, or an admin's "My Requests" would list everyone's.
   const { data: requestsData, isLoading } = useQuery({
-    queryKey: ['my-requests', userId, statusFilter],
-    queryFn:  () => hrRequestsApi.getAll({ ...(statusFilter ? { status: statusFilter } : {}) }),
-    enabled:  !!userId,
+    queryKey: ['my-requests', userId, empId, statusFilter],
+    queryFn:  () => hrRequestsApi.getAll({
+      ...(empId ? { employee: empId } : {}),
+      ...(statusFilter ? { status: statusFilter } : {}),
+    }),
+    enabled:  !!userId && !!empId,
   });
 
   const { data: requestTypes } = useQuery({
@@ -775,11 +780,11 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
 
 // ── Type Summary Sidebar ───────────────────────────────────────────────────────
 
-function TypeSummary({ userId }: { userId: number }) {
+function TypeSummary({ userId, empId }: { userId: number; empId?: number }) {
   const { data: requestsData } = useQuery({
-    queryKey: ['my-requests', userId, ''],
-    queryFn:  () => hrRequestsApi.getAll({}),
-    enabled:  !!userId,
+    queryKey: ['my-requests', userId, empId, ''],
+    queryFn:  () => hrRequestsApi.getAll({ ...(empId ? { employee: empId } : {}) }),
+    enabled:  !!userId && !!empId,
     staleTime: 30 * 1000,
   });
 
@@ -907,7 +912,7 @@ export default function RequestsTab({ user, emp, isSelf, isAdmin, userId }: User
         </div>
 
         {/* Summary sidebar */}
-        <TypeSummary userId={userId} />
+        <TypeSummary userId={userId} empId={empId} />
       </div>
     </div>
   );
