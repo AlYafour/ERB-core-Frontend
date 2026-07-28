@@ -117,6 +117,17 @@ const LBL_CS: React.CSSProperties = {
   display: 'block', fontSize: 'var(--text-xs)', fontWeight: 600,
   color: 'var(--text-secondary)', marginBottom: 4,
 };
+// Sub-group header inside the settings card. `first` variant drops the top rule.
+const GROUP_HEAD: React.CSSProperties = {
+  margin: 'var(--space-5) 0 var(--space-3)', paddingTop: 'var(--space-4)',
+  borderTop: '1px solid var(--border-subtle)',
+  fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)', color: 'var(--text-primary)',
+};
+const GROUP_HEAD_FIRST: React.CSSProperties = {
+  margin: '0 0 var(--space-3)',
+  fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)', color: 'var(--text-primary)',
+};
+const GRID3: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' };
 
 function CompanySettingsPanel() {
   const qc = useQueryClient();
@@ -165,7 +176,9 @@ function CompanySettingsPanel() {
         {dirty && <Button size="sm" onClick={() => mut.mutate()} disabled={mut.isPending}>{mut.isPending ? 'Saving…' : 'Save Changes'}</Button>}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
+      {/* ── Company & Locale ── */}
+      <p style={GROUP_HEAD_FIRST}>Company &amp; Locale</p>
+      <div style={GRID3}>
         <div>
           <label style={LBL_CS}>Timezone</label>
           <input style={INPUT_CS} value={form.timezone ?? data?.timezone ?? ''} onChange={e => set('timezone', e.target.value)} placeholder="e.g. Asia/Dubai" />
@@ -174,6 +187,26 @@ function CompanySettingsPanel() {
           <label style={LBL_CS}>Currency</label>
           <input style={INPUT_CS} value={form.currency ?? data?.currency ?? ''} onChange={e => set('currency', e.target.value)} placeholder="AED" />
         </div>
+      </div>
+
+      {/* ── Attendance ── */}
+      <p style={GROUP_HEAD}>Attendance</p>
+      <div style={{ marginBottom: 'var(--space-4)' }}>
+        <label style={LBL_CS}>Working Days</label>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {DAYS_MAP.map((d, i) => (
+            <button key={i} onClick={() => toggleDay(i)} style={{
+              padding: '4px 12px', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-xs)', fontWeight: 600,
+              cursor: 'pointer', border: '1px solid',
+              background: wd.includes(i) ? 'var(--brand)' : 'var(--surface-subtle)',
+              color:      wd.includes(i) ? '#fff'         : 'var(--text-secondary)',
+              borderColor: wd.includes(i) ? 'var(--brand)' : 'var(--border-subtle)',
+              transition: 'all 0.15s',
+            }}>{d}</button>
+          ))}
+        </div>
+      </div>
+      <div style={GRID3}>
         <div>
           <label style={LBL_CS}>Check-in Cutoff Time</label>
           <input
@@ -192,30 +225,6 @@ function CompanySettingsPanel() {
             {ENFORCEMENT_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>
-        <div>
-          <label style={LBL_CS}>Default Annual Leave Days</label>
-          <input style={INPUT_CS} type="number" min={0} value={form.annual_leave_days ?? data?.annual_leave_days ?? 30} onChange={e => set('annual_leave_days', Number(e.target.value))} />
-        </div>
-        <div>
-          <label style={LBL_CS}>Default Sick Leave Days</label>
-          <input style={INPUT_CS} type="number" min={0} value={form.sick_leave_days ?? data?.sick_leave_days ?? 15} onChange={e => set('sick_leave_days', Number(e.target.value))} />
-        </div>
-      </div>
-
-      <div style={{ marginTop: 'var(--space-4)' }}>
-        <label style={LBL_CS}>Working Days</label>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {DAYS_MAP.map((d, i) => (
-            <button key={i} onClick={() => toggleDay(i)} style={{
-              padding: '4px 12px', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-xs)', fontWeight: 600,
-              cursor: 'pointer', border: '1px solid',
-              background: wd.includes(i) ? 'var(--brand)' : 'var(--surface-subtle)',
-              color:      wd.includes(i) ? '#fff'         : 'var(--text-secondary)',
-              borderColor: wd.includes(i) ? 'var(--brand)' : 'var(--border-subtle)',
-              transition: 'all 0.15s',
-            }}>{d}</button>
-          ))}
-        </div>
       </div>
 
       {/* One source of truth — no duplicated work-hours / late-threshold inputs here. */}
@@ -231,9 +240,22 @@ function CompanySettingsPanel() {
         <Link href="/hr/settings/notifications" style={{ color: 'var(--brand)' }}>Notifications</Link>.
       </div>
 
+      {/* ── Leave Defaults ── */}
+      <p style={GROUP_HEAD}>Leave Defaults</p>
+      <div style={GRID3}>
+        <div>
+          <label style={LBL_CS}>Default Annual Leave Days</label>
+          <input style={INPUT_CS} type="number" min={0} value={form.annual_leave_days ?? data?.annual_leave_days ?? 30} onChange={e => set('annual_leave_days', Number(e.target.value))} />
+        </div>
+        <div>
+          <label style={LBL_CS}>Default Sick Leave Days</label>
+          <input style={INPUT_CS} type="number" min={0} value={form.sick_leave_days ?? data?.sick_leave_days ?? 15} onChange={e => set('sick_leave_days', Number(e.target.value))} />
+        </div>
+      </div>
+
       {/* ── Attendance policy (overtime) ── */}
       <div style={{ marginTop: 'var(--space-5)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
-        <p style={{ margin: '0 0 2px', fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}>Attendance Policy</p>
+        <p style={{ margin: '0 0 2px', fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>Overtime &amp; Hours</p>
         <p style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Overtime handling and the required-hours fallback (used when an employee has no shift).</p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
