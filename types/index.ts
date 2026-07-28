@@ -966,6 +966,9 @@ export interface HRCompanySettings {
   overtime_multiplier?: string;
   // Attendance policy
   overtime_enabled?: boolean;
+  break_deduction_mode?: 'as_taken' | 'minimum' | 'fixed';
+  clip_checkin_to_shift_start?: boolean;
+  clip_checkout_to_shift_end?: boolean;
   notifications_enabled?: boolean;
   notify_late_arrival?: boolean;
   notify_incomplete_hours?: boolean;
