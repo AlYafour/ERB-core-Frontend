@@ -1022,6 +1022,7 @@ export default function PenaltyRulesPage() {
   return (
     <AppListPage
       title="Penalty Rules"
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Settings', href: '/hr/settings' }, { label: 'Penalty Rules' }]}
       description="Configure tiered penalty rules per employee category and event type (lateness, early leave, absence)."
       showBack={false}
       totalCount={filtered.length}

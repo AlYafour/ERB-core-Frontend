@@ -556,7 +556,7 @@ export default function ShiftsPage() {
     <AppListPage
       title="Work Shifts"
       description="Define named work schedules and assign them to employee categories."
-      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Work Shifts' }]}
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Settings', href: '/hr/settings' }, { label: 'Work Shifts' }]}
       totalCount={allShifts.length}
       createAction={canManage ? (
         <Button variant="primary" size="sm" onClick={() => setModalShift('new')}>+ Create Shift</Button>

@@ -657,7 +657,7 @@ export default function LeavePoliciesPage() {
     <AppListPage
       title="Leave Policies"
       description="Configure annual entitlements, monthly accrual rates, and encashment rules per employee category."
-      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Leave Policies' }]}
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Settings', href: '/hr/settings' }, { label: 'Leave Policies' }]}
       totalCount={all.length}
       createAction={
         isAdmin ? (

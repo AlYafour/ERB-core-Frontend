@@ -1205,6 +1205,7 @@ export default function ApprovalChainsPage() {
   return (
     <AppListPage
       title="Approval Chains"
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Settings', href: '/hr/settings' }, { label: 'Approval Chains' }]}
       description="Configure multi-stage approval chains per employee category and request type."
       showBack={false}
       totalCount={filtered.length}

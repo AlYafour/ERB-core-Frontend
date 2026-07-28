@@ -449,6 +449,7 @@ export default function EmployeeGroupsPage() {
       breadcrumbs={[
         { label: 'Home', href: '/' },
         { label: 'HR' },
+        { label: 'Settings', href: '/hr/settings' },
         { label: 'Employee Categories' },
       ]}
       totalCount={allGroups.length}

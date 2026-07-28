@@ -154,7 +154,7 @@ export default function DepartmentsPage() {
     <AppListPage
       title="Departments"
       description="Organisational units — structure, hierarchy, headcount"
-      breadcrumbs={[{ label: 'HR' }, { label: 'Departments' }]}
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'HR' }, { label: 'Settings', href: '/hr/settings' }, { label: 'Departments' }]}
       totalCount={all.length}
       createAction={canManage
         ? <Button variant="primary" size="sm" onClick={openCreate}>+ New Department</Button>
