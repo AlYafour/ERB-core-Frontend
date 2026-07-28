@@ -179,6 +179,18 @@ function CompanySettingsPanel() {
           <input style={INPUT_CS} type="time" value={form.work_end_time ?? data?.work_end_time ?? ''} onChange={e => set('work_end_time', e.target.value)} />
         </div>
         <div>
+          <label style={LBL_CS}>Check-in Cutoff Time</label>
+          <input
+            style={INPUT_CS}
+            type="time"
+            value={form.checkin_cutoff_time ?? data?.checkin_cutoff_time ?? ''}
+            onChange={e => set('checkin_cutoff_time', e.target.value || null)}
+          />
+          <span style={{ display: 'block', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 4 }}>
+            After this time employees can’t check in. Leave empty for no limit.
+          </span>
+        </div>
+        <div>
           <label style={LBL_CS}>Late Threshold (minutes)</label>
           <input style={INPUT_CS} type="number" min={0} value={form.late_threshold_mins ?? data?.late_threshold_mins ?? 0} onChange={e => set('late_threshold_mins', Number(e.target.value))} />
         </div>

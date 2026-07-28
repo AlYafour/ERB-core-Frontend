@@ -951,6 +951,7 @@ export interface HRCompanySettings {
   working_days: number[];
   work_start_time: string;
   work_end_time: string;
+  checkin_cutoff_time: string | null;
   late_threshold_mins: number;
   office_address: string;
   geofence_enforcement: 'enforce' | 'warn' | 'off';
