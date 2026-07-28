@@ -179,7 +179,7 @@ export default function HRRequestDetailPage() {
           <div style={{ flex: '1 1 420px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
             {/* Employee card */}
             <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-              <Avatar src={req.employee_avatar} name={req.employee_name} size={64} />
+              <Avatar src={req.employee_avatar} username={req.employee_name} alt={req.employee_name} size={64} />
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', color: 'var(--text-primary)', lineHeight: 1.2 }}>
                   {req.employee_name}

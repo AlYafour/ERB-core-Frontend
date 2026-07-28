@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { hrRequestsApi, hrApprovalsApi } from '@/lib/api/hr';
 import { toast, confirm } from '@/lib/hooks/use-toast';
@@ -105,10 +106,10 @@ function StatusBadge({ status }: { status: string }) {
 // ── Approvals Inbox ────────────────────────────────────────────────────────────
 
 function ApprovalsInbox({ userId }: { userId: number }) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [rejectingId, setRejectingId]   = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
-  const [expandedId, setExpandedId]     = useState<number | null>(null);
 
   const { data: inbox = [], isLoading } = useQuery({
     queryKey: ['pending-my-approval'],
@@ -167,15 +168,13 @@ function ApprovalsInbox({ userId }: { userId: number }) {
 
       {inbox.map((req, idx) => {
         const isRejectOpen = rejectingId === req.id;
-        const isExpanded   = expandedId  === req.id;
         const isDateType   = DATE_RANGE_TYPES.has(req.request_type);
-        const step         = req.current_approval_step;
 
         return (
           <div key={req.id} style={{ borderBottom: idx < inbox.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
-            {/* Main row */}
+            {/* Main row — opens the full request detail */}
             <div
-              onClick={() => !isRejectOpen && setExpandedId(isExpanded ? null : req.id)}
+              onClick={() => !isRejectOpen && router.push('/hr/requests/' + req.id)}
               style={{ display: 'grid', gridTemplateColumns: '1fr 130px 70px 1fr 160px', gap: 'var(--space-3)', padding: 'var(--space-4) var(--space-5)', alignItems: 'center', cursor: 'pointer' }}>
 
               <div>
@@ -219,7 +218,7 @@ function ApprovalsInbox({ userId }: { userId: number }) {
                 <button
                   onClick={() => {
                     if (isRejectOpen) { setRejectingId(null); setRejectReason(''); }
-                    else { setRejectingId(req.id); setExpandedId(null); }
+                    else { setRejectingId(req.id); }
                   }}
                   disabled={approveMutation.isPending}
                   style={{ padding: '4px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', background: isRejectOpen ? 'var(--status-error-bg)' : 'none', color: isRejectOpen ? 'var(--status-error)' : 'var(--text-secondary)', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)' }}>
@@ -259,23 +258,6 @@ function ApprovalsInbox({ userId }: { userId: number }) {
               </div>
             )}
 
-            {/* Expanded detail */}
-            {isExpanded && !isRejectOpen && (
-              <div style={{ padding: 'var(--space-3) var(--space-5) var(--space-4)', borderTop: '1px solid var(--border-subtle)', background: 'var(--surface-subtle)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                {step && (
-                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
-                    <span style={{ fontWeight: 'var(--weight-semibold)' }}>Step {step.step_order}</span>
-                    {' · '}{STRATEGY_LABEL[step.strategy] || step.strategy}
-                    {' · Submitted '}{fmtDate(req.created_at)}
-                  </p>
-                )}
-                {req.reason && (
-                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
-                    <span style={{ fontWeight: 'var(--weight-semibold)' }}>Reason: </span>{req.reason}
-                  </p>
-                )}
-              </div>
-            )}
           </div>
         );
       })}
