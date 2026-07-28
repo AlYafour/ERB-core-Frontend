@@ -238,7 +238,7 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
             </div>
           </div>
 
-          {/* Default times — hidden when per-day is on */}
+          {/* Default times — hidden when per-day is on (the per-day table has its own) */}
           <div style={{ display: form.per_day_times ? 'none' : undefined }}>
             <label style={LABEL}>Schedule</label>
 
@@ -255,7 +255,11 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
                   className="form-input" style={{ width: '100%', fontSize: 'var(--text-sm)' }} />
               </div>
             </div>
+          </div>
 
+          {/* Break — one uniform break for the whole shift, applied to every day.
+              Shown in BOTH modes (per-day only overrides the start/end, not the break). */}
+          <div>
             {/* Break toggle */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: form.break_enabled ? 10 : 0 }}>
               <span style={{ ...LABEL, marginBottom: 0, fontSize: 10 }}>Break</span>
@@ -312,8 +316,8 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
 
           {/* Per-day schedule table */}
           {form.per_day_times && form.work_days.length > 0 && (() => {
-            const cols = form.break_enabled ? '52px 1fr 1fr 1fr 1fr' : '52px 1fr 1fr';
-            const headers = form.break_enabled ? ['Day', 'Start', 'End', 'Brk Start', 'Brk End'] : ['Day', 'Start', 'End'];
+            const cols = '52px 1fr 1fr';
+            const headers = ['Day', 'Start', 'End'];
             return (
               <div style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', overflow: 'hidden' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: cols, gap: 0, background: 'var(--surface-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
@@ -335,25 +339,11 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
                           onChange={e => updateDayRow(day, { start_time: e.target.value })}
                           className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
                       </div>
-                      <div style={{ padding: '6px 6px 6px 0' }}>
+                      <div style={{ padding: '6px 8px 6px 0' }}>
                         <input type="time" value={row.end_time}
                           onChange={e => updateDayRow(day, { end_time: e.target.value })}
                           className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
                       </div>
-                      {form.break_enabled && (
-                        <>
-                          <div style={{ padding: '6px 6px 6px 0' }}>
-                            <input type="time" value={row.break_start}
-                              onChange={e => updateDayRow(day, { break_start: e.target.value })}
-                              className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
-                          </div>
-                          <div style={{ padding: '6px 8px 6px 0' }}>
-                            <input type="time" value={row.break_end}
-                              onChange={e => updateDayRow(day, { break_end: e.target.value })}
-                              className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
-                          </div>
-                        </>
-                      )}
                     </div>
                   );
                 })}
@@ -473,16 +463,14 @@ export default function ShiftsPage() {
       break_start: bs || null,
       break_end:   be || null,
       break_mins:  data.break_enabled ? (calcBreakMins(bs, be) || data.break_mins) : 0,
-      day_schedules: data.day_schedules.map(ds => {
-        const dbs = data.break_enabled ? ds.break_start : '';
-        const dbe = data.break_enabled ? ds.break_end : '';
-        return {
-          ...ds,
-          break_start: dbs || null,
-          break_end:   dbe || null,
-          break_mins:  data.break_enabled ? (calcBreakMins(dbs, dbe) || ds.break_mins) : 0,
-        };
-      }),
+      // One uniform break for the whole shift → apply the top-level break to
+      // every day (per-day mode only varies the start/end, not the break).
+      day_schedules: data.day_schedules.map(ds => ({
+        ...ds,
+        break_start: bs || null,
+        break_end:   be || null,
+        break_mins:  data.break_enabled ? (calcBreakMins(bs, be) || data.break_mins) : 0,
+      })),
     };
     if (modalShift === 'new') createMutation.mutate(enriched as unknown as FormState);
     else if (modalShift) updateMutation.mutate({ id: modalShift.id, data: enriched as unknown as FormState });
