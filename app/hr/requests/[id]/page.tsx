@@ -11,7 +11,7 @@ import { resolveRequestTypeLabel } from '@/lib/hr/request-type-label';
 import { ProcField } from '@/components/procurement/shared/ProcField';
 import { ApprovalStatusWidget } from '@/components/ui/ApprovalStatusWidget';
 import { toast, confirm } from '@/lib/hooks/use-toast';
-import { Button, Badge, Loader, PageHeader, PageShell } from '@/components/ui';
+import { Button, Badge, Loader, PageHeader, PageShell, Avatar } from '@/components/ui';
 
 const PUNCH_KIND_LABEL: Record<string, string> = {
   clock_in: 'Clocking-In', clock_out: 'Clocking-Out', break_out: 'Break-Out', break_in: 'Break-In',
@@ -113,10 +113,10 @@ export default function HRRequestDetailPage() {
   tiles.push({ value: fmtShort(req.created_at), label: 'Submitted' });
 
   // Request Details fields (precise values; tiles are the at-a-glance summary).
+  // The employee is shown in its own photo card above, so it's omitted here.
   const details: { label: string; value: string }[] = [
-    { label: 'Employee', value: `${req.employee_name} (${req.employee_id_code})` },
     { label: 'Type', value: typeLabel },
-    { label: 'Request No.', value: `#${req.id}` },
+    { label: isMissingPunch ? 'Serial No.' : 'Request No.', value: isMissingPunch ? `MP-${String(req.id).padStart(6, '0')}` : `#${req.id}` },
   ];
   if (isHourly) {
     details.push({ label: 'Date', value: fmtDate(req.start_date) });
@@ -177,6 +177,28 @@ export default function HRRequestDetailPage() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-4)', alignItems: 'flex-start' }}>
           {/* MAIN */}
           <div style={{ flex: '1 1 420px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            {/* Employee card */}
+            <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+              <Avatar src={req.employee_avatar} name={req.employee_name} size={64} />
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                  {req.employee_name}
+                </div>
+                {req.employee_name_ar && (
+                  <div dir="rtl" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 2 }}>{req.employee_name_ar}</div>
+                )}
+                {(req.employee_position || req.employee_department) && (
+                  <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 4 }}>
+                    {[req.employee_position, req.employee_department].filter(Boolean).join(' · ')}
+                  </div>
+                )}
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 4 }}>
+                  Employment number:{' '}
+                  <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{req.employee_id_code}</span>
+                </div>
+              </div>
+            </div>
+
             <div className="card">
               <div className="proc-section-head"><h3 className="proc-section-title">Request Details</h3></div>
               <div className="proc-info-grid">
