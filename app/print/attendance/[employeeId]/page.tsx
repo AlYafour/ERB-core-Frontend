@@ -248,67 +248,60 @@ export default function PrintAttendancePage() {
             ))}
           </div>
 
-          {/* ── ATTENTION ──────────────────────────────────────────── */}
+          {/* ── ATTENTION (one slim line) ──────────────────────────── */}
           {data.attention.length > 0 && (
-            <div style={{ marginTop: 13 }}>
-              <SectionLabel>Attention Required</SectionLabel>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px 12px' }}>
-                {data.attention.map((m, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 11px',
-                    borderRadius: 7, background: WARN.bg, border: `1px solid ${WARN.bd}` }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: WARN.fg, flexShrink: 0 }} />
-                    <span style={{ fontSize: '8pt', color: NAVY2, fontWeight: 500 }}>{m}</span>
-                  </div>
-                ))}
-              </div>
+            <div style={{ marginTop: 12, display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap',
+              fontSize: '7.8pt', color: NAVY2, lineHeight: 1.6 }}>
+              <span style={{ fontSize: '6.4pt', fontWeight: 700, letterSpacing: '.6px', textTransform: 'uppercase', color: WARN.fg }}>Attention</span>
+              {data.attention.map((m, i) => (
+                <span key={i}>{i > 0 && <span style={{ color: FAINT, margin: '0 4px' }}>·</span>}{m}</span>
+              ))}
             </div>
           )}
 
           {/* ── DAILY TABLE ────────────────────────────────────────── */}
           <div style={{ marginTop: 15 }}><SectionLabel>Daily Attendance</SectionLabel></div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.2pt', tableLayout: 'fixed',
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.4pt', tableLayout: 'fixed',
             fontVariantNumeric: 'tabular-nums' }}>
             <colgroup>
-              <col style={{ width: '15%' }} /><col style={{ width: '7%' }} />
-              <col style={{ width: '11%' }} /><col style={{ width: '20%' }} />
-              <col style={{ width: '11%' }} /><col style={{ width: '9%' }} />
-              <col style={{ width: '8%' }} /><col style={{ width: '19%' }} />
+              <col style={{ width: '17%' }} /><col style={{ width: '8%' }} />
+              <col style={{ width: '12%' }} /><col style={{ width: '21%' }} />
+              <col style={{ width: '12%' }} /><col style={{ width: '12%' }} />
+              <col style={{ width: '18%' }} />
             </colgroup>
             <thead>
-              <tr style={{ background: NAVY, color: '#fff' }}>
-                {([['Date', 'left'], ['Day', 'center'], ['In', 'center'], ['Break', 'center'], ['Out', 'center'], ['Work', 'right'], ['OT', 'right'], ['Status', 'left']] as const)
+              <tr>
+                {([['Date', 'left'], ['Day', 'center'], ['In', 'center'], ['Break', 'center'], ['Out', 'center'], ['Work', 'right'], ['Status', 'left']] as const)
                   .map(([h, a], i) => (
-                    <th key={i} style={{ padding: '7px 9px', textAlign: a, fontSize: '6.6pt', fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                    <th key={i} style={{ padding: '0 10px 7px', textAlign: a, fontSize: '6.8pt', fontWeight: 700,
+                      letterSpacing: '.8px', textTransform: 'uppercase', color: MUTE, whiteSpace: 'nowrap',
+                      borderBottom: `1.5px solid ${NAVY}` }}>{h}</th>
                   ))}
               </tr>
             </thead>
             <tbody>
               {data.days.length === 0 ? (
-                <tr><td colSpan={8} style={{ padding: 16, textAlign: 'center', color: FAINT }}>No days in this period.</td></tr>
+                <tr><td colSpan={7} style={{ padding: 16, textAlign: 'center', color: FAINT }}>No days in this period.</td></tr>
               ) : data.days.map((r, idx) => {
                 const s = dayState(r);
-                const exception = s.key === 'ab' || s.key === 'no' || s.key === 'ni';
-                const rowBg = s.key === 'ab' ? CRIT.bg : s.key === 'lv' ? LEAVE.bg
-                  : s.key === 'off' ? PAPER : (idx % 2 ? '#fafbfc' : '#fff');
-                const cell: React.CSSProperties = { padding: '6.5px 9px', borderBottom: `1px solid ${LINE}` };
-                const time = (v: string | null, on: string) => <span style={{ color: v ? on : '#cfd6df' }}>{fmtTime(v)}</span>;
-                const brk = r.break_start || r.break_end
-                  ? `${fmtTime(r.break_start)} – ${fmtTime(r.break_end)}` : '—';
+                const off = s.key === 'off';
+                const tint = s.key === 'ab' ? CRIT.bg : s.key === 'lv' ? LEAVE.bg : off ? PAPER : '#fff';
+                const cell: React.CSSProperties = { padding: '6px 10px', borderBottom: `1px solid ${LINE}` };
+                const time = (v: string | null) => <span style={{ color: v ? (off ? MUTE : INK) : '#d0d6de' }}>{fmtTime(v)}</span>;
+                const brk = r.break_start || r.break_end ? `${fmtTime(r.break_start)} – ${fmtTime(r.break_end)}` : '—';
                 return (
-                  <tr key={r.date ?? idx} style={{ background: rowBg,
-                    boxShadow: exception ? `inset 3px 0 0 ${s.fg}` : 'none' }}>
-                    <td style={{ ...cell, fontWeight: 700, color: exception ? s.fg : NAVY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{fmtDate(r.date)}</td>
-                    <td style={{ ...cell, textAlign: 'center', color: MUTE }}>{fmtDow(r.date)}</td>
-                    <td style={{ ...cell, textAlign: 'center' }}>{time(r.check_in, INK)}</td>
-                    <td style={{ ...cell, textAlign: 'center', color: r.break_start || r.break_end ? MUTE : '#cfd6df' }}>{brk}</td>
-                    <td style={{ ...cell, textAlign: 'center' }}>{time(r.check_out, INK)}</td>
-                    <td style={{ ...cell, textAlign: 'right', fontWeight: 700, color: r.work_hours != null ? INK : '#cfd6df' }}>{formatHoursMinutes(r.work_hours)}</td>
-                    <td style={{ ...cell, textAlign: 'right', color: Number(r.overtime_hours) > 0 ? GOLD : '#cfd6df' }}>{formatHoursMinutes(r.overtime_hours)}</td>
+                  <tr key={r.date ?? idx} style={{ background: tint }}>
+                    <td style={{ ...cell, fontWeight: 600, color: off ? MUTE : NAVY, whiteSpace: 'nowrap' }}>{fmtDate(r.date)}</td>
+                    <td style={{ ...cell, textAlign: 'center', color: FAINT }}>{fmtDow(r.date)}</td>
+                    <td style={{ ...cell, textAlign: 'center' }}>{time(r.check_in)}</td>
+                    <td style={{ ...cell, textAlign: 'center', color: r.break_start || r.break_end ? MUTE : '#d0d6de' }}>{brk}</td>
+                    <td style={{ ...cell, textAlign: 'center' }}>{time(r.check_out)}</td>
+                    <td style={{ ...cell, textAlign: 'right', fontWeight: 700, color: r.work_hours != null ? INK : '#d0d6de' }}>{formatHoursMinutes(r.work_hours)}</td>
                     <td style={cell}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '7.4pt', fontWeight: 600, color: s.fg, whiteSpace: 'nowrap' }}>
-                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: s.fg, flexShrink: 0 }} />
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '7.6pt', fontWeight: 600, color: s.fg, whiteSpace: 'nowrap' }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.fg, flexShrink: 0 }} />
                         {s.label}
-                        {r.permission_hours ? <span style={{ color: LEAVE.fg }}> · {formatHoursMinutes(r.permission_hours)} permit</span> : null}
+                        {r.permission_hours ? <span style={{ color: LEAVE.fg }}> · {formatHoursMinutes(r.permission_hours)}</span> : null}
                       </span>
                     </td>
                   </tr>
@@ -316,21 +309,17 @@ export default function PrintAttendancePage() {
               })}
             </tbody>
             <tfoot>
-              <tr style={{ background: NAVY, color: '#fff', fontWeight: 800 }}>
-                <td colSpan={5} style={{ padding: '8px 9px', fontSize: '7.6pt', letterSpacing: '.3px' }}>TOTAL · {T.present_days} present of {T.expected_working_days} scheduled day(s)</td>
-                <td style={{ padding: '8px 9px', textAlign: 'right' }}>{formatHoursMinutes(T.work_hours, { keepZero: true })}</td>
-                <td style={{ padding: '8px 9px', textAlign: 'right' }}>{formatHoursMinutes(T.overtime_hours, { keepZero: true })}</td>
-                <td />
+              <tr>
+                <td colSpan={5} style={{ padding: '9px 10px', fontSize: '7.6pt', fontWeight: 800, color: NAVY, letterSpacing: '.3px', borderTop: `1.5px solid ${NAVY}` }}>TOTAL · {T.present_days} present of {T.expected_working_days} scheduled</td>
+                <td style={{ padding: '9px 10px', textAlign: 'right', fontWeight: 800, color: NAVY, borderTop: `1.5px solid ${NAVY}` }}>{formatHoursMinutes(T.work_hours, { keepZero: true })}</td>
+                <td style={{ borderTop: `1.5px solid ${NAVY}` }} />
               </tr>
             </tfoot>
           </table>
-          <div style={{ fontSize: '6.6pt', color: FAINT, marginTop: 7, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            {([['Complete', GOOD.fg, 'both punches captured'], ['Missing', WARN.fg, 'a punch not recorded'],
-               ['Absent', CRIT.fg, 'scheduled day, no attendance'], ['On Leave', LEAVE.fg, 'approved time off'],
-               ['Off', NEUT.fg, 'non-working day']] as const).map(([l, c, d], i) => (
+          <div style={{ fontSize: '6.8pt', color: NAVY2, marginTop: 8, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+            {([['Complete', GOOD.fg], ['Missing punch', WARN.fg], ['Absent', CRIT.fg], ['On Leave', LEAVE.fg], ['Off', NEUT.fg]] as const).map(([l, c], i) => (
               <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: c }} />
-                <b style={{ color: NAVY2 }}>{l}</b> {d}
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: c }} />{l}
               </span>
             ))}
           </div>
