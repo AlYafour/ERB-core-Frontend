@@ -1,12 +1,11 @@
 'use client';
 
 /**
- * Executive Attendance Report — one employee, one period.
+ * Attendance Statement — one employee, one period.
  * /print/attendance/<employeeId>?from=YYYY-MM-DD&to=YYYY-MM-DD
  *
- * Designed as an enterprise HR document: a manager reads the status banner +
- * KPI grid + attention list in seconds; the daily table is the audit detail.
- * A4 portrait, print/PDF-optimised.
+ * A formal, print/PDF-optimised HR document (A4 portrait): identity card with
+ * photo, a summary strip, an attention list, then the daily audit table.
  */
 
 import Image from 'next/image';
@@ -19,25 +18,29 @@ import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { PrintControlsBar } from '@/components/print/PrintControlsBar';
 import { formatHoursMinutes } from '@/lib/utils/hr';
+import { normalizeImageUrl } from '@/lib/utils/image-url';
 
-/* ── Enterprise palette ──────────────────────────────────────────── */
-const NAVY   = '#16233d';
-const NAVY2  = '#33415c';
-const ORANGE = '#C9943A';
-const INK    = '#0f172a';
-const MUTE   = '#64748b';
-const FAINT  = '#94a3b8';
-const LINE   = '#e7ebf0';
-const GOOD   = { fg: '#15803d', bg: '#effaf1', bd: '#bbe7c4' };
-const WARN   = { fg: '#b45309', bg: '#fef8ee', bd: '#f0d9a8' };
-const CRIT   = { fg: '#b91c1c', bg: '#fef2f2', bd: '#f4c4c4' };
-const NEUT   = { fg: '#475569', bg: '#f6f8fa', bd: '#e2e8f0' };
-const LEAVE  = { fg: '#1d4ed8', bg: '#eef3ff', bd: '#c7d7fe' };
+/* ── Palette (fixed hex — a print document commits to one look) ────── */
+const INK    = '#1b2330';
+const NAVY    = '#233047';
+const NAVY2  = '#3c4759';
+const MUTE   = '#697384';
+const FAINT  = '#9aa3b1';
+const LINE   = '#e6e9ef';
+const PAPER  = '#f7f8fa';
+const GOLD   = '#a97e30';
+const GOOD   = { fg: '#2f7d55', bg: '#eef7f1', bd: '#cfe6d8' };
+const WARN   = { fg: '#a76f1c', bg: '#fbf4e8', bd: '#eddcbd' };
+const CRIT   = { fg: '#b23b3b', bg: '#fbf0f0', bd: '#eed1d1' };
+const NEUT   = { fg: '#5a6472', bg: '#f6f7f9', bd: '#e6e9ef' };
+const LEAVE  = { fg: '#35579f', bg: '#eef3fb', bd: '#d3ddf1' };
+
+const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
 const STATUS_META = {
-  GOOD:            { label: 'GOOD',            dot: '🟢', ...GOOD, line: 'Attendance is on track — no issues detected.' },
-  NEEDS_ATTENTION: { label: 'NEEDS ATTENTION', dot: '🟠', ...WARN, line: 'Some records need review.' },
-  CRITICAL:        { label: 'CRITICAL',        dot: '🔴', ...CRIT, line: 'Multiple attendance issues require action.' },
+  GOOD:            { label: 'On Track',        ...GOOD, line: 'Attendance is on track — no issues detected.' },
+  NEEDS_ATTENTION: { label: 'Needs Review',    ...WARN, line: 'Some records need review.' },
+  CRITICAL:        { label: 'Action Required', ...CRIT, line: 'Multiple attendance issues require action.' },
 } as const;
 
 const fmtDate = (d?: string | null) =>
@@ -55,8 +58,8 @@ function fmtTime(dt: string | null): string {
   return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-/** From/To picker shown in the control bar (hidden on print). Changing a date
- *  rewrites the URL query, which re-runs the timesheet query for the new period. */
+/** From/To picker in the control bar (hidden on print). Changing a date rewrites
+ *  the URL query, which re-runs the timesheet query for the new period. */
 function PeriodPicker({ employeeId, from, to }: { employeeId: string; from?: string; to?: string }) {
   const router = useRouter();
   const ymd = (d: Date) =>
@@ -64,11 +67,7 @@ function PeriodPicker({ employeeId, from, to }: { employeeId: string; from?: str
   const now = new Date();
   const [f, setF] = useState(from || ymd(new Date(now.getFullYear(), now.getMonth(), 1)));
   const [t, setT] = useState(to || ymd(now));
-
-  const go = (nf: string, nt: string) => {
-    if (nf && nt) router.replace(`/print/attendance/${employeeId}?from=${nf}&to=${nt}`);
-  };
-
+  const go = (nf: string, nt: string) => { if (nf && nt) router.replace(`/print/attendance/${employeeId}?from=${nf}&to=${nt}`); };
   const inp: React.CSSProperties = {
     padding: '3px 7px', borderRadius: 6, border: `1px solid ${LINE}`,
     background: '#f8fafc', color: '#475569', fontSize: 11, fontWeight: 600, colorScheme: 'light',
@@ -77,7 +76,6 @@ function PeriodPicker({ employeeId, from, to }: { employeeId: string; from?: str
     display: 'inline-flex', alignItems: 'center', gap: 4,
     fontSize: 10, fontWeight: 700, color: MUTE, textTransform: 'uppercase', letterSpacing: '.04em',
   };
-
   return (
     <>
       <label style={lbl}>From
@@ -89,6 +87,28 @@ function PeriodPicker({ employeeId, from, to }: { employeeId: string; from?: str
           onChange={e => { setT(e.target.value); go(f, e.target.value); }} />
       </label>
     </>
+  );
+}
+
+/** Employee photo with a clean initials fallback (no broken-image icon). */
+function EmployeePhoto({ src, name }: { src: string | null; name: string }) {
+  const [err, setErr] = useState(false);
+  const url = normalizeImageUrl(src);
+  const box: React.CSSProperties = {
+    width: 66, height: 80, borderRadius: 8, flexShrink: 0,
+    border: `1px solid ${LINE}`, overflow: 'hidden', background: PAPER,
+  };
+  if (url && !err) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={url} alt={name} onError={() => setErr(true)}
+      style={{ ...box, objectFit: 'cover', display: 'block' }} />;
+  }
+  const initials = name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  return (
+    <div style={{ ...box, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: '#f3ead8', color: GOLD, fontWeight: 800, fontSize: '17pt', letterSpacing: '.5px' }}>
+      {initials || '—'}
+    </div>
   );
 }
 
@@ -123,256 +143,233 @@ export default function PrintAttendancePage() {
   const periodLabel = `${fmtDate(data.period.from)} — ${fmtDate(data.period.to)}`;
   const reportId = `ATT-${emp.employee_id}-${(data.period.to || '').replace(/-/g, '')}`;
   const companyName = brand?.company_legal_name || data.company.name || 'Company';
+  const rate = T.attendance_rate;
 
   const dayState = (r: AttendanceTimesheet['days'][number]) => {
-    if (r.kind === 'off')      return { key: 'off', icon: '·', label: 'Weekend / Off', ...NEUT };
-    if (r.kind === 'upcoming') return { key: 'up',  icon: '·', label: 'Upcoming',      ...NEUT };
-    if (r.kind === 'leave')    return { key: 'lv',  icon: '⤶', label: 'On Leave',       ...LEAVE };
-    if (r.kind === 'absent')   return { key: 'ab',  icon: '✕', label: 'Absent',        ...CRIT };
-    if (r.check_in && r.check_out) return { key: 'ok', icon: '✓', label: 'Complete',        ...GOOD };
-    if (r.check_in && !r.check_out) return { key: 'no', icon: '!', label: 'Missing check-out', ...WARN };
-    if (!r.check_in && r.check_out) return { key: 'ni', icon: '!', label: 'Missing check-in',  ...WARN };
-    return { key: 'rv', icon: '!', label: 'Review required', ...WARN };
+    if (r.kind === 'off')      return { key: 'off', label: 'Weekend / Off',      ...NEUT };
+    if (r.kind === 'upcoming') return { key: 'up',  label: 'Upcoming',           ...NEUT };
+    if (r.kind === 'leave')    return { key: 'lv',  label: 'On Leave',           ...LEAVE };
+    if (r.kind === 'absent')   return { key: 'ab',  label: 'Absent',            ...CRIT };
+    if (r.check_in && r.check_out)   return { key: 'ok', label: 'Complete',            ...GOOD };
+    if (r.check_in && !r.check_out)  return { key: 'no', label: 'Missing check-out', ...WARN };
+    if (!r.check_in && r.check_out)  return { key: 'ni', label: 'Missing check-in',  ...WARN };
+    return { key: 'rv', label: 'Review required', ...WARN };
   };
 
-  // KPI cells — `tone` drives the accent only when the number is abnormal.
-  const kpis: { label: string; value: string; sub?: string; tone: typeof GOOD | typeof WARN | typeof CRIT | typeof NEUT }[] = [
-    { label: 'Attendance Rate', value: T.attendance_rate != null ? `${T.attendance_rate}%` : '—',
-      sub: `${T.present_days}/${T.expected_working_days} days`,
-      tone: T.attendance_rate == null ? NEUT : T.attendance_rate >= 90 ? GOOD : T.attendance_rate >= 70 ? WARN : CRIT },
-    { label: 'Present Days', value: String(T.present_days), sub: `of ${T.expected_working_days} expected`, tone: NEUT },
-    { label: 'Absent Days', value: String(T.absent_days), sub: 'scheduled, no record', tone: T.absent_days ? CRIT : GOOD },
-    { label: 'Leave Days', value: String(T.leave_days ?? 0), sub: 'approved leave', tone: NEUT },
-    ...((T.permission_hours ?? 0) > 0 ? [{ label: 'Permission', value: formatHoursMinutes(T.permission_hours), sub: `${T.permission_days} day(s)`, tone: NEUT }] : []),
-    { label: 'Work Hours', value: formatHoursMinutes(T.work_hours, { keepZero: true }), sub: `of ${formatHoursMinutes(T.expected_hours, { keepZero: true })} expected`, tone: NEUT },
-    { label: 'Overtime', value: formatHoursMinutes(T.overtime_hours, { keepZero: true }), sub: 'total', tone: T.overtime_hours > 0 ? WARN : NEUT },
-    { label: 'Late Arrivals', value: String(T.late_days), sub: 'days', tone: T.late_days ? WARN : GOOD },
-    { label: 'Complete Records', value: String(T.complete_records), sub: 'full punch days', tone: GOOD },
-    { label: 'Attendance Issues', value: String(T.incomplete_records + T.absent_days),
-      sub: `${T.missing_check_ins} in · ${T.missing_check_outs} out`, tone: (T.incomplete_records + T.absent_days) ? WARN : GOOD },
+  const metrics = [
+    { label: 'Attendance', value: rate != null ? `${rate}%` : '—', sub: `${T.present_days}/${T.expected_working_days} days`,
+      color: rate == null ? INK : rate >= 90 ? GOOD.fg : rate >= 70 ? WARN.fg : CRIT.fg },
+    { label: 'Present',  value: String(T.present_days),      sub: 'days worked', color: INK },
+    { label: 'Absent',   value: String(T.absent_days),       sub: 'no record',   color: T.absent_days ? CRIT.fg : INK },
+    { label: 'On Leave', value: String(T.leave_days ?? 0),   sub: 'approved',    color: (T.leave_days ?? 0) ? LEAVE.fg : INK },
+    { label: 'Worked',   value: formatHoursMinutes(T.work_hours, { keepZero: true }), sub: `of ${formatHoursMinutes(T.expected_hours, { keepZero: true })}`, color: INK },
+    { label: 'Overtime', value: formatHoursMinutes(T.overtime_hours, { keepZero: true }), sub: 'extra', color: T.overtime_hours > 0 ? GOLD : FAINT },
   ];
 
-  const profile: [string, string | null][] = [
+  const facts: [string, string | null][] = [
     ['Employee ID', emp.employee_id],
     ['Job Title', emp.job_title],
-    ['Department', emp.department],
+    ['Department', emp.department_ar || emp.department],
     ['Employment', emp.employment_type ? emp.employment_type.replace(/_/g, ' ') : null],
     ['Join Date', emp.join_date ? fmtDate(emp.join_date) : null],
     ['Nationality', emp.nationality],
   ];
 
   return (
-    <div className="print-page-bg" style={{ minHeight: '100vh', background: '#eef1f5', fontFamily: "'Inter','IBM Plex Sans','Helvetica Neue',sans-serif" }}>
-      <PrintControlsBar backHref="/hr/attendance" docType="ATTENDANCE" docTypeColor={ORANGE}
+    <div className="print-page-bg" style={{ minHeight: '100vh', background: '#e9edf2', fontFamily: FONT }}>
+      <PrintControlsBar backHref="/hr/attendance" docType="ATTENDANCE" docTypeColor={GOLD}
         docNumber={emp.employee_id} status={st.label}>
         <PeriodPicker employeeId={String(employeeId)} from={from} to={to} />
       </PrintControlsBar>
 
       <div className="print-doc" style={{
         width: '210mm', minHeight: '297mm', margin: '12px auto', background: '#fff',
-        borderRadius: 4, boxShadow: '0 4px 32px rgba(0,0,0,.14)', color: INK,
-        display: 'flex', flexDirection: 'column',
+        boxShadow: '0 4px 32px rgba(0,0,0,.14)', color: INK, display: 'flex', flexDirection: 'column',
       }}>
-      {/* Padding lives on THIS inner wrapper, not .print-doc — the print
-          stylesheet forces .print-doc padding to 0, which was making the
-          content bleed to the page edge with no margins in the PDF. */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '12mm 11mm' }}>
-        {/* ── HEADER ──────────────────────────────────────────────── */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-            <Image src={brand?.logo_url || '/xerb-logo.svg'} alt="" width={44} height={44}
-              style={{ objectFit: 'contain' }} priority unoptimized />
-            <div>
-              <div style={{ fontSize: '10.5pt', fontWeight: 800, color: NAVY, lineHeight: 1.15, letterSpacing: '-.2px' }}>{companyName}</div>
-              {brand?.company_address && <div style={{ fontSize: '6.8pt', color: FAINT, marginTop: 2, maxWidth: 260, lineHeight: 1.4 }}>{brand.company_address}</div>}
-              {brand?.company_trn && <div style={{ fontSize: '6.8pt', color: FAINT, marginTop: 1 }}>TRN {brand.company_trn}</div>}
-            </div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '7pt', fontWeight: 700, letterSpacing: '2px', color: ORANGE, textTransform: 'uppercase' }}>Attendance Report</div>
-            <div style={{ fontSize: '15pt', fontWeight: 800, color: NAVY, lineHeight: 1.1, marginTop: 1 }}>{emp.name}</div>
-            <div style={{ fontSize: '7.2pt', color: MUTE, marginTop: 4, display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <span><b style={{ color: NAVY2 }}>Period</b> {periodLabel}</span>
-            </div>
-            <div style={{ fontSize: '6.8pt', color: FAINT, marginTop: 2, fontFamily: 'monospace' }}>{reportId}</div>
-          </div>
-        </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '13mm 12mm' }}>
 
-        {/* ── STATUS BANNER ───────────────────────────────────────── */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12, marginTop: 14,
-          padding: '10px 16px', borderRadius: 10, background: st.bg, border: `1px solid ${st.bd}`,
-          borderLeft: `4px solid ${st.fg}`,
-        }}>
-          <div style={{ fontSize: '13pt' }}>{st.dot}</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '11pt', fontWeight: 800, color: st.fg, letterSpacing: '.3px' }}>{st.label}</div>
-            <div style={{ fontSize: '8pt', color: NAVY2, marginTop: 1 }}>
-              {T.complete_records} complete records · {T.incomplete_records + T.absent_days} attendance issue(s) · {st.line}
-            </div>
-          </div>
-          <div style={{ textAlign: 'right', paddingLeft: 12, borderLeft: `1px solid ${st.bd}` }}>
-            <div style={{ fontSize: '20pt', fontWeight: 800, color: st.fg, lineHeight: 1, fontFamily: 'monospace' }}>
-              {T.attendance_rate != null ? `${T.attendance_rate}%` : '—'}
-            </div>
-            <div style={{ fontSize: '6.5pt', color: MUTE, textTransform: 'uppercase', letterSpacing: '.5px' }}>Attendance</div>
-          </div>
-        </div>
-
-        {/* ── KPI GRID ────────────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 1, marginTop: 12,
-          border: `1px solid ${LINE}`, borderRadius: 10, overflow: 'hidden', background: LINE }}>
-          {kpis.map((k, i) => (
-            <div key={i} style={{ padding: '10px 12px', background: '#fff' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: k.tone.fg, flexShrink: 0 }} />
-                <span style={{ fontSize: '6.4pt', fontWeight: 700, letterSpacing: '.4px', textTransform: 'uppercase', color: MUTE }}>{k.label}</span>
+          {/* ── LETTERHEAD ─────────────────────────────────────────── */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+              <Image src={brand?.logo_url || '/xerb-logo.svg'} alt="" width={42} height={42}
+                style={{ objectFit: 'contain' }} priority unoptimized />
+              <div>
+                <div style={{ fontSize: '11pt', fontWeight: 800, color: NAVY, lineHeight: 1.15, letterSpacing: '-.2px' }}>{companyName}</div>
+                {brand?.company_address && <div style={{ fontSize: '6.8pt', color: FAINT, marginTop: 2, maxWidth: 300, lineHeight: 1.4 }}>{brand.company_address}</div>}
+                {brand?.company_trn && <div style={{ fontSize: '6.8pt', color: FAINT, marginTop: 1 }}>TRN {brand.company_trn}</div>}
               </div>
-              <div style={{ fontSize: '18pt', fontWeight: 800, lineHeight: 1.05, color: k.tone.fg, fontFamily: 'monospace', marginTop: 4 }}>{k.value}</div>
-              {k.sub && <div style={{ fontSize: '6.4pt', color: FAINT, marginTop: 2 }}>{k.sub}</div>}
             </div>
-          ))}
-        </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '7.5pt', fontWeight: 700, letterSpacing: '3px', color: GOLD, textTransform: 'uppercase' }}>Attendance Statement</div>
+              <div style={{ fontSize: '6.8pt', color: FAINT, marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>{reportId}</div>
+              <div style={{ fontSize: '7.4pt', color: MUTE, marginTop: 2 }}>{periodLabel}</div>
+            </div>
+          </div>
+          <div style={{ marginTop: 9, height: 2, background: LINE, position: 'relative' }}>
+            <div style={{ position: 'absolute', left: 0, top: 0, width: 64, height: 2, background: GOLD }} />
+          </div>
 
-        {/* ── ATTENTION + PROFILE (two columns) ───────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 1fr', gap: 14, marginTop: 14 }}>
-          <div>
-            <SectionLabel>Attention Required</SectionLabel>
-            {data.attention.length === 0 ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 9,
-                background: GOOD.bg, border: `1px solid ${GOOD.bd}`, fontSize: '8.5pt', color: GOOD.fg, fontWeight: 600 }}>
-                ✓ No anomalies — all records are complete.
+          {/* ── IDENTITY CARD (photo + facts) ──────────────────────── */}
+          <div style={{ display: 'flex', gap: 14, marginTop: 13, padding: 13, borderRadius: 10,
+            border: `1px solid ${LINE}`, background: PAPER }}>
+            <EmployeePhoto src={emp.photo} name={emp.name} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: '13.5pt', fontWeight: 800, color: NAVY, lineHeight: 1.1, letterSpacing: '-.3px' }}>{emp.name}</div>
+                  {emp.name_ar && <div style={{ fontSize: '9.5pt', color: NAVY2, marginTop: 1, direction: 'rtl' }}>{emp.name_ar}</div>}
+                </div>
+                <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5,
+                  padding: '3px 10px', borderRadius: 99, background: st.bg, border: `1px solid ${st.bd}`, color: st.fg,
+                  fontSize: '7pt', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.6px' }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: st.fg }} />{st.label}
+                </span>
               </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                {data.attention.map((m, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 11px', borderRadius: 8,
-                    background: WARN.bg, border: `1px solid ${WARN.bd}` }}>
-                    <span style={{ width: 15, height: 15, borderRadius: '50%', background: WARN.fg, color: '#fff',
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '9pt', fontWeight: 800, flexShrink: 0 }}>!</span>
-                    <span style={{ fontSize: '8.3pt', color: NAVY2, fontWeight: 500 }}>{m}</span>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '7px 16px', marginTop: 11 }}>
+                {facts.map(([label, val], i) => (
+                  <div key={i}>
+                    <div style={{ fontSize: '6.2pt', fontWeight: 700, letterSpacing: '.5px', textTransform: 'uppercase', color: FAINT }}>{label}</div>
+                    <div style={{ fontSize: '8.4pt', fontWeight: 600, color: val ? INK : FAINT, marginTop: 1 }}>{val || '—'}</div>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-          <div>
-            <SectionLabel>Employee</SectionLabel>
-            <div style={{ borderRadius: 9, border: `1px solid ${LINE}`, overflow: 'hidden' }}>
-              {profile.map(([label, val], i) => (
-                <div key={i} style={{ display: 'flex', padding: '5.5px 12px', fontSize: '8pt',
-                  borderBottom: i < profile.length - 1 ? `1px solid ${LINE}` : 'none' }}>
-                  <span style={{ width: 92, flexShrink: 0, color: MUTE, fontWeight: 500 }}>{label}</span>
-                  <span style={{ fontWeight: val ? 600 : 400, color: val ? INK : FAINT }}>{val || '—'}</span>
-                </div>
-              ))}
             </div>
           </div>
-        </div>
 
-        {/* ── DAILY TABLE ─────────────────────────────────────────── */}
-        <SectionLabel style={{ marginTop: 16 }}>Daily Attendance</SectionLabel>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.2pt', tableLayout: 'fixed' }}>
-          <colgroup>
-            <col style={{ width: '14%' }} /><col style={{ width: '6%' }} />
-            <col style={{ width: '10.5%' }} /><col style={{ width: '10.5%' }} />
-            <col style={{ width: '10.5%' }} /><col style={{ width: '10.5%' }} />
-            <col style={{ width: '8%' }} /><col style={{ width: '7%' }} />
-            <col style={{ width: '22.5%' }} />
-          </colgroup>
-          <thead>
-            <tr style={{ background: NAVY, color: '#fff' }}>
-              {([['Date','left'],['Day','center'],['In','center'],['Break Out','center'],['Break In','center'],['Out','center'],['Work','right'],['OT','right'],['Status','left']] as const)
-                .map(([h, a], i) => (
-                <th key={i} style={{ padding: '7px 9px', textAlign: a,
-                  fontSize: '6.6pt', fontWeight: 700, letterSpacing: '.6px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.days.length === 0 ? (
-              <tr><td colSpan={9} style={{ padding: 16, textAlign: 'center', color: FAINT }}>No days in this period.</td></tr>
-            ) : data.days.map((r, idx) => {
-              const s = dayState(r);
-              const alt = idx % 2 === 1;
-              const rowBg = s.key === 'ab' ? '#fdf4f4' : s.key === 'lv' ? LEAVE.bg : s.key === 'off' ? '#f8fafc'
-                          : s.key === 'up' ? '#fff' : (alt ? '#fafbfc' : '#fff');
-              const t = (v: string | null, on: string) =>
-                <span style={{ color: v ? on : '#d3dae2', fontFamily: 'monospace', fontSize: '8pt' }}>{fmtTime(v)}</span>;
-              return (
-                <tr key={r.date ?? idx} style={{ background: rowBg, borderBottom: `1px solid ${LINE}`,
-                  boxShadow: s.key === 'ab' ? `inset 2px 0 0 ${CRIT.fg}` : 'none' }}>
-                  <td style={{ padding: '6.5px 9px', fontWeight: 700, color: s.key === 'ab' ? CRIT.fg : NAVY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{fmtDate(r.date)}</td>
-                  <td style={{ padding: '6.5px 9px', textAlign: 'center', color: MUTE }}>{fmtDow(r.date)}</td>
-                  <td style={{ padding: '6.5px 9px', textAlign: 'center' }}>{t(r.check_in, INK)}</td>
-                  <td style={{ padding: '6.5px 9px', textAlign: 'center' }}>{t(r.break_start, ORANGE)}</td>
-                  <td style={{ padding: '6.5px 9px', textAlign: 'center' }}>{t(r.break_end, ORANGE)}</td>
-                  <td style={{ padding: '6.5px 9px', textAlign: 'center' }}>{t(r.check_out, INK)}</td>
-                  <td style={{ padding: '6.5px 9px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, fontSize: '8pt', color: r.work_hours != null ? INK : '#d3dae2' }}>{formatHoursMinutes(r.work_hours)}</td>
-                  <td style={{ padding: '6.5px 9px', textAlign: 'right', fontFamily: 'monospace', fontSize: '8pt', color: Number(r.overtime_hours) > 0 ? ORANGE : '#d3dae2' }}>{formatHoursMinutes(r.overtime_hours)}</td>
-                  <td style={{ padding: '6.5px 9px' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '7pt', fontWeight: 700, color: s.fg, whiteSpace: 'nowrap' }}>
-                      <span style={{ width: 12, height: 12, borderRadius: '50%', background: s.fg, color: '#fff',
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '7pt', flexShrink: 0, lineHeight: 1 }}>{s.icon}</span>
-                      {s.label}
-                      {r.permission_hours ? <span style={{ color: LEAVE.fg, fontWeight: 600 }}> · {r.permission_hours}h permit</span> : null}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-          <tfoot>
-            <tr style={{ background: NAVY, color: '#fff', fontWeight: 800 }}>
-              <td colSpan={6} style={{ padding: '8px 9px', fontSize: '7.6pt', letterSpacing: '.3px' }}>TOTAL · {T.present_days} present of {T.expected_working_days} expected day(s)</td>
-              <td style={{ padding: '8px 9px', textAlign: 'right', fontFamily: 'monospace' }}>{formatHoursMinutes(T.work_hours, { keepZero: true })}</td>
-              <td style={{ padding: '8px 9px', textAlign: 'right', fontFamily: 'monospace' }}>{formatHoursMinutes(T.overtime_hours, { keepZero: true })}</td>
-              <td />
-            </tr>
-          </tfoot>
-        </table>
-        <div style={{ fontSize: '6.6pt', color: FAINT, marginTop: 6, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-          <span><b style={{ color: GOOD.fg }}>✓ Complete</b> · both punches captured</span>
-          <span><b style={{ color: WARN.fg }}>! Missing</b> · a punch not recorded</span>
-          <span><b style={{ color: CRIT.fg }}>✕ Absent</b> · scheduled day, no attendance</span>
-          <span><b style={{ color: NEUT.fg }}>· Off</b> · non-working day</span>
-        </div>
-
-        <div style={{ height: 22 }} />
-
-        {/* ── CERTIFICATION ───────────────────────────────────────── */}
-        <div style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-          <div style={{ display: 'flex', gap: 0, border: `1px solid ${LINE}`, borderRadius: 9, overflow: 'hidden' }}>
-            {['Employee', 'HR / Supervisor', 'Authorised Signatory'].map((label, i, a) => (
-              <div key={i} style={{ flex: 1, padding: '10px 14px', borderRight: i < a.length - 1 ? `1px solid ${LINE}` : 'none' }}>
-                <div style={{ height: 30 }} />
-                <div style={{ height: 1, background: '#cbd5e1', marginBottom: 5 }} />
-                <div style={{ fontSize: '6.8pt', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: MUTE }}>{label}</div>
+          {/* ── SUMMARY STRIP ──────────────────────────────────────── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', marginTop: 14,
+            border: `1px solid ${LINE}`, borderRadius: 10, overflow: 'hidden' }}>
+            {metrics.map((m, i) => (
+              <div key={i} style={{ padding: '11px 12px', borderLeft: i ? `1px solid ${LINE}` : 'none' }}>
+                <div style={{ fontSize: '6.2pt', fontWeight: 700, letterSpacing: '.5px', textTransform: 'uppercase', color: MUTE }}>{m.label}</div>
+                <div style={{ fontSize: '17pt', fontWeight: 800, lineHeight: 1.05, color: m.color, marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>{m.value}</div>
+                {m.sub && <div style={{ fontSize: '6.2pt', color: FAINT, marginTop: 2 }}>{m.sub}</div>}
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '6.5pt', color: FAINT }}>
-            <span>System-generated from the ERB attendance system · {companyName}</span>
-            <span style={{ fontFamily: 'monospace' }}>{reportId}</span>
+
+          {/* ── ATTENTION ──────────────────────────────────────────── */}
+          {data.attention.length > 0 && (
+            <div style={{ marginTop: 13 }}>
+              <SectionLabel>Attention Required</SectionLabel>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px 12px' }}>
+                {data.attention.map((m, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 11px',
+                    borderRadius: 7, background: WARN.bg, border: `1px solid ${WARN.bd}` }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: WARN.fg, flexShrink: 0 }} />
+                    <span style={{ fontSize: '8pt', color: NAVY2, fontWeight: 500 }}>{m}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── DAILY TABLE ────────────────────────────────────────── */}
+          <div style={{ marginTop: 15 }}><SectionLabel>Daily Attendance</SectionLabel></div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.2pt', tableLayout: 'fixed',
+            fontVariantNumeric: 'tabular-nums' }}>
+            <colgroup>
+              <col style={{ width: '15%' }} /><col style={{ width: '7%' }} />
+              <col style={{ width: '11%' }} /><col style={{ width: '20%' }} />
+              <col style={{ width: '11%' }} /><col style={{ width: '9%' }} />
+              <col style={{ width: '8%' }} /><col style={{ width: '19%' }} />
+            </colgroup>
+            <thead>
+              <tr style={{ background: NAVY, color: '#fff' }}>
+                {([['Date', 'left'], ['Day', 'center'], ['In', 'center'], ['Break', 'center'], ['Out', 'center'], ['Work', 'right'], ['OT', 'right'], ['Status', 'left']] as const)
+                  .map(([h, a], i) => (
+                    <th key={i} style={{ padding: '7px 9px', textAlign: a, fontSize: '6.6pt', fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+              </tr>
+            </thead>
+            <tbody>
+              {data.days.length === 0 ? (
+                <tr><td colSpan={8} style={{ padding: 16, textAlign: 'center', color: FAINT }}>No days in this period.</td></tr>
+              ) : data.days.map((r, idx) => {
+                const s = dayState(r);
+                const exception = s.key === 'ab' || s.key === 'no' || s.key === 'ni';
+                const rowBg = s.key === 'ab' ? CRIT.bg : s.key === 'lv' ? LEAVE.bg
+                  : s.key === 'off' ? PAPER : (idx % 2 ? '#fafbfc' : '#fff');
+                const cell: React.CSSProperties = { padding: '6.5px 9px', borderBottom: `1px solid ${LINE}` };
+                const time = (v: string | null, on: string) => <span style={{ color: v ? on : '#cfd6df' }}>{fmtTime(v)}</span>;
+                const brk = r.break_start || r.break_end
+                  ? `${fmtTime(r.break_start)} – ${fmtTime(r.break_end)}` : '—';
+                return (
+                  <tr key={r.date ?? idx} style={{ background: rowBg,
+                    boxShadow: exception ? `inset 3px 0 0 ${s.fg}` : 'none' }}>
+                    <td style={{ ...cell, fontWeight: 700, color: exception ? s.fg : NAVY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{fmtDate(r.date)}</td>
+                    <td style={{ ...cell, textAlign: 'center', color: MUTE }}>{fmtDow(r.date)}</td>
+                    <td style={{ ...cell, textAlign: 'center' }}>{time(r.check_in, INK)}</td>
+                    <td style={{ ...cell, textAlign: 'center', color: r.break_start || r.break_end ? MUTE : '#cfd6df' }}>{brk}</td>
+                    <td style={{ ...cell, textAlign: 'center' }}>{time(r.check_out, INK)}</td>
+                    <td style={{ ...cell, textAlign: 'right', fontWeight: 700, color: r.work_hours != null ? INK : '#cfd6df' }}>{formatHoursMinutes(r.work_hours)}</td>
+                    <td style={{ ...cell, textAlign: 'right', color: Number(r.overtime_hours) > 0 ? GOLD : '#cfd6df' }}>{formatHoursMinutes(r.overtime_hours)}</td>
+                    <td style={cell}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '7.4pt', fontWeight: 600, color: s.fg, whiteSpace: 'nowrap' }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: s.fg, flexShrink: 0 }} />
+                        {s.label}
+                        {r.permission_hours ? <span style={{ color: LEAVE.fg }}> · {formatHoursMinutes(r.permission_hours)} permit</span> : null}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr style={{ background: NAVY, color: '#fff', fontWeight: 800 }}>
+                <td colSpan={5} style={{ padding: '8px 9px', fontSize: '7.6pt', letterSpacing: '.3px' }}>TOTAL · {T.present_days} present of {T.expected_working_days} scheduled day(s)</td>
+                <td style={{ padding: '8px 9px', textAlign: 'right' }}>{formatHoursMinutes(T.work_hours, { keepZero: true })}</td>
+                <td style={{ padding: '8px 9px', textAlign: 'right' }}>{formatHoursMinutes(T.overtime_hours, { keepZero: true })}</td>
+                <td />
+              </tr>
+            </tfoot>
+          </table>
+          <div style={{ fontSize: '6.6pt', color: FAINT, marginTop: 7, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            {([['Complete', GOOD.fg, 'both punches captured'], ['Missing', WARN.fg, 'a punch not recorded'],
+               ['Absent', CRIT.fg, 'scheduled day, no attendance'], ['On Leave', LEAVE.fg, 'approved time off'],
+               ['Off', NEUT.fg, 'non-working day']] as const).map(([l, c, d], i) => (
+              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: c }} />
+                <b style={{ color: NAVY2 }}>{l}</b> {d}
+              </span>
+            ))}
+          </div>
+
+          <div style={{ flex: 1 }} />
+
+          {/* ── SIGNATURES ─────────────────────────────────────────── */}
+          <div style={{ breakInside: 'avoid', pageBreakInside: 'avoid', marginTop: 22 }}>
+            <div style={{ display: 'flex', border: `1px solid ${LINE}`, borderRadius: 10, overflow: 'hidden' }}>
+              {['Employee', 'HR / Supervisor', 'Authorised Signatory'].map((label, i, a) => (
+                <div key={i} style={{ flex: 1, padding: '12px 14px', borderRight: i < a.length - 1 ? `1px solid ${LINE}` : 'none' }}>
+                  <div style={{ height: 30 }} />
+                  <div style={{ height: 1, background: '#c7d0da', marginBottom: 5 }} />
+                  <div style={{ fontSize: '6.8pt', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: MUTE }}>{label}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '6.5pt', color: FAINT }}>
+              <span>System-generated from the ERB attendance system · {companyName}</span>
+              <span style={{ fontVariantNumeric: 'tabular-nums' }}>{reportId}</span>
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </div>
   );
 }
 
-function SectionLabel({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontSize: '7.5pt', fontWeight: 700, letterSpacing: '.9px', textTransform: 'uppercase',
-      color: NAVY2, borderBottom: `1.5px solid ${ORANGE}`, paddingBottom: 4, marginBottom: 9, display: 'inline-block', ...style }}>
-      {children}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 9 }}>
+      <span style={{ fontSize: '7.5pt', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: NAVY2, whiteSpace: 'nowrap' }}>{children}</span>
+      <span style={{ flex: 1, height: 1, background: LINE }} />
     </div>
   );
 }
 
 function Msg({ text, color }: { text: string; color: string }) {
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter,sans-serif', color }}>{text}</div>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT, color }}>{text}</div>
   );
 }

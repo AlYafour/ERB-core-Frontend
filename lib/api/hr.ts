@@ -631,8 +631,9 @@ export interface AttendanceRecord {
 /** Legal per-employee attendance timesheet over a period (printable). */
 export interface AttendanceTimesheet {
   employee: {
-    id: string; name: string; employee_id: string;
-    job_title: string | null; department: string | null;
+    id: string; name: string; name_ar: string | null; employee_id: string;
+    photo: string | null;
+    job_title: string | null; department: string | null; department_ar: string | null;
     nationality: string | null; employment_type: string | null;
     join_date: string | null; labor_card: string | null;
   };
