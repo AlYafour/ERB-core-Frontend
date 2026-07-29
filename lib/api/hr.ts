@@ -402,6 +402,7 @@ export interface HRRequestType {
   requires_attachment?: boolean;
   produces_document?: boolean;
   backdate_limit_days?: number;
+  day_credit?: string | number;
 }
 
 export const hrApprovalsApi = {
@@ -663,8 +664,9 @@ export interface AttendanceTimesheet {
   /** Complete day-by-day series across the whole period. */
   days: Array<{
     date: string;
-    kind: 'present' | 'absent' | 'off' | 'upcoming' | 'leave';
+    kind: 'present' | 'absent' | 'off' | 'upcoming' | 'leave' | 'wfh';
     leave_type: string | null;
+    day_credit: number | null;
     permission_hours: number | null;
     permission_type: string | null;
     check_in: string | null;

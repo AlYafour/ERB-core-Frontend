@@ -87,7 +87,16 @@ export default function RequestTypesPage() {
     onError: (err) => toast(getApiError(err, 'Action failed'), 'error'),
   });
 
-  const busy = remove.isPending || toggle.isPending;
+  // "Counts as" — how much of a working day each approved day of this type is
+  // worth on the attendance report (e.g. Work From Home = ½ day).
+  const setCredit = useMutation({
+    mutationFn: ({ id, credit }: { id: number; credit: number }) =>
+      hrApprovalsApi.updateRequestType(id, { day_credit: credit }),
+    onSuccess: () => { toast('Updated', 'success'); invalidate(); },
+    onError: (err) => toast(getApiError(err, 'Could not update — for a shared type, add a company copy first'), 'error'),
+  });
+
+  const busy = remove.isPending || toggle.isPending || setCredit.isPending;
 
   // Hiding a SHARED (global) type = a per-tenant inactive override (destroy).
   const hideShared = async (t: HRRequestType) => {
@@ -168,7 +177,22 @@ export default function RequestTypesPage() {
                         </div>
                         {t.name_ar && <span dir="rtl" style={{ display: 'block', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>{t.name_ar}</span>}
                       </div>
-                      <div style={{ display: 'flex', gap: 'var(--space-2)', flexShrink: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexShrink: 0 }}>
+                        {(t.duration_mode === 'days' || t.duration_mode === 'both') && (
+                          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                            Counts as
+                            <select
+                              value={String(Number(t.day_credit ?? 1))}
+                              onChange={e => setCredit.mutate({ id: t.id, credit: Number(e.target.value) })}
+                              disabled={busy}
+                              style={{ padding: '3px 6px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: 'var(--text-xs)' }}
+                            >
+                              <option value="1">Full day</option>
+                              <option value="0.5">½ day</option>
+                              <option value="0.25">¼ day</option>
+                            </select>
+                          </label>
+                        )}
                         {k === 'shared' && (
                           <Button variant="ghost" size="sm" onClick={() => hideShared(t)} disabled={busy}>Hide</Button>
                         )}

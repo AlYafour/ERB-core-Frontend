@@ -127,6 +127,7 @@ export default function PrintAttendancePage() {
   const dayState = (r: AttendanceTimesheet['days'][number]) => {
     if (r.kind === 'off')      return { key: 'off', label: 'Weekend / Off',       ...NEUT };
     if (r.kind === 'upcoming') return { key: 'up',  label: 'Upcoming',            ...NEUT };
+    if (r.kind === 'wfh')      return { key: 'wfh', label: r.day_credit && r.day_credit < 1 ? `Work From Home (½)` : 'Work From Home', ...LEAVE };
     if (r.kind === 'leave')    return { key: 'lv',  label: 'On Leave',            ...LEAVE };
     if (r.kind === 'absent')   return { key: 'ab',  label: 'Absent',             ...CRIT };
     if (r.check_in && r.check_out)   return { key: 'ok', label: 'Complete',             ...GOOD };
