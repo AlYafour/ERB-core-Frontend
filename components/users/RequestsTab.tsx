@@ -25,6 +25,7 @@ const STATUS_LABEL: Record<string, string> = {
 const DATE_RANGE_TYPES = new Set([
   'annual_leave', 'sick_leave', 'emergency_leave',
   'unpaid_leave', 'work_from_home', 'overtime',
+  'maternity_leave', 'paternity_leave',
 ]);
 
 // Single-day types that use one date (not a range).
@@ -34,6 +35,7 @@ const SINGLE_DATE_TYPES = new Set(['missing_punch']);
 // configured RequestType row. The tenant's RequestType.duration_mode wins.
 const DEFAULT_DURATION_MODE: Record<string, 'days' | 'hours' | 'both' | 'none'> = {
   annual_leave: 'days', unpaid_leave: 'days', work_from_home: 'days',
+  maternity_leave: 'days', paternity_leave: 'days',
   sick_leave: 'both', emergency_leave: 'both',
   personal_leave: 'hours', business_leave: 'hours', overtime: 'hours',
   missing_punch: 'none', advance_salary: 'none', document_request: 'none', other: 'none',
@@ -47,6 +49,7 @@ const TYPE_LABELS = REQUEST_TYPE_LABELS;
 // fallback when the request-types API hasn't resolved.
 const RAISABLE_TYPES = [
   'annual_leave', 'sick_leave', 'emergency_leave', 'unpaid_leave', 'work_from_home',
+  'maternity_leave', 'paternity_leave',
   'personal_leave', 'business_leave', 'missing_punch', 'overtime', 'advance_salary',
   'document_request', 'other',
 ] as const;
