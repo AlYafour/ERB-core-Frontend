@@ -161,12 +161,23 @@ function CompanySettingsPanel() {
         </div>
       </div>
 
-      {/* ── Attendance policy (overtime) ── */}
+      {/* ── Work Hours & Overtime Policy (all frontend-configurable) ── */}
       <div style={{ marginTop: 'var(--space-5)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
-        <p style={{ margin: '0 0 2px', fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>Overtime &amp; Hours</p>
-        <p style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Overtime handling and the required-hours fallback (used when an employee has no shift).</p>
+        <p style={{ margin: '0 0 2px', fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>Work Hours &amp; Overtime</p>
+        <p style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+          How daily work hours are counted for everyone. The shift start/end times &amp; break length are set
+          per <Link href="/hr/shifts" style={{ color: 'var(--brand)' }}>Shift</Link>.
+        </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
+        <div style={GRID3}>
+          <div>
+            <label style={LBL_CS}>Break deduction</label>
+            <select style={INPUT_CS} value={form.break_deduction_mode ?? data?.break_deduction_mode ?? 'as_taken'} onChange={e => set('break_deduction_mode', e.target.value)}>
+              <option value="as_taken">As taken — punched break, else standard</option>
+              <option value="minimum">Minimum — larger of standard &amp; punched</option>
+              <option value="fixed">Fixed — always the standard break</option>
+            </select>
+          </div>
           <div>
             <label style={LBL_CS}>Required Hours / Day</label>
             <input style={INPUT_CS} type="number" min={0} step="0.5" value={form.working_hours_per_day ?? data?.working_hours_per_day ?? 8} onChange={e => set('working_hours_per_day', Number(e.target.value))} />
@@ -177,44 +188,24 @@ function CompanySettingsPanel() {
           </div>
         </div>
 
-        <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <SwitchRow label="Count overtime" hint="When off, time worked past the shift end is not paid (hours capped at scheduled)." checked={form.overtime_enabled ?? data?.overtime_enabled ?? true} onChange={v => set('overtime_enabled', v)} />
-        </div>
-      </div>
-
-      {/* ── Work-hours rules (break + shift-window clipping) ── */}
-      <div style={{ marginTop: 'var(--space-5)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
-        <p style={{ margin: '0 0 2px', fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>Work-Hours Rules</p>
-        <p style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-          How the unpaid break and the shift window are applied to net work hours. The shift start/end
-          times &amp; break length are set per <Link href="/hr/shifts" style={{ color: 'var(--brand)' }}>Shift</Link>.
-        </p>
-
-        <div style={{ maxWidth: 420, marginBottom: 'var(--space-4)' }}>
-          <label style={LBL_CS}>Break deduction</label>
-          <select
-            style={INPUT_CS}
-            value={form.break_deduction_mode ?? data?.break_deduction_mode ?? 'as_taken'}
-            onChange={e => set('break_deduction_mode', e.target.value)}
-          >
-            <option value="as_taken">As taken — punched break, else the standard break</option>
-            <option value="minimum">Minimum — the larger of standard and punched (a short break still costs the full hour)</option>
-            <option value="fixed">Fixed — always the standard break</option>
-          </select>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <SwitchRow
-            label="Count early arrival from shift start"
-            hint="Checking in before the shift start counts from the start time — arriving early earns no extra time."
+            label="Ignore time before shift start"
+            hint="Arriving early is not counted — work starts at the shift start · الحضور قبل موعد الدوام لا يُحتسب."
             checked={form.clip_checkin_to_shift_start ?? data?.clip_checkin_to_shift_start ?? false}
             onChange={v => set('clip_checkin_to_shift_start', v)}
           />
           <SwitchRow
-            label="Cap late departure at shift end"
-            hint="Checking out after the shift end counts as the shift end — staying late earns no overtime."
+            label="Ignore time after shift end"
+            hint="Staying late is not counted — work stops at the shift end · البقاء بعد موعد الدوام لا يُحتسب."
             checked={form.clip_checkout_to_shift_end ?? data?.clip_checkout_to_shift_end ?? false}
             onChange={v => set('clip_checkout_to_shift_end', v)}
+          />
+          <SwitchRow
+            label="Pay overtime past scheduled hours"
+            hint="When off, extra time beyond scheduled hours is never paid as overtime · عند الإيقاف لا يُحتسب أي أوفر تايم."
+            checked={form.overtime_enabled ?? data?.overtime_enabled ?? true}
+            onChange={v => set('overtime_enabled', v)}
           />
         </div>
       </div>
