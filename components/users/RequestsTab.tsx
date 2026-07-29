@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { hrRequestsApi, hrApprovalsApi } from '@/lib/api/hr';
+import { hrRequestsApi, hrApprovalsApi, hrCompanySettingsApi } from '@/lib/api/hr';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import type { UserTabProps } from './types';
 import type { HRRequest } from '@/types';
@@ -80,9 +80,24 @@ function fmtShort(d?: string | null) {
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
-function calcDays(start: string, end: string) {
+// Count the days in an inclusive range. When workingDays (weekday numbers,
+// Python Mon=0..Sun=6 — the company's working_days) is given, only those days
+// count, so the weekly off (e.g. Saturday) is excluded. JS getDay() is
+// Sun=0..Sat=6, converted with (getDay()+6)%7.
+function calcDays(start: string, end: string, workingDays?: number[]) {
   if (!start || !end) return 0;
-  return Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000) + 1);
+  const s = new Date(start + 'T00:00:00');
+  const e = new Date(end + 'T00:00:00');
+  if (isNaN(s.getTime()) || isNaN(e.getTime()) || e < s) return 0;
+  if (!workingDays || workingDays.length === 0) {
+    return Math.max(1, Math.round((e.getTime() - s.getTime()) / 86400000) + 1);
+  }
+  const work = new Set(workingDays);
+  let count = 0;
+  for (const d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+    if (work.has((d.getDay() + 6) % 7)) count++;
+  }
+  return count;
 }
 
 /** "HH:MM" → minutes since midnight. */
@@ -300,6 +315,14 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
     staleTime: 10 * 60 * 1000,
   });
 
+  // Company working week — so day-count excludes the weekly off (e.g. Saturday).
+  const { data: companySettings } = useQuery({
+    queryKey: ['hr-company-settings'],
+    queryFn:  hrCompanySettingsApi.get,
+    staleTime: 5 * 60 * 1000,
+  });
+  const workingDays: number[] = Array.isArray(companySettings?.working_days) ? companySettings!.working_days : [];
+
   const requests: HRRequest[] = requestsData?.results ?? [];
 
   const createMutation = useMutation({
@@ -371,7 +394,7 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
       setForm(prev => {
         const next = { ...prev, [k]: val };
         if ((k === 'start_date' || k === 'end_date') && next.start_date && next.end_date)
-          next.days = String(calcDays(next.start_date, next.end_date));
+          next.days = String(calcDays(next.start_date, next.end_date, workingDays));
         if (k === 'request_type')
           Object.assign(next, { start_date: '', end_date: '', days: '', start_time: '', end_time: '', punch_kind: 'both' });
         return next;
@@ -408,7 +431,7 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
       ...(asDays && {
         start_date: form.start_date,
         end_date:   form.end_date,
-        days:       form.days || String(calcDays(form.start_date, form.end_date)),
+        days:       form.days || String(calcDays(form.start_date, form.end_date, workingDays)),
       }),
       ...(asHourly && {
         start_date: form.start_date, end_date: form.start_date,
