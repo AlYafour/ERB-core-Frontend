@@ -74,7 +74,9 @@ export default function AttendanceTab({ emp }: UserTabProps) {
 
   const { data: records, isLoading } = useQuery({
     queryKey: ['emp-attendance', empId, month],
-    queryFn: () => hrAttendanceApi.getAll({ employee: empId!, page: 1 }),
+    // Filter the month server-side (was: page 1 only, no date filter — older
+    // months fell outside the first page and showed "No records" despite data).
+    queryFn: () => hrAttendanceApi.getAll({ employee: empId!, date_after: startDate, date_before: endDate, page_size: 100 }),
     enabled: !!empId,
     staleTime: 60_000,
     select: (data) => data.results.filter((r: HRAttendance) => r.date >= startDate && r.date <= endDate),
