@@ -25,17 +25,20 @@ const LBL_CS: React.CSSProperties = {
   display: 'block', fontSize: 'var(--text-xs)', fontWeight: 600,
   color: 'var(--text-secondary)', marginBottom: 4,
 };
-// Sub-group header inside the settings card. `first` variant drops the top rule.
-const GROUP_HEAD: React.CSSProperties = {
-  margin: 'var(--space-5) 0 var(--space-3)', paddingTop: 'var(--space-4)',
-  borderTop: '1px solid var(--border-subtle)',
-  fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)', color: 'var(--text-primary)',
-};
-const GROUP_HEAD_FIRST: React.CSSProperties = {
-  margin: '0 0 var(--space-3)',
-  fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)', color: 'var(--text-primary)',
-};
 const GRID3: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' };
+
+// One consistent section header for every group in the settings card.
+function SectionHead({ title, desc, first }: { title: string; desc?: React.ReactNode; first?: boolean }) {
+  return (
+    <div style={{
+      marginTop: first ? 0 : 'var(--space-6)', paddingTop: first ? 0 : 'var(--space-4)',
+      borderTop: first ? undefined : '1px solid var(--border-subtle)', marginBottom: 'var(--space-3)',
+    }}>
+      <p style={{ margin: 0, fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{title}</p>
+      {desc && <p style={{ margin: '3px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{desc}</p>}
+    </div>
+  );
+}
 
 function CompanySettingsPanel() {
   const qc = useQueryClient();
@@ -85,7 +88,7 @@ function CompanySettingsPanel() {
       </div>
 
       {/* ── Company & Locale ── */}
-      <p style={GROUP_HEAD_FIRST}>Company &amp; Locale</p>
+      <SectionHead first title="Company & Locale" desc="Timezone and default currency." />
       <div style={GRID3}>
         <div>
           <label style={LBL_CS}>Timezone</label>
@@ -98,7 +101,7 @@ function CompanySettingsPanel() {
       </div>
 
       {/* ── Attendance ── */}
-      <p style={GROUP_HEAD}>Attendance</p>
+      <SectionHead title="Attendance" desc="Working week, check-in cutoff, and geofence enforcement." />
       <div style={{ marginBottom: 'var(--space-4)' }}>
         <label style={LBL_CS}>Working Days</label>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -107,7 +110,7 @@ function CompanySettingsPanel() {
               padding: '4px 12px', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-xs)', fontWeight: 600,
               cursor: 'pointer', border: '1px solid',
               background: wd.includes(i) ? 'var(--brand)' : 'var(--surface-subtle)',
-              color:      wd.includes(i) ? '#fff'         : 'var(--text-secondary)',
+              color:      wd.includes(i) ? 'var(--primary-foreground)' : 'var(--text-secondary)',
               borderColor: wd.includes(i) ? 'var(--brand)' : 'var(--border-subtle)',
               transition: 'all 0.15s',
             }}>{d}</button>
@@ -149,7 +152,7 @@ function CompanySettingsPanel() {
       </div>
 
       {/* ── Leave Defaults ── */}
-      <p style={GROUP_HEAD}>Leave Defaults</p>
+      <SectionHead title="Leave Defaults" desc="Default annual and sick balances for new employees." />
       <div style={GRID3}>
         <div>
           <label style={LBL_CS}>Default Annual Leave Days</label>
@@ -161,14 +164,12 @@ function CompanySettingsPanel() {
         </div>
       </div>
 
-      {/* ── Work Hours & Overtime Policy (all frontend-configurable) ── */}
-      <div style={{ marginTop: 'var(--space-5)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)' }}>
-        <p style={{ margin: '0 0 2px', fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>Work Hours &amp; Overtime</p>
-        <p style={{ margin: '0 0 var(--space-4)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-          How daily work hours are counted for everyone. The shift start/end times &amp; break length are set
-          per <Link href="/hr/shifts" style={{ color: 'var(--brand)' }}>Shift</Link>.
-        </p>
-
+      {/* ── Work Hours & Overtime ── */}
+      <SectionHead
+        title="Work Hours & Overtime"
+        desc={<>How daily work hours are counted for everyone. The shift start/end times &amp; break length are set per <Link href="/hr/shifts" style={{ color: 'var(--brand)' }}>Shift</Link>.</>}
+      />
+      <div>
         <div style={GRID3}>
           <div>
             <label style={LBL_CS}>Break deduction</label>
