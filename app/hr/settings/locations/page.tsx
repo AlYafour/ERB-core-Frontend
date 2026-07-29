@@ -11,6 +11,7 @@ import { confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { Button, Badge, Loader, PageHeader, PageShell, SearchInput, Drawer } from '@/components/ui';
+import { RowActions } from '@/components/ui/RowActions';
 import HRSettingsNav from '@/components/hr/HRSettingsNav';
 
 const PRESET_ICONS  = ['🏢', '🏗️', '🔧', '🏭', '🏪', '🏠', '📍', '🗺️', '⚙️', '🏛️', '🚧', '🏕️'];
@@ -262,20 +263,12 @@ export default function HRSettingsLocationsPage() {
           </td>
           {canManage && (
             <td style={{ ...tdStyle, textAlign: 'right' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 'var(--space-1)' }}>
-                <button onClick={() => openLocCreate(loc.id)} title="Add sub-location"
-                  style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-2)', borderRadius: 'var(--radius-sm)', color: 'var(--text-secondary)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer' }}>
-                  + Sub
-                </button>
-                <button onClick={() => openLocEdit(loc)}
-                  style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-2)', borderRadius: 'var(--radius-sm)', color: 'var(--text-secondary)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer' }}>
-                  Edit
-                </button>
-                <button onClick={async () => { if (await confirm(`Delete "${loc.name}"?`)) deleteLocMut.mutate(loc.id); }}
-                  style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-2)', borderRadius: 'var(--radius-sm)', color: 'var(--color-error)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer' }}>
-                  Del
-                </button>
-              </div>
+              <RowActions actions={[
+                { label: 'Add sub-location', onClick: () => openLocCreate(loc.id) },
+                { label: 'Edit', onClick: () => openLocEdit(loc) },
+                { separator: true },
+                { label: 'Delete', variant: 'danger', onClick: async () => { if (await confirm(`Delete "${loc.name}"?`)) deleteLocMut.mutate(loc.id); } },
+              ]} />
             </td>
           )}
         </tr>
@@ -343,11 +336,12 @@ export default function HRSettingsLocationsPage() {
                             </div>
                           </div>
                           {canManage && (
-                            <div style={{ display: 'flex', gap: 'var(--space-1)', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                              <button onClick={() => openTypeEdit(t)}
-                                style={{ fontSize: 'var(--text-xs)', padding: '2px var(--space-1-5)', borderRadius: 'var(--radius-sm)', color: 'var(--text-secondary)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer' }}>✎</button>
-                              <button onClick={async () => { if (await confirm(`Delete type "${t.name}"?`)) deleteTypeMut.mutate(t.id); }}
-                                style={{ fontSize: 'var(--text-xs)', padding: '2px var(--space-1-5)', borderRadius: 'var(--radius-sm)', color: 'var(--color-error)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer' }}>✕</button>
+                            <div style={{ flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                              <RowActions actions={[
+                                { label: 'Edit', onClick: () => openTypeEdit(t) },
+                                { separator: true },
+                                { label: 'Delete', variant: 'danger', onClick: async () => { if (await confirm(`Delete type "${t.name}"?`)) deleteTypeMut.mutate(t.id); } },
+                              ]} />
                             </div>
                           )}
                         </div>
@@ -464,16 +458,11 @@ export default function HRSettingsLocationsPage() {
                           <td style={tdStyle}><Badge variant={o.is_active ? 'success' : 'error'}>{o.is_active ? 'Active' : 'Inactive'}</Badge></td>
                           {canManage && (
                             <td style={{ ...tdStyle, textAlign: 'right' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 'var(--space-1)' }}>
-                                <button onClick={() => openOfficeEdit(o)}
-                                  style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-2)', borderRadius: 'var(--radius-sm)', color: 'var(--text-secondary)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer' }}>
-                                  Edit
-                                </button>
-                                <button onClick={async () => { if (await confirm(`Delete "${o.name}"?`)) deleteOfficeMut.mutate(o.id); }}
-                                  style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-2)', borderRadius: 'var(--radius-sm)', color: 'var(--color-error)', background: 'var(--surface-subtle)', border: 'none', cursor: 'pointer' }}>
-                                  Del
-                                </button>
-                              </div>
+                              <RowActions actions={[
+                                { label: 'Edit', onClick: () => openOfficeEdit(o) },
+                                { separator: true },
+                                { label: 'Delete', variant: 'danger', onClick: async () => { if (await confirm(`Delete "${o.name}"?`)) deleteOfficeMut.mutate(o.id); } },
+                              ]} />
                             </td>
                           )}
                         </tr>
@@ -544,7 +533,7 @@ export default function HRSettingsLocationsPage() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', alignItems: 'center' }}>
               {PRESET_COLORS.map(c => (
                 <button key={c} onClick={() => setTypeForm(p => ({ ...p, color: c }))}
-                  style={{ width: 32, height: 32, borderRadius: '50%', border: `2px solid ${typeForm.color === c ? '#000' : 'transparent'}`, background: c, transform: typeForm.color === c ? 'scale(1.2)' : 'scale(1)', cursor: 'pointer' }} />
+                  style={{ width: 32, height: 32, borderRadius: '50%', border: `2px solid ${typeForm.color === c ? 'var(--text-primary)' : 'transparent'}`, background: c, transform: typeForm.color === c ? 'scale(1.2)' : 'scale(1)', cursor: 'pointer' }} />
               ))}
               <input type="color" value={typeForm.color}
                 onChange={e => setTypeForm(p => ({ ...p, color: e.target.value }))}
