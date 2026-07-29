@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button, PageShell, PageHeader } from '@/components/ui';
+import HRSettingsNav from '@/components/hr/HRSettingsNav';
 import apiClient from '@/lib/api/client';
 import { toast } from '@/lib/hooks/use-toast';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
@@ -108,10 +109,15 @@ export default function LabelsPage() {
           description="Customise how key system entities are labelled for your organisation."
           breadcrumbs={[
             { label: 'Home', href: '/' },
-            { label: 'Settings', href: '/settings/company' },
-            { label: 'System Labels' },
+            { label: 'HR' },
+            { label: 'Settings', href: '/hr/settings' },
+            { label: 'Operation Labels' },
           ]}
         />
+
+        <div style={{ display: 'flex', gap: 'var(--space-6)', alignItems: 'flex-start' }}>
+          <HRSettingsNav />
+          <div style={{ flex: 1, minWidth: 0 }}>
 
         {/* Description banner */}
         <div style={{
@@ -209,6 +215,8 @@ export default function LabelsPage() {
               )}
             </form>
           )}
+        </div>
+          </div>
         </div>
       </PageShell>
     </MainLayout>

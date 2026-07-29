@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { BaseModal } from '@/components/ui/base/BaseModal'
 import { confirm, toast } from '@/lib/hooks/use-toast'
 import HasPermission from '@/components/shared/HasPermission'
+import HRSettingsNav from '@/components/hr/HRSettingsNav'
 
 const TYPE_ICONS: Record<string, string> = {
   salary_certificate: '💰', experience_certificate: '🎓', noc: '📄',
@@ -92,7 +93,9 @@ const [editTemplate, setEditTemplate] = useState<Partial<DocumentTemplate> | nul
   ]
 
   return (
-    <div style={{ padding: 'var(--space-6)', maxWidth: 1280, margin: '0 auto' }}>
+    <div style={{ padding: 'var(--space-6)', maxWidth: 1280, margin: '0 auto', display: 'flex', gap: 'var(--space-6)', alignItems: 'flex-start' }}>
+      <HRSettingsNav />
+      <div style={{ flex: 1, minWidth: 0 }}>
       <div style={{ marginBottom: 'var(--space-6)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)' }}>HR Documents</h1>
@@ -230,6 +233,7 @@ const [editTemplate, setEditTemplate] = useState<Partial<DocumentTemplate> | nul
           </div>
         </BaseModal>
       )}
+      </div>
     </div>
   )
 }

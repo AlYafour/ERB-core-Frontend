@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { BaseModal } from '@/components/ui/base/BaseModal'
 import { confirm, toast } from '@/lib/hooks/use-toast'
 import HasPermission from '@/components/shared/HasPermission'
+import HRSettingsNav from '@/components/hr/HRSettingsNav'
 
 const MODULE_ICONS: Record<string, string> = {
   eos: '📋', payroll: '💰', leave: '🏖️', overtime: '⏰', penalty: '⚠️', attendance: '📅', general: '⚙️',
@@ -158,7 +159,9 @@ export default function PolicyPage() {
   }, {})
 
   return (
-    <div style={{ padding: 'var(--space-6)', maxWidth: 1280, margin: '0 auto' }}>
+    <div style={{ padding: 'var(--space-6)', maxWidth: 1280, margin: '0 auto', display: 'flex', gap: 'var(--space-6)', alignItems: 'flex-start' }}>
+      <HRSettingsNav />
+      <div style={{ flex: 1, minWidth: 0 }}>
       <div style={{ marginBottom: 'var(--space-6)' }}>
         <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Policy Engine</h1>
         <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: 'var(--text-sm)' }}>
@@ -311,6 +314,7 @@ export default function PolicyPage() {
           </div>
         </BaseModal>
       )}
+      </div>
     </div>
   )
 }
