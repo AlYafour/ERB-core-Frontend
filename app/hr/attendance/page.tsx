@@ -31,6 +31,16 @@ const STATUS_LABEL: Record<string, string> = {
   half_day: 'Half Day', holiday: 'Holiday', on_leave: 'On Leave',
 };
 
+// An approved leave / WFH request covering a day is shown instead of the raw
+// "present" so the list reflects the day's real nature.
+const LEAVE_LABEL: Record<string, string> = {
+  work_from_home: 'Work From Home', paternity_leave: 'Paternity Leave',
+  maternity_leave: 'Maternity Leave', annual_leave: 'Annual Leave',
+  sick_leave: 'Sick Leave', emergency_leave: 'Emergency Leave',
+  unpaid_leave: 'Unpaid Leave', personal_leave: 'Personal Leave',
+  business_leave: 'Business Leave',
+};
+
 const filterFields: FilterField[] = [
   { name: 'status',       label: 'Status',     type: 'select', group: 'Filters',
     options: Object.entries(STATUS_LABEL).map(([v, l]) => ({ value: v, label: l })) },
@@ -634,7 +644,9 @@ export default function HRAttendancePage() {
     },
     {
       key: 'status', header: t('col', 'status'),
-      render: r => <Badge variant={ATTENDANCE_STATUS[r.status] ?? 'default'}>{STATUS_LABEL[r.status] || r.status}</Badge>,
+      render: r => r.leave_overlay
+        ? <Badge variant="info">{LEAVE_LABEL[r.leave_overlay] ?? r.leave_overlay}</Badge>
+        : <Badge variant={ATTENDANCE_STATUS[r.status] ?? 'default'}>{STATUS_LABEL[r.status] || r.status}</Badge>,
     },
     {
       key: 'notes', header: 'Notes',

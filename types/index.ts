@@ -827,6 +827,7 @@ export interface HRAttendance {
   shift_name: string | null;
   shift_start_time: string | null;
   shift_end_time: string | null;
+  leave_overlay?: string | null;
   scheduled_hours: number | null;
   late_minutes: number | null;
   early_leave_minutes: number | null;
