@@ -181,16 +181,29 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
         {/* Body */}
         <div style={{ padding: '20px 22px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 18 }}>
 
-          {/* Name */}
-          <div>
-            <label style={LABEL}>Shift Name <span style={{ color: 'var(--color-error)' }}>*</span></label>
-            <input
-              value={form.name}
-              onChange={e => set('name', e.target.value)}
-              placeholder="e.g. Summer, Winter, Ramadan"
-              className="form-input"
-              style={{ width: '100%', fontSize: 'var(--text-sm)' }}
-            />
+          {/* Name (EN + AR) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+            <div>
+              <label style={LABEL}>Shift Name <span style={{ color: 'var(--color-error)' }}>*</span></label>
+              <input
+                value={form.name}
+                onChange={e => set('name', e.target.value)}
+                placeholder="e.g. Normal Office Shift"
+                className="form-input"
+                style={{ width: '100%', fontSize: 'var(--text-sm)' }}
+              />
+            </div>
+            <div>
+              <label style={LABEL}>الاسم بالعربية</label>
+              <input
+                value={form.name_ar}
+                onChange={e => set('name_ar', e.target.value)}
+                placeholder="مثال: الدوام الرسمي"
+                dir="rtl"
+                className="form-input"
+                style={{ width: '100%', fontSize: 'var(--text-sm)' }}
+              />
+            </div>
           </div>
 
           {/* Type pills */}
