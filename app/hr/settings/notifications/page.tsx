@@ -242,6 +242,17 @@ export default function AttendanceNotificationsPage() {
                   />
                   <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 4 }}>After this local time, a scheduled employee with no check-in is flagged absent. Blank = work start + 4h.</div>
                 </div>
+                <div>
+                  <label style={LBL_CS}>Contact address shown in notices</label>
+                  <input
+                    type="email"
+                    style={INPUT_CS}
+                    value={g('notify_contact_email', '')}
+                    placeholder="e.g. saif@alyafour.com"
+                    onChange={e => set('notify_contact_email', e.target.value)}
+                  />
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 4 }}>The address employees are told to write to for corrections/grievances. Blank = the first CC address.</div>
+                </div>
               </div>
 
               <div style={{ marginTop: 'var(--space-5)', opacity: enabled ? 1 : 0.5, pointerEvents: enabled ? 'auto' : 'none' }}>

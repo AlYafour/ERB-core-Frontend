@@ -987,6 +987,7 @@ export interface HRCompanySettings {
   notify_checkin_correction?: boolean;
   absent_cutoff_time?: string | null;
   notify_legal_ref?: string;
+  notify_contact_email?: string;
   updated_at: string;
 }
 
