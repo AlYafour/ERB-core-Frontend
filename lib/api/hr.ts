@@ -328,6 +328,15 @@ export const hrAttendanceApi = {
     const response = await apiClient.post('/hr/attendance/bulk-recalculate/');
     return response.data;
   },
+  // Apply one change to many records. Time fields are "HH:MM" (combined with each
+  // record's date); "" clears a punch. Only provided keys in `patch` are applied.
+  bulkUpdate: async (
+    ids: number[],
+    patch: { status?: string; notes?: string; check_in?: string; check_out?: string; break_start?: string; break_end?: string },
+  ): Promise<{ updated: number; requested: number }> => {
+    const response = await apiClient.post('/hr/attendance/bulk-update/', { ids, patch });
+    return response.data;
+  },
   getShifts: async (): Promise<PaginatedResponse<HRShift>> => {
     const response = await apiClient.get('/hr/attendance/shifts/');
     return response.data;

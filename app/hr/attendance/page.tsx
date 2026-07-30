@@ -17,6 +17,7 @@ import { useT } from '@/lib/i18n/useT';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { ATTENDANCE_STATUS } from '@/lib/utils/status-colors';
 import { formatHoursMinutes } from '@/lib/utils/hr';
+import { getApiError } from '@/lib/utils/error';
 
 function fmtShiftTime(t: string): string {
   if (!t) return '';
@@ -204,11 +205,92 @@ function QuickActions({
   );
 }
 
+// ── Bulk Edit Modal ───────────────────────────────────────────
+// Apply ONE change to many selected records. Each field is opt-in via its
+// checkbox so nothing is touched by accident; time fields apply to each row's
+// own date, and an enabled-but-empty time clears that punch.
+function BulkEditModal({
+  count, onClose, onApply, isLoading,
+}: {
+  count: number;
+  onClose: () => void;
+  onApply: (patch: Record<string, string>) => void;
+  isLoading: boolean;
+}) {
+  const [setStat, setSetStat] = useState(true);
+  const [status, setStatus]   = useState('present');
+  const [setIn, setSetIn]     = useState(false);
+  const [checkIn, setCheckIn] = useState('');
+  const [setOut, setSetOut]   = useState(false);
+  const [checkOut, setCheckOut] = useState('');
+  const [setNote, setSetNote] = useState(false);
+  const [notes, setNotes]     = useState('');
+
+  const rowStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 'var(--space-3)' };
+  const labelStyle: React.CSSProperties = { fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', minWidth: 96, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' };
+
+  const patch: Record<string, string> = {};
+  if (setStat) patch.status = status;
+  if (setIn)   patch.check_in = checkIn;
+  if (setOut)  patch.check_out = checkOut;
+  if (setNote) patch.notes = notes;
+  const nothing = Object.keys(patch).length === 0;
+
+  const Check = ({ on, set }: { on: boolean; set: (v: boolean) => void }) => (
+    <input type="checkbox" checked={on} onChange={e => set(e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+  );
+
+  return (
+    <BaseModal isOpen onClose={onClose} title={`Edit ${count} selected record${count === 1 ? '' : 's'}`} size="sm">
+      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: '-4px 0 var(--space-4)' }}>
+        Only the ticked fields are changed on all {count} record{count === 1 ? '' : 's'}. Times apply to each record’s own date.
+      </p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+        <div style={rowStyle}>
+          <label style={labelStyle}><Check on={setStat} set={setSetStat} /> Status</label>
+          <select className="form-input" value={status} disabled={!setStat}
+            onChange={e => setStatus(e.target.value)} style={{ flex: 1, opacity: setStat ? 1 : 0.5 }}>
+            {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </div>
+        <div style={rowStyle}>
+          <label style={labelStyle}><Check on={setIn} set={setSetIn} /> Check In</label>
+          <input type="time" className="form-input" value={checkIn} disabled={!setIn}
+            onChange={e => setCheckIn(e.target.value)} style={{ flex: 1, opacity: setIn ? 1 : 0.5 }} />
+        </div>
+        <div style={rowStyle}>
+          <label style={labelStyle}><Check on={setOut} set={setSetOut} /> Check Out</label>
+          <input type="time" className="form-input" value={checkOut} disabled={!setOut}
+            onChange={e => setCheckOut(e.target.value)} style={{ flex: 1, opacity: setOut ? 1 : 0.5 }} />
+        </div>
+        <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
+          <label style={{ ...labelStyle, marginTop: 8 }}><Check on={setNote} set={setSetNote} /> Notes</label>
+          <textarea className="form-input" value={notes} disabled={!setNote} rows={2}
+            onChange={e => setNotes(e.target.value)} placeholder="Correction note…"
+            style={{ flex: 1, resize: 'vertical', minHeight: 56, fontFamily: 'inherit', opacity: setNote ? 1 : 0.5 }} />
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-4)' }}>
+          <button type="button" onClick={onClose} disabled={isLoading}
+            style={{ padding: '7px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-default)', background: 'none', cursor: 'pointer', fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
+            Cancel
+          </button>
+          <button type="button" onClick={() => onApply(patch)} disabled={isLoading || nothing}
+            style={{ padding: '7px 20px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--brand)', color: 'var(--primary-foreground)', cursor: (isLoading || nothing) ? 'default' : 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', opacity: (isLoading || nothing) ? 0.6 : 1 }}>
+            {isLoading ? 'Applying…' : `Apply to ${count}`}
+          </button>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────
 export default function HRAttendancePage() {
   const router = useRouter();
   const tableState = useTableState();
-  const { page, search, filters, handleFilterChange } = tableState;
+  const { page, search, filters, handleFilterChange, selectedItems, clearSelection } = tableState;
   const t = useT();
   const { user } = useAuth();
   const { hasPermission } = useMyPermissions();
@@ -218,6 +300,7 @@ export default function HRAttendancePage() {
   const canEdit = hasPermission('hr.hr_attendance.update');
 
   const [editRecord, setEditRecord] = useState<HRAttendance | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
   const isToday  = (filters as Record<string, string>).date === todayStr;
@@ -248,6 +331,18 @@ export default function HRAttendancePage() {
       toast('Metrics recalculated', 'success');
     },
     onError: (err: any) => toast(err?.response?.data?.detail ?? 'Recalculation failed', 'error'),
+  });
+
+  const bulkUpdateMutation = useMutation({
+    mutationFn: (patch: Record<string, string>) =>
+      hrAttendanceApi.bulkUpdate([...selectedItems], patch),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['hr-attendance'] });
+      setBulkOpen(false);
+      clearSelection();
+      toast(`Updated ${res.updated} record${res.updated === 1 ? '' : 's'}`, 'success');
+    },
+    onError: (err: any) => toast(getApiError(err, 'Bulk update failed'), 'error'),
   });
 
   const bulkRecalcMutation = useMutation({
@@ -450,6 +545,15 @@ export default function HRAttendancePage() {
       paginatedData={data}
       pageSize={50}
       selectable={true}
+      bulkActions={canEdit && selectedItems.size > 0 ? (
+        <button
+          type="button"
+          onClick={() => setBulkOpen(true)}
+          style={{ padding: '7px 16px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--brand)', color: 'var(--primary-foreground)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)' }}
+        >
+          Edit {selectedItems.size} selected
+        </button>
+      ) : undefined}
       onRowClick={(r) => router.push('/hr/attendance/' + r.id)}
     >
       {editRecord && (
@@ -458,6 +562,14 @@ export default function HRAttendancePage() {
           onClose={() => setEditRecord(null)}
           onSave={patch => editMutation.mutate({ id: editRecord.id, patch })}
           isLoading={editMutation.isPending}
+        />
+      )}
+      {bulkOpen && (
+        <BulkEditModal
+          count={selectedItems.size}
+          onClose={() => setBulkOpen(false)}
+          onApply={patch => bulkUpdateMutation.mutate(patch)}
+          isLoading={bulkUpdateMutation.isPending}
         />
       )}
     </AppListPage>
