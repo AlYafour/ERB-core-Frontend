@@ -9,11 +9,15 @@ import { useAuthStore } from '@/lib/store/auth-store';
 import { useTenantInfo } from '@/lib/hooks/use-tenant';
 import { tasksApi } from '@/lib/api/tasks';
 import { purchaseRequestsApi } from '@/lib/api/purchase-requests';
-import { hrRequestsApi } from '@/lib/api/hr';
+import { hrRequestsApi, hrAttendanceApi } from '@/lib/api/hr';
 import { resolveRequestTypeLabel } from '@/lib/hr/request-type-label';
 import MainLayout from '@/components/layout/MainLayout';
 import { Loader } from '@/components/ui';
 import { useMyEmployeeRecord } from '@/lib/hooks/use-my-employee-record';
+import dynamic from 'next/dynamic';
+
+const Donut    = dynamic(() => import('./WorkspaceCharts').then(m => m.Donut),    { ssr: false });
+const MiniBars = dynamic(() => import('./WorkspaceCharts').then(m => m.MiniBars), { ssr: false });
 
 /* ── Palette (mirrors the Executive Dashboard) ───────────────────── */
 const V = {
@@ -110,9 +114,17 @@ export default function MyWorkspace() {
   const showHR   = showMod('hr');
   const canApprove = isAdmin || hasPermission('hr.hr_request.approve') || hasPermission('hr_request.approve');
   const uid = user?.id ?? 0;
+  const empId = myEmp?.id;
+  const now = new Date();
+  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const todayStr   = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   const tasksQ = useQuery({ queryKey: ['workspace-my-tasks'], queryFn: () => tasksApi.getAll({ scope: 'mine', page_size: 8 }), staleTime: 60_000, enabled: !!user });
-  const hrQ    = useQuery({ queryKey: ['workspace-my-hr-requests'], queryFn: () => hrRequestsApi.getAll({ status: 'pending', page_size: 6 }), staleTime: 60_000, enabled: !!user && showHR });
+  // Filter to the signed-in employee's OWN requests — otherwise admins/approvers
+  // get EVERY pending request back, which duplicated the approvals list.
+  const hrQ    = useQuery({ queryKey: ['workspace-my-hr-requests', empId], queryFn: () => hrRequestsApi.getAll({ status: 'pending', employee: empId, page_size: 6 }), staleTime: 60_000, enabled: !!user && showHR && !!empId });
+  const myAllQ = useQuery({ queryKey: ['workspace-my-all', empId], queryFn: () => hrRequestsApi.getAll({ employee: empId, page_size: 100 }), staleTime: 60_000, enabled: !!user && showHR && !!empId });
+  const attnQ  = useQuery({ queryKey: ['workspace-attn', empId, monthStart], queryFn: () => hrAttendanceApi.timesheet({ employee: empId!, date_after: monthStart, date_before: todayStr }), staleTime: 5 * 60_000, enabled: !!user && showHR && !!empId });
   const apprQ  = useQuery({ queryKey: ['workspace-my-approvals'], queryFn: () => hrRequestsApi.getPendingMyApproval(), staleTime: 60_000, enabled: !!user && canApprove });
   const prQ    = useQuery({ queryKey: ['workspace-my-prs', uid], queryFn: () => purchaseRequestsApi.getAll({ status: 'pending', created_by: uid, page_size: 6 }), staleTime: 60_000, enabled: !!user && showProc });
 
@@ -126,6 +138,21 @@ export default function MyWorkspace() {
   const hr = listOf<Req>(hrQ.data);
   const appr = listOf<Req>(apprQ.data);
   const prs = listOf<PR>(prQ.data);
+
+  /* Chart data */
+  const byType = (items: Req[]) => {
+    const m = new Map<string, number>();
+    items.forEach(r => m.set(r.request_type, (m.get(r.request_type) ?? 0) + 1));
+    return [...m.entries()].map(([k, v]) => ({ name: resolveRequestTypeLabel(k), value: v }));
+  };
+  const apprByType = byType(appr);
+  const myAll = listOf<{ status: string }>(myAllQ.data);
+  const statusSlices = (['pending', 'approved', 'rejected', 'cancelled'] as const)
+    .map(s => ({ name: s.charAt(0).toUpperCase() + s.slice(1), value: myAll.filter(r => r.status === s).length }));
+  const attnDays = (attnQ.data?.days ?? []) as { date: string; work_hours: number | null }[];
+  const attnBars = attnDays
+    .filter(d => d.work_hours != null && d.work_hours > 0)
+    .map(d => ({ label: String(new Date(d.date + 'T00:00:00').getDate()), value: Number(d.work_hours) }));
 
   const kpis = [
     { label: 'My Tasks',            value: tasks.length,       href: '/tasks',             show: true,        accent: false },
@@ -198,6 +225,26 @@ export default function MyWorkspace() {
               </Link>
             ))}
           </div>
+
+          {/* Charts */}
+          {showHR && empId && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 12 }}>
+              {canApprove && (
+                <div style={card({ padding: '13px 15px' })}>
+                  <div style={{ ...sectionTitle, marginBottom: 12 }}>Approvals by Type</div>
+                  <Donut data={apprByType} />
+                </div>
+              )}
+              <div style={card({ padding: '13px 15px' })}>
+                <div style={{ ...sectionTitle, marginBottom: 12 }}>My Requests by Status</div>
+                <Donut data={statusSlices} />
+              </div>
+              <div style={card({ padding: '13px 15px' })}>
+                <div style={{ ...sectionTitle, marginBottom: 12 }}>My Attendance · This Month</div>
+                <MiniBars data={attnBars} />
+              </div>
+            </div>
+          )}
 
           {/* Activity grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 12, alignItems: 'start' }}>
