@@ -3,13 +3,13 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { hrAttendanceApi } from '@/lib/api/hr';
+import { hrAttendanceApi, hrEmployeesApi } from '@/lib/api/hr';
 import { HRAttendance } from '@/types';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
-import { Badge, BaseModal, type Column } from '@/components/ui';
+import { Badge, BaseModal, DateInput, SearchableDropdown, type Column } from '@/components/ui';
 import { RowActions } from '@/components/ui/RowActions';
 import { PersonCell } from '@/components/ui/PersonCell';
 import { AppListPage } from '@/components/app/AppListPage';
@@ -161,7 +161,7 @@ function AttendanceEditModal({
 
 // ── Today + Export buttons ────────────────────────────────────
 function QuickActions({
-  isToday, onToday, onExport, onRecalcAll, hasRecords, exporting,
+  isToday, onToday, onExport, onRecalcAll, hasRecords, exporting, onAdd,
 }: {
   isToday: boolean;
   onToday: () => void;
@@ -169,6 +169,7 @@ function QuickActions({
   onRecalcAll: () => void;
   hasRecords: boolean;
   exporting?: boolean;
+  onAdd?: () => void;
 }) {
   const btnStyle: React.CSSProperties = {
     fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)',
@@ -179,6 +180,14 @@ function QuickActions({
   };
   return (
     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+      {onAdd && (
+        <button style={{ ...btnStyle, border: 'none', background: 'var(--brand)', color: 'var(--primary-foreground)' }} onClick={onAdd}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add Record
+        </button>
+      )}
       <button style={{ ...btnStyle, ...(isToday ? { borderColor: 'var(--brand)', color: 'var(--brand)', background: 'var(--brand-subtle)' } : {}) }}
         onClick={onToday}>
         {isToday ? '✓ Today' : (
@@ -286,6 +295,109 @@ function BulkEditModal({
   );
 }
 
+// ── Add Record Modal ──────────────────────────────────────────
+// Admin adds an attendance record for any employee/date directly (e.g. a day
+// the employee never punched). The backend recomputes shift/late/hours.
+function AddAttendanceModal({
+  onClose, onSave, isLoading,
+}: {
+  onClose: () => void;
+  onSave: (data: Record<string, unknown>) => void;
+  isLoading: boolean;
+}) {
+  const [employee, setEmployee] = useState<number | null>(null);
+  const [date, setDate]       = useState(new Date().toISOString().split('T')[0]);
+  const [checkIn, setCheckIn] = useState('');
+  const [checkOut, setCheckOut] = useState('');
+  const [breakStart, setBreakStart] = useState('');
+  const [breakEnd, setBreakEnd] = useState('');
+  const [status, setStatus]   = useState('present');
+  const [notes, setNotes]     = useState('');
+
+  const empQ = useQuery({
+    queryKey: ['att-emp-picker'],
+    queryFn: () => hrEmployeesApi.getAll({ page_size: 500 }),
+  });
+  const options = (empQ.data?.results ?? []).map((e: any) => ({
+    value: e.id, label: `${e.full_name}${e.employee_id ? ` · ${e.employee_id}` : ''}`,
+  }));
+
+  const fieldStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 'var(--space-1-5)' };
+  const labelStyle: React.CSSProperties = { fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' };
+  const canSave = employee != null && !!date && !isLoading;
+
+  return (
+    <BaseModal isOpen onClose={onClose} title="Add Attendance Record" size="sm">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        <div style={fieldStyle}>
+          <label style={labelStyle}>Employee</label>
+          <SearchableDropdown
+            options={options}
+            value={employee}
+            onChange={v => setEmployee(v == null ? null : Number(v))}
+            placeholder={empQ.isLoading ? 'Loading…' : 'Search employee by name or ID…'}
+          />
+        </div>
+        <div style={fieldStyle}>
+          <label style={labelStyle}>Date</label>
+          <DateInput value={date} onChange={setDate} />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>Check In</label>
+            <input type="time" className="form-input" value={checkIn} onChange={e => setCheckIn(e.target.value)} />
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>Check Out</label>
+            <input type="time" className="form-input" value={checkOut} onChange={e => setCheckOut(e.target.value)} />
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>Break Start</label>
+            <input type="time" className="form-input" value={breakStart} onChange={e => setBreakStart(e.target.value)} />
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>Break End</label>
+            <input type="time" className="form-input" value={breakEnd} onChange={e => setBreakEnd(e.target.value)} />
+          </div>
+        </div>
+        <div style={fieldStyle}>
+          <label style={labelStyle}>Status</label>
+          <select className="form-input" value={status} onChange={e => setStatus(e.target.value)}>
+            {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </div>
+        <div style={fieldStyle}>
+          <label style={labelStyle}>Admin Notes</label>
+          <textarea className="form-input" value={notes} rows={2}
+            onChange={e => setNotes(e.target.value)} placeholder="Optional…"
+            style={{ resize: 'vertical', minHeight: 56, fontFamily: 'inherit' }} />
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-4)' }}>
+          <button type="button" onClick={onClose} disabled={isLoading}
+            style={{ padding: '7px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-default)', background: 'none', cursor: 'pointer', fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
+            Cancel
+          </button>
+          <button type="button" disabled={!canSave}
+            onClick={() => onSave({
+              employee,
+              date,
+              check_in:    buildDatetime(date, checkIn),
+              check_out:   buildDatetime(date, checkOut),
+              break_start: buildDatetime(date, breakStart),
+              break_end:   buildDatetime(date, breakEnd),
+              status,
+              notes,
+            })}
+            style={{ padding: '7px 20px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--brand)', color: 'var(--primary-foreground)', cursor: canSave ? 'pointer' : 'default', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', opacity: canSave ? 1 : 0.6 }}>
+            {isLoading ? 'Adding…' : 'Add Record'}
+          </button>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────
 export default function HRAttendancePage() {
   const router = useRouter();
@@ -299,9 +411,11 @@ export default function HRAttendancePage() {
   const admin     = hasPermission('hr.hr_attendance.view');
   const canEdit   = hasPermission('hr.hr_attendance.update');
   const canDelete = hasPermission('hr.hr_attendance.delete');
+  const canCreate = hasPermission('hr.hr_attendance.create');
 
   const [editRecord, setEditRecord] = useState<HRAttendance | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
 
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
   const isToday  = (filters as Record<string, string>).date === todayStr;
@@ -344,6 +458,16 @@ export default function HRAttendancePage() {
       toast(`Updated ${res.updated} record${res.updated === 1 ? '' : 's'}`, 'success');
     },
     onError: (err: any) => toast(getApiError(err, 'Bulk update failed'), 'error'),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: Record<string, unknown>) => hrAttendanceApi.create(data as any),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['hr-attendance'] });
+      setAddOpen(false);
+      toast('Attendance record added', 'success');
+    },
+    onError: (err: any) => toast(getApiError(err, 'Could not add record'), 'error'),
   });
 
   const bulkDeleteMutation = useMutation({
@@ -551,6 +675,7 @@ export default function HRAttendancePage() {
           onRecalcAll={() => bulkRecalcMutation.mutate()}
           hasRecords={records.length > 0}
           exporting={exporting}
+          onAdd={canCreate ? () => setAddOpen(true) : undefined}
         />
       }
       filterFields={filterFields}
@@ -603,6 +728,13 @@ export default function HRAttendancePage() {
           onClose={() => setBulkOpen(false)}
           onApply={patch => bulkUpdateMutation.mutate(patch)}
           isLoading={bulkUpdateMutation.isPending}
+        />
+      )}
+      {addOpen && (
+        <AddAttendanceModal
+          onClose={() => setAddOpen(false)}
+          onSave={data => createMutation.mutate(data)}
+          isLoading={createMutation.isPending}
         />
       )}
     </AppListPage>
