@@ -92,9 +92,9 @@ export default function MyApprovalsPage() {
                       {label}
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                      Submitted by <strong>{inst.submitted_by_name ?? inst.submitted_by}</strong>
+                      Submitted by <strong>{inst.submitted_by_username ?? inst.submitted_by}</strong>
                       {' · '}{timeAgo(inst.submitted_at)}
-                      {' · '}Step {inst.current_step} of {total}
+                      {' · '}Step {inst.current_step_order} of {total}
                     </div>
                   </div>
 
