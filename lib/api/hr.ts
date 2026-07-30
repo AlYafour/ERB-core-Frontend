@@ -372,6 +372,10 @@ export const hrRequestsApi = {
   cancel: async (id: number): Promise<void> => {
     await apiClient.post(`/hr/requests/${id}/cancel/`);
   },
+  edit: async (id: number, data: Partial<HRRequest>): Promise<HRRequest> => {
+    const response = await apiClient.post(`/hr/requests/${id}/edit/`, data);
+    return response.data;
+  },
   remove: async (id: number): Promise<void> => {
     await apiClient.delete(`/hr/requests/${id}/`);
   },

@@ -288,6 +288,7 @@ function ApprovalsInbox({ userId }: { userId: number }) {
 function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; isSelf: boolean; isAdmin: boolean; empId?: number }) {
   const queryClient = useQueryClient();
   const [drawerOpen, setDrawerOpen]     = useState(false);
+  const [editingId, setEditingId]       = useState<number | null>(null);
   const [expandedId, setExpandedId]     = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState('');
   const [form, setForm] = useState({
@@ -363,10 +364,40 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
     onError: () => toast('Failed to cancel request', 'error'),
   });
 
+  const editMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<HRRequest> }) => hrRequestsApi.edit(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-requests', userId] });
+      toast('Request updated — a changed date/type re-starts approval', 'success');
+      setDrawerOpen(false);
+      resetForm();
+    },
+    onError: () => toast('Failed to update request', 'error'),
+  });
+
   const resetForm = () => {
     setForm({ request_type: 'annual_leave', start_date: '', end_date: '', days: '', reason: '', start_time: '', end_time: '', punch_kind: 'both' });
     setFile(null);
     setBothHourly(false);
+    setEditingId(null);
+  };
+
+  // Open the drawer pre-filled to edit a still-pending request.
+  const openEdit = (req: HRRequest) => {
+    setEditingId(req.id);
+    setForm({
+      request_type: req.request_type,
+      start_date: req.start_date || '',
+      end_date: req.end_date || '',
+      days: req.days ? String(parseFloat(req.days)) : '',
+      reason: req.reason || '',
+      start_time: (req.start_time || '').slice(0, 5),
+      end_time: (req.end_time || '').slice(0, 5),
+      punch_kind: req.punch_kind || 'both',
+    });
+    setBothHourly(!!(req.start_time && req.end_time));
+    setFile(null);
+    setDrawerOpen(true);
   };
 
   // Effective duration mode for the selected type (from its RequestType row,
@@ -420,12 +451,14 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
       if (!form.start_time) { toast('Enter the time of the missed punch', 'error'); return; }
     }
     if (!form.reason.trim()) { toast('Please provide a reason', 'error'); return; }
-    if (form.request_type === 'sick_leave' && !file) {
+    // On a fresh sick-leave request the certificate is required; when editing an
+    // existing request the certificate is already attached, so don't re-require it.
+    if (form.request_type === 'sick_leave' && !file && !editingId) {
       toast('Sick leave requires a medical certificate — attach a file', 'error'); return;
     }
 
-    createMutation.mutate({
-      ...(empId && { employee: empId }),
+    const payload: Partial<HRRequest> = {
+      ...(empId && !editingId ? { employee: empId } : {}),
       request_type: form.request_type as HRRequest['request_type'],
       reason: form.reason,
       ...(asDays && {
@@ -442,7 +475,10 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
         punch_kind: form.punch_kind as HRRequest['punch_kind'],
         start_time: form.start_time,
       }),
-    });
+    };
+
+    if (editingId) editMutation.mutate({ id: editingId, data: payload });
+    else createMutation.mutate(payload);
   };
 
   return (
@@ -526,6 +562,13 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)' }}>
                   {req.status === 'pending' && (isSelf || isAdmin) && (
                     <button
+                      onClick={e => { e.stopPropagation(); openEdit(req); }}
+                      style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', padding: '4px 10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                      Edit
+                    </button>
+                  )}
+                  {req.status === 'pending' && (isSelf || isAdmin) && (
+                    <button
                       onClick={e => { e.stopPropagation(); cancelMutation.mutate(req.id); }}
                       disabled={cancelMutation.isPending}
                       style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)', padding: '4px 10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
@@ -594,7 +637,7 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
           <div style={{ marginLeft: 'auto', width: '100%', maxWidth: 520, height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--card-bg)', boxShadow: '-4px 0 24px rgba(0,0,0,0.15)' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-4) var(--space-6)', borderBottom: '1px solid var(--border-subtle)' }}>
-              <h2 style={{ fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-base)', margin: 0 }}>New Request</h2>
+              <h2 style={{ fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-base)', margin: 0 }}>{editingId ? 'Edit Request' : 'New Request'}</h2>
               <button onClick={() => setDrawerOpen(false)} style={{ fontSize: 'var(--text-lg)', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1 }}>✕</button>
             </div>
 
@@ -774,9 +817,9 @@ function MyRequestsList({ userId, isSelf, isAdmin, empId }: { userId: number; is
                 style={{ padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', background: 'none', cursor: 'pointer', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
                 Cancel
               </button>
-              <button onClick={handleSubmit} disabled={createMutation.isPending}
-                style={{ padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)', cursor: createMutation.isPending ? 'not-allowed' : 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', opacity: createMutation.isPending ? 0.7 : 1 }}>
-                {createMutation.isPending ? 'Submitting…' : 'Submit Request'}
+              <button onClick={handleSubmit} disabled={createMutation.isPending || editMutation.isPending}
+                style={{ padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active-text)', cursor: (createMutation.isPending || editMutation.isPending) ? 'not-allowed' : 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', opacity: (createMutation.isPending || editMutation.isPending) ? 0.7 : 1 }}>
+                {(createMutation.isPending || editMutation.isPending) ? 'Saving…' : editingId ? 'Save Changes' : 'Submit Request'}
               </button>
             </div>
           </div>
