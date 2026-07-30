@@ -317,13 +317,14 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
 
           {/* Per-day schedule table */}
           {form.per_day_times && form.work_days.length > 0 && (() => {
-            const cols = '52px 1fr 1fr';
-            const headers = ['Day', 'Start', 'End'];
+            const cols = '44px 1fr 1fr 1fr 1fr';
+            const headers = ['Day', 'Start', 'End', 'Break in', 'Break out'];
+            const inp: React.CSSProperties = { width: '100%', fontSize: 'var(--text-xs)', padding: '4px 5px' };
             return (
               <div style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', overflow: 'hidden' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: cols, gap: 0, background: 'var(--surface-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
                   {headers.map(h => (
-                    <div key={h} style={{ padding: '6px 8px', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
+                    <div key={h} style={{ padding: '6px 6px', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</div>
                   ))}
                 </div>
                 {form.work_days.map((day, i) => {
@@ -332,18 +333,28 @@ function ShiftModal({ shift, onClose, onSave, isSaving }: {
                   const isLast = i === form.work_days.length - 1;
                   return (
                     <div key={day} style={{ display: 'grid', gridTemplateColumns: cols, gap: 0, borderBottom: isLast ? 'none' : '1px solid var(--border-subtle)', alignItems: 'center' }}>
-                      <div style={{ padding: '8px 10px', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      <div style={{ padding: '8px 8px', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-primary)' }}>
                         {WEEKDAYS[day]?.label}
                       </div>
-                      <div style={{ padding: '6px 6px 6px 0' }}>
+                      <div style={{ padding: '6px 5px 6px 0' }}>
                         <input type="time" value={row.start_time}
                           onChange={e => updateDayRow(day, { start_time: e.target.value })}
-                          className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
+                          className="form-input" style={inp} />
                       </div>
-                      <div style={{ padding: '6px 8px 6px 0' }}>
+                      <div style={{ padding: '6px 5px 6px 0' }}>
                         <input type="time" value={row.end_time}
                           onChange={e => updateDayRow(day, { end_time: e.target.value })}
-                          className="form-input" style={{ width: '100%', fontSize: 'var(--text-xs)', padding: '4px 6px' }} />
+                          className="form-input" style={inp} />
+                      </div>
+                      <div style={{ padding: '6px 5px 6px 0' }}>
+                        <input type="time" value={row.break_start}
+                          onChange={e => updateDayRow(day, { break_start: e.target.value, break_mins: calcBreakMins(e.target.value, row.break_end) || row.break_mins })}
+                          className="form-input" style={inp} />
+                      </div>
+                      <div style={{ padding: '6px 6px 6px 0' }}>
+                        <input type="time" value={row.break_end}
+                          onChange={e => updateDayRow(day, { break_end: e.target.value, break_mins: calcBreakMins(row.break_start, e.target.value) || row.break_mins })}
+                          className="form-input" style={inp} />
                       </div>
                     </div>
                   );
