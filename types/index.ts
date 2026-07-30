@@ -978,6 +978,15 @@ export interface HRCompanySettings {
   late_notify_subject?: string;
   late_notify_body?: string;
   notify_footer?: string;
+  // Per-event toggles (the wider 10-template attendance notice suite)
+  notify_on_time_checkin?: boolean;
+  notify_absent?: boolean;
+  notify_day_complete?: boolean;
+  notify_break_issues?: boolean;
+  notify_missing_checkout?: boolean;
+  notify_checkin_correction?: boolean;
+  absent_cutoff_time?: string | null;
+  notify_legal_ref?: string;
   updated_at: string;
 }
 

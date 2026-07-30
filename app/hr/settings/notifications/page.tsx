@@ -178,9 +178,79 @@ export default function AttendanceNotificationsPage() {
                 />
                 <ToggleRow
                   label="Notify on incomplete hours"
-                  hint="Send a notice when someone leaves before completing the day's required hours."
+                  hint="Send a notice when someone leaves before completing the day's required hours (early departure / late-arrival summary)."
                   checked={g('notify_incomplete_hours', true)}
                   onChange={v => set('notify_incomplete_hours', v)}
+                />
+              </div>
+            </section>
+
+            {/* 1b ── The wider notice suite ───────────────────────────────── */}
+            <section className="card" style={{ padding: 'var(--space-5)' }}>
+              <SectionTitle title="More attendance notices" subtitle="The full set of automatic attendance emails. Exceptions default on; the positive confirmations are opt-in because they fire for everyone, every day." />
+
+              <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', opacity: enabled ? 1 : 0.5, pointerEvents: enabled ? 'auto' : 'none' }}>
+                <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '.04em' }}>Exceptions</div>
+                <ToggleRow
+                  label="Absent — no check-in"
+                  hint="A scheduled employee with no check-in by the cutoff is flagged absent (sent by the daily batch)."
+                  checked={g('notify_absent', true)}
+                  onChange={v => set('notify_absent', v)}
+                />
+                <ToggleRow
+                  label="Missing check-out (open record)"
+                  hint="Checked in but never checked out — the record stays open. Sent at day's end."
+                  checked={g('notify_missing_checkout', true)}
+                  onChange={v => set('notify_missing_checkout', v)}
+                />
+                <ToggleRow
+                  label="Break punch issues"
+                  hint="Break not recorded, or opened but never closed."
+                  checked={g('notify_break_issues', true)}
+                  onChange={v => set('notify_break_issues', v)}
+                />
+                <ToggleRow
+                  label="Record correction (absent → present)"
+                  hint="Notify the employee when a day is manually corrected to present (e.g. an approved missing-punch)."
+                  checked={g('notify_checkin_correction', true)}
+                  onChange={v => set('notify_checkin_correction', v)}
+                />
+
+                <div style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '.04em' }}>Positive confirmations (opt-in)</div>
+                <ToggleRow
+                  label="On-time check-in confirmation"
+                  hint="Thank the employee for checking in on time. High volume — one email per employee per day."
+                  checked={g('notify_on_time_checkin', false)}
+                  onChange={v => set('notify_on_time_checkin', v)}
+                />
+                <ToggleRow
+                  label="Completed-day confirmation"
+                  hint="Confirm a completed day at check-out. High volume — one email per employee per day."
+                  checked={g('notify_day_complete', false)}
+                  onChange={v => set('notify_day_complete', v)}
+                />
+              </div>
+
+              <div style={{ marginTop: 'var(--space-5)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--space-4)', opacity: enabled ? 1 : 0.5, pointerEvents: enabled ? 'auto' : 'none' }}>
+                <div>
+                  <label style={LBL_CS}>Absence cutoff time</label>
+                  <input
+                    type="time"
+                    style={INPUT_CS}
+                    value={(g('absent_cutoff_time', '') || '').slice(0, 5)}
+                    onChange={e => set('absent_cutoff_time', e.target.value || null)}
+                  />
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 4 }}>After this local time, a scheduled employee with no check-in is flagged absent. Blank = work start + 4h.</div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 'var(--space-5)', opacity: enabled ? 1 : 0.5, pointerEvents: enabled ? 'auto' : 'none' }}>
+                <label style={LBL_CS}>Legal-basis note (optional, shown in the footer of exception notices)</label>
+                <textarea
+                  style={{ ...INPUT_CS, minHeight: 72, resize: 'vertical', lineHeight: 1.6 }}
+                  value={g('notify_legal_ref', '')}
+                  placeholder="e.g. an administrative decision number / training-acknowledgement reference"
+                  onChange={e => set('notify_legal_ref', e.target.value)}
                 />
               </div>
             </section>
