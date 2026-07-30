@@ -337,6 +337,10 @@ export const hrAttendanceApi = {
     const response = await apiClient.post('/hr/attendance/bulk-update/', { ids, patch });
     return response.data;
   },
+  bulkDelete: async (ids: number[]): Promise<{ deleted: number; requested: number }> => {
+    const response = await apiClient.post('/hr/attendance/bulk-delete/', { ids });
+    return response.data;
+  },
   getShifts: async (): Promise<PaginatedResponse<HRShift>> => {
     const response = await apiClient.get('/hr/attendance/shifts/');
     return response.data;

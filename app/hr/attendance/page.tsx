@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { hrAttendanceApi } from '@/lib/api/hr';
 import { HRAttendance } from '@/types';
-import { toast } from '@/lib/hooks/use-toast';
+import { toast, confirm } from '@/lib/hooks/use-toast';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { type FilterField } from '@/components/ui/FilterPanel';
@@ -296,8 +296,9 @@ export default function HRAttendancePage() {
   const { hasPermission } = useMyPermissions();
   const qc = useQueryClient();
 
-  const admin   = hasPermission('hr.hr_attendance.view');
-  const canEdit = hasPermission('hr.hr_attendance.update');
+  const admin     = hasPermission('hr.hr_attendance.view');
+  const canEdit   = hasPermission('hr.hr_attendance.update');
+  const canDelete = hasPermission('hr.hr_attendance.delete');
 
   const [editRecord, setEditRecord] = useState<HRAttendance | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -344,6 +345,24 @@ export default function HRAttendancePage() {
     },
     onError: (err: any) => toast(getApiError(err, 'Bulk update failed'), 'error'),
   });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (ids: number[]) => hrAttendanceApi.bulkDelete(ids),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['hr-attendance'] });
+      clearSelection();
+      toast(`Deleted ${res.deleted} record${res.deleted === 1 ? '' : 's'}`, 'success');
+    },
+    onError: (err: any) => toast(getApiError(err, 'Delete failed'), 'error'),
+  });
+
+  const askBulkDelete = async () => {
+    const ids = [...selectedItems];
+    const ok = await confirm(
+      `Delete ${ids.length} attendance record${ids.length === 1 ? '' : 's'}? This permanently removes them and cannot be undone.`,
+    );
+    if (ok) bulkDeleteMutation.mutate(ids);
+  };
 
   const bulkRecalcMutation = useMutation({
     mutationFn: () => hrAttendanceApi.bulkRecalculate(),
@@ -545,14 +564,28 @@ export default function HRAttendancePage() {
       paginatedData={data}
       pageSize={50}
       selectable={true}
-      bulkActions={canEdit && selectedItems.size > 0 ? (
-        <button
-          type="button"
-          onClick={() => setBulkOpen(true)}
-          style={{ padding: '7px 16px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--brand)', color: 'var(--primary-foreground)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)' }}
-        >
-          Edit {selectedItems.size} selected
-        </button>
+      bulkActions={selectedItems.size > 0 && (canEdit || canDelete) ? (
+        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => setBulkOpen(true)}
+              style={{ padding: '7px 16px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--brand)', color: 'var(--primary-foreground)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)' }}
+            >
+              Edit {selectedItems.size} selected
+            </button>
+          )}
+          {canDelete && (
+            <button
+              type="button"
+              onClick={askBulkDelete}
+              disabled={bulkDeleteMutation.isPending}
+              style={{ padding: '7px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--status-error)', background: 'var(--status-error-bg, transparent)', color: 'var(--status-error)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)' }}
+            >
+              Delete {selectedItems.size}
+            </button>
+          )}
+        </div>
       ) : undefined}
       onRowClick={(r) => router.push('/hr/attendance/' + r.id)}
     >
