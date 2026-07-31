@@ -36,7 +36,10 @@ function getLocation(): Promise<GeolocationCoordinates | null> {
     navigator.geolocation.getCurrentPosition(
       pos => resolve(pos.coords),
       () => resolve(null),
-      { timeout: 10000, maximumAge: 30000 },
+      // enableHighAccuracy → use the GPS chip, not coarse wifi/cell location.
+      // maximumAge:0 → never reuse a cached fix, so moving away actually changes
+      // the reading (a stale position let people check in after leaving the site).
+      { timeout: 15000, maximumAge: 0, enableHighAccuracy: true },
     );
   });
 }
