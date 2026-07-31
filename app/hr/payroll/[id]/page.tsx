@@ -20,6 +20,48 @@ const fmt = (v: string | number) =>
 const fmtDate = (d: string) =>
   new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
+const num = (v: string | number | null | undefined) => Number(v ?? 0);
+
+const CARD: React.CSSProperties = {
+  background: 'var(--surface-primary)', border: '1px solid var(--border-subtle)',
+  borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)',
+};
+const SECTION_TITLE: React.CSSProperties = {
+  fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)', textTransform: 'uppercase',
+  letterSpacing: '0.07em', color: 'var(--text-tertiary)', margin: '0 0 var(--space-4)',
+};
+const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono, monospace)', fontVariantNumeric: 'tabular-nums' };
+const ROW: React.CSSProperties = {
+  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+  fontSize: 'var(--text-sm)', padding: '3px 0',
+};
+const CHEVRON = (open: boolean): React.CSSProperties => ({
+  fontSize: 9, lineHeight: 1, color: 'var(--text-tertiary)', display: 'inline-block',
+  transition: 'transform 0.15s', transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
+});
+
+function KpiCard({ label, value, tone }: { label: string; value: string; tone: 'neutral' | 'error' | 'net' }) {
+  const isNet = tone === 'net';
+  return (
+    <div style={{
+      ...CARD,
+      display: 'flex', flexDirection: 'column', gap: 'var(--space-2)',
+      background: isNet ? 'var(--brand)' : 'var(--surface-primary)',
+      border: isNet ? 'none' : '1px solid var(--border-subtle)',
+    }}>
+      <span style={{
+        fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.06em',
+        fontWeight: 'var(--weight-semibold)',
+        color: isNet ? 'var(--primary-foreground)' : 'var(--text-tertiary)', opacity: isNet ? 0.85 : 1,
+      }}>{label}</span>
+      <span style={{
+        ...MONO, fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-bold)', lineHeight: 1.1,
+        color: isNet ? 'var(--primary-foreground)' : tone === 'error' ? 'var(--status-error)' : 'var(--text-primary)',
+      }}>{value}</span>
+    </div>
+  );
+}
+
 export default function PayrollDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
@@ -92,255 +134,207 @@ export default function PayrollDetailPage() {
           }
         />
 
-        <div className="card" style={{ maxWidth: '42rem', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-          {payroll.paid_at && (
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>Paid {new Date(payroll.paid_at).toLocaleDateString()}</p>
-          )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', maxWidth: '56rem' }}>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-            <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', margin: 0 }}>Earnings</p>
-            {[
-              ['Basic Salary',       payroll.basic_salary],
-              ['Housing Allowance',  payroll.housing_allowance],
-              ['Transport Allowance',payroll.transport_allowance],
-              ['Other Allowances',   payroll.other_allowances],
-              ['Overtime',           payroll.overtime_amount],
-            ].map(([label, value]) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
-                <span>{fmt(value)}</span>
+          {/* ── Employee + period meta ─────────────────────────────────── */}
+          <div style={{ ...CARD, display: 'flex', flexWrap: 'wrap', gap: 'var(--space-5)', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+              <div style={{
+                width: 46, height: 46, borderRadius: '50%', flexShrink: 0,
+                background: 'var(--brand)', color: 'var(--primary-foreground)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 'var(--weight-bold)', fontSize: 'var(--text-lg)',
+              }}>{(payroll.employee_name || '?').trim().slice(0, 1).toUpperCase()}</div>
+              <div>
+                <p style={{ margin: 0, fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-md)' }}>{payroll.employee_name}</p>
+                <p style={{ margin: '2px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', ...MONO }}>{payroll.employee_id_code}</p>
               </div>
-            ))}
-
-            {/* Leave Encashment earning — expandable when approved_encashments exist */}
-            {(() => {
-              const encAmount  = parseFloat(payroll.leave_encashment ?? '0');
-              const encRows    = payroll.approved_encashments ?? [];
-              const hasEnc     = encRows.length > 0;
-
-              return (
-                <>
-                  {(encAmount > 0 || hasEnc) && (
-                    <div
-                      onClick={() => hasEnc && setEncashmentExpanded(o => !o)}
-                      style={{
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                        fontSize: 'var(--text-sm)',
-                        cursor: hasEnc ? 'pointer' : 'default',
-                        borderRadius: 'var(--radius-sm)',
-                        padding: hasEnc ? '2px 4px' : undefined,
-                        marginLeft: hasEnc ? -4 : undefined,
-                      }}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-secondary)' }}>
-                        {hasEnc && (
-                          <span style={{ fontSize: 10, lineHeight: 1, color: 'var(--text-tertiary)', transition: 'transform 0.15s', display: 'inline-block', transform: encashmentExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
-                        )}
-                        Leave Encashment
-                        {hasEnc && <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>({encRows.length})</span>}
-                      </span>
-                      <span style={{ color: encAmount > 0 ? 'var(--color-success)' : 'var(--text-tertiary)' }}>
-                        {encAmount > 0 ? `+${fmt(payroll.leave_encashment)}` : '—'}
-                      </span>
-                    </div>
-                  )}
-
-                  {encashmentExpanded && hasEnc && (
-                    <div style={{
-                      marginLeft: 12, marginTop: -4,
-                      borderLeft: '2px solid var(--border-subtle)', paddingLeft: 10,
-                      display: 'flex', flexDirection: 'column', gap: 6,
-                    }}>
-                      {encRows.map(e => (
-                        <div key={e.id} style={{
-                          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-                          fontSize: 'var(--text-xs)', gap: 8,
-                        }}>
-                          <span style={{ color: 'var(--text-secondary)' }}>
-                            {e.leave_type === 'annual_leave' ? 'Annual Leave' : 'Sick Leave'}
-                            <span style={{ color: 'var(--text-tertiary)', marginLeft: 4 }}>
-                              · {e.days_encashed} days × AED {parseFloat(e.rate_per_day).toFixed(4)}/day
-                            </span>
-                          </span>
-                          <span style={{ color: 'var(--color-success)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                            +{fmt(e.encashment_amount)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-2)' }}>
-              <span>Gross Salary</span>
-              <span>{fmt(payroll.gross_salary)}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 'var(--space-6)', flexWrap: 'wrap' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pay Period</p>
+                <p style={{ margin: '3px 0 0', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)' }}>
+                  {payroll.period_start && payroll.period_end
+                    ? `${fmtDate(payroll.period_start)} → ${fmtDate(payroll.period_end)}`
+                    : `${payroll.month_name} ${payroll.year}`}
+                </p>
+              </div>
+              {payroll.paid_at && (
+                <div>
+                  <p style={{ margin: 0, fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Paid On</p>
+                  <p style={{ margin: '3px 0 0', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)' }}>{fmtDate(payroll.paid_at)}</p>
+                </div>
+              )}
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-            <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', margin: 0 }}>Deductions</p>
-
-            {/* Static deduction rows */}
-            {[
-              ['General Deductions', payroll.deductions],
-              ['Absence Deduction',  payroll.absence_deduction],
-            ].map(([label, value]) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
-                <span style={{ color: 'var(--color-error)' }}>-{fmt(value)}</span>
-              </div>
-            ))}
-
-            {/* WFH / partial-day breakdown — its money is inside Absence Deduction */}
-            {payroll.partial_deduct_days && Number(payroll.partial_deduct_days) > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', paddingInlineStart: 'var(--space-3)', color: 'var(--text-tertiary)' }}>
-                <span>↳ منها خصم WFH / أيام جزئية · WFH / partial days</span>
-                <span>{Number(payroll.partial_deduct_days)} يوم</span>
-              </div>
-            )}
-
-            {/* Penalty deductions — expandable when confirmed penalties exist */}
-            {(() => {
-              const penaltyAmount = parseFloat(payroll.penalty_deduction ?? '0');
-              const hasPenalties  = (payroll.confirmed_penalties ?? []).length > 0;
-
-              return (
-                <>
-                  <div
-                    onClick={() => hasPenalties && setPenaltyExpanded(o => !o)}
-                    style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      fontSize: 'var(--text-sm)',
-                      cursor: hasPenalties ? 'pointer' : 'default',
-                      borderRadius: 'var(--radius-sm)',
-                      padding: hasPenalties ? '2px 4px' : undefined,
-                      marginLeft: hasPenalties ? -4 : undefined,
-                    }}
-                  >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-secondary)' }}>
-                      {hasPenalties && (
-                        <span style={{ fontSize: 10, lineHeight: 1, color: 'var(--text-tertiary)', transition: 'transform 0.15s', display: 'inline-block', transform: penaltyExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
-                      )}
-                      Penalty Deductions
-                      {hasPenalties && <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>({payroll.confirmed_penalties.length})</span>}
-                    </span>
-                    <span style={{ color: penaltyAmount > 0 ? 'var(--color-error)' : 'var(--text-tertiary)' }}>
-                      {penaltyAmount > 0 ? `-${fmt(payroll.penalty_deduction)}` : '—'}
-                    </span>
-                  </div>
-
-                  {penaltyExpanded && hasPenalties && (
-                    <div style={{
-                      marginLeft: 12, marginTop: -4,
-                      borderLeft: '2px solid var(--border-subtle)', paddingLeft: 10,
-                      display: 'flex', flexDirection: 'column', gap: 6,
-                    }}>
-                      {payroll.confirmed_penalties.map(p => (
-                        <div key={p.id} style={{
-                          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-                          fontSize: 'var(--text-xs)', gap: 8,
-                        }}>
-                          <span style={{ color: 'var(--text-secondary)' }}>
-                            {p.date}
-                            {p.rule_name && <> · {p.rule_name}</>}
-                            {p.tier_label && <> · {p.tier_label}</>}
-                            <span style={{ color: 'var(--text-tertiary)', marginLeft: 4 }}>({p.minutes_evaluated} min late)</span>
-                          </span>
-                          <span style={{ color: 'var(--color-error)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                            -{fmt(p.amount)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-
-            {/* Loan deductions — expandable when loan_installments exist */}
-            {(() => {
-              const loanAmount = parseFloat(payroll.loan_deduction ?? '0');
-              const hasLoans   = (payroll.loan_installments ?? []).length > 0;
-
-              return (
-                <>
-                  <div
-                    onClick={() => hasLoans && setLoanExpanded(o => !o)}
-                    style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      fontSize: 'var(--text-sm)',
-                      cursor: hasLoans ? 'pointer' : 'default',
-                      borderRadius: 'var(--radius-sm)',
-                      padding: hasLoans ? '2px 4px' : undefined,
-                      marginLeft: hasLoans ? -4 : undefined,
-                    }}
-                  >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-secondary)' }}>
-                      {hasLoans && (
-                        <span style={{ fontSize: 10, lineHeight: 1, color: 'var(--text-tertiary)', transition: 'transform 0.15s', display: 'inline-block', transform: loanExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
-                      )}
-                      Loan Deductions
-                      {hasLoans && <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>({payroll.loan_installments.length})</span>}
-                    </span>
-                    <span style={{ color: loanAmount > 0 ? 'var(--color-error)' : 'var(--text-tertiary)' }}>
-                      {loanAmount > 0 ? `-${fmt(payroll.loan_deduction)}` : '—'}
-                    </span>
-                  </div>
-
-                  {loanExpanded && hasLoans && (
-                    <div style={{
-                      marginLeft: 12, marginTop: -4,
-                      borderLeft: '2px solid var(--border-subtle)', paddingLeft: 10,
-                      display: 'flex', flexDirection: 'column', gap: 6,
-                    }}>
-                      {payroll.loan_installments.map(inst => (
-                        <div key={inst.id} style={{
-                          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-                          fontSize: 'var(--text-xs)', gap: 8,
-                        }}>
-                          <span style={{ color: 'var(--text-secondary)' }}>
-                            {inst.loan_notes || `Loan #${inst.loan_id}`}
-                            <span style={{ color: 'var(--text-tertiary)', marginLeft: 4 }}>
-                              · remaining {fmt(inst.loan_remaining)}
-                            </span>
-                          </span>
-                          <span style={{ color: 'var(--color-error)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                            -{fmt(inst.amount)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </div>{/* /deductions */}
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-base)', fontWeight: 'var(--weight-bold)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--brand)', color: 'var(--primary-foreground)' }}>
-            <span>Net Salary</span>
-            <span>{fmt(payroll.net_salary)}</span>
+          {/* ── KPI hero ────────────────────────────────────────────────── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-4)' }}>
+            <KpiCard label="Gross Salary" value={fmt(payroll.gross_salary)} tone="neutral" />
+            <KpiCard label="Total Deductions" value={`-${fmt(Math.max(0, num(payroll.gross_salary) - num(payroll.net_salary)))}`} tone="error" />
+            <KpiCard label="Net Pay" value={fmt(payroll.net_salary)} tone="net" />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-3)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-4)' }}>
-            {[
-              ['Working Days', payroll.working_days],
-              ['Present', payroll.present_days],
-              ['Absent', payroll.absent_days],
-              ['Leave', payroll.leave_days],
-            ].map(([label, value]) => (
-              <div key={label} style={{ textAlign: 'center' }}>
-                <p style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', margin: 0 }}>{value}</p>
-                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 'var(--space-1)', marginBottom: 0 }}>{label}</p>
+          {/* ── Earnings + Deductions ───────────────────────────────────── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-4)', alignItems: 'start' }}>
+
+            {/* Earnings */}
+            <div style={CARD}>
+              <p style={SECTION_TITLE}>Earnings</p>
+              {([
+                ['Basic Salary',        payroll.basic_salary],
+                ['Housing Allowance',   payroll.housing_allowance],
+                ['Transport Allowance', payroll.transport_allowance],
+                ['Other Allowances',    payroll.other_allowances],
+                ['Overtime',            payroll.overtime_amount],
+              ] as [string, string | number][]).map(([label, value]) => (
+                <div key={label} style={ROW}>
+                  <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
+                  <span style={{ ...MONO, color: num(value) > 0 ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>{fmt(value)}</span>
+                </div>
+              ))}
+
+              {/* Leave encashment (expandable) */}
+              {(() => {
+                const encAmount = num(payroll.leave_encashment);
+                const encRows   = payroll.approved_encashments ?? [];
+                const hasEnc    = encRows.length > 0;
+                if (encAmount <= 0 && !hasEnc) return null;
+                return (
+                  <>
+                    <div onClick={() => hasEnc && setEncashmentExpanded(o => !o)} style={{ ...ROW, cursor: hasEnc ? 'pointer' : 'default' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)' }}>
+                        {hasEnc && <span style={CHEVRON(encashmentExpanded)}>▶</span>}
+                        Leave Encashment {hasEnc && <span style={{ color: 'var(--text-tertiary)' }}>({encRows.length})</span>}
+                      </span>
+                      <span style={{ ...MONO, color: encAmount > 0 ? 'var(--status-success)' : 'var(--text-tertiary)' }}>{encAmount > 0 ? `+${fmt(payroll.leave_encashment)}` : '—'}</span>
+                    </div>
+                    {encashmentExpanded && hasEnc && (
+                      <div style={{ marginInlineStart: 14, borderInlineStart: '2px solid var(--border-subtle)', paddingInlineStart: 10, display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 4 }}>
+                        {encRows.map(e => (
+                          <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', gap: 8 }}>
+                            <span style={{ color: 'var(--text-tertiary)' }}>{e.leave_type === 'annual_leave' ? 'Annual' : 'Sick'} · {e.days_encashed}d × {parseFloat(e.rate_per_day).toFixed(2)}</span>
+                            <span style={{ ...MONO, color: 'var(--status-success)', flexShrink: 0 }}>+{fmt(e.encashment_amount)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
+              <div style={{ ...ROW, borderTop: '1px solid var(--border-subtle)', marginTop: 'var(--space-2)', paddingTop: 'var(--space-3)', fontWeight: 'var(--weight-bold)' }}>
+                <span>Gross Salary</span>
+                <span style={MONO}>{fmt(payroll.gross_salary)}</span>
               </div>
-            ))}
+            </div>
+
+            {/* Deductions */}
+            <div style={CARD}>
+              <p style={SECTION_TITLE}>Deductions</p>
+
+              <div style={ROW}>
+                <span style={{ color: 'var(--text-secondary)' }}>General Deductions</span>
+                <span style={{ ...MONO, color: num(payroll.deductions) > 0 ? 'var(--status-error)' : 'var(--text-tertiary)' }}>{num(payroll.deductions) > 0 ? `-${fmt(payroll.deductions)}` : '—'}</span>
+              </div>
+
+              <div style={ROW}>
+                <span style={{ color: 'var(--text-secondary)' }}>Absence Deduction</span>
+                <span style={{ ...MONO, color: num(payroll.absence_deduction) > 0 ? 'var(--status-error)' : 'var(--text-tertiary)' }}>{num(payroll.absence_deduction) > 0 ? `-${fmt(payroll.absence_deduction)}` : '—'}</span>
+              </div>
+              {num(payroll.partial_deduct_days) > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', paddingInlineStart: 'var(--space-3)' }}>
+                  <span>↳ WFH / partial days · أيام جزئية</span>
+                  <span style={MONO}>{num(payroll.partial_deduct_days)} d</span>
+                </div>
+              )}
+
+              {/* Penalty (expandable) */}
+              {(() => {
+                const penaltyAmount = num(payroll.penalty_deduction);
+                const hasPenalties  = (payroll.confirmed_penalties ?? []).length > 0;
+                return (
+                  <>
+                    <div onClick={() => hasPenalties && setPenaltyExpanded(o => !o)} style={{ ...ROW, cursor: hasPenalties ? 'pointer' : 'default' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)' }}>
+                        {hasPenalties && <span style={CHEVRON(penaltyExpanded)}>▶</span>}
+                        Penalty Deductions {hasPenalties && <span style={{ color: 'var(--text-tertiary)' }}>({payroll.confirmed_penalties.length})</span>}
+                      </span>
+                      <span style={{ ...MONO, color: penaltyAmount > 0 ? 'var(--status-error)' : 'var(--text-tertiary)' }}>{penaltyAmount > 0 ? `-${fmt(payroll.penalty_deduction)}` : '—'}</span>
+                    </div>
+                    {penaltyExpanded && hasPenalties && (
+                      <div style={{ marginInlineStart: 14, borderInlineStart: '2px solid var(--border-subtle)', paddingInlineStart: 10, display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 4 }}>
+                        {payroll.confirmed_penalties.map(p => (
+                          <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', gap: 8 }}>
+                            <span style={{ color: 'var(--text-tertiary)' }}>{p.date}{p.tier_label ? ` · ${p.tier_label}` : ''} ({p.minutes_evaluated}m)</span>
+                            <span style={{ ...MONO, color: 'var(--status-error)', flexShrink: 0 }}>-{fmt(p.amount)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
+              {/* Loan (expandable) */}
+              {(() => {
+                const loanAmount = num(payroll.loan_deduction);
+                const hasLoans   = (payroll.loan_installments ?? []).length > 0;
+                return (
+                  <>
+                    <div onClick={() => hasLoans && setLoanExpanded(o => !o)} style={{ ...ROW, cursor: hasLoans ? 'pointer' : 'default' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)' }}>
+                        {hasLoans && <span style={CHEVRON(loanExpanded)}>▶</span>}
+                        Loan Deductions {hasLoans && <span style={{ color: 'var(--text-tertiary)' }}>({payroll.loan_installments.length})</span>}
+                      </span>
+                      <span style={{ ...MONO, color: loanAmount > 0 ? 'var(--status-error)' : 'var(--text-tertiary)' }}>{loanAmount > 0 ? `-${fmt(payroll.loan_deduction)}` : '—'}</span>
+                    </div>
+                    {loanExpanded && hasLoans && (
+                      <div style={{ marginInlineStart: 14, borderInlineStart: '2px solid var(--border-subtle)', paddingInlineStart: 10, display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 4 }}>
+                        {payroll.loan_installments.map(inst => (
+                          <div key={inst.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', gap: 8 }}>
+                            <span style={{ color: 'var(--text-tertiary)' }}>{inst.loan_notes || `Loan #${inst.loan_id}`} · rem {fmt(inst.loan_remaining)}</span>
+                            <span style={{ ...MONO, color: 'var(--status-error)', flexShrink: 0 }}>-{fmt(inst.amount)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
+              <div style={{ ...ROW, borderTop: '1px solid var(--border-subtle)', marginTop: 'var(--space-2)', paddingTop: 'var(--space-3)', fontWeight: 'var(--weight-bold)' }}>
+                <span>Total Deductions</span>
+                <span style={{ ...MONO, color: 'var(--status-error)' }}>-{fmt(Math.max(0, num(payroll.gross_salary) - num(payroll.net_salary)))}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Attendance ──────────────────────────────────────────────── */}
+          <div style={CARD}>
+            <p style={SECTION_TITLE}>Attendance Summary</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: 'var(--space-3)' }}>
+              {([
+                ['Working Days', payroll.working_days, 'var(--text-primary)'],
+                ['Present',      payroll.present_days, 'var(--status-success)'],
+                ['Leave',        payroll.leave_days,   'var(--status-warning)'],
+                ['Absent',       payroll.absent_days,  'var(--status-error)'],
+              ] as [string, number, string][]).map(([label, value, color]) => (
+                <div key={label} style={{
+                  textAlign: 'center', padding: 'var(--space-3) var(--space-2)',
+                  background: 'var(--surface-subtle)', borderRadius: 'var(--radius-md)',
+                }}>
+                  <p style={{ ...MONO, fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', margin: 0, color }}>{value ?? 0}</p>
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '4px 0 0' }}>{label}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
           {payroll.notes && (
-            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-3)' }}>
-              <p style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', margin: '0 0 var(--space-1) 0' }}>Notes</p>
-              <p style={{ fontSize: 'var(--text-sm)', margin: 0 }}>{payroll.notes}</p>
+            <div style={CARD}>
+              <p style={SECTION_TITLE}>Notes</p>
+              <p style={{ fontSize: 'var(--text-sm)', margin: 0, color: 'var(--text-secondary)' }}>{payroll.notes}</p>
             </div>
           )}
         </div>
