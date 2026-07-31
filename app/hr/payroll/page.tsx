@@ -37,7 +37,7 @@ const filterFields: FilterField[] = [
 
 export default function HRPayrollPage() {
   const tableState = useTableState();
-  const { page, search, filters } = tableState;
+  const { page, search, filters, selectedItems, clearSelection } = tableState;
 
   const queryClient = useQueryClient();
   const { user }    = useAuth();
@@ -109,6 +109,39 @@ export default function HRPayrollPage() {
 
   const handleMarkPaid = async (id: number, employeeName: string, monthName: string) => {
     if (await confirm(`Mark payroll for ${employeeName} (${monthName}) as paid?`)) markPaidMutation.mutate(id);
+  };
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (ids: number[]) => hrPayrollApi.bulkDelete(ids),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['hr-payroll'] });
+      clearSelection();
+      toast(`Deleted ${res.deleted} of ${res.requested} payroll record(s)`, 'success');
+    },
+    onError: () => toast('Bulk delete failed', 'error'),
+  });
+
+  const askBulkDelete = async () => {
+    const ids = [...selectedItems];
+    if (!ids.length) return;
+    const ok = await confirm(`Delete ${ids.length} selected payroll record(s)? Paid records cannot be deleted.`);
+    if (ok) bulkDeleteMutation.mutate(ids);
+  };
+
+  const bulkMarkPaidMutation = useMutation({
+    mutationFn: async (ids: number[]) => { await Promise.allSettled(ids.map(id => hrPayrollApi.markPaid(id))); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hr-payroll'] });
+      clearSelection();
+      toast('Selected payrolls marked as paid', 'success');
+    },
+    onError: () => toast('Bulk mark-paid failed', 'error'),
+  });
+
+  const askBulkMarkPaid = async () => {
+    const ids = [...selectedItems];
+    if (!ids.length) return;
+    if (await confirm(`Mark ${ids.length} selected payroll(s) as paid?`)) bulkMarkPaidMutation.mutate(ids);
   };
 
   useEffect(() => {
@@ -197,6 +230,16 @@ export default function HRPayrollPage() {
       emptyTitle={t('empty', 'noPayroll')}
       tableState={tableState}
       paginatedData={data}
+      bulkActions={selectedItems.size > 0 && isAdmin ? (
+        <>
+          <Button variant="success" size="sm" onClick={askBulkMarkPaid} disabled={bulkMarkPaidMutation.isPending}>
+            Mark {selectedItems.size} paid
+          </Button>
+          <Button variant="destructive" size="sm" onClick={askBulkDelete} disabled={bulkDeleteMutation.isPending}>
+            Delete {selectedItems.size}
+          </Button>
+        </>
+      ) : undefined}
       pageSize={50}
       selectable={true}
       onRowClick={(r) => router.push('/hr/payroll/' + r.id)}

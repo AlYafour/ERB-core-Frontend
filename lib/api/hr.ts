@@ -510,6 +510,13 @@ export const hrPayrollApi = {
     const response = await apiClient.patch(`/hr/payroll/${id}/`, data);
     return response.data;
   },
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/payroll/${id}/`);
+  },
+  bulkDelete: async (ids: number[]): Promise<{ deleted: number; requested: number }> => {
+    const results = await Promise.allSettled(ids.map(id => apiClient.delete(`/hr/payroll/${id}/`)));
+    return { deleted: results.filter(r => r.status === 'fulfilled').length, requested: ids.length };
+  },
   markPaid: async (id: number, notes?: string): Promise<HRPayroll> => {
     const response = await apiClient.post(`/hr/payroll/${id}/mark-paid/`, { notes });
     return response.data;
