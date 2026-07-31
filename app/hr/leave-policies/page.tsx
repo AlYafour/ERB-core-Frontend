@@ -31,7 +31,15 @@ const LEAVE_TYPE_LABELS: Record<string, string> = {
   sick_leave:      'Sick Leave',
   emergency_leave: 'Emergency Leave',
   unpaid_leave:    'Unpaid Leave',
+  personal_leave:  'Personal Leave',
+  business_leave:  'Business Leave',
+  maternity_leave: 'Maternity Leave',
+  paternity_leave: 'Paternity Leave',
+  other:           'Other Leave',
 };
+
+// Leaves paid by UAE labour law — always paid, not company-configurable.
+const STATUTORY_PAID = ['annual_leave', 'sick_leave', 'emergency_leave', 'maternity_leave', 'paternity_leave'];
 
 const LEAVE_TYPE_VARIANT: Record<string, 'success' | 'info'> = {
   annual_leave: 'success',
@@ -69,6 +77,9 @@ interface PolicyForm {
   effective_from:          string;
   encashment_rate_base:    string;
   encashment_rate_divisor: string;
+  is_paid:                 boolean;
+  deduct_over_limit:       boolean;
+  over_limit_deduction_per_day: string;
   is_active:               boolean;
 }
 
@@ -84,6 +95,9 @@ const EMPTY_FORM: PolicyForm = {
   effective_from:          today,
   encashment_rate_base:    'basic',
   encashment_rate_divisor: '30',
+  is_paid:                 true,
+  deduct_over_limit:       false,
+  over_limit_deduction_per_day: '0',
   is_active:               true,
 };
 
@@ -98,6 +112,9 @@ function policyToForm(p: LeavePolicy): PolicyForm {
     effective_from:          p.effective_from,
     encashment_rate_base:    p.encashment_rate_base,
     encashment_rate_divisor: p.encashment_rate_divisor,
+    is_paid:                 p.is_paid ?? true,
+    deduct_over_limit:       p.deduct_over_limit ?? false,
+    over_limit_deduction_per_day: p.over_limit_deduction_per_day ?? '0',
     is_active:               p.is_active,
   };
 }
@@ -125,6 +142,12 @@ function PolicyModal({
   const setNum = (key: keyof PolicyForm) =>
     (e: React.ChangeEvent<HTMLSelectElement>) =>
       setForm(f => ({ ...f, [key]: parseInt(e.target.value) }));
+
+  const setBool = (key: keyof PolicyForm) =>
+    (e: React.ChangeEvent<HTMLInputElement>) =>
+      setForm(f => ({ ...f, [key]: e.target.checked }));
+
+  const isStatutory = STATUTORY_PAID.includes(form.leave_type);
 
   const groupOptions = useMemo(() => [
     { value: '__catchall__', label: 'Any category (catch-all)', searchText: 'any catch-all' },
@@ -162,6 +185,9 @@ function PolicyModal({
       effective_from:          form.effective_from,
       encashment_rate_base:    form.encashment_rate_base as LeavePolicy['encashment_rate_base'],
       encashment_rate_divisor: form.encashment_rate_divisor,
+      is_paid:                 STATUTORY_PAID.includes(form.leave_type) ? true : form.is_paid,
+      deduct_over_limit:       form.deduct_over_limit,
+      over_limit_deduction_per_day: form.over_limit_deduction_per_day || '0',
       is_active:               form.is_active,
     };
     editing ? updateMut.mutate(payload) : createMut.mutate(payload);
@@ -210,8 +236,9 @@ function PolicyModal({
             <div>
               <label style={LABEL}>Leave Type <span style={{ color: 'var(--color-error)' }}>*</span></label>
               <select value={form.leave_type} onChange={set('leave_type')} style={INPUT}>
-                <option value="annual_leave">Annual Leave</option>
-                <option value="sick_leave">Sick Leave</option>
+                {Object.entries(LEAVE_TYPE_LABELS).map(([v, l]) => (
+                  <option key={v} value={v}>{l}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -221,21 +248,49 @@ function PolicyModal({
           </div>
         </div>
 
+        {/* Pay treatment — drives payroll */}
+        <div>
+          <p style={SECTION}>Pay Treatment · المعاملة في الراتب</p>
+          {isStatutory ? (
+            <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--status-success)' }}>
+              ✅ إجازة مدفوعة بالقانون — لا تُخصم ضمن الاستحقاق القانوني.
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--text-sm)', cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.is_paid} onChange={setBool('is_paid')} />
+                مدفوعة ضمن الحد (Paid within the entitlement limit)
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--text-sm)', cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.deduct_over_limit} onChange={setBool('deduct_over_limit')} />
+                خصم الأيام الزائدة عن الحد (Deduct days taken beyond the limit)
+              </label>
+              {form.deduct_over_limit && (
+                <div style={{ maxWidth: 320 }}>
+                  <label style={LABEL}>قيمة الخصم لليوم الزائد (AED) — 0 = الراتب اليومي</label>
+                  <input type="number" min="0" step="1" value={form.over_limit_deduction_per_day}
+                    onChange={set('over_limit_deduction_per_day')} style={INPUT} />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Accrual */}
         <div>
-          <p style={SECTION}>Accrual</p>
+          <p style={SECTION}>Entitlement &amp; Accrual</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-3)' }}>
             <div>
-              <label style={LABEL}>Annual Entitlement (days) <span style={{ color: 'var(--color-error)' }}>*</span></label>
-              <input type="number" min="0.01" step="0.5" value={form.annual_entitlement_days} onChange={set('annual_entitlement_days')} style={INPUT} />
+              <label style={LABEL}>Annual Entitlement / Limit (days) <span style={{ color: 'var(--color-error)' }}>*</span></label>
+              <input type="number" min="0" step="0.5" value={form.annual_entitlement_days} onChange={set('annual_entitlement_days')} style={INPUT} />
             </div>
             <div>
-              <label style={LABEL}>Monthly Accrual (days) <span style={{ color: 'var(--color-error)' }}>*</span></label>
-              <input type="number" min="0.01" step="0.01" value={form.monthly_accrual_days} onChange={set('monthly_accrual_days')} style={INPUT} />
+              <label style={LABEL}>Monthly Accrual (days) — 0 = no accrual</label>
+              <input type="number" min="0" step="0.01" value={form.monthly_accrual_days} onChange={set('monthly_accrual_days')} style={INPUT} />
             </div>
             <div>
-              <label style={LABEL}>Max Accrual Cap (days) <span style={{ color: 'var(--color-error)' }}>*</span></label>
-              <input type="number" min="0.01" step="0.5" value={form.max_accrual_days} onChange={set('max_accrual_days')} style={INPUT} />
+              <label style={LABEL}>Max Accrual Cap (days) — 0 = none</label>
+              <input type="number" min="0" step="0.5" value={form.max_accrual_days} onChange={set('max_accrual_days')} style={INPUT} />
             </div>
             <div>
               <label style={LABEL}>Accrual Starts (month)</label>

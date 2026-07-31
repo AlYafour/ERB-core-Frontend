@@ -17,6 +17,9 @@ const STATUS_VARIANT: Record<string, string> = {
 const fmt = (v: string | number) =>
   `AED ${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 
+const fmtDate = (d: string) =>
+  new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
 export default function PayrollDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
@@ -51,7 +54,11 @@ export default function PayrollDetailPage() {
       <PageShell>
         <PageHeader
           title={`${payroll.month_name} ${payroll.year}`}
-          description={`${payroll.employee_name} — ${payroll.employee_id_code}`}
+          description={
+            payroll.period_start && payroll.period_end
+              ? `${payroll.employee_name} — ${payroll.employee_id_code} · الفترة ${fmtDate(payroll.period_start)} → ${fmtDate(payroll.period_end)}`
+              : `${payroll.employee_name} — ${payroll.employee_id_code}`
+          }
           breadcrumbs={[{ label: 'HR' }, { label: 'Payroll', href: '/hr/payroll' }, { label: `${payroll.month_name} ${payroll.year}` }]}
           actions={
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>

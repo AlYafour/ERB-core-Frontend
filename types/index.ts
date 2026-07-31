@@ -967,6 +967,8 @@ export interface HRCompanySettings {
   sick_leave_days: number;
   working_hours_per_day?: number;
   overtime_multiplier?: string;
+  working_days_per_month?: number;
+  payroll_cutoff_day?: number;
   // Attendance policy
   overtime_enabled?: boolean;
   break_deduction_mode?: 'as_taken' | 'minimum' | 'fixed';
@@ -1053,6 +1055,8 @@ export interface HRPayroll {
   present_days: number;
   absent_days: number;
   leave_days: number;
+  period_start: string | null;
+  period_end: string | null;
   status: 'draft' | 'processed' | 'paid';
   paid_at: string | null;
   notes: string;
@@ -1078,7 +1082,7 @@ export interface LeavePolicy {
   tenant: string | null;
   employee_group: number | null;
   employee_group_name: string | null;
-  leave_type: 'annual_leave' | 'sick_leave';
+  leave_type: 'annual_leave' | 'sick_leave' | 'emergency_leave' | 'unpaid_leave' | 'personal_leave' | 'business_leave' | 'maternity_leave' | 'paternity_leave' | 'other';
   annual_entitlement_days: string;
   monthly_accrual_days: string;
   max_accrual_days: string;
@@ -1086,6 +1090,9 @@ export interface LeavePolicy {
   effective_from: string;
   encashment_rate_base: 'basic' | 'total';
   encashment_rate_divisor: string;
+  is_paid: boolean;
+  deduct_over_limit: boolean;
+  over_limit_deduction_per_day: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;

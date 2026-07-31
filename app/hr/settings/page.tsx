@@ -187,6 +187,15 @@ function CompanySettingsPanel() {
             <label style={LBL_CS}>Overtime Multiplier</label>
             <input style={INPUT_CS} type="number" min={1} step="0.05" value={form.overtime_multiplier ?? data?.overtime_multiplier ?? '1.25'} onChange={e => set('overtime_multiplier', e.target.value)} />
           </div>
+          <div>
+            <label style={LBL_CS}>Payroll Cut-off Day · يوم قطع الرواتب</label>
+            <input style={INPUT_CS} type="number" min={0} max={28} step="1"
+              value={form.payroll_cutoff_day ?? data?.payroll_cutoff_day ?? 0}
+              onChange={e => set('payroll_cutoff_day', Number(e.target.value))} />
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '4px 0 0' }}>
+              مثلاً 25 → الدورة من 26 الشهر السابق حتى 25 الحالي. 0 = الشهر الميلادي الكامل.
+            </p>
+          </div>
         </div>
 
         <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 10 }}>
