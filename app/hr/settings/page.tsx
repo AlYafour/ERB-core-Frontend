@@ -196,6 +196,18 @@ function CompanySettingsPanel() {
               مثلاً 25 → الدورة من 26 الشهر السابق حتى 25 الحالي. 0 = الشهر الميلادي الكامل.
             </p>
           </div>
+          <div>
+            <label style={LBL_CS}>Absence Deduction Base · أساس خصم الغياب</label>
+            <select style={INPUT_CS}
+              value={form.payroll_deduction_base ?? data?.payroll_deduction_base ?? 'basic'}
+              onChange={e => set('payroll_deduction_base', e.target.value)}>
+              <option value="basic">Basic Salary only · الأساسي فقط</option>
+              <option value="total">Total Package · الحزمة الكاملة (أساسي + بدلات)</option>
+            </select>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '4px 0 0' }}>
+              الراتب اليومي للخصم = الأساس ÷ أيام العمل في الفترة.
+            </p>
+          </div>
         </div>
 
         <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 10 }}>

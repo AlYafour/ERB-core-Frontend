@@ -193,6 +193,14 @@ export default function PayrollDetailPage() {
               </div>
             ))}
 
+            {/* WFH / partial-day breakdown — its money is inside Absence Deduction */}
+            {payroll.partial_deduct_days && Number(payroll.partial_deduct_days) > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', paddingInlineStart: 'var(--space-3)', color: 'var(--text-tertiary)' }}>
+                <span>↳ منها خصم WFH / أيام جزئية · WFH / partial days</span>
+                <span>{Number(payroll.partial_deduct_days)} يوم</span>
+              </div>
+            )}
+
             {/* Penalty deductions — expandable when confirmed penalties exist */}
             {(() => {
               const penaltyAmount = parseFloat(payroll.penalty_deduction ?? '0');

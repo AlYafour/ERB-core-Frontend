@@ -969,6 +969,7 @@ export interface HRCompanySettings {
   overtime_multiplier?: string;
   working_days_per_month?: number;
   payroll_cutoff_day?: number;
+  payroll_deduction_base?: 'basic' | 'total';
   // Attendance policy
   overtime_enabled?: boolean;
   break_deduction_mode?: 'as_taken' | 'minimum' | 'fixed';
@@ -1057,6 +1058,7 @@ export interface HRPayroll {
   leave_days: number;
   period_start: string | null;
   period_end: string | null;
+  partial_deduct_days?: string;
   status: 'draft' | 'processed' | 'paid';
   paid_at: string | null;
   notes: string;
