@@ -180,10 +180,10 @@ export default function HRPayrollPage() {
           <Button variant="secondary" size="sm" onClick={() => setShowWpsExport(true)}>
             WPS Export
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => setShowAutoCalc(true)}>
-            Auto Calculate
+          <Button variant="ghost" size="sm" onClick={() => setShowGenerate(true)}>
+            Manual Entry
           </Button>
-          <Button variant="primary" size="sm" onClick={() => setShowGenerate(true)}>
+          <Button variant="primary" size="sm" onClick={() => setShowAutoCalc(true)}>
             + Generate Payroll
           </Button>
         </div>
@@ -211,7 +211,7 @@ export default function HRPayrollPage() {
       <BaseModal
         isOpen={showAutoCalc}
         onClose={() => setShowAutoCalc(false)}
-        title="Auto Calculate Payroll"
+        title="Generate Payroll"
         size="sm"
         footer={
           <>
@@ -222,14 +222,16 @@ export default function HRPayrollPage() {
               isLoading={autoCalcMutation.isPending}
               disabled={!acEmployee}
             >
-              Calculate
+              Generate
             </Button>
           </>
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
           <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-            Reads attendance records and computes absent days, overtime, penalties, and loan deductions automatically.
+            اختر الموظف والشهر فقط. النظام يجيب كل حاجة أوتوماتيك: الراتب والبدلات من ملف
+            الموظف، وأيام الحضور/الغياب/الإجازة/WFH والأوفرتايم من الفترة، والسلف والجزاءات.
+            تقدر تراجع وتعدّل قبل الاعتماد.
           </p>
           <div>
             <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>
