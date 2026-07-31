@@ -123,18 +123,49 @@ function StatusBadge({ status }: { status: string }) {
 
 // ── Approvals Inbox ────────────────────────────────────────────────────────────
 
+// Each row of the hub carries the caller's relationship to the request.
+type MyStatus = NonNullable<HRRequest['my_approval_status']>;
+
+const MY_STATUS_META: Record<MyStatus, { label: string; bg: string; text: string }> = {
+  action_needed:    { label: 'Needs your action', bg: 'var(--status-warning-bg)', text: 'var(--status-warning)' },
+  upcoming:         { label: 'In the pipeline',    bg: 'var(--status-info-bg, var(--surface-subtle))', text: 'var(--status-info, var(--text-secondary))' },
+  approved_by_me:   { label: 'You approved',       bg: 'var(--status-success-bg)', text: 'var(--status-success)' },
+  rejected_by_me:   { label: 'You rejected',       bg: 'var(--status-error-bg)', text: 'var(--status-error)' },
+  closed_no_action: { label: 'Closed',             bg: 'var(--surface-subtle)', text: 'var(--text-secondary)' },
+};
+
+// Filter tabs, in display order. '' = All.
+const HUB_FILTERS: { key: MyStatus | ''; label: string }[] = [
+  { key: 'action_needed',   label: 'Needs your action' },
+  { key: 'upcoming',        label: 'In the pipeline' },
+  { key: 'approved_by_me',  label: 'Approved' },
+  { key: 'rejected_by_me',  label: 'Rejected' },
+  { key: 'closed_no_action',label: 'Closed' },
+  { key: '',                label: 'All' },
+];
+
 function ApprovalsInbox({ userId }: { userId: number }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [rejectingId, setRejectingId]   = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [filter, setFilter] = useState<MyStatus | ''>('action_needed');
 
-  const { data: inbox = [], isLoading } = useQuery({
-    queryKey: ['pending-my-approval'],
-    queryFn:  () => hrRequestsApi.getPendingMyApproval(),
+  const { data: all = [], isLoading } = useQuery({
+    queryKey: ['my-approvals'],
+    queryFn:  () => hrRequestsApi.getMyApprovals(),
   });
 
+  const counts = all.reduce<Record<string, number>>((acc, r) => {
+    const k = r.my_approval_status || 'closed_no_action';
+    acc[k] = (acc[k] || 0) + 1;
+    return acc;
+  }, {});
+
+  const inbox = filter ? all.filter(r => r.my_approval_status === filter) : all;
+
   const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['my-approvals'] });
     queryClient.invalidateQueries({ queryKey: ['pending-my-approval'] });
     queryClient.invalidateQueries({ queryKey: ['my-requests', userId] });
   };
@@ -167,19 +198,47 @@ function ApprovalsInbox({ userId }: { userId: number }) {
     </div>
   );
 
+  const FilterBar = (
+    <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', padding: 'var(--space-4) var(--space-5)', borderBottom: '1px solid var(--border-subtle)' }}>
+      {HUB_FILTERS.map(f => {
+        const n = f.key ? (counts[f.key] || 0) : all.length;
+        const active = filter === f.key;
+        return (
+          <button key={f.key || 'all'} onClick={() => { setFilter(f.key); setRejectingId(null); }}
+            style={{
+              padding: '5px 12px', borderRadius: 'var(--radius-full, 999px)', cursor: 'pointer',
+              fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)',
+              border: active ? '1px solid var(--brand)' : '1px solid var(--border-subtle)',
+              background: active ? 'var(--brand)' : 'var(--surface-primary)',
+              color: active ? 'var(--text-inverse)' : 'var(--text-secondary)',
+            }}>
+            {f.label}
+            <span style={{ marginInlineStart: 6, opacity: 0.8 }}>{n}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
   if (inbox.length === 0) return (
-    <div style={{ padding: 'var(--space-10)', textAlign: 'center' }}>
-      <p style={{ fontSize: 'var(--text-2xl)', margin: '0 0 var(--space-3)' }}>✓</p>
-      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', margin: '0 0 var(--space-1)' }}>All clear</p>
-      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>No requests awaiting your approval.</p>
+    <div>
+      {FilterBar}
+      <div style={{ padding: 'var(--space-10)', textAlign: 'center' }}>
+        <p style={{ fontSize: 'var(--text-2xl)', margin: '0 0 var(--space-3)' }}>✓</p>
+        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', margin: '0 0 var(--space-1)' }}>Nothing here</p>
+        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
+          {filter === 'action_needed' ? 'No requests awaiting your action.' : 'No requests in this view.'}
+        </p>
+      </div>
     </div>
   );
 
   return (
     <div>
+      {FilterBar}
       {/* Column headers */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px 70px 1fr 160px', gap: 'var(--space-3)', padding: 'var(--space-3) var(--space-5)', borderBottom: '1px solid var(--border-subtle)', background: 'var(--surface-subtle)' }}>
-        {['Employee', 'Type', 'Days', 'Dates / Reason', 'Actions'].map(h => (
+        {['Employee', 'Type', 'Days', 'Dates / Reason', 'Status'].map(h => (
           <span key={h} style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</span>
         ))}
       </div>
@@ -226,23 +285,42 @@ function ApprovalsInbox({ userId }: { userId: number }) {
                 )}
               </div>
 
-              <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
-                <button
-                  onClick={() => approveMutation.mutate(req.id)}
-                  disabled={approveMutation.isPending || rejectMutation.isPending}
-                  style={{ padding: '4px 12px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--status-success-bg)', color: 'var(--status-success)', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)' }}>
-                  Approve
-                </button>
-                <button
-                  onClick={() => {
-                    if (isRejectOpen) { setRejectingId(null); setRejectReason(''); }
-                    else { setRejectingId(req.id); }
-                  }}
-                  disabled={approveMutation.isPending}
-                  style={{ padding: '4px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', background: isRejectOpen ? 'var(--status-error-bg)' : 'none', color: isRejectOpen ? 'var(--status-error)' : 'var(--text-secondary)', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)' }}>
-                  Reject
-                </button>
-              </div>
+              {req.my_approval_status === 'action_needed' ? (
+                <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                  <button
+                    onClick={() => approveMutation.mutate(req.id)}
+                    disabled={approveMutation.isPending || rejectMutation.isPending}
+                    style={{ padding: '4px 12px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--status-success-bg)', color: 'var(--status-success)', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)' }}>
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (isRejectOpen) { setRejectingId(null); setRejectReason(''); }
+                      else { setRejectingId(req.id); }
+                    }}
+                    disabled={approveMutation.isPending}
+                    style={{ padding: '4px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', background: isRejectOpen ? 'var(--status-error-bg)' : 'none', color: isRejectOpen ? 'var(--status-error)' : 'var(--text-secondary)', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)' }}>
+                    Reject
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-start' }}>
+                  {(() => {
+                    const m = MY_STATUS_META[req.my_approval_status || 'closed_no_action'];
+                    return (
+                      <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 'var(--radius-full, 999px)', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', background: m.bg, color: m.text }}>
+                        {m.label}
+                      </span>
+                    );
+                  })()}
+                  {/* overall request outcome, when it differs from my personal action */}
+                  {req.status !== 'pending' && (
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                      Outcome: {STATUS_LABEL[req.status] || req.status}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Reject reason inline */}

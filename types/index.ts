@@ -925,6 +925,8 @@ export interface HRRequest {
     resolved_approver_id: number | null;
   } | null;
   approval_status?: ApprovalStatus | null;
+  // Set only by the /my-approvals hub: the caller's relationship to this request.
+  my_approval_status?: 'action_needed' | 'upcoming' | 'approved_by_me' | 'rejected_by_me' | 'closed_no_action';
   attachments?: {
     id: string | number;
     name: string;

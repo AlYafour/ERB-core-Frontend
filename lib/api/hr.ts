@@ -403,6 +403,13 @@ export const hrRequestsApi = {
     const data = response.data;
     return Array.isArray(data) ? data : (data.results ?? []);
   },
+  // Full approver tracking hub: every request I'm an approver on, any status,
+  // each tagged with `my_approval_status`.
+  getMyApprovals: async (): Promise<HRRequest[]> => {
+    const response = await apiClient.get('/hr/requests/my-approvals/');
+    const data = response.data;
+    return Array.isArray(data) ? data : (data.results ?? []);
+  },
 };
 
 // ── Approvals (request types) ──────────────────────────────────────────────────
