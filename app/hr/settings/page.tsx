@@ -204,8 +204,18 @@ function CompanySettingsPanel() {
               <option value="basic">Basic Salary only · الأساسي فقط</option>
               <option value="total">Total Package · الحزمة الكاملة (أساسي + بدلات)</option>
             </select>
+          </div>
+          <div>
+            <label style={LBL_CS}>Daily-Rate Divisor · المقسوم عليه لليومي</label>
+            <select style={INPUT_CS}
+              value={form.payroll_deduction_divisor ?? data?.payroll_deduction_divisor ?? 30}
+              onChange={e => set('payroll_deduction_divisor', Number(e.target.value))}>
+              <option value={30}>30 · أيام الشهر (المعتمد بالإمارات)</option>
+              <option value={26}>26 · أيام العمل</option>
+              <option value={0}>0 · أيام العمل الفعلية في الفترة</option>
+            </select>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '4px 0 0' }}>
-              الراتب اليومي للخصم = الأساس ÷ أيام العمل في الفترة.
+              اليومي = الأساس ÷ هذا الرقم. مثال: 5750 ÷ 30 = 191.67/يوم.
             </p>
           </div>
         </div>

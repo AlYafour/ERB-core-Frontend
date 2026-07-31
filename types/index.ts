@@ -970,6 +970,7 @@ export interface HRCompanySettings {
   working_days_per_month?: number;
   payroll_cutoff_day?: number;
   payroll_deduction_base?: 'basic' | 'total';
+  payroll_deduction_divisor?: number;
   // Attendance policy
   overtime_enabled?: boolean;
   break_deduction_mode?: 'as_taken' | 'minimum' | 'fixed';
