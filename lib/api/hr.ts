@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRLegalEntity, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, TeamType, WorkTeamMember, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment, EmployeeBankAccount, HRCompanySettings, PayrollRun, EOSCalculation, EOSPreview, SalaryHistory } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRLegalEntity, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, TeamType, WorkTeamMember, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment, EmployeeBankAccount, HRCompanySettings, AttendancePolicy, PayrollRun, EOSCalculation, EOSPreview, SalaryHistory } from '@/types';
 
 /** Standard page_size values — use these instead of inline numbers for consistency. */
 export const PAGE_SIZES = {
@@ -1021,6 +1021,24 @@ export interface TestNotificationResult {
     error: string;
   };
 }
+
+export const hrAttendancePoliciesApi = {
+  getAll: async (): Promise<AttendancePolicy[]> => {
+    const res = await apiClient.get('/hr/attendance/attendance-policies/', { params: { page_size: 200 } });
+    return Array.isArray(res.data) ? res.data : (res.data.results ?? []);
+  },
+  create: async (data: Partial<AttendancePolicy>): Promise<AttendancePolicy> => {
+    const res = await apiClient.post('/hr/attendance/attendance-policies/', data);
+    return res.data;
+  },
+  update: async (id: number, data: Partial<AttendancePolicy>): Promise<AttendancePolicy> => {
+    const res = await apiClient.patch(`/hr/attendance/attendance-policies/${id}/`, data);
+    return res.data;
+  },
+  remove: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/attendance/attendance-policies/${id}/`);
+  },
+};
 
 export const hrCompanySettingsApi = {
   get: async (): Promise<HRCompanySettings> => {

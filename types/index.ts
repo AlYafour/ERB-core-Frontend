@@ -952,6 +952,27 @@ export interface EmployeeBankAccount {
   updated_at: string;
 }
 
+export interface AttendancePolicy {
+  id: number;
+  tenant: string | null;
+  employee_group: number | null;
+  employee_group_name: string | null;
+  name: string;
+  enforce_punch_windows: boolean;
+  checkin_opens_before_min: number;
+  checkin_closes_after_min: number;
+  checkin_minor_late_min: number;
+  break_opens_before_min: number;
+  break_closes_after_min: number;
+  break_max_min: number;
+  break_grace_min: number;
+  checkout_opens_after_min: number;
+  checkout_closes_after_min: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface HRCompanySettings {
   id: number;
   timezone: string;
