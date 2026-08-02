@@ -962,6 +962,7 @@ export interface HRCompanySettings {
   late_threshold_mins: number;
   office_address: string;
   geofence_enforcement: 'enforce' | 'warn' | 'off';
+  geofence_accuracy_slack_m?: number;
   currency: string;
   annual_leave_days: number;
   sick_leave_days: number;

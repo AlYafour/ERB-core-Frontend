@@ -136,6 +136,16 @@ function CompanySettingsPanel() {
             {ENFORCEMENT_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>
+        <div>
+          <label style={LBL_CS}>GPS Tolerance (m) · سماحية دقة الـGPS</label>
+          <input style={INPUT_CS} type="number" min={0} max={500} step="10"
+            value={form.geofence_accuracy_slack_m ?? data?.geofence_accuracy_slack_m ?? 50}
+            onChange={e => set('geofence_accuracy_slack_m', Number(e.target.value))} />
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '4px 0 0' }}>
+            يُقبل لو (المسافة − دقة الجهاز) ≤ نصف القطر، بحد أقصى للسماحية هذا الرقم.
+            0 = نصف القطر فقط (الأصرم). النطاق الفعلي = نصف القطر + هذا الرقم.
+          </p>
+        </div>
       </div>
 
       {/* One source of truth — no duplicated work-hours / late-threshold inputs here. */}
