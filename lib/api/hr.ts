@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRLegalEntity, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, TeamType, WorkTeamMember, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment, EmployeeBankAccount, HRCompanySettings, AttendancePolicy, EmergencyExit, PunchStatus, MissingPunch, PayrollRun, EOSCalculation, EOSPreview, SalaryHistory } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRLegalEntity, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, TeamType, WorkTeamMember, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment, EmployeeBankAccount, HRCompanySettings, AttendancePolicy, EmergencyExit, PunchStatus, MissingPunch, TrustedDevice, LocationSignal, PayrollRun, EOSCalculation, EOSPreview, SalaryHistory } from '@/types';
 
 /** Standard page_size values — use these instead of inline numbers for consistency. */
 export const PAGE_SIZES = {
@@ -843,11 +843,11 @@ export const hrSelfAttendanceApi = {
     const response = await apiClient.get('/hr/attendance/missing-punches/');
     return Array.isArray(response.data) ? response.data : [];
   },
-  checkIn: async (data: { latitude: number; longitude: number; accuracy?: number; address?: string } & Partial<BiometricProof>): Promise<AttendanceRecord> => {
+  checkIn: async (data: { latitude: number; longitude: number; accuracy?: number; address?: string; device_uuid?: string } & Partial<BiometricProof>): Promise<AttendanceRecord> => {
     const response = await apiClient.post('/hr/attendance/self-check-in/', data);
     return response.data;
   },
-  checkOut: async (data?: { latitude?: number; longitude?: number; accuracy?: number } & Partial<BiometricProof>): Promise<AttendanceRecord> => {
+  checkOut: async (data?: { latitude?: number; longitude?: number; accuracy?: number; device_uuid?: string } & Partial<BiometricProof>): Promise<AttendanceRecord> => {
     const response = await apiClient.post('/hr/attendance/self-check-out/', data ?? {});
     return response.data;
   },
@@ -856,11 +856,11 @@ export const hrSelfAttendanceApi = {
     const response = await apiClient.post('/hr/attendance/biometric-begin/', {});
     return response.data;
   },
-  breakOut: async (data?: { latitude?: number; longitude?: number; accuracy?: number }): Promise<AttendanceRecord> => {
+  breakOut: async (data?: { latitude?: number; longitude?: number; accuracy?: number; device_uuid?: string }): Promise<AttendanceRecord> => {
     const response = await apiClient.post('/hr/attendance/self-break-out/', data ?? {});
     return response.data;
   },
-  breakIn: async (data?: { latitude?: number; longitude?: number; accuracy?: number }): Promise<AttendanceRecord> => {
+  breakIn: async (data?: { latitude?: number; longitude?: number; accuracy?: number; device_uuid?: string }): Promise<AttendanceRecord> => {
     const response = await apiClient.post('/hr/attendance/self-break-in/', data ?? {});
     return response.data;
   },
@@ -1059,6 +1059,38 @@ export const hrAttendancePoliciesApi = {
   },
   remove: async (id: number): Promise<void> => {
     await apiClient.delete(`/hr/attendance/attendance-policies/${id}/`);
+  },
+};
+
+export const hrTrustedDevicesApi = {
+  getAll: async (params?: { employee?: number; is_active?: boolean; mine?: boolean }): Promise<TrustedDevice[]> => {
+    const res = await apiClient.get('/hr/attendance/trusted-devices/', { params: { page_size: 200, ...params } });
+    return Array.isArray(res.data) ? res.data : (res.data.results ?? []);
+  },
+  update: async (id: number, data: Partial<TrustedDevice>): Promise<TrustedDevice> => {
+    const res = await apiClient.patch(`/hr/attendance/trusted-devices/${id}/`, data);
+    return res.data;
+  },
+  remove: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/attendance/trusted-devices/${id}/`);
+  },
+};
+
+export const hrLocationSignalsApi = {
+  getAll: async (params?: { office_location?: number; kind?: string }): Promise<LocationSignal[]> => {
+    const res = await apiClient.get('/hr/attendance/location-signals/', { params: { page_size: 500, ...params } });
+    return Array.isArray(res.data) ? res.data : (res.data.results ?? []);
+  },
+  create: async (data: Partial<LocationSignal>): Promise<LocationSignal> => {
+    const res = await apiClient.post('/hr/attendance/location-signals/', data);
+    return res.data;
+  },
+  update: async (id: number, data: Partial<LocationSignal>): Promise<LocationSignal> => {
+    const res = await apiClient.patch(`/hr/attendance/location-signals/${id}/`, data);
+    return res.data;
+  },
+  remove: async (id: number): Promise<void> => {
+    await apiClient.delete(`/hr/attendance/location-signals/${id}/`);
   },
 };
 

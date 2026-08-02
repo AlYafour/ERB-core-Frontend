@@ -42,6 +42,23 @@ function getPosition(highAccuracy: boolean, timeout: number, maxAge: number): Pr
   });
 }
 
+// Stable per-browser device id (localStorage). Sent with every punch so the
+// trusted-device verification layer can bind punches to a known device — the
+// anti-buddy-punching signal. The mobile app supplies its own native UUID.
+function getDeviceUuid(): string {
+  try {
+    const KEY = 'erb_device_uuid';
+    let v = localStorage.getItem(KEY);
+    if (!v) {
+      v = (crypto?.randomUUID?.() ?? `web-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      localStorage.setItem(KEY, v);
+    }
+    return v;
+  } catch {
+    return '';
+  }
+}
+
 // Two-stage acquisition: try the precise GPS chip first (short wait), then fall
 // back to fast network / Wi-Fi location. The fallback is what makes check-in
 // work INDOORS (weak GPS) and on DESKTOPS (no GPS chip at all) — the previous
@@ -186,28 +203,28 @@ export default function ClockingCard({ emp, isSelf }: Props) {
   };
 
   const checkInMut = useMutation({
-    mutationFn: (data: { latitude: number; longitude: number; accuracy?: number } & Partial<BiometricProof>) => hrSelfAttendanceApi.checkIn(data),
+    mutationFn: (data: { latitude: number; longitude: number; accuracy?: number; device_uuid?: string } & Partial<BiometricProof>) => hrSelfAttendanceApi.checkIn(data),
     onSuccess: (rec) => { invalidate(); toast(rec.check_in_method === 'biometric' ? 'Checked in — verified by fingerprint.' : 'Checked in successfully.', 'success'); },
     onError:   (err: any) => setGpsError(err?.response?.data?.detail ?? 'Check-in failed.'),
     throwOnError: false,
   });
 
   const checkOutMut = useMutation({
-    mutationFn: (data?: { latitude?: number; longitude?: number; accuracy?: number } & Partial<BiometricProof>) => hrSelfAttendanceApi.checkOut(data),
+    mutationFn: (data?: { latitude?: number; longitude?: number; accuracy?: number; device_uuid?: string } & Partial<BiometricProof>) => hrSelfAttendanceApi.checkOut(data),
     onSuccess: (rec) => { invalidate(); toast(rec.check_out_method === 'biometric' ? 'Checked out — verified by fingerprint.' : 'Checked out successfully.', 'success'); },
     onError:   (err: any) => setGpsError(err?.response?.data?.detail ?? 'Check-out failed.'),
     throwOnError: false,
   });
 
   const breakOutMut = useMutation({
-    mutationFn: (data?: { latitude?: number; longitude?: number; accuracy?: number }) => hrSelfAttendanceApi.breakOut(data),
+    mutationFn: (data?: { latitude?: number; longitude?: number; accuracy?: number; device_uuid?: string }) => hrSelfAttendanceApi.breakOut(data),
     onSuccess: () => { invalidate(); toast('Break started.', 'success'); },
     onError:   (err: any) => setGpsError(err?.response?.data?.detail ?? 'Failed to start break.'),
     throwOnError: false,
   });
 
   const breakInMut = useMutation({
-    mutationFn: (data?: { latitude?: number; longitude?: number; accuracy?: number }) => hrSelfAttendanceApi.breakIn(data),
+    mutationFn: (data?: { latitude?: number; longitude?: number; accuracy?: number; device_uuid?: string }) => hrSelfAttendanceApi.breakIn(data),
     onSuccess: () => { invalidate(); toast('Break ended — welcome back.', 'success'); },
     onError:   (err: any) => setGpsError(err?.response?.data?.detail ?? 'Failed to end break.'),
     throwOnError: false,
@@ -265,7 +282,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
     setGettingGps(true);
     const coords = await getLocation();
     setGettingGps(false);
-    const base = coords ? { latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy } : {};
+    const base = { device_uuid: getDeviceUuid(), ...(coords ? { latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy } : {}) };
     (which === 'out' ? breakOutMut : breakInMut).mutate(base);
   };
 
@@ -278,7 +295,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
     if (!coords) { setGpsError('Could not get your location. Please enable GPS and try again.'); return; }
     const { proof, hadPasskey } = await tryFingerprint();
     if (hadPasskey && !proof) toast('Fingerprint not verified — clocking in without it.', 'info');
-    checkInMut.mutate({ latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy, ...(proof ?? {}) });
+    checkInMut.mutate({ latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy, device_uuid: getDeviceUuid(), ...(proof ?? {}) });
   };
 
   const handleCheckOut = async () => {
@@ -290,7 +307,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
     setGettingGps(false);
     const { proof, hadPasskey } = await tryFingerprint();
     if (hadPasskey && !proof) toast('Fingerprint not verified — clocking out without it.', 'info');
-    const base = coords ? { latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy } : {};
+    const base = { device_uuid: getDeviceUuid(), ...(coords ? { latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy } : {}) };
     checkOutMut.mutate({ ...base, ...(proof ?? {}) });
   };
 

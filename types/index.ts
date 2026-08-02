@@ -976,9 +976,38 @@ export interface AttendancePolicy {
   missing_punch_detection_enabled: boolean;
   missing_punch_lookback_days: number;
   missing_checkout_assume_shift_end: boolean;
+  verify_wifi: boolean;
+  verify_beacon: boolean;
+  verify_device: boolean;
+  verification_mode: 'all' | 'any';
+  device_trust_on_first_use: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface TrustedDevice {
+  id: number;
+  employee: number;
+  employee_name: string | null;
+  employee_id_code: string | null;
+  device_uuid: string;
+  label: string;
+  platform: 'ios' | 'android' | 'web' | 'other';
+  is_active: boolean;
+  last_seen_at: string | null;
+  created_at: string;
+}
+
+export interface LocationSignal {
+  id: number;
+  office_location: number;
+  office_location_name: string | null;
+  kind: 'wifi' | 'beacon';
+  identifier: string;
+  label: string;
+  is_active: boolean;
+  created_at: string;
 }
 
 export interface EmergencyExit {

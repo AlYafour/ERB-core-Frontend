@@ -41,6 +41,8 @@ const DEFAULTS: Draft = {
   emergency_min_reason_chars: 100, emergency_followup_days: 3,
   missing_punch_detection_enabled: true, missing_punch_lookback_days: 7,
   missing_checkout_assume_shift_end: true,
+  verify_wifi: false, verify_beacon: false, verify_device: false,
+  verification_mode: 'any', device_trust_on_first_use: true,
 };
 
 function NumField({ label, hint, value, onChange }: {
@@ -189,6 +191,46 @@ export default function AttendanceRulesPage() {
               <NumField label="عدد الأيام السابقة للفحص" hint="يفحص آخر كام يوم للأيام الناقصة"
                 value={form.missing_punch_lookback_days} onChange={set('missing_punch_lookback_days') as (v: number) => void} />
             </div>
+          </div>
+
+          {/* Verification layers */}
+          <div style={CARD}>
+            <p style={SECTION}>🛡️ طبقات التحقق · Verification layers</p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '0 0 var(--space-4)', lineHeight: 1.6 }}>
+              طبقات إضافية فوق الـGPS. تطبيق الموبايل يبعت إشارة الواي-فاي/البيكون؛ الويب يبعت معرّف الجهاز فقط.
+              كل الطبقات مطفأة افتراضياً — تشتغل بس لما تفعّلها.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+              {[
+                ['verify_wifi', 'واي-فاي المكتب (BSSID معروف) — من الموبايل'],
+                ['verify_beacon', 'بيكون المكتب (BLE) — من الموبايل'],
+                ['verify_device', 'جهاز موثوق — يمنع البصم بجهاز شخص آخر'],
+              ].map(([k, label]) => (
+                <label key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 'var(--text-sm)' }}>
+                  <input type="checkbox" checked={!!form[k as keyof Draft]}
+                    onChange={e => set(k as keyof Draft)(e.target.checked)} />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+            <div style={GRID}>
+              <div>
+                <label style={LBL}>طريقة الدمج</label>
+                <select style={INPUT} value={form.verification_mode ?? 'any'}
+                  onChange={e => set('verification_mode')(e.target.value)}>
+                  <option value="any">أي طبقة مفعّلة تكفي (any)</option>
+                  <option value="all">كل الطبقات المفعّلة لازم تنجح (all)</option>
+                </select>
+              </div>
+              <label style={{ display: 'flex', alignItems: 'flex-end', gap: 8, cursor: 'pointer', fontSize: 'var(--text-sm)', paddingBottom: 8 }}>
+                <input type="checkbox" checked={!!form.device_trust_on_first_use}
+                  onChange={e => set('device_trust_on_first_use')(e.target.checked)} />
+                <span>الثقة بأول جهاز تلقائياً (وإلا يعتمده المدير)</span>
+              </label>
+            </div>
+            <a href="/hr/settings/verification" style={{ display: 'inline-block', marginTop: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>
+              إدارة الأجهزة الموثوقة وإشارات المكتب →
+            </a>
           </div>
         </div>
       </PageShell>
