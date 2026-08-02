@@ -43,6 +43,8 @@ const DEFAULTS: Draft = {
   missing_checkout_assume_shift_end: true,
   verify_wifi: false, verify_beacon: false, verify_device: false,
   verification_mode: 'any', device_trust_on_first_use: true,
+  escalation_enabled: false, escalate_manager_after: 3, escalate_hr_after: 5,
+  grade_b_threshold: 2, grade_c_threshold: 5,
 };
 
 function NumField({ label, hint, value, onChange }: {
@@ -230,6 +232,32 @@ export default function AttendanceRulesPage() {
             </div>
             <a href="/hr/settings/verification" style={{ display: 'inline-block', marginTop: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>
               إدارة الأجهزة الموثوقة وإشارات المكتب →
+            </a>
+          </div>
+
+          {/* Escalation + grading */}
+          <div style={CARD}>
+            <p style={SECTION}>📈 التصعيد والتقدير · Escalation & A/B/C</p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '0 0 var(--space-4)', lineHeight: 1.6 }}>
+              «المخالفة» = تأخير أو غياب أو انصراف ناقص أو بصمة خارج النطاق. تُحسب شهرياً للتصعيد، وضمن مدة التقرير للتقدير.
+            </p>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 'var(--space-4)' }}>
+              <input type="checkbox" checked={!!form.escalation_enabled}
+                onChange={e => set('escalation_enabled')(e.target.checked)} />
+              <span style={{ fontSize: 'var(--text-sm)' }}>تفعيل التصعيد التلقائي للمدير / الموارد البشرية</span>
+            </label>
+            <div style={GRID}>
+              <NumField label="إشعار المدير بعد (مخالفات/شهر)" value={form.escalate_manager_after}
+                onChange={set('escalate_manager_after') as (v: number) => void} />
+              <NumField label="إشعار HR بعد (مخالفات/شهر)" value={form.escalate_hr_after}
+                onChange={set('escalate_hr_after') as (v: number) => void} />
+              <NumField label="حد التقدير B (مخالفات)" hint="عندها فأكثر = B" value={form.grade_b_threshold}
+                onChange={set('grade_b_threshold') as (v: number) => void} />
+              <NumField label="حد التقدير C (مخالفات)" hint="عندها فأكثر = C" value={form.grade_c_threshold}
+                onChange={set('grade_c_threshold') as (v: number) => void} />
+            </div>
+            <a href="/hr/attendance/grades" style={{ display: 'inline-block', marginTop: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>
+              عرض تقرير A/B/C →
             </a>
           </div>
         </div>

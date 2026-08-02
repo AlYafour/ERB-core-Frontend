@@ -1,0 +1,114 @@
+'use client';
+
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import MainLayout from '@/components/layout/MainLayout';
+import { PageShell, PageHeader, Loader } from '@/components/ui';
+import { hrSelfAttendanceApi } from '@/lib/api/hr';
+import type { AttendanceGradeRow } from '@/types';
+
+const CARD: React.CSSProperties = {
+  background: 'var(--surface-primary)', border: '1px solid var(--border-subtle)',
+  borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)',
+};
+const INPUT: React.CSSProperties = {
+  padding: '7px 10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--input-border)',
+  background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: 'var(--text-sm)', boxSizing: 'border-box',
+};
+const TH: React.CSSProperties = {
+  textAlign: 'left', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)',
+  color: 'var(--text-tertiary)', padding: '8px', textTransform: 'uppercase', letterSpacing: '0.05em',
+};
+const TD: React.CSSProperties = { padding: '8px', fontSize: 'var(--text-sm)', color: 'var(--text-primary)', borderTop: '1px solid var(--border-subtle)' };
+const NUM: React.CSSProperties = { ...TD, textAlign: 'right', fontFamily: 'monospace' };
+
+const GRADE_STYLE: Record<string, React.CSSProperties> = {
+  A: { background: 'var(--status-success-bg)', color: 'var(--status-success)' },
+  B: { background: 'var(--status-warning-bg)', color: 'var(--status-warning)' },
+  C: { background: 'var(--status-error-bg)', color: 'var(--status-error)' },
+};
+
+function GradePill({ g }: { g: 'A' | 'B' | 'C' }) {
+  return <span style={{ ...GRADE_STYLE[g], fontSize: 'var(--text-xs)', fontWeight: 700, padding: '2px 12px', borderRadius: 999 }}>{g}</span>;
+}
+
+function monthStart(): string { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; }
+function todayStr(): string { return new Date().toISOString().slice(0, 10); }
+
+export default function AttendanceGradesPage() {
+  const [start, setStart] = useState(monthStart());
+  const [end, setEnd] = useState(todayStr());
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['attendance-grades', start, end],
+    queryFn: () => hrSelfAttendanceApi.gradeReport(start, end),
+  });
+
+  const summary = data?.summary ?? { A: 0, B: 0, C: 0 };
+  const rows = (data?.rows ?? []) as AttendanceGradeRow[];
+
+  return (
+    <MainLayout>
+      <PageShell>
+        <PageHeader
+          title="A/B/C Attendance · تقدير الحضور"
+          description="تقدير كل موظف حسب عدد المخالفات (تأخير / غياب / انصراف ناقص / خارج النطاق) خلال المدة. الحدود من إعدادات قواعد البصمة."
+          breadcrumbs={[{ label: 'HR' }, { label: 'Attendance', href: '/hr/attendance' }, { label: 'A/B/C' }]}
+        />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          {/* Date range + summary */}
+          <div style={{ ...CARD, display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', flexWrap: 'wrap' }}>
+              <input type="date" style={INPUT} value={start} onChange={e => setStart(e.target.value)} />
+              <span style={{ color: 'var(--text-tertiary)' }}>→</span>
+              <input type="date" style={INPUT} value={end} onChange={e => setEnd(e.target.value)} />
+            </div>
+            <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+              {(['A', 'B', 'C'] as const).map(g => (
+                <div key={g} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <GradePill g={g} />
+                  <span style={{ fontSize: 'var(--text-lg)', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{summary[g]}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Table */}
+          <div style={CARD}>
+            {isLoading ? <Loader /> : rows.length === 0 ? (
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>لا توجد بيانات لهذه المدة.</p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr>
+                    <th style={TH}>الموظف</th>
+                    <th style={{ ...TH, textAlign: 'right' }}>تأخير</th>
+                    <th style={{ ...TH, textAlign: 'right' }}>غياب</th>
+                    <th style={{ ...TH, textAlign: 'right' }}>انصراف ناقص</th>
+                    <th style={{ ...TH, textAlign: 'right' }}>خارج النطاق</th>
+                    <th style={{ ...TH, textAlign: 'right' }}>الإجمالي</th>
+                    <th style={{ ...TH, textAlign: 'center' }}>التقدير</th>
+                  </tr></thead>
+                  <tbody>
+                    {rows.map(r => (
+                      <tr key={r.employee}>
+                        <td style={TD}>{r.employee_name}<br /><span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{r.employee_id_code}</span></td>
+                        <td style={NUM}>{r.late}</td>
+                        <td style={NUM}>{r.absent}</td>
+                        <td style={NUM}>{r.missing}</td>
+                        <td style={NUM}>{r.out_of_range}</td>
+                        <td style={{ ...NUM, fontWeight: 700 }}>{r.total}</td>
+                        <td style={{ ...TD, textAlign: 'center' }}><GradePill g={r.grade} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </PageShell>
+    </MainLayout>
+  );
+}

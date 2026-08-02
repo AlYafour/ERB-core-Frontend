@@ -981,9 +981,33 @@ export interface AttendancePolicy {
   verify_device: boolean;
   verification_mode: 'all' | 'any';
   device_trust_on_first_use: boolean;
+  escalation_enabled: boolean;
+  escalate_manager_after: number;
+  escalate_hr_after: number;
+  grade_b_threshold: number;
+  grade_c_threshold: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface AttendanceGradeRow {
+  employee: number;
+  employee_name: string;
+  employee_id_code: string;
+  late: number;
+  absent: number;
+  missing: number;
+  out_of_range: number;
+  total: number;
+  grade: 'A' | 'B' | 'C';
+}
+
+export interface AttendanceGradeReport {
+  start: string;
+  end: string;
+  summary: { A: number; B: number; C: number };
+  rows: AttendanceGradeRow[];
 }
 
 export interface TrustedDevice {

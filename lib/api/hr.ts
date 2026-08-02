@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRLegalEntity, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, TeamType, WorkTeamMember, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment, EmployeeBankAccount, HRCompanySettings, AttendancePolicy, EmergencyExit, PunchStatus, MissingPunch, TrustedDevice, LocationSignal, PayrollRun, EOSCalculation, EOSPreview, SalaryHistory } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRLegalEntity, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, TeamType, WorkTeamMember, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment, EmployeeBankAccount, HRCompanySettings, AttendancePolicy, EmergencyExit, PunchStatus, MissingPunch, TrustedDevice, LocationSignal, AttendanceGradeReport, PayrollRun, EOSCalculation, EOSPreview, SalaryHistory } from '@/types';
 
 /** Standard page_size values — use these instead of inline numbers for consistency. */
 export const PAGE_SIZES = {
@@ -842,6 +842,11 @@ export const hrSelfAttendanceApi = {
   missingPunches: async (): Promise<MissingPunch[]> => {
     const response = await apiClient.get('/hr/attendance/missing-punches/');
     return Array.isArray(response.data) ? response.data : [];
+  },
+  /** A/B/C attendance grade report for a date range (admin). */
+  gradeReport: async (start?: string, end?: string): Promise<AttendanceGradeReport> => {
+    const response = await apiClient.get('/hr/attendance/grade-report/', { params: { start, end } });
+    return response.data;
   },
   checkIn: async (data: { latitude: number; longitude: number; accuracy?: number; address?: string; device_uuid?: string } & Partial<BiometricProof>): Promise<AttendanceRecord> => {
     const response = await apiClient.post('/hr/attendance/self-check-in/', data);
