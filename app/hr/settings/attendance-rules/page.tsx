@@ -37,6 +37,8 @@ const DEFAULTS: Draft = {
   checkin_opens_before_min: 30, checkin_closes_after_min: 240, checkin_minor_late_min: 30,
   break_opens_before_min: 60, break_closes_after_min: 30, break_max_min: 60, break_grace_min: 5,
   checkout_opens_after_min: 0, checkout_closes_after_min: 60,
+  emergency_enabled: true, emergency_monthly_limit: 2, emergency_validity_min: 15,
+  emergency_min_reason_chars: 100, emergency_followup_days: 3,
 };
 
 function NumField({ label, hint, value, onChange }: {
@@ -145,6 +147,26 @@ export default function AttendanceRulesPage() {
                 value={form.checkout_opens_after_min} onChange={set('checkout_opens_after_min') as (v: number) => void} />
               <NumField label="يقفل بعد نهاية الدوام (دقيقة)" hint="60 → يقفل 6:30 لدوام ينتهي 5:30"
                 value={form.checkout_closes_after_min} onChange={set('checkout_closes_after_min') as (v: number) => void} />
+            </div>
+          </div>
+
+          {/* Emergency exit */}
+          <div style={CARD}>
+            <p style={SECTION}>🚨 زر الطوارئ · Emergency Exit</p>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 'var(--space-4)' }}>
+              <input type="checkbox" checked={!!form.emergency_enabled}
+                onChange={e => set('emergency_enabled')(e.target.checked)} />
+              <span style={{ fontSize: 'var(--text-sm)' }}>تفعيل زر الطوارئ</span>
+            </label>
+            <div style={GRID}>
+              <NumField label="الحد الشهري (عدد الطلبات)" value={form.emergency_monthly_limit}
+                onChange={set('emergency_monthly_limit') as (v: number) => void} />
+              <NumField label="مدة صلاحية الطلب (دقيقة)" value={form.emergency_validity_min}
+                onChange={set('emergency_validity_min') as (v: number) => void} />
+              <NumField label="أقل عدد حروف للسبب" value={form.emergency_min_reason_chars}
+                onChange={set('emergency_min_reason_chars') as (v: number) => void} />
+              <NumField label="أيام تقديم المستند" value={form.emergency_followup_days}
+                onChange={set('emergency_followup_days') as (v: number) => void} />
             </div>
           </div>
         </div>

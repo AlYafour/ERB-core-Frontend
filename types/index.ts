@@ -968,9 +968,59 @@ export interface AttendancePolicy {
   break_grace_min: number;
   checkout_opens_after_min: number;
   checkout_closes_after_min: number;
+  emergency_enabled: boolean;
+  emergency_monthly_limit: number;
+  emergency_validity_min: number;
+  emergency_min_reason_chars: number;
+  emergency_followup_days: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface EmergencyExit {
+  id: number;
+  employee: number;
+  employee_name: string;
+  employee_id_code: string;
+  requested_at: string;
+  reason: string;
+  ack_confirmed: boolean;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled' | 'expired';
+  valid_until: string;
+  follow_up_due: string | null;
+  left_at: string | null;
+  reviewed_by_name: string | null;
+  reviewed_at: string | null;
+  review_note: string;
+  month: number;
+  year: number;
+  created_at: string;
+}
+
+interface PunchWindow {
+  opens?: string;
+  closes?: string;
+  open_now: boolean;
+}
+
+export interface PunchStatus {
+  server_time: string;
+  enforced: boolean;
+  check_in: PunchWindow;
+  break_start: PunchWindow;
+  check_out: PunchWindow;
+  break_end?: { deadline: string; open_now: boolean };
+  emergency: {
+    enabled: boolean;
+    monthly_limit?: number;
+    used_this_month?: number;
+    remaining?: number;
+    min_reason_chars?: number;
+    validity_min?: number;
+    has_pending?: boolean;
+    pending_valid_until?: string | null;
+  };
 }
 
 export interface HRCompanySettings {

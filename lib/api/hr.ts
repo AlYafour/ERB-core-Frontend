@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRLegalEntity, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, TeamType, WorkTeamMember, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment, EmployeeBankAccount, HRCompanySettings, AttendancePolicy, PayrollRun, EOSCalculation, EOSPreview, SalaryHistory } from '@/types';
+import { HREmployee, HRDepartment, HRPosition, HRLocation, HRLocationType, HRLegalEntity, HRAttendance, HRShift, HRRequest, HRLeaveBalance, HRPayroll, OfficeLocation, PaginatedResponse, EmployeeGroup, WorkTeam, TeamType, WorkTeamMember, ApprovalPolicy, ApprovalStep, PenaltyRule, PenaltyTier, EmployeeLoan, LeavePolicy, LeaveEncashment, EmployeeBankAccount, HRCompanySettings, AttendancePolicy, EmergencyExit, PunchStatus, PayrollRun, EOSCalculation, EOSPreview, SalaryHistory } from '@/types';
 
 /** Standard page_size values — use these instead of inline numbers for consistency. */
 export const PAGE_SIZES = {
@@ -833,6 +833,11 @@ export const hrSelfAttendanceApi = {
     const results: AttendanceRecord[] = response.data?.results ?? [];
     return results[0] ?? null;
   },
+  /** Which buttons are open now + emergency-exit state — all policy-driven. */
+  punchStatus: async (): Promise<PunchStatus> => {
+    const response = await apiClient.get('/hr/attendance/punch-status/');
+    return response.data;
+  },
   checkIn: async (data: { latitude: number; longitude: number; accuracy?: number; address?: string } & Partial<BiometricProof>): Promise<AttendanceRecord> => {
     const response = await apiClient.post('/hr/attendance/self-check-in/', data);
     return response.data;
@@ -852,6 +857,18 @@ export const hrSelfAttendanceApi = {
   },
   breakIn: async (data?: { latitude?: number; longitude?: number; accuracy?: number }): Promise<AttendanceRecord> => {
     const response = await apiClient.post('/hr/attendance/self-break-in/', data ?? {});
+    return response.data;
+  },
+  emergencyExit: async (data: { reason: string; ack: boolean }): Promise<EmergencyExit> => {
+    const response = await apiClient.post('/hr/attendance/emergency-exit/', data);
+    return response.data;
+  },
+  listEmergencyExits: async (status?: string): Promise<EmergencyExit[]> => {
+    const response = await apiClient.get('/hr/attendance/emergency-exits/', { params: status ? { status } : {} });
+    return Array.isArray(response.data) ? response.data : (response.data.results ?? []);
+  },
+  reviewEmergencyExit: async (id: number, decision: 'approve' | 'reject', note?: string): Promise<EmergencyExit> => {
+    const response = await apiClient.post('/hr/attendance/emergency-exit-review/', { id, decision, note });
     return response.data;
   },
 };

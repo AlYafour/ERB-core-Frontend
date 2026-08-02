@@ -117,6 +117,10 @@ export default function ClockingCard({ emp, isSelf }: Props) {
   const [gpsError, setGpsError]   = useState<string | null>(null);
   const [gettingGps, setGettingGps] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  // Emergency-exit form (config + limits come entirely from punch-status).
+  const [showEmergency, setShowEmergency] = useState(false);
+  const [emReason, setEmReason] = useState('');
+  const [emAck, setEmAck] = useState(false);
   // Fingerprint (WebAuthn) is optional: only offered where the OS supports it
   // (Windows Hello / Touch ID). hasPasskey is discovered lazily on first use.
   const [platformAvail, setPlatformAvail] = useState(false);
@@ -172,7 +176,10 @@ export default function ClockingCard({ emp, isSelf }: Props) {
     staleTime: 30_000,
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['attendance-today', emp?.id] });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['attendance-today', emp?.id] });
+    queryClient.invalidateQueries({ queryKey: ['punch-status', emp?.id] });
+  };
 
   const checkInMut = useMutation({
     mutationFn: (data: { latitude: number; longitude: number; accuracy?: number } & Partial<BiometricProof>) => hrSelfAttendanceApi.checkIn(data),
@@ -199,6 +206,28 @@ export default function ClockingCard({ emp, isSelf }: Props) {
     mutationFn: (data?: { latitude?: number; longitude?: number; accuracy?: number }) => hrSelfAttendanceApi.breakIn(data),
     onSuccess: () => { invalidate(); toast('Break ended — welcome back.', 'success'); },
     onError:   (err: any) => setGpsError(err?.response?.data?.detail ?? 'Failed to end break.'),
+    throwOnError: false,
+  });
+
+  // Punch-status carries the emergency-exit config + monthly counter, all
+  // policy-driven. Refetched after any punch so the counter/pending stay fresh.
+  const { data: punch } = useQuery({
+    queryKey: ['punch-status', emp?.id],
+    queryFn:  () => hrSelfAttendanceApi.punchStatus(),
+    enabled:  !!emp && isSelf,
+    refetchOnWindowFocus: true,
+    staleTime: 30_000,
+  });
+  const em = punch?.emergency;
+
+  const emergencyMut = useMutation({
+    mutationFn: (data: { reason: string; ack: boolean }) => hrSelfAttendanceApi.emergencyExit(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['punch-status', emp?.id] });
+      setShowEmergency(false); setEmReason(''); setEmAck(false);
+      toast('Emergency exit approved — you may now clock out.', 'success');
+    },
+    onError: (err: any) => setGpsError(err?.response?.data?.detail ?? 'Emergency request failed.'),
     throwOnError: false,
   });
 
@@ -448,6 +477,26 @@ export default function ClockingCard({ emp, isSelf }: Props) {
                 </button>
               )}
 
+              {/* Emergency exit — a genuine leave-now escape hatch. Shown while
+                  working (or on break) when the policy enables it and the
+                  employee still has monthly allowance. All limits are server-set. */}
+              {checkedIn && !checkedOut && em?.enabled && (
+                em.has_pending ? (
+                  <span style={{ flexBasis: '100%', fontSize: 12, color: '#B45309', fontWeight: 600 }}>
+                    🚨 Emergency exit active — valid until {em.pending_valid_until}. You may clock out.
+                  </span>
+                ) : (em.remaining ?? 0) > 0 ? (
+                  <button onClick={() => { setGpsError(null); setShowEmergency(true); }} disabled={busy}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 42, padding: '0 18px', borderRadius: 999, border: '1px solid #FECACA', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: '#FEF2F2', color: '#991B1B', opacity: busy ? 0.55 : 1 }}>
+                    🚨 Emergency exit
+                  </button>
+                ) : (
+                  <span style={{ flexBasis: '100%', fontSize: 12, color: 'var(--text-tertiary)' }}>
+                    No emergency exits left this month ({em.used_this_month}/{em.monthly_limit}).
+                  </span>
+                )
+              )}
+
               {checkedOut && (
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
                   Great work today — {fmtHours(displayHours)} logged.
@@ -466,6 +515,52 @@ export default function ClockingCard({ emp, isSelf }: Props) {
           )}
         </>
       )}
+
+      {/* Emergency-exit form overlay */}
+      {showEmergency && em?.enabled && (() => {
+        const minChars = em.min_reason_chars ?? 100;
+        const reasonOk = emReason.trim().length >= minChars;
+        const canSubmit = reasonOk && emAck && !emergencyMut.isPending;
+        return (
+          <div onClick={() => !emergencyMut.isPending && setShowEmergency(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 1000 }}>
+            <div onClick={e => e.stopPropagation()}
+              style={{ background: 'var(--card-bg)', borderRadius: 20, maxWidth: 460, width: '100%', padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+              <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>🚨 Emergency exit</p>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 16px', lineHeight: 1.6 }}>
+                Use this only for a genuine emergency. It lets you clock out now; the request is logged and reviewed.
+                You have {em.remaining} of {em.monthly_limit} left this month, valid for {em.validity_min} minutes.
+              </p>
+
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>
+                Reason ({minChars}+ characters)
+              </label>
+              <textarea value={emReason} onChange={e => setEmReason(e.target.value)} rows={4}
+                placeholder="Describe the emergency in detail…"
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 12, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: 13, boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }} />
+              <p style={{ fontSize: 11, color: reasonOk ? '#16a34a' : 'var(--text-tertiary)', margin: '4px 0 14px', textAlign: 'right' }}>
+                {emReason.trim().length}/{minChars}
+              </p>
+
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', marginBottom: 18, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                <input type="checkbox" checked={emAck} onChange={e => setEmAck(e.target.checked)} style={{ marginTop: 2, flexShrink: 0 }} />
+                <span>I confirm this is a real emergency and I may be asked to provide supporting documents.</span>
+              </label>
+
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button onClick={() => setShowEmergency(false)} disabled={emergencyMut.isPending}
+                  style={{ height: 40, padding: '0 18px', borderRadius: 999, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--text-secondary)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                  Cancel
+                </button>
+                <button onClick={() => emergencyMut.mutate({ reason: emReason.trim(), ack: emAck })} disabled={!canSubmit}
+                  style={{ height: 40, padding: '0 22px', borderRadius: 999, border: 'none', background: canSubmit ? '#991B1B' : 'var(--border-default)', color: '#fff', fontWeight: 600, fontSize: 13, cursor: canSubmit ? 'pointer' : 'not-allowed' }}>
+                  {emergencyMut.isPending ? '⏳ Submitting…' : 'Submit & unlock clock-out'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
