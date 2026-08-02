@@ -30,18 +30,27 @@ function fmtHours(h: number | null | undefined): string {
   return mins === 0 ? `${hrs}h` : `${hrs}h ${mins}m`;
 }
 
-function getLocation(): Promise<GeolocationCoordinates | null> {
+function getPosition(highAccuracy: boolean, timeout: number, maxAge: number): Promise<GeolocationCoordinates | null> {
   return new Promise(resolve => {
     if (!navigator.geolocation) return resolve(null);
     navigator.geolocation.getCurrentPosition(
       pos => resolve(pos.coords),
       () => resolve(null),
-      // enableHighAccuracy → use the GPS chip, not coarse wifi/cell location.
-      // maximumAge:0 → never reuse a cached fix, so moving away actually changes
-      // the reading (a stale position let people check in after leaving the site).
-      { timeout: 15000, maximumAge: 0, enableHighAccuracy: true },
+      { timeout, maximumAge: maxAge, enableHighAccuracy: highAccuracy },
     );
   });
+}
+
+// Two-stage acquisition: try the precise GPS chip first (short wait), then fall
+// back to fast network / Wi-Fi location. The fallback is what makes check-in
+// work INDOORS (weak GPS) and on DESKTOPS (no GPS chip at all) — the previous
+// GPS-only + no-cache setup silently timed out there. The device also reports
+// `coords.accuracy` (metres), which the server uses so two phones at the same
+// spot with different GPS error still agree.
+async function getLocation(): Promise<GeolocationCoordinates | null> {
+  const precise = await getPosition(true, 8000, 0);
+  if (precise) return precise;
+  return getPosition(false, 12000, 60000);
 }
 
 // Compute work hours from timestamps (live estimate before checkout)
@@ -166,14 +175,14 @@ export default function ClockingCard({ emp, isSelf }: Props) {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['attendance-today', emp?.id] });
 
   const checkInMut = useMutation({
-    mutationFn: (data: { latitude: number; longitude: number } & Partial<BiometricProof>) => hrSelfAttendanceApi.checkIn(data),
+    mutationFn: (data: { latitude: number; longitude: number; accuracy?: number } & Partial<BiometricProof>) => hrSelfAttendanceApi.checkIn(data),
     onSuccess: (rec) => { invalidate(); toast(rec.check_in_method === 'biometric' ? 'Checked in — verified by fingerprint.' : 'Checked in successfully.', 'success'); },
     onError:   (err: any) => setGpsError(err?.response?.data?.detail ?? 'Check-in failed.'),
     throwOnError: false,
   });
 
   const checkOutMut = useMutation({
-    mutationFn: (data?: { latitude?: number; longitude?: number } & Partial<BiometricProof>) => hrSelfAttendanceApi.checkOut(data),
+    mutationFn: (data?: { latitude?: number; longitude?: number; accuracy?: number } & Partial<BiometricProof>) => hrSelfAttendanceApi.checkOut(data),
     onSuccess: (rec) => { invalidate(); toast(rec.check_out_method === 'biometric' ? 'Checked out — verified by fingerprint.' : 'Checked out successfully.', 'success'); },
     onError:   (err: any) => setGpsError(err?.response?.data?.detail ?? 'Check-out failed.'),
     throwOnError: false,
@@ -202,7 +211,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
     if (!coords) { setGpsError('Could not get your location. Please enable GPS and try again.'); return; }
     const { proof, hadPasskey } = await tryFingerprint();
     if (hadPasskey && !proof) toast('Fingerprint not verified — clocking in without it.', 'info');
-    checkInMut.mutate({ latitude: coords.latitude, longitude: coords.longitude, ...(proof ?? {}) });
+    checkInMut.mutate({ latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy, ...(proof ?? {}) });
   };
 
   const handleCheckOut = async () => {
@@ -214,7 +223,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
     setGettingGps(false);
     const { proof, hadPasskey } = await tryFingerprint();
     if (hadPasskey && !proof) toast('Fingerprint not verified — clocking out without it.', 'info');
-    const base = coords ? { latitude: coords.latitude, longitude: coords.longitude } : {};
+    const base = coords ? { latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy } : {};
     checkOutMut.mutate({ ...base, ...(proof ?? {}) });
   };
 

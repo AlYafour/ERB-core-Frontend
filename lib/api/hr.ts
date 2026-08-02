@@ -833,11 +833,11 @@ export const hrSelfAttendanceApi = {
     const results: AttendanceRecord[] = response.data?.results ?? [];
     return results[0] ?? null;
   },
-  checkIn: async (data: { latitude: number; longitude: number; address?: string } & Partial<BiometricProof>): Promise<AttendanceRecord> => {
+  checkIn: async (data: { latitude: number; longitude: number; accuracy?: number; address?: string } & Partial<BiometricProof>): Promise<AttendanceRecord> => {
     const response = await apiClient.post('/hr/attendance/self-check-in/', data);
     return response.data;
   },
-  checkOut: async (data?: { latitude?: number; longitude?: number } & Partial<BiometricProof>): Promise<AttendanceRecord> => {
+  checkOut: async (data?: { latitude?: number; longitude?: number; accuracy?: number } & Partial<BiometricProof>): Promise<AttendanceRecord> => {
     const response = await apiClient.post('/hr/attendance/self-check-out/', data ?? {});
     return response.data;
   },
