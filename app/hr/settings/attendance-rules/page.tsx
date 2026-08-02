@@ -39,6 +39,8 @@ const DEFAULTS: Draft = {
   checkout_opens_after_min: 0, checkout_closes_after_min: 60,
   emergency_enabled: true, emergency_monthly_limit: 2, emergency_validity_min: 15,
   emergency_min_reason_chars: 100, emergency_followup_days: 3,
+  missing_punch_detection_enabled: true, missing_punch_lookback_days: 7,
+  missing_checkout_assume_shift_end: true,
 };
 
 function NumField({ label, hint, value, onChange }: {
@@ -167,6 +169,25 @@ export default function AttendanceRulesPage() {
                 onChange={set('emergency_min_reason_chars') as (v: number) => void} />
               <NumField label="أيام تقديم المستند" value={form.emergency_followup_days}
                 onChange={set('emergency_followup_days') as (v: number) => void} />
+            </div>
+          </div>
+
+          {/* Smart missing-punch */}
+          <div style={CARD}>
+            <p style={SECTION}>🧩 البصمة الناقصة الذكية · Missing-punch</p>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 'var(--space-3)' }}>
+              <input type="checkbox" checked={!!form.missing_punch_detection_enabled}
+                onChange={e => set('missing_punch_detection_enabled')(e.target.checked)} />
+              <span style={{ fontSize: 'var(--text-sm)' }}>اكتشاف الأيام غير المكتملة واقتراح تصحيح</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', marginBottom: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+              <input type="checkbox" checked={!!form.missing_checkout_assume_shift_end} style={{ marginTop: 3 }}
+                onChange={e => set('missing_checkout_assume_shift_end')(e.target.checked)} />
+              <span>اقتراح وقت الانصراف المنسي = نهاية الدوام (يقدر الموظف يعدّله)</span>
+            </label>
+            <div style={GRID}>
+              <NumField label="عدد الأيام السابقة للفحص" hint="يفحص آخر كام يوم للأيام الناقصة"
+                value={form.missing_punch_lookback_days} onChange={set('missing_punch_lookback_days') as (v: number) => void} />
             </div>
           </div>
         </div>

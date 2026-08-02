@@ -973,6 +973,9 @@ export interface AttendancePolicy {
   emergency_validity_min: number;
   emergency_min_reason_chars: number;
   emergency_followup_days: number;
+  missing_punch_detection_enabled: boolean;
+  missing_punch_lookback_days: number;
+  missing_checkout_assume_shift_end: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -1004,6 +1007,14 @@ interface PunchWindow {
   open_now: boolean;
 }
 
+export interface MissingPunch {
+  date: string;
+  kind: 'clock_out' | 'break_in' | 'clock_in' | 'break_out';
+  suggested_time: string | null;
+  shift_end: string | null;
+  label: string;
+}
+
 export interface PunchStatus {
   server_time: string;
   enforced: boolean;
@@ -1011,6 +1022,7 @@ export interface PunchStatus {
   break_start: PunchWindow;
   check_out: PunchWindow;
   break_end?: { deadline: string; open_now: boolean };
+  missing_punches?: number;
   emergency: {
     enabled: boolean;
     monthly_limit?: number;

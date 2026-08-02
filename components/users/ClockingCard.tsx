@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { hrSelfAttendanceApi, type BiometricProof } from '@/lib/api/hr';
+import { hrSelfAttendanceApi, hrRequestsApi, type BiometricProof } from '@/lib/api/hr';
+import type { MissingPunch } from '@/types';
 import { Loader } from '@/components/ui';
 import { toast } from '@/lib/hooks/use-toast';
 import {
@@ -121,6 +122,9 @@ export default function ClockingCard({ emp, isSelf }: Props) {
   const [showEmergency, setShowEmergency] = useState(false);
   const [emReason, setEmReason] = useState('');
   const [emAck, setEmAck] = useState(false);
+  // Missing-punch one-tap correction: which gap is being fixed + its edited time.
+  const [fixing, setFixing] = useState<MissingPunch | null>(null);
+  const [fixTime, setFixTime] = useState('');
   // Fingerprint (WebAuthn) is optional: only offered where the OS supports it
   // (Windows Hello / Touch ID). hasPasskey is discovered lazily on first use.
   const [platformAvail, setPlatformAvail] = useState(false);
@@ -228,6 +232,30 @@ export default function ClockingCard({ emp, isSelf }: Props) {
       toast('Emergency exit approved — you may now clock out.', 'success');
     },
     onError: (err: any) => setGpsError(err?.response?.data?.detail ?? 'Emergency request failed.'),
+    throwOnError: false,
+  });
+
+  // Prior incomplete days (forgot to clock out / end break) — one-tap correction.
+  const { data: missing } = useQuery({
+    queryKey: ['missing-punches', emp?.id],
+    queryFn:  () => hrSelfAttendanceApi.missingPunches(),
+    enabled:  !!emp && isSelf,
+    staleTime: 5 * 60_000,
+  });
+
+  const fixMut = useMutation({
+    mutationFn: (g: MissingPunch & { time: string }) => hrRequestsApi.create({
+      request_type: 'missing_punch', start_date: g.date,
+      punch_kind: g.kind, start_time: g.time,
+      reason: g.label,
+    } as any),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['missing-punches', emp?.id] });
+      queryClient.invalidateQueries({ queryKey: ['punch-status', emp?.id] });
+      setFixing(null); setFixTime('');
+      toast('Correction submitted for approval.', 'success');
+    },
+    onError: (err: any) => toast(err?.response?.data?.detail ?? 'Could not submit the correction.', 'error'),
     throwOnError: false,
   });
 
@@ -342,6 +370,26 @@ export default function ClockingCard({ emp, isSelf }: Props) {
 
       {emp && !isLoading && (
         <>
+          {/* Missing-punch banner — prior days started but never completed */}
+          {isSelf && (missing?.length ?? 0) > 0 && (
+            <div style={{ margin: '16px 24px 0', padding: '12px 14px', borderRadius: 14, background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: '#92400E', margin: '0 0 8px' }}>
+                🧩 {missing!.length} incomplete {missing!.length === 1 ? 'day' : 'days'} — fix in one tap
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {missing!.map(g => (
+                  <div key={`${g.date}-${g.kind}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, fontSize: 12, color: '#78350F' }}>
+                    <span>{new Date(g.date).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' })} · {g.label}</span>
+                    <button onClick={() => { setFixing(g); setFixTime(g.suggested_time ?? g.shift_end ?? ''); }}
+                      style={{ height: 30, padding: '0 14px', borderRadius: 999, border: 'none', background: '#B45309', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                      Fix
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* IN → BREAK → OUT */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr auto 1fr', alignItems: 'center', padding: '20px 24px 16px' }}>
 
@@ -555,6 +603,42 @@ export default function ClockingCard({ emp, isSelf }: Props) {
                 <button onClick={() => emergencyMut.mutate({ reason: emReason.trim(), ack: emAck })} disabled={!canSubmit}
                   style={{ height: 40, padding: '0 22px', borderRadius: 999, border: 'none', background: canSubmit ? '#991B1B' : 'var(--border-default)', color: '#fff', fontWeight: 600, fontSize: 13, cursor: canSubmit ? 'pointer' : 'not-allowed' }}>
                   {emergencyMut.isPending ? '⏳ Submitting…' : 'Submit & unlock clock-out'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Missing-punch correction form */}
+      {fixing && (() => {
+        const timeOk = /^\d{2}:\d{2}$/.test(fixTime);
+        const canFix = timeOk && !fixMut.isPending;
+        return (
+          <div onClick={() => !fixMut.isPending && setFixing(null)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 1000 }}>
+            <div onClick={e => e.stopPropagation()}
+              style={{ background: 'var(--card-bg)', borderRadius: 20, maxWidth: 420, width: '100%', padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+              <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>🧩 Fix missing punch</p>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 16px', lineHeight: 1.6 }}>
+                {fixing.label} on {new Date(fixing.date).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long' })}.
+                Confirm the time — it&apos;s sent for approval, then written to your attendance.
+              </p>
+
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>
+                Time
+              </label>
+              <input type="time" value={fixTime} onChange={e => setFixTime(e.target.value)}
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 12, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: 14, boxSizing: 'border-box', marginBottom: 18 }} />
+
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button onClick={() => setFixing(null)} disabled={fixMut.isPending}
+                  style={{ height: 40, padding: '0 18px', borderRadius: 999, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--text-secondary)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                  Cancel
+                </button>
+                <button onClick={() => fixMut.mutate({ ...fixing, time: fixTime })} disabled={!canFix}
+                  style={{ height: 40, padding: '0 22px', borderRadius: 999, border: 'none', background: canFix ? 'var(--brand)' : 'var(--border-default)', color: '#fff', fontWeight: 600, fontSize: 13, cursor: canFix ? 'pointer' : 'not-allowed' }}>
+                  {fixMut.isPending ? '⏳ Submitting…' : 'Submit correction'}
                 </button>
               </div>
             </div>
