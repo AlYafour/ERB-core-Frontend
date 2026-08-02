@@ -846,12 +846,12 @@ export const hrSelfAttendanceApi = {
     const response = await apiClient.post('/hr/attendance/biometric-begin/', {});
     return response.data;
   },
-  breakOut: async (): Promise<AttendanceRecord> => {
-    const response = await apiClient.post('/hr/attendance/self-break-out/', {});
+  breakOut: async (data?: { latitude?: number; longitude?: number; accuracy?: number }): Promise<AttendanceRecord> => {
+    const response = await apiClient.post('/hr/attendance/self-break-out/', data ?? {});
     return response.data;
   },
-  breakIn: async (): Promise<AttendanceRecord> => {
-    const response = await apiClient.post('/hr/attendance/self-break-in/', {});
+  breakIn: async (data?: { latitude?: number; longitude?: number; accuracy?: number }): Promise<AttendanceRecord> => {
+    const response = await apiClient.post('/hr/attendance/self-break-in/', data ?? {});
     return response.data;
   },
 };

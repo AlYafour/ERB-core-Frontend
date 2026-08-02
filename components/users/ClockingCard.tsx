@@ -189,18 +189,28 @@ export default function ClockingCard({ emp, isSelf }: Props) {
   });
 
   const breakOutMut = useMutation({
-    mutationFn: () => hrSelfAttendanceApi.breakOut(),
+    mutationFn: (data?: { latitude?: number; longitude?: number; accuracy?: number }) => hrSelfAttendanceApi.breakOut(data),
     onSuccess: () => { invalidate(); toast('Break started.', 'success'); },
     onError:   (err: any) => setGpsError(err?.response?.data?.detail ?? 'Failed to start break.'),
     throwOnError: false,
   });
 
   const breakInMut = useMutation({
-    mutationFn: () => hrSelfAttendanceApi.breakIn(),
+    mutationFn: (data?: { latitude?: number; longitude?: number; accuracy?: number }) => hrSelfAttendanceApi.breakIn(data),
     onSuccess: () => { invalidate(); toast('Break ended — welcome back.', 'success'); },
     onError:   (err: any) => setGpsError(err?.response?.data?.detail ?? 'Failed to end break.'),
     throwOnError: false,
   });
+
+  // Break punches must also be at the work site — capture location like check-in.
+  const handleBreak = async (which: 'out' | 'in') => {
+    setGpsError(null);
+    setGettingGps(true);
+    const coords = await getLocation();
+    setGettingGps(false);
+    const base = coords ? { latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy } : {};
+    (which === 'out' ? breakOutMut : breakInMut).mutate(base);
+  };
 
   const handleCheckIn = async () => {
     setGpsError(null);
@@ -419,7 +429,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
               {checkedIn && !checkedOut && !isOnBreak && (
                 <>
                   {!record?.break_start && (
-                    <button onClick={() => { setGpsError(null); breakOutMut.mutate(); }} disabled={busy}
+                    <button onClick={() => handleBreak('out')} disabled={busy}
                       style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 20px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: '#FEF3C7', color: '#B45309', opacity: busy ? 0.55 : 1 }}>
                       {breakOutMut.isPending ? '…' : '⏸ Take a break'}
                     </button>
@@ -432,7 +442,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
               )}
 
               {isOnBreak && (
-                <button onClick={() => { setGpsError(null); breakInMut.mutate(); }} disabled={busy}
+                <button onClick={() => handleBreak('in')} disabled={busy}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 24px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: '#FEF3C7', color: '#B45309', opacity: busy ? 0.65 : 1 }}>
                   {breakInMut.isPending ? '…' : '▶ End break'}
                 </button>
