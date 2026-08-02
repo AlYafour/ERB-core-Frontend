@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageShell, PageHeader, Button, Loader } from '@/components/ui';
+import HRSettingsNav from '@/components/hr/HRSettingsNav';
 import { hrAttendancePoliciesApi } from '@/lib/api/hr';
 import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
@@ -101,7 +102,9 @@ export default function AttendanceRulesPage() {
           }
         />
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', maxWidth: '52rem' }}>
+        <div style={{ display: 'flex', gap: 'var(--space-6)', alignItems: 'flex-start' }}>
+          <HRSettingsNav />
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', maxWidth: '52rem' }}>
           {/* Master toggle */}
           <div style={{ ...CARD, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-4)' }}>
             <div>
@@ -259,6 +262,7 @@ export default function AttendanceRulesPage() {
             <a href="/hr/attendance/grades" style={{ display: 'inline-block', marginTop: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>
               عرض تقرير A/B/C →
             </a>
+          </div>
           </div>
         </div>
       </PageShell>

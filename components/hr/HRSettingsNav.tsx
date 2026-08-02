@@ -20,7 +20,10 @@ const NAV_GROUPS: { title: string; items: { label: string; href: string }[] }[] 
   ]},
   { title: 'Time & Attendance', items: [
     { label: 'Work Shifts', href: '/hr/shifts' },
+    { label: 'Attendance Rules', href: '/hr/settings/attendance-rules' },
     { label: 'Office Locations', href: '/hr/settings/locations' },
+    { label: 'Verification', href: '/hr/settings/verification' },
+    { label: 'A/B/C Report', href: '/hr/attendance/grades' },
     { label: 'Penalty Rules', href: '/hr/penalties' },
     { label: 'Notifications', href: '/hr/settings/notifications' },
   ]},

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageShell, PageHeader, Button, Loader } from '@/components/ui';
+import HRSettingsNav from '@/components/hr/HRSettingsNav';
 import { hrTrustedDevicesApi, hrLocationSignalsApi, hrOfficeLocationsApi } from '@/lib/api/hr';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
@@ -89,7 +90,9 @@ export default function VerificationManagementPage() {
           breadcrumbs={[{ label: 'HR' }, { label: 'Settings', href: '/hr/settings' }, { label: 'Verification' }]}
         />
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', maxWidth: '56rem' }}>
+        <div style={{ display: 'flex', gap: 'var(--space-6)', alignItems: 'flex-start' }}>
+          <HRSettingsNav />
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', maxWidth: '56rem' }}>
           {/* Trusted devices */}
           <div style={CARD}>
             <p style={SECTION}>📱 الأجهزة الموثوقة · Trusted devices</p>
@@ -192,6 +195,7 @@ export default function VerificationManagementPage() {
                 )}
               </>
             )}
+          </div>
           </div>
         </div>
       </PageShell>
