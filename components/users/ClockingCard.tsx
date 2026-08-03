@@ -368,7 +368,14 @@ export default function ClockingCard({ emp, isSelf }: Props) {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 24px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Today&apos;s Clocking</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Today&apos;s Clocking</span>
+          {isSelf && punch?.zone && (() => {
+            const z = { green: '#16a34a', yellow: '#CA8A04', orange: '#EA580C', red: '#DC2626' }[punch.zone];
+            return <span title={`Attendance zone this month${punch.score != null ? ` · ${punch.score} pts` : ''}`}
+              style={{ width: 10, height: 10, borderRadius: '50%', background: z, flexShrink: 0, boxShadow: `0 0 0 3px ${z}22` }} />;
+          })()}
+        </span>
         {emp && !isLoading && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, padding: '4px 12px', borderRadius: 999, background: statusCfg.bg, color: statusCfg.color }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusCfg.dot, flexShrink: 0, animation: statusCfg.pulse ? 'clock-dot-pulse 1.8s ease-in-out infinite' : 'none' }} />

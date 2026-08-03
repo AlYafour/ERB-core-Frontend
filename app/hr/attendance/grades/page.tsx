@@ -88,6 +88,7 @@ export default function AttendanceGradesPage() {
                     <th style={{ ...TH, textAlign: 'right' }}>Missing</th>
                     <th style={{ ...TH, textAlign: 'right' }}>Out-of-range</th>
                     <th style={{ ...TH, textAlign: 'right' }}>Total</th>
+                    <th style={{ ...TH, textAlign: 'right' }}>Score</th>
                     <th style={{ ...TH, textAlign: 'center' }}>Grade</th>
                   </tr></thead>
                   <tbody>
@@ -99,6 +100,12 @@ export default function AttendanceGradesPage() {
                         <td style={NUM}>{r.missing}</td>
                         <td style={NUM}>{r.out_of_range}</td>
                         <td style={{ ...NUM, fontWeight: 700 }}>{r.total}</td>
+                        <td style={{ ...NUM, fontWeight: 700 }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: { green: '#16a34a', yellow: '#CA8A04', orange: '#EA580C', red: '#DC2626' }[r.zone] }} />
+                            {r.score}
+                          </span>
+                        </td>
                         <td style={{ ...TD, textAlign: 'center' }}><GradePill g={r.grade} /></td>
                       </tr>
                     ))}

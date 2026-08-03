@@ -48,6 +48,9 @@ const DEFAULTS: Draft = {
   verification_mode: 'any', device_trust_on_first_use: true,
   escalation_enabled: false, escalate_manager_after: 3, escalate_hr_after: 5,
   grade_b_threshold: 2, grade_c_threshold: 5,
+  points_minor_late: 5, points_severe_late: 10, points_absent: 15,
+  points_missing_punch: 3, points_out_of_range: 5, points_mock_location: 25,
+  zone_yellow_at: 10, zone_orange_at: 20, zone_red_at: 35, block_mock_location: false,
 };
 
 function NumField({ label, hint, value, onChange }: {
@@ -310,6 +313,49 @@ export default function AttendanceRulesPage() {
             <a href="/hr/attendance/grades" style={{ display: 'inline-block', marginTop: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>
               View A/B/C report →
             </a>
+          </div>
+
+          {/* Rolling score (points) + zones */}
+          <div style={CARD}>
+            <p style={SECTION}>Rolling score & zones</p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '0 0 var(--space-4)', lineHeight: 1.6 }}>
+              Points per issue this month add up to a score that maps to a zone colour (green → yellow → orange → red) shown on the clock.
+            </p>
+            <div style={GRID}>
+              <NumField label="Points · minor late" value={form.points_minor_late}
+                onChange={set('points_minor_late') as (v: number) => void} />
+              <NumField label="Points · severe late" value={form.points_severe_late}
+                onChange={set('points_severe_late') as (v: number) => void} />
+              <NumField label="Points · absent" value={form.points_absent}
+                onChange={set('points_absent') as (v: number) => void} />
+              <NumField label="Points · missing punch" value={form.points_missing_punch}
+                onChange={set('points_missing_punch') as (v: number) => void} />
+              <NumField label="Points · out of range" value={form.points_out_of_range}
+                onChange={set('points_out_of_range') as (v: number) => void} />
+              <NumField label="Points · fake GPS" value={form.points_mock_location}
+                onChange={set('points_mock_location') as (v: number) => void} />
+            </div>
+            <div style={{ ...GRID, marginTop: 'var(--space-4)' }}>
+              <NumField label="Yellow zone at (points)" value={form.zone_yellow_at}
+                onChange={set('zone_yellow_at') as (v: number) => void} />
+              <NumField label="Orange zone at (points)" value={form.zone_orange_at}
+                onChange={set('zone_orange_at') as (v: number) => void} />
+              <NumField label="Red zone at (points)" value={form.zone_red_at}
+                onChange={set('zone_red_at') as (v: number) => void} />
+            </div>
+          </div>
+
+          {/* Fake / mock GPS */}
+          <div style={CARD}>
+            <p style={SECTION}>Fake / mock GPS</p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '0 0 var(--space-3)', lineHeight: 1.6 }}>
+              The mobile app reports whether the location came from a spoofing app. When blocked, such a punch is rejected; otherwise it is recorded and flagged (and scored).
+            </p>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input type="checkbox" checked={!!form.block_mock_location}
+                onChange={e => set('block_mock_location')(e.target.checked)} />
+              <span style={{ fontSize: 'var(--text-sm)' }}>Block punches from a fake (mock) location</span>
+            </label>
           </div>
           </div>
         </div>

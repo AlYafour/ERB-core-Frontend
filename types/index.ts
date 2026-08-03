@@ -986,6 +986,16 @@ export interface AttendancePolicy {
   escalate_hr_after: number;
   grade_b_threshold: number;
   grade_c_threshold: number;
+  points_minor_late: number;
+  points_severe_late: number;
+  points_absent: number;
+  points_missing_punch: number;
+  points_out_of_range: number;
+  points_mock_location: number;
+  zone_yellow_at: number;
+  zone_orange_at: number;
+  zone_red_at: number;
+  block_mock_location: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -996,11 +1006,16 @@ export interface AttendanceGradeRow {
   employee_name: string;
   employee_id_code: string;
   late: number;
+  minor?: number;
+  severe?: number;
   absent: number;
   missing: number;
   out_of_range: number;
+  mock?: number;
   total: number;
   grade: 'A' | 'B' | 'C';
+  score: number;
+  zone: 'green' | 'yellow' | 'orange' | 'red';
 }
 
 export interface AttendanceGradeReport {
@@ -1076,6 +1091,8 @@ export interface PunchStatus {
   check_out: PunchWindow;
   break_end?: { deadline: string; open_now: boolean };
   missing_punches?: number;
+  score?: number;
+  zone?: 'green' | 'yellow' | 'orange' | 'red';
   emergency: {
     enabled: boolean;
     monthly_limit?: number;
