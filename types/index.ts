@@ -1130,6 +1130,8 @@ export interface HRCompanySettings {
   break_deduction_mode?: 'as_taken' | 'minimum' | 'fixed';
   clip_checkin_to_shift_start?: boolean;
   clip_checkout_to_shift_end?: boolean;
+  work_hours_arrival_grace_min?: number;
+  work_hours_break_grace_min?: number;
   notifications_enabled?: boolean;
   notify_late_arrival?: boolean;
   notify_incomplete_hours?: boolean;

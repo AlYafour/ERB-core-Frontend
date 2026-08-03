@@ -249,6 +249,24 @@ function CompanySettingsPanel() {
             checked={form.overtime_enabled ?? data?.overtime_enabled ?? true}
             onChange={v => set('overtime_enabled', v)}
           />
+          <div style={{ marginTop: 'var(--space-4)' }}>
+            <label style={LBL_CS}>Arrival grace (min) · سماحية الحضور</label>
+            <input style={INPUT_CS} type="number" min={0} max={60} step="1"
+              value={form.work_hours_arrival_grace_min ?? data?.work_hours_arrival_grace_min ?? 5}
+              onChange={e => set('work_hours_arrival_grace_min', Number(e.target.value))} />
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '4px 0 0' }}>
+              حضور متأخر خلال هذه الدقائق يُحتسب من بداية الدوام — لا نقصان في الساعات (يتطلب "Ignore time before shift start").
+            </p>
+          </div>
+          <div style={{ marginTop: 'var(--space-4)' }}>
+            <label style={LBL_CS}>Break grace (min) · سماحية الاستراحة</label>
+            <input style={INPUT_CS} type="number" min={0} max={60} step="1"
+              value={form.work_hours_break_grace_min ?? data?.work_hours_break_grace_min ?? 5}
+              onChange={e => set('work_hours_break_grace_min', Number(e.target.value))} />
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '4px 0 0' }}>
+              بريك حتى (المعياري + هذا الرقم) يُخصم منه المعياري فقط — لا عقاب على تجاوز بسيط.
+            </p>
+          </div>
         </div>
       </div>
     </div>
