@@ -1132,6 +1132,7 @@ export interface HRCompanySettings {
   clip_checkout_to_shift_end?: boolean;
   work_hours_arrival_grace_min?: number;
   work_hours_break_grace_min?: number;
+  min_punch_gap_seconds?: number;
   notifications_enabled?: boolean;
   notify_late_arrival?: boolean;
   notify_incomplete_hours?: boolean;

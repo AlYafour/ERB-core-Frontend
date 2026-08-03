@@ -267,6 +267,15 @@ function CompanySettingsPanel() {
               بريك حتى (المعياري + هذا الرقم) يُخصم منه المعياري فقط — لا عقاب على تجاوز بسيط.
             </p>
           </div>
+          <div style={{ marginTop: 'var(--space-4)' }}>
+            <label style={LBL_CS}>Min check-in→out gap (sec) · أقل فرق بين الدخول والخروج</label>
+            <input style={INPUT_CS} type="number" min={0} max={3600} step="10"
+              value={form.min_punch_gap_seconds ?? data?.min_punch_gap_seconds ?? 60}
+              onChange={e => set('min_punch_gap_seconds', Number(e.target.value))} />
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '4px 0 0' }}>
+              يمنع الانصراف الفوري بالغلط بعد الدخول مباشرة. 0 = بلا حد أدنى.
+            </p>
+          </div>
         </div>
       </div>
     </div>
