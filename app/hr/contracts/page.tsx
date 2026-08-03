@@ -19,13 +19,18 @@ export default function ContractsPage() {
   const [terminationReason, setTerminationReason] = useState('')
   const [filter, setFilter] = useState('active')
 
+  // The list endpoint is paginated ({results:[…]}); expiring-soon returns a
+  // bare array. Unwrap both so the page always gets an array (a raw object here
+  // was crashing the page with "contracts.map is not a function").
+  const asArray = (d: unknown): EmployeeContract[] =>
+    Array.isArray(d) ? d as EmployeeContract[] : ((d as { results?: EmployeeContract[] })?.results ?? [])
   const { data: contracts = [] } = useQuery({
     queryKey: ['contracts', filter],
-    queryFn: () => hrContractsApi.getAll(filter !== 'all' ? { status: filter } : {}).then(r => r.data),
+    queryFn: () => hrContractsApi.getAll(filter !== 'all' ? { status: filter } : {}).then(r => asArray(r.data)),
   })
   const { data: expiring = [] } = useQuery({
     queryKey: ['contracts-expiring'],
-    queryFn: () => hrContractsApi.expiringSoon(60).then(r => r.data),
+    queryFn: () => hrContractsApi.expiringSoon(60).then(r => asArray(r.data)),
   })
 
   const terminateMutation = useMutation({
