@@ -5,10 +5,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageShell, PageHeader, Button, Loader } from '@/components/ui';
 import HRSettingsNav from '@/components/hr/HRSettingsNav';
-import { hrAttendancePoliciesApi } from '@/lib/api/hr';
+import { hrAttendancePoliciesApi, hrCompanySettingsApi } from '@/lib/api/hr';
 import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import type { AttendancePolicy } from '@/types';
+
+type Geo = { geofence_enforcement: 'off' | 'warn' | 'enforce'; geofence_accuracy_slack_m: number };
 
 const CARD: React.CSSProperties = {
   background: 'var(--surface-primary)', border: '1px solid var(--border-subtle)',
@@ -68,21 +70,42 @@ export default function AttendanceRulesPage() {
     queryFn: () => hrAttendancePoliciesApi.getAll(),
   });
 
+  // Company settings hold the location (geofence) controls — shown here too so
+  // ALL punch rules live on one page. Saved together with the policy.
+  const { data: company } = useQuery({
+    queryKey: ['hr-company-settings'],
+    queryFn: () => hrCompanySettingsApi.get(),
+  });
+
   // We manage the tenant-wide catch-all policy (employee_group = null).
   const catchAll = (policies ?? []).find(p => p.employee_group == null);
   const [form, setForm] = useState<Draft>(DEFAULTS);
+  const [geo, setGeo] = useState<Geo>({ geofence_enforcement: 'enforce', geofence_accuracy_slack_m: 50 });
 
   useEffect(() => {
     if (catchAll) setForm(catchAll);
   }, [catchAll]);
+  useEffect(() => {
+    if (company) setGeo({
+      geofence_enforcement: company.geofence_enforcement ?? 'enforce',
+      geofence_accuracy_slack_m: company.geofence_accuracy_slack_m ?? 50,
+    });
+  }, [company]);
 
   const set = (k: keyof Draft) => (v: number | boolean | string) => setForm(f => ({ ...f, [k]: v }));
 
   const saveMut = useMutation({
-    mutationFn: (data: Draft) =>
-      catchAll ? hrAttendancePoliciesApi.update(catchAll.id, data)
-               : hrAttendancePoliciesApi.create({ ...data, employee_group: null }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['attendance-policies'] }); toast('Attendance rules saved', 'success'); },
+    mutationFn: async () => {
+      await (catchAll
+        ? hrAttendancePoliciesApi.update(catchAll.id, form)
+        : hrAttendancePoliciesApi.create({ ...form, employee_group: null }));
+      await hrCompanySettingsApi.update(geo);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['attendance-policies'] });
+      qc.invalidateQueries({ queryKey: ['hr-company-settings'] });
+      toast('Attendance rules saved', 'success');
+    },
     onError: (e) => toast(getApiError(e, 'Save failed'), 'error'),
   });
 
@@ -96,7 +119,7 @@ export default function AttendanceRulesPage() {
           description="Every time and threshold is set here. Windows are relative to each employee's shift, so different days adjust automatically."
           breadcrumbs={[{ label: 'HR' }, { label: 'Settings', href: '/hr/settings' }, { label: 'Attendance Rules' }]}
           actions={
-            <Button variant="primary" size="sm" isLoading={saveMut.isPending} onClick={() => saveMut.mutate(form)}>
+            <Button variant="primary" size="sm" isLoading={saveMut.isPending} onClick={() => saveMut.mutate()}>
               Save
             </Button>
           }
@@ -118,6 +141,31 @@ export default function AttendanceRulesPage() {
                 onChange={e => set('enforce_punch_windows')(e.target.checked)} />
               <span style={{ fontSize: 'var(--text-sm)' }}>{form.enforce_punch_windows ? 'On' : 'Off'}</span>
             </label>
+          </div>
+
+          {/* Location (GPS geofence) — applies to every punch the same way */}
+          <div style={CARD}>
+            <p style={SECTION}>Location (GPS)</p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '0 0 var(--space-4)', lineHeight: 1.6 }}>
+              One rule for all punches — check-in, check-out and break are treated the same way.
+            </p>
+            <div style={GRID}>
+              <div>
+                <label style={LBL}>When outside the allowed area</label>
+                <select style={INPUT} value={geo.geofence_enforcement}
+                  onChange={e => setGeo(g => ({ ...g, geofence_enforcement: e.target.value as Geo['geofence_enforcement'] }))}>
+                  <option value="enforce">Block the punch (strict)</option>
+                  <option value="warn">Allow but flag for review</option>
+                  <option value="off">Don’t check location</option>
+                </select>
+              </div>
+              <NumField label="GPS tolerance (m)" hint="Absorbs GPS drift so a phone off by a few metres still counts"
+                value={geo.geofence_accuracy_slack_m}
+                onChange={v => setGeo(g => ({ ...g, geofence_accuracy_slack_m: v }))} />
+            </div>
+            <a href="/hr/settings/locations" style={{ display: 'inline-block', marginTop: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>
+              Set office points and radius on the map →
+            </a>
           </div>
 
           {/* Check-in */}
