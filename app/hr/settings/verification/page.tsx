@@ -85,8 +85,8 @@ export default function VerificationManagementPage() {
     <MainLayout>
       <PageShell>
         <PageHeader
-          title="Verification · التحقق"
-          description="الأجهزة الموثوقة وإشارات المكتب (واي-فاي / بيكون) المستخدمة في طبقات التحقق. الإعدادات نفسها في صفحة قواعد البصمة."
+          title="Verification"
+          description="Trusted devices and office signals (Wi-Fi / beacon) used by the verification layers. The layer toggles live on the Attendance Rules page."
           breadcrumbs={[{ label: 'HR' }, { label: 'Settings', href: '/hr/settings' }, { label: 'Verification' }]}
         />
 
@@ -95,17 +95,17 @@ export default function VerificationManagementPage() {
           <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', maxWidth: '56rem' }}>
           {/* Trusted devices */}
           <div style={CARD}>
-            <p style={SECTION}>📱 الأجهزة الموثوقة · Trusted devices</p>
+            <p style={SECTION}>Trusted devices</p>
             {devLoading ? <Loader /> : (devices?.length ?? 0) === 0 ? (
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
-                لا توجد أجهزة بعد — تُسجَّل تلقائياً عند أول بصمة.
+                No devices yet — they register automatically on first punch.
               </p>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead><tr>
-                    <th style={TH}>الموظف</th><th style={TH}>المنصّة</th><th style={TH}>آخر ظهور</th>
-                    <th style={TH}>الحالة</th><th style={TH}></th>
+                    <th style={TH}>Employee</th><th style={TH}>Platform</th><th style={TH}>Last seen</th>
+                    <th style={TH}>Status</th><th style={TH}></th>
                   </tr></thead>
                   <tbody>
                     {devices!.map(d => (
@@ -115,17 +115,17 @@ export default function VerificationManagementPage() {
                         <td style={TD}>{fmt(d.last_seen_at)}</td>
                         <td style={TD}>
                           <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, padding: '2px 10px', borderRadius: 999, background: d.is_active ? 'var(--status-success-bg)' : 'var(--surface-subtle)', color: d.is_active ? 'var(--status-success)' : 'var(--text-tertiary)' }}>
-                            {d.is_active ? 'موثوق' : 'موقوف'}
+                            {d.is_active ? 'Trusted' : 'Blocked'}
                           </span>
                         </td>
                         <td style={{ ...TD, whiteSpace: 'nowrap' }}>
                           <Button variant={d.is_active ? 'secondary' : 'success'} size="sm"
                             onClick={() => devToggle.mutate({ id: d.id, is_active: !d.is_active })}>
-                            {d.is_active ? 'إيقاف' : 'اعتماد'}
+                            {d.is_active ? 'Block' : 'Approve'}
                           </Button>{' '}
                           <Button variant="destructive" size="sm"
-                            onClick={async () => { if (await confirm('حذف هذا الجهاز؟')) devRemove.mutate(d.id); }}>
-                            حذف
+                            onClick={async () => { if (await confirm('Remove this device?')) devRemove.mutate(d.id); }}>
+                            Remove
                           </Button>
                         </td>
                       </tr>
@@ -138,10 +138,10 @@ export default function VerificationManagementPage() {
 
           {/* Office signals */}
           <div style={CARD}>
-            <p style={SECTION}>📡 إشارات المكتب · Wi-Fi / Beacon</p>
+            <p style={SECTION}>Office signals · Wi-Fi / Beacon</p>
             {locations.length === 0 ? (
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
-                أضف موقع مكتب أولاً من صفحة المواقع.
+                Add an office location first from the Office Locations page.
               </p>
             ) : (
               <>
@@ -160,20 +160,20 @@ export default function VerificationManagementPage() {
                   </select>
                   <input style={{ ...INPUT, flex: 1, minWidth: 200 }} placeholder={kind === 'wifi' ? 'aa:bb:cc:dd:ee:ff' : 'beacon UUID'}
                     value={identifier} onChange={e => setIdentifier(e.target.value)} />
-                  <input style={{ ...INPUT, width: 160 }} placeholder="اسم (اختياري)" value={label} onChange={e => setLabel(e.target.value)} />
+                  <input style={{ ...INPUT, width: 160 }} placeholder="Label (optional)" value={label} onChange={e => setLabel(e.target.value)} />
                   <Button variant="primary" size="sm" isLoading={sigAdd.isPending}
                     disabled={!identifier.trim()} onClick={() => sigAdd.mutate()}>
-                    إضافة
+                    Add
                   </Button>
                 </div>
 
                 {sigLoading ? <Loader /> : (signals?.length ?? 0) === 0 ? (
-                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>لا توجد إشارات لهذا الموقع.</p>
+                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>No signals for this location.</p>
                 ) : (
                   <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead><tr>
-                        <th style={TH}>النوع</th><th style={TH}>المُعرّف</th><th style={TH}>الاسم</th><th style={TH}></th>
+                        <th style={TH}>Type</th><th style={TH}>Identifier</th><th style={TH}>Label</th><th style={TH}></th>
                       </tr></thead>
                       <tbody>
                         {(signals as LocationSignal[]).map(s => (
@@ -183,8 +183,8 @@ export default function VerificationManagementPage() {
                             <td style={TD}>{s.label || '—'}</td>
                             <td style={{ ...TD, whiteSpace: 'nowrap' }}>
                               <Button variant="destructive" size="sm"
-                                onClick={async () => { if (await confirm('حذف هذه الإشارة؟')) sigRemove.mutate(s.id); }}>
-                                حذف
+                                onClick={async () => { if (await confirm('Remove this signal?')) sigRemove.mutate(s.id); }}>
+                                Remove
                               </Button>
                             </td>
                           </tr>

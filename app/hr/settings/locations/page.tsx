@@ -13,6 +13,7 @@ import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { Button, Badge, Loader, PageHeader, PageShell, SearchInput, Drawer } from '@/components/ui';
 import { RowActions } from '@/components/ui/RowActions';
 import HRSettingsNav from '@/components/hr/HRSettingsNav';
+import MapPicker from '@/components/hr/MapPicker';
 
 const PRESET_ICONS  = ['🏢', '🏗️', '🔧', '🏭', '🏪', '🏠', '📍', '🗺️', '⚙️', '🏛️', '🚧', '🏕️'];
 const PRESET_COLORS = ['#C9943A','#B8832E','#E0AE55','#4A6280','#64748B','#94A3B8','#334155','#E05C5C','#475569'];
@@ -615,34 +616,55 @@ export default function HRSettingsLocationsPage() {
                 placeholder="مثال: مكتب دبي" />
             </div>
           </div>
+          {/* Map: click or drag the pin to set the point; the shaded circle is the radius. */}
+          <div className="form-field" style={{ marginTop: 'var(--space-4)' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
+              <label className="form-label" style={{ marginBottom: 0 }}>Pick on map</label>
+              <button type="button" onClick={useMyLocation}
+                style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', fontWeight: 'var(--weight-medium)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                Use my current location
+              </button>
+            </div>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '2px 0 var(--space-2)' }}>
+              Click the map or drag the pin to set the exact spot. The shaded circle is the check-in radius.
+            </p>
+            <MapPicker
+              lat={officeForm.latitude !== '' && !isNaN(parseFloat(officeForm.latitude)) ? parseFloat(officeForm.latitude) : null}
+              lng={officeForm.longitude !== '' && !isNaN(parseFloat(officeForm.longitude)) ? parseFloat(officeForm.longitude) : null}
+              radius={parseFloat(officeForm.radius_m) || 0}
+              onChange={(la, ln) => setOfficeForm(p => ({ ...p, latitude: la.toFixed(6), longitude: ln.toFixed(6) }))}
+            />
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', marginTop: 'var(--space-4)' }}>
             <div className="form-field">
-              <label className="form-label">Latitude (-90 to 90)</label>
+              <label className="form-label">Latitude</label>
               <input className="form-input" type="number" step="any" min={-90} max={90}
                 value={officeForm.latitude}
                 onChange={e => setOfficeForm(p => ({ ...p, latitude: e.target.value }))}
-                placeholder="e.g. 25.204800" />
+                placeholder="e.g. 24.453900" />
             </div>
             <div className="form-field">
-              <label className="form-label">Longitude (-180 to 180)</label>
+              <label className="form-label">Longitude</label>
               <input className="form-input" type="number" step="any" min={-180} max={180}
                 value={officeForm.longitude}
                 onChange={e => setOfficeForm(p => ({ ...p, longitude: e.target.value }))}
-                placeholder="e.g. 55.270800" />
+                placeholder="e.g. 54.377300" />
             </div>
           </div>
-          <div style={{ marginTop: 'var(--space-2)' }}>
-            <button type="button" onClick={useMyLocation}
-              style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', fontWeight: 'var(--weight-medium)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-              Use my current location
-            </button>
-          </div>
+
           <div className="form-field" style={{ marginTop: 'var(--space-4)' }}>
-            <label className="form-label">Radius (metres)</label>
-            <input className="form-input" type="number" min={1} step={1}
-              value={officeForm.radius_m}
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+              <label className="form-label" style={{ marginBottom: 0 }}>Radius</label>
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', fontVariantNumeric: 'tabular-nums' }}>{officeForm.radius_m || 0} m</span>
+            </div>
+            <input type="range" min={30} max={1000} step={10}
+              value={parseFloat(officeForm.radius_m) || 30}
               onChange={e => setOfficeForm(p => ({ ...p, radius_m: e.target.value }))}
-              placeholder="e.g. 200" />
+              style={{ width: '100%', marginTop: 'var(--space-2)', accentColor: 'var(--brand)' }} />
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 'var(--space-1) 0 0' }}>
+              Recommended: 100–200 m for a single building, larger for an open site. GPS drift is handled separately by the tolerance in HR Settings.
+            </p>
           </div>
           <div className="form-field" style={{ marginTop: 'var(--space-4)' }}>
             <label className="form-label">Address (optional)</label>

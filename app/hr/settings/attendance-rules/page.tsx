@@ -92,8 +92,8 @@ export default function AttendanceRulesPage() {
     <MainLayout>
       <PageShell>
         <PageHeader
-          title="Attendance Rules · قواعد البصمة"
-          description="كل الأوقات والحدود من هنا — لا شيء مكتوب في الكود. النوافذ محسوبة نسبةً لجدول دوام الموظف (فالجمعة تتعدّل تلقائياً)."
+          title="Attendance Rules"
+          description="Every time and threshold is set here. Windows are relative to each employee's shift, so different days adjust automatically."
           breadcrumbs={[{ label: 'HR' }, { label: 'Settings', href: '/hr/settings' }, { label: 'Attendance Rules' }]}
           actions={
             <Button variant="primary" size="sm" isLoading={saveMut.isPending} onClick={() => saveMut.mutate(form)}>
@@ -108,108 +108,108 @@ export default function AttendanceRulesPage() {
           {/* Master toggle */}
           <div style={{ ...CARD, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-4)' }}>
             <div>
-              <p style={{ margin: 0, fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}>تفعيل نوافذ الأزرار</p>
+              <p style={{ margin: 0, fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}>Enforce punch windows</p>
               <p style={{ margin: '2px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                لمّا مُفعّل: كل زر يُقبل فقط داخل نافذته. مُطفأ: البصمة مسموحة أي وقت.
+                When on, each button is only accepted inside its window. Off: punching is allowed any time.
               </p>
             </div>
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
               <input type="checkbox" checked={!!form.enforce_punch_windows}
                 onChange={e => set('enforce_punch_windows')(e.target.checked)} />
-              <span style={{ fontSize: 'var(--text-sm)' }}>{form.enforce_punch_windows ? 'مُفعّل' : 'مُطفأ'}</span>
+              <span style={{ fontSize: 'var(--text-sm)' }}>{form.enforce_punch_windows ? 'On' : 'Off'}</span>
             </label>
           </div>
 
           {/* Check-in */}
           <div style={CARD}>
-            <p style={SECTION}>🟢 الدخول · Check-in</p>
+            <p style={SECTION}>Check-in</p>
             <div style={GRID}>
-              <NumField label="يفتح قبل بداية الدوام (دقيقة)" hint="مثال 30 → يفتح 8:00 لدوام 8:30"
+              <NumField label="Opens before shift start (min)" hint="30 → opens 08:00 for an 08:30 shift"
                 value={form.checkin_opens_before_min} onChange={set('checkin_opens_before_min') as (v: number) => void} />
-              <NumField label="يقفل بعد بداية الدوام (دقيقة)" hint="بعده = غياب. 240 → 12:30"
+              <NumField label="Closes after shift start (min)" hint="After this = absent. 240 → 12:30"
                 value={form.checkin_closes_after_min} onChange={set('checkin_closes_after_min') as (v: number) => void} />
-              <NumField label="حد التأخر البسيط (دقيقة)" hint="لِحدّه بسيط، بعده شديد"
+              <NumField label="Minor-late threshold (min)" hint="Up to this = minor, beyond = severe"
                 value={form.checkin_minor_late_min} onChange={set('checkin_minor_late_min') as (v: number) => void} />
             </div>
           </div>
 
           {/* Break */}
           <div style={CARD}>
-            <p style={SECTION}>🟡 الاستراحة · Break</p>
+            <p style={SECTION}>Break</p>
             <div style={GRID}>
-              <NumField label="يفتح قبل موعد الاستراحة (دقيقة)" value={form.break_opens_before_min}
+              <NumField label="Opens before break time (min)" value={form.break_opens_before_min}
                 onChange={set('break_opens_before_min') as (v: number) => void} />
-              <NumField label="يقفل بعد موعد الاستراحة (دقيقة)" value={form.break_closes_after_min}
+              <NumField label="Closes after break time (min)" value={form.break_closes_after_min}
                 onChange={set('break_closes_after_min') as (v: number) => void} />
-              <NumField label="أقصى مدة استراحة (دقيقة)" value={form.break_max_min}
+              <NumField label="Max break length (min)" value={form.break_max_min}
                 onChange={set('break_max_min') as (v: number) => void} />
-              <NumField label="تسامح بعد المدة (دقيقة)" hint="النهاية = البداية + المدة + التسامح"
+              <NumField label="Grace after max (min)" hint="Deadline = start + max + grace"
                 value={form.break_grace_min} onChange={set('break_grace_min') as (v: number) => void} />
             </div>
           </div>
 
           {/* Check-out */}
           <div style={CARD}>
-            <p style={SECTION}>🔴 الانصراف · Check-out</p>
+            <p style={SECTION}>Check-out</p>
             <div style={GRID}>
-              <NumField label="يفتح بعد نهاية الدوام (دقيقة)" hint="0 = عند النهاية بالضبط"
+              <NumField label="Opens after shift end (min)" hint="0 = exactly at shift end"
                 value={form.checkout_opens_after_min} onChange={set('checkout_opens_after_min') as (v: number) => void} />
-              <NumField label="يقفل بعد نهاية الدوام (دقيقة)" hint="60 → يقفل 6:30 لدوام ينتهي 5:30"
+              <NumField label="Closes after shift end (min)" hint="60 → closes 18:30 for a 17:30 shift"
                 value={form.checkout_closes_after_min} onChange={set('checkout_closes_after_min') as (v: number) => void} />
             </div>
           </div>
 
           {/* Emergency exit */}
           <div style={CARD}>
-            <p style={SECTION}>🚨 زر الطوارئ · Emergency Exit</p>
+            <p style={SECTION}>Emergency Exit</p>
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 'var(--space-4)' }}>
               <input type="checkbox" checked={!!form.emergency_enabled}
                 onChange={e => set('emergency_enabled')(e.target.checked)} />
-              <span style={{ fontSize: 'var(--text-sm)' }}>تفعيل زر الطوارئ</span>
+              <span style={{ fontSize: 'var(--text-sm)' }}>Enable emergency-exit button</span>
             </label>
             <div style={GRID}>
-              <NumField label="الحد الشهري (عدد الطلبات)" value={form.emergency_monthly_limit}
+              <NumField label="Monthly limit (requests)" value={form.emergency_monthly_limit}
                 onChange={set('emergency_monthly_limit') as (v: number) => void} />
-              <NumField label="مدة صلاحية الطلب (دقيقة)" value={form.emergency_validity_min}
+              <NumField label="Request validity (min)" value={form.emergency_validity_min}
                 onChange={set('emergency_validity_min') as (v: number) => void} />
-              <NumField label="أقل عدد حروف للسبب" value={form.emergency_min_reason_chars}
+              <NumField label="Minimum reason length (chars)" value={form.emergency_min_reason_chars}
                 onChange={set('emergency_min_reason_chars') as (v: number) => void} />
-              <NumField label="أيام تقديم المستند" value={form.emergency_followup_days}
+              <NumField label="Document follow-up (days)" value={form.emergency_followup_days}
                 onChange={set('emergency_followup_days') as (v: number) => void} />
             </div>
           </div>
 
           {/* Smart missing-punch */}
           <div style={CARD}>
-            <p style={SECTION}>🧩 البصمة الناقصة الذكية · Missing-punch</p>
+            <p style={SECTION}>Missing-punch</p>
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 'var(--space-3)' }}>
               <input type="checkbox" checked={!!form.missing_punch_detection_enabled}
                 onChange={e => set('missing_punch_detection_enabled')(e.target.checked)} />
-              <span style={{ fontSize: 'var(--text-sm)' }}>اكتشاف الأيام غير المكتملة واقتراح تصحيح</span>
+              <span style={{ fontSize: 'var(--text-sm)' }}>Detect incomplete days and suggest a correction</span>
             </label>
             <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', marginBottom: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
               <input type="checkbox" checked={!!form.missing_checkout_assume_shift_end} style={{ marginTop: 3 }}
                 onChange={e => set('missing_checkout_assume_shift_end')(e.target.checked)} />
-              <span>اقتراح وقت الانصراف المنسي = نهاية الدوام (يقدر الموظف يعدّله)</span>
+              <span>Suggest the forgotten check-out time = shift end (employee can edit)</span>
             </label>
             <div style={GRID}>
-              <NumField label="عدد الأيام السابقة للفحص" hint="يفحص آخر كام يوم للأيام الناقصة"
+              <NumField label="Look-back window (days)" hint="How many recent days to scan for gaps"
                 value={form.missing_punch_lookback_days} onChange={set('missing_punch_lookback_days') as (v: number) => void} />
             </div>
           </div>
 
           {/* Verification layers */}
           <div style={CARD}>
-            <p style={SECTION}>🛡️ طبقات التحقق · Verification layers</p>
+            <p style={SECTION}>Verification layers</p>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '0 0 var(--space-4)', lineHeight: 1.6 }}>
-              طبقات إضافية فوق الـGPS. تطبيق الموبايل يبعت إشارة الواي-فاي/البيكون؛ الويب يبعت معرّف الجهاز فقط.
-              كل الطبقات مطفأة افتراضياً — تشتغل بس لما تفعّلها.
+              Extra layers on top of GPS. The mobile app supplies the Wi-Fi / beacon signal; the web sends a device ID only.
+              All layers are off by default and only apply once enabled.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
               {[
-                ['verify_wifi', 'واي-فاي المكتب (BSSID معروف) — من الموبايل'],
-                ['verify_beacon', 'بيكون المكتب (BLE) — من الموبايل'],
-                ['verify_device', 'جهاز موثوق — يمنع البصم بجهاز شخص آخر'],
+                ['verify_wifi', 'Office Wi-Fi (known BSSID) — from mobile'],
+                ['verify_beacon', 'Office beacon (BLE) — from mobile'],
+                ['verify_device', 'Trusted device — blocks punching from someone else’s phone'],
               ].map(([k, label]) => (
                 <label key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 'var(--text-sm)' }}>
                   <input type="checkbox" checked={!!form[k as keyof Draft]}
@@ -220,47 +220,47 @@ export default function AttendanceRulesPage() {
             </div>
             <div style={GRID}>
               <div>
-                <label style={LBL}>طريقة الدمج</label>
+                <label style={LBL}>Combine mode</label>
                 <select style={INPUT} value={form.verification_mode ?? 'any'}
                   onChange={e => set('verification_mode')(e.target.value)}>
-                  <option value="any">أي طبقة مفعّلة تكفي (any)</option>
-                  <option value="all">كل الطبقات المفعّلة لازم تنجح (all)</option>
+                  <option value="any">Any enabled layer is enough</option>
+                  <option value="all">All enabled layers must pass</option>
                 </select>
               </div>
               <label style={{ display: 'flex', alignItems: 'flex-end', gap: 8, cursor: 'pointer', fontSize: 'var(--text-sm)', paddingBottom: 8 }}>
                 <input type="checkbox" checked={!!form.device_trust_on_first_use}
                   onChange={e => set('device_trust_on_first_use')(e.target.checked)} />
-                <span>الثقة بأول جهاز تلقائياً (وإلا يعتمده المدير)</span>
+                <span>Trust the first device automatically (else an admin approves it)</span>
               </label>
             </div>
             <a href="/hr/settings/verification" style={{ display: 'inline-block', marginTop: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>
-              إدارة الأجهزة الموثوقة وإشارات المكتب →
+              Manage trusted devices and office signals →
             </a>
           </div>
 
           {/* Escalation + grading */}
           <div style={CARD}>
-            <p style={SECTION}>📈 التصعيد والتقدير · Escalation & A/B/C</p>
+            <p style={SECTION}>Escalation & A/B/C</p>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '0 0 var(--space-4)', lineHeight: 1.6 }}>
-              «المخالفة» = تأخير أو غياب أو انصراف ناقص أو بصمة خارج النطاق. تُحسب شهرياً للتصعيد، وضمن مدة التقرير للتقدير.
+              An issue = a late arrival, absence, missing check-out, or out-of-range punch. Counted per month for escalation, and over the report range for grading.
             </p>
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 'var(--space-4)' }}>
               <input type="checkbox" checked={!!form.escalation_enabled}
                 onChange={e => set('escalation_enabled')(e.target.checked)} />
-              <span style={{ fontSize: 'var(--text-sm)' }}>تفعيل التصعيد التلقائي للمدير / الموارد البشرية</span>
+              <span style={{ fontSize: 'var(--text-sm)' }}>Enable automatic escalation to manager / HR</span>
             </label>
             <div style={GRID}>
-              <NumField label="إشعار المدير بعد (مخالفات/شهر)" value={form.escalate_manager_after}
+              <NumField label="Notify manager after (issues/month)" value={form.escalate_manager_after}
                 onChange={set('escalate_manager_after') as (v: number) => void} />
-              <NumField label="إشعار HR بعد (مخالفات/شهر)" value={form.escalate_hr_after}
+              <NumField label="Notify HR after (issues/month)" value={form.escalate_hr_after}
                 onChange={set('escalate_hr_after') as (v: number) => void} />
-              <NumField label="حد التقدير B (مخالفات)" hint="عندها فأكثر = B" value={form.grade_b_threshold}
+              <NumField label="Grade B threshold (issues)" hint="At or above = B" value={form.grade_b_threshold}
                 onChange={set('grade_b_threshold') as (v: number) => void} />
-              <NumField label="حد التقدير C (مخالفات)" hint="عندها فأكثر = C" value={form.grade_c_threshold}
+              <NumField label="Grade C threshold (issues)" hint="At or above = C" value={form.grade_c_threshold}
                 onChange={set('grade_c_threshold') as (v: number) => void} />
             </div>
             <a href="/hr/attendance/grades" style={{ display: 'inline-block', marginTop: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>
-              عرض تقرير A/B/C →
+              View A/B/C report →
             </a>
           </div>
           </div>

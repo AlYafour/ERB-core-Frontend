@@ -51,8 +51,8 @@ export default function AttendanceGradesPage() {
     <MainLayout>
       <PageShell>
         <PageHeader
-          title="A/B/C Attendance · تقدير الحضور"
-          description="تقدير كل موظف حسب عدد المخالفات (تأخير / غياب / انصراف ناقص / خارج النطاق) خلال المدة. الحدود من إعدادات قواعد البصمة."
+          title="A/B/C Attendance"
+          description="Each employee graded by their number of issues (late / absent / missing check-out / out-of-range) over the range. Thresholds are set on the Attendance Rules page."
           breadcrumbs={[{ label: 'HR' }, { label: 'Attendance', href: '/hr/attendance' }, { label: 'A/B/C' }]}
         />
 
@@ -77,18 +77,18 @@ export default function AttendanceGradesPage() {
           {/* Table */}
           <div style={CARD}>
             {isLoading ? <Loader /> : rows.length === 0 ? (
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>لا توجد بيانات لهذه المدة.</p>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>No data for this range.</p>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead><tr>
-                    <th style={TH}>الموظف</th>
-                    <th style={{ ...TH, textAlign: 'right' }}>تأخير</th>
-                    <th style={{ ...TH, textAlign: 'right' }}>غياب</th>
-                    <th style={{ ...TH, textAlign: 'right' }}>انصراف ناقص</th>
-                    <th style={{ ...TH, textAlign: 'right' }}>خارج النطاق</th>
-                    <th style={{ ...TH, textAlign: 'right' }}>الإجمالي</th>
-                    <th style={{ ...TH, textAlign: 'center' }}>التقدير</th>
+                    <th style={TH}>Employee</th>
+                    <th style={{ ...TH, textAlign: 'right' }}>Late</th>
+                    <th style={{ ...TH, textAlign: 'right' }}>Absent</th>
+                    <th style={{ ...TH, textAlign: 'right' }}>Missing</th>
+                    <th style={{ ...TH, textAlign: 'right' }}>Out-of-range</th>
+                    <th style={{ ...TH, textAlign: 'right' }}>Total</th>
+                    <th style={{ ...TH, textAlign: 'center' }}>Grade</th>
                   </tr></thead>
                   <tbody>
                     {rows.map(r => (
