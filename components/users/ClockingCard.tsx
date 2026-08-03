@@ -316,6 +316,13 @@ export default function ClockingCard({ emp, isSelf }: Props) {
   const checkedOut = !!record?.check_out;
   const isOnBreak  = !!record?.break_start && !record?.break_end;
 
+  // Per-button time windows (from punch-status). When enforcement is off the
+  // server returns open_now:true, so nothing locks. A valid emergency exit
+  // overrides the check-out window. `opens`/`closes` drive the locked label.
+  const ciLocked  = punch?.check_in ? !punch.check_in.open_now : false;
+  const brkLocked = punch?.break_start ? !punch.break_start.open_now : false;
+  const coLocked  = punch?.check_out ? (!punch.check_out.open_now && !em?.has_pending) : false;
+
   // ── Status pill ────────────────────────────────────────────────────────────
   const statusCfg = !checkedIn
     ? { label: 'Not started',                                     bg: 'var(--surface-subtle)', color: 'var(--text-secondary)', dot: 'var(--text-tertiary)', pulse: false }
@@ -521,23 +528,26 @@ export default function ClockingCard({ emp, isSelf }: Props) {
             <div style={{ padding: '0 24px 22px', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
 
               {!checkedIn && (
-                <button onClick={handleCheckIn} disabled={busy}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 24px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: 'var(--brand)', color: '#fff', opacity: busy ? 0.65 : 1, transition: 'opacity .15s' }}>
-                  {gettingGps ? '⏳ Locating…' : verifying ? '🔒 Verifying…' : checkInMut.isPending ? '⏳ Saving…' : '⏱ Clock In'}
+                <button onClick={handleCheckIn} disabled={busy || ciLocked}
+                  title={ciLocked ? `Check-in window: ${punch?.check_in?.opens}–${punch?.check_in?.closes}` : undefined}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 24px', borderRadius: 999, border: 'none', cursor: (busy || ciLocked) ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: 'var(--brand)', color: '#fff', opacity: ciLocked ? 0.4 : busy ? 0.65 : 1, transition: 'opacity .15s' }}>
+                  {ciLocked ? `🔒 Opens ${punch?.check_in?.opens ?? ''}` : gettingGps ? '⏳ Locating…' : verifying ? '🔒 Verifying…' : checkInMut.isPending ? '⏳ Saving…' : '⏱ Clock In'}
                 </button>
               )}
 
               {checkedIn && !checkedOut && !isOnBreak && (
                 <>
                   {!record?.break_start && (
-                    <button onClick={() => handleBreak('out')} disabled={busy}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 20px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: '#FEF3C7', color: '#B45309', opacity: busy ? 0.55 : 1 }}>
-                      {breakOutMut.isPending ? '…' : '⏸ Take a break'}
+                    <button onClick={() => handleBreak('out')} disabled={busy || brkLocked}
+                      title={brkLocked ? `Break window: ${punch?.break_start?.opens}–${punch?.break_start?.closes}` : undefined}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 20px', borderRadius: 999, border: 'none', cursor: (busy || brkLocked) ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: '#FEF3C7', color: '#B45309', opacity: brkLocked ? 0.4 : busy ? 0.55 : 1 }}>
+                      {brkLocked ? `🔒 Break ${punch?.break_start?.opens ?? ''}` : breakOutMut.isPending ? '…' : '⏸ Take a break'}
                     </button>
                   )}
-                  <button onClick={handleCheckOut} disabled={busy}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 20px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: 'var(--brand)', color: '#fff', opacity: busy ? 0.65 : 1 }}>
-                    {gettingGps ? '⏳ Locating…' : verifying ? '🔒 Verifying…' : checkOutMut.isPending ? '⏳ Saving…' : '✓ Clock Out'}
+                  <button onClick={handleCheckOut} disabled={busy || coLocked}
+                    title={coLocked ? `Check-out window: ${punch?.check_out?.opens}–${punch?.check_out?.closes}` : undefined}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 20px', borderRadius: 999, border: 'none', cursor: (busy || coLocked) ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: 'var(--brand)', color: '#fff', opacity: coLocked ? 0.4 : busy ? 0.65 : 1 }}>
+                    {coLocked ? `🔒 Opens ${punch?.check_out?.opens ?? ''}` : gettingGps ? '⏳ Locating…' : verifying ? '🔒 Verifying…' : checkOutMut.isPending ? '⏳ Saving…' : '✓ Clock Out'}
                   </button>
                 </>
               )}
