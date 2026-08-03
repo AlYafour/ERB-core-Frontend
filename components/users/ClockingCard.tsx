@@ -610,8 +610,8 @@ export default function ClockingCard({ emp, isSelf }: Props) {
               style={{ background: 'var(--card-bg)', borderRadius: 20, maxWidth: 460, width: '100%', padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
               <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>🚨 Emergency exit</p>
               <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 16px', lineHeight: 1.6 }}>
-                Use this only for a genuine emergency. It lets you clock out now; the request is logged and reviewed.
-                You have {em.remaining} of {em.monthly_limit} left this month, valid for {em.validity_min} minutes.
+                {em.intro_text || 'Use this only for a genuine emergency. It lets you clock out now; the request is logged and reviewed.'}
+                {' '}You have {em.remaining} of {em.monthly_limit} left this month, valid for {em.validity_min} minutes.
               </p>
 
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>
@@ -626,7 +626,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
 
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', marginBottom: 18, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                 <input type="checkbox" checked={emAck} onChange={e => setEmAck(e.target.checked)} style={{ marginTop: 2, flexShrink: 0 }} />
-                <span>I confirm this is a real emergency and I may be asked to provide supporting documents.</span>
+                <span>{em.ack_text || 'I confirm this is a real emergency and I may be asked to provide supporting documents.'}</span>
               </label>
 
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>

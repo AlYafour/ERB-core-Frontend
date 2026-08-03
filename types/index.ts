@@ -973,6 +973,8 @@ export interface AttendancePolicy {
   emergency_validity_min: number;
   emergency_min_reason_chars: number;
   emergency_followup_days: number;
+  emergency_intro_text: string;
+  emergency_ack_text: string;
   missing_punch_detection_enabled: boolean;
   missing_punch_lookback_days: number;
   missing_checkout_assume_shift_end: boolean;
@@ -1100,6 +1102,8 @@ export interface PunchStatus {
     remaining?: number;
     min_reason_chars?: number;
     validity_min?: number;
+    intro_text?: string;
+    ack_text?: string;
     has_pending?: boolean;
     pending_valid_until?: string | null;
   };

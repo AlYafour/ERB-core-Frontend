@@ -42,6 +42,7 @@ const DEFAULTS: Draft = {
   checkout_opens_after_min: 0, checkout_closes_after_min: 60,
   emergency_enabled: true, emergency_monthly_limit: 2, emergency_validity_min: 15,
   emergency_min_reason_chars: 100, emergency_followup_days: 3,
+  emergency_intro_text: '', emergency_ack_text: '',
   missing_punch_detection_enabled: true, missing_punch_lookback_days: 7,
   missing_checkout_assume_shift_end: true,
   verify_wifi: false, verify_beacon: false, verify_device: false,
@@ -227,6 +228,18 @@ export default function AttendanceRulesPage() {
                 onChange={set('emergency_min_reason_chars') as (v: number) => void} />
               <NumField label="Document follow-up (days)" value={form.emergency_followup_days}
                 onChange={set('emergency_followup_days') as (v: number) => void} />
+            </div>
+            <div style={{ marginTop: 'var(--space-4)' }}>
+              <label style={LBL}>Warning text (top of the form)</label>
+              <textarea style={{ ...INPUT, minHeight: 60, resize: 'vertical', fontFamily: 'inherit' }} rows={2}
+                value={form.emergency_intro_text ?? ''} onChange={e => set('emergency_intro_text')(e.target.value)}
+                placeholder="Use this only for a genuine emergency…" />
+            </div>
+            <div style={{ marginTop: 'var(--space-3)' }}>
+              <label style={LBL}>Acknowledgment text (the employee ticks)</label>
+              <textarea style={{ ...INPUT, minHeight: 60, resize: 'vertical', fontFamily: 'inherit' }} rows={2}
+                value={form.emergency_ack_text ?? ''} onChange={e => set('emergency_ack_text')(e.target.value)}
+                placeholder="I confirm this is a real emergency…" />
             </div>
           </div>
 
