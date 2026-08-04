@@ -1357,7 +1357,7 @@ export interface PolicyPreviewResult {
 }
 
 export const hrPolicySetsApi = {
-  getAll: (params?: Record<string, string>) => apiClient.get<PolicySet[]>('/hr/policy/sets/', { params }),
+  getAll: (params?: Record<string, string>) => _paged<PolicySet>('/hr/policy/sets/', params),
   getById: (id: number) => apiClient.get<PolicySet>(`/hr/policy/sets/${id}/`),
   create: (data: Partial<PolicySet>) => apiClient.post<PolicySet>('/hr/policy/sets/', data),
   update: (id: number, data: Partial<PolicySet>) => apiClient.patch<PolicySet>(`/hr/policy/sets/${id}/`, data),
@@ -1369,13 +1369,13 @@ export const hrPolicySetsApi = {
 }
 
 export const hrPolicyPresetsApi = {
-  getAll: () => apiClient.get<PolicyPreset[]>('/hr/policy/presets/'),
+  getAll: () => _paged<PolicyPreset>('/hr/policy/presets/'),
   getById: (id: number) => apiClient.get<PolicyPreset>(`/hr/policy/presets/${id}/`),
   apply: (id: number, effective_from?: string) => apiClient.post(`/hr/policy/presets/${id}/apply/`, { effective_from }),
 }
 
 export const hrPolicyAuditApi = {
-  getAll: (params?: Record<string, string>) => apiClient.get<PolicyAuditLog[]>('/hr/policy/audit-log/', { params }),
+  getAll: (params?: Record<string, string>) => _paged<PolicyAuditLog>('/hr/policy/audit-log/', params),
 }
 
 export interface CalculationSnapshot {
@@ -1533,7 +1533,7 @@ export interface OffboardingProcess {
 }
 
 export const hrDocumentTemplatesApi = {
-  getAll: (params?: Record<string, string>) => apiClient.get<DocumentTemplate[]>('/hr/documents/templates/', { params }),
+  getAll: (params?: Record<string, string>) => _paged<DocumentTemplate>('/hr/documents/templates/', params),
   getById: (id: number) => apiClient.get<DocumentTemplate>(`/hr/documents/templates/${id}/`),
   create: (data: Partial<DocumentTemplate>) => apiClient.post<DocumentTemplate>('/hr/documents/templates/', data),
   update: (id: number, data: Partial<DocumentTemplate>) => apiClient.patch<DocumentTemplate>(`/hr/documents/templates/${id}/`, data),
@@ -1543,7 +1543,7 @@ export const hrDocumentTemplatesApi = {
 }
 
 export const hrGeneratedDocsApi = {
-  getAll: (params?: Record<string, string>) => apiClient.get<GeneratedDocument[]>('/hr/documents/generated/', { params }),
+  getAll: (params?: Record<string, string>) => _paged<GeneratedDocument>('/hr/documents/generated/', params),
   getById: (id: number) => apiClient.get<GeneratedDocument>(`/hr/documents/generated/${id}/`),
   generate: (data: { employee_id: number; template_id: number; extra_context?: Record<string, unknown>; hr_request_id?: number }) =>
     apiClient.post<GeneratedDocument>('/hr/documents/generated/generate/', data),
