@@ -47,7 +47,7 @@ export default function MyApprovalsPage() {
       <PageShell>
         <PageHeader
           title="My Approvals"
-          description="Documents waiting for your action"
+          description="Everything you approve — awaiting your action now, and coming up on a later step"
           breadcrumbs={[{ label: 'My Approvals' }]}
         />
 
@@ -74,6 +74,7 @@ export default function MyApprovalsPage() {
               const label = DOC_LABEL[model] ?? inst.request_type_name ?? 'Document';
               const steps = inst.policy_snapshot?.steps ?? [];
               const total = steps.filter((s: any) => !s.sod_skipped).length;
+              const myTurn = inst.my_turn !== false;   // default true (older payloads)
 
               return (
                 <div
@@ -83,13 +84,25 @@ export default function MyApprovalsPage() {
                   onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--brand)'; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--card-border)'; }}
                 >
-                  {/* Left: dot */}
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--status-warning)', flexShrink: 0 }} />
+                  {/* Left: dot — warning when it's your turn, muted when upcoming */}
+                  <span style={{
+                    width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
+                    background: myTurn ? 'var(--status-warning)' : 'var(--text-muted)',
+                  }} />
 
                   {/* Center: info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>
-                      {label}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>
+                        {label}
+                      </span>
+                      <span style={{
+                        fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
+                        color: myTurn ? 'var(--status-warning)' : 'var(--text-muted)',
+                        background: myTurn ? 'var(--status-warning-bg)' : 'var(--card-border)',
+                      }}>
+                        {myTurn ? 'Your turn' : 'Upcoming'}
+                      </span>
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
                       Submitted by <strong>{inst.submitted_by_username ?? inst.submitted_by}</strong>
