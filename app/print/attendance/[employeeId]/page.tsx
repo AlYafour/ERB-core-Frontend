@@ -18,7 +18,6 @@ import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { PrintControlsBar } from '@/components/print/PrintControlsBar';
 import { formatHoursMinutes } from '@/lib/utils/hr';
-import { normalizeImageUrl } from '@/lib/utils/image-url';
 
 /* ── Palette (fixed hex — a print document commits to one look) ────── */
 const INK   = '#1c2431';
@@ -75,19 +74,6 @@ function PeriodPicker({ employeeId, from, to }: { employeeId: string; from?: str
       <label style={lbl}>To<input type="date" style={inp} value={t} min={f || undefined} onChange={e => { setT(e.target.value); go(f, e.target.value); }} /></label>
     </>
   );
-}
-
-/** Employee photo with a clean initials fallback. */
-function EmployeePhoto({ src, name }: { src: string | null; name: string }) {
-  const [err, setErr] = useState(false);
-  const url = normalizeImageUrl(src);
-  const box: React.CSSProperties = { width: 68, height: 82, borderRadius: 6, flexShrink: 0, border: `1px solid ${LINE}`, overflow: 'hidden', background: PAPER };
-  if (url && !err) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={url} alt={name} onError={() => setErr(true)} style={{ ...box, objectFit: 'cover', display: 'block' }} />;
-  }
-  const initials = name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
-  return <div style={{ ...box, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f4ecdb', color: GOLD, fontFamily: SERIF, fontWeight: 700, fontSize: '19pt' }}>{initials || '—'}</div>;
 }
 
 export default function PrintAttendancePage() {
@@ -185,7 +171,6 @@ export default function PrintAttendancePage() {
 
           {/* ── IDENTITY ───────────────────────────────────────────── */}
           <div style={{ display: 'flex', gap: 15, marginTop: 15, alignItems: 'center' }}>
-            <EmployeePhoto src={emp.photo} name={emp.name} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                 <div>

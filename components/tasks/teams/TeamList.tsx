@@ -1,7 +1,6 @@
 'use client';
 
 import type { Team } from '@/types';
-import { TaskAvatar } from '../shared/TaskAvatar';
 import { TeamListSkeleton } from '../shared/Skeletons';
 import { BRAND, BRAND_HEX } from '../shared/constants';
 
@@ -195,53 +194,10 @@ export function TeamList({ teams, selectedId, isLoading, onSelect, onCreateClick
                   </div>
                 </div>
 
-                {/* Member avatars */}
+                {/* Member count */}
                 {(team.members?.length ?? 0) > 0 && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      marginTop: 8,
-                      paddingLeft: 46,
-                    }}
-                  >
-                    {(team.members ?? []).slice(0, 5).map((m, i) => (
-                      <div
-                        key={m.id}
-                        style={{
-                          marginLeft: i > 0 ? -6 : 0,
-                          border: '2px solid var(--card-bg)',
-                          borderRadius: '50%',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <TaskAvatar
-                          name={m.user_detail.full_name}
-                          url={m.user_detail.avatar_url}
-                          size={20}
-                        />
-                      </div>
-                    ))}
-                    {team.member_count > 5 && (
-                      <div
-                        style={{
-                          width: 20,
-                          height: 20,
-                          borderRadius: '50%',
-                          marginLeft: -6,
-                          background: 'var(--surface-subtle)',
-                          border: '2px solid var(--card-bg)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 9,
-                          color: 'var(--text-tertiary)',
-                          fontWeight: 700,
-                        }}
-                      >
-                        +{team.member_count - 5}
-                      </div>
-                    )}
+                  <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 8, paddingLeft: 46 }}>
+                    {team.member_count} member{team.member_count === 1 ? '' : 's'}
                   </div>
                 )}
               </button>

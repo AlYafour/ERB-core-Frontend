@@ -536,9 +536,6 @@ function DashboardContent() {
                           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = V.border2; }}
                           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = V.border; }}
                         >
-                          <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg, var(--brand), var(--wine-700))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', marginBottom: 8 }}>
-                            {u.username.slice(0, 2).toUpperCase()}
-                          </div>
                           <div style={{ fontSize: 11, fontWeight: 600, color: V.text, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.username}</div>
                           <div style={{ fontSize: 22, fontWeight: 800, color: V.gold, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{total}</div>
                           <div style={{ fontSize: 9, color: V.text3, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.5px' }}>actions</div>

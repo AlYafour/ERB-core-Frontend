@@ -1,5 +1,6 @@
 /* ================================================================
-   PersonCell — unified person/avatar display used across all pages
+   PersonCell — unified person display (name + optional sub-line).
+   No avatar/initials bubble: people are shown by name across the app.
    ================================================================ */
 
 .person-cell {
@@ -7,23 +8,6 @@
   align-items: center;
   gap: var(--space-3);
   min-width: 0;
-}
-
-/* ── Avatar ──────────────────────────────────────────────────── */
-.person-cell-av {
-  border-radius: 50%;
-  flex-shrink: 0;
-  object-fit: cover;
-}
-
-.person-cell-av--initials {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: var(--weight-bold);
-  letter-spacing: 0.02em;
-  font-family: system-ui, -apple-system, sans-serif;
-  user-select: none;
 }
 
 /* ── Text stack ──────────────────────────────────────────────── */

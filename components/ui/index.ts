@@ -82,7 +82,6 @@ export { default as DarkModeToggle } from './DarkModeToggle';
 export { default as LocaleToggle }  from './LocaleToggle';
 
 // Data display
-export { default as Avatar }       from './Avatar';
 export { default as StatusBadge }  from './StatusBadge';
 export { default as TableActions } from './TableActions';
 export { default as DetailCard, DetailField } from './DetailCard';
@@ -92,7 +91,7 @@ export { default as TableShell }   from './TableShell';
 export { default as DropdownButton } from './DropdownButton';
 export { RowActions }               from './RowActions';
 export type { RowAction }           from './RowActions';
-export { PersonCell, getInitials, getAvatarColor } from './PersonCell';
+export { PersonCell, getInitials } from './PersonCell';
 export type { PersonCellProps }     from './PersonCell';
 
 // Forms

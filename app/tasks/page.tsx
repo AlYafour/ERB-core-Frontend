@@ -16,7 +16,6 @@ import Link from 'next/link';
 import { TaskDetailDrawer } from '@/components/tasks/detail/TaskDetailDrawer';
 import { CreateTaskDrawer } from '@/components/tasks/create/CreateTaskDrawer';
 import { TodoPanel } from '@/components/tasks/todo/TodoPanel';
-import { TaskAvatar } from '@/components/tasks/shared/TaskAvatar';
 import { StatusBadge } from '@/components/tasks/shared/StatusBadge';
 import { TYPE_LABEL, PRIORITY_CONFIG, fmtDate, isOverdue } from '@/components/tasks/shared/constants';
 
@@ -192,7 +191,6 @@ export default function TasksPage() {
       key: 'assignee', header: 'Assignee',
       render: t => t.assigned_to_detail ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <TaskAvatar name={t.assigned_to_detail.full_name} url={t.assigned_to_detail.avatar_url} size={24} />
           <span style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {t.assigned_to_detail.full_name}
           </span>
@@ -204,7 +202,6 @@ export default function TasksPage() {
       header: 'Created By',
       render: (t: TaskListItem) => t.created_by_detail ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <TaskAvatar name={t.created_by_detail.full_name} url={t.created_by_detail.avatar_url} size={22} />
           <span style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {t.created_by_detail.full_name}
           </span>

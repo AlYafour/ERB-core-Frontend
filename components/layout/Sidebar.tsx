@@ -373,7 +373,6 @@ export default function Sidebar() {
   const displayName = user?.first_name
     ? `${user.first_name} ${user.last_name || ''}`.trim()
     : (user?.username || '');
-  const initials = displayName.split(' ').slice(0, 2).map((w: string) => w[0]?.toUpperCase() || '').join('');
   const roleLabel = (user as any)?.permission_set?.name || user?.role?.replace(/_/g, ' ') || '';
 
   return (
@@ -606,21 +605,6 @@ export default function Sidebar() {
               justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
               gap: sidebarCollapsed ? 0 : 8, flexShrink: 0,
             }}>
-              {!sidebarCollapsed && (
-                <div
-                  style={{
-                    width: 28, height: 28, borderRadius: '50%',
-                    background: 'var(--brand-muted)', border: '1px solid var(--border-subtle)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, overflow: 'hidden',
-                    fontSize: 10, fontWeight: 700, color: 'var(--brand)',
-                  }}
-                >
-                  {(user as any).avatar_url ? (
-                    <img src={(user as any).avatar_url} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (initials || '?')}
-                </div>
-              )}
               {!sidebarCollapsed && (
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

@@ -210,9 +210,6 @@ function ViolationDetailPanel({
               borderRadius: 'var(--radius-md)',
               border: '1px solid var(--status-success-border)',
             }}>
-              <div className="av-initials" style={{ width: 28, height: 28, fontSize: 11, background: 'var(--status-success)' }}>
-                {violation.engineer_name[0].toUpperCase()}
-              </div>
               <div>
                 <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-primary)' }}>{violation.engineer_name}</div>
                 <div style={{ fontSize: 10, color: 'var(--status-success)' }}>Responsible Engineer</div>

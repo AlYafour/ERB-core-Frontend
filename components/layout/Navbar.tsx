@@ -8,7 +8,6 @@ import GlobalSearch from '@/components/features/GlobalSearch';
 import NotificationsDropdown from '@/components/layout/NotificationsDropdown';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import LocaleToggle from '@/components/ui/LocaleToggle';
-import Avatar from '@/components/ui/Avatar';
 import Link from 'next/link';
 import { useT } from '@/lib/i18n/useT';
 
@@ -68,8 +67,7 @@ export default function Navbar() {
               e.currentTarget.style.color = 'var(--text-secondary)';
             }}
           >
-            <Avatar src={user?.avatar_url} alt={user?.username || 'User'} size={30} username={user?.username} />
-            <span className="text-sm font-semibold hidden sm:inline" style={{ color: 'var(--text-primary)' }}>
+            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
               {user?.username || 'User'}
             </span>
           </Link>

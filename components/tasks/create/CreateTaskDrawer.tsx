@@ -15,41 +15,6 @@ interface Props {
   onClose: () => void;
 }
 
-// ── Avatar helpers ─────────────────────────────────────────────────────────
-
-function getInitials(first: string, last: string, username: string): string {
-  if (first && last) return (first[0] + last[0]).toUpperCase();
-  if (first) return first.slice(0, 2).toUpperCase();
-  return (username || '?').slice(0, 2).toUpperCase();
-}
-
-function getAvatarColor(str: string): string {
-  const palette = [
-    '#C9943A', '#B8832E', '#A07228', '#E05C5C', '#DC2626', '#64748B', '#475569', '#334155', '#4A6280', '#9AB0C8', '#E0AE55', '#D4A44C', '#94A3B8', '#CBD5E1', '#1A2235',
-  ];
-  let h = 0;
-  for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
-  return palette[Math.abs(h) % palette.length];
-}
-
-// ── Small Avatar circle ────────────────────────────────────────────────────
-
-function Avatar({ inits, color, size = 26 }: { inits: string; color: string; size?: number }) {
-  return (
-    <span
-      style={{
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        width: size, height: size, borderRadius: '50%',
-        background: color + '20', color, flexShrink: 0,
-        fontSize: Math.round(size * 0.38), fontWeight: 700, letterSpacing: '-0.03em',
-        border: `1.5px solid ${color}30`,
-      }}
-    >
-      {inits}
-    </span>
-  );
-}
-
 // ── Chevron icon ───────────────────────────────────────────────────────────
 
 function Chevron({ open }: { open: boolean }) {
@@ -72,8 +37,6 @@ interface ComboItem {
   id: number;
   label: string;
   sublabel?: string;
-  inits: string;
-  color: string;
 }
 
 interface ComboboxProps {
@@ -173,7 +136,6 @@ function SearchableCombobox({ items, value, onChange, placeholder, clearLabel = 
       >
         {selected ? (
           <>
-            <Avatar inits={selected.inits} color={selected.color} size={24} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <span style={{
                 fontSize: 13, fontWeight: 500, color: 'var(--text-primary)',
@@ -302,7 +264,6 @@ function SearchableCombobox({ items, value, onChange, placeholder, clearLabel = 
                       : 'var(--surface-base)',
                   }}
                 >
-                  <Avatar inits={item.inits} color={item.color} size={30} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{
                       margin: 0, fontSize: 13, color: 'var(--text-primary)',
@@ -404,8 +365,6 @@ export function CreateTaskDrawer({ onClose }: Props) {
       id:       u.id,
       label,
       sublabel: u.role ? `@${u.username} · ${u.role}` : `@${u.username}`,
-      inits:    getInitials(first, last, u.username),
-      color:    getAvatarColor(label),
     };
   };
 
@@ -427,8 +386,6 @@ export function CreateTaskDrawer({ onClose }: Props) {
     sublabel: t.member_count != null
       ? `${t.member_count} member${t.member_count !== 1 ? 's' : ''}`
       : undefined,
-    inits: t.name.slice(0, 2).toUpperCase(),
-    color: getAvatarColor(t.name),
   }));
 
   const create = useMutation({
@@ -646,7 +603,6 @@ export function CreateTaskDrawer({ onClose }: Props) {
                           borderRadius: 20, fontSize: 12, color: 'var(--text-primary)',
                         }}
                       >
-                        <Avatar inits={u.inits} color={u.color} size={18} />
                         {u.label}
                         <button
                           type="button"
