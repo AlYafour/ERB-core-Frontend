@@ -9,6 +9,7 @@ import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { Button, Badge, PageShell, PageHeader, Loader } from '@/components/ui';
 import SearchableDropdown, { type DropdownOption } from '@/components/ui/SearchableDropdown';
+import SecuritySettings from '@/components/users/SecuritySettings';
 import { NATIONALITY_OPTS, HOME_COUNTRY_OPTS, RELIGION_OPTS, MARITAL_OPTS } from '@/lib/hr/lookups';
 
 // Common fields an employee can request a change to. The backend is the source
@@ -92,7 +93,7 @@ export default function MyProfilePage() {
               <Button variant="primary" size="sm" isLoading={saveSelf.isPending} onClick={() => saveSelf.mutate()}>Save contact details</Button>
             </div>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: 'var(--space-3) 0 0' }}>
-              Password, profile picture and bank details are managed from your account settings.
+              Your password, two-factor authentication and biometric login are in the Account Security section below.
             </p>
           </div>
 
@@ -170,6 +171,12 @@ export default function MyProfilePage() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Account security — password, 2FA, biometric login (self-service) */}
+        <div style={{ marginTop: 'var(--space-5)' }}>
+          <h3 style={{ margin: '0 0 var(--space-3)', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)' }}>Account Security</h3>
+          <SecuritySettings />
         </div>
       </PageShell>
     </MainLayout>
