@@ -40,6 +40,7 @@ const DEFAULTS: Draft = {
   checkin_opens_before_min: 30, checkin_closes_after_min: 240, checkin_minor_late_min: 30,
   break_start_time: null,
   break_opens_before_min: 60, break_closes_after_min: 30, break_max_min: 60, break_grace_min: 5,
+  break_alerts_enabled: false, break_notify_before_start_min: 10, break_notify_before_end_min: 5,
   checkout_opens_after_min: 0, checkout_closes_after_min: 60,
   emergency_enabled: true, emergency_monthly_limit: 2, emergency_validity_min: 15,
   emergency_min_reason_chars: 100, emergency_followup_days: 3,
@@ -208,6 +209,20 @@ export default function AttendanceRulesPage() {
               <NumField label="Grace after max (min)" hint="Deadline = start + max + grace"
                 value={form.break_grace_min} onChange={set('break_grace_min') as (v: number) => void} />
             </div>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginTop: 'var(--space-4)' }}>
+              <input type="checkbox" checked={!!form.break_alerts_enabled}
+                onChange={e => set('break_alerts_enabled')(e.target.checked)} />
+              <span style={{ fontSize: 'var(--text-sm)' }}>تفعيل تنبيهات البريك (قرب / قرب يخلص / تعدّى)</span>
+            </label>
+            <div style={{ ...GRID, marginTop: 'var(--space-3)' }}>
+              <NumField label="Notify before break (min)" hint="تنبيه قبل موعد البريك"
+                value={form.break_notify_before_start_min} onChange={set('break_notify_before_start_min') as (v: number) => void} />
+              <NumField label="Notify before break ends (min)" hint="تنبيه قبل انتهاء المهلة"
+                value={form.break_notify_before_end_min} onChange={set('break_notify_before_end_min') as (v: number) => void} />
+            </div>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: 'var(--space-2) 0 0', lineHeight: 1.6 }}>
+              تنبيه "تعدّيت البريك" بيتبعت تلقائياً لما يعدّي (المدة + السماحية) — بيوصل داخل التطبيق وكـpush على الموبايل.
+            </p>
           </div>
 
           {/* Check-out */}
