@@ -23,6 +23,15 @@ function fmtTime(iso: string | null | undefined): string {
   return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
+// Whole minutes from `now` until an "HH:MM" wall-clock time today (can be negative).
+function minsUntil(hhmm: string | undefined, now: Date): number | null {
+  if (!hhmm || !/^\d{2}:\d{2}$/.test(hhmm)) return null;
+  const [h, m] = hhmm.split(':').map(Number);
+  const target = new Date(now);
+  target.setHours(h, m, 0, 0);
+  return Math.round((target.getTime() - now.getTime()) / 60000);
+}
+
 function fmtHours(h: number | null | undefined): string {
   if (h == null) return '—';
   const hrs  = Math.floor(h);
@@ -142,6 +151,13 @@ export default function ClockingCard({ emp, isSelf }: Props) {
   // Missing-punch one-tap correction: which gap is being fixed + its edited time.
   const [fixing, setFixing] = useState<MissingPunch | null>(null);
   const [fixTime, setFixTime] = useState('');
+  // Live wall clock (ticks every second) — powers the on-screen clock + the
+  // "opens/closes in X min" countdown next to each punch button.
+  const [now, setNow] = useState<Date>(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
   // Fingerprint (WebAuthn) is optional: only offered where the OS supports it
   // (Windows Hello / Touch ID). hasPasskey is discovered lazily on first use.
   const [platformAvail, setPlatformAvail] = useState(false);
@@ -323,6 +339,25 @@ export default function ClockingCard({ emp, isSelf }: Props) {
   const brkLocked = punch?.break_start ? !punch.break_start.open_now : false;
   const coLocked  = punch?.check_out ? (!punch.check_out.open_now && !em?.has_pending) : false;
 
+  // Countdown hint for the button that matters right now: how long until the
+  // relevant window opens (locked) or closes (open, closing soon). Only shown
+  // when windows are enforced.
+  const windowHint = (() => {
+    if (!isSelf || !punch?.enforced) return null;
+    const w = !checkedIn ? punch.check_in : (checkedIn && !checkedOut ? punch.check_out : null);
+    const label = !checkedIn ? 'Check-in' : 'Check-out';
+    if (!w) return null;
+    if (!w.open_now) {
+      const o = minsUntil(w.opens, now);
+      if (o != null && o > 0 && o <= 180) return { text: `${label} opens in ${o} min`, warn: false };
+      return null;
+    }
+    const c = minsUntil(w.closes, now);
+    if (c != null && c > 0 && c <= 10) return { text: `⏳ ${label} closes in ${c} min`, warn: true };
+    if (c != null && c > 0) return { text: `${label} open until ${w.closes}`, warn: false };
+    return null;
+  })();
+
   // ── Status pill ────────────────────────────────────────────────────────────
   const statusCfg = !checkedIn
     ? { label: 'Not started',                                     bg: 'var(--surface-subtle)', color: 'var(--text-secondary)', dot: 'var(--text-tertiary)', pulse: false }
@@ -377,6 +412,11 @@ export default function ClockingCard({ emp, isSelf }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 24px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Today&apos;s Clocking</span>
+          {isSelf && (
+            <span style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--brand)', fontFamily: 'var(--font-mono, monospace)' }}>
+              {now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}
+            </span>
+          )}
           {isSelf && punch?.zone && (() => {
             const z = { green: '#16a34a', yellow: '#CA8A04', orange: '#EA580C', red: '#DC2626' }[punch.zone];
             return <span title={`Attendance zone this month${punch.score != null ? ` · ${punch.score} pts` : ''}`}
@@ -520,6 +560,15 @@ export default function ClockingCard({ emp, isSelf }: Props) {
           {gpsError && (
             <div style={{ margin: '0 24px 12px', padding: '10px 14px', borderRadius: 12, background: '#FEF2F2', color: '#991B1B', fontSize: 12, lineHeight: 1.5, border: '1px solid #FECACA' }}>
               {gpsError}
+            </div>
+          )}
+
+          {/* Window countdown hint */}
+          {windowHint && (
+            <div style={{ padding: '0 24px 10px' }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: windowHint.warn ? '#B45309' : 'var(--text-secondary)' }}>
+                {windowHint.text}
+              </span>
             </div>
           )}
 
