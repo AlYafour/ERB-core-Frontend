@@ -41,6 +41,7 @@ const DEFAULTS: Draft = {
   break_start_time: null,
   break_opens_before_min: 60, break_closes_after_min: 30, break_max_min: 60, break_grace_min: 5,
   break_alerts_enabled: false, break_notify_before_start_min: 10, break_notify_before_end_min: 5,
+  break_soon_msg: '', break_ending_msg: '', break_overrun_msg: '',
   checkout_opens_after_min: 0, checkout_closes_after_min: 60,
   emergency_enabled: true, emergency_monthly_limit: 2, emergency_validity_min: 15,
   emergency_min_reason_chars: 100, emergency_followup_days: 3,
@@ -220,9 +221,22 @@ export default function AttendanceRulesPage() {
               <NumField label="Notify before break ends (min)" hint="تنبيه قبل انتهاء المهلة"
                 value={form.break_notify_before_end_min} onChange={set('break_notify_before_end_min') as (v: number) => void} />
             </div>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: 'var(--space-2) 0 0', lineHeight: 1.6 }}>
-              تنبيه "تعدّيت البريك" بيتبعت تلقائياً لما يعدّي (المدة + السماحية) — بيوصل داخل التطبيق وكـpush على الموبايل.
-            </p>
+            <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              {([
+                ['break_soon_msg', 'نص "البريك قرب"', 'Your break is at {time}.'],
+                ['break_ending_msg', 'نص "البريك قرب يخلص"', 'Your break ends at {time}…'],
+                ['break_overrun_msg', 'نص "تعدّيت البريك"', 'Your break ran past its limit…'],
+              ] as const).map(([k, label, ph]) => (
+                <div key={k}>
+                  <label style={LBL}>{label}</label>
+                  <textarea style={{ ...INPUT, minHeight: 48, resize: 'vertical', fontFamily: 'inherit' }} rows={2}
+                    value={(form[k] as string) ?? ''} onChange={e => set(k)(e.target.value)} placeholder={ph} />
+                </div>
+              ))}
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: 0, lineHeight: 1.6 }}>
+                تقدر تستخدم <code>{'{time}'}</code> (الوقت) و<code>{'{limit}'}</code> (المدة+السماحية) جوّه النص. بتوصل داخل التطبيق وكـpush على الموبايل.
+              </p>
+            </div>
           </div>
 
           {/* Check-out */}

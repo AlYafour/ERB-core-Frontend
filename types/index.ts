@@ -968,6 +968,9 @@ export interface AttendancePolicy {
   break_alerts_enabled: boolean;
   break_notify_before_start_min: number;
   break_notify_before_end_min: number;
+  break_soon_msg: string;
+  break_ending_msg: string;
+  break_overrun_msg: string;
   break_max_min: number;
   break_grace_min: number;
   checkout_opens_after_min: number;
