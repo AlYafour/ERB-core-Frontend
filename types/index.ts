@@ -962,6 +962,7 @@ export interface AttendancePolicy {
   checkin_opens_before_min: number;
   checkin_closes_after_min: number;
   checkin_minor_late_min: number;
+  break_start_time: string | null;
   break_opens_before_min: number;
   break_closes_after_min: number;
   break_max_min: number;

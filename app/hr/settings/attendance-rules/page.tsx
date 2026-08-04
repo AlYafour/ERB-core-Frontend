@@ -38,6 +38,7 @@ type Draft = Partial<AttendancePolicy>;
 const DEFAULTS: Draft = {
   name: 'Attendance Policy', enforce_punch_windows: false,
   checkin_opens_before_min: 30, checkin_closes_after_min: 240, checkin_minor_late_min: 30,
+  break_start_time: null,
   break_opens_before_min: 60, break_closes_after_min: 30, break_max_min: 60, break_grace_min: 5,
   checkout_opens_after_min: 0, checkout_closes_after_min: 60,
   emergency_enabled: true, emergency_monthly_limit: 2, emergency_validity_min: 15,
@@ -188,6 +189,15 @@ export default function AttendanceRulesPage() {
           {/* Break */}
           <div style={CARD}>
             <p style={SECTION}>Break</p>
+            <div style={{ marginBottom: 'var(--space-4)' }}>
+              <label style={LBL}>Break start time</label>
+              <input type="time" style={{ ...INPUT, maxWidth: 200 }}
+                value={(form.break_start_time ?? '').slice(0, 5)}
+                onChange={e => setForm(f => ({ ...f, break_start_time: e.target.value || null }))} />
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '4px 0 0' }}>
+                وقت البريك — الزر يظهر/يختفي نسبةً له. سيبه فاضي عشان ياخد وقت البريك من الشيفت.
+              </p>
+            </div>
             <div style={GRID}>
               <NumField label="Opens before break time (min)" value={form.break_opens_before_min}
                 onChange={set('break_opens_before_min') as (v: number) => void} />
