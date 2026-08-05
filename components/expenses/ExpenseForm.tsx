@@ -109,7 +109,9 @@ export default function ExpenseForm({ existing }: { existing?: Expense }) {
   const [lines, setLines] = useState<Line[]>(existing ? [lineFromExisting(existing)] : [blankLine(1)]);
 
   const { data: cfg }            = useQuery({ queryKey: ['exp-config'], queryFn: () => expensesApi.getConfig(), staleTime: 600_000 });
-  const vatRate = Number(cfg?.vat_rate ?? 5) || 5;
+  // No jurisdiction default: when the tenant has no VAT tax code configured the
+  // API returns null → rate 0 (VAT simply not applied), never a hardcoded 5%.
+  const vatRate = cfg?.vat_rate != null ? (Number(cfg.vat_rate) || 0) : 0;
   const { data: boxes = [] }     = useQuery({ queryKey: ['exp-cash-boxes'], queryFn: () => expensesApi.listCashBoxes(), staleTime: 300_000 });
   const { data: costTypes = [] } = useQuery({ queryKey: ['exp-cost-types', isEdit], queryFn: () => expensesApi.listCostTypes(isEdit), staleTime: 300_000 });
   const { data: overheads = [] } = useQuery({ queryKey: ['exp-overheads', isEdit], queryFn: () => expensesApi.listOverheadCategories(isEdit), staleTime: 300_000 });

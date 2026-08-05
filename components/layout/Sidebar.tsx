@@ -426,6 +426,9 @@ export default function Sidebar() {
               )}
               {user?.id && navLink('/security', 'Account Security', <ShieldCheckIcon className="w-4 h-4" />)}
               {user?.id && navLink('/my-approvals', 'My Approvals', <ShieldCheckIcon className="w-4 h-4" />, myApprovalsBadge)}
+              {/* Self-service: any engineer/worker who holds petty cash sees his
+                  own custody (received / spent / balance), no expense perm. */}
+              {user?.id && navLink('/expenses/my-custody', 'My Custody', <DollarIcon className="w-4 h-4" />)}
             </div>
 
             {/* Procurement */}

@@ -648,6 +648,12 @@ function TransferModal({ source, boxes, onClose }: {
   });
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
+  // One idempotency key per transfer intent (per open modal): a double-click or
+  // retry reuses it, so the backend books the transfer exactly once.
+  const [idemKey] = useState(() =>
+    (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : `txf-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
   const targets = boxes.filter((b) => b.id !== source.id && b.is_active);
   const dest = targets.find((b) => b.id === f.destination) || null;
@@ -657,7 +663,7 @@ function TransferModal({ source, boxes, onClose }: {
     if (!f.destination || amt <= 0) { toastErr('Destination and a positive amount are required.'); return; }
     setBusy(true);
     try {
-      const r = await accountingApi.transfer(source.id, f) as { journal_entry: string; journal_number?: string };
+      const r = await accountingApi.transfer(source.id, f, idemKey) as { journal_entry: string; journal_number?: string };
       let attached = 0;
       for (const file of files) {
         try { await accountingApi.uploadJournalAttachment(r.journal_entry, file); attached += 1; }

@@ -5,6 +5,24 @@ import type { ApprovalStatus } from './approvals';
 export type ExpenseStatus =
   | 'draft' | 'submitted' | 'accounting_approved' | 'approved' | 'posted' | 'rejected' | 'cancelled';
 
+export interface MyCustody {
+  worker_id: string;
+  box_id: string;
+  box_name: string;
+  received: string;
+  spent: string;
+  balance: string;
+}
+
+export interface MyCustodyVoucher {
+  id: string;
+  number: string;
+  date: string;
+  amount: string;
+  description: string;
+  status: ExpenseStatus;
+}
+
 export interface ExpenseAttachment {
   id: string;
   name: string;
@@ -227,8 +245,17 @@ export const expensesApi = {
 
   /** Tenant form config — currently the VAT rate (percent), so the form
    *  doesn't hardcode a jurisdiction-specific 5%. */
-  getConfig: (): Promise<{ vat_rate: string }> =>
+  getConfig: (): Promise<{ vat_rate: string | null }> =>
     apiClient.get(`${BASE}/config/`).then(r => r.data),
+
+  /** Self-service: the sub-floats (custodies) the current user holds as a
+   *  registered worker, each with received / spent / balance. */
+  myCustody: (): Promise<MyCustody[]> =>
+    apiClient.get(`${BASE}/my-custody/`).then(r => r.data),
+
+  /** The vouchers charged to the current user on one of his own custodies. */
+  myCustodyVouchers: (workerId: string): Promise<MyCustodyVoucher[]> =>
+    apiClient.get(`${BASE}/my-custody/${workerId}/vouchers/`).then(r => r.data),
 
   listCostTypes: (includeInactive = false): Promise<CostTypeOption[]> =>
     apiClient.get(`${BASE}/cost-types/`, { params: includeInactive ? { include_inactive: 1 } : undefined }).then(r => r.data),

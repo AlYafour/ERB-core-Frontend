@@ -399,8 +399,11 @@ export const accountingApi = {
     apiClient.post<BankAccount>(`${BASE}/bank-accounts/`, payload).then(r => r.data),
   updateBankAccount: (id: string, payload: Partial<BankAccount>) =>
     apiClient.patch<BankAccount>(`${BASE}/bank-accounts/${id}/`, payload).then(r => r.data),
-  transfer: (sourceId: string, payload: { destination: string; amount: string; transfer_date?: string; reference?: string; memo?: string }) =>
-    apiClient.post(`${BASE}/bank-accounts/${sourceId}/transfer/`, payload).then(r => r.data),
+  // idempotencyKey (one per transfer intent) makes a retried/double-clicked
+  // transfer resolve to the entry already booked instead of posting a duplicate.
+  transfer: (sourceId: string, payload: { destination: string; amount: string; transfer_date?: string; reference?: string; memo?: string }, idempotencyKey?: string) =>
+    apiClient.post(`${BASE}/bank-accounts/${sourceId}/transfer/`, payload,
+      idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : undefined).then(r => r.data),
   setBankOpeningBalances: (payload: { as_of?: string; entries: Array<{ account: string; amount: string }> }) =>
     apiClient.post<{ journal_number: string; restated: boolean }>(
       `${BASE}/bank-accounts/opening-balances/`, payload).then(r => r.data),
