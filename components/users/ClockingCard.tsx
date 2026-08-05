@@ -585,27 +585,30 @@ export default function ClockingCard({ emp, isSelf }: Props) {
                 </button>
               )}
 
-              {checkedIn && !checkedOut && !isOnBreak && (
-                <>
-                  {!record?.break_start && !brkLocked && (
-                    <button onClick={() => handleBreak('out')} disabled={busy}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 20px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: '#FEF3C7', color: '#B45309', opacity: busy ? 0.55 : 1 }}>
-                      {breakOutMut.isPending ? '…' : '⏸ Take a break'}
-                    </button>
-                  )}
-                  {!coLocked && (
-                    <button onClick={handleCheckOut} disabled={busy}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 20px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: 'var(--brand)', color: '#fff', opacity: busy ? 0.65 : 1 }}>
-                      {gettingGps ? '⏳ Locating…' : verifying ? '🔒 Verifying…' : checkOutMut.isPending ? '⏳ Saving…' : '✓ Clock Out'}
-                    </button>
-                  )}
-                </>
+              {/* Take a break — only while working and not already on/after a break. */}
+              {checkedIn && !checkedOut && !isOnBreak && !record?.break_start && !brkLocked && (
+                <button onClick={() => handleBreak('out')} disabled={busy}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 20px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: '#FEF3C7', color: '#B45309', opacity: busy ? 0.55 : 1 }}>
+                  {breakOutMut.isPending ? '…' : '⏸ Take a break'}
+                </button>
               )}
 
               {isOnBreak && (
                 <button onClick={() => handleBreak('in')} disabled={busy}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 24px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: '#FEF3C7', color: '#B45309', opacity: busy ? 0.65 : 1 }}>
                   {breakInMut.isPending ? '…' : '▶ End break'}
+                </button>
+              )}
+
+              {/* Clock Out is available whenever checked-in and within its
+                  window — INCLUDING while on an unfinished break — so nobody is
+                  trapped if the break-end deadline passes. Leaving with an open
+                  break just becomes a missing-punch correction, which the
+                  server already accepts. */}
+              {checkedIn && !checkedOut && !coLocked && (
+                <button onClick={handleCheckOut} disabled={busy}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 20px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: 'var(--brand)', color: '#fff', opacity: busy ? 0.65 : 1 }}>
+                  {gettingGps ? '⏳ Locating…' : verifying ? '🔒 Verifying…' : checkOutMut.isPending ? '⏳ Saving…' : '✓ Clock Out'}
                 </button>
               )}
 
