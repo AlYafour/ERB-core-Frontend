@@ -40,6 +40,16 @@ function fmtHours(h: number | null | undefined): string {
   return mins === 0 ? `${hrs}h` : `${hrs}h ${mins}m`;
 }
 
+// Label/value row used inside the late-return acknowledge screen.
+function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+      <span>{label}</span>
+      <span style={{ fontWeight: strong ? 700 : 600, fontVariantNumeric: 'tabular-nums' }}>{value}</span>
+    </div>
+  );
+}
+
 function getPosition(highAccuracy: boolean, timeout: number, maxAge: number): Promise<GeolocationCoordinates | null> {
   return new Promise(resolve => {
     if (!navigator.geolocation) return resolve(null);
@@ -151,6 +161,8 @@ export default function ClockingCard({ emp, isSelf }: Props) {
   // Missing-punch one-tap correction: which gap is being fixed + its edited time.
   const [fixing, setFixing] = useState<MissingPunch | null>(null);
   const [fixTime, setFixTime] = useState('');
+  // Late return from break: the yellow acknowledge screen before self-recording.
+  const [showLateBreak, setShowLateBreak] = useState(false);
   // Live wall clock (ticks every second) — powers the on-screen clock + the
   // "opens/closes in X min" countdown next to each punch button.
   const [now, setNow] = useState<Date>(() => new Date());
@@ -240,8 +252,15 @@ export default function ClockingCard({ emp, isSelf }: Props) {
   });
 
   const breakInMut = useMutation({
-    mutationFn: (data?: { latitude?: number; longitude?: number; accuracy?: number; device_uuid?: string }) => hrSelfAttendanceApi.breakIn(data),
-    onSuccess: () => { invalidate(); toast('Break ended — welcome back.', 'success'); },
+    mutationFn: (data?: { latitude?: number; longitude?: number; accuracy?: number; device_uuid?: string; late_ack?: boolean }) => hrSelfAttendanceApi.breakIn(data),
+    onSuccess: (rec: any) => {
+      // Past the deadline the server asks the employee to acknowledge first —
+      // show the yellow "late return" screen instead of recording silently.
+      if (rec?.requires_ack) { setShowLateBreak(true); return; }
+      setShowLateBreak(false);
+      invalidate();
+      toast(rec?.break_end_late ? 'Late return recorded — noted on your day.' : 'Break ended — welcome back.', 'success');
+    },
     onError:   (err: any) => setGpsError(err?.response?.data?.detail ?? 'Failed to end break.'),
     throwOnError: false,
   });
@@ -293,13 +312,32 @@ export default function ClockingCard({ emp, isSelf }: Props) {
   });
 
   // Break punches must also be at the work site — capture location like check-in.
-  const handleBreak = async (which: 'out' | 'in') => {
+  const doBreakIn = async (lateAck: boolean) => {
     setGpsError(null);
     setGettingGps(true);
     const coords = await getLocation();
     setGettingGps(false);
     const base = { device_uuid: getDeviceUuid(), ...(coords ? { latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy } : {}) };
-    (which === 'out' ? breakOutMut : breakInMut).mutate(base);
+    breakInMut.mutate({ ...base, ...(lateAck ? { late_ack: true } : {}) });
+  };
+
+  const handleBreak = async (which: 'out' | 'in') => {
+    if (which === 'in') {
+      // Returned after the deadline → acknowledge on the yellow screen first,
+      // then it self-records (flagged late + retroactive). No manager approval.
+      if (punch?.enforced && punch.break_end && punch.break_end.open_now === false) {
+        setGpsError(null);
+        setShowLateBreak(true);
+        return;
+      }
+      return doBreakIn(false);
+    }
+    setGpsError(null);
+    setGettingGps(true);
+    const coords = await getLocation();
+    setGettingGps(false);
+    const base = { device_uuid: getDeviceUuid(), ...(coords ? { latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy } : {}) };
+    breakOutMut.mutate(base);
   };
 
   const handleCheckIn = async () => {
@@ -593,12 +631,15 @@ export default function ClockingCard({ emp, isSelf }: Props) {
                 </button>
               )}
 
-              {isOnBreak && (
-                <button onClick={() => handleBreak('in')} disabled={busy}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 24px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: '#FEF3C7', color: '#B45309', opacity: busy ? 0.65 : 1 }}>
-                  {breakInMut.isPending ? '…' : '▶ End break'}
-                </button>
-              )}
+              {isOnBreak && (() => {
+                const breakLate = !!punch?.enforced && punch?.break_end?.open_now === false;
+                return (
+                  <button onClick={() => handleBreak('in')} disabled={busy}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 24px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: breakLate ? '#FDE68A' : '#FEF3C7', color: '#B45309', opacity: busy ? 0.65 : 1 }}>
+                    {breakInMut.isPending ? '…' : breakLate ? '⚠ Record late return' : '▶ End break'}
+                  </button>
+                );
+              })()}
 
               {/* Clock Out is available whenever checked-in and within its
                   window — INCLUDING while on an unfinished break — so nobody is
@@ -690,6 +731,41 @@ export default function ClockingCard({ emp, isSelf }: Props) {
                 <button onClick={() => emergencyMut.mutate({ reason: emReason.trim(), ack: emAck })} disabled={!canSubmit}
                   style={{ height: 40, padding: '0 22px', borderRadius: 999, border: 'none', background: canSubmit ? '#991B1B' : 'var(--border-default)', color: '#fff', fontWeight: 600, fontSize: 13, cursor: canSubmit ? 'pointer' : 'not-allowed' }}>
                   {emergencyMut.isPending ? '⏳ Submitting…' : 'Submit & unlock clock-out'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Late-return-from-break acknowledge screen (the yellow confirm) */}
+      {showLateBreak && punch?.break_end && (() => {
+        const be = punch.break_end!;
+        const saving = breakInMut.isPending || gettingGps;
+        return (
+          <div onClick={() => !saving && setShowLateBreak(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 1000 }}>
+            <div onClick={e => e.stopPropagation()}
+              style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 20, maxWidth: 420, width: '100%', padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+              <p style={{ fontSize: 16, fontWeight: 800, color: '#92400E', margin: '0 0 14px' }}>📝 Record end of break</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: '#78350F', borderTop: '1px solid #FDE68A', borderBottom: '1px solid #FDE68A', padding: '14px 0', margin: '0 0 14px' }}>
+                <Row label="Current time" value={now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} />
+                {be.break_start && <Row label="Break started" value={be.break_start} />}
+                <Row label="Allowed until" value={be.deadline} />
+                <Row label="Classification" value="Late return (recorded retroactively)" strong />
+                {be.points ? <Row label="Score" value={`−${be.points} points`} strong /> : null}
+              </div>
+              <p style={{ fontSize: 12, color: '#78350F', margin: '0 0 16px', lineHeight: 1.6 }}>
+                You returned after the allowed break time. Confirming records your return now and flags it as a late, retroactive punch — no approval needed.
+              </p>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button onClick={() => setShowLateBreak(false)} disabled={saving}
+                  style={{ height: 40, padding: '0 18px', borderRadius: 999, border: '1px solid #FDE68A', background: 'transparent', color: '#92400E', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                  Cancel
+                </button>
+                <button onClick={() => doBreakIn(true)} disabled={saving}
+                  style={{ height: 40, padding: '0 22px', borderRadius: 999, border: 'none', background: '#B45309', color: '#fff', fontWeight: 700, fontSize: 13, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}>
+                  {saving ? '⏳ Saving…' : 'OK · Confirm'}
                 </button>
               </div>
             </div>

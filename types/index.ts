@@ -1001,6 +1001,7 @@ export interface AttendancePolicy {
   points_absent: number;
   points_missing_punch: number;
   points_out_of_range: number;
+  points_break_late?: number;
   points_mock_location: number;
   zone_yellow_at: number;
   zone_orange_at: number;
@@ -1099,7 +1100,7 @@ export interface PunchStatus {
   check_in: PunchWindow;
   break_start: PunchWindow;
   check_out: PunchWindow;
-  break_end?: { deadline: string; open_now: boolean };
+  break_end?: { deadline: string; open_now: boolean; break_start?: string; points?: number };
   missing_punches?: number;
   score?: number;
   zone?: 'green' | 'yellow' | 'orange' | 'red';

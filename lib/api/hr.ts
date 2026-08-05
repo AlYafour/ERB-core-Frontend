@@ -865,7 +865,7 @@ export const hrSelfAttendanceApi = {
     const response = await apiClient.post('/hr/attendance/self-break-out/', data ?? {});
     return response.data;
   },
-  breakIn: async (data?: { latitude?: number; longitude?: number; accuracy?: number; device_uuid?: string }): Promise<AttendanceRecord> => {
+  breakIn: async (data?: { latitude?: number; longitude?: number; accuracy?: number; device_uuid?: string; late_ack?: boolean }): Promise<AttendanceRecord & { requires_ack?: boolean; classification?: string; break_start?: string; deadline?: string; now?: string; points?: number }> => {
     const response = await apiClient.post('/hr/attendance/self-break-in/', data ?? {});
     return response.data;
   },

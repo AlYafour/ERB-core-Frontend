@@ -53,7 +53,7 @@ const DEFAULTS: Draft = {
   escalation_enabled: false, escalate_manager_after: 3, escalate_hr_after: 5,
   grade_b_threshold: 2, grade_c_threshold: 5,
   points_minor_late: 5, points_severe_late: 10, points_absent: 15,
-  points_missing_punch: 3, points_out_of_range: 5, points_mock_location: 25,
+  points_missing_punch: 3, points_out_of_range: 5, points_break_late: 10, points_mock_location: 25,
   zone_yellow_at: 10, zone_orange_at: 20, zone_red_at: 35, block_mock_location: false,
 };
 
@@ -384,6 +384,8 @@ export default function AttendanceRulesPage() {
                 onChange={set('points_missing_punch') as (v: number) => void} />
               <NumField label="Points · out of range" value={form.points_out_of_range}
                 onChange={set('points_out_of_range') as (v: number) => void} />
+              <NumField label="Points · late back from break" value={form.points_break_late}
+                onChange={set('points_break_late') as (v: number) => void} />
               <NumField label="Points · fake GPS" value={form.points_mock_location}
                 onChange={set('points_mock_location') as (v: number) => void} />
             </div>
