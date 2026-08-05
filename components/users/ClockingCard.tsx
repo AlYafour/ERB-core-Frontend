@@ -751,7 +751,8 @@ export default function ClockingCard({ emp, isSelf }: Props) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: '#78350F', borderTop: '1px solid #FDE68A', borderBottom: '1px solid #FDE68A', padding: '14px 0', margin: '0 0 14px' }}>
                 <Row label="Current time" value={now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} />
                 {be.break_start && <Row label="Break started" value={be.break_start} />}
-                <Row label="Allowed until" value={be.deadline} />
+                {/* Deliberately NOT showing the deadline — it would reveal the
+                    grace window and be treated as an entitlement. */}
                 <Row label="Classification" value="Late return (recorded retroactively)" strong />
                 {be.points ? <Row label="Score" value={`−${be.points} points`} strong /> : null}
               </div>
