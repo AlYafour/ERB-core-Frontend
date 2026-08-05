@@ -36,6 +36,7 @@ const EMPTY_FORM = {
   code: '',
   description: '',
   is_active: true,
+  track_attendance: true,
   default_shift: null as number | null,
   default_manager: null as number | null,
 };
@@ -71,6 +72,7 @@ function GroupModal({
           code:            group.code,
           description:     group.description,
           is_active:       group.is_active,
+          track_attendance: group.track_attendance ?? true,
           default_shift:   group.default_shift ?? null,
           default_manager: group.default_manager ?? null,
         }
@@ -220,6 +222,30 @@ function GroupModal({
             </div>
             <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)' }}>
               {form.is_active ? 'Active — employees can be assigned to this category' : 'Inactive — hidden from assignment pickers'}
+            </span>
+          </label>
+
+          {/* Track attendance toggle — off for crews that don't clock in from
+              the app (e.g. remote sites), so they are not auto-marked absent. */}
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', cursor: 'pointer', userSelect: 'none' }}>
+            <div
+              onClick={() => set('track_attendance', !form.track_attendance)}
+              style={{
+                width: 40, height: 22, borderRadius: 99, flexShrink: 0, marginTop: 2,
+                background: form.track_attendance ? 'var(--brand)' : 'var(--border-default)',
+                position: 'relative', cursor: 'pointer', transition: 'background 200ms',
+              }}
+            >
+              <div style={{
+                position: 'absolute', top: 3, left: form.track_attendance ? 21 : 3,
+                width: 16, height: 16, borderRadius: '50%', background: 'var(--primary-foreground)',
+                transition: 'left 200ms', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              }} />
+            </div>
+            <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)' }}>
+              {form.track_attendance
+                ? 'App attendance — members clock in from the app; absentees are auto-flagged'
+                : 'No app attendance — members don’t clock in from the app (e.g. site crews); they are NOT auto-marked absent'}
             </span>
           </label>
 

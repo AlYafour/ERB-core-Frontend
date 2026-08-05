@@ -631,6 +631,7 @@ export interface EmployeeGroup {
   code: string;
   description: string;
   is_active: boolean;
+  track_attendance?: boolean;
   member_count: number;
   default_shift?: number | null;
   default_shift_name?: string | null;
