@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Team, TeamMember, TeamMemberRole } from '@/types';
 import { teamsApi } from '@/lib/api/tasks';
 import { usersApi } from '@/lib/api/users';
+import { TaskAvatar } from '../shared/TaskAvatar';
 import { BRAND, BRAND_HEX } from '../shared/constants';
 import { toast } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
@@ -472,6 +473,11 @@ export function TeamDetail({ teamId, onEdit, onDelete }: Props) {
                 onMouseEnter={(e) => (e.currentTarget.style.borderColor = `${BRAND_HEX}30`)}
                 onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-subtle)')}
               >
+                <TaskAvatar
+                  name={m.user_detail.full_name}
+                  url={m.user_detail.avatar_url}
+                  size={36}
+                />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p
                     style={{

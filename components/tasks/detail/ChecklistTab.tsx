@@ -1,6 +1,7 @@
 'use client';
 
 import type { SubTask } from '@/types';
+import { TaskAvatar } from '../shared/TaskAvatar';
 import { BRAND } from '../shared/constants';
 
 interface Props {
@@ -69,9 +70,11 @@ export function ChecklistTab({ subtasks, newSub, onNewSubChange, onAddSubtask, o
               {s.title}
             </span>
             {s.completed_by_detail && (
-              <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-                {s.completed_by_detail.full_name}
-              </span>
+              <TaskAvatar
+                name={s.completed_by_detail.full_name}
+                url={s.completed_by_detail.avatar_url}
+                size={18}
+              />
             )}
           </div>
         ))}

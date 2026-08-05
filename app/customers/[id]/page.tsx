@@ -56,6 +56,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 'var(--space-6)', alignItems: 'flex-start' }}>
             {/* Left: Summary card */}
             <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 'var(--space-3)' }}>
+              <div
+                className="av-initials"
+                style={{ width: 80, height: 80, fontSize: '1.75rem', background: 'var(--brand)', color: '#fff' }}
+              >
+                {(customer.full_name_english || '?')[0].toUpperCase()}
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
                 <p style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-primary)', margin: 0 }}>
                   {customer.full_name_english}

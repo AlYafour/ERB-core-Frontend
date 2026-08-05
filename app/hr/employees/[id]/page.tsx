@@ -769,6 +769,7 @@ export default function EmployeeDetailPage() {
   );
 
   const avatarSrc    = avatarPreview || emp.user?.avatar || emp.avatar || null;
+  const avatarLetter = (emp.full_name || emp.user?.username || '?')[0].toUpperCase();
 
   const drawerTitle =
     editSection === 'account'       ? 'Edit Account & Access'
@@ -808,6 +809,29 @@ export default function EmployeeDetailPage() {
           marginBottom: 12,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+
+            {/* Avatar */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              {avatarSrc ? (
+                <img src={avatarSrc} alt={emp.full_name} style={{
+                  width: 72, height: 72, borderRadius: '50%', objectFit: 'cover',
+                  border: '2px solid var(--border-subtle)',
+                }} />
+              ) : (
+                <div style={{
+                  width: 72, height: 72, borderRadius: '50%',
+                  background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1.75rem', fontWeight: 700, color: '#fff',
+                  border: '2px solid var(--border-subtle)',
+                }}>{avatarLetter}</div>
+              )}
+              <span style={{
+                position: 'absolute', bottom: 2, right: 2,
+                width: 13, height: 13, borderRadius: '50%',
+                border: '2px solid var(--surface-card)',
+                background: emp.is_active ? 'var(--status-success)' : 'var(--status-error)',
+              }} />
+            </div>
 
             {/* Identity */}
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -941,6 +965,11 @@ export default function EmployeeDetailPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
                 <div className="card">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+                    {avatarSrc ? (
+                      <img src={avatarSrc} alt={emp.full_name} className="av" style={{ width: 56, height: 56 }} />
+                    ) : (
+                      <div className="av-initials" style={{ width: 56, height: 56, fontSize: '1.25rem' }}>{avatarLetter}</div>
+                    )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontWeight: 700, fontSize: 'var(--text-base)', margin: 0 }}>{emp.full_name}</p>
                       <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{emp.user?.email || '—'}</p>
@@ -1284,6 +1313,17 @@ export default function EmployeeDetailPage() {
             <div className={fld}>
               <label className={lbl}>Profile Picture</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+                <div style={{
+                  width: 64, height: 64, borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+                  background: 'var(--surface-subtle)', border: '1px solid var(--border-subtle)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {avatarPreview || avatarSrc ? (
+                    <img src={avatarPreview || avatarSrc || ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: '1.5rem', color: 'var(--text-tertiary)' }}>{avatarLetter}</span>
+                  )}
+                </div>
                 <div>
                   <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
                     onChange={e => {

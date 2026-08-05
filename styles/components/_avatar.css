@@ -1,6 +1,24 @@
 /* ================================================================
-   PRIORITY BAR
+   AVATAR + PRIORITY BAR
    ================================================================ */
+
+.av {
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.av-initials {
+  border-radius: var(--radius-full);
+  background: var(--brand);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--weight-bold);
+  flex-shrink: 0;
+  user-select: none;
+}
 
 /* Priority bar — 3-segment vertical bars */
 .prio-bar {

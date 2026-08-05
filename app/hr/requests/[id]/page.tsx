@@ -11,7 +11,7 @@ import { resolveRequestTypeLabel } from '@/lib/hr/request-type-label';
 import { ProcField } from '@/components/procurement/shared/ProcField';
 import { ApprovalStatusWidget } from '@/components/ui/ApprovalStatusWidget';
 import { toast, confirm } from '@/lib/hooks/use-toast';
-import { Button, Badge, Loader, PageHeader, PageShell } from '@/components/ui';
+import { Button, Badge, Loader, PageHeader, PageShell, Avatar } from '@/components/ui';
 
 const PUNCH_KIND_LABEL: Record<string, string> = {
   clock_in: 'Clocking-In', clock_out: 'Clocking-Out', break_out: 'Break-Out', break_in: 'Break-In',
@@ -179,6 +179,7 @@ export default function HRRequestDetailPage() {
           <div style={{ flex: '1 1 420px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
             {/* Employee card */}
             <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+              <Avatar src={req.employee_avatar} username={req.employee_name} alt={req.employee_name} size={64} />
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', color: 'var(--text-primary)', lineHeight: 1.2 }}>
                   {req.employee_name}

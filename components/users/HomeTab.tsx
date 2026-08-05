@@ -55,6 +55,12 @@ function getGreeting(): string {
   return 'evening';
 }
 
+function userInitials(user: any): string {
+  const f = (user?.first_name || '').charAt(0).toUpperCase();
+  const l = (user?.last_name  || '').charAt(0).toUpperCase();
+  return (f + l) || (user?.username || '?').charAt(0).toUpperCase();
+}
+
 // ── SVG arc leave indicator ────────────────────────────────────────────────────
 const ARC_LEN = 81.7;
 
@@ -112,6 +118,7 @@ export default function HomeTab({ user, emp, isSelf }: UserTabProps) {
 
   const firstName = user?.first_name || user?.username || 'there';
   const company   = (tenant as any)?.name || '';
+  const initials  = userInitials(user);
 
   const allTasks    = Array.isArray(rawTasks) ? rawTasks : (rawTasks as any)?.results ?? [];
   const activeTasks = allTasks
@@ -140,6 +147,15 @@ export default function HomeTab({ user, emp, isSelf }: UserTabProps) {
           <p style={{ fontSize: 12, color: 'rgba(255,255,255,.6)', margin: 0 }}>
             {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
+        </div>
+        <div style={{
+          width: 52, height: 52, borderRadius: '50%',
+          background: 'rgba(255,255,255,.15)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 18, fontWeight: 700, color: '#fff', flexShrink: 0,
+          border: '2px solid rgba(255,255,255,.25)', letterSpacing: '0.02em',
+        }}>
+          {initials}
         </div>
       </div>
 

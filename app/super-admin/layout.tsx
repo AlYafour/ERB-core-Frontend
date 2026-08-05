@@ -23,7 +23,7 @@ const NAV = [
 
 const T = '100ms cubic-bezier(0.16, 1, 0.3, 1)';
 
-function AdminUserMenu({ displayName, onLogout }: { displayName: string; onLogout: () => void }) {
+function AdminUserMenu({ displayName, initials, onLogout }: { displayName: string; initials: string; onLogout: () => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -48,9 +48,12 @@ function AdminUserMenu({ displayName, onLogout }: { displayName: string; onLogou
         onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-subtle)'; }}
         onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
       >
-        <div style={{ textAlign: 'start', lineHeight: 1 }}>
+        <div style={{ width: 30, height: 30, borderRadius: '50%', background: C.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+          {initials}
+        </div>
+        <div className="hidden sm:block" style={{ textAlign: 'start', lineHeight: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>{displayName}</div>
-          <div className="hidden sm:block" style={{ fontSize: 11, color: C.accent, marginTop: 2, fontWeight: 500 }}>Platform Admin</div>
+          <div style={{ fontSize: 11, color: C.accent, marginTop: 2, fontWeight: 500 }}>Platform Admin</div>
         </div>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
           style={{ opacity: 0.4, flexShrink: 0, transition: `transform ${T}`, transform: open ? 'rotate(180deg)' : 'rotate(0deg)', color: 'var(--text-secondary)' }}>
@@ -129,6 +132,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
   const displayName = user?.first_name
     ? `${user.first_name} ${user.last_name || ''}`.trim()
     : (user?.username || 'Admin');
+  const initials = displayName.split(' ').slice(0, 2).map((w: string) => w[0]?.toUpperCase() || '').join('');
 
   function NavLink({ item }: { item: (typeof NAV)[number] }) {
     const active = isActive(item.href, item.exact);
@@ -197,6 +201,9 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
           {/* User footer */}
           <div style={{ padding: '10px 12px 14px', borderTop: '1px solid var(--sidebar-border)', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: C.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                {initials}
+              </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</div>
                 <div style={{ fontSize: 10, color: C.accent, fontWeight: 500 }}>Platform Admin</div>
@@ -224,6 +231,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
           <div style={{ width: 1, height: 22, background: 'var(--border-subtle)', margin: '0 4px' }} />
           <AdminUserMenu
             displayName={displayName}
+            initials={initials}
             onLogout={logout}
           />
         </div>

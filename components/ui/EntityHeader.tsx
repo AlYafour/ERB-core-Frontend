@@ -60,59 +60,56 @@ export default function EntityHeader({
   return (
     <div className="card" style={{ marginBottom: 'var(--spacing-6)' }}>
       <div style={{ display: 'flex', gap: 'var(--spacing-4)', alignItems: 'flex-start' }}>
-        {/* Image — people are shown by name only; product/project/supplier
-            keep their real image/logo. */}
-        {!isCircular && (
-          <div
-            style={{
-              flexShrink: 0,
-              width: `${imageSize}px`,
-              height: `${imageSize}px`,
-              borderRadius: 'var(--radius-lg)',
-              overflow: 'hidden',
-              backgroundColor: 'var(--bg-tertiary)',
-              border: '2px solid var(--border-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: 'var(--shadow-md)',
-            }}
-          >
-            {imageUrl && !imageError ? (
-              <Image
-                src={imageUrl}
-                alt={imageAlt || title}
-                width={imageSize}
-                height={imageSize}
-                unoptimized
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-                onError={() => {
-                  setImageError(true);
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'var(--bg-tertiary)',
-                  color: 'var(--text-tertiary)',
-                  fontSize: 'var(--font-2xl)',
-                  fontWeight: 'var(--font-weight-bold)',
-                }}
-              >
-                {title.charAt(0).toUpperCase()}
-              </div>
-            )}
-          </div>
-        )}
+        {/* Image */}
+        <div
+          style={{
+            flexShrink: 0,
+            width: `${imageSize}px`,
+            height: `${imageSize}px`,
+            borderRadius: isCircular ? '50%' : 'var(--radius-lg)',
+            overflow: 'hidden',
+            backgroundColor: 'var(--bg-tertiary)',
+            border: '2px solid var(--border-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: 'var(--shadow-md)',
+          }}
+        >
+          {imageUrl && !imageError ? (
+            <Image
+              src={imageUrl}
+              alt={imageAlt || title}
+              width={imageSize}
+              height={imageSize}
+              unoptimized
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+              onError={() => {
+                setImageError(true);
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'var(--bg-tertiary)',
+                color: 'var(--text-tertiary)',
+                fontSize: 'var(--font-2xl)',
+                fontWeight: 'var(--font-weight-bold)',
+              }}
+            >
+              {title.charAt(0).toUpperCase()}
+            </div>
+          )}
+        </div>
 
         {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>

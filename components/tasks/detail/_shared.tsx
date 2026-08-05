@@ -1,7 +1,10 @@
 'use client';
 
+import { TaskAvatar } from '../shared/TaskAvatar';
+
 export function UserRow({
   name,
+  url,
   sub,
 }: {
   name: string;
@@ -10,6 +13,7 @@ export function UserRow({
 }) {
   return (
     <div className="user-row">
+      <TaskAvatar name={name} url={url} size={24} />
       <div>
         <p className="user-row__name">{name}</p>
         {sub && <p className="user-row__sub">{sub}</p>}

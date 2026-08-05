@@ -1,6 +1,7 @@
 'use client';
 
 import type { TaskDetail } from '@/types';
+import { TaskAvatar } from '../shared/TaskAvatar';
 import { fmtDate } from '../shared/constants';
 
 interface Props {
@@ -21,6 +22,7 @@ export function ActivityTab({ activities }: Props) {
       {activities.map((a, i) => (
         <div key={a.id} className="activity-item">
           {i < activities.length - 1 && <div className="activity-connector" />}
+          <TaskAvatar name={a.actor_detail.full_name} url={a.actor_detail.avatar_url} size={28} />
           <div style={{ flex: 1 }}>
             <p className="activity-text">
               <strong>{a.actor_detail.full_name}</strong>{' '}

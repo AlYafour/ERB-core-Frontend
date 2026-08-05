@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { TaskComment } from '@/types';
 import { usersApi } from '@/lib/api/users';
+import { TaskAvatar } from '../shared/TaskAvatar';
 import { BRAND, fmtDate } from '../shared/constants';
 
 /* Render @mention as highlighted span */
@@ -140,6 +141,7 @@ export function CommentsTab({
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-subtle)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
               >
+                <TaskAvatar name={u.full_name} url={u.avatar_url} size={24} />
                 <div style={{ minWidth: 0 }}>
                   <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{u.full_name}</p>
                   <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>@{u.username}</p>
@@ -173,6 +175,7 @@ export function CommentsTab({
             const isOwn = c.author === currentUserId || (c as any).author_detail?.id === currentUserId;
             return (
               <div key={c.id} className="comment-row">
+                <TaskAvatar name={c.author_detail.full_name} url={c.author_detail.avatar_url} size={32} />
                 <div style={{ flex: 1 }}>
                   <div className="comment-meta">
                     <p className="comment-author">{c.author_detail.full_name}</p>
