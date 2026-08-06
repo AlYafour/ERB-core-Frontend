@@ -32,6 +32,22 @@ const STATUS_VARIANT: Record<ExpenseStatus, 'default' | 'warning' | 'info' | 'su
   approved: 'success', posted: 'success', rejected: 'error', cancelled: 'default',
 };
 const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+const fmtDateTime = (d?: string | null) => d ? new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+
+const ACTION_LABEL: Record<string, string> = {
+  'expense.updated': 'Corrected', 'expense.attachment_added': 'Receipt attached',
+  'expense.attachment_removed': 'Receipt removed', 'approval.submit': 'Submitted',
+  'approval.approve': 'Approved', 'approval.reject': 'Rejected',
+  'approval.return': 'Returned', 'approval.comment': 'Comment', 'approval.withdraw': 'Withdrawn',
+};
+const FIELD_LABEL: Record<string, string> = {
+  amount: 'Amount', vat_amount: 'VAT', vat_liable: 'VAT liable', description: 'Description',
+  expense_date: 'Date', supplier_id: 'Supplier', cost_code_id: 'Cost code',
+  cost_type_id: 'Cost type', project_id: 'Project', payee_name: 'Payee',
+  payee_worker_id: 'Payee (worker)', invoice_no: 'Invoice no.', invoice_date: 'Invoice date',
+  cash_box_id: 'Cash box', voucher_number: 'Voucher no.', overhead_category_id: 'Overhead',
+  vehicle_id: 'Vehicle', expense_account_id: 'GL account',
+};
 
 const ROW_LABEL: React.CSSProperties = {
   fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
@@ -94,10 +110,16 @@ function ExpenseDetailContent() {
     queryFn: () => expensesApi.getById(id),
     enabled: !!id,
   });
+  const { data: history = [] } = useQuery({
+    queryKey: ['expense-history', id],
+    queryFn: () => expensesApi.getHistory(id),
+    enabled: !!id,
+  });
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['expense', id] });
     queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    queryClient.invalidateQueries({ queryKey: ['expense-history', id] });
   };
   const submitM = useMutation({
     mutationFn: () => expensesApi.submit(id),
@@ -143,6 +165,12 @@ function ExpenseDetailContent() {
 
   const s = exp.status;
   const isDraft = s === 'draft' || s === 'rejected';
+  // Reviewer correction window: a SUBMITTED (pre-post) voucher may be corrected
+  // and have receipts attached by an approver/accounting reviewer. Mirrors the
+  // backend _can_edit_now gate; the ledger still posts only at final approval.
+  const canReview = s === 'submitted' && canApprove;
+  const canEditNow = (isDraft && canEdit) || canReview;
+  const wasEdited = history.some(e => e.action === 'expense.updated');
 
   // The code chain, split into NAMED tiers — never one crammed breadcrumb.
   const path = exp.cost_code_path ?? [];
@@ -168,7 +196,8 @@ function ExpenseDetailContent() {
           backHref="/expenses"
           actions={
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              {isDraft && canEdit && <Button variant="edit" size="sm" onClick={() => router.push(`/expenses/${id}/edit`)}>Edit</Button>}
+              {wasEdited && <Badge variant="warning">Edited</Badge>}
+              {canEditNow && <Button variant="edit" size="sm" onClick={() => router.push(`/expenses/${id}/edit`)}>{canReview ? 'Correct' : 'Edit'}</Button>}
               {isDraft && canEdit && <Button variant="secondary" size="sm" onClick={() => submitM.mutate()} isLoading={submitM.isPending}>Submit</Button>}
               {s === 'submitted' && canApprove && <Button variant="success" size="sm" onClick={() => approveM.mutate()} isLoading={approveM.isPending}>Approve</Button>}
               {s === 'submitted' && canApprove && <Button variant="destructive" size="sm" onClick={handleReject} isLoading={rejectM.isPending}>Reject</Button>}
@@ -291,18 +320,20 @@ function ExpenseDetailContent() {
             {/* Receipts */}
             <div className="card" style={{ padding: '16px 20px' }}>
               <div style={SECTION_TITLE}>Receipts {exp.attachments?.length ? `(${exp.attachments.length})` : ''}</div>
-              <label style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                minHeight: 48, padding: '10px', cursor: 'pointer',
-                border: '1.5px dashed var(--border-default)', borderRadius: 10,
-                color: 'var(--brand)', fontSize: 'var(--text-sm)', fontWeight: 700,
-              }}>
-                📎 Add receipt
-                <input type="file" multiple hidden onChange={e => {
-                  const chosen = Array.from(e.target.files ?? []).filter(f => f.size <= 20 * 1024 * 1024);
-                  uploadReceipt(chosen); e.target.value = '';
-                }} />
-              </label>
+              {canEditNow && (
+                <label style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  minHeight: 48, padding: '10px', cursor: 'pointer',
+                  border: '1.5px dashed var(--border-default)', borderRadius: 10,
+                  color: 'var(--brand)', fontSize: 'var(--text-sm)', fontWeight: 700,
+                }}>
+                  📎 Add receipt
+                  <input type="file" multiple hidden onChange={e => {
+                    const chosen = Array.from(e.target.files ?? []).filter(f => f.size <= 20 * 1024 * 1024);
+                    uploadReceipt(chosen); e.target.value = '';
+                  }} />
+                </label>
+              )}
               {exp.attachments && exp.attachments.length > 0 ? (
                 <ul style={{ listStyle: 'none', margin: '10px 0 0', padding: 0, fontSize: 'var(--text-sm)' }}>
                   {exp.attachments.map(a => (
@@ -310,8 +341,10 @@ function ExpenseDetailContent() {
                       {a.url ? <a href={a.url} target="_blank" rel="noreferrer" style={{ color: 'var(--brand)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none', fontWeight: 600 }}>{a.name}</a> : <span>{a.name}</span>}
                       <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                         <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>{(a.size / 1024).toFixed(0)} KB</span>
-                        <button onClick={async () => { if (await confirm(`Remove "${a.name}"?`)) { try { await expensesApi.deleteAttachment(id, a.id); invalidate(); } catch (err) { toast(getApiError(err, 'Delete failed'), 'error'); } } }}
-                                style={{ background: 'none', border: 'none', color: 'var(--status-error)', cursor: 'pointer', fontSize: 14 }}>×</button>
+                        {canEditNow && (
+                          <button onClick={async () => { if (await confirm(`Remove "${a.name}"?`)) { try { await expensesApi.deleteAttachment(id, a.id); invalidate(); } catch (err) { toast(getApiError(err, 'Delete failed'), 'error'); } } }}
+                                  style={{ background: 'none', border: 'none', color: 'var(--status-error)', cursor: 'pointer', fontSize: 14 }}>×</button>
+                        )}
                       </span>
                     </li>
                   ))}
@@ -328,6 +361,42 @@ function ExpenseDetailContent() {
                 <div><span style={{ color: 'var(--text-muted)' }}>Entered on:</span> {fmtDate(exp.created_at)}</div>
                 {exp.approved_at && <div><span style={{ color: 'var(--text-muted)' }}>Approved on:</span> {fmtDate(exp.approved_at)}</div>}
               </div>
+            </div>
+
+            {/* Activity Log — who entered, corrected, attached, approved */}
+            <div className="card" style={{ padding: '16px 20px' }}>
+              <div style={SECTION_TITLE}>Activity Log</div>
+              {history.length === 0 ? (
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: '8px 0 0' }}>No activity recorded yet.</p>
+              ) : (
+                <ul style={{ listStyle: 'none', margin: '10px 0 0', padding: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {history.map((ev, i) => (
+                    <li key={i} style={{ borderInlineStart: '2px solid var(--border-default)', paddingInlineStart: 12 }}>
+                      <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        {ACTION_LABEL[ev.action] ?? ev.action}
+                      </div>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                        {ev.actor || '—'} · {fmtDateTime(ev.at)}
+                      </div>
+                      {ev.action === 'expense.updated' && ev.changed_fields.length > 0 && (
+                        <div style={{ marginTop: 4, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {ev.changed_fields.map(f => (
+                            <div key={f}>
+                              <span style={{ fontWeight: 600 }}>{FIELD_LABEL[f] ?? f}:</span>{' '}
+                              <span style={{ color: 'var(--status-error)', textDecoration: 'line-through' }}>{ev.before[f] ?? '—'}</span>
+                              {' → '}
+                              <span style={{ color: 'var(--status-success)' }}>{ev.after[f] ?? '—'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {ev.comment && (
+                        <div style={{ marginTop: 4, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontStyle: 'italic' }}>“{ev.comment}”</div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </div>

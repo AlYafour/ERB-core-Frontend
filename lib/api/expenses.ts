@@ -14,6 +14,17 @@ export interface MyCustody {
   balance: string;
 }
 
+export interface ExpenseHistoryEvent {
+  at: string;
+  actor: string;
+  /** e.g. 'expense.updated', 'expense.attachment_added', 'approval.approve'. */
+  action: string;
+  changed_fields: string[];
+  before: Record<string, string | null>;
+  after: Record<string, string | null>;
+  comment: string;
+}
+
 export interface MyCustodyVoucher {
   id: string;
   number: string;
@@ -291,4 +302,9 @@ export const expensesApi = {
   },
   deleteAttachment: (id: string, attId: string): Promise<void> =>
     apiClient.delete(`${BASE}/${id}/attachments/${attId}/`).then(() => undefined),
+
+  /** Full activity timeline: field edits + attachment changes + approval
+   *  actions, oldest first. */
+  getHistory: (id: string): Promise<ExpenseHistoryEvent[]> =>
+    apiClient.get(`${BASE}/${id}/history/`).then(r => r.data),
 };

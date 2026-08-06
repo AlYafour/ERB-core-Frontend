@@ -10,7 +10,9 @@ import { expensesApi } from '@/lib/api/expenses';
 
 export default function EditExpensePage() {
   return (
-    <RouteGuard requiredPermission={{ category: 'expense', action: 'update' }} redirectTo="/expenses">
+    <RouteGuard requiredPermission={{ category: 'expense', action: 'update' }}
+                anyOfPermissions={[{ category: 'expense', action: 'approve' }]}
+                redirectTo="/expenses">
       <EditExpenseContent />
     </RouteGuard>
   );
