@@ -44,6 +44,8 @@ function ExpensesPageInner() {
   const { isTenantAdmin, isPlatformAdmin, hasPermission, isLoading: permsLoading } = useMyPermissions();
   const seesAll = isTenantAdmin || isPlatformAdmin
     || hasPermission('accounting.banking.view') || hasPermission('accounting.expense.approve');
+  const canSubmit = isTenantAdmin || isPlatformAdmin
+    || hasPermission('accounting.expense.update') || hasPermission('accounting.expense.create');
   const { data: myBoxes } = useQuery({
     queryKey: ['exp-cash-boxes'],
     queryFn: () => expensesApi.listCashBoxes(),
@@ -81,6 +83,28 @@ function ExpensesPageInner() {
     if (!ids.length) return;
     if (await confirm(`Delete ${ids.length} selected expense${ids.length === 1 ? '' : 's'}? Approved/posted ones are skipped.`)) {
       deleteMut.mutate(ids);
+    }
+  };
+
+  // Submit many drafts for approval at once — no need to open each voucher.
+  const submitMut = useMutation({
+    mutationFn: (ids: Array<string | number>) =>
+      Promise.allSettled(ids.map(id => expensesApi.submit(String(id)))),
+    onSuccess: (results) => {
+      const failed = results.filter(r => r.status === 'rejected').length;
+      const ok = results.length - failed;
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      tableState.clearSelection();
+      if (failed) toast(`Submitted ${ok}. ${failed} skipped — only drafts can be submitted (check the approval chain is configured).`, ok ? 'warning' : 'error');
+      else toast(`Submitted ${ok} voucher${ok === 1 ? '' : 's'} for approval.`, 'success');
+    },
+    onError: () => toast('Submit failed.', 'error'),
+  });
+  const handleBulkSubmit = async () => {
+    const ids = Array.from(tableState.selectedItems);
+    if (!ids.length) return;
+    if (await confirm(`Submit ${ids.length} selected voucher${ids.length === 1 ? '' : 's'} for approval? Non-draft ones are skipped.`)) {
+      submitMut.mutate(ids);
     }
   };
 
@@ -138,9 +162,16 @@ function ExpensesPageInner() {
       searchPlaceholder="Search by voucher, invoice, payee…"
       selectable
       bulkActions={
-        <Button variant="destructive" size="sm" isLoading={deleteMut.isPending} onClick={handleBulkDelete}>
-          Delete selected
-        </Button>
+        <>
+          {canSubmit && (
+            <Button variant="primary" size="sm" isLoading={submitMut.isPending} onClick={handleBulkSubmit}>
+              Submit selected
+            </Button>
+          )}
+          <Button variant="destructive" size="sm" isLoading={deleteMut.isPending} onClick={handleBulkDelete}>
+            Delete selected
+          </Button>
+        </>
       }
       columns={columns}
       data={rows}
