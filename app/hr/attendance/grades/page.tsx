@@ -5,6 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageShell, PageHeader, Loader } from '@/components/ui';
 import { hrSelfAttendanceApi } from '@/lib/api/hr';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
+import { getApiError } from '@/lib/utils/error';
 import type { AttendanceGradeRow } from '@/types';
 
 const CARD: React.CSSProperties = {
@@ -38,14 +40,32 @@ function todayStr(): string { return new Date().toISOString().slice(0, 10); }
 export default function AttendanceGradesPage() {
   const [start, setStart] = useState(monthStart());
   const [end, setEnd] = useState(todayStr());
+  const { hasPermission } = useMyPermissions();
+  // This is an all-employee admin report — gate it (the backend enforces
+  // hr_attendance.view too; this avoids a confusing empty state on 403).
+  const canView = hasPermission('hr.hr_attendance.view');
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['attendance-grades', start, end],
     queryFn: () => hrSelfAttendanceApi.gradeReport(start, end),
+    enabled: canView,
   });
 
   const summary = data?.summary ?? { A: 0, B: 0, C: 0 };
   const rows = (data?.rows ?? []) as AttendanceGradeRow[];
+
+  if (!canView) {
+    return (
+      <MainLayout>
+        <PageShell>
+          <PageHeader title="A/B/C Attendance" breadcrumbs={[{ label: 'HR' }, { label: 'Attendance', href: '/hr/attendance' }, { label: 'A/B/C' }]} />
+          <div style={{ ...CARD, textAlign: 'center', color: 'var(--text-secondary)' }}>
+            You don’t have permission to view attendance grades.
+          </div>
+        </PageShell>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -76,7 +96,9 @@ export default function AttendanceGradesPage() {
 
           {/* Table */}
           <div style={CARD}>
-            {isLoading ? <Loader /> : rows.length === 0 ? (
+            {isLoading ? <Loader /> : error ? (
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--status-error)', margin: 0 }}>{getApiError(error, 'Could not load attendance grades.')}</p>
+            ) : rows.length === 0 ? (
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>No data for this range.</p>
             ) : (
               <div style={{ overflowX: 'auto' }}>

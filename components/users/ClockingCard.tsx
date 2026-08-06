@@ -325,7 +325,9 @@ export default function ClockingCard({ emp, isSelf }: Props) {
     if (which === 'in') {
       // Returned after the deadline → acknowledge on the yellow screen first,
       // then it self-records (flagged late + retroactive). No manager approval.
-      if (punch?.enforced && punch.break_end && punch.break_end.open_now === false) {
+      // Follows the break deadline (break_end.open_now), independent of the
+      // check-in/out window toggle.
+      if (punch?.break_end && punch.break_end.open_now === false) {
         setGpsError(null);
         setShowLateBreak(true);
         return;
@@ -632,7 +634,7 @@ export default function ClockingCard({ emp, isSelf }: Props) {
               )}
 
               {isOnBreak && (() => {
-                const breakLate = !!punch?.enforced && punch?.break_end?.open_now === false;
+                const breakLate = punch?.break_end?.open_now === false;
                 return (
                   <button onClick={() => handleBreak('in')} disabled={busy}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 42, padding: '0 24px', borderRadius: 999, border: 'none', cursor: busy ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, background: breakLate ? '#FDE68A' : '#FEF3C7', color: '#B45309', opacity: busy ? 0.65 : 1 }}>

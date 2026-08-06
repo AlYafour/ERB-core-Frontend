@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { BaseModal } from '@/components/ui/base/BaseModal'
 import { confirm, toast } from '@/lib/hooks/use-toast'
+import { getApiError } from '@/lib/utils/error'
 import HasPermission from '@/components/shared/HasPermission'
 import HRSettingsNav from '@/components/hr/HRSettingsNav'
 
@@ -110,19 +111,22 @@ export default function PolicyPage() {
   const cloneMutation = useMutation({
     mutationFn: (id: number) => hrPolicySetsApi.clone(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['policy-sets'] }); toast('Cloned to new draft version', 'success') },
+    onError: (e: unknown) => toast(getApiError(e, 'Failed to clone'), 'error'),
   })
   const activateMutation = useMutation({
     mutationFn: (id: number) => hrPolicySetsApi.activate(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['policy-sets'] }); toast('Policy Set activated', 'success') },
-    onError: (e: unknown) => toast((e as Error).message, 'error'),
+    onError: (e: unknown) => toast(getApiError(e, 'Activation failed'), 'error'),
   })
   const archiveMutation = useMutation({
     mutationFn: (id: number) => hrPolicySetsApi.archive(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['policy-sets'] }); toast('Archived', 'success') },
+    onError: (e: unknown) => toast(getApiError(e, 'Failed to archive'), 'error'),
   })
   const applyPresetMutation = useMutation({
     mutationFn: ({ id, effective_from }: { id: number; effective_from: string }) => hrPolicyPresetsApi.apply(id, effective_from),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['policy-sets'] }); toast('Preset applied — review draft sets then activate each one', 'success') },
+    onError: (e: unknown) => toast(getApiError(e, 'Failed to apply preset'), 'error'),
   })
 
   async function handleActivate(ps: PolicySet) {

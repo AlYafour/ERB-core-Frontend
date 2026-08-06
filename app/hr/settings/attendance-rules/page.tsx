@@ -88,18 +88,20 @@ export default function AttendanceRulesPage() {
   const catchAll = (policies ?? []).find(p => p.employee_group == null);
   const [form, setForm] = useState<Draft>(DEFAULTS);
   const [geo, setGeo] = useState<Geo>({ geofence_enforcement: 'enforce', geofence_accuracy_slack_m: 50 });
+  // Don't let a background refetch of this (long) form clobber in-progress edits.
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
-    if (catchAll) setForm(catchAll);
-  }, [catchAll]);
+    if (catchAll && !dirty) setForm(catchAll);
+  }, [catchAll, dirty]);
   useEffect(() => {
-    if (company) setGeo({
+    if (company && !dirty) setGeo({
       geofence_enforcement: company.geofence_enforcement ?? 'enforce',
       geofence_accuracy_slack_m: company.geofence_accuracy_slack_m ?? 50,
     });
-  }, [company]);
+  }, [company, dirty]);
 
-  const set = (k: keyof Draft) => (v: number | boolean | string) => setForm(f => ({ ...f, [k]: v }));
+  const set = (k: keyof Draft) => (v: number | boolean | string) => { setDirty(true); setForm(f => ({ ...f, [k]: v })); };
 
   const saveMut = useMutation({
     mutationFn: async () => {
@@ -109,6 +111,7 @@ export default function AttendanceRulesPage() {
       await hrCompanySettingsApi.update(geo);
     },
     onSuccess: () => {
+      setDirty(false);
       qc.invalidateQueries({ queryKey: ['attendance-policies'] });
       qc.invalidateQueries({ queryKey: ['hr-company-settings'] });
       toast('Attendance rules saved', 'success');
@@ -160,7 +163,7 @@ export default function AttendanceRulesPage() {
               <div>
                 <label style={LBL}>When outside the allowed area</label>
                 <select style={INPUT} value={geo.geofence_enforcement}
-                  onChange={e => setGeo(g => ({ ...g, geofence_enforcement: e.target.value as Geo['geofence_enforcement'] }))}>
+                  onChange={e => { setDirty(true); setGeo(g => ({ ...g, geofence_enforcement: e.target.value as Geo['geofence_enforcement'] })); }}>
                   <option value="enforce">Block the punch (strict)</option>
                   <option value="warn">Allow but flag for review</option>
                   <option value="off">Don’t check location</option>
@@ -168,7 +171,7 @@ export default function AttendanceRulesPage() {
               </div>
               <NumField label="GPS tolerance (m)" hint="Absorbs GPS drift so a phone off by a few metres still counts"
                 value={geo.geofence_accuracy_slack_m}
-                onChange={v => setGeo(g => ({ ...g, geofence_accuracy_slack_m: v }))} />
+                onChange={v => { setDirty(true); setGeo(g => ({ ...g, geofence_accuracy_slack_m: v })); }} />
             </div>
             <a href="/hr/settings/locations" style={{ display: 'inline-block', marginTop: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--brand)', textDecoration: 'none', fontWeight: 'var(--weight-semibold)' }}>
               Set office points and radius on the map →

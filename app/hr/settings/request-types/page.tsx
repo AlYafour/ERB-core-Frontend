@@ -178,7 +178,7 @@ export default function RequestTypesPage() {
                         {t.name_ar && <span dir="rtl" style={{ display: 'block', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2 }}>{t.name_ar}</span>}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexShrink: 0 }}>
-                        {(t.duration_mode === 'days' || t.duration_mode === 'both') && (
+                        {k !== 'shared' && (t.duration_mode === 'days' || t.duration_mode === 'both') && (
                           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
                             Counts as
                             <select
