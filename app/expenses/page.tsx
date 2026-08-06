@@ -171,12 +171,11 @@ function ExpensesPageInner() {
       render: e => {
         const miss = missingInfo(e);
         return (
-          <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
+          <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 5, alignItems: 'flex-start' }}>
             <Badge variant={STATUS_VARIANT[e.status] ?? 'default'}>{STATUS_LABEL[e.status] ?? e.status}</Badge>
             {miss.length > 0 && (
-              <span title={`Missing: ${miss.join(', ')}`}
-                    style={{ fontSize: 'var(--text-xs)', color: 'var(--status-warning)', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                ⚠ Missing {miss.join(' · ')}
+              <span title={`Missing: ${miss.join(', ')}`} style={{ display: 'inline-flex' }}>
+                <Badge variant="warning" size="sm">Incomplete</Badge>
               </span>
             )}
           </span>
@@ -190,7 +189,7 @@ function ExpensesPageInner() {
             { label: 'Submit for approval',
               hidden: !((e.status === 'draft' || e.status === 'rejected') && canSubmit),
               onClick: () => submitMut.mutate([e.id]) },
-            { label: '📎 Attach receipt', hidden: !rowEditable(e), onClick: () => startAttach(String(e.id)) },
+            { label: 'Attach receipt', hidden: !rowEditable(e), onClick: () => startAttach(String(e.id)) },
             { label: e.status === 'submitted' ? 'Correct' : 'Edit',
               href: `/expenses/${e.id}/edit`, hidden: !rowEditable(e) },
             { separator: true },
