@@ -186,6 +186,11 @@ function ExpenseDetailContent() {
   const vat = Number(exp.vat_amount || 0);
   const net = Number(exp.net_amount || 0);
 
+  // Completeness: who was paid + the receipt scan.
+  const missing: string[] = [];
+  if (!exp.supplier && !exp.payee_worker && !exp.vehicle && !(exp.payee_name || '').trim()) missing.push('Payee');
+  if (!exp.attachments || exp.attachments.length === 0) missing.push('Receipt');
+
   return (
     <MainLayout>
       <PageShell>
@@ -210,6 +215,16 @@ function ExpenseDetailContent() {
           <div style={{ marginBottom: 'var(--space-4)', padding: '12px 16px', borderRadius: 10, background: 'var(--status-error-bg)', border: '1px solid var(--status-error-border)', borderInlineStart: '4px solid var(--status-error)' }}>
             <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--status-error)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Rejected</div>
             <div style={{ fontSize: 'var(--text-sm)', color: 'var(--status-error)' }}>{exp.rejection_reason || 'No reason recorded.'}</div>
+          </div>
+        )}
+
+        {missing.length > 0 && s !== 'posted' && (
+          <div style={{ marginBottom: 'var(--space-4)', padding: '12px 16px', borderRadius: 10, background: 'var(--status-warning-bg)', border: '1px solid var(--status-warning-border)', borderInlineStart: '4px solid var(--status-warning)' }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--status-warning)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Incomplete</div>
+            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+              This voucher is missing: <strong>{missing.join(', ')}</strong>.
+              {canEditNow ? ' Add it before approval — use “Add receipt” below or “Correct”.' : ''}
+            </div>
           </div>
         )}
 
@@ -286,7 +301,8 @@ function ExpenseDetailContent() {
               {exp.vehicle_label && <Row label="Vehicle">{exp.vehicle_label}</Row>}
               <Row label="Invoice No.">{exp.invoice_no ? <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{exp.invoice_no}</span> : null}</Row>
               <Row label="Invoice Date">{exp.invoice_date ? fmtDate(exp.invoice_date) : null}</Row>
-              <Row label="Description" last>{exp.description}</Row>
+              <Row label="Description">{exp.description}</Row>
+              <Row label="Notes" last>{exp.notes || null}</Row>
             </div>
           </div>
 

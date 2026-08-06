@@ -33,6 +33,14 @@ const filterFields: FilterField[] = [
 
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
+// What's missing for a complete record: who was paid, and the receipt scan.
+const missingInfo = (e: Expense): string[] => {
+  const m: string[] = [];
+  if (!e.supplier && !e.payee_worker && !e.vehicle && !(e.payee_name || '').trim()) m.push('Payee');
+  if (!e.attachments || e.attachments.length === 0) m.push('Receipt');
+  return m;
+};
+
 function ExpensesPageInner() {
   const router = useRouter();
   const tableState = useTableState();
@@ -160,7 +168,20 @@ function ExpensesPageInner() {
     { key: 'vat', header: 'VAT',
       render: e => e.vat_liable ? <span style={{ fontFamily: 'monospace' }}>{formatPrice(Number(e.vat_amount || 0))}</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
     { key: 'status', header: 'Status',
-      render: e => <Badge variant={STATUS_VARIANT[e.status] ?? 'default'}>{STATUS_LABEL[e.status] ?? e.status}</Badge> },
+      render: e => {
+        const miss = missingInfo(e);
+        return (
+          <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
+            <Badge variant={STATUS_VARIANT[e.status] ?? 'default'}>{STATUS_LABEL[e.status] ?? e.status}</Badge>
+            {miss.length > 0 && (
+              <span title={`Missing: ${miss.join(', ')}`}
+                    style={{ fontSize: 'var(--text-xs)', color: 'var(--status-warning)', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                ⚠ Missing {miss.join(' · ')}
+              </span>
+            )}
+          </span>
+        );
+      } },
     { key: 'actions', header: '',
       render: e => (
         <span onClick={ev => ev.stopPropagation()} style={{ display: 'inline-flex', justifyContent: 'flex-end', width: '100%' }}>
