@@ -159,6 +159,10 @@ export interface CashBox {
   spent?: string;
   balance?: string;
   is_active?: boolean;
+  // Present only when fetched with { withStats: true } (box hub).
+  voucher_count?: number;
+  to_review?: number;
+  incomplete?: number;
 }
 
 export interface CashBoxMovement {
@@ -228,8 +232,8 @@ export const expensesApi = {
   preview: (id: string): Promise<{ lines: Array<{ account: string; debit: string; credit: string; source: string }> }> =>
     apiClient.get(`${BASE}/${id}/preview/`).then(r => r.data),
 
-  listCashBoxes: (): Promise<CashBox[]> =>
-    apiClient.get(`${BASE}/cash-boxes/`).then(r => r.data),
+  listCashBoxes: (opts?: { withStats?: boolean }): Promise<CashBox[]> =>
+    apiClient.get(`${BASE}/cash-boxes/`, opts?.withStats ? { params: { with_stats: 1 } } : undefined).then(r => r.data),
   createCashBox: (payload: { name: string; custodian?: number | null }): Promise<CashBox> =>
     apiClient.post(`${BASE}/cash-boxes/`, payload).then(r => r.data),
   updateCashBox: (id: string, patch: { name?: string; custodian?: number | null; is_active?: boolean }): Promise<CashBox> =>

@@ -2,12 +2,13 @@
 
 import RouteGuard from '@/components/auth/RouteGuard';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { expensesApi, type Expense, type ExpenseStatus } from '@/lib/api/expenses';
-import { Button, Badge, type Column } from '@/components/ui';
+import { expensesApi, type Expense, type ExpenseStatus, type CashBox } from '@/lib/api/expenses';
+import { Button, Badge, PageShell, PageHeader, type Column } from '@/components/ui';
+import MainLayout from '@/components/layout/MainLayout';
 import { RowActions } from '@/components/ui/RowActions';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
@@ -41,27 +42,89 @@ const missingInfo = (e: Expense): string[] => {
   return m;
 };
 
+// ── Box hub: one card per cash box with balance + review/incomplete counts ────
+function BoxHub({ boxes, loading, onOpen }: {
+  boxes: CashBox[]; loading: boolean; onOpen: (id: string) => void;
+}) {
+  if (loading) {
+    return <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>Loading boxes…</div>;
+  }
+  if (boxes.length === 0) {
+    return (
+      <div style={{ padding: '60px 24px', textAlign: 'center', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 16 }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>🗄️</div>
+        <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>No cash boxes yet</div>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 6 }}>Create a petty-cash box to start recording vouchers.</div>
+      </div>
+    );
+  }
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--space-4)' }}>
+      {boxes.map(b => {
+        const bal = Number(b.balance ?? 0);
+        return (
+          <div key={b.id} className="card" onClick={() => onOpen(b.id)}
+            style={{ padding: '18px 20px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: 'var(--text-md)', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.name}</div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{b.custodian_name || 'No custodian'}</div>
+              </div>
+              <Badge variant={b.kind === 'petty_cash' ? 'default' : 'info'} size="sm">
+                {b.kind === 'petty_cash' ? 'Petty Cash' : 'Bank'}
+              </Badge>
+            </div>
+
+            <div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Balance</div>
+              <div style={{ fontSize: 'var(--text-xl)', fontWeight: 800, fontFamily: 'monospace', color: bal < 0 ? 'var(--status-error)' : 'var(--text-primary)' }}>
+                {formatPrice(bal)}
+              </div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
+                In {formatPrice(Number(b.cash_in ?? 0))} · Spent {formatPrice(Number(b.spent ?? 0))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: 10 }}>
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                {b.voucher_count ?? 0} voucher{(b.voucher_count ?? 0) === 1 ? '' : 's'}
+              </span>
+              {!!b.to_review && <Badge variant="info" size="sm">{b.to_review} to review</Badge>}
+              {!!b.incomplete && (
+                <span title="Vouchers missing a payee or a receipt">
+                  <Badge variant="warning" size="sm">{b.incomplete} incomplete</Badge>
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function ExpensesPageInner() {
   const router = useRouter();
   const tableState = useTableState();
   const { page, search, filters } = tableState;
   const queryClient = useQueryClient();
+  const [view, setView] = useState<'boxes' | 'all'>('boxes');
 
-  // Best-practice workspaces: a box custodian's whole world is HIS box page —
-  // the company-wide voucher list belongs to admins / accounting / approvers.
-  // Custodians landing here are sent straight to their box.
   const { user } = useAuth();
   const { isTenantAdmin, isPlatformAdmin, hasPermission, isLoading: permsLoading } = useMyPermissions();
-  const seesAll = isTenantAdmin || isPlatformAdmin
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
+  const seesAll = isAdmin
     || hasPermission('accounting.banking.view') || hasPermission('accounting.expense.approve');
-  const canSubmit = isTenantAdmin || isPlatformAdmin
+  const canSubmit = isAdmin
     || hasPermission('accounting.expense.update') || hasPermission('accounting.expense.create');
-  const canReview = isTenantAdmin || isPlatformAdmin || hasPermission('accounting.expense.approve');
+  const canReview = isAdmin || hasPermission('accounting.expense.approve');
   // A row is editable/attachable when it is a draft/rejected the user can edit,
   // or a submitted voucher the user can review (mirrors the backend gate).
   const rowEditable = (e: Expense) =>
     (((e.status === 'draft' || e.status === 'rejected') && canSubmit)
      || (e.status === 'submitted' && canReview));
+
+  // Custodians land straight on their own box; reviewers/admins get the hub.
   const { data: myBoxes } = useQuery({
     queryKey: ['exp-cash-boxes'],
     queryFn: () => expensesApi.listCashBoxes(),
@@ -73,6 +136,13 @@ function ExpensesPageInner() {
   useEffect(() => {
     if (myBox) router.replace(`/expenses/cash-boxes/${myBox.id}`);
   }, [myBox, router]);
+
+  // Box hub data (with per-box counts) — only for users who see all boxes.
+  const { data: hubBoxes = [], isLoading: hubLoading } = useQuery({
+    queryKey: ['exp-cash-boxes', 'hub'],
+    queryFn: () => expensesApi.listCashBoxes({ withStats: true }),
+    enabled: !permsLoading && seesAll && !myBox, staleTime: 60_000,
+  });
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['expenses', page, search, filters],
@@ -145,15 +215,53 @@ function ExpensesPageInner() {
 
   if (myBox) return null;   // redirecting to the custodian's box — no flash
 
+  const effectiveView = seesAll ? view : 'all';
+  const toggle = seesAll ? (
+    <div style={{ display: 'inline-flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+      {(['boxes', 'all'] as const).map(v => (
+        <button key={v} type="button" onClick={() => setView(v)}
+          style={{
+            padding: '6px 14px', fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer', border: 'none',
+            background: effectiveView === v ? 'var(--brand)' : 'transparent',
+            color: effectiveView === v ? '#fff' : 'var(--text-secondary)',
+          }}>
+          {v === 'boxes' ? 'By Box' : 'All Vouchers'}
+        </button>
+      ))}
+    </div>
+  ) : null;
+
+  if (effectiveView === 'boxes') {
+    return (
+      <MainLayout>
+        <PageShell>
+          <PageHeader
+            title="Petty Cash & Expenses"
+            description="Each cash box and its balance — open a box to review its vouchers."
+            breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Accounting' }, { label: 'Petty Cash & Expenses' }]}
+            actions={
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                {toggle}
+                {isAdmin && <Link href="/expenses/cash-boxes"><Button variant="secondary" size="sm">Manage boxes</Button></Link>}
+                <Link href="/expenses/new"><Button variant="primary">+ New Expense</Button></Link>
+              </div>
+            }
+          />
+          <BoxHub boxes={hubBoxes} loading={hubLoading} onOpen={id => router.push(`/expenses/cash-boxes/${id}`)} />
+        </PageShell>
+      </MainLayout>
+    );
+  }
+
   const columns: Column<Expense>[] = [
     { key: 'voucher', header: 'Voucher', sortKey: 'number',
       render: e => <span className="font-mono font-medium">{e.voucher_number || e.number}</span> },
     { key: 'date', header: 'Date', sortKey: 'expense_date',
       render: e => <span style={{ color: 'var(--text-secondary)' }}>{fmtDate(e.expense_date)}</span> },
+    { key: 'box', header: 'Cash Box',
+      render: e => <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{e.cash_box_name || '—'}</span> },
     { key: 'supplier', header: 'Supplier / Payee',
-      render: e => <span>{e.supplier_name || e.payee_name || '—'}</span> },
-    { key: 'cost', header: 'Cost',
-      render: e => e.cost_type_label ? <Badge variant="default">{e.cost_type_label}</Badge> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
+      render: e => <span>{e.supplier_name || e.payee_name || e.payee_worker_name || '—'}</span> },
     { key: 'code', header: 'Cost Code',
       render: e => e.cost_code_code
         ? <span style={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)' }}
@@ -165,8 +273,6 @@ function ExpensesPageInner() {
       render: e => <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>{e.project_name || '—'}</span> },
     { key: 'amount', header: 'Amount', sortKey: 'amount',
       render: e => <span className="font-semibold">{formatPrice(Number(e.amount || 0))}</span> },
-    { key: 'vat', header: 'VAT',
-      render: e => e.vat_liable ? <span style={{ fontFamily: 'monospace' }}>{formatPrice(Number(e.vat_amount || 0))}</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
     { key: 'status', header: 'Status',
       render: e => {
         const miss = missingInfo(e);
@@ -210,7 +316,12 @@ function ExpensesPageInner() {
       totalCount={totalCount}
       totalAmount={pageTotal}
       totalAmountLabel="Page Total"
-      headerExtra={<Link href="/expenses/cash-boxes"><Button variant="secondary" size="sm">Cash Boxes</Button></Link>}
+      headerExtra={
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {toggle}
+          {isAdmin && <Link href="/expenses/cash-boxes"><Button variant="secondary" size="sm">Manage boxes</Button></Link>}
+        </div>
+      }
       createAction={<Link href="/expenses/new"><Button variant="primary">+ New Expense</Button></Link>}
       statusItems={[
         { value: '',          label: 'All', count: totalCount },
