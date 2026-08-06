@@ -2,13 +2,15 @@
 
 import RouteGuard from '@/components/auth/RouteGuard';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { expensesApi, type Expense, type ExpenseStatus } from '@/lib/api/expenses';
 import { Button, Badge, type Column } from '@/components/ui';
+import { RowActions } from '@/components/ui/RowActions';
 import { toast, confirm } from '@/lib/hooks/use-toast';
+import { getApiError } from '@/lib/utils/error';
 import { type FilterField } from '@/components/ui/FilterPanel';
 import { useTableState } from '@/lib/hooks/use-table-state';
 import { AppListPage } from '@/components/app/AppListPage';
@@ -46,6 +48,12 @@ function ExpensesPageInner() {
     || hasPermission('accounting.banking.view') || hasPermission('accounting.expense.approve');
   const canSubmit = isTenantAdmin || isPlatformAdmin
     || hasPermission('accounting.expense.update') || hasPermission('accounting.expense.create');
+  const canReview = isTenantAdmin || isPlatformAdmin || hasPermission('accounting.expense.approve');
+  // A row is editable/attachable when it is a draft/rejected the user can edit,
+  // or a submitted voucher the user can review (mirrors the backend gate).
+  const rowEditable = (e: Expense) =>
+    (((e.status === 'draft' || e.status === 'rejected') && canSubmit)
+     || (e.status === 'submitted' && canReview));
   const { data: myBoxes } = useQuery({
     queryKey: ['exp-cash-boxes'],
     queryFn: () => expensesApi.listCashBoxes(),
@@ -108,6 +116,21 @@ function ExpensesPageInner() {
     }
   };
 
+  // Per-row attach: one shared hidden file input, retargeted to the row's id.
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const attachTargetId = useRef<string | null>(null);
+  const attachMut = useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) => expensesApi.uploadAttachment(id, file),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['expenses'] }); toast('Receipt attached.', 'success'); },
+    onError: (err) => toast(getApiError(err, 'Attach failed'), 'error'),
+  });
+  const startAttach = (id: string) => { attachTargetId.current = id; fileInputRef.current?.click(); };
+  const handleRowDelete = async (id: string) => {
+    if (await confirm('Delete this voucher? Approved/posted ones must be reversed in Accounting.')) {
+      deleteMut.mutate([id]);
+    }
+  };
+
   const rows = data?.results ?? [];
   const totalCount = data?.count ?? 0;
   const pageTotal = rows.reduce((s, e) => s + Number(e.amount || 0), 0);
@@ -138,9 +161,28 @@ function ExpensesPageInner() {
       render: e => e.vat_liable ? <span style={{ fontFamily: 'monospace' }}>{formatPrice(Number(e.vat_amount || 0))}</span> : <span style={{ color: 'var(--text-tertiary)' }}>—</span> },
     { key: 'status', header: 'Status',
       render: e => <Badge variant={STATUS_VARIANT[e.status] ?? 'default'}>{STATUS_LABEL[e.status] ?? e.status}</Badge> },
+    { key: 'actions', header: '',
+      render: e => (
+        <span onClick={ev => ev.stopPropagation()} style={{ display: 'inline-flex', justifyContent: 'flex-end', width: '100%' }}>
+          <RowActions actions={[
+            { label: 'Open', href: `/expenses/${e.id}` },
+            { label: 'Submit for approval',
+              hidden: !((e.status === 'draft' || e.status === 'rejected') && canSubmit),
+              onClick: () => submitMut.mutate([e.id]) },
+            { label: '📎 Attach receipt', hidden: !rowEditable(e), onClick: () => startAttach(String(e.id)) },
+            { label: e.status === 'submitted' ? 'Correct' : 'Edit',
+              href: `/expenses/${e.id}/edit`, hidden: !rowEditable(e) },
+            { separator: true },
+            { label: 'Delete', variant: 'danger',
+              hidden: !(['draft', 'rejected', 'submitted'].includes(e.status) && canSubmit),
+              onClick: () => handleRowDelete(String(e.id)) },
+          ]} />
+        </span>
+      ) },
   ];
 
   return (
+    <>
     <AppListPage
       title="Petty Cash & Expenses"
       description="Cash expense vouchers — coded to projects and cost codes, posted to the ledger on approval."
@@ -184,6 +226,16 @@ function ExpensesPageInner() {
       emptyTitle="No expenses yet"
       emptyAction={<Link href="/expenses/new"><Button variant="primary">+ New Expense</Button></Link>}
     />
+    <input ref={fileInputRef} type="file" hidden onChange={e => {
+      const f = e.target.files?.[0];
+      const id = attachTargetId.current;
+      if (f && id) {
+        if (f.size > 20 * 1024 * 1024) toast('Max file size is 20 MB.', 'error');
+        else attachMut.mutate({ id, file: f });
+      }
+      e.target.value = '';
+    }} />
+    </>
   );
 }
 
