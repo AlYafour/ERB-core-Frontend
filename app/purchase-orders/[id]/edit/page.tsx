@@ -111,7 +111,10 @@ function EditPOContent() {
       unit_price: item.unit_price,
       discount: item.discount ?? 0,
       tax_rate: item.tax_rate ?? 0,
+      // Preserve the saved unit so an edit doesn't wipe it back to empty.
+      unit: item.unit || item.product?.unit || '',
       notes: item.notes || '',
+      _product: item.product || null,
     })));
     setCharges((order.charges ?? []).map((c) => ({
       id: c.id,
@@ -266,7 +269,12 @@ function EditPOContent() {
                 items={items}
                 onUpdate={(idx, field, val) => setItems((p) => p.map((it, i) => i === idx ? { ...it, [field]: val } : it))}
                 onRemove={(idx) => setItems((p) => p.filter((_, i) => i !== idx))}
-                showUnit={false}
+                showUnit
+                getUnit={(item) => {
+                  const it = item as { unit?: string; _product?: { unit?: string } };
+                  const prod = products?.results?.find((p) => p.id === (item as { product_id?: number }).product_id);
+                  return ((it.unit || it._product?.unit || prod?.unit || '').toUpperCase()) || '—';
+                }}
                 renderProduct={(item) => {
                   const prod = products?.results?.find((p) => p.id === item.product_id)
                     ?? order.items.find((oi) => (oi.product?.id ?? oi.product_id) === item.product_id)?.product;

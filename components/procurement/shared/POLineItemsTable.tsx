@@ -33,7 +33,8 @@ export function buildLineRows(
       description: item.product?.name ?? `Item #${item.product_id}`,
       code:       item.product?.code,
       notes:      item.notes || undefined,
-      unit:       item.product?.unit,
+      // Prefer the line's own saved unit; fall back to the product default.
+      unit:       (item as { unit?: string }).unit || item.product?.unit,
       qty:        Number(item.quantity),
       unitPrice:  Number(item.unit_price),
       exclVat:    afterDisc,

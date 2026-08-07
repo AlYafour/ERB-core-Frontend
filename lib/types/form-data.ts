@@ -99,6 +99,10 @@ export function toPurchaseOrderCreateData(form: PurchaseOrderFormData, items?: A
     unit_price: item.unit_price ?? 0,
     discount: item.discount ?? 0,
     tax_rate: item.tax_rate ?? 0,
+    // Carry the line's own unit (chosen on the PR / this order); fall back to
+    // the product default. Was omitted entirely, so the PO always saved an
+    // empty unit and showed the product default instead of the chosen one.
+    unit: item.unit ?? item._product?.unit ?? '',
     notes: item.notes ?? '',
   }));
   return {

@@ -127,6 +127,7 @@ function NewPOContent() {
           unit_price: Number(item.unit_price || 0),
           discount: Number(item.discount ?? 0),
           tax_rate: Number((item as { tax_rate?: number }).tax_rate ?? (item as { tax?: number }).tax ?? 0),
+          unit: (item as { unit?: string }).unit || item.product?.unit || '',
           notes: item.notes || '',
           _product: item.product || null,
         })));
@@ -137,6 +138,8 @@ function NewPOContent() {
           product_id: item.product?.id || item.product_id,
           quantity: Number(item.quantity || 0),
           unit_price: 0, discount: 0, tax_rate: 0,
+          // Keep the engineer's chosen unit from the PR line (fallback product default).
+          unit: (item as { unit?: string }).unit || item.product?.unit || '',
           notes: item.notes || '',
           _product: item.product || null,
         })));
@@ -354,7 +357,7 @@ function NewPOContent() {
                   onRemove={fromQR ? undefined : (idx) => setItems((p) => p.filter((_, i) => i !== idx))}
                   readOnly={fromQR}
                   showUnit
-                  getUnit={(item) => (item as FormItem)._product?.unit?.toUpperCase() || '—'}
+                  getUnit={(item) => (((item as FormItem).unit || (item as FormItem)._product?.unit || '').toUpperCase()) || '—'}
                   renderProduct={(item) => {
                     const fItem = item as FormItem;
                     const prod = fItem._product || products?.results?.find((p) => p.id === item.product_id);
