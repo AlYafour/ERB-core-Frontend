@@ -48,6 +48,22 @@ const STATUS_VARIANT: Record<string, 'default' | 'warning' | 'info' | 'success' 
 
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
+type Tier = { code: string; description: string } | null;
+// One classification tier as a table cell: code (bold) + its description beneath.
+function TierCell({ tier }: { tier: Tier }) {
+  if (!tier) return <td style={{ ...TD, color: 'var(--text-tertiary)' }}>—</td>;
+  return (
+    <td style={TD}>
+      <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{tier.code}</span>
+      {tier.description && (
+        <span style={{ display: 'block', fontSize: 'var(--text-xs)', color: 'var(--text-muted)', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tier.description}>
+          {tier.description}
+        </span>
+      )}
+    </td>
+  );
+}
+
 export default function CashBoxDetailPage() {
   return (
     <RouteGuard requiredPermission={{ category: 'expense', action: 'view' }}
@@ -228,13 +244,19 @@ function CashBoxDetail() {
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead><tr>
                       <th style={TH}>Date</th><th style={TH}>Number</th><th style={TH}>Serial</th>
-                      <th style={TH}>Description</th><th style={TH}>Cost Type</th><th style={TH}>Cost Code</th>
+                      <th style={TH}>Description</th><th style={TH}>Cost Type</th>
+                      <th style={TH}>Main Category</th><th style={TH}>Sub Category</th><th style={TH}>Cost Code</th>
                       <th style={TH}>Paid To</th><th style={TH}>Project</th>
                       <th style={{ ...TH, textAlign: 'right' }}>Amount</th><th style={TH}>Status</th><th style={TH}></th>
                     </tr></thead>
                     <tbody>
                       {vouchers.map(e => {
                         const miss = missingInfo(e);
+                        const path = e.cost_code_path ?? [];
+                        const main: Tier = path.length >= 2 ? path[0] : null;
+                        const sub: Tier = path.length === 3 ? path[1] : null;
+                        const leaf: Tier = path.length ? path[path.length - 1]
+                          : (e.cost_code_code ? { code: e.cost_code_code, description: e.cost_code_desc || '' } : null);
                         return (
                         <tr key={e.id} onClick={() => router.push(`/expenses/${e.id}`)} style={{ cursor: 'pointer' }}>
                           <td style={{ ...TD, whiteSpace: 'nowrap' }}>{fmtDate(e.expense_date)}</td>
@@ -246,20 +268,9 @@ function CashBoxDetail() {
                               ? <Badge variant="default" size="sm">{e.cost_type_label}</Badge>
                               : <span style={{ color: 'var(--text-tertiary)' }}>—</span>}
                           </td>
-                          <td style={TD}>
-                            {e.cost_code_code ? (
-                              <span title={e.cost_code_path?.length
-                                ? e.cost_code_path.map(p => `${p.code} — ${p.description}`).join(' › ')
-                                : (e.cost_code_desc || '')}>
-                                <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{e.cost_code_code}</span>
-                                {e.cost_code_desc && (
-                                  <span style={{ display: 'block', fontSize: 'var(--text-xs)', color: 'var(--text-muted)', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {e.cost_code_desc}
-                                  </span>
-                                )}
-                              </span>
-                            ) : <span style={{ color: 'var(--text-tertiary)' }}>—</span>}
-                          </td>
+                          <TierCell tier={main} />
+                          <TierCell tier={sub} />
+                          <TierCell tier={leaf} />
                           <td style={{ ...TD, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(e as any).supplier_name || e.payee_name || e.payee_worker_name || '—'}</td>
                           <td style={{ ...TD, fontFamily: 'monospace', fontSize: 'var(--text-xs)' }}>{(e as any).project_code || (e as any).project_name || '—'}</td>
                           <td style={{ ...NUM, fontWeight: 700 }}>{formatPrice(Number(e.amount))}</td>
