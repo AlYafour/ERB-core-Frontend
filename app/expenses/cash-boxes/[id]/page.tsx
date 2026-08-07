@@ -82,6 +82,7 @@ function CashBoxDetail() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const { isTenantAdmin, isPlatformAdmin, hasPermission } = useMyPermissions();
   const isAdmin = isTenantAdmin || isPlatformAdmin;
@@ -119,6 +120,29 @@ function CashBoxDetail() {
     }
   };
 
+  // Multi-select → submit many drafts at once.
+  const toggleOne = (id: string) => setSelected(prev => {
+    const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
+  });
+  const bulkSubmitMut = useMutation({
+    mutationFn: (ids: string[]) => Promise.allSettled(ids.map(id => expensesApi.submit(id))),
+    onSuccess: (results) => {
+      const failed = results.filter(r => r.status === 'rejected').length;
+      const ok = results.length - failed;
+      invalidateVouchers(); setSelected(new Set());
+      if (failed) toast(`Submitted ${ok}. ${failed} skipped — only drafts can be submitted.`, ok ? 'warning' : 'error');
+      else toast(`Submitted ${ok} voucher${ok === 1 ? '' : 's'} for approval.`, 'success');
+    },
+    onError: () => toast('Submit failed.', 'error'),
+  });
+  const handleBulkSubmit = async () => {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    if (await confirm(`Submit ${ids.length} selected voucher${ids.length === 1 ? '' : 's'} for approval? Non-draft ones are skipped.`)) {
+      bulkSubmitMut.mutate(ids);
+    }
+  };
+
   const { data: stmt, isLoading } = useQuery({
     queryKey: ['box-statement', boxId],
     queryFn: () => expensesApi.getCashBoxStatement(boxId),
@@ -134,6 +158,14 @@ function CashBoxDetail() {
   const vouchers: Expense[] = expData?.results ?? [];
   const voucherCount = expData?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(voucherCount / 25));
+  const pageIds = vouchers.map(v => String(v.id));
+  const allSelected = pageIds.length > 0 && pageIds.every(id => selected.has(id));
+  const toggleAll = () => setSelected(prev => {
+    const n = new Set(prev);
+    if (allSelected) pageIds.forEach(id => n.delete(id));
+    else pageIds.forEach(id => n.add(id));
+    return n;
+  });
 
   const balance = Number(stmt?.totals.balance ?? 0);
 
@@ -226,7 +258,16 @@ function CashBoxDetail() {
         <div className="card">
           <div className="proc-section-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             <h3 className="proc-section-title">Expense Vouchers ({voucherCount})</h3>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              {canSubmit && selected.size > 0 && (
+                <>
+                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{selected.size} selected</span>
+                  <Button variant="primary" size="sm" isLoading={bulkSubmitMut.isPending} onClick={handleBulkSubmit}>
+                    Submit selected
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())}>Clear</Button>
+                </>
+              )}
               <input style={{ ...INPUT, width: 220 }} placeholder="Search vouchers…" value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1); }} />
               <select style={INPUT} value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}>
@@ -243,11 +284,12 @@ function CashBoxDetail() {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead><tr>
+                      {canSubmit && <th style={{ ...TH, width: 32 }}><input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="Select all" /></th>}
                       <th style={TH}>Date</th><th style={TH}>Number</th>
-                      <th style={TH}>Description</th><th style={TH}>Cost Type</th>
+                      <th style={TH}>Cost Type</th><th style={TH}>Project</th>
                       <th style={TH}>Main Category</th><th style={TH}>Sub Category</th><th style={TH}>Cost Code</th>
-                      <th style={TH}>Paid To</th><th style={TH}>Project</th>
-                      <th style={{ ...TH, textAlign: 'right' }}>Amount</th><th style={TH}>Status</th><th style={TH}></th>
+                      <th style={TH}>Paid To</th><th style={{ ...TH, textAlign: 'right' }}>Amount</th>
+                      <th style={TH}>Description</th><th style={TH}>Status</th><th style={TH}></th>
                     </tr></thead>
                     <tbody>
                       {vouchers.map(e => {
@@ -259,20 +301,25 @@ function CashBoxDetail() {
                           : (e.cost_code_code ? { code: e.cost_code_code, description: e.cost_code_desc || '' } : null);
                         return (
                         <tr key={e.id} onClick={() => router.push(`/expenses/${e.id}`)} style={{ cursor: 'pointer' }}>
+                          {canSubmit && (
+                            <td style={{ ...TD, width: 32 }} onClick={ev => ev.stopPropagation()}>
+                              <input type="checkbox" checked={selected.has(String(e.id))} onChange={() => toggleOne(String(e.id))} aria-label="Select voucher" />
+                            </td>
+                          )}
                           <td style={{ ...TD, whiteSpace: 'nowrap' }}>{fmtDate(e.expense_date)}</td>
                           <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 600, color: 'var(--brand)', whiteSpace: 'nowrap' }} title={e.voucher_number ? `Serial: ${e.voucher_number}` : undefined}>{e.number || '—'}</td>
-                          <td style={{ ...TD, maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={e.description}>{e.description || '—'}</td>
                           <td style={TD}>
                             {e.cost_type_label
                               ? <Badge variant="default" size="sm">{e.cost_type_label}</Badge>
                               : <span style={{ color: 'var(--text-tertiary)' }}>—</span>}
                           </td>
+                          <td style={{ ...TD, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={(e as any).project_name || ''}>{(e as any).project_code || (e as any).project_name || '—'}</td>
                           <TierCell tier={main} />
                           <TierCell tier={sub} />
                           <TierCell tier={leaf} />
                           <td style={{ ...TD, maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(e as any).supplier_name || e.payee_name || e.payee_worker_name || '—'}</td>
-                          <td style={{ ...TD, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={(e as any).project_name || ''}>{(e as any).project_code || (e as any).project_name || '—'}</td>
                           <td style={{ ...NUM, fontWeight: 700 }}>{formatPrice(Number(e.amount))}</td>
+                          <td style={{ ...TD, maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={e.description}>{e.description || '—'}</td>
                           <td style={TD}>
                             <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
                               <Badge variant={STATUS_VARIANT[e.status] ?? 'default'}>{STATUS_LABEL[e.status] ?? e.status}</Badge>
