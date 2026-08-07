@@ -196,10 +196,11 @@ function CashBoxDetail() {
   const { data: expData, isLoading: expLoading } = useQuery({
     queryKey: ['box-expenses', boxId, page, search, statusFilter, costType, amountMin, amountMax, dateFrom, dateTo],
     queryFn: () => expensesApi.getAll({
-      // Order by ENTRY sequence (the voucher number) ascending — the FIRST
-      // voucher entered sits at the top, reading down in the order they were
-      // recorded (the original sheet order), not by the voucher date.
-      cash_box: boxId, page, ordering: 'number', ...(search ? { search } : {}),
+      // Order by the actual ENTRY TIME (created_at), tie-break by number.
+      // NOT by voucher date, and NOT by number alone — the import resets the
+      // number counter each year (EXP-2024-1, EXP-2026-1…), so number order
+      // groups by year instead of the true order things were entered.
+      cash_box: boxId, page, ordering: 'created_at,number', ...(search ? { search } : {}),
       ...(statusFilter ? { status: statusFilter } : {}),
       ...(costType ? { cost_type: costType } : {}),
       ...(amountMin ? { amount_min: amountMin } : {}),
