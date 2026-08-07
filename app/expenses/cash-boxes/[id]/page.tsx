@@ -82,7 +82,18 @@ function CashBoxDetail() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [costType, setCostType] = useState('');
+  const [amountMin, setAmountMin] = useState('');
+  const [amountMax, setAmountMax] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const anyFilter = !!(costType || amountMin || amountMax || dateFrom || dateTo || statusFilter);
+  const clearFilters = () => {
+    setCostType(''); setAmountMin(''); setAmountMax(''); setDateFrom(''); setDateTo('');
+    setStatusFilter(''); setPage(1);
+  };
 
   const { isTenantAdmin, isPlatformAdmin, hasPermission } = useMyPermissions();
   const isAdmin = isTenantAdmin || isPlatformAdmin;
@@ -148,14 +159,24 @@ function CashBoxDetail() {
     queryFn: () => expensesApi.getCashBoxStatement(boxId),
   });
   const { data: expData, isLoading: expLoading } = useQuery({
-    queryKey: ['box-expenses', boxId, page, search, statusFilter],
+    queryKey: ['box-expenses', boxId, page, search, statusFilter, costType, amountMin, amountMax, dateFrom, dateTo],
     queryFn: () => expensesApi.getAll({
       // Order by ENTRY sequence (the voucher number) ascending — the FIRST
       // voucher entered sits at the top, reading down in the order they were
       // recorded (the original sheet order), not by the voucher date.
       cash_box: boxId, page, ordering: 'number', ...(search ? { search } : {}),
       ...(statusFilter ? { status: statusFilter } : {}),
+      ...(costType ? { cost_type: costType } : {}),
+      ...(amountMin ? { amount_min: amountMin } : {}),
+      ...(amountMax ? { amount_max: amountMax } : {}),
+      ...(dateFrom ? { date_from: dateFrom } : {}),
+      ...(dateTo ? { date_to: dateTo } : {}),
     }),
+  });
+  const { data: costTypes = [] } = useQuery({
+    queryKey: ['exp-cost-types-active'],
+    queryFn: () => expensesApi.listCostTypes(),
+    staleTime: 300_000,
   });
 
   const vouchers: Expense[] = expData?.results ?? [];
@@ -271,14 +292,50 @@ function CashBoxDetail() {
                   <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())}>Clear</Button>
                 </>
               )}
-              <input style={{ ...INPUT, width: 220 }} placeholder="Search vouchers…" value={search}
+              <input style={{ ...INPUT, width: 220 }} placeholder="Search voucher, invoice, project, code…" value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1); }} />
               <select style={INPUT} value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}>
                 <option value="">All statuses</option>
                 {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
+              <Button variant={anyFilter ? 'primary' : 'secondary'} size="sm" onClick={() => setShowFilters(s => !s)}>
+                Filters{anyFilter ? ' •' : ''}
+              </Button>
             </div>
           </div>
+
+          {showFilters && (
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end', padding: '4px 0 14px', borderBottom: '1px solid var(--border-subtle)', marginBottom: 12 }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                Amount from
+                <input type="number" style={{ ...INPUT, width: 120 }} value={amountMin} placeholder="0"
+                  onChange={e => { setAmountMin(e.target.value); setPage(1); }} />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                Amount to
+                <input type="number" style={{ ...INPUT, width: 120 }} value={amountMax} placeholder="∞"
+                  onChange={e => { setAmountMax(e.target.value); setPage(1); }} />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                Date from
+                <input type="date" style={{ ...INPUT, width: 150 }} value={dateFrom}
+                  onChange={e => { setDateFrom(e.target.value); setPage(1); }} />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                Date to
+                <input type="date" style={{ ...INPUT, width: 150 }} value={dateTo}
+                  onChange={e => { setDateTo(e.target.value); setPage(1); }} />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                Cost Type
+                <select style={{ ...INPUT, minWidth: 150 }} value={costType} onChange={e => { setCostType(e.target.value); setPage(1); }}>
+                  <option value="">All</option>
+                  {costTypes.map(ct => <option key={ct.id} value={ct.id}>{ct.name}</option>)}
+                </select>
+              </label>
+              {anyFilter && <Button variant="ghost" size="sm" onClick={clearFilters}>Clear filters</Button>}
+            </div>
+          )}
           {expLoading ? <div style={{ color: 'var(--text-secondary)' }}>Loading…</div>
             : vouchers.length === 0 ? (
               <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>No vouchers match.</div>
