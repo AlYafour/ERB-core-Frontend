@@ -150,7 +150,11 @@ function CashBoxDetail() {
   const { data: expData, isLoading: expLoading } = useQuery({
     queryKey: ['box-expenses', boxId, page, search, statusFilter],
     queryFn: () => expensesApi.getAll({
-      cash_box: boxId, page, ...(search ? { search } : {}),
+      // Order by ENTRY sequence (the voucher number), not by the voucher date —
+      // for imported vouchers the number preserves the original entry order,
+      // while created_at is the import moment for all of them. '-number' = the
+      // most-recent entry on top; change to 'number' for oldest-first.
+      cash_box: boxId, page, ordering: '-number', ...(search ? { search } : {}),
       ...(statusFilter ? { status: statusFilter } : {}),
     }),
   });
