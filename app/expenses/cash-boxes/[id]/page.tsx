@@ -228,7 +228,8 @@ function CashBoxDetail() {
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead><tr>
                       <th style={TH}>Date</th><th style={TH}>Number</th><th style={TH}>Serial</th>
-                      <th style={TH}>Description</th><th style={TH}>Paid To</th><th style={TH}>Project</th>
+                      <th style={TH}>Description</th><th style={TH}>Cost Type</th><th style={TH}>Cost Code</th>
+                      <th style={TH}>Paid To</th><th style={TH}>Project</th>
                       <th style={{ ...TH, textAlign: 'right' }}>Amount</th><th style={TH}>Status</th><th style={TH}></th>
                     </tr></thead>
                     <tbody>
@@ -239,7 +240,26 @@ function CashBoxDetail() {
                           <td style={{ ...TD, whiteSpace: 'nowrap' }}>{fmtDate(e.expense_date)}</td>
                           <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 600, color: 'var(--brand)' }}>{e.number || '—'}</td>
                           <td style={{ ...TD, fontFamily: 'monospace', fontSize: 'var(--text-xs)' }}>{e.voucher_number || '—'}</td>
-                          <td style={{ ...TD, maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={e.description}>{e.description || '—'}</td>
+                          <td style={{ ...TD, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={e.description}>{e.description || '—'}</td>
+                          <td style={TD}>
+                            {e.cost_type_label
+                              ? <Badge variant="default" size="sm">{e.cost_type_label}</Badge>
+                              : <span style={{ color: 'var(--text-tertiary)' }}>—</span>}
+                          </td>
+                          <td style={TD}>
+                            {e.cost_code_code ? (
+                              <span title={e.cost_code_path?.length
+                                ? e.cost_code_path.map(p => `${p.code} — ${p.description}`).join(' › ')
+                                : (e.cost_code_desc || '')}>
+                                <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{e.cost_code_code}</span>
+                                {e.cost_code_desc && (
+                                  <span style={{ display: 'block', fontSize: 'var(--text-xs)', color: 'var(--text-muted)', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {e.cost_code_desc}
+                                  </span>
+                                )}
+                              </span>
+                            ) : <span style={{ color: 'var(--text-tertiary)' }}>—</span>}
+                          </td>
                           <td style={{ ...TD, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(e as any).supplier_name || e.payee_name || e.payee_worker_name || '—'}</td>
                           <td style={{ ...TD, fontFamily: 'monospace', fontSize: 'var(--text-xs)' }}>{(e as any).project_code || (e as any).project_name || '—'}</td>
                           <td style={{ ...NUM, fontWeight: 700 }}>{formatPrice(Number(e.amount))}</td>
