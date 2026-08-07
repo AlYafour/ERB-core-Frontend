@@ -7,17 +7,27 @@
  * expense vouchers (paginated, searchable), each linking to its documents.
  */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageShell, Button, Badge, PageHeader } from '@/components/ui';
+import { RowActions } from '@/components/ui/RowActions';
 import RouteGuard from '@/components/auth/RouteGuard';
 import { expensesApi, type Expense } from '@/lib/api/expenses';
+import { useMyPermissions } from '@/lib/hooks/use-my-permissions';
 import { toast, confirm } from '@/lib/hooks/use-toast';
 import { getApiError } from '@/lib/utils/error';
 import { formatPrice } from '@/lib/utils/format';
+
+// What's missing for a complete record: who was paid, and the receipt scan.
+const missingInfo = (e: Expense): string[] => {
+  const m: string[] = [];
+  if (!e.supplier && !e.payee_worker && !e.vehicle && !(e.payee_name || '').trim()) m.push('Payee');
+  if (!e.attachments || e.attachments.length === 0) m.push('Receipt');
+  return m;
+};
 
 const TH: React.CSSProperties = { padding: '8px 10px', textAlign: 'left', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' };
 const TD: React.CSSProperties = { padding: '9px 10px', fontSize: 'var(--text-sm)', borderBottom: '1px solid var(--border-subtle)' };
@@ -51,9 +61,47 @@ export default function CashBoxDetailPage() {
 function CashBoxDetail() {
   const params = useParams<{ id: string }>();
   const boxId = String(params.id);
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+
+  const { isTenantAdmin, isPlatformAdmin, hasPermission } = useMyPermissions();
+  const isAdmin = isTenantAdmin || isPlatformAdmin;
+  const canSubmit = isAdmin || hasPermission('accounting.expense.update') || hasPermission('accounting.expense.create');
+  const canReview = isAdmin || hasPermission('accounting.expense.approve');
+  const rowEditable = (e: Expense) =>
+    (((e.status === 'draft' || e.status === 'rejected') && canSubmit)
+     || (e.status === 'submitted' && canReview));
+
+  const invalidateVouchers = () => {
+    queryClient.invalidateQueries({ queryKey: ['box-expenses', boxId] });
+    queryClient.invalidateQueries({ queryKey: ['box-statement', boxId] });
+  };
+  const submitVoucherMut = useMutation({
+    mutationFn: (id: string) => expensesApi.submit(id),
+    onSuccess: () => { invalidateVouchers(); toast('Submitted for approval', 'success'); },
+    onError: (err) => toast(getApiError(err, 'Submit failed'), 'error'),
+  });
+  const deleteVoucherMut = useMutation({
+    mutationFn: (id: string) => expensesApi.remove(id),
+    onSuccess: () => { invalidateVouchers(); toast('Deleted', 'success'); },
+    onError: (err) => toast(getApiError(err, 'Delete failed'), 'error'),
+  });
+  const attachVoucherMut = useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) => expensesApi.uploadAttachment(id, file),
+    onSuccess: () => { invalidateVouchers(); toast('Receipt attached.', 'success'); },
+    onError: (err) => toast(getApiError(err, 'Attach failed'), 'error'),
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const attachTargetId = useRef<string | null>(null);
+  const startAttach = (id: string) => { attachTargetId.current = id; fileInputRef.current?.click(); };
+  const handleVoucherDelete = async (id: string) => {
+    if (await confirm('Delete this voucher? Approved/posted ones must be reversed in Accounting.')) {
+      deleteVoucherMut.mutate(id);
+    }
+  };
 
   const { data: stmt, isLoading } = useQuery({
     queryKey: ['box-statement', boxId],
@@ -181,25 +229,47 @@ function CashBoxDetail() {
                     <thead><tr>
                       <th style={TH}>Date</th><th style={TH}>Number</th><th style={TH}>Serial</th>
                       <th style={TH}>Description</th><th style={TH}>Paid To</th><th style={TH}>Project</th>
-                      <th style={{ ...TH, textAlign: 'right' }}>Amount</th><th style={TH}>Status</th>
+                      <th style={{ ...TH, textAlign: 'right' }}>Amount</th><th style={TH}>Status</th><th style={TH}></th>
                     </tr></thead>
                     <tbody>
-                      {vouchers.map(e => (
-                        <tr key={e.id}>
+                      {vouchers.map(e => {
+                        const miss = missingInfo(e);
+                        return (
+                        <tr key={e.id} onClick={() => router.push(`/expenses/${e.id}`)} style={{ cursor: 'pointer' }}>
                           <td style={{ ...TD, whiteSpace: 'nowrap' }}>{fmtDate(e.expense_date)}</td>
-                          <td style={TD}>
-                            <Link href={`/expenses/${e.id}`} style={{ color: 'var(--brand)', fontFamily: 'monospace', fontWeight: 600, textDecoration: 'none' }}>
-                              {e.number || '—'}
-                            </Link>
-                          </td>
+                          <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 600, color: 'var(--brand)' }}>{e.number || '—'}</td>
                           <td style={{ ...TD, fontFamily: 'monospace', fontSize: 'var(--text-xs)' }}>{e.voucher_number || '—'}</td>
                           <td style={{ ...TD, maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={e.description}>{e.description || '—'}</td>
-                          <td style={{ ...TD, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(e as any).supplier_name || e.payee_name || '—'}</td>
+                          <td style={{ ...TD, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(e as any).supplier_name || e.payee_name || e.payee_worker_name || '—'}</td>
                           <td style={{ ...TD, fontFamily: 'monospace', fontSize: 'var(--text-xs)' }}>{(e as any).project_code || (e as any).project_name || '—'}</td>
                           <td style={{ ...NUM, fontWeight: 700 }}>{formatPrice(Number(e.amount))}</td>
-                          <td style={TD}><Badge variant={STATUS_VARIANT[e.status] ?? 'default'}>{STATUS_LABEL[e.status] ?? e.status}</Badge></td>
+                          <td style={TD}>
+                            <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                              <Badge variant={STATUS_VARIANT[e.status] ?? 'default'}>{STATUS_LABEL[e.status] ?? e.status}</Badge>
+                              {miss.length > 0 && (
+                                <span title={`Missing: ${miss.join(', ')}`} style={{ display: 'inline-flex' }}>
+                                  <Badge variant="warning" size="sm">Incomplete</Badge>
+                                </span>
+                              )}
+                            </span>
+                          </td>
+                          <td style={{ ...TD, textAlign: 'right' }} onClick={ev => ev.stopPropagation()}>
+                            <RowActions actions={[
+                              { label: 'Open', href: `/expenses/${e.id}` },
+                              { label: 'Submit for approval',
+                                hidden: !((e.status === 'draft' || e.status === 'rejected') && canSubmit),
+                                onClick: () => submitVoucherMut.mutate(String(e.id)) },
+                              { label: 'Attach receipt', hidden: !rowEditable(e), onClick: () => startAttach(String(e.id)) },
+                              { label: e.status === 'submitted' ? 'Correct' : 'Edit',
+                                href: `/expenses/${e.id}/edit`, hidden: !rowEditable(e) },
+                              { separator: true },
+                              { label: 'Delete', variant: 'danger',
+                                hidden: !(['draft', 'rejected', 'submitted'].includes(e.status) && canSubmit),
+                                onClick: () => handleVoucherDelete(String(e.id)) },
+                            ]} />
+                          </td>
                         </tr>
-                      ))}
+                      ); })}
                     </tbody>
                   </table>
                 </div>
@@ -213,6 +283,16 @@ function CashBoxDetail() {
               </>
             )}
         </div>
+
+        <input ref={fileInputRef} type="file" hidden onChange={ev => {
+          const f = ev.target.files?.[0];
+          const id = attachTargetId.current;
+          if (f && id) {
+            if (f.size > 20 * 1024 * 1024) toast('Max file size is 20 MB.', 'error');
+            else attachVoucherMut.mutate({ id, file: f });
+          }
+          ev.target.value = '';
+        }} />
       </PageShell>
     </MainLayout>
   );
