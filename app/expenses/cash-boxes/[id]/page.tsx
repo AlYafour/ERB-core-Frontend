@@ -48,6 +48,41 @@ const STATUS_VARIANT: Record<string, 'default' | 'warning' | 'info' | 'success' 
 
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
+// Numbered pager with ellipsis + a "go to page" box — Prev/Next alone is
+// painful across dozens of pages.
+function PageNav({ page, totalPages, onGo }: { page: number; totalPages: number; onGo: (p: number) => void }) {
+  const [jump, setJump] = useState('');
+  if (totalPages <= 1) return null;
+  const pages: Array<number | '…'> = [];
+  const start = Math.max(1, page - 2);
+  const end = Math.min(totalPages, page + 2);
+  if (start > 1) { pages.push(1); if (start > 2) pages.push('…'); }
+  for (let p = start; p <= end; p++) pages.push(p);
+  if (end < totalPages) { if (end < totalPages - 1) pages.push('…'); pages.push(totalPages); }
+  const go = () => { const n = parseInt(jump, 10); if (n >= 1 && n <= totalPages) { onGo(n); setJump(''); } };
+  const btn = (active: boolean): React.CSSProperties => ({
+    minWidth: 32, padding: '6px 8px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+    border: `1px solid ${active ? 'var(--brand)' : 'var(--border-subtle)'}`,
+    background: active ? 'var(--brand)' : 'transparent',
+    color: active ? '#fff' : 'var(--text-secondary)', fontWeight: active ? 700 : 500, fontSize: 'var(--text-sm)',
+  });
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 14, flexWrap: 'wrap' }}>
+      <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => onGo(page - 1)}>‹ Prev</Button>
+      {pages.map((p, i) => p === '…'
+        ? <span key={`e${i}`} style={{ padding: '0 4px', color: 'var(--text-muted)' }}>…</span>
+        : <button key={p} type="button" onClick={() => onGo(p)} style={btn(p === page)}>{p}</button>)}
+      <Button variant="secondary" size="sm" disabled={page >= totalPages} onClick={() => onGo(page + 1)}>Next ›</Button>
+      <span style={{ marginInlineStart: 10, fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Go to</span>
+      <input type="number" min={1} max={totalPages} value={jump} placeholder={String(page)}
+        onChange={e => setJump(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') go(); }}
+        style={{ width: 64, padding: '6px 8px', fontSize: 'var(--text-sm)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+      <Button variant="secondary" size="sm" onClick={go}>Go</Button>
+    </div>
+  );
+}
+
 type Tier = { code: string; description: string } | null;
 // One classification tier as a table cell: code (bold) + its description beneath.
 function TierCell({ tier }: { tier: Tier }) {
@@ -410,13 +445,7 @@ function CashBoxDetail() {
                     </tbody>
                   </table>
                 </div>
-                {totalPages > 1 && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
-                    <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>‹ Prev</Button>
-                    <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Page {page} / {totalPages}</span>
-                    <Button variant="secondary" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next ›</Button>
-                  </div>
-                )}
+                <PageNav page={page} totalPages={totalPages} onGo={setPage} />
               </>
             )}
         </div>
