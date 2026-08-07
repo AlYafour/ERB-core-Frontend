@@ -29,8 +29,8 @@ const missingInfo = (e: Expense): string[] => {
   return m;
 };
 
-const TH: React.CSSProperties = { padding: '8px 10px', textAlign: 'left', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' };
-const TD: React.CSSProperties = { padding: '9px 10px', fontSize: 'var(--text-sm)', borderBottom: '1px solid var(--border-subtle)' };
+const TH: React.CSSProperties = { padding: '7px 8px', textAlign: 'left', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid var(--border-subtle)', whiteSpace: 'nowrap' };
+const TD: React.CSSProperties = { padding: '7px 8px', fontSize: 'var(--text-sm)', borderBottom: '1px solid var(--border-subtle)', verticalAlign: 'top' };
 const NUM: React.CSSProperties = { ...TD, textAlign: 'right', fontFamily: 'monospace', whiteSpace: 'nowrap' };
 const INPUT: React.CSSProperties = {
   padding: '7px 10px', fontSize: 'var(--text-sm)', border: '1px solid var(--border-subtle)',
@@ -54,9 +54,9 @@ function TierCell({ tier }: { tier: Tier }) {
   if (!tier) return <td style={{ ...TD, color: 'var(--text-tertiary)' }}>—</td>;
   return (
     <td style={TD}>
-      <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{tier.code}</span>
+      <span style={{ fontFamily: 'monospace', fontWeight: 600, whiteSpace: 'nowrap' }}>{tier.code}</span>
       {tier.description && (
-        <span style={{ display: 'block', fontSize: 'var(--text-xs)', color: 'var(--text-muted)', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tier.description}>
+        <span style={{ display: 'block', fontSize: 'var(--text-xs)', color: 'var(--text-muted)', maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tier.description}>
           {tier.description}
         </span>
       )}
@@ -243,7 +243,7 @@ function CashBoxDetail() {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead><tr>
-                      <th style={TH}>Date</th><th style={TH}>Number</th><th style={TH}>Serial</th>
+                      <th style={TH}>Date</th><th style={TH}>Number</th>
                       <th style={TH}>Description</th><th style={TH}>Cost Type</th>
                       <th style={TH}>Main Category</th><th style={TH}>Sub Category</th><th style={TH}>Cost Code</th>
                       <th style={TH}>Paid To</th><th style={TH}>Project</th>
@@ -260,9 +260,8 @@ function CashBoxDetail() {
                         return (
                         <tr key={e.id} onClick={() => router.push(`/expenses/${e.id}`)} style={{ cursor: 'pointer' }}>
                           <td style={{ ...TD, whiteSpace: 'nowrap' }}>{fmtDate(e.expense_date)}</td>
-                          <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 600, color: 'var(--brand)' }}>{e.number || '—'}</td>
-                          <td style={{ ...TD, fontFamily: 'monospace', fontSize: 'var(--text-xs)' }}>{e.voucher_number || '—'}</td>
-                          <td style={{ ...TD, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={e.description}>{e.description || '—'}</td>
+                          <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 600, color: 'var(--brand)', whiteSpace: 'nowrap' }} title={e.voucher_number ? `Serial: ${e.voucher_number}` : undefined}>{e.number || '—'}</td>
+                          <td style={{ ...TD, maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={e.description}>{e.description || '—'}</td>
                           <td style={TD}>
                             {e.cost_type_label
                               ? <Badge variant="default" size="sm">{e.cost_type_label}</Badge>
@@ -271,8 +270,8 @@ function CashBoxDetail() {
                           <TierCell tier={main} />
                           <TierCell tier={sub} />
                           <TierCell tier={leaf} />
-                          <td style={{ ...TD, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(e as any).supplier_name || e.payee_name || e.payee_worker_name || '—'}</td>
-                          <td style={{ ...TD, fontFamily: 'monospace', fontSize: 'var(--text-xs)' }}>{(e as any).project_code || (e as any).project_name || '—'}</td>
+                          <td style={{ ...TD, maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(e as any).supplier_name || e.payee_name || e.payee_worker_name || '—'}</td>
+                          <td style={{ ...TD, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={(e as any).project_name || ''}>{(e as any).project_code || (e as any).project_name || '—'}</td>
                           <td style={{ ...NUM, fontWeight: 700 }}>{formatPrice(Number(e.amount))}</td>
                           <td style={TD}>
                             <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
